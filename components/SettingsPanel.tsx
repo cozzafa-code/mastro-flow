@@ -1497,7 +1497,7 @@ export default function SettingsPanel() {
                   <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, marginBottom: 6 }}>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700 }}>N. {f.numero}/{f.anno} — {f.tipo.toUpperCase()}</div>
-                      <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} · {f.cmCode} · {f.data}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} · {f.cmCode} · {f.data ? new Date(f.data+'T12:00:00').toLocaleDateString('it-IT') : f.data}</div>
                       <div style={{ fontSize: 9, color: f.pagata ? "#1A9E73" : (f.scadenza < new Date().toISOString().split("T")[0] ? "#DC4444" : T.sub) }}>
                         {f.pagata ? `✅ Pagata il ${f.dataPagamento}` : `⏳ Scadenza: ${f.scadenza}`}
                       </div>

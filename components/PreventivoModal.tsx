@@ -284,7 +284,7 @@ export default function PreventivoModal() {
                     <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${T.bdr}` }}>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 700 }}>N. {f.numero}/{f.anno} · {f.tipo.toUpperCase()}</div>
-                        <div style={{ fontSize: 9, color: T.sub }}>{f.data} · Scad: {f.scadenza}</div>
+                        <div style={{ fontSize: 9, color: T.sub }}>{f.data ? new Date(f.data+'T12:00:00').toLocaleDateString('it-IT') : f.data} · Scad: {f.scadenza ? new Date(f.scadenza+'T12:00:00').toLocaleDateString('it-IT') : f.scadenza}</div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ fontSize: 12, fontWeight: 800, color: f.pagata ? "#34c759" : T.text }}>€{f.importo.toLocaleString("it-IT")}</span>

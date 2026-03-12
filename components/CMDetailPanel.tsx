@@ -170,6 +170,11 @@ export default function CMDetailPanel() {
               <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.code} · {c.cliente} {c.cognome || ""}</div>
               <div style={{ fontSize: 10, color: "#ffffff60" }}>{c.indirizzo || ""}</div>
             </div>
+            {fattureDB.filter(f => f.cmId === c.id).length > 0 && (
+              <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#1A9E7330" : "#D0800830", color: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#1A9E73" : "#D08008", flexShrink: 0 }}>
+                {fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "✅ Pagata" : "📄 Fattura"}
+              </span>
+            )}
             <div style={{ background: T.acc, padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 900, color: "#fff", flexShrink: 0 }}>€{pwFmt(pwTotale)}</div>
           </div>
 
@@ -2888,6 +2893,11 @@ export default function CMDetailPanel() {
                       <div style={{ fontSize: 10, color: T.sub }}>{curCC.desc}</div>
                     </div>
                     <span style={{ fontSize: 10, fontWeight: 700, color: T.acc }}>{doneCC}/{stepsCC.length}</span>
+                    {hasFattCC && (
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: tuttoCC ? "#1A9E7320" : "#D0800820", color: tuttoCC ? "#1A9E73" : "#D08008", marginLeft: 4 }}>
+                        {tuttoCC ? "✅ Pagata" : "📄 Fatt."}
+                      </span>
+                    )}
                   </div>
                   {/* Success flash */}
                   {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#34c75918", border: "1px solid #34c75940", fontSize: 12, fontWeight: 700, color: "#34c759", textAlign: "center" }}>{ccDone}</div>}
@@ -2954,6 +2964,12 @@ export default function CMDetailPanel() {
                   {curCC.id === "conferma" && (
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: €{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
+                      {hasFattCC && !fattCC.every(f => f.pagata) && (
+                        <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#D0800815", border: "1px solid #D0800830", display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 13 }}>📄</span>
+                          <span style={{ fontSize: 11, color: "#D08008", fontWeight: 600 }}>Fattura acconto emessa — verifica pagamento in Contabilità</span>
+                        </div>
+                      )}
                       {firmaStep === 0 ? (
                         <div>
                           <button onClick={async () => {
@@ -3797,7 +3813,7 @@ export default function CMDetailPanel() {
                     <span style={{ fontSize: 16 }}>{a.tipo === "nota" ? "📄" : a.tipo === "vocale" ? "🎤" : a.tipo === "video" ? "🎬" : a.tipo === "foto" ? "📷" : "📎"}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{a.nome}</div>
-                      <div style={{ fontSize: 10, color: T.sub }}>{a.data}{a.durata ? ` · ${a.durata}` : ""}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>{a.data ? new Date(a.data+'T12:00:00').toLocaleDateString('it-IT') : a.data}{a.durata ? ` · ${a.durata}` : ""}</div>
                     </div>
                     {/* Audio: play inline */}
                     {a.tipo === "vocale" && (

@@ -542,7 +542,7 @@ ${msgsCm.length > 0 ? "<h2>💬 Comunicazioni (" + msgsCm.length + " conversazio
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
                     <div>
                       <div style={{ fontSize:12, fontWeight:700, color:T.text }}>N.{f.numero}/{f.anno} — {f.tipo}</div>
-                      <div style={{ fontSize:10, color:T.sub }}>{f.data} · {f.cliente}</div>
+                      <div style={{ fontSize:10, color:T.sub }}>{f.data ? new Date(f.data+'T12:00:00').toLocaleDateString('it-IT') : f.data} · {f.cliente}</div>
                     </div>
                     <div style={{ textAlign:"right" }}>
                       <div style={{ fontSize:14, fontWeight:900, color:f.pagata?"#34c759":"#ff3b30" }}>{fD(f.importo)}</div>

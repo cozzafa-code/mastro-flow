@@ -209,8 +209,8 @@ export const generaPreventivoPDF = (c: any, deps: PdfDeps) => {
     if (v.vociLibere?.length > 0) {
       v.vociLibere.forEach(vl => {
         const vlTot = (vl.prezzo || 0) * (vl.qta || 1);
-        const unitaLabel = { pz: "pz", mq: "mq", ml: "ml", kg: "kg", forfait: "forfait" }[vl.unita] || vl.unita || "pz";
-        addS("📦 " + (vl.descrizione || "Voce extra") + ":", `€${(vl.prezzo||0).toFixed(2)}/${unitaLabel} × ${vl.qta||1} = <b style="color:#1a7f37">€${vlTot.toFixed(2)}</b>`);
+        const unitaLabel = { pz: "pz", mq: "mq", ml: "ml", kg: "kg", forfait: "forfait" }[vl.unita] || (typeof vl.unita === "string" ? vl.unita : "pz");
+        addS("📦 " + (vl.descrizione || "Voce extra") + ":", `€${(parseFloat(vl.prezzo)||0).toFixed(2)}/${unitaLabel} × ${vl.qta||1} = <b style="color:#1a7f37">€${vlTot.toFixed(2)}</b>`);
       });
     }
     return { ...v, idx: i, sub, mq, sysKey, sysName, sysRec, tipoCode, tipoLabel, lmm, hmm, specs };

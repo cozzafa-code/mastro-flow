@@ -271,7 +271,7 @@ export default function ClientiPanel() {
                   <div key={d.id} style={{ background: T.card, borderRadius: 12, padding: "12px 14px", marginBottom: 8, border: "1px solid " + T.bdr, borderLeft: "3px solid " + tagObj.color }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                       <span style={{ fontSize: 10, fontWeight: 700, color: tagObj.color, textTransform: "uppercase", letterSpacing: "0.05em" }}>{tagObj.label}</span>
-                      <span style={{ fontSize: 10, color: T.sub }}>{d.data}</span>
+                      <span style={{ fontSize: 10, color: T.sub }}>{d.data ? new Date(d.data+'T12:00:00').toLocaleDateString('it-IT') : d.data}</span>
                     </div>
                     <div style={{ fontSize: 13, color: T.text, lineHeight: 1.4 }}>{d.testo}</div>
                   </div>

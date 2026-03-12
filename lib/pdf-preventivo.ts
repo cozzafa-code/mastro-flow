@@ -216,13 +216,13 @@ export function generaPreventivoPDF(c: any, ctx: any) {
     Object.entries(accLabels).forEach(([key, label]) => {
       const a: any = acc[key] || v.accessori?.[key];
       if (!a?.attivo) return;
-      const aDesc = [label as string, a.colore ? `Colore: ${a.colore}` : "", a.l && a.h ? `${a.l}×${a.h}mm` : ""].filter(Boolean).join(" · ");
+      const aDesc = [String(label), a.colore ? `Colore: ${a.colore}` : "", a.l && a.h ? `${a.l}×${a.h}mm` : ""].filter(Boolean).join(" · ");
       rows.push(["", `  ↳ ${aDesc}`, String(v.pezzi || 1), "incluso", ""]);
     });
 
     // Voci libere vano
     (v.vociLibere || []).forEach((vl: any) => {
-      rows.push(["", `  ↳ ${vl.desc || "Voce aggiuntiva"}`, String(vl.qta || 1), `€ ${fmt(vl.prezzo || 0)}`, `€ ${fmt((vl.prezzo || 0) * (vl.qta || 1))}`]);
+      rows.push(["", `  ↳ ${vl.desc || vl.descrizione || "Voce aggiuntiva"}`, String(vl.qta || 1), `€ ${fmt(vl.prezzo || 0)}`, `€ ${fmt((vl.prezzo || 0) * (vl.qta || 1))}`]);
     });
   });
 
@@ -230,7 +230,7 @@ export function generaPreventivoPDF(c: any, ctx: any) {
   (c.vociLibere || []).forEach((vl: any) => {
     rows.push([
       "—",
-      vl.desc || "Voce aggiuntiva",
+      vl.desc || vl.descrizione || "Voce aggiuntiva",
       String(vl.qta || 1),
       `€ ${fmt(vl.importo || 0)}`,
       `€ ${fmt((vl.importo || 0) * (vl.qta || 1))}`,

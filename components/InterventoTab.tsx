@@ -65,7 +65,7 @@ export default function InterventoTab({ montaggiDB, cmId, squadreDB, T, onOpenIn
                 <span style={{ fontSize:18 }}>{fase.icon}</span>
                 <div>
                   <div style={{ fontSize:13, fontWeight:800, color:T.text }}>Montaggio #{idx + 1}</div>
-                  <div style={{ fontSize:10, color:T.sub }}>{m.data} · {m.orario || "—"} · {m.durata || m.giorni + "g"}</div>
+                  <div style={{ fontSize:10, color:T.sub }}>{(m.data ? new Date(m.data+'T12:00:00').toLocaleDateString('it-IT') : m.data)} · {m.orario || "—"} · {m.durata || m.giorni + "g"}</div>
                 </div>
               </div>
               <div style={{ padding:"4px 10px", borderRadius:8, background:fase.color+"15", border:"1px solid "+fase.color+"30", fontSize:10, fontWeight:800, color:fase.color }}>

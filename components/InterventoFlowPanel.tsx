@@ -165,7 +165,7 @@ export default function InterventoFlowPanel({ montaggio, onClose, onUpdate }) {
         <div onClick={onClose} style={{ cursor:"pointer", padding:4 }}><Ico d={ICO.back} s={22} c="#fff" /></div>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:16, fontWeight:900, color:"#fff" }}>{m.cliente}</div>
-          <div style={{ fontSize:10, color:"rgba(255,255,255,0.8)" }}>{m.cmCode} · {sq?.nome||"—"} · {m.data}</div>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.8)" }}>{m.cmCode} · {sq?.nome||"—"} · {m.data ? new Date(m.data+'T12:00:00').toLocaleDateString('it-IT') : m.data}</div>
         </div>
         <div style={{ fontSize:28 }}>{faseCorrente.icon}</div>
       </div>

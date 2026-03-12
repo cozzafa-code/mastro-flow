@@ -849,13 +849,17 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     setShowModal(null);
   };
 
+  // #23: retroattivo clienteId una tantum
+  useEffect(() => { if (contatti?.length) fixClienteIdRetroattivo(); }, [contatti.length]);
+
   const addCommessa = () => {
     const v = validateCommessa(newCM);
     if (!v.valid) { setFormErrors(v.errors); toast(v.errors[0], "error"); return; }
     setFormErrors([]);
     if (!canDo("commessa")) return;
     const code = "S-" + String(cantieri.length + 1).padStart(4, "0");
-    const nc = { id: Date.now(), code, cliente: newCM.cliente, cognome: newCM.cognome||"", indirizzo: newCM.indirizzo, telefono: newCM.telefono, email: newCM.email||"", fase: "sopralluogo", rilievi: [], sistema: newCM.sistema, tipo: newCM.tipo, difficoltaSalita: newCM.difficoltaSalita, mezzoSalita: newCM.mezzoSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, note: newCM.note, allegati: [], creato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), aggiornato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
+    const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
+    const nc = { id: Date.now(), code, clienteId: _ctMatch?.id || newCM.clienteId || null, cliente: newCM.cliente, cognome: newCM.cognome||"", indirizzo: newCM.indirizzo, telefono: newCM.telefono, email: newCM.email||"", fase: "sopralluogo", rilievi: [], sistema: newCM.sistema, tipo: newCM.tipo, difficoltaSalita: newCM.difficoltaSalita, mezzoSalita: newCM.mezzoSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, note: newCM.note, allegati: [], creato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), aggiornato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
     setCantieri(cs => [nc, ...cs]);
     setNewCM({ cliente: "", cognome: "", indirizzo: "", telefono: "", email: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", note: "" });
     setShowModal(null);
@@ -863,6 +867,22 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     setTab("commesse");
   };
 
+
+  // #23 FIX: popola clienteId retroattivo sulle commesse che non ce l'hanno
+  const fixClienteIdRetroattivo = () => {
+    if (!contatti?.length) return;
+    setCantieri(cs => cs.map(c => {
+      if (c.clienteId) return c;
+      const ct = contatti.find((ct:any) => {
+        const nomeCompleto = ([ct.nome, ct.cognome].filter(Boolean).join(" ")).toLowerCase();
+        const cmNome = ([c.cliente, c.cognome].filter(Boolean).join(" ")).toLowerCase();
+        if (nomeCompleto && cmNome && nomeCompleto === cmNome) return true;
+        if (ct.telefono && c.telefono && ct.telefono.replace(/\D/g,"") === c.telefono.replace(/\D/g,"")) return true;
+        return false;
+      });
+      return ct ? { ...c, clienteId: ct.id } : c;
+    }));
+  };
   const addVano = () => {
     if (!selectedCM || !selectedRilievo) return;
     const tipObj = TIPOLOGIE_RAPIDE.find(t => t.code === newVano.tipo);

@@ -51,7 +51,7 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
   const vociLibHTML = (c.vociLibere || []).map((vl: any) => `
     <tr>
       <td>—</td>
-      <td>${vl.desc || "Voce aggiuntiva"}</td>
+      <td>${vl.desc || vl.descrizione || "Voce aggiuntiva"}</td>
       <td class="num">${vl.qta || 1}</td>
       <td class="num">€ ${fmt(vl.importo || 0)}</td>
       <td class="num bold">€ ${fmt((vl.importo || 0) * (vl.qta || 1))}</td>

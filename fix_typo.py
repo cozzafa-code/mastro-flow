@@ -1,0 +1,10 @@
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+f=open('components/SettingsPanel.tsx','r',encoding='utf-8')
+c=f.read()
+f.close()
+c=c.replace('setFoornitori={setFornitori}','setFornitori={setFornitori}',1)
+f=open('components/SettingsPanel.tsx','w',encoding='utf-8')
+f.write(c)
+f.close()
+print("done")
