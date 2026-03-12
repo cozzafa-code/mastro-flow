@@ -47,7 +47,7 @@ function ListinoSettore({ titolo, emoji, storageKey, T, PRI, FF }: any) {
 
   // Export CSV
   const exportCSV = () => {
-    let csv = "Nome;Fornitore;Materiale;Peso Stecca (kg/m);Euro/mq;Minimo mq;Griglia L;Griglia H;Griglia Prezzo\n";
+    let csv = "Nome;Fornitore;Materiale;Peso Stecca (kg/mq);Euro/mq;Minimo mq;Griglia L;Griglia H;Griglia Prezzo\n";
     listino.forEach((p: any) => {
       if (p.griglia && p.griglia.length > 0) {
         p.griglia.forEach((g: any) => {
@@ -66,7 +66,7 @@ function ListinoSettore({ titolo, emoji, storageKey, T, PRI, FF }: any) {
 
   // Export template vuoto
   const exportTemplate = () => {
-    const csv = "Nome;Fornitore;Materiale;Peso Stecca (kg/m);Euro/mq;Minimo mq;Griglia L;Griglia H;Griglia Prezzo\n" +
+    const csv = "Nome;Fornitore;Materiale;Peso Stecca (kg/mq);Euro/mq;Minimo mq;Griglia L;Griglia H;Griglia Prezzo\n" +
       "Tapparella PVC Standard;Fornitore SRL;PVC;1.2;28;0.5;800;1200;22.50\n" +
       "Tapparella PVC Standard;Fornitore SRL;PVC;1.2;28;0.5;1000;1500;35.00\n" +
       "Tapparella Alluminio;Fornitore SRL;Alluminio;1.8;45;0.5;800;1200;36.00\n" +
@@ -215,20 +215,55 @@ function ListinoSettore({ titolo, emoji, storageKey, T, PRI, FF }: any) {
               <div style={{ padding: "12px 14px", background: T.bg, borderTop: `1px solid ${T.bdr}` }}>
                 {/* Campi prodotto */}
                 <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-                  {[
-                    { label: "Nome prodotto", key: "nome", placeholder: "es. Tapparella PVC Standard" },
-                    { label: "Fornitore", key: "fornitore", placeholder: "es. Rollplast SRL" },
-                    { label: "Materiale", key: "materiale", placeholder: "es. PVC / Alluminio" },
-                    { label: "Peso stecca (kg/m)", key: "pesoStecca", placeholder: "es. 1.2" },
-                  ].map(({ label, key, placeholder }) => (
-                    <div key={key} style={{ flex: "1 1 45%", minWidth: 120 }}>
-                      <div style={{ fontSize: 9, color: T.sub, marginBottom: 3 }}>{label}</div>
-                      <input value={(prod as any)[key] || ""} placeholder={placeholder}
-                        onChange={e => updateProdotto(prod.id, { [key]: e.target.value })}
-                        style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${T.bdr}`,
-                          fontSize: 12, fontFamily: FF, background: T.card, color: T.text }} />
-                    </div>
-                  ))}
+                  {/* Nome prodotto */}
+                <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                  <div style={{ fontSize: 9, color: T.sub, marginBottom: 3 }}>Nome prodotto</div>
+                  <input value={prod.nome || ""} placeholder="es. Tapparella PVC Standard"
+                    onChange={e => updateProdotto(prod.id, { nome: e.target.value })}
+                    style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${T.bdr}`,
+                      fontSize: 12, fontFamily: FF, background: T.card, color: T.text }} />
+                </div>
+                {/* Fornitore dropdown */}
+                <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                  <div style={{ fontSize: 9, color: T.sub, marginBottom: 3 }}>Fornitore</div>
+                  <select value={prod.fornitore || ""}
+                    onChange={e => {
+                      if (e.target.value === "__nuovo__") {
+                        let n; try { n = window.prompt("Nome nuovo fornitore:"); } catch(err) {}
+                        if (n?.trim()) {
+                          const newF = { id: "forn_" + Date.now(), nome: n.trim(), email: "", tel: "", piva: "", note: "" };
+                          setFornitori((prev: any[]) => [...prev, newF]);
+                          updateProdotto(prod.id, { fornitore: n.trim() });
+                        }
+                      } else {
+                        updateProdotto(prod.id, { fornitore: e.target.value });
+                      }
+                    }}
+                    style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${T.bdr}`,
+                      fontSize: 12, fontFamily: FF, background: T.card, color: T.text }}>
+                    <option value="">— Seleziona fornitore —</option>
+                    {(fornitori || []).map((fo: any) => (
+                      <option key={fo.id} value={fo.nome}>{fo.nome}</option>
+                    ))}
+                    <option value="__nuovo__">+ Crea nuovo fornitore...</option>
+                  </select>
+                </div>
+                {/* Materiale */}
+                <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                  <div style={{ fontSize: 9, color: T.sub, marginBottom: 3 }}>Materiale</div>
+                  <input value={prod.materiale || ""} placeholder="es. PVC / Alluminio"
+                    onChange={e => updateProdotto(prod.id, { materiale: e.target.value })}
+                    style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${T.bdr}`,
+                      fontSize: 12, fontFamily: FF, background: T.card, color: T.text }} />
+                </div>
+                {/* Peso stecca */}
+                <div style={{ flex: "1 1 45%", minWidth: 120 }}>
+                  <div style={{ fontSize: 9, color: T.sub, marginBottom: 3 }}>Peso stecca (kg/mq)</div>
+                  <input value={prod.pesoStecca || ""} placeholder="es. 1.2"
+                    onChange={e => updateProdotto(prod.id, { pesoStecca: e.target.value })}
+                    style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${T.bdr}`,
+                      fontSize: 12, fontFamily: FF, background: T.card, color: T.text }} />
+                </div>
                 </div>
 
                 {/* Euro/mq e minimo */}
