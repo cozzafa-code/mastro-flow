@@ -545,6 +545,9 @@ export default function SettingsPanel() {
     showStrutture, setShowStrutture,
   } = ctx;
 
+  // Ref per upload logo azienda
+  const logoInputRef = React.useRef<HTMLInputElement>(null);
+
   // DS v2.0 — primary from theme (teal for chiaro)
   const PRI = T.acc || "#0D7C6B";
   const PRI08 = T.accLt || "rgba(13,124,107,0.08)";
@@ -2757,7 +2760,7 @@ export default function SettingsPanel() {
             setEvents([]);
             setTasks([]);
             setAiInbox([]);
-            setPipeline([]);
+            setPipelineDB([]);
             setProblemi([]);
             // Save empty to localStorage + set cleanSlate flag
             ["cantieri","tasks","events","fatture","ordiniForn","montaggi","contatti","pipeline","msgs","problemi","fatturePassive","fornitori"].forEach(k => {
