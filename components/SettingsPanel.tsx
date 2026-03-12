@@ -549,7 +549,6 @@ export default function SettingsPanel() {
   const logoInputRef = React.useRef<HTMLInputElement>(null);
 
   // DS v2.0 — primary from theme (teal for chiaro)
-  const logoInputRef = React.useRef(null);
   const PRI = T.acc || "#0D7C6B";
   const PRI08 = T.accLt || "rgba(13,124,107,0.08)";
   const PRI15 = T.accLt || "rgba(13,124,107,0.15)";
