@@ -594,15 +594,12 @@ export default function TabHome() {
             <div style={{ display: "flex", flexDirection: "column" as const, alignItems: "flex-end", gap: 6 }}>
               <div style={{ textAlign: "right" as const }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 20 }}>⛅</span>
-                  <span style={{ fontSize: 18, fontWeight: 600 }}>12°</span>
+                  <span style={{ fontSize: 20 }}>{weather?.icon || "🌡"}</span>
+                  <span style={{ fontSize: 18, fontWeight: 600 }}>{weather?.temp != null ? `${weather.temp}°` : "—"}</span>
                 </div>
-                <div style={{ fontSize: 11, color: T.sub }}>Cosenza</div>
+                <div style={{ fontSize: 11, color: T.sub }}>{weather?.city || "—"}</div>
               </div>
-              <div onClick={() => setHomeEditMode(e => !e)}
-                style={{ padding: "4px 10px", borderRadius: 7, background: homeEditMode ? T.acc : T.bg, border: `1px solid ${homeEditMode ? T.acc : T.bdr}`, fontSize: 11, fontWeight: 700, color: homeEditMode ? "#fff" : T.sub, cursor: "pointer" }}>
-                {homeEditMode ? "✓ Fine" : "✏ Riordina"}
-              </div>
+              {/* #08 Riordina nascosto pre-lancio */}
             </div>
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.3 }}>{saluto}, Fabio</div>

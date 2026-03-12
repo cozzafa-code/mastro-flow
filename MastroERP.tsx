@@ -264,6 +264,28 @@ export default function MastroMisure({ user, azienda: aziendaInit }: { user?: an
   const WIDGET_IDS = ["banner", "urgenti", "calendario", "email", "commesse"];
   const drag = useDragOrder(WIDGET_IDS);
   const [homeEditMode, setHomeEditMode] = useState(false);
+
+  // #06 — Meteo reale via geolocation + Open-Meteo (no API key)
+  const [weather, setWeather] = useState<{temp:number|null,icon:string,city:string}|null>(null);
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        // Reverse geocoding città
+        const geo = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+        const geoData = await geo.json();
+        const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || "—";
+        // Meteo Open-Meteo
+        const wx = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const wxData = await wx.json();
+        const temp = Math.round(wxData.current_weather?.temperature ?? 0);
+        const code = wxData.current_weather?.weathercode ?? 0;
+        const icon = code === 0 ? "☀️" : code <= 3 ? "⛅" : code <= 48 ? "🌫" : code <= 67 ? "🌧" : code <= 77 ? "❄️" : code <= 82 ? "🌦" : "⛈";
+        setWeather({ temp, icon, city });
+      } catch { /* silenzioso */ }
+    }, () => { /* permesso negato — rimane null */ });
+  }, []);
   // Wizard nuova visita
   const [cmSubTab, setCmSubTab] = useState("sopralluoghi"); // "sopralluoghi" | "misure" | "info"
   const [nvView, setNvView] = useState(false);
@@ -938,15 +960,12 @@ export default function MastroMisure({ user, azienda: aziendaInit }: { user?: an
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
             <div style={{ textAlign: "right" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 20 }}>⛅</span>
-                <span style={{ fontSize: 18, fontWeight: 600 }}>12°</span>
+                <span style={{ fontSize: 20 }}>{weather?.icon || "🌡"}</span>
+                <span style={{ fontSize: 18, fontWeight: 600 }}>{weather?.temp != null ? `${weather.temp}°` : "—"}</span>
               </div>
-              <div style={{ fontSize: 11, color: T.sub }}>Cosenza</div>
+              <div style={{ fontSize: 11, color: T.sub }}>{weather?.city || "—"}</div>
             </div>
-            <div onClick={() => setHomeEditMode(e => !e)}
-              style={{ padding: "4px 10px", borderRadius: 7, background: homeEditMode ? T.acc : T.bg, border: `1px solid ${homeEditMode ? T.acc : T.bdr}`, fontSize: 11, fontWeight: 700, color: homeEditMode ? "#fff" : T.sub, cursor: "pointer" }}>
-              {homeEditMode ? "✓ Fine" : "✏ Riordina"}
-            </div>
+            {/* #08 Riordina nascosto pre-lancio */}
           </div>
         </div>
         {/* Saluto */}
