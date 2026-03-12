@@ -7,6 +7,7 @@
 // components/MastroERP.tsx
 // MASTRO ERP — adattato per Next.js + Supabase
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import MastroDesktop from "./MastroDesktop";
 // import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEvent as deleteEventDB, saveContatto, saveTeamMember, saveTask, saveAzienda, saveVano, deleteVano, saveMateriali, savePipeline } from "@/lib/supabase-sync";
 import { supabase } from "@/lib/supabase";
 import { useSyncEngine, SyncStatusBar } from "./mastro-sync";
@@ -50,6 +51,18 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [theme, setTheme] = useState("chiaro");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
+  // Inject font link in <head> client-side to avoid SSR hydration mismatch
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const id = "mastro-font-link";
+    if (!document.getElementById(id)) {
+      const el = document.createElement("link");
+      el.id = id;
+      el.rel = "stylesheet";
+      el.href = FONT;
+      document.head.appendChild(el);
+    }
+  }, []);
   const userId = user?.id || null;
   const isUuid = userId ? /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(userId) : false;
   const sync = useSyncEngine(isUuid ? userId : null);
@@ -292,6 +305,15 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     condConsegna: "",
     condContratto: "",
     condDettagli: "",
+    // Listini accessori globali
+    prezzoTapparella: aziendaInit?.prezzoTapparella || 0,
+    prezzoPersiana: aziendaInit?.prezzoPersiana || 0,
+    prezzoZanzariera: aziendaInit?.prezzoZanzariera || 0,
+    prezzoControtelaio: aziendaInit?.prezzoControtelaio || 0,
+    prezzoPosaVano: aziendaInit?.prezzoPosaVano || 0,
+    prezzoSmaltimento: aziendaInit?.prezzoSmaltimento || 0,
+    includePosaInPreventivo: aziendaInit?.includePosaInPreventivo || false,
+    scontoGlobale: aziendaInit?.scontoGlobale || 0,
   });
   const logoInputRef = useRef(null);
   const [aiChat, setAiChat] = useState(false);
@@ -733,10 +755,22 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     // Lamiera
     const lamRec = lamiereDB.find(l => l.cod === v.lamiera);
     if (lamRec?.prezzoMl) tot += lc * parseFloat(lamRec.prezzoMl);
-    // Accessori
-    const tapp = v.accessori?.tapparella; if (tapp?.attivo && c?.prezzoTapparella) { const tmq = ((tapp.l || lmm) / 1000) * ((tapp.h || hmm) / 1000); tot += tmq * parseFloat(c.prezzoTapparella); }
-    const pers = v.accessori?.persiana; if (pers?.attivo && c?.prezzoPersiana) { const pmq = ((pers.l || lmm) / 1000) * ((pers.h || hmm) / 1000); tot += pmq * parseFloat(c.prezzoPersiana); }
-    const zanz = v.accessori?.zanzariera; if (zanz?.attivo && c?.prezzoZanzariera) { const zmq = ((zanz.l || lmm) / 1000) * ((zanz.h || hmm) / 1000); tot += zmq * parseFloat(c.prezzoZanzariera); }
+    // Accessori — fallback: prezzo commessa → listino globale azienda → 0
+    const pTapp = parseFloat(c?.prezzoTapparella || aziendaInfo?.prezzoTapparella || 0);
+    const pPers = parseFloat(c?.prezzoPersiana || aziendaInfo?.prezzoPersiana || 0);
+    const pZanz = parseFloat(c?.prezzoZanzariera || aziendaInfo?.prezzoZanzariera || 0);
+    const tapp = v.accessori?.tapparella; if (tapp?.attivo && pTapp > 0) { const tmq = ((tapp.l || lmm) / 1000) * ((tapp.h || hmm) / 1000); tot += tmq * pTapp; }
+    const pers = v.accessori?.persiana; if (pers?.attivo && pPers > 0) { const pmq = ((pers.l || lmm) / 1000) * ((pers.h || hmm) / 1000); tot += pmq * pPers; }
+    const zanz = v.accessori?.zanzariera; if (zanz?.attivo && pZanz > 0) { const zmq = ((zanz.l || lmm) / 1000) * ((zanz.h || hmm) / 1000); tot += zmq * pZanz; }
+    // Controtelaio — da listino globale
+    const pCT = parseFloat(aziendaInfo?.prezzoControtelaio || 0);
+    if (v.controtelaio && v.controtelaio !== "Nessuno" && pCT > 0) tot += pCT;
+    // Posa — da listino globale
+    const pPosa = parseFloat(aziendaInfo?.prezzoPosaVano || 0);
+    if (pPosa > 0 && aziendaInfo?.includePosaInPreventivo) tot += pPosa * (v.pezzi || 1);
+    // Sconto/maggiorazione globale su tot
+    const sconto = parseFloat(aziendaInfo?.scontoGlobale || 0);
+    if (sconto !== 0) tot = tot * (1 + sconto / 100);
     // Voci libere del vano
     if (v.vociLibere?.length > 0) v.vociLibere.forEach(vl => { tot += (vl.prezzo || 0) * (vl.qta || 1); });
     return Math.round(tot * 100) / 100;
@@ -2746,15 +2780,29 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
   /* ======= MAIN RENDER ======= */
+
+  // ─── DESKTOP SHELL ───────────────────────────────────────────
+  if (isDesktop) {
+    return (
+      <MastroContext.Provider value={ctx}>
+        <>
+          <style>{`
+            * { box-sizing: border-box; }
+            body { margin: 0; }
+            input, select, textarea, button { font-size: inherit; }
+            ::-webkit-scrollbar { width: 4px; height: 4px; }
+            ::-webkit-scrollbar-track { background: transparent; }
+            ::-webkit-scrollbar-thumb { background: #DCDCD7; border-radius: 2px; }
+          `}</style>
+          <MastroDesktop />
+        </>
+      </MastroContext.Provider>
+    );
+  }
+
   return (
     <MastroContext.Provider value={ctx}>
     <>
-      <link href={FONT} rel="stylesheet" />
-      <style>{`
-        * { box-sizing: border-box; }
-        body { margin: 0; }
-        input, select, textarea, button { font-size: inherit; }
-      `}</style>
       <div style={S.app}>
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
@@ -4136,7 +4184,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 2 }}>{doc.nome}</div>
                         <div style={{ fontSize: 11, color: T.sub }}>{doc.detail || ""}</div>
-                        {doc.data && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}><I d={ICO.calendar} /> {doc.data}</div>}
+                        {doc.data && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}><I d={ICO.calendar} /> {fmtData(doc.data)}</div>}
                       </div>
                       <span style={{ fontSize: 10, fontWeight: 700, color: col, background: col + "15", padding: "2px 8px", borderRadius: 6, textTransform: "uppercase" as any }}>{doc.tipo}</span>
                     </div>
@@ -4186,7 +4234,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   <div key={ai} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: ai < selectedCM.allegati.length - 1 ? `1px solid ${T.bdr}` : "none" }}>
                     <span><I d={ICO[a.tipo === "firma" ? "signatureEdit" : a.tipo === "fattura" ? "wallet" : a.tipo === "ordine" ? "package" : "paperclip"]} s={14} c={T.sub} /></span>
                     <div style={{ flex: 1, fontSize: 11, color: T.text, fontWeight: 600 }}>{a.nome}</div>
-                    <span style={{ fontSize: 10, color: T.sub }}>{a.data}</span>
+                    <span style={{ fontSize: 10, color: T.sub }}>{fmtData(a.data)}</span>
                   </div>
                 ))}
               </div>

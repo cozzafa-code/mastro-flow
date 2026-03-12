@@ -112,7 +112,7 @@ export default function SettingsPanel() {
             // Strutture — Configuratore
             ...(settoriAttivi.includes("strutture") ? [{ id: "strutture", l: "🏗 Strutture" }] : []),
             // Sempre visibili
-            { id: "tipologie", l: "📐 Tipologie" }, { id: "salita", l: "🪜 Salita" }, { id: "pipeline", l: "📊 Pipeline" }, { id: "manodopera", l: "👷 Manodopera" }, { id: "libreria", l: "📦 Libreria" }, { id: "importa", l: "📥 Importa" }, { id: "guida", l: "📖 Guida" }, { id: "kit", l: "🔧 Kit" }, { id: "marketplace", l: "🏪 Fornitori" }, { id: "temi", l: "🎨 Temi" },
+            { id: "listini", l: "💰 Listini" }, { id: "tipologie", l: "📐 Tipologie" }, { id: "salita", l: "🪜 Salita" }, { id: "pipeline", l: "📊 Pipeline" }, { id: "manodopera", l: "👷 Manodopera" }, { id: "libreria", l: "📦 Libreria" }, { id: "importa", l: "📥 Importa" }, { id: "guida", l: "📖 Guida" }, { id: "kit", l: "🔧 Kit" }, { id: "marketplace", l: "🏪 Fornitori" }, { id: "temi", l: "🎨 Temi" },
           ].map(t => (
             <div key={t.id} onClick={() => setSettingsTab(t.id)} style={{ padding: "8px 12px", textAlign: "center", fontSize: 10, fontWeight: 600, background: settingsTab === t.id ? PRI : T.card, color: settingsTab === t.id ? "#fff" : T.sub, cursor: "pointer", whiteSpace: "nowrap", borderRadius: 6 }}>
               {t.l}
@@ -328,6 +328,37 @@ export default function SettingsPanel() {
                 <div><div style={{ fontSize: 20, fontWeight: 700, color: PRI }}>{cantieri.length}</div>Commesse</div>
                 <div><div style={{ fontSize: 20, fontWeight: 700, color: T.blue }}>{countVani()}</div>Vani</div>
                 <div><div style={{ fontSize: 20, fontWeight: 700, color: T.grn }}>{tasks.filter(t => t.done).length}/{tasks.length}</div>Task</div>
+              </div>
+            </div></div>
+            <div style={{ ...S.card, marginTop: 8 }}><div style={S.cardInner}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 12, textTransform: "uppercase" as const }}>📐 Disegno Tecnico Obbligatorio</div>
+              <div style={{ fontSize: 11, color: T.sub, marginBottom: 12, lineHeight: 1.5 }}>
+                Per quali settori il disegno tecnico è obbligatorio prima di generare il preventivo.
+              </div>
+              {[
+                { id: "serramenti", label: "Serramenti",           icon: "🪟", defaultOn: true  },
+                { id: "fabbro",     label: "Fabbro / Cancelli",    icon: "⚙️", defaultOn: true  },
+                { id: "pergole",    label: "Pergole / Strutture",  icon: "🏗️", defaultOn: true  },
+                { id: "porte",      label: "Porte",                icon: "🚪", defaultOn: false },
+                { id: "zanzariere", label: "Zanzariere",           icon: "🦟", defaultOn: false },
+                { id: "tendaggi",   label: "Tendaggi",             icon: "🪞", defaultOn: false },
+                { id: "tapparelle", label: "Tapparelle / Persiane",icon: "🔲", defaultOn: false },
+              ].map(s => {
+                const dtConf = aziendaInfo.disegnoTecnico || {};
+                const isOn = s.id in dtConf ? dtConf[s.id] : s.defaultOn;
+                return (
+                  <div key={s.id} onClick={() => setAziendaInfo((a: any) => ({ ...a, disegnoTecnico: { ...(a.disegnoTecnico || {}), [s.id]: !isOn } }))}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: `1px solid ${T.bdr}`, cursor: "pointer" }}>
+                    <span style={{ fontSize: 18, width: 24, textAlign: "center" as const }}>{s.icon}</span>
+                    <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: T.text }}>{s.label}</div>
+                    <div style={{ width: 44, height: 26, borderRadius: 13, padding: 2, background: isOn ? "#1A9E73" : T.bdr, display: "flex", alignItems: "center", transition: "all .2s" }}>
+                      <div style={{ width: 22, height: 22, borderRadius: 11, background: "#fff", transform: isOn ? "translateX(18px)" : "translateX(0px)", transition: "all .2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ fontSize: 10, color: T.sub, marginTop: 8, lineHeight: 1.5 }}>
+                I settori attivi richiedono un disegno tecnico salvato prima di generare il preventivo.
               </div>
             </div></div>
           </>
@@ -705,6 +736,83 @@ export default function SettingsPanel() {
             <div onClick={() => { setSettingsModal("vetro"); setSettingsForm({ nome: "", code: "", ug: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600 }}>+ Aggiungi vetro</div>
           </>
         )}
+
+        {/* === LISTINI === */}
+        {settingsTab === "listini" && (() => {
+          const az = ctx.aziendaInfo || {};
+          const updAz = (upd) => ctx.setAziendaInfo(prev => ({ ...prev, ...upd }));
+          const Field = ({ label, field, unit = "€/mq", note = "" }: { label: string, field: string, unit?: string, note?: string }) => (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${T.bdr}20` }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{label}</div>
+                {note && <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>{note}</div>}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={az[field] || ""}
+                  placeholder="0"
+                  onChange={e => updAz({ [field]: parseFloat(e.target.value) || 0 })}
+                  style={{ width: 80, padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, fontWeight: 800, fontFamily: FF, textAlign: "right" }}
+                />
+                <span style={{ fontSize: 10, color: T.sub, minWidth: 32 }}>{unit}</span>
+              </div>
+            </div>
+          );
+          return (
+            <div>
+              <div style={{ background: PRI, borderRadius: 12, padding: "14px 16px", color: "#fff", marginBottom: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 900 }}>💰 Listini Prezzi</div>
+                <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2 }}>Prezzi globali usati automaticamente nel calcolo preventivo</div>
+              </div>
+              {/* Accessori finestra */}
+              <div style={{ ...S.card, padding: "14px 16px", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.text, marginBottom: 4 }}>Accessori finestra</div>
+                <div style={{ fontSize: 9, color: T.sub, marginBottom: 10 }}>Calcolati automaticamente in base alle misure del vano</div>
+                <Field label="Tapparella" field="prezzoTapparella" unit="€/mq" note="Calcolata su superficie tapparella" />
+                <Field label="Persiana" field="prezzoPersiana" unit="€/mq" note="Calcolata su superficie persiana" />
+                <Field label="Zanzariera" field="prezzoZanzariera" unit="€/mq" note="Calcolata su superficie zanzariera" />
+                <Field label="Controtelaio" field="prezzoControtelaio" unit="€/cad" note="Aggiunto per vano con controtelaio ≠ Nessuno" />
+              </div>
+              {/* Posa e smaltimento */}
+              <div style={{ ...S.card, padding: "14px 16px", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.text, marginBottom: 4 }}>Posa e smaltimento</div>
+                <Field label="Posa per vano" field="prezzoPosaVano" unit="€/vano" note="Moltiplicato per numero pezzi" />
+                <Field label="Smaltimento infisso" field="prezzoSmaltimento" unit="€/vano" note="Rimozione e smaltimento vecchio infisso" />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Includi posa nel preventivo</div>
+                    <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Se attivo, la posa viene aggiunta automaticamente al totale</div>
+                  </div>
+                  <div onClick={() => updAz({ includePosaInPreventivo: !az.includePosaInPreventivo })}
+                    style={{ width: 44, height: 24, borderRadius: 12, background: az.includePosaInPreventivo ? PRI : T.bdr, cursor: "pointer", transition: "all .2s", position: "relative" }}>
+                    <div style={{ position: "absolute", top: 2, left: az.includePosaInPreventivo ? 22 : 2, width: 20, height: 20, borderRadius: 10, background: "#fff", transition: "all .2s", boxShadow: "0 1px 4px rgba(0,0,0,0.2)" }} />
+                  </div>
+                </div>
+              </div>
+              {/* Sconto globale */}
+              <div style={{ ...S.card, padding: "14px 16px", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.text, marginBottom: 4 }}>Sconto / maggiorazione globale</div>
+                <div style={{ fontSize: 9, color: T.sub, marginBottom: 10 }}>Applicato su tutti i sistemi che usano €/mq (non sulle griglie L×H)</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="number" step="1" min="-50" max="50" value={az.scontoGlobale || ""} placeholder="0"
+                    onChange={e => updAz({ scontoGlobale: parseFloat(e.target.value) || 0 })}
+                    style={{ width: 80, padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, fontWeight: 800, fontFamily: FF, textAlign: "right" }} />
+                  <span style={{ fontSize: 11, color: T.sub }}>% (negativo = sconto, positivo = maggiorazione)</span>
+                </div>
+                {!!az.scontoGlobale && (
+                  <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, background: az.scontoGlobale < 0 ? "#DC444412" : "#1A9E7312", fontSize: 10, fontWeight: 700, color: az.scontoGlobale < 0 ? "#DC4444" : "#1A9E73" }}>
+                    {az.scontoGlobale < 0 ? `Sconto ${Math.abs(az.scontoGlobale)}% su €/mq sistemi` : `Maggiorazione +${az.scontoGlobale}% su €/mq sistemi`}
+                  </div>
+                )}
+              </div>
+              <div style={{ padding: "10px 12px", borderRadius: 8, background: T.acc + "10", border: `1px solid ${T.acc}30`, fontSize: 10, color: T.sub, lineHeight: 1.6 }}>
+                💡 I prezzi qui sono i <strong>valori di default aziendali</strong>. Puoi sovrascriverli per singola commessa. I sistemi con griglia L×H usano sempre la griglia, non €/mq.
+              </div>
+            </div>
+          );
+        })()}
 
         {/* === TIPOLOGIE === */}
         {settingsTab === "tipologie" && (
@@ -2267,7 +2375,7 @@ export default function SettingsPanel() {
             setEvents([]);
             setTasks([]);
             setAiInbox([]);
-            setPipeline([]);
+            setPipelineDB([]);
             setProblemi([]);
             // Save empty to localStorage + set cleanSlate flag
             ["cantieri","tasks","events","fatture","ordiniForn","montaggi","contatti","pipeline","msgs","problemi","fatturePassive","fornitori"].forEach(k => {
