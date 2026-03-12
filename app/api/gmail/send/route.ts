@@ -1,8 +1,13 @@
 export const dynamic="force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getValidAccessToken, getTokens } from "../tokens";
+import { rateLimit, getClientIp, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+  const rl = rateLimit(ip, RATE_LIMITS.email);
+  if (!rl.success) return rateLimitResponse(rl);
+
   const token = await getValidAccessToken();
   if (!token) return NextResponse.json({ error: "Non connesso" }, { status: 401 });
   const { to, subject, body, replyTo, threadId } = await req.json();

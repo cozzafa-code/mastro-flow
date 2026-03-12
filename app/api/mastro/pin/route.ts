@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import { rateLimit, getClientIp, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,10 @@ const SALT_ROUNDS = 12;
 const MAX_ATTEMPTS = 5;
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+  const rl = rateLimit(ip, RATE_LIMITS.pin);
+  if (!rl.success) return rateLimitResponse(rl);
+
   const { action, memberId, pin, azId } = await req.json();
 
   if (!memberId || !azId) {
