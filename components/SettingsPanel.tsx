@@ -13,7 +13,7 @@ import {
 
 
 // ─── ListinoSettore — componente riutilizzabile per ogni tab ─────────────────
-function ListinoSettore({ titolo, emoji, storageKey, T, PRI, FF }: any) {
+function ListinoSettore({ titolo, emoji, storageKey, T, PRI, FF, fornitori, setFornitori }: any) {
   const ctx = (window as any).__mastroCtx;
   const [listino, setListino] = React.useState<any[]>(() => {
     try { return JSON.parse(localStorage.getItem("mastro_listino_" + storageKey) || "[]"); } catch { return []; }
@@ -1141,7 +1141,7 @@ export default function SettingsPanel() {
               </div></div>
             ))}
             <div onClick={() => { let n; try{n=window.prompt("Nuovo tipo misura tapparella:");}catch(e){} if (n?.trim()) setTipoMisuraTappDB(prev => [...prev, { id: "tmt" + Date.now(), code: n.trim() }]); }} style={{ padding: "12px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipo misura</div>
-            <ListinoSettore titolo="Listino Tapparelle" emoji="⬇️" storageKey="tapparelleListino" T={T} PRI={PRI} FF={FF} />
+            <ListinoSettore titolo="Listino Tapparelle" emoji="⬇️" storageKey="tapparelleListino" T={T} PRI={PRI} FF={FF} fornitori={fornitori} setFornitori={setFornitori} />
           </>
         )}
 
@@ -1156,7 +1156,7 @@ export default function SettingsPanel() {
               </div></div>
             ))}
             <div onClick={() => { let n; try{n=window.prompt("Nuovo tipo misura zanzariera:");}catch(e){} if (n?.trim()) setTipoMisuraZanzDB(prev => [...prev, { id: "tmz" + Date.now(), code: n.trim() }]); }} style={{ padding: "12px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipo misura</div>
-            <ListinoSettore titolo="Listino Zanzariere" emoji="🦟" storageKey="zanzariereListino" T={T} PRI={PRI} FF={FF} />
+            <ListinoSettore titolo="Listino Zanzariere" emoji="🦟" storageKey="zanzariereListino" T={T} PRI={PRI} FF={FF} fornitori={fornitori} setFornitori={setFornitori} />
           </>
         )}
 
@@ -1187,7 +1187,7 @@ export default function SettingsPanel() {
               </div></div>
             ))}
             <div onClick={() => { let n; try{n=window.prompt("Nuovo tipo misura (es. Luce netta):");}catch(e){} if (n?.trim()) setTipoMisuraDB(prev => [...prev, { id: "tm" + Date.now(), code: n.trim() }]); }} style={{ padding: "12px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipo misura</div>
-            <ListinoSettore titolo="Listino Persiane" emoji="🏠" storageKey="persianeListino" T={T} PRI={PRI} FF={FF} />
+            <ListinoSettore titolo="Listino Persiane" emoji="🏠" storageKey="persianeListino" T={T} PRI={PRI} FF={FF} fornitori={fornitori} setFornitori={setFornitori} />
           </>
         )}
 
