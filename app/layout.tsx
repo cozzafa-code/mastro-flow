@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
 
 export const metadata: Metadata = {
   title: 'MASTRO ERP',
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="it" suppressHydrationWarning>
       <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif' }}>
         {children}
+        <CookieBanner />
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')" }} />
       </body>
     </html>
