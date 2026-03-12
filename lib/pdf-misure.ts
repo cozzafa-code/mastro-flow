@@ -121,9 +121,11 @@ export function generaPDFMisure(c: any, ctx: any) {
   const puntiCols = Array.from(tuttiPunti);
 
   const head = [
-    ["#", "Vano / Nome", "Tipo", "Settore", "Sistema / Modello",
+    [
+      "#", "Vano / Nome", "Tipo", "Settore", "Sistema / Modello",
+      "Col. Int.", "Col. Est.", "Vetro",
       ...puntiCols.map(p => PUNTI_LABEL[p] || p),
-      "Pezzi", "Note"
+      "Pz", "Tappar.", "Persiana", "Zanzar.", "Controtelaio", "Note",
     ]
   ];
 
@@ -131,6 +133,18 @@ export function generaPDFMisure(c: any, ctx: any) {
     const m = v.misure || {};
     const settore = v.settore || "serramenti";
     const sistema = v.sistema || v.modello || v.tipoBox || v.tipoCancello || "—";
+    const acc = v.accessori || {};
+    const tappStr = acc.tapparella?.attivo
+      ? [acc.tapparella.tipo || "Si", acc.tapparella.colore, acc.tapparella.l && acc.tapparella.h ? `${acc.tapparella.l}x${acc.tapparella.h}` : ""].filter(Boolean).join(" ")
+      : "";
+    const persianaStr = acc.persiana?.attivo
+      ? [acc.persiana.tipo || "Si", acc.persiana.colore].filter(Boolean).join(" ")
+      : "";
+    const zanzStr = acc.zanzariera?.attivo
+      ? [acc.zanzariera.tipo || "Si", acc.zanzariera.colore].filter(Boolean).join(" ")
+      : "";
+    const colInt = v.coloreInt || v.colore || "";
+    const colEst = v.coloreEst || "";
 
     return [
       String(i + 1),
@@ -138,8 +152,15 @@ export function generaPDFMisure(c: any, ctx: any) {
       v.tipo || "—",
       settore.charAt(0).toUpperCase() + settore.slice(1),
       sistema,
+      colInt || "—",
+      colEst && colEst !== colInt ? colEst : "=",
+      v.vetro || "—",
       ...puntiCols.map(p => m[p] ? `${m[p]}` : "—"),
       String(v.pezzi || 1),
+      tappStr || "—",
+      persianaStr || "—",
+      zanzStr || "—",
+      v.controtelaio || "—",
       v.note || "",
     ];
   });
@@ -162,11 +183,14 @@ export function generaPDFMisure(c: any, ctx: any) {
       fontSize: 7,
     },
     columnStyles: {
-      0: { cellWidth: 8,  halign: "center" },
-      1: { cellWidth: 28 },
-      2: { cellWidth: 14 },
-      3: { cellWidth: 18 },
-      4: { cellWidth: 30 },
+      0: { cellWidth: 7,  halign: "center" },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 12 },
+      3: { cellWidth: 16 },
+      4: { cellWidth: 28 },
+      5: { cellWidth: 16 },  // Col Int
+      6: { cellWidth: 16 },  // Col Est
+      7: { cellWidth: 20 },  // Vetro
     },
     alternateRowStyles: { fillColor: [248, 248, 250] },
   });

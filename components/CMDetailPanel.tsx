@@ -2899,14 +2899,14 @@ export default function CMDetailPanel() {
 
           const skipped = (id) => (c.skipLog || []).some(s => s.fase === id);
           const stepsCC = [
-            { id: "sopralluogo", icon: "🔍", l: "Sopralluogo", done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
-            { id: "preventivo", icon: "📋", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"), skipped: skipped("preventivo"), desc: "Rivedi prezzi, sconti, condizioni" },
-            { id: "conferma", icon: "✏️", l: "Conferma", done: hasFirmaCC || skipped("conferma"), skipped: skipped("conferma"), desc: "Firma cliente e conferma ordine" },
-            { id: "ordini", icon: "📦", l: "Ordini", done: hasOrdCC || skipped("ordini"), skipped: skipped("ordini"), desc: "Ordina materiali ai fornitori" },
-            { id: "produzione", icon: "🏭", l: "Produzione", done: confFirmCC || skipped("produzione"), skipped: skipped("produzione"), desc: "Attesa materiali e lavorazione" },
-            { id: "posa", icon: "🔧", l: "Posa", done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
-            { id: "collaudo", icon: "🔍", l: "Collaudo", done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
-            { id: "chiusura", icon: "€", l: "Chiusura", done: tuttoCC, desc: "Fattura saldo e chiudi" },
+            { id: "sopralluogo", icon: "📐", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
+            { id: "preventivo",  icon: "💰", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
+            { id: "conferma",    icon: "✍️",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
+            { id: "ordini",      icon: "📦", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
+            { id: "produzione",  icon: "🏭", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
+            { id: "posa",        icon: "🔧", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
+            { id: "collaudo",    icon: "✅", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
+            { id: "chiusura",    icon: "💶", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
           ];
           const doneCC = stepsCC.filter(s => s.done).length;
           const curIdxCC = stepsCC.findIndex(s => !s.done);
@@ -2915,16 +2915,19 @@ export default function CMDetailPanel() {
 
           return (
             <div style={{ margin: "8px 16px 4px" }}>
-              {/* Progress dots */}
-              <div style={{ display: "flex", gap: 3, marginBottom: 6, justifyContent: "center" }}>
+              {/* Progress dots con label */}
+              <div style={{ display: "flex", gap: 2, marginBottom: 6, justifyContent: "center", alignItems: "flex-end" }}>
                 {stepsCC.map((s, i) => (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
-                      background: s.skipped ? "#ff9500" : s.done ? "#34c759" : i === curIdxCC ? T.acc : T.bg,
-                      color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
-                    }}>{s.skipped ? "⏭" : s.done ? "✓" : s.icon}</div>
-                    {i < stepsCC.length - 1 && <div style={{ width: 8, height: 2, background: s.done ? "#34c759" : T.bdr }} />}
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
+                        background: s.skipped ? "#ff9500" : s.done ? "#34c759" : i === curIdxCC ? T.acc : T.bg,
+                        color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
+                      }}>{s.skipped ? "⏭" : s.done ? "✓" : s.icon}</div>
+                      <div style={{ fontSize: 7, color: i === curIdxCC ? T.acc : s.done ? "#34c759" : T.sub, fontWeight: i === curIdxCC ? 800 : 500, whiteSpace: "nowrap", maxWidth: 32, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>{s.l}</div>
+                    </div>
+                    {i < stepsCC.length - 1 && <div style={{ width: 6, height: 2, background: s.done ? "#34c759" : T.bdr, marginBottom: 12 }} />}
                   </div>
                 ))}
               </div>
