@@ -207,6 +207,7 @@ export default function ContabilitaPanel() {
                 <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} · {f.cmCode}</div>
                 <div style={{ display: "flex", gap: 4, marginTop: 3 }}>
                   <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: f.tipo === "saldo" ? T.grnLt : f.tipo === "acconto" ? T.orangeLt : T.accLt, color: f.tipo === "saldo" ? T.grn : f.tipo === "acconto" ? T.orange : T.acc, fontWeight: 700 }}>{f.tipo?.toUpperCase()}</span>
+                  {f.inviata && <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: "#1A9E7315", color: "#1A9E73", fontWeight: 700 }}>✉ INVIATA</span>}
                   <span style={{ fontSize: 8, color: T.sub }}>{f.dataISO}</span>
                   {f.scadenza && <span style={{ fontSize: 8, color: f.scadenza < today.toISOString().split("T")[0] && !f.pagata ? T.red : T.sub }}>Scade: {new Date(f.scadenza).toLocaleDateString("it-IT")}</span>}
                 </div>
@@ -220,7 +221,7 @@ export default function ContabilitaPanel() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
-              <div onClick={() => generaFatturaPDF(f)} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.accLt, color: T.acc, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>📄 PDF</div>
+              <div onClick={() => { generaFatturaPDF(f); setFattureDB(prev => prev.map(ff => ff.id === f.id ? { ...ff, inviata: true } : ff)); }} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.accLt, color: T.acc, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>📄 PDF</div>
               <div onClick={() => generaXmlSDI(f)} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.purpleLt, color: T.purple, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>🏛 XML SDI</div>
               <div onClick={() => { const cm = cantieri.find(c => c.code === f.cmCode); if(cm) { setSelectedCM(cm); setShowContabilita(false); setTab("commesse"); }}} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.bg, color: T.sub, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer", border: "1px solid " + T.bdr }}>📁 Commessa</div>
             </div>

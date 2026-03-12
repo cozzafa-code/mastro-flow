@@ -27,6 +27,7 @@ export default function PreventivoModal() {
     // Business logic + state
     ordineDetail, setOrdineDetail,
     generaPreventivoPDF, generaPDFMisure, creaFattura, generaFatturaPDF, inviaWhatsApp, inviaEmail, creaOrdineFornitore, ricalcolaOrdine, updateOrdine, calcolaScadenzaPagamento, generaOrdinePDF, generaConfermaFirmataPDF, inviaOrdineFornitore, creaMontaggio, generaTrackingCliente,
+    aziendaInfo,
   } = useMastro();
 
     if (!showPreventivoModal || !selectedCM) return null;
@@ -70,6 +71,18 @@ export default function PreventivoModal() {
     const vaniSenzaSistema = vaniCalc.filter(v=>!v.calc.sysRec && !v.sistema && v.calc.settore === "serramenti");
     const vaniSenzaMisure = vaniCalc.filter(v=>!(v.misure?.lCentro) || !(v.misure?.hCentro));
     const hasWarnings = vaniSenzaSistema.length>0 || vaniSenzaMisure.length>0;
+    const vaniNonConfermati = vaniCalc.filter(v => (v.statoMisure || "provvisorie") !== "confermate");
+    const bloccatoPerMisure = vaniNonConfermati.length > 0;
+    // ── Blocco disegno tecnico ──
+    const dtConf = aziendaInfo?.disegnoTecnico || {};
+    const DISEGNO_DEFAULT: Record<string,boolean> = { serramenti: true, fabbro: true, pergole: true, porte: false, zanzariere: false, tendaggi: false, tapparelle: false };
+    const vaniSenzaDisegno = vaniCalc.filter(v => {
+      const settore = TIPOLOGIE_RAPIDE.find((t: any) => t.code === v.tipo)?.settore || "serramenti";
+      const obbligatorio = settore in dtConf ? dtConf[settore] : (DISEGNO_DEFAULT[settore] ?? false);
+      if (!obbligatorio) return false;
+      return !(v.disegno && (v.disegno.pagine?.length > 0 || v.disegno.paths?.length > 0)) && !v.pdfFornitore;
+    });
+    const bloccatoPerDisegno = vaniSenzaDisegno.length > 0;
     const scontoVal=totale*parseFloat(c.sconto||0)/100;
     const imponibile=totale-scontoVal; const iva=imponibile*0.10; const totIva=imponibile+iva;
     return (
@@ -147,8 +160,36 @@ export default function PreventivoModal() {
             {hasWarnings && (
               <div style={{fontSize:11,color:"#999",textAlign:"center",marginBottom:6}}>⚠️ Correggi i problemi per un preventivo accurato</div>
             )}
-            <button onClick={()=>generaPreventivoPDF(c)} style={{width:"100%",padding:14,borderRadius:12,border:"none",background:hasWarnings?"linear-gradient(135deg,#8e8e93,#636366)":"linear-gradient(135deg,#007aff,#0055cc)",color:"#fff",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:hasWarnings?"none":"0 4px 12px rgba(0,122,255,0.3)"}}>
-              {hasWarnings?"⚠️ Genera PDF (incompleto)":"📄 Genera & Scarica PDF"}
+            {bloccatoPerMisure && (
+              <div style={{background:"#DC444410",border:"1.5px solid #DC444440",borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#DC4444",marginBottom:4}}>🔒 Misure non confermate</div>
+                <div style={{fontSize:11,color:"#DC4444",marginBottom:6}}>
+                  {vaniNonConfermati.length} vano/i con misure non ancora confermate. Conferma le misure per sbloccare il preventivo.
+                </div>
+                {vaniNonConfermati.map(v => (
+                  <div key={v.id} style={{fontSize:10,color:"#7a0000",padding:"3px 0",borderTop:"1px solid #DC444420",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <span>• {v.nome} — <b>{v.statoMisure === "da_rivedere" ? "⚠️ Da rivedere" : v.statoMisure === "verificate" ? "👁 Verificate" : "✏️ Provvisorie"}</b></span>
+                    <span onClick={()=>{setShowPreventivoModal(false);setSelectedVano(v);setVanoStep(0);}} style={{color:"#007aff",fontWeight:700,cursor:"pointer",fontSize:10}}>Vai →</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {bloccatoPerDisegno && (
+              <div style={{background:"#3B7FE010",border:"1.5px solid #3B7FE040",borderRadius:10,padding:"10px 14px",marginBottom:10}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#3B7FE0",marginBottom:4}}>📐 Disegno tecnico mancante</div>
+                <div style={{fontSize:11,color:"#3B7FE0",marginBottom:6}}>
+                  {vaniSenzaDisegno.length} vano/i richiedono un disegno tecnico prima di generare il preventivo.
+                </div>
+                {vaniSenzaDisegno.map(v => (
+                  <div key={v.id} style={{fontSize:10,color:"#1a3a6e",padding:"3px 0",borderTop:"1px solid #3B7FE020",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <span>• {v.nome} — {TIPOLOGIE_RAPIDE.find((t: any) => t.code === v.tipo)?.label || v.tipo}</span>
+                    <span onClick={()=>{setShowPreventivoModal(false);setSelectedVano(v);setVanoStep(1);}} style={{color:"#007aff",fontWeight:700,cursor:"pointer",fontSize:10}}>Disegna →</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button onClick={()=>{ if(!bloccatoPerMisure && !bloccatoPerDisegno) generaPreventivoPDF(c); }} style={{width:"100%",padding:14,borderRadius:12,border:"none",background:(bloccatoPerMisure||bloccatoPerDisegno)?"linear-gradient(135deg,#DC4444,#b83030)":hasWarnings?"linear-gradient(135deg,#8e8e93,#636366)":"linear-gradient(135deg,#007aff,#0055cc)",color:"#fff",fontSize:15,fontWeight:800,cursor:(bloccatoPerMisure||bloccatoPerDisegno)?"not-allowed":"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:(bloccatoPerMisure||bloccatoPerDisegno)?"none":hasWarnings?"none":"0 4px 12px rgba(0,122,255,0.3)",opacity:(bloccatoPerMisure||bloccatoPerDisegno)?0.8:1}}>
+              {bloccatoPerMisure?"🔒 Conferma le misure per generare":bloccatoPerDisegno?"📐 Disegno tecnico mancante":hasWarnings?"⚠️ Genera PDF (incompleto)":"📄 Genera & Scarica PDF"}
             </button>
             <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
               <button onClick={() => generaPDFMisure(c)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1.5px solid #5856d6`, background: "#5856d615", color: "#5856d6", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>

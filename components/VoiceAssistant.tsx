@@ -269,16 +269,19 @@ export default function VoiceAssistant({ onClose }) {
     if (!full) { toast("Nessun audio rilevato", "warning"); return; }
     setProcessing(true);
     const analysis = analyzeVoice(full, { contatti, cantieri, selectedCM, selectedVano, events, tasks });
-    setResult(analysis);
-    setTimeout(() => { executeAction(analysis); setProcessing(false); }, 500);
+    // Execute IMMEDIATELY — don't wait for animation
+    executeAction(analysis);
+    // Then show result after brief animation
+    setTimeout(() => { setResult(analysis); setProcessing(false); }, 400);
   };
 
   const executeAction = (r) => {
     const now = new Date();
     // NAVIGATE
     if (r.type === "navigate" && r.navigateTo) {
-      if (r.cmId) { const cm = cantieri.find(c => c.id === r.cmId); if (cm) { setSelectedCM(cm); setTab("commesse"); toast("📂 "+cm.code+" — "+cm.cliente, "success"); setTimeout(onClose, 600); return; } }
-      setTab(r.navigateTo); toast("🧭 "+r.navigateTo, "success"); setTimeout(onClose, 600); return;
+      if (r.cmId) { const cm = cantieri.find(c => c.id === r.cmId); if (cm) { setSelectedCM(cm); setTab("commesse"); toast("📂 "+cm.code+" — "+cm.cliente, "success"); } }
+      else { setTab(r.navigateTo); toast("🧭 "+r.navigateTo, "success"); }
+      return;
     }
     // MEASURE + vano context
     if (r.type === "measure" && selectedVano && selectedRilievo) {
@@ -401,7 +404,7 @@ export default function VoiceAssistant({ onClose }) {
             <span style={{ fontSize:9, color:"rgba(255,255,255,0.25)" }}>{Math.round(result.confidence*100)}%</span>
           </div>
           <div style={{ display:"flex", gap:8, marginTop:14 }}>
-            <div onClick={() => { recognitionRef.current?.stop(); onClose(); }} style={{ flex:1, padding:"10px 0", borderRadius:10, background:tc.c, color:"#fff", textAlign:"center", fontSize:13, fontWeight:700, cursor:"pointer" }}>✓ OK</div>
+            <div onClick={() => { recognitionRef.current?.stop(); setTimeout(onClose, 100); }} style={{ flex:1, padding:"10px 0", borderRadius:10, background:tc.c, color:"#fff", textAlign:"center", fontSize:13, fontWeight:700, cursor:"pointer" }}>✓ OK</div>
             <div onClick={() => { setResult(null); setTranscript(""); setInterim(""); setLiveActions([]); }} style={{ padding:"10px 16px", borderRadius:10, background:"rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.5)", textAlign:"center", fontSize:13, fontWeight:600, cursor:"pointer" }}>🔄</div>
           </div>
         </div>

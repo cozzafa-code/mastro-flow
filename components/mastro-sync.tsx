@@ -337,8 +337,8 @@ export function SyncStatusBar({ status }: { status: SyncStatus }) {
     <div
       style={{
         position: "fixed",
-        bottom: 70,
-        left: 12,
+        bottom: typeof window !== "undefined" && window.innerWidth >= 1024 ? 16 : 70,
+        left: typeof window !== "undefined" && window.innerWidth >= 1024 ? "220px" : 12,
         right: 12,
         zIndex: 9999,
         background: bg,

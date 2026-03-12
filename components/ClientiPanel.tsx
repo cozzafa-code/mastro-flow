@@ -52,7 +52,15 @@ export default function ClientiPanel() {
       })
       .sort((a, b) => (a.nome||"").localeCompare(b.nome||""));
 
-    const cmCountFor = (c) => cantieri.filter(cm => cm.cliente === c.nome || (c.cognome && cm.cognome === c.cognome)).length;
+    const matchCliente = (cm: any, c: any) => {
+    if (c.id && cm.clienteId === c.id) return true;
+    const nomeCompleto = [c.nome, c.cognome].filter(Boolean).join(" ").toLowerCase();
+    const cmNome = [cm.cliente, cm.cognome].filter(Boolean).join(" ").toLowerCase();
+    if (nomeCompleto && cmNome && nomeCompleto === cmNome) return true;
+    if (c.telefono && cm.telefono && c.telefono.replace(/\D/g,"") === cm.telefono.replace(/\D/g,"")) return true;
+    return false;
+  };
+  const cmCountFor = (c) => cantieri.filter(cm => matchCliente(cm, c)).length;
 
     // ═══ EDIT CLIENT ═══
     if (editMode && editForm) {
@@ -101,7 +109,7 @@ export default function ClientiPanel() {
     // ═══ DETAIL VIEW ═══
     if (selectedCliente) {
       const c = selectedCliente;
-      const cmList = cantieri.filter(cm => cm.cliente === c.nome || (c.cognome && cm.cognome === c.cognome));
+      const cmList = cantieri.filter(cm => matchCliente(cm, c));
       const evList = events.filter(ev => ev.persona === c.nome || ev.persona === (c.nome + " " + (c.cognome||"")).trim());
       const fattureTot = fattureDB.filter(f => cmList.some(cm => cm.id === f.cmId)).reduce((s, f) => s + (f.importo || 0), 0);
       const cmAttive = cmList.filter(cm => cm.fase !== "chiusura").length;
@@ -210,7 +218,7 @@ export default function ClientiPanel() {
             <div style={{ margin: "0 16px 12px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span>📂 Commesse ({cmList.length})</span>
-                <div onClick={() => { setNewCM(prev => ({ ...prev, cliente: c.nome, telefono: c.telefono || "", indirizzo: c.indirizzo || "" })); setTab("commesse"); }} style={{ fontSize: 11, fontWeight: 700, color: T.acc, cursor: "pointer" }}>+ Nuova commessa</div>
+                <div onClick={() => { setNewCM(prev => ({ ...prev, cliente: c.nome, cognome: c.cognome || "", telefono: c.telefono || "", indirizzo: c.indirizzo || "", clienteId: c.id })); setTab("commesse"); }} style={{ fontSize: 11, fontWeight: 700, color: T.acc, cursor: "pointer" }}>+ Nuova commessa</div>
               </div>
               {cmList.length === 0 && <div style={{ padding: 16, background: T.card, borderRadius: 10, textAlign: "center", fontSize: 12, color: T.sub }}>Nessuna commessa</div>}
               {cmList.map(cm => (

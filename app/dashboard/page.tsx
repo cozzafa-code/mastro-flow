@@ -1,5 +1,6 @@
 "use client";
-import MastroERP from "@/components/MastroERP";
+import dynamic from 'next/dynamic';
+const MastroERP = dynamic(() => import('@/components/MastroERP'), { ssr: false });
 export default function DashboardPage() {
   return <MastroERP user={{id:"fabio",email:"cozzafa@gmail.com"}} azienda={null} />;
 }

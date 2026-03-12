@@ -8,8 +8,44 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
 import DisegnoTecnico from "./DisegnoTecnico";
+import { generaTavolaTecnica } from "../lib/pdf-tavola-tecnica";
 import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
+import { supabase } from "@/lib/supabase";
+
+// ─── STATI MISURE ──────────────────────────────────────────
+const STATO_MISURE = [
+  { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: "✏️", desc: "Misure non ancora verificate" },
+  { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "👁", desc: "Verificate sul posto, non ancora confermate" },
+  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "✅", desc: "Misure definitive — preventivo sbloccato" },
+  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "⚠️", desc: "Rilevate discrepanze — ricontrollare" },
+];
+const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
+
+// ── Upload foto su Supabase Storage ──
+async function uploadFotoVano(userId, cmId, vanoId, file, nome) {
+  try {
+    const ext = nome.split(".").pop() || "jpg";
+    const path = `${userId}/${cmId}/${vanoId}/${Date.now()}_${nome}`;
+    const { error } = await supabase.storage
+      .from("foto-vani")
+      .upload(path, file, { contentType: `image/${ext === "jpg" ? "jpeg" : ext}`, upsert: false });
+    if (error) throw error;
+    const { data } = supabase.storage.from("foto-vani").getPublicUrl(path);
+    return data.publicUrl;
+  } catch (e) {
+    console.warn("[FOTO] Upload fallito, uso base64:", e);
+    return null;
+  }
+}
+async function deleteFotoVano(url) {
+  try {
+    const parts = url.split("/foto-vani/");
+    if (parts.length < 2) return;
+    await supabase.storage.from("foto-vani").remove([parts[1]]);
+  } catch {}
+}
+
 
 export default function VanoDetailPanel() {
   const {
@@ -86,6 +122,7 @@ export default function VanoDetailPanel() {
   // ═══ VOICE RECOGNITION — Self-contained implementation ═══
   const [vrActive, setVrActive] = useState(false);
   const [showFotoMisure, setShowFotoMisure] = useState(false);
+  const [showStatoMisurePanel, setShowStatoMisurePanel] = useState(false);
   const applyParsedRef = useRef<any>(null);
   const saveVoiceNoteRef = useRef<any>(null);
   const [vrTranscripts, setVrTranscripts] = useState<{text:string,time:string,parsed?:Record<string,any>}[]>([]);
@@ -361,6 +398,16 @@ export default function VanoDetailPanel() {
             <div style={{ fontSize: 14, fontWeight: 700 }}>{v.nome}</div>
             <div style={{ fontSize: 10, color: T.sub }}>{TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo} · {v.stanza} · {v.piano}</div>
           </div>
+          {/* BADGE STATO MISURE */}
+          {(() => {
+            const sm = getStatoMisure(v);
+            return (
+              <div onClick={() => setShowStatoMisurePanel(true)} style={{ padding: "5px 10px", borderRadius: 8, background: sm.bg, border: `1.5px solid ${sm.color}40`, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ fontSize: 12 }}>{sm.icon}</span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: sm.color, whiteSpace: "nowrap" }}>{sm.label}</span>
+              </div>
+            );
+          })()}
           <div onClick={() => { setShowAIPhoto(true); setAiPhotoStep(0); }} style={{ padding: "5px 10px", borderRadius: 8, background: "linear-gradient(135deg, #af52de20, #0D7C6B20)", border: "1px solid #af52de40", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontSize: 14 }}><I d={ICO.cpu} /></span>
             <span style={{ fontSize: 10, fontWeight: 700, color: "#af52de" }}>AI</span>
@@ -923,11 +970,11 @@ export default function VanoDetailPanel() {
                 <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
                   {fotoMisure.map(([key, foto]) => (
                     <div key={key} style={{ flexShrink: 0, position: "relative" }}>
-                      <img src={foto.dataUrl} style={{ width: 100, height: 75, objectFit: "cover", borderRadius: 8, border: "2px solid " + T.bdr }} />
+                      <img src={foto.url || foto.dataUrl} style={{ width: 100, height: 75, objectFit: "cover", borderRadius: 8, border: "2px solid " + T.bdr }} />
                       <div style={{ position: "absolute", bottom: 2, left: 2, right: 2, padding: "2px 4px", borderRadius: "0 0 6px 6px", background: "rgba(0,0,0,0.6)", fontSize: 8, color: "#fff", fontWeight: 700, textAlign: "center" }}>
                         {(foto.annotations || []).length} segni
                       </div>
-                      <div onClick={(e) => { e.stopPropagation(); const newFoto = { ...(v.foto || {}) }; delete newFoto[key]; setCantieri(cs => cs.map(c2 => c2.id === selectedCM?.id ? { ...c2, rilievi: c2.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: newFoto } : vn) } : r2) } : c2)); setSelectedVano(prev => ({ ...prev, foto: newFoto })); }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 9, background: "rgba(220,68,68,0.85)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, color: "#fff", fontWeight: 700 }}>✕</div>
+                      <div onClick={(e) => { e.stopPropagation(); const newFoto = { ...(v.foto || {}) }; const fDel = newFoto[key]; if (fDel?.url) deleteFotoVano(fDel.url); delete newFoto[key]; setCantieri(cs => cs.map(c2 => c2.id === selectedCM?.id ? { ...c2, rilievi: c2.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: newFoto } : vn) } : r2) } : c2)); setSelectedVano(prev => ({ ...prev, foto: newFoto })); }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 9, background: "rgba(220,68,68,0.85)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, color: "#fff", fontWeight: 700 }}>✕</div>
                     </div>
                   ))}
                 </div>
@@ -1152,6 +1199,76 @@ export default function VanoDetailPanel() {
                 </div>
               )}
             </>)}
+
+              {/* ═══ PDF TECNICO FORNITORE ═══ */}
+              <div style={{ marginTop: 20, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#3B7FE0", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  📐 PDF Tecnico Fornitore
+                </div>
+                {v.pdfFornitore ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "#3B7FE010", border: "1px solid #3B7FE030" }}>
+                    <span style={{ fontSize: 20 }}>📄</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{v.pdfFornitoreNome || "disegno_tecnico.pdf"}</div>
+                      <div style={{ fontSize: 9, color: T.sub }}>{v.pdfFornitoreData || ""}</div>
+                    </div>
+                    <div onClick={() => { const a = document.createElement("a"); a.href = v.pdfFornitore; a.download = v.pdfFornitoreNome || "disegno.pdf"; a.click(); }}
+                      style={{ padding: "5px 12px", borderRadius: 7, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0", whiteSpace: "nowrap" as const }}>⬇ Apri</div>
+                    <div onClick={() => { updateVanoField(v.id, "pdfFornitore", null); updateVanoField(v.id, "pdfFornitoreNome", null); updateVanoField(v.id, "pdfFornitoreData", null); }}
+                      style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", border: "1px solid #DC444430", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#DC4444" }}>✕</div>
+                  </div>
+                ) : (
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 10, background: T.card, border: `1.5px dashed #3B7FE040`, cursor: "pointer" }}>
+                    <span style={{ fontSize: 20 }}>📎</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0" }}>Allega PDF tecnico fornitore</div>
+                      <div style={{ fontSize: 9, color: T.sub }}>Sezioni nodi, dettagli profilo dal fornitore</div>
+                    </div>
+                    <input type="file" accept="application/pdf" style={{ display: "none" }} onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        updateVanoField(v.id, "pdfFornitore", reader.result as string);
+                        updateVanoField(v.id, "pdfFornitoreNome", file.name);
+                        updateVanoField(v.id, "pdfFornitoreData", new Date().toLocaleDateString("it-IT"));
+                      };
+                      reader.readAsDataURL(file);
+                    }} />
+                  </label>
+                )}
+              </div>
+
+              {/* ═══ BOTTONE TAVOLA TECNICA ═══ */}
+              <div style={{ marginTop: 16 }}>
+                <div
+                  onClick={() => {
+                    const ctx = {
+                      aziendaInfo: aziendaInfo,
+                      sistemiDB: sistemiDB,
+                      vetriDB: vetriDB,
+                      cliente: selectedCM?.cliente || selectedCM?.nome || "",
+                      cognome: selectedCM?.cognome || "",
+                      commessaCode: selectedCM?.code || selectedCM?.id || "",
+                      commessaData: selectedCM?.data || "",
+                    };
+                    generaTavolaTecnica(v, ctx);
+                  }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    padding: "14px 16px", borderRadius: 12, cursor: "pointer",
+                    background: "linear-gradient(135deg, #2D7A6B 0%, #1A9E73 100%)",
+                    border: "none", boxShadow: "0 2px 8px #2D7A6B30"
+                  }}>
+                  <span style={{ fontSize: 18 }}>📐</span>
+                  <div style={{ textAlign: "left" as const }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Genera Tavola Tecnica</div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)" }}>Vista frontale · Nodi · Specifiche · Trasmittanza Uw</div>
+                  </div>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginLeft: "auto" }}>PDF ↓</span>
+                </div>
+              </div>
+
           </>
           )}
 
@@ -1649,19 +1766,32 @@ export default function VanoDetailPanel() {
                 </div>
                 {/* Hidden file inputs as fallback */}
                 <input ref={fotoVanoRef} type="file" accept="image/*" multiple style={{ display: "none" }}
-                  onChange={e => {
+                  onChange={async e => {
                     const cat = pendingFotoCat;
-                    Array.from(e.target.files || []).forEach(file => {
-                      const r = new FileReader();
-                      r.onload = async ev => {
-                        const compressed = await compressImage(ev.target.result as string);
-                        const key = "foto_" + Date.now() + "_" + file.name;
-                        const fotoObj = { dataUrl: compressed, nome: file.name, tipo: "foto", categoria: cat || null };
+                    const files = Array.from(e.target.files || []);
+                    for (const file of files) {
+                      const key = "foto_" + Date.now() + "_" + file.name;
+                      // Prova upload Supabase, fallback base64
+                      const userId = user?.id || "anon";
+                      const cmId = selectedCM?.id || "cm";
+                      const vanoId = v.id || "vano";
+                      const publicUrl = await uploadFotoVano(userId, cmId, vanoId, file, file.name);
+                      if (publicUrl) {
+                        const fotoObj = { url: publicUrl, dataUrl: null, nome: file.name, tipo: "foto", categoria: cat || null };
                         setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, rilievi: c.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: { ...(vn.foto||{}), [key]: fotoObj } } : vn) } : r2) } : c));
                         setSelectedVano(prev => ({ ...prev, foto: { ...(prev.foto||{}), [key]: fotoObj } }));
-                      };
-                      r.readAsDataURL(file);
-                    });
+                      } else {
+                        // Fallback base64
+                        const r = new FileReader();
+                        r.onload = async ev => {
+                          const compressed = await compressImage(ev.target.result as string);
+                          const fotoObj = { url: null, dataUrl: compressed, nome: file.name, tipo: "foto", categoria: cat || null };
+                          setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, rilievi: c.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: { ...(vn.foto||{}), [key]: fotoObj } } : vn) } : r2) } : c));
+                          setSelectedVano(prev => ({ ...prev, foto: { ...(prev.foto||{}), [key]: fotoObj } }));
+                        };
+                        r.readAsDataURL(file);
+                      }
+                    }
                     setPendingFotoCat(null);
                     e.target.value = "";
                   }}/>
@@ -1703,7 +1833,7 @@ export default function VanoDetailPanel() {
                         <div key={k} onClick={() => { if (f.dataUrl) setViewingPhotoId(viewingPhotoId === k ? null : k as any); }}
                           style={{ position: "relative", width: 72, height: 72, borderRadius: 8, overflow: "hidden", background: T.bg, border: viewingPhotoId === k ? `2px solid ${T.acc}` : `1px solid ${T.bdr}`, cursor: f.dataUrl ? "pointer" : "default" }}>
                           {f.tipo === "foto" && f.dataUrl
-                            ? <img src={f.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={f.nome}/>
+                            ? <img src={f.url || f.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={f.nome}/>
                             : f.tipo === "video" && f.dataUrl
                               ? <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
                                   <span style={{ fontSize: 28, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}>▶</span>
@@ -1728,7 +1858,7 @@ export default function VanoDetailPanel() {
                       <div style={{ marginTop: 8, borderRadius: 12, overflow: "hidden", background: "#000", position: "relative" as const }}>
                         {(v.foto||{})[viewingPhotoId as any]?.tipo === "video"
                           ? <video src={(v.foto||{})[viewingPhotoId as any]?.dataUrl} controls playsInline autoPlay style={{ width: "100%", maxHeight: 300 }} />
-                          : <img src={(v.foto||{})[viewingPhotoId as any]?.dataUrl} style={{ width: "100%", maxHeight: 300, objectFit: "contain" }} alt="" />
+                          : <img src={(v.foto||{})[viewingPhotoId as any]?.url || (v.foto||{})[viewingPhotoId as any]?.dataUrl} style={{ width: "100%", maxHeight: 300, objectFit: "contain" }} alt="" />
                         }
                         <div onClick={() => setViewingPhotoId(null)} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>✕</div>
                       </div>
@@ -1918,7 +2048,7 @@ export default function VanoDetailPanel() {
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: 8 }}>
                           {Object.entries(v.foto || {}).filter(([, f]) => f.tipo === "foto" && f.dataUrl).map(([k, f]) => (
                             <div key={k} style={{ position: "relative", width: 64, height: 48, borderRadius: 6, overflow: "hidden" }}>
-                              <img src={f.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+                              <img src={f.url || f.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
                               {f.categoria && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 6, textAlign: "center", padding: "1px" }}>{f.categoria}</div>}
                             </div>
                           ))}
@@ -2199,6 +2329,34 @@ export default function VanoDetailPanel() {
             setShowFotoMisure(false);
           }}
         />
+      )}
+
+      {/* ═══ PANEL SELEZIONE STATO MISURE ═══ */}
+      {showStatoMisurePanel && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "flex-end" }} onClick={() => setShowStatoMisurePanel(false)}>
+          <div style={{ width: "100%", background: T.card, borderRadius: "20px 20px 0 0", padding: "20px 16px 32px", maxWidth: 480, margin: "0 auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: T.bdr, margin: "0 auto 16px" }} />
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 4 }}>Stato misure — {v.nome}</div>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 16 }}>Imposta lo stato di validazione delle misure di questo vano</div>
+            {STATO_MISURE.map(sm => {
+              const isActive = (v.statoMisure || "provvisorie") === sm.id;
+              return (
+                <div key={sm.id} onClick={() => {
+                  updateVanoField(v.id, "statoMisure", sm.id);
+                  setSelectedVano(prev => ({ ...prev, statoMisure: sm.id }));
+                  setShowStatoMisurePanel(false);
+                }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12, border: `2px solid ${isActive ? sm.color : T.bdr}`, background: isActive ? sm.bg : T.bg, marginBottom: 8, cursor: "pointer" }}>
+                  <span style={{ fontSize: 20 }}>{sm.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isActive ? sm.color : T.text }}>{sm.label}</div>
+                    <div style={{ fontSize: 10, color: T.sub }}>{sm.desc}</div>
+                  </div>
+                  {isActive && <span style={{ fontSize: 16, color: sm.color }}>●</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 </div>
     );

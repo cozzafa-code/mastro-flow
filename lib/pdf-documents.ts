@@ -1,253 +1,595 @@
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — lib/pdf-documents.ts
-// PDF/HTML generators estratti da MastroERP.tsx
+// Fattura cliente, Ordine fornitore, Conferma firmata,
+// Pagina tracking cliente, XML SDI (bozza)
 // ═══════════════════════════════════════════════════════════
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-interface DocDeps {
-  aziendaInfo: any;
-  fattureDB?: any[];
-  montaggiDB?: any[];
-  calcolaVanoPrezzo?: (v: any, c: any) => number;
-  getVaniAttivi?: (c: any) => any[];
+const C = {
+  dark:  [26,  26,  28],
+  amber: [208, 128,  8],
+  green: [26,  158, 115],
+  sub:   [134, 134, 139],
+  bg:    [242, 241, 236],
+  white: [255, 255, 255],
+  blue:  [59,  127, 224],
+  red:   [220,  68,  68],
+};
+
+function fmt(n: number) {
+  return (n || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export function generaFatturaPDF(fat: any, deps: DocDeps) {
-  const { aziendaInfo, fattureDB, calcolaVanoPrezzo, getVaniAttivi } = deps;
-  const aziendaDB = aziendaInfo;
-    const az = aziendaDB;
-    const fmt = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2 }) : "0,00";
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fattura ${fat.numero}/${fat.anno}</title>
-    <style>
-      body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;font-size:12px;color:#333}
-      @media print{.no-print{display:none!important}body{padding:10px}}
-      table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:8px;text-align:left}
-      th{background:#f5f8fc;font-size:10px;text-transform:uppercase;color:#666}
-      .totale{font-size:16px;font-weight:900}
-    </style></head><body>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
-      <div>
-        ${az.logo ? `<img src="${az.logo}" style="max-height:60px;max-width:200px;margin-bottom:6px" alt=""/>` : ""}
-        <div style="font-size:18px;font-weight:900">${az.nome || "MASTRO"}</div>
-        <div style="font-size:10px;color:#666">${az.indirizzo || ""} · ${az.citta || ""}</div>
-        <div style="font-size:10px;color:#666">P.IVA: ${az.piva || "—"} · Tel: ${az.tel || "—"}</div>
-        ${az.pec ? `<div style="font-size:10px;color:#666">PEC: ${az.pec}</div>` : ""}
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:24px;font-weight:900;color:#0D7C6B">FATTURA</div>
-        <div style="font-size:14px;font-weight:700">N. ${fat.numero}/${fat.anno}</div>
-        <div style="font-size:11px;color:#666">Data: ${fat.data}</div>
-        <div style="font-size:10px;color:#999;margin-top:4px">${fat.tipo === "acconto" ? "ACCONTO" : fat.tipo === "saldo" ? "SALDO" : "FATTURA"}</div>
-      </div>
-    </div>
-    <div style="background:#F2F1EC;padding:14px;border-radius:8px;margin-bottom:16px">
-      <div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:4px">Destinatario</div>
-      <div style="font-size:14px;font-weight:800">${fat.cliente} ${fat.cognome}</div>
-      <div style="font-size:11px">${fat.indirizzo || ""}</div>
-      ${fat.cf ? `<div style="font-size:10px;color:#666">C.F.: ${fat.cf}</div>` : ""}
-      ${fat.piva ? `<div style="font-size:10px;color:#666">P.IVA: ${fat.piva}</div>` : ""}
-      ${fat.sdi ? `<div style="font-size:10px;color:#666">SDI: ${fat.sdi}</div>` : ""}
-      ${fat.pec ? `<div style="font-size:10px;color:#666">PEC: ${fat.pec}</div>` : ""}
-      <div style="font-size:10px;color:#666;margin-top:4px">Rif. commessa: ${fat.cmCode}</div>
-    </div>
-    <table>
-      <thead><tr><th>Descrizione</th><th style="width:80px;text-align:right">Imponibile</th><th style="width:60px;text-align:right">IVA %</th><th style="width:80px;text-align:right">IVA</th><th style="width:90px;text-align:right">Totale</th></tr></thead>
-      <tbody>
-        <tr>
-          <td>Fornitura e posa serramenti${fat.tipo === "acconto" ? " — Acconto 50%" : fat.tipo === "saldo" ? " — Saldo" : ""}<br><span style="font-size:10px;color:#666">${fat.note || ""}</span></td>
-          <td style="text-align:right;font-weight:700">&euro; ${fmt(fat.imponibile)}</td>
-          <td style="text-align:right">${fat.iva}%</td>
-          <td style="text-align:right">&euro; ${fmt(fat.ivaAmt)}</td>
-          <td style="text-align:right;font-weight:900;font-size:14px">&euro; ${fmt(fat.importo)}</td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="text-align:right;margin-top:12px;padding:12px;background:#f0f8ff;border-radius:8px">
-      <div style="font-size:10px;color:#666">Imponibile: &euro; ${fmt(fat.imponibile)}</div>
-      <div style="font-size:10px;color:#666">IVA ${fat.iva}%: &euro; ${fmt(fat.ivaAmt)}</div>
-      <div class="totale" style="margin-top:6px;color:#0D7C6B">TOTALE: &euro; ${fmt(fat.importo)}</div>
-    </div>
-    <div style="margin-top:16px;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:10px;color:#666">
-      <b>Modalità pagamento:</b> Bonifico bancario<br>
-      <b>IBAN:</b> ${az.iban || "________________"}<br>
-      <b>Scadenza:</b> ${fat.scadenza || "30 giorni data fattura"}<br>
-      ${fat.note ? `<b>Note:</b> ${fat.note}` : ""}
-    </div>
-    <div style="margin-top:20px;text-align:center;font-size:9px;color:#999">Documento generato da MASTRO ERP</div>
-    <div class="no-print" style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #0D7C6B;padding:10px 16px;display:flex;gap:8px;z-index:999;box-shadow:0 -4px 20px rgba(0,0,0,0.15)">
-      <button onclick="window.print()" style="flex:1;padding:10px;background:#0D7C6B;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer"><I d={ICO.printer} /> Stampa PDF</button>
-      <button onclick="if(navigator.share){navigator.share({title:document.title,text:'Ordine fornitore',url:window.location.href}).catch(()=>{})}else{alert('Usa Stampa → Salva come PDF')}" style="flex:1;padding:10px;background:#1A9E73;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer"><I d={ICO.upload} /> Condividi</button>
-      <button onclick="window.close()" style="padding:10px 16px;background:#DC4444;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✕</button>
-    </div>
-    <button class="no-print" onclick="window.print()" style="position:fixed;bottom:70px;right:20px;padding:12px 24px;background:#0D7C6B;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer"><I d={ICO.printer} /> Stampa / Salva PDF</button>
-    </body></html>`;
-    const blob = new Blob([html], { type: "text/html" });
-    window.open(URL.createObjectURL(blob), "_blank");
+function miniHeader(doc: jsPDF, az: any, label: string, color: number[]) {
+  const W = doc.internal.pageSize.width;
+  doc.setFillColor(...C.dark as [number,number,number]);
+  doc.rect(0, 0, W, 22, "F");
+
+  doc.setFillColor(...color as [number,number,number]);
+  doc.roundedRect(8, 4, 14, 14, 2, 2, "F");
+  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("M", 15, 13.5, { align: "center" });
+
+  doc.setTextColor(...C.white as [number,number,number]);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(az.nome || "MASTRO ERP", 26, 12);
+
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...color as [number,number,number]);
+  doc.text(label, W - 10, 14, { align: "right" });
+
+  doc.setTextColor(...C.dark as [number,number,number]);
 }
 
-export function generaOrdinePDF(ord: any, deps: DocDeps) {
-  const { aziendaInfo } = deps;
-  const aziendaDB = aziendaInfo;
-    const az = aziendaDB;
-    const fmt = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00";
-    const imponibile = ord.totale;
-    const ivaVal = imponibile * ord.iva / 100;
-    const scontoPerc = ord.sconto || 0;
+// ─────────────────────────────────────────────────────────
+// FATTURA CLIENTE
+// ─────────────────────────────────────────────────────────
+export function generaFatturaPDF(fat: any, ctx: any) {
+  const { aziendaInfo } = ctx;
+  const az = aziendaInfo || {};
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.width;
 
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#1a1a1c;padding:20px;max-width:800px;margin:0 auto}
-      .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1a1a1c}
-      .title{font-size:20px;font-weight:800;letter-spacing:-0.3px}
-      table{width:100%;border-collapse:collapse;margin:16px 0}
-      th{background:#F2F1EC;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #ddd}
-      td{padding:8px 10px;border-bottom:1px solid #eee}
-      .total-row td{font-weight:700;border-top:2px solid #1a1a1c;border-bottom:none}
-      .box{background:#f9f9fb;border-radius:8px;padding:14px;margin-bottom:12px}
-      .sign-area{margin-top:40px;display:flex;justify-content:space-between}
-      .sign-box{width:45%;border-top:1px solid #aaa;padding-top:8px;text-align:center;font-size:10px;color:#888}
-      @media print{body{padding:10px}}
-    </style></head><body>
+  const tipoLabel: Record<string, string> = {
+    acconto: "FATTURA ACCONTO",
+    saldo:   "FATTURA SALDO",
+    unica:   "FATTURA",
+  };
 
+  miniHeader(doc, az, tipoLabel[fat.tipo] || "FATTURA", C.green);
+
+  let y = 28;
+
+  // Dati azienda emittente
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...C.sub as [number,number,number]);
+  const azLines = [
+    az.indirizzo || "",
+    [az.cap, az.citta].filter(Boolean).join(" "),
+    az.piva ? `P.IVA ${az.piva}` : "",
+    az.cf ? `C.F. ${az.cf}` : "",
+    az.pec || "",
+    az.sdi ? `SDI ${az.sdi}` : "",
+  ].filter(Boolean);
+  doc.text(azLines, 12, y);
+
+  // Dati cliente (dx)
+  const clienteLines = [
+    `${fat.clienteNome || ""}`,
+    fat.clienteIndirizzo || "",
+    fat.clientePiva ? `P.IVA ${fat.clientePiva}` : "",
+    fat.clienteCf ? `C.F. ${fat.clienteCf}` : "",
+    fat.clienteSdi ? `SDI ${fat.clienteSdi}` : "",
+    fat.clientePec || "",
+  ].filter(Boolean);
+
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text("DESTINATARIO", W / 2 + 4, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.text(clienteLines, W / 2 + 4, y + 5);
+
+  y = Math.max(y + azLines.length * 5, y + clienteLines.length * 5) + 10;
+
+  // Info fattura
+  doc.setFillColor(...C.bg as [number,number,number]);
+  doc.roundedRect(12, y, W - 24, 18, 3, 3, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.dark as [number,number,number]);
+
+  const fRows = [
+    ["N° Fattura", `${fat.numero}/${fat.anno}`],
+    ["Data",       fat.data || new Date().toLocaleDateString("it-IT")],
+    ["Scadenza",   fat.scadenza || "—"],
+    ["Commessa",   fat.cmCode || "—"],
+  ];
+  fRows.forEach(([k, v], i) => {
+    const x = 14 + i * ((W - 28) / 4);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.sub as [number,number,number]);
+    doc.setFontSize(7);
+    doc.text(k, x, y + 6);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.dark as [number,number,number]);
+    doc.setFontSize(10);
+    doc.text(String(v), x, y + 13);
+  });
+
+  y += 24;
+
+  // Tabella righe fattura
+  const righe = fat.righe || [{
+    desc: fat.descrizione || `Fornitura e posa ${fat.tipo}`,
+    qta: 1,
+    prezzoUnit: fat.imponibile || fat.importo || 0,
+    totale: fat.imponibile || fat.importo || 0,
+  }];
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Descrizione", "Q.tà", "Prezzo unit.", "Totale"]],
+    body: righe.map((r: any) => [
+      r.desc || "—",
+      String(r.qta || 1),
+      `€ ${fmt(r.prezzoUnit || r.totale || 0)}`,
+      `€ ${fmt(r.totale || 0)}`,
+    ]),
+    theme: "plain",
+    styles: { fontSize: 9, cellPadding: 3, textColor: C.dark },
+    headStyles: {
+      fillColor: C.dark as [number,number,number],
+      textColor: C.white as [number,number,number],
+      fontStyle: "bold",
+      fontSize: 8,
+    },
+    columnStyles: {
+      0: { cellWidth: "auto" },
+      1: { cellWidth: 14, halign: "center" },
+      2: { cellWidth: 32, halign: "right" },
+      3: { cellWidth: 32, halign: "right", fontStyle: "bold" },
+    },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  // Totali
+  const imp = fat.imponibile || fat.importo || 0;
+  const ivaAmt = imp * (fat.aliqIva || 10) / 100;
+  const totFat = imp + ivaAmt;
+
+  const totW = 85;
+  const totX = W - totW - 12;
+  [
+    ["Imponibile", `€ ${fmt(imp)}`, false],
+    [`IVA ${fat.aliqIva || 10}%`, `€ ${fmt(ivaAmt)}`, false],
+    ["TOTALE FATTURA", `€ ${fmt(totFat)}`, true],
+    fat.pagata ? ["Pagata il", fat.dataPagamento || "—", false] : null,
+  ].filter(Boolean).forEach(([label, val, bold]: any) => {
+    if (bold) {
+      doc.setFillColor(...C.green as [number,number,number]);
+      doc.rect(totX, y - 4, totW, 8, "F");
+      doc.setTextColor(...C.white as [number,number,number]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+    } else {
+      doc.setTextColor(...C.sub as [number,number,number]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+    }
+    doc.text(String(label), totX + 3, y + 0.5);
+    doc.text(String(val), totX + totW - 3, y + 0.5, { align: "right" });
+    y += 8;
+  });
+
+  y += 6;
+
+  // Dati pagamento
+  if (az.iban) {
+    doc.setFillColor(...C.bg as [number,number,number]);
+    doc.roundedRect(12, y, W - 24, 14, 3, 3, "F");
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.sub as [number,number,number]);
+    doc.text("DATI PAGAMENTO", 14, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C.dark as [number,number,number]);
+    doc.text(`IBAN: ${az.iban}${az.banca ? " · " + az.banca : ""}`, 14, y + 11);
+  }
+
+  // Footer
+  const pH = doc.internal.pageSize.height;
+  doc.setFontSize(7);
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text(`Documento generato da MASTRO ERP · ${new Date().toLocaleString("it-IT")}`, 12, pH - 6);
+
+  doc.save(`fattura_${fat.numero}_${fat.anno}_${fat.clienteNome?.replace(/\s/g, "_") || "cliente"}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────
+// ORDINE FORNITORE
+// ─────────────────────────────────────────────────────────
+export function generaOrdinePDF(ord: any, ctx: any) {
+  const { aziendaInfo } = ctx;
+  const az = aziendaInfo || {};
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.width;
+
+  miniHeader(doc, az, "ORDINE FORNITORE", C.blue);
+
+  let y = 28;
+
+  // Info ordine + fornitore
+  doc.setFillColor(...C.bg as [number,number,number]);
+  doc.roundedRect(12, y, W - 24, 20, 3, 3, "F");
+
+  const oRows = [
+    ["N° Ordine", `${ord.numero}/${ord.anno}`],
+    ["Data",       new Date(ord.dataOrdine || Date.now()).toLocaleDateString("it-IT")],
+    ["Commessa",   ord.cmCode || "—"],
+    ["Cliente",    ord.cliente || "—"],
+  ];
+  oRows.forEach(([k, v], i) => {
+    const x = 14 + i * ((W - 28) / 4);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.sub as [number,number,number]);
+    doc.text(k, x, y + 6);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.dark as [number,number,number]);
+    doc.text(String(v), x, y + 14);
+  });
+
+  y += 26;
+
+  // Fornitore
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.text(`Spett.le ${ord.fornitore?.nome || "Fornitore"}`, 12, y);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...C.sub as [number,number,number]);
+  const fornLines = [
+    ord.fornitore?.referente ? `Att.ne: ${ord.fornitore.referente}` : "",
+    ord.fornitore?.email || "",
+    ord.fornitore?.tel || "",
+  ].filter(Boolean);
+  doc.text(fornLines, 12, y + 5);
+
+  y += fornLines.length * 5 + 12;
+
+  // Righe ordine
+  autoTable(doc, {
+    startY: y,
+    head: [["#", "Descrizione", "Misure", "Q.tà", "Prezzo unit.", "Totale"]],
+    body: (ord.righe || []).map((r: any, i: number) => [
+      String(i + 1),
+      r.desc || "—",
+      r.misure || "—",
+      String(r.qta || 1),
+      `€ ${fmt(r.prezzoUnit || 0)}`,
+      `€ ${fmt((r.qta || 1) * (r.prezzoUnit || 0))}`,
+    ]),
+    theme: "plain",
+    styles: { fontSize: 9, cellPadding: 3, textColor: C.dark },
+    headStyles: {
+      fillColor: C.dark as [number,number,number],
+      textColor: C.white as [number,number,number],
+      fontStyle: "bold",
+      fontSize: 8,
+    },
+    columnStyles: {
+      0: { cellWidth: 8,  halign: "center" },
+      1: { cellWidth: "auto" },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 12, halign: "center" },
+      4: { cellWidth: 28, halign: "right" },
+      5: { cellWidth: 28, halign: "right", fontStyle: "bold" },
+    },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  // Totali
+  const totW = 80;
+  const totX = W - totW - 12;
+  [
+    ["Imponibile",    `€ ${fmt(ord.totale || 0)}`,    false],
+    [`IVA ${ord.iva || 22}%`, `€ ${fmt((ord.totale || 0) * (ord.iva || 22) / 100)}`, false],
+    ["TOTALE",        `€ ${fmt(ord.totaleIva || 0)}`, true],
+  ].forEach(([label, val, bold]: any) => {
+    if (bold) {
+      doc.setFillColor(...C.blue as [number,number,number]);
+      doc.rect(totX, y - 4, totW, 8, "F");
+      doc.setTextColor(...C.white as [number,number,number]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+    } else {
+      doc.setTextColor(...C.sub as [number,number,number]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+    }
+    doc.text(String(label), totX + 3, y + 0.5);
+    doc.text(String(val), totX + totW - 3, y + 0.5, { align: "right" });
+    y += 8;
+  });
+
+  y += 6;
+
+  // Condizioni
+  const condLines: string[] = [];
+  if (ord.consegna?.prevista) condLines.push(`Consegna prevista: ${new Date(ord.consegna.prevista).toLocaleDateString("it-IT")}`);
+  if (ord.pagamento?.termini) condLines.push(`Pagamento: ${ord.pagamento.termini}`);
+  if (condLines.length > 0) {
+    doc.setFillColor(...C.bg as [number,number,number]);
+    doc.roundedRect(12, y, W - 24, condLines.length * 6 + 8, 3, 3, "F");
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.sub as [number,number,number]);
+    doc.text("CONDIZIONI", 14, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C.dark as [number,number,number]);
+    doc.text(condLines, 14, y + 11);
+    y += condLines.length * 6 + 14;
+  }
+
+  // Note
+  if (ord.note) {
+    doc.setFontSize(8);
+    doc.setTextColor(...C.sub as [number,number,number]);
+    const noteLines = doc.splitTextToSize(ord.note, W - 24);
+    doc.text(noteLines, 12, y);
+  }
+
+  // Footer
+  const pH = doc.internal.pageSize.height;
+  doc.setFontSize(7);
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text(`${az.nome || "MASTRO ERP"} · ${az.piva ? "P.IVA " + az.piva : ""}`, 12, pH - 6);
+  doc.text(new Date().toLocaleDateString("it-IT"), W - 12, pH - 6, { align: "right" });
+
+  doc.save(`ordine_${ord.numero}_${ord.anno}_${ord.fornitore?.nome?.replace(/\s/g, "_") || "fornitore"}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────
+// CONFERMA FIRMATA (ordine accettato)
+// ─────────────────────────────────────────────────────────
+export function generaConfermaFirmataPDF(ord: any, ctx: any) {
+  const { aziendaInfo } = ctx;
+  const az = aziendaInfo || {};
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.width;
+
+  miniHeader(doc, az, "CONFERMA D'ORDINE", C.green);
+
+  let y = 30;
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.text(`Conferma ordine N. ${ord.numero}/${ord.anno}`, 12, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text(`Commessa: ${ord.cmCode || "—"} · Cliente: ${ord.cliente || "—"}`, 12, y + 6);
+  doc.text(`Data conferma: ${ord.conferma?.dataFirma || new Date().toLocaleDateString("it-IT")}`, 12, y + 12);
+
+  y += 22;
+
+  // Tabella righe (stessa dell'ordine)
+  autoTable(doc, {
+    startY: y,
+    head: [["#", "Descrizione", "Misure", "Q.tà", "Totale"]],
+    body: (ord.righe || []).map((r: any, i: number) => [
+      String(i + 1),
+      r.desc || "—",
+      r.misure || "—",
+      String(r.qta || 1),
+      `€ ${fmt((r.qta || 1) * (r.prezzoUnit || 0))}`,
+    ]),
+    theme: "striped",
+    styles: { fontSize: 9, cellPadding: 3, textColor: C.dark },
+    headStyles: {
+      fillColor: C.green as [number,number,number],
+      textColor: C.white as [number,number,number],
+      fontStyle: "bold",
+    },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 10;
+
+  // Totale
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.text(`Totale confermato: € ${fmt(ord.totaleIva || 0)}`, W - 12, y, { align: "right" });
+  y += 16;
+
+  // Differenze (se presenti)
+  if (ord.conferma?.differenze) {
+    doc.setFillColor(255, 248, 220);
+    doc.roundedRect(12, y, W - 24, 20, 3, 3, "F");
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...C.amber as [number,number,number]);
+    doc.text("NOTE / DIFFERENZE", 14, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...C.dark as [number,number,number]);
+    const dLines = doc.splitTextToSize(ord.conferma.differenze, W - 28);
+    doc.text(dLines, 14, y + 11);
+    y += 26;
+  }
+
+  // Firma azienda
+  doc.setFillColor(...C.bg as [number,number,number]);
+  doc.roundedRect(12, y, W - 24, 28, 3, 3, "F");
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text("FIRMA AUTORIZZATA", 14, y + 6);
+  doc.setDrawColor(...C.sub as [number,number,number]);
+  doc.setLineWidth(0.4);
+  doc.line(14, y + 22, 100, y + 22);
+  doc.line(W - 100, y + 22, W - 14, y + 22);
+  doc.setFontSize(7);
+  doc.text(az.nome || "", 57, y + 26, { align: "center" });
+  doc.text("Fornitore", W - 57, y + 26, { align: "center" });
+
+  // Footer
+  const pH = doc.internal.pageSize.height;
+  doc.setFontSize(7);
+  doc.setTextColor(...C.sub as [number,number,number]);
+  doc.text(`MASTRO ERP · ${new Date().toLocaleString("it-IT")}`, 12, pH - 6);
+
+  doc.save(`conferma_${ord.numero}_${ord.anno}.pdf`);
+}
+
+// ─────────────────────────────────────────────────────────
+// TRACKING CLIENTE (apre nuova tab con pagina HTML)
+// ─────────────────────────────────────────────────────────
+export function generaTrackingCliente(c: any) {
+  const steps = [
+    { id: "ordinato",   label: "Ordinato",   icon: "📦", color: "#ff9500" },
+    { id: "produzione", label: "In Produzione", icon: "🏭", color: "#5856d6" },
+    { id: "pronto",     label: "Pronto",      icon: "✅", color: "#34c759" },
+    { id: "consegnato", label: "Consegnato",  icon: "🚛", color: "#007aff" },
+    { id: "montato",    label: "Montato",     icon: "🔧", color: "#30b0c7" },
+  ];
+  const order = steps.map(s => s.id);
+  const curIdx = order.indexOf(c.trackingStato || "");
+
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stato ordine ${c.code || ""} — MASTRO</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, 'Inter', sans-serif; background: #F2F1EC; min-height: 100vh; padding: 24px 16px; }
+    .card { background: #fff; border-radius: 20px; max-width: 480px; margin: 0 auto; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.08); }
+    .header { background: #1A1A1C; padding: 24px; text-align: center; }
+    .logo { display: inline-block; width: 48px; height: 48px; background: #D08008; border-radius: 12px; line-height: 48px; font-size: 22px; font-weight: 900; color: #1A1A1C; margin-bottom: 12px; }
+    .header h1 { color: #fff; font-size: 20px; }
+    .header p { color: #86868b; font-size: 13px; margin-top: 4px; }
+    .body { padding: 24px; }
+    .info { background: #F2F1EC; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+    .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; }
+    .info-row strong { color: #1A1A1C; }
+    .info-row span { color: #86868b; }
+    .steps { }
+    .step { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .step:last-child { border-bottom: none; }
+    .step-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .step-label { font-size: 14px; font-weight: 600; }
+    .step-date { font-size: 11px; color: #86868b; margin-top: 2px; }
+    .active .step-icon { box-shadow: 0 0 0 3px currentColor; }
+    .footer { padding: 16px 24px; text-align: center; font-size: 11px; color: #86868b; border-top: 1px solid #f0f0f0; }
+  </style>
+</head>
+<body>
+  <div class="card">
     <div class="header">
-      <div>
-        ${az.logo ? `<img src="${az.logo}" style="max-height:45px;margin-bottom:6px" /><br>` : ""}
-        <div class="title">${az.nome || "MASTRO"}</div>
-        <div style="font-size:10px;color:#666;margin-top:2px">${az.indirizzo || ""}<br>${az.tel || ""} · ${az.email || ""}<br>${az.piva ? "P.IVA " + az.piva : ""}</div>
+      <div class="logo">M</div>
+      <h1>Stato del tuo ordine</h1>
+      <p>${c.cliente || ""}${c.cognome ? " " + c.cognome : ""}</p>
+    </div>
+    <div class="body">
+      <div class="info">
+        <div class="info-row"><span>Commessa</span><strong>${c.code || "—"}</strong></div>
+        ${c.dataPrevConsegna ? `<div class="info-row"><span>Consegna prevista</span><strong>${new Date(c.dataPrevConsegna + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}</strong></div>` : ""}
       </div>
-      <div style="text-align:right">
-        <div style="font-size:16px;font-weight:800;color:#0D7C6B">ORDINE FORNITORE</div>
-        <div style="font-size:12px;font-weight:700">N. ${ord.numero}/${ord.anno}</div>
-        <div style="font-size:10px;color:#666">Data: ${new Date(ord.dataOrdine).toLocaleDateString("it-IT")}</div>
-        <div style="font-size:10px;color:#666">Rif. Commessa: ${ord.cmCode}</div>
+      <div class="steps">
+        ${steps.map((s, i) => {
+          const done = i <= curIdx;
+          const current = i === curIdx;
+          const dateKey = `tracking_${s.id}_data`;
+          return `
+          <div class="step ${current ? "active" : ""}">
+            <div class="step-icon" style="background:${done ? s.color + "20" : "#f0f0f0"};color:${done ? s.color : "#ccc"}">
+              ${done ? s.icon : "○"}
+            </div>
+            <div>
+              <div class="step-label" style="color:${done ? "#1A1A1C" : "#ccc"}">${s.label}</div>
+              ${c[dateKey] ? `<div class="step-date">${c[dateKey]}</div>` : ""}
+            </div>
+          </div>`;
+        }).join("")}
       </div>
     </div>
-
-    <div style="display:flex;gap:16px;margin-bottom:16px">
-      <div class="box" style="flex:1">
-        <div style="font-size:9px;text-transform:uppercase;color:#888;letter-spacing:1px;margin-bottom:6px">Fornitore</div>
-        <div style="font-size:14px;font-weight:700">${ord.fornitore.nome || "—"}</div>
-        ${ord.fornitore.referente ? `<div>Att.ne: ${ord.fornitore.referente}</div>` : ""}
-        ${ord.fornitore.email ? `<div>${ord.fornitore.email}</div>` : ""}
-        ${ord.fornitore.tel ? `<div>${ord.fornitore.tel}</div>` : ""}
-        ${ord.fornitore.piva ? `<div>P.IVA: ${ord.fornitore.piva}</div>` : ""}
-      </div>
-      <div class="box" style="flex:1">
-        <div style="font-size:9px;text-transform:uppercase;color:#888;letter-spacing:1px;margin-bottom:6px">Consegna</div>
-        <div style="font-size:12px;font-weight:600">${ord.consegna.luogo || "Da definire"}</div>
-        ${ord.consegna.prevista ? `<div><I d={ICO.calendar} /> Prevista: ${new Date(ord.consegna.prevista).toLocaleDateString("it-IT")}</div>` : ""}
-        ${ord.consegna.settimane ? `<div><I d={ICO.clock} /> Produzione: ${ord.consegna.settimane} settimane</div>` : ""}
-        <div style="margin-top:4px;font-size:10px;color:#888">Pagamento: ${ord.pagamento.termini === "anticipato" ? "Anticipato" : ord.pagamento.termini === "30gg_fm" ? "30gg FM" : ord.pagamento.termini === "60gg_fm" ? "60gg FM" : ord.pagamento.termini === "90gg_fm" ? "90gg FM" : "A ricevimento merce"}</div>
-      </div>
+    <div class="footer">
+      Aggiornato il ${new Date().toLocaleDateString("it-IT")} · MASTRO ERP
     </div>
+  </div>
+</body>
+</html>`;
 
-    <div style="font-size:12px;font-weight:700;margin-bottom:4px">Cliente finale: ${ord.cliente}</div>
-
-    <table>
-      <tr><th style="width:5%">#</th><th style="width:40%">Descrizione</th><th style="width:12%">Misure</th><th style="width:8%">Qtà</th><th style="width:15%">Prezzo Unit.</th><th style="width:15%">Totale</th><th>Note</th></tr>
-      ${ord.righe.map((r, i) => `<tr>
-        <td>${i + 1}</td>
-        <td style="font-weight:600">${r.desc}</td>
-        <td>${r.misure}</td>
-        <td style="text-align:center">${r.qta}</td>
-        <td style="text-align:right">&euro;${fmt(r.prezzoUnit)}</td>
-        <td style="text-align:right">&euro;${fmt(r.qta * r.prezzoUnit)}</td>
-        <td style="font-size:9px;color:#666">${r.note || ""}</td>
-      </tr>`).join("")}
-      ${scontoPerc > 0 ? `<tr><td colspan="5" style="text-align:right;font-weight:600">Sconto ${scontoPerc}%</td><td style="text-align:right;color:#DC4444">-&euro;${fmt(ord.righe.reduce((s, r) => s + r.qta * r.prezzoUnit, 0) * scontoPerc / 100)}</td><td></td></tr>` : ""}
-      <tr><td colspan="5" style="text-align:right">Imponibile</td><td style="text-align:right">&euro;${fmt(imponibile)}</td><td></td></tr>
-      <tr><td colspan="5" style="text-align:right">IVA ${ord.iva}%</td><td style="text-align:right">&euro;${fmt(ivaVal)}</td><td></td></tr>
-      <tr class="total-row"><td colspan="5" style="text-align:right;font-size:13px">TOTALE</td><td style="text-align:right;font-size:13px">&euro;${fmt(ord.totaleIva)}</td><td></td></tr>
-    </table>
-
-    ${ord.note ? `<div class="box"><div style="font-size:9px;text-transform:uppercase;color:#888;margin-bottom:4px">Note</div>${ord.note}</div>` : ""}
-
-    <div class="sign-area">
-      <div class="sign-box">Timbro e firma ordinante<br><br><br></div>
-      <div class="sign-box">Per accettazione fornitore<br><br><br></div>
-    </div>
-
-    <div style="text-align:center;font-size:8px;color:#ccc;margin-top:30px">Generato con MASTRO · ${new Date().toLocaleDateString("it-IT")}</div>
-    </body></html>`;
-
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.print(); }
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
 }
 
-export function generaConfermaFirmataPDF(ord: any, deps: DocDeps) {
-  const { aziendaInfo } = deps;
-  const aziendaDB = aziendaInfo;
-    const az = aziendaDB;
-    const fmt = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2 }) : "0,00";
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#1a1a1c;padding:30px;max-width:800px;margin:0 auto}
-      .stamp{border:3px solid #1A9E73;border-radius:12px;padding:16px;margin:20px 0;text-align:center}
-    </style></head><body>
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:18px;font-weight:800;color:#1A9E73">✅ CONFERMA ORDINE APPROVATA</div>
-      <div style="font-size:12px;color:#666;margin-top:4px">Ordine N. ${ord.numero}/${ord.anno} — ${ord.fornitore.nome}</div>
-    </div>
+// ─────────────────────────────────────────────────────────
+// XML SDI (bozza FatturaPA — NON per invio diretto)
+// ─────────────────────────────────────────────────────────
+export function generaXmlSDI(fat: any, az: any): string {
+  const esc = (s: any) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const imp = fat.imponibile || fat.importo || 0;
+  const aliq = fat.aliqIva || 10;
+  const ivaAmt = imp * aliq / 100;
+  const tot = imp + ivaAmt;
 
-    <div style="background:#f9f9fb;border-radius:8px;padding:14px;margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between">
-        <div><b>Committente:</b> ${az.nome || "MASTRO"}<br>${az.indirizzo || ""}<br>${az.piva ? "P.IVA " + az.piva : ""}</div>
-        <div style="text-align:right"><b>Fornitore:</b> ${ord.fornitore.nome}<br>${ord.fornitore.email || ""}<br>${ord.fornitore.piva ? "P.IVA " + ord.fornitore.piva : ""}</div>
-      </div>
-    </div>
-
-    <div style="margin:14px 0"><b>Rif. Commessa:</b> ${ord.cmCode} — ${ord.cliente}</div>
-
-    <table style="width:100%;border-collapse:collapse">
-      <tr><th style="background:#1A9E7320;padding:8px;text-align:left;border-bottom:2px solid #1A9E73">#</th><th style="background:#1A9E7320;padding:8px;text-align:left;border-bottom:2px solid #1A9E73">Descrizione</th><th style="background:#1A9E7320;padding:8px;border-bottom:2px solid #1A9E73">Misure</th><th style="background:#1A9E7320;padding:8px;border-bottom:2px solid #1A9E73">Qtà</th><th style="background:#1A9E7320;padding:8px;text-align:right;border-bottom:2px solid #1A9E73">Prezzo</th></tr>
-      ${ord.righe.map((r, i) => `<tr><td style="padding:6px;border-bottom:1px solid #eee">${i + 1}</td><td style="padding:6px;border-bottom:1px solid #eee">${r.desc}</td><td style="padding:6px;border-bottom:1px solid #eee">${r.misure}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:center">${r.qta}</td><td style="padding:6px;border-bottom:1px solid #eee;text-align:right">&euro;${fmt(r.qta * r.prezzoUnit)}</td></tr>`).join("")}
-    </table>
-    <div style="text-align:right;font-size:14px;font-weight:800;margin-top:8px">TOTALE: &euro;${fmt(ord.totaleIva)}</div>
-
-    <div class="stamp">
-      <div style="font-size:14px;font-weight:800;color:#1A9E73">CONFERMATO E APPROVATO</div>
-      <div style="font-size:11px;color:#666;margin-top:4px">Data conferma: ${ord.conferma.dataFirma ? new Date(ord.conferma.dataFirma).toLocaleDateString("it-IT") : new Date().toLocaleDateString("it-IT")}</div>
-      <div style="font-size:11px;color:#666">Consegna prevista: ${ord.consegna.prevista ? new Date(ord.consegna.prevista).toLocaleDateString("it-IT") : "Da concordare"}</div>
-      <div style="font-size:11px;color:#666">Pagamento: ${ord.pagamento.termini === "anticipato" ? "Anticipato" : ord.pagamento.termini.replace("_", " ").toUpperCase()}</div>
-      ${ord.conferma.differenze ? `<div style="margin-top:8px;font-size:10px;color:#E8A020;font-weight:600"><I d={ICO.alertTriangle} /> Note: ${ord.conferma.differenze}</div>` : ""}
-    </div>
-
-    <div style="display:flex;justify-content:space-between;margin-top:40px">
-      <div style="width:45%;border-top:1px solid #aaa;padding-top:8px;text-align:center;font-size:10px;color:#888">Firma ${az.nome || "committente"}<br>${ord.conferma.dataFirma || ""}</div>
-      <div style="width:45%;border-top:1px solid #aaa;padding-top:8px;text-align:center;font-size:10px;color:#888">Per accettazione fornitore</div>
-    </div>
-    </body></html>`;
-
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.print(); }
-}
-
-export function generaXmlSDI(fat: any, deps: DocDeps) {
-  const { aziendaInfo } = deps;
-  const aziendaDB = aziendaInfo;
-    const az = aziendaDB;
-    const progressivo = String(fat.numero).padStart(5, "0") + "_" + fat.anno;
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<p:FatturaElettronica xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" versione="FPR12">
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<p:FatturaElettronica versione="FPR12"
+  xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <FatturaElettronicaHeader>
     <DatiTrasmissione>
-      <IdTrasmittente><IdPaese>IT</IdPaese><IdCodice>` + (az.piva || "00000000000") + `</IdCodice></IdTrasmittente>
-      <ProgressivoInvio>` + progressivo + `</ProgressivoInvio>
+      <IdTrasmittente>
+        <IdPaese>IT</IdPaese>
+        <IdCodice>${esc(az.piva || "")}</IdCodice>
+      </IdTrasmittente>
+      <ProgressivoInvio>00001</ProgressivoInvio>
       <FormatoTrasmissione>FPR12</FormatoTrasmissione>
-      <CodiceDestinatario>` + (fat.sdi || "0000000") + `</CodiceDestinatario>
+      <CodiceDestinatario>${esc(fat.clienteSdi || "0000000")}</CodiceDestinatario>
     </DatiTrasmissione>
     <CedentePrestatore>
       <DatiAnagrafici>
-        <IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>` + (az.piva || "") + `</IdCodice></IdFiscaleIVA>
-        <Anagrafica><Denominazione>` + (az.ragioneSociale || "MASTRO SRL") + `</Denominazione></Anagrafica>
+        <IdFiscaleIVA>
+          <IdPaese>IT</IdPaese>
+          <IdCodice>${esc(az.piva || "")}</IdCodice>
+        </IdFiscaleIVA>
+        <Anagrafica><Denominazione>${esc(az.nome)}</Denominazione></Anagrafica>
         <RegimeFiscale>RF01</RegimeFiscale>
       </DatiAnagrafici>
+      <Sede>
+        <Indirizzo>${esc(az.indirizzo || "")}</Indirizzo>
+        <CAP>${esc(az.cap || "00000")}</CAP>
+        <Comune>${esc(az.citta || "")}</Comune>
+        <Nazione>IT</Nazione>
+      </Sede>
     </CedentePrestatore>
     <CessionarioCommittente>
       <DatiAnagrafici>
-        <Anagrafica><Denominazione>` + fat.cliente + ` ` + (fat.cognome || "") + `</Denominazione></Anagrafica>
+        <CodiceFiscale>${esc(fat.clienteCf || fat.clientePiva || "")}</CodiceFiscale>
+        <Anagrafica><Denominazione>${esc(fat.clienteNome || "")}</Denominazione></Anagrafica>
       </DatiAnagrafici>
+      <Sede>
+        <Indirizzo>${esc(fat.clienteIndirizzo || "")}</Indirizzo>
+        <CAP>00000</CAP>
+        <Comune>—</Comune>
+        <Nazione>IT</Nazione>
+      </Sede>
     </CessionarioCommittente>
   </FatturaElettronicaHeader>
   <FatturaElettronicaBody>
@@ -255,132 +597,37 @@ export function generaXmlSDI(fat: any, deps: DocDeps) {
       <DatiGeneraliDocumento>
         <TipoDocumento>TD01</TipoDocumento>
         <Divisa>EUR</Divisa>
-        <Data>` + (fat.dataISO || new Date().toISOString().split("T")[0]) + `</Data>
-        <Numero>` + fat.numero + `/` + fat.anno + `</Numero>
-        <ImportoTotaleDocumento>` + fat.importo.toFixed(2) + `</ImportoTotaleDocumento>
+        <Data>${fat.data || new Date().toISOString().split("T")[0]}</Data>
+        <Numero>${fat.numero}/${fat.anno}</Numero>
+        <ImportoTotaleDocumento>${tot.toFixed(2)}</ImportoTotaleDocumento>
       </DatiGeneraliDocumento>
     </DatiGenerali>
     <DatiBeniServizi>
       <DettaglioLinee>
         <NumeroLinea>1</NumeroLinea>
-        <Descrizione>Fornitura e posa serramenti (Rif. ` + fat.cmCode + `)</Descrizione>
+        <Descrizione>${esc(fat.descrizione || "Fornitura e posa")}</Descrizione>
         <Quantita>1.00</Quantita>
-        <PrezzoUnitario>` + fat.imponibile.toFixed(2) + `</PrezzoUnitario>
-        <PrezzoTotale>` + fat.imponibile.toFixed(2) + `</PrezzoTotale>
-        <AliquotaIVA>` + fat.iva.toFixed(2) + `</AliquotaIVA>
+        <PrezzoUnitario>${imp.toFixed(2)}</PrezzoUnitario>
+        <PrezzoTotale>${imp.toFixed(2)}</PrezzoTotale>
+        <AliquotaIVA>${aliq}.00</AliquotaIVA>
       </DettaglioLinee>
+      <DatiRiepilogo>
+        <AliquotaIVA>${aliq}.00</AliquotaIVA>
+        <ImponibileImporto>${imp.toFixed(2)}</ImponibileImporto>
+        <Imposta>${ivaAmt.toFixed(2)}</Imposta>
+        <EsigibilitaIVA>I</EsigibilitaIVA>
+      </DatiRiepilogo>
     </DatiBeniServizi>
   </FatturaElettronicaBody>
 </p:FatturaElettronica>`;
-    const blob = new Blob([xml], { type: "application/xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
-    a.download = "IT" + (az.piva || "00000000000") + "_" + progressivo + ".xml";
-    a.click(); URL.revokeObjectURL(url);
+
+  // Download XML
+  const blob = new Blob([xml], { type: "application/xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `fattura_${fat.numero}_${fat.anno}_SDI.xml`;
+  a.click();
+  URL.revokeObjectURL(url);
+  return xml;
 }
-
-
-export function generaTrackingCliente(c: any, deps: DocDeps) {
-  const { aziendaInfo, fattureDB, montaggiDB } = deps;
-  const aziendaDB = aziendaInfo;
-    const az = aziendaDB;
-    const TRACK_SVG = {
-      package: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
-      factory: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20V8l6 4V8l6 4V8l6 4v12H2z"/><path d="M2 20h20"/></svg>',
-      checkCircle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-      truck: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
-      hammer: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12l-8.5 8.5c-.83.83-2.17.83-3 0a2.12 2.12 0 010-3L12 9"/><path d="M17.64 15L22 10.64"/><path d="M20.91 11.7l-1.25-1.25c-.6-.6-.93-1.4-.93-2.25V6.5L14.5 2.23a.5.5 0 00-.8.14l-1.02 2.45a2 2 0 00.44 2.17l5.08 4.56"/></svg>',
-    };
-    const trackSteps = [
-      { id: "ordinato", label: "Ordinato", icon: "package", desc: "Il materiale è stato ordinato al fornitore" },
-      { id: "produzione", label: "In Produzione", icon: "factory", desc: "I serramenti sono in fase di produzione" },
-      { id: "pronto", label: "Pronto", icon: "checkCircle", desc: "Il materiale è pronto per la consegna" },
-      { id: "consegnato", label: "Consegnato", icon: "truck", desc: "Il materiale è stato consegnato" },
-      { id: "montato", label: "Montato", icon: "hammer", desc: "L'installazione è completata" },
-    ];
-    const curIdx = trackSteps.findIndex(s => s.id === c.trackingStato);
-    const fatture = fattureDB.filter(f => f.cmId === c.id);
-    const totFat = fatture.reduce((s, f) => s + f.importo, 0);
-    const totPag = fatture.filter(f => f.pagata).reduce((s, f) => s + f.importo, 0);
-    const montaggio = montaggiDB.find(m => m.cmId === c.id && m.stato !== "completato");
-    const fmt = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2 }) : "0,00";
-
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Tracking Ordine ${c.code} — ${az.nome || "MASTRO"}</title>
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F2F1EC;color:#1a1a1c;padding:16px;max-width:480px;margin:0 auto}
-      .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
-      .step{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid #f0f0f2}
-      .step:last-child{border-bottom:none}
-      .dot{width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-      .active .dot{background:#0D7C6B20} .done .dot{background:#1A9E7320} .pending .dot{background:#f0f0f2}
-      .line{width:2px;height:20px;margin:0 17px;background:#e0e0e2}
-      .done .line{background:#1A9E73} .active .line{background:#0D7C6B}
-      .badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700}
-      h2{font-size:20px;font-weight:800;letter-spacing:-0.3px}
-    </style></head><body>
-    <div class="card" style="text-align:center">
-      ${az.logo ? `<img src="${az.logo}" style="max-height:50px;max-width:180px;margin-bottom:8px" alt="">` : ""}
-      <h2>${az.nome || "MASTRO"}</h2>
-      <div style="font-size:12px;color:#8e8e93;margin-top:4px">${az.tel || ""} · ${az.email || ""}</div>
-    </div>
-
-    <div class="card">
-      <div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Ordine</div>
-      <h2>${c.code}</h2>
-      <div style="font-size:13px;color:#8e8e93;margin-top:2px">${c.cliente} ${c.cognome || ""}</div>
-      <div style="font-size:12px;color:#8e8e93">${c.indirizzo || ""}</div>
-      ${c.dataPrevConsegna ? `<div style="margin-top:10px;padding:8px 12px;background:#0D7C6B10;border-radius:8px;font-size:12px;color:#0D7C6B;font-weight:600"><I d={ICO.calendar} /> Consegna prevista: ${new Date(c.dataPrevConsegna).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>` : ""}
-      ${montaggio?.data ? `<div style="margin-top:6px;padding:8px 12px;background:#30b0c710;border-radius:8px;font-size:12px;color:#30b0c7;font-weight:600"><I d={ICO.wrench} /> Montaggio programmato: ${new Date(montaggio.data).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })} ore ${montaggio.oraInizio || "08:00"}</div>` : ""}
-    </div>
-
-    <div class="card">
-      <div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Stato avanzamento</div>
-      ${trackSteps.map((st, i) => {
-        const isDone = i < curIdx;
-        const isActive = i === curIdx;
-        const cls = isDone ? "done" : isActive ? "active" : "pending";
-        return `<div class="step ${cls}">
-          <div>
-            <div class="dot">${TRACK_SVG[st.icon] || st.icon}</div>
-            ${i < trackSteps.length - 1 ? `<div class="line"></div>` : ""}
-          </div>
-          <div style="padding-top:6px">
-            <div style="font-size:14px;font-weight:700;color:${isDone ? "#1A9E73" : isActive ? "#0D7C6B" : "#c7c7cc"}">${st.label}</div>
-            <div style="font-size:11px;color:#8e8e93;margin-top:2px">${st.desc}</div>
-            ${isDone && c["tracking_" + st.id + "_data"] ? `<div style="font-size:10px;color:#1A9E73;margin-top:2px">✅ ${c["tracking_" + st.id + "_data"]}</div>` : ""}
-            ${isActive ? `<span class="badge" style="background:#0D7C6B20;color:#0D7C6B;margin-top:4px">In corso</span>` : ""}
-          </div>
-        </div>`;
-      }).join("")}
-    </div>
-
-    ${fatture.length > 0 ? `<div class="card">
-      <div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Situazione pagamenti</div>
-      ${fatture.map(f => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f2">
-        <div>
-          <div style="font-size:12px;font-weight:600">${f.tipo === "acconto" ? "Acconto" : f.tipo === "saldo" ? "Saldo" : "Fattura"} N.${f.numero}/${f.anno}</div>
-          <div style="font-size:10px;color:#8e8e93">${f.data}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:14px;font-weight:800">&euro;${fmt(f.importo)}</div>
-          <div style="font-size:10px;color:${f.pagata ? "#1A9E73" : "#DC4444"};font-weight:600">${f.pagata ? "✅ Pagata" : "🕐 Da pagare"}</div>
-        </div>
-      </div>`).join("")}
-      <div style="display:flex;justify-content:space-between;padding:10px 0 0;margin-top:4px">
-        <span style="font-size:12px;color:#8e8e93">Totale: &euro;${fmt(totFat)}</span>
-        <span style="font-size:12px;font-weight:700;color:${totPag >= totFat ? "#1A9E73" : "#E8A020"}">${totPag >= totFat ? "✅ Saldato" : `Da pagare: €${fmt(totFat - totPag)}`}</span>
-      </div>
-    </div>` : ""}
-
-    <div style="text-align:center;font-size:10px;color:#c7c7cc;margin-top:16px;padding:12px">
-      Pagina generata da MASTRO · ${new Date().toLocaleDateString("it-IT")}
-    </div>
-    </body></html>`;
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
-    return url;
-}
-

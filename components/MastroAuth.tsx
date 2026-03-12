@@ -36,7 +36,10 @@ export default function MastroAuth({ onAuth }: Props) {
   const [onbCognome, setOnbCognome] = useState("");
   const [onbPiva, setOnbPiva] = useState("");
   const [onbTelefono, setOnbTelefono] = useState("");
-  const [onbStep, setOnbStep] = useState(1); // 1: azienda, 2: personale
+  const [onbStep, setOnbStep] = useState(1); // 1: azienda, 2: settore, 3: personale
+  const [onbSettore, setOnbSettore] = useState("");
+  const [gdprAccettato, setGdprAccettato] = useState(false);
+  const [marketingAccettato, setMarketingAccettato] = useState(false);
 
   // Check existing session on mount — WITH TIMEOUT
   useEffect(() => {
@@ -146,15 +149,26 @@ export default function MastroAuth({ onAuth }: Props) {
       setOnbStep(2);
       return;
     }
+    if (onbStep === 2) {
+      if (!onbSettore) { setError("Seleziona il tuo settore"); return; }
+      setError("");
+      setOnbStep(3);
+      return;
+    }
+    if (!onbNome.trim()) { setError("Inserisci il tuo nome"); return; }
+    if (!gdprAccettato) { setError("Devi accettare la Privacy Policy per continuare"); return; }
     setError(""); setLoading(true);
-    try {
-      if (!onbNome.trim()) { setError("Inserisci il tuo nome"); setLoading(false); return; }
+    try {; setLoading(false); return; }
       const { data, error: err } = await supabase.rpc("onboard_new_user", {
         p_ragione: onbRagione.trim(),
         p_nome: onbNome.trim(),
         p_cognome: onbCognome.trim() || null,
         p_piva: onbPiva.trim() || null,
         p_telefono: onbTelefono.trim() || null,
+        p_settore: onbSettore || null,
+        p_gdpr_consent: true,
+        p_gdpr_timestamp: new Date().toISOString(),
+        p_marketing_consent: marketingAccettato,
       });
       if (err) throw err;
       // Reload profile
@@ -214,7 +228,7 @@ export default function MastroAuth({ onAuth }: Props) {
 
           {/* Progress */}
           <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-            {[1, 2].map(s => (
+            {[1, 2, 3].map(s => (
               <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: onbStep >= s ? T.acc : T.bdr, transition: "all 0.3s" }} />
             ))}
           </div>
@@ -238,6 +252,28 @@ export default function MastroAuth({ onAuth }: Props) {
                 style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: FF, marginBottom: 20, boxSizing: "border-box", outline: "none" }}
                 onFocus={e => e.target.style.borderColor = T.acc} onBlur={e => e.target.style.borderColor = T.bdr} />
             </>
+          ) : onbStep === 2 ? (
+            <>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 8 }}>🏗️ Il tuo settore</div>
+              <div style={{ fontSize: 12, color: T.sub, marginBottom: 20 }}>Determina i moduli e i campi attivi nel tuo account.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+                {[
+                  { id: "serramentista", label: "Serramentista", icon: "🪟", desc: "Finestre, porte, infissi" },
+                  { id: "fabbro", label: "Fabbro", icon: "⚙️", desc: "Cancelli, ringhiere, ferro" },
+                  { id: "tendaggi", label: "Tendaggi", icon: "🪄", desc: "Tende, tessuti, decorazioni" },
+                  { id: "zanzariere", label: "Zanzariere", icon: "🕸️", desc: "Reti, sistemi antiinsetto" },
+                  { id: "pergole", label: "Pergole", icon: "🌿", desc: "Pergole, gazebo, coperture" },
+                  { id: "altro", label: "Altro", icon: "🔧", desc: "Lavori generali" },
+                ].map(s => (
+                  <div key={s.id} onClick={() => setOnbSettore(s.id)}
+                    style={{ padding: "14px 12px", borderRadius: 12, border: `2px solid ${onbSettore === s.id ? T.acc : T.bdr}`, background: onbSettore === s.id ? T.accLt : T.card, cursor: "pointer", transition: "all 0.15s", textAlign: "center" }}>
+                    <div style={{ fontSize: 24, marginBottom: 6 }}>{s.icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: onbSettore === s.id ? T.acc : T.text }}>{s.label}</div>
+                    <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{s.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
             <>
               <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 16 }}>👤 I tuoi dati</div>
@@ -260,18 +296,61 @@ export default function MastroAuth({ onAuth }: Props) {
             </>
           )}
 
+          {/* ── GDPR Consenso — mostrato solo allo step 3 ── */}
+          {onbStep === 3 && (
+            <div style={{ marginBottom: 16 }}>
+              {/* Privacy Policy — obbligatoria */}
+              <div
+                onClick={() => setGdprAccettato(!gdprAccettato)}
+                style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${gdprAccettato ? T.acc : T.bdr}`, background: gdprAccettato ? T.accLt : T.card, cursor: "pointer", marginBottom: 8, transition: "all 0.15s" }}
+              >
+                <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${gdprAccettato ? T.acc : T.bdr}`, background: gdprAccettato ? T.acc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                  {gdprAccettato && <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>✓</span>}
+                </div>
+                <div style={{ fontSize: 12, color: T.text, lineHeight: 1.5 }}>
+                  Ho letto e accetto la{" "}
+                  <a href="https://mastro-erp.vercel.app/privacy" target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ color: T.acc, fontWeight: 700, textDecoration: "underline" }}>
+                    Privacy Policy
+                  </a>{" "}e i{" "}
+                  <a href="https://mastro-erp.vercel.app/termini" target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{ color: T.acc, fontWeight: 700, textDecoration: "underline" }}>
+                    Termini di Servizio
+                  </a>
+                  {" "}<span style={{ color: T.red, fontWeight: 700 }}>*</span>
+                </div>
+              </div>
+
+              {/* Marketing — opzionale */}
+              <div
+                onClick={() => setMarketingAccettato(!marketingAccettato)}
+                style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${marketingAccettato ? T.acc : T.bdr}`, background: marketingAccettato ? T.accLt : T.card, cursor: "pointer", transition: "all 0.15s" }}
+              >
+                <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${marketingAccettato ? T.acc : T.bdr}`, background: marketingAccettato ? T.acc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                  {marketingAccettato && <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>✓</span>}
+                </div>
+                <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.5 }}>
+                  Acconsento a ricevere aggiornamenti, novità e comunicazioni commerciali da MASTRO{" "}
+                  <span style={{ color: T.sub, fontSize: 11 }}>(opzionale)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && <div style={{ background: "#ff3b3010", border: "1px solid #ff3b3030", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: T.red, fontWeight: 600 }}>⚠️ {error}</div>}
 
           <div style={{ display: "flex", gap: 10 }}>
-            {onbStep === 2 && (
-              <button onClick={() => { setOnbStep(1); setError(""); }}
+            {onbStep > 1 && (
+              <button onClick={() => { setOnbStep(onbStep - 1); setError(""); }}
                 style={{ flex: 1, padding: "14px", borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, color: T.sub }}>
                 ← Indietro
               </button>
             )}
             <button onClick={handleOnboarding} disabled={loading}
               style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: `linear-gradient(135deg, ${T.acc}, #B8860B)`, color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "wait" : "pointer", fontFamily: FF, opacity: loading ? 0.7 : 1 }}>
-              {loading ? "Creazione..." : onbStep === 1 ? "Avanti →" : "🚀 Inizia a usare MASTRO"}
+              {loading ? "Creazione..." : onbStep < 3 ? "Avanti →" : "🚀 Inizia a usare MASTRO"}
             </button>
           </div>
         </div>

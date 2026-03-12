@@ -28,6 +28,24 @@ export default function HomePanel() {
   const [weekOffset, setWeekOffset] = React.useState(0);
   const touchStart = useRef({ x: 0, y: 0 });
 
+  // #06 — Meteo reale con geolocation
+  const [meteo, setMeteo] = React.useState<{ temp: number; citta: string } | null>(null);
+  React.useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const res = await fetch(`https://wttr.in/${coords.latitude},${coords.longitude}?format=j1`);
+          const data = await res.json();
+          const temp = Math.round(Number(data.current_condition[0].temp_C));
+          const citta = data.nearest_area[0].areaName[0].value;
+          setMeteo({ temp, citta });
+        } catch {}
+      },
+      () => {}
+    );
+  }, []);
+
   const todayISO = today.toISOString().split("T")[0];
   const h = today.getHours();
   const saluto = h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera";
@@ -121,11 +139,13 @@ export default function HomePanel() {
           <div><span style={{ fontSize: 15, fontWeight: 800, color: T.text, letterSpacing: "-0.02em" }}>MASTRO</span></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <I d={ICO.sun} s={18} c="#F5A623" />
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: T.text, fontFamily: FM, lineHeight: 1 }}>12°</div>
-            <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>Cosenza</div>
-          </div>
+          {meteo && <>
+            <I d={ICO.sun} s={18} c="#F5A623" />
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, fontFamily: FM, lineHeight: 1 }}>{meteo.temp}°</div>
+              <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>{meteo.citta}</div>
+            </div>
+          </>}
         </div>
       </div>
 
@@ -136,7 +156,7 @@ export default function HomePanel() {
             <div suppressHydrationWarning style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: "-0.03em" }}>{saluto}, Fabio</div>
             <div suppressHydrationWarning style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>{today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
           </div>
-          <div onClick={() => setHomeEditMode(e => !e)} style={{ padding: "5px 10px", borderRadius: 6, background: homeEditMode ? T.acc : T.bg, border: "1px solid " + (homeEditMode ? T.acc : T.bdr), fontSize: 10, fontWeight: 700, color: homeEditMode ? "#fff" : T.sub, cursor: "pointer" }}>{homeEditMode ? "✓ Fine" : "⋮ Riordina"}</div>
+          {/* #08 Riordina rimosso */}
         </div>
       </div>
 
