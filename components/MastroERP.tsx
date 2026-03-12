@@ -826,6 +826,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     const totVoci = (c.vociLibere || []).reduce((s, vl) => s + ((vl.importo || 0) * (vl.qta || 1)), 0);
     return totVani + totVoci;
   };
+  const countVani = () => cantieri.reduce((s, c) => s + getVaniAttivi(c).length, 0);
   // Fase reale calcolata da azioni (Centro Comando) — per PipelineBar
   const faseRealeCommessa = (c) => {
     const rilieviC = (c.rilievi || []);
