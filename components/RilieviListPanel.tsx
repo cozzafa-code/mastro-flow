@@ -286,7 +286,7 @@ export default function RilieviListPanel() {
       const incD = fattD.filter(f => f.pagata).reduce((s, f) => s + f.importo, 0);
       const costD = ordD.reduce((s, o) => s + (o.totaleIva || o.totale || 0), 0);
       const restD = totID - incD;
-      const fD = (n: number) => "€" + n.toLocaleString("it-IT", { minimumFractionDigits: 2 });
+      const fD = (n: number) => "€" + n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       // dossierTab is defined at component top level
 
       // Timeline events
@@ -769,7 +769,7 @@ ${msgsCm.length > 0 ? "<h2>💬 Comunicazioni (" + msgsCm.length + " conversazio
           const totIvaD = totPrev * (1 + (c.ivaPerc || 10) / 100);
           const incassato = fattCm.filter(f => f.pagata).reduce((s, f) => s + f.importo, 0);
           const costoForn = ordCm.reduce((s, o) => s + (o.totaleIva || o.totale || 0), 0);
-          const fmtE = (n: number) => "€" + n.toLocaleString("it-IT", { minimumFractionDigits: 2 });
+          const fmtE = (n: number) => "€" + n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           const docs: Array<{ico:string;nome:string;detail:string;col:string}> = [];
           rilievi.forEach(r => docs.push({ ico: "📏", nome: `Rilievo #${r.n} — ${r.tipo || "rilievo"}`, detail: `${(r.vani || []).length} vani · ${r.data || ""}`, col: T.blue }));
           if (c.firmaCliente) docs.push({ ico: "✍️", nome: "Preventivo Firmato", detail: c.dataFirma || "", col: T.grn });
@@ -876,7 +876,7 @@ ${msgsCm.length > 0 ? "<h2>💬 Comunicazioni (" + msgsCm.length + " conversazio
           const unicaPagata = fattureCommessa.find(f => f.tipo === "unica")?.pagata;
           const tuttoChiuso = (hasSaldo && saldoPagato) || (hasUnica && unicaPagata) || (c.fase === "chiusura" && incassato >= totIva) || (incassato >= totIva && fattureCommessa.length > 0 && fattureCommessa.every(f => f.pagata));
 
-          const fmt = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2 }) : "0,00";
+          const fmt = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00";
 
           const steps = [
             { id: "rilievo", icon: "📐", label: "Rilievo", done: hasRilievi,
@@ -1708,7 +1708,7 @@ ${msgsCm.length > 0 ? "<h2>💬 Comunicazioni (" + msgsCm.length + " conversazio
           const totPF = vaniPF.reduce((s, v) => s + calcolaVanoPrezzo(v, c), 0) + (c.vociLibere || []).reduce((s, vl) => s + ((vl.importo || 0) * (vl.qta || 1)), 0);
           const ivaPF = c.ivaPerc || 10;
           const totIvaPF = totPF * (1 + ivaPF / 100);
-          const fmtPF = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2 }) : "0,00";
+          const fmtPF = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00";
           return (
             <div style={{ margin: "8px 16px 0", background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
