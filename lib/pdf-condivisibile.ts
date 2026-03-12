@@ -27,7 +27,7 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
   const totIva = imponibile + iva;
   const acconto = parseFloat(c.accontoRicevuto || 0);
 
-  const fmt = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2 });
+  const fmt = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const righeHTML = vaniCalc.map((v: any, i: number) => {
     const m = v.misure || {};

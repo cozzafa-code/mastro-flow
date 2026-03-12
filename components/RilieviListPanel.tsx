@@ -747,7 +747,7 @@ ${msgsCm.length > 0 ? "<h2>💬 Comunicazioni (" + msgsCm.length + " conversazio
 
         {/* Info badges */}
         <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <PipelineBar fase={c.fase} />
+          <PipelineBar fase={c.fase} cm={c} />
         </div>
         <div style={{ padding: "0 16px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}

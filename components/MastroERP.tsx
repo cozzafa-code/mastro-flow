@@ -826,7 +826,25 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     const totVoci = (c.vociLibere || []).reduce((s, vl) => s + ((vl.importo || 0) * (vl.qta || 1)), 0);
     return totVani + totVoci;
   };
-  const countVani = () => cantieri.reduce((s, c) => s + getVaniAttivi(c).length, 0);
+  // Fase reale calcolata da azioni (Centro Comando) — per PipelineBar
+  const faseRealeCommessa = (c) => {
+    const rilieviC = (c.rilievi || []);
+    const vaniC = rilieviC.flatMap(r => r.vani || []);
+    const fattC = fattureDB.filter(f => f.cmId === c.id);
+    const ordC = ordiniFornDB.filter(o => o.cmId === c.id);
+    const montC = montaggiDB.filter(m => m.cmId === c.id);
+    const hasFirma = !!(c.firmaCliente || c.firmaClienteUrl);
+    if (fattC.some(f => f.tipo === "saldo" && f.pagata) || (fattC.some(f => f.tipo === "unica") && fattC.find(f => f.tipo === "unica")?.pagata)) return "chiusura";
+    if (montC.some(m => ["collaudo","chiuso"].includes(m.interventoStato || m.stato))) return "collaudo";
+    if (montC.some(m => ["programmato","in_corso","completato"].includes(m.interventoStato || m.stato || ""))) return "posa";
+    if (ordC.some(o => o.conferma?.ricevuta)) return "produzione";
+    if (ordC.length > 0) return "ordini";
+    if (hasFirma) return "conferma";
+    if (c.preventivoInviato) return "conferma";
+    if (vaniC.length > 0) return "preventivo";
+    if (rilieviC.length > 0) return "sopralluogo";
+    return c.fase || "sopralluogo";
+  };
   // Safety: ensure every cantiere has required fields
   const cantieriSafe = cantieri.filter(c => c && c.id && c.fase);
   if (cantieriSafe.length !== cantieri.length && cantieri.length > 0) {
@@ -1427,8 +1445,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   });
 
   /* ======= PIPELINE COMPONENT ======= */
-  const PipelineBar = ({ fase }) => {
-    const idx = faseIndex(fase);
+  const PipelineBar = ({ fase, cm = null }) => {
+    // Se viene passata la commessa, usa la fase reale calcolata dalle azioni
+    const faseEffettiva = cm ? faseRealeCommessa(cm) : fase;
+    const idx = faseIndex(faseEffettiva);
     return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 0, overflowX: "auto", padding: "8px 0", WebkitOverflowScrolling: "touch" }}>
         {PIPELINE.map((p, i) => {
@@ -1964,13 +1984,13 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     return annoPrev.length + 1;
   };
 
-  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica", importoManuale?: number) => {
+  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica") => {
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
     const importoBase = calcolaTotaleCommessa(c);
     const giaPagato = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s, f) => s + (f.importo || 0), 0);
-    const importo = importoManuale ?? (tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase);
+    const importo = tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase;
     const iva = 10; // serramenti = 10% se ristrutturazione, 22% se nuova costruzione
     const imponibile = Math.round(importo / (1 + iva / 100) * 100) / 100;
     const ivaAmt = importo - imponibile;
