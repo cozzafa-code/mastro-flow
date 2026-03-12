@@ -156,6 +156,13 @@ export function generaPreventivoPDF(c: any, ctx: any) {
       v.vociLibere.forEach((vl: any) => { tot += (vl.prezzo || 0) * (vl.qta || 1); });
     }
 
+    // Accessori da catalogo (maniglie, cerniere, cremonesi, ecc.)
+    if (v.accessoriCatalogo?.length > 0) {
+      v.accessoriCatalogo.forEach((a: any) => {
+        tot += (parseFloat(a.prezzoUnitario) || 0) * (a.quantita || 1);
+      });
+    }
+
     // Accessori
     const acc = v.accessori || {};
     const tapp = acc.tapparella; if (tapp?.attivo && c?.prezzoTapparella) { const tmq = ((tapp.l || lmm) / 1000) * ((tapp.h || hmm) / 1000); tot += tmq * parseFloat(c.prezzoTapparella); }
@@ -210,7 +217,7 @@ export function generaPreventivoPDF(c: any, ctx: any) {
       `€ ${fmt(v._calc.tot * (v.pezzi || 1))}`,
     ]);
 
-    // Righe accessori vano
+    // Righe accessori vano (tapparella/persiana/zanzariera)
     const acc = v._calc.acc || {};
     const accLabels: any = { tapparella: "Tapparella", persiana: "Persiana", zanzariera: "Zanzariera" };
     Object.entries(accLabels).forEach(([key, label]) => {
@@ -218,6 +225,27 @@ export function generaPreventivoPDF(c: any, ctx: any) {
       if (!a?.attivo) return;
       const aDesc = [String(label), a.colore ? `Colore: ${a.colore}` : "", a.l && a.h ? `${a.l}×${a.h}mm` : ""].filter(Boolean).join(" · ");
       rows.push(["", `  ↳ ${aDesc}`, String(v.pezzi || 1), "incluso", ""]);
+    });
+
+    // Righe accessori da catalogo (maniglie, cerniere, cremonesi, ecc.)
+    (v.accessoriCatalogo || []).forEach((a: any) => {
+      if (!a?.nome) return;
+      const aDesc = [
+        a.nome,
+        a.codice ? `(${a.codice})` : "",
+        a.colore ? `Colore: ${a.colore}` : "",
+        a.nota ? a.nota : "",
+      ].filter(Boolean).join(" · ");
+      const qta = (a.quantita || 1) * (v.pezzi || 1);
+      const pu = parseFloat(a.prezzoUnitario) || 0;
+      const tot = pu * qta;
+      rows.push([
+        "",
+        `  ↳ ${aDesc}`,
+        String(a.quantita || 1),
+        pu > 0 ? `€ ${fmt(pu)}` : "incluso",
+        pu > 0 ? `€ ${fmt(tot)}` : "",
+      ]);
     });
 
     // Voci libere vano
