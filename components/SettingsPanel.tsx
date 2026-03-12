@@ -223,30 +223,13 @@ function ListinoSettore({ titolo, emoji, storageKey, T, PRI, FF, fornitori, setF
                     style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${T.bdr}`,
                       fontSize: 12, fontFamily: FF, background: T.card, color: T.text }} />
                 </div>
-                {/* Fornitore dropdown */}
+                {/* Fornitore input */}
                 <div style={{ flex: "1 1 45%", minWidth: 120 }}>
                   <div style={{ fontSize: 9, color: T.sub, marginBottom: 3 }}>Fornitore</div>
-                  <select value={prod.fornitore || ""}
-                    onChange={e => {
-                      if (e.target.value === "__nuovo__") {
-                        let n; try { n = window.prompt("Nome nuovo fornitore:"); } catch(err) {}
-                        if (n?.trim()) {
-                          const newF = { id: "forn_" + Date.now(), nome: n.trim(), email: "", tel: "", piva: "", note: "" };
-                          setFornitori((prev: any[]) => [...prev, newF]);
-                          updateProdotto(prod.id, { fornitore: n.trim() });
-                        }
-                      } else {
-                        updateProdotto(prod.id, { fornitore: e.target.value });
-                      }
-                    }}
+                  <input value={prod.fornitore || ""} placeholder="es. Rollplast SRL"
+                    onChange={e => updateProdotto(prod.id, { fornitore: e.target.value })}
                     style={{ width: "100%", padding: "7px 9px", borderRadius: 7, border: `1px solid ${T.bdr}`,
-                      fontSize: 12, fontFamily: FF, background: T.card, color: T.text }}>
-                    <option value="">— Seleziona fornitore —</option>
-                    {(fornitori || []).map((fo: any) => (
-                      <option key={fo.id} value={fo.nome}>{fo.nome}</option>
-                    ))}
-                    <option value="__nuovo__">+ Crea nuovo fornitore...</option>
-                  </select>
+                      fontSize: 12, fontFamily: FF, background: T.card, color: T.text }} />
                 </div>
                 {/* Materiale */}
                 <div style={{ flex: "1 1 45%", minWidth: 120 }}>
