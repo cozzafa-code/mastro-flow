@@ -2,6 +2,7 @@ export const dynamic="force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getValidAccessToken, getTokens } from "../tokens";
 import { rateLimit, getClientIp, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
+import { logAudit, getIpFromRequest } from "@/lib/audit-log";
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
     });
     const data = await res.json();
     if (data.error) return NextResponse.json({ error: data.error.message }, { status: 500 });
+    await logAudit({ azienda_id: 'gmail', action: 'email_send', entity: 'gmail', details: { to, subject }, ip: getIpFromRequest(req) });
     return NextResponse.json({ success: true, id: data.id, threadId: data.threadId });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

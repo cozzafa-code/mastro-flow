@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import { rateLimit, getClientIp, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
+import { logAudit, getIpFromRequest } from "@/lib/audit-log";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,7 +60,8 @@ export async function POST(req: NextRequest) {
     if (member.pin_locked_at) {
       const lockAge = Date.now() - new Date(member.pin_locked_at).getTime();
       if (lockAge < 15 * 60 * 1000) { // 15 min lock
-        return NextResponse.json({ error: 'Account bloccato. Contatta l\'admin.', locked: true }, { status: 403 });
+        await logAudit({ azienda_id: azId, user_id: memberId, action: 'pin_lock', entity: 'team', entity_id: memberId, ip: getIpFromRequest(req) });
+  return NextResponse.json({ error: 'Account bloccato. Contatta l\'admin.', locked: true }, { status: 403 });
       }
       // Auto-unlock after 15min
       await supabase.from('team').update({ pin_locked_at: null, pin_attempts: 0 }).eq('id', memberId);
