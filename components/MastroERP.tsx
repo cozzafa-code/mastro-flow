@@ -123,6 +123,12 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [vetriDB, setVetriDB] = useState(VETRI_INIT);
   const [coprifiliDB, setCoprifiliDB] = useState(COPRIFILI_INIT);
   const [lamiereDB, setLamiereDB] = useState(LAMIERE_INIT);
+  // Listini per settore — struttura: { id, nome, euroMq, minimoMq, griglia: [{l,h,prezzo}] }
+  const [tapparelleListino, setTapparelleListino] = useState<any[]>([]);
+  const [persianeListino, setPersianeListino] = useState<any[]>([]);
+  const [zanzariereListino, setZanzariereListino] = useState<any[]>([]);
+  const [tendeListino, setTendeListino] = useState<any[]>([]);
+  const [pergoleListino, setPergoleListino] = useState<any[]>([]);
   const [libreriaDB, setLibreriaDB] = useState<any[]>([
     { id: 1, nome: "Controtelaio monoblocco", categoria: "Controtelaio", prezzo: 85, unita: "pz" },
     { id: 2, nome: "Davanzale marmo", categoria: "Davanzale", prezzo: 45, unita: "ml" },
@@ -755,13 +761,50 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     // Lamiera
     const lamRec = lamiereDB.find(l => l.cod === v.lamiera);
     if (lamRec?.prezzoMl) tot += lc * parseFloat(lamRec.prezzoMl);
-    // Accessori — fallback: prezzo commessa → listino globale azienda → 0
-    const pTapp = parseFloat(c?.prezzoTapparella || aziendaInfo?.prezzoTapparella || 0);
-    const pPers = parseFloat(c?.prezzoPersiana || aziendaInfo?.prezzoPersiana || 0);
-    const pZanz = parseFloat(c?.prezzoZanzariera || aziendaInfo?.prezzoZanzariera || 0);
-    const tapp = v.accessori?.tapparella; if (tapp?.attivo && pTapp > 0) { const tmq = ((tapp.l || lmm) / 1000) * ((tapp.h || hmm) / 1000); tot += tmq * pTapp; }
-    const pers = v.accessori?.persiana; if (pers?.attivo && pPers > 0) { const pmq = ((pers.l || lmm) / 1000) * ((pers.h || hmm) / 1000); tot += pmq * pPers; }
-    const zanz = v.accessori?.zanzariera; if (zanz?.attivo && pZanz > 0) { const zmq = ((zanz.l || lmm) / 1000) * ((zanz.h || hmm) / 1000); tot += zmq * pZanz; }
+    // Accessori — calcolo prezzo da listino settore o fallback globale
+    // Helper: cerca prezzo in listino settore (griglia L×H o €/mq con minimo)
+    const getListinoPrice = (listino: any[], lmm: number, hmm: number) => {
+      if (!listino?.length) return null;
+      const mq = (lmm / 1000) * (hmm / 1000);
+      // Prova griglia L×H per ogni prodotto del listino (usa il primo match)
+      for (const prod of listino) {
+        if (prod.griglia?.length) {
+          const match = prod.griglia.find((g: any) => g.l >= lmm && g.h >= hmm);
+          if (match) return match.prezzo;
+          const last = prod.griglia[prod.griglia.length - 1];
+          if (last) return last.prezzo;
+        }
+        if (prod.euroMq > 0) {
+          const mqCalc = prod.minimoMq > 0 && mq < prod.minimoMq ? prod.minimoMq : mq;
+          return mqCalc * prod.euroMq;
+        }
+      }
+      return null;
+    };
+    const tapp = v.accessori?.tapparella;
+    if (tapp?.attivo) {
+      const tl = tapp.l || lmm, th = tapp.h || hmm;
+      const fromListino = getListinoPrice(tapparelleListino, tl, th);
+      const fallback = parseFloat(c?.prezzoTapparella || aziendaInfo?.prezzoTapparella || 0);
+      const p = fromListino ?? (fallback > 0 ? (tl/1000)*(th/1000)*fallback : 0);
+      tot += p;
+    }
+    const pers = v.accessori?.persiana;
+    if (pers?.attivo) {
+      const pl = pers.l || lmm, ph = pers.h || hmm;
+      const fromListino = getListinoPrice(persianeListino, pl, ph);
+      const fallback = parseFloat(c?.prezzoPersiana || aziendaInfo?.prezzoPersiana || 0);
+      const p = fromListino ?? (fallback > 0 ? (pl/1000)*(ph/1000)*fallback : 0);
+      tot += p;
+    }
+    const zanz = v.accessori?.zanzariera;
+    if (zanz?.attivo) {
+      const zl = zanz.l || lmm, zh = zanz.h || hmm;
+      const fromListino = getListinoPrice(zanzariereListino, zl, zh);
+      const fallback = parseFloat(c?.prezzoZanzariera || aziendaInfo?.prezzoZanzariera || 0);
+      const p = fromListino ?? (fallback > 0 ? (zl/1000)*(zh/1000)*fallback : 0);
+      tot += p;
+    }
     // Controtelaio — da listino globale
     const pCT = parseFloat(aziendaInfo?.prezzoControtelaio || 0);
     if (v.controtelaio && v.controtelaio !== "Nessuno" && pCT > 0) tot += pCT;
@@ -2658,6 +2701,8 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     team, setTeam, coloriDB, setColoriDB, sistemiDB, setSistemiDB,
     vetriDB, setVetriDB, coprifiliDB, setCoprifiliDB,
     lamiereDB, setLamiereDB, libreriaDB, setLibreriaDB,
+    tapparelleListino, setTapparelleListino, persianeListino, setPersianeListino,
+    zanzariereListino, setZanzariereListino, tendeListino, setTendeListino, pergoleListino, setPergoleListino,
     telaiPersianaDB, setTelaiPersianaDB, posPersianaDB, setPosPersianaDB,
     tipoMisuraDB, setTipoMisuraDB, tipoMisuraTappDB, setTipoMisuraTappDB,
     tipoMisuraZanzDB, setTipoMisuraZanzDB, tipoCassonettoDB, setTipoCassonettoDB,
