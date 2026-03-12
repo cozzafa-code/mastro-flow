@@ -1964,13 +1964,13 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     return annoPrev.length + 1;
   };
 
-  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica") => {
+  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica", importoManuale?: number) => {
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
     const importoBase = calcolaTotaleCommessa(c);
     const giaPagato = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s, f) => s + (f.importo || 0), 0);
-    const importo = tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase;
+    const importo = importoManuale ?? (tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase);
     const iva = 10; // serramenti = 10% se ristrutturazione, 22% se nuova costruzione
     const imponibile = Math.round(importo / (1 + iva / 100) * 100) / 100;
     const ivaAmt = importo - imponibile;

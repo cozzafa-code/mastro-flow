@@ -4,7 +4,7 @@
 // MASTRO ERP — PreventivoModal
 // Estratto S2: ~569 righe (Modale Preventivo completa)
 // ═══════════════════════════════════════════════════════════
-import React from "react";
+import React, { useState } from "react";
 import { useMastro } from "./MastroContext";
 import { FM, tipoToMinCat, TIPOLOGIE_RAPIDE } from "./mastro-constants";
 
@@ -33,6 +33,21 @@ export default function PreventivoModal() {
     if (!showPreventivoModal || !selectedCM) return null;
     const c = selectedCM;
     const updateCMp = (field, val) => { setCantieri(cs=>cs.map(x=>x.id===c.id?{...x,[field]:val}:x)); setSelectedCM(p=>({...p,[field]:val})); };
+    // Modal importo fattura
+    const [fatturaModal, setFatturaModal] = useState<{tipo:string,importo:string}|null>(null);
+    const totCommessa = calcolaTotaleCommessa(c);
+    const apriModalFattura = (tipo: string) => {
+      const suggerito = tipo === "acconto" ? Math.round(totCommessa * 0.3).toString() : tipo === "saldo" ? Math.round(totCommessa * 0.7).toString() : Math.round(totCommessa).toString();
+      setFatturaModal({ tipo, importo: suggerito });
+    };
+    const confermaFattura = () => {
+      if (!fatturaModal) return;
+      const importo = parseFloat(fatturaModal.importo);
+      if (!importo || importo <= 0) return;
+      const f = creaFattura(c, fatturaModal.tipo, importo);
+      generaFatturaPDF(f);
+      setFatturaModal(null);
+    };
     const calcolaVano = (v) => {
       const m=v.misure||{}; const lc=(m.lCentro||0)/1000,hc=(m.hCentro||0)/1000; const lmm=m.lCentro||0,hmm=m.hCentro||0; const mq=lc*hc,perim=2*(lc+hc);
       const settore = TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.settore || "serramenti";
@@ -273,9 +288,9 @@ export default function PreventivoModal() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" }}>💰 Fatturazione</div>
                 <div style={{ display: "flex", gap: 4 }}>
-                  <button onClick={() => { const f = creaFattura(c, "acconto"); generaFatturaPDF(f); }} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid #ff9500`, background: "#ff950015", color: "#ff9500", fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Acconto</button>
-                  <button onClick={() => { const f = creaFattura(c, "saldo"); generaFatturaPDF(f); }} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid #34c759`, background: "#34c75915", color: "#34c759", fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Saldo</button>
-                  <button onClick={() => { const f = creaFattura(c, "unica"); generaFatturaPDF(f); }} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid #007aff`, background: "#007aff15", color: "#007aff", fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Unica</button>
+                  <button onClick={() => apriModalFattura("acconto")} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid #ff9500`, background: "#ff950015", color: "#ff9500", fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Acconto</button>
+                  <button onClick={() => apriModalFattura("saldo")} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid #34c759`, background: "#34c75915", color: "#34c759", fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Saldo</button>
+                  <button onClick={() => apriModalFattura("unica")} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid #007aff`, background: "#007aff15", color: "#007aff", fontSize: 9, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Unica</button>
                 </div>
               </div>
               {fattureDB.filter(f => f.cmId === c.id).length > 0 ? (
@@ -656,6 +671,34 @@ export default function PreventivoModal() {
           </div>
         </div>
       </div>
+
+      {/* ── Modal importo fattura ── */}
+      {fatturaModal && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:600,display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={e=>e.target===e.currentTarget&&setFatturaModal(null)}>
+          <div style={{background:T.card,borderRadius:20,padding:24,width:"100%",maxWidth:340,boxShadow:"0 20px 60px rgba(0,0,0,0.4)"}}>
+            <div style={{fontSize:16,fontWeight:800,marginBottom:4}}>
+              {fatturaModal.tipo==="acconto"?"Fattura Acconto":fatturaModal.tipo==="saldo"?"Fattura Saldo":"Fattura Unica"}
+            </div>
+            <div style={{fontSize:11,color:T.sub,marginBottom:20}}>Totale commessa: <b style={{color:T.text}}>€{Math.round(totCommessa).toLocaleString("it-IT")}</b></div>
+            <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:6,textTransform:"uppercase"}}>Importo fattura (€)</div>
+            <input
+              type="number"
+              autoFocus
+              value={fatturaModal.importo}
+              onChange={e=>setFatturaModal(f=>f?{...f,importo:e.target.value}:null)}
+              onKeyDown={e=>e.key==="Enter"&&confermaFattura()}
+              style={{width:"100%",padding:"14px 16px",borderRadius:12,border:"2px solid "+T.acc,fontSize:22,fontWeight:800,textAlign:"right",boxSizing:"border-box",fontFamily:FM,background:T.bg,color:T.text,marginBottom:16}}
+            />
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setFatturaModal(null)} style={{flex:1,padding:14,borderRadius:12,border:"1px solid "+T.bdr,background:T.bg,color:T.sub,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Annulla</button>
+              <button onClick={confermaFattura}
+                style={{flex:2,padding:14,borderRadius:12,border:"none",background:fatturaModal.tipo==="acconto"?"#ff9500":fatturaModal.tipo==="saldo"?"#34c759":"#007aff",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                Genera PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     );
 
 }
