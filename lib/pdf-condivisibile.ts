@@ -44,12 +44,45 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
       colori,
     ].filter(Boolean).join(" · ");
 
-    // Accessori su sub-riga
+    // Accessori su sub-riga — legge struttura con/senza .attivo
     const acc = v.accessori || {};
     const accList: string[] = [];
-    if (acc.tapparella?.attivo) accList.push(`Tapparella${acc.tapparella.colore ? " " + acc.tapparella.colore : ""}${acc.tapparella.azionamento ? " – " + acc.tapparella.azionamento : ""}`);
-    if (acc.persiana?.attivo) accList.push(`Persiana${acc.persiana.tipo ? " " + acc.persiana.tipo : ""}${acc.persiana.colore ? " " + acc.persiana.colore : ""}`);
-    if (acc.zanzariera?.attivo) accList.push(`Zanzariera${acc.zanzariera.tipo ? " " + acc.zanzariera.tipo : ""}`);
+    // Tapparella
+    const tapp = acc.tapparella;
+    if (tapp && (tapp.attivo || tapp === true)) {
+      const parts = ["Tapparella"];
+      if (tapp.tipo) parts.push(tapp.tipo);
+      if (tapp.colore) parts.push(tapp.colore);
+      if (tapp.azionamento) parts.push(tapp.azionamento);
+      if (tapp.l && tapp.h) parts.push(`${tapp.l}×${tapp.h} mm`);
+      accList.push(parts.join(" "));
+    }
+    // Persiana
+    const pers = acc.persiana;
+    if (pers && (pers.attivo || pers === true)) {
+      const parts = ["Persiana"];
+      if (pers.tipo) parts.push(pers.tipo);
+      if (pers.colore) parts.push(pers.colore);
+      accList.push(parts.join(" "));
+    }
+    // Zanzariera
+    const zanz = acc.zanzariera;
+    if (zanz && (zanz.attivo || zanz === true)) {
+      const parts = ["Zanzariera"];
+      if (zanz.tipo) parts.push(zanz.tipo);
+      if (zanz.colore) parts.push(zanz.colore);
+      accList.push(parts.join(" "));
+    }
+    // Controtelaio
+    if (v.controtelaio) accList.push(`Controtelaio`);
+    // Accessori catalogo aggiuntivi
+    (v.accessoriCatalogo || []).forEach((ac: any) => {
+      if (ac.nome) accList.push(`${ac.quantita > 1 ? ac.quantita + "× " : ""}${ac.nome}${ac.colore ? " " + ac.colore : ""}`);
+    });
+    // Voci libere vano
+    (v.vociLibere || []).forEach((vl: any) => {
+      if (vl.desc) accList.push(vl.desc);
+    });
     const accHTML = accList.length > 0
       ? `<div style="font-size:11px;color:#86868b;margin-top:3px;">↳ ${accList.join(" · ")}</div>`
       : "";
@@ -77,13 +110,22 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
       <td class="num bold">€ ${fmt((vl.importo || 0) * (vl.qta || 1))}</td>
     </tr>`).join("");
 
-  // ─── Condizioni commerciali ───
-  const condizioniHTML = (c.condPagamento || c.tempiConsegna || c.garanzia || c.dataPrevConsegna) ? `
+  // ─── Condizioni commerciali — prima da Settings azienda, poi da commessa ───
+  const condPag = az.condPagamento || c.condPagamento || "";
+  const condConsegna = az.condConsegna || c.tempiConsegna || "";
+  const condFornitura = az.condFornitura || "";
+  const condContratto = az.condContratto || c.garanzia || "";
+  const condDettagli = az.condDettagli || "";
+  const dataPrevConsegna = c.dataPrevConsegna || "";
+
+  const condizioniHTML = (condPag || condConsegna || condFornitura || condContratto || condDettagli || dataPrevConsegna) ? `
     <div class="condizioni-grid">
-      ${c.condPagamento ? `<div class="cond-item"><div class="label">Modalità di pagamento</div><div class="cond-val">${c.condPagamento}</div></div>` : ""}
-      ${c.tempiConsegna ? `<div class="cond-item"><div class="label">Tempi di consegna</div><div class="cond-val">${c.tempiConsegna}</div></div>` : ""}
-      ${c.garanzia ? `<div class="cond-item"><div class="label">Garanzia</div><div class="cond-val">${c.garanzia}</div></div>` : ""}
-      ${c.dataPrevConsegna ? `<div class="cond-item"><div class="label">Data prevista consegna</div><div class="cond-val">${new Date(c.dataPrevConsegna).toLocaleDateString("it-IT")}</div></div>` : ""}
+      ${condPag ? `<div class="cond-item"><div class="label">💳 Condizioni di pagamento</div><div class="cond-val" style="white-space:pre-wrap">${condPag}</div></div>` : ""}
+      ${condConsegna ? `<div class="cond-item"><div class="label">📦 Tempi di consegna</div><div class="cond-val" style="white-space:pre-wrap">${condConsegna}</div></div>` : ""}
+      ${condFornitura ? `<div class="cond-item"><div class="label">📋 Condizioni di fornitura</div><div class="cond-val" style="white-space:pre-wrap">${condFornitura}</div></div>` : ""}
+      ${condContratto ? `<div class="cond-item"><div class="label">🛡 Garanzia e contratto</div><div class="cond-val" style="white-space:pre-wrap">${condContratto}</div></div>` : ""}
+      ${condDettagli ? `<div class="cond-item" style="grid-column:1/-1"><div class="label">📄 Documenti alla consegna</div><div class="cond-val" style="white-space:pre-wrap">${condDettagli}</div></div>` : ""}
+      ${dataPrevConsegna ? `<div class="cond-item"><div class="label">📅 Data prevista consegna</div><div class="cond-val">${new Date(dataPrevConsegna).toLocaleDateString("it-IT")}</div></div>` : ""}
     </div>` : "";
 
   // ─── Note ───
