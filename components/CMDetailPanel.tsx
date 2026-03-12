@@ -2271,7 +2271,44 @@ export default function CMDetailPanel() {
                 </div>
               ) : (<div onClick={() => setCcConfirm("addVoce")} style={{ padding: 12, textAlign: "center", fontSize: 12, color: T.acc, fontWeight: 700, cursor: "pointer" }}>+ Aggiungi voce</div>)}
 
-              <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)} rows={3} placeholder="Condizioni, tempi, garanzie..." style={{ ...inputPw, resize: "vertical" as any, lineHeight: 1.5, marginTop: 8 }} />
+              {/* ── Condizioni strutturate ── */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8, marginBottom: 8 }}>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" }}>Modalità pagamento</div>
+                  <select value={c.condPagamento || ""} onChange={e => updCM("condPagamento", e.target.value)} style={inputPw}>
+                    <option value="">— Seleziona —</option>
+                    <option value="30% acconto, saldo a consegna">30% acconto, saldo a consegna</option>
+                    <option value="50% acconto, 50% a consegna">50% acconto, 50% a consegna</option>
+                    <option value="100% a consegna">100% a consegna</option>
+                    <option value="Bonifico 30 giorni">Bonifico 30 giorni</option>
+                    <option value="Contanti">Contanti</option>
+                    <option value="Da concordare">Da concordare</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" }}>Tempi di consegna</div>
+                  <select value={c.tempiConsegna || ""} onChange={e => updCM("tempiConsegna", e.target.value)} style={inputPw}>
+                    <option value="">— Seleziona —</option>
+                    <option value="2-3 settimane">2-3 settimane</option>
+                    <option value="4-6 settimane">4-6 settimane</option>
+                    <option value="6-8 settimane">6-8 settimane</option>
+                    <option value="8-10 settimane">8-10 settimane</option>
+                    <option value="10-12 settimane">10-12 settimane</option>
+                    <option value="Da concordare">Da concordare</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" }}>Garanzia</div>
+                <select value={c.garanzia || ""} onChange={e => updCM("garanzia", e.target.value)} style={inputPw}>
+                  <option value="">— Seleziona —</option>
+                  <option value="2 anni manodopera, 10 anni profili">2 anni manodopera, 10 anni profili</option>
+                  <option value="5 anni manodopera, 10 anni profili">5 anni manodopera, 10 anni profili</option>
+                  <option value="Garanzia di legge 2 anni">Garanzia di legge 2 anni</option>
+                  <option value="Da concordare">Da concordare</option>
+                </select>
+              </div>
+              <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)} rows={2} placeholder="Note aggiuntive, clausole speciali..." style={{ ...inputPw, resize: "vertical" as any, lineHeight: 1.5 }} />
 
               {/* ═══ CTA AZIONI PREVENTIVO ═══ */}
               {pwVani.length > 0 && (
@@ -2372,7 +2409,15 @@ export default function CMDetailPanel() {
                 </>)}
               </div>
 
-              {c.notePreventivo && (<div style={{ marginTop: 12, padding: 12, background: T.bg, borderRadius: 10, fontSize: 10, color: T.sub, lineHeight: 1.6, whiteSpace: "pre-wrap" as any }}><div style={{ fontWeight: 700, color: T.text, marginBottom: 4 }}>NOTE E CONDIZIONI</div>{c.notePreventivo}</div>)}
+              {(c.condPagamento || c.tempiConsegna || c.garanzia || c.notePreventivo) && (
+                <div style={{ marginTop: 12, padding: 12, background: T.bg, borderRadius: 10, fontSize: 10, color: T.sub, lineHeight: 1.8 }}>
+                  <div style={{ fontWeight: 700, color: T.text, marginBottom: 4 }}>CONDIZIONI</div>
+                  {c.condPagamento && <div>💳 Pagamento: <b style={{ color: T.text }}>{c.condPagamento}</b></div>}
+                  {c.tempiConsegna && <div>📦 Consegna: <b style={{ color: T.text }}>{c.tempiConsegna}</b></div>}
+                  {c.garanzia && <div>🛡 Garanzia: <b style={{ color: T.text }}>{c.garanzia}</b></div>}
+                  {c.notePreventivo && <div style={{ marginTop: 6, whiteSpace: "pre-wrap" as any }}>{c.notePreventivo}</div>}
+                </div>
+              )}
 
               <div style={{ marginTop: 16, display: "flex", gap: 8, marginBottom: 8 }}>
                 <button onClick={() => generaPreventivoPDF(c)} style={{ flex: 1, padding: 14, borderRadius: 10, background: `${T.acc}10`, color: T.acc, border: `1.5px solid ${T.acc}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
