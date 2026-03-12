@@ -549,26 +549,15 @@ export default function VanoDetailPanel() {
               </div>
             },
             { id:"posizione", icon:"🏠", label:"Stanza / Piano",
-              badge: v.stanza?`${v.stanza} · ${v.piano}`:null, filled: [v.stanza, v.piano].filter(Boolean).length, total: 2,
+              badge: v.stanza?`${v.stanza}`:null, filled: [v.stanza].filter(Boolean).length, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px"}}>STANZA</div>
                   <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                     {["Soggiorno","Cucina","Camera","Cameretta","Bagno","Studio","Ingresso","Corridoio","Altro"].map(x=>(
-                      <div key={x} onClick={()=>{const others=(selectedRilievo?.vani||[]).filter(vn=>vn.id!==v.id);const cnt=others.filter(vn=>vn.stanza===x||vn.stanza?.startsWith(x+" ")).length;updateV("stanza",cnt>0?x+" "+(cnt+1):x);if(v.piano)setTimeout(()=>flashAndAdvance("posizione"),150);}}
+                      <div key={x} onClick={()=>{const others=(selectedRilievo?.vani||[]).filter(vn=>vn.id!==v.id);const cnt=others.filter(vn=>vn.stanza===x||vn.stanza?.startsWith(x+" ")).length;updateV("stanza",cnt>0?x+" "+(cnt+1):x);setTimeout(()=>flashAndAdvance("posizione"),150);}}
                         style={{padding:"7px 12px",borderRadius:8,border:"2px solid "+(v.stanza===x?T.acc:T.bdr),background:v.stanza===x?T.accLt:T.card,fontSize:12,fontWeight:v.stanza===x?700:500,color:v.stanza===x?T.acc:T.text,cursor:"pointer",transition:"all 0.15s"}}>
                         {x}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px"}}>PIANO</div>
-                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                    {pianiList.map(p=>(
-                      <div key={p} onClick={()=>{updateV("piano",p);if(v.stanza)setTimeout(()=>flashAndAdvance("posizione"),150);}}
-                        style={{padding:"7px 10px",borderRadius:8,border:"2px solid "+(v.piano===p?T.blu:T.bdr),background:v.piano===p?T.blu+"12":T.card,fontSize:11,fontWeight:v.piano===p?700:500,color:v.piano===p?T.blu:T.text,cursor:"pointer",transition:"all 0.15s"}}>
-                        {p==="PT"?"PT Terra":p==="S1"?"S1":p==="S2"?"S2":p==="M"?"Mans.":p}
                       </div>
                     ))}
                   </div>
@@ -1555,37 +1544,65 @@ export default function VanoDetailPanel() {
                           }} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", background: (voce.tipo||"generico")===t.id ? t.color+"18" : T.bg, color: (voce.tipo||"generico")===t.id ? t.color : T.sub, border: `1px solid ${(voce.tipo||"generico")===t.id ? t.color+"50" : T.bdr}` }}>{t.label}</div>
                         ))}
                       </div>
-                      {/* Campi vetro */}
+                      {/* Campi vetro — da catalogo */}
                       {(voce.tipo === "vetro") && (
-                        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Larghezza mm</label>
-                            <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" placeholder="0" defaultValue={voce.larghezza || ""} onBlur={e => {
-                              const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], larghezza: parseInt(e.target.value) || 0 };
-                              updateVanoField(v.id, "vociLibere", newVoci);
-                            }} />
+                        <div style={{ marginBottom: 8 }}>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Vetro da catalogo</label>
+                          <select style={{ ...S.select, fontSize: 12, marginBottom: 6 }} value={voce.vetroCode || ""} onChange={e => {
+                            const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], vetroCode: e.target.value };
+                            updateVanoField(v.id, "vociLibere", newVoci);
+                          }}>
+                            <option value="">— Seleziona vetro —</option>
+                            {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}{g.ug ? ` · Ug ${g.ug}` : ""}</option>)}
+                          </select>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Larghezza mm</label>
+                              <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" placeholder="0" defaultValue={voce.larghezza || ""} onBlur={e => {
+                                const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], larghezza: parseInt(e.target.value) || 0 };
+                                updateVanoField(v.id, "vociLibere", newVoci);
+                              }} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Altezza mm</label>
+                              <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" placeholder="0" defaultValue={voce.altezza || ""} onBlur={e => {
+                                const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], altezza: parseInt(e.target.value) || 0 };
+                                updateVanoField(v.id, "vociLibere", newVoci);
+                              }} />
+                            </div>
+                            {voce.larghezza > 0 && voce.altezza > 0 && <div style={{ fontSize: 10, color: "#3B7FE0", fontWeight: 700, alignSelf: "flex-end", paddingBottom: 8 }}>{((voce.larghezza * voce.altezza) / 1000000).toFixed(3)} mq</div>}
                           </div>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Altezza mm</label>
-                            <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" placeholder="0" defaultValue={voce.altezza || ""} onBlur={e => {
-                              const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], altezza: parseInt(e.target.value) || 0 };
-                              updateVanoField(v.id, "vociLibere", newVoci);
-                            }} />
-                          </div>
-                          {voce.larghezza > 0 && voce.altezza > 0 && <div style={{ fontSize: 10, color: "#3B7FE0", fontWeight: 700, alignSelf: "flex-end", paddingBottom: 8 }}>{((voce.larghezza * voce.altezza) / 1000000).toFixed(3)} mq</div>}
                         </div>
                       )}
-                      {/* Campi coprifilo/lamiera */}
+                      {/* Campi coprifilo — da catalogo */}
                       {(voce.tipo === "coprifilo") && (
-                        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                        <div style={{ marginBottom: 8 }}>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Coprifilo da catalogo</label>
+                          <select style={{ ...S.select, fontSize: 12, marginBottom: 6 }} value={voce.coprifiloCode || ""} onChange={e => {
+                            const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], coprifiloCode: e.target.value };
+                            updateVanoField(v.id, "vociLibere", newVoci);
+                          }}>
+                            <option value="">— Seleziona coprifilo —</option>
+                            {coprifiliDB.map(c => <option key={c.id} value={c.cod}>{c.cod}</option>)}
+                          </select>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Lamiera da catalogo</label>
+                          <select style={{ ...S.select, fontSize: 12, marginBottom: 6 }} value={voce.lamieraCode || ""} onChange={e => {
+                            const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], lamieraCode: e.target.value };
+                            updateVanoField(v.id, "vociLibere", newVoci);
+                          }}>
+                            <option value="">— Seleziona lamiera —</option>
+                            {lamiereDB.map(l => <option key={l.id} value={l.cod}>{l.cod}</option>)}
+                          </select>
                           <div style={{ flex: 1 }}>
                             <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Lunghezza mm</label>
-                            <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" placeholder="0" defaultValue={voce.lunghezza || ""} onBlur={e => {
-                              const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], lunghezza: parseInt(e.target.value) || 0 };
-                              updateVanoField(v.id, "vociLibere", newVoci);
-                            }} />
+                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                              <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" placeholder="0" defaultValue={voce.lunghezza || ""} onBlur={e => {
+                                const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], lunghezza: parseInt(e.target.value) || 0 };
+                                updateVanoField(v.id, "vociLibere", newVoci);
+                              }} />
+                              {voce.lunghezza > 0 && <div style={{ fontSize: 10, color: "#8B5CF6", fontWeight: 700, whiteSpace: "nowrap" }}>{(voce.lunghezza / 1000).toFixed(2)} ml</div>}
+                            </div>
                           </div>
-                          {voce.lunghezza > 0 && <div style={{ fontSize: 10, color: "#8B5CF6", fontWeight: 700, alignSelf: "flex-end", paddingBottom: 8 }}>{(voce.lunghezza / 1000).toFixed(2)} ml</div>}
                         </div>
                       )}
                       {/* Foto */}
@@ -2076,6 +2093,10 @@ export default function VanoDetailPanel() {
                       ]} />
                     )}
 
+                    {/* Accessori da catalogo */}
+                    {v.accessoriCatalogo && v.accessoriCatalogo.length > 0 && (
+                      <Sec title="ACCESSORI CATALOGO" color="#8B5CF6" icon="🏷" rows={v.accessoriCatalogo.map(a => [`${a.nome}`, `×${a.quantita} · €${((a.prezzoUnitario||0)*(a.quantita||1)).toFixed(0)}`])} />
+                    )}
                     {/* Voci libere */}
                     {v.vociLibere && v.vociLibere.length > 0 && (
                       <Sec title="VOCI LIBERE" color="#E8A020" icon="📄" rows={v.vociLibere.map(vl => {
