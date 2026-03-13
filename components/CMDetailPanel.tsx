@@ -2351,7 +2351,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                    <button onClick={() => { if(!pwBloccato) generaPreventivoPDF(c); }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pwBloccato ? "#DC444415" : `${T.acc}10`, color: pwBloccato ? "#DC4444" : T.acc, border: `1.5px solid ${pwBloccato ? "#DC444460" : T.acc}`, fontSize: 13, fontWeight: 800, cursor: pwBloccato ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: pwBloccato ? 0.7 : 1 }}><I d={ICO.fileText} /> {pwBloccato ? "🔒 Misure" : "Scarica PDF"}</button>
+                    <button onClick={async () => { if(!pwBloccato) await generaPreventivoPDF(c); }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pwBloccato ? "#DC444415" : `${T.acc}10`, color: pwBloccato ? "#DC4444" : T.acc, border: `1.5px solid ${pwBloccato ? "#DC444460" : T.acc}`, fontSize: 13, fontWeight: 800, cursor: pwBloccato ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: pwBloccato ? 0.7 : 1 }}><I d={ICO.fileText} /> {pwBloccato ? "🔒 Misure" : "Scarica PDF"}</button>
                     <button onClick={() => generaPreventivoCondivisibile(c)} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
                   </div>
                   {/* Step 1: Genera link + PDF + WhatsApp */}
