@@ -547,24 +547,87 @@ export default function CMDetailPanel() {
                 const lv = v.misure?.lCentro || v.larghezza || v.l || 0;
                 const hv = v.misure?.hCentro || v.altezza || v.h || 0;
                 const acc = v.accessori || {};
+                const pezzi = v.pezzi || 1;
+                const lmm = v.misure?.lCentro || 0, hmm = v.misure?.hCentro || 0;
+                const az = aziendaInfo || {};
+
+                // ── Calcolo prezzi singoli accessori ──
+                const accVoci: { label: string; prezzo: number; qta: number }[] = [];
+                const tapp = acc.tapparella;
+                if (tapp?.attivo) {
+                  const pTappMq = parseFloat(az.prezzoTapparella || c.prezzoTapparella || 0);
+                  const pT = pTappMq > 0 ? Math.round(((tapp.l || lmm) / 1000) * ((tapp.h || hmm) / 1000) * pTappMq * 100) / 100 : 0;
+                  const desc = ["Tapparella", tapp.tipo, tapp.colore, tapp.azionamento, tapp.motorizzata ? "Mot." : null].filter(Boolean).join(" ");
+                  accVoci.push({ label: desc, prezzo: pT, qta: pezzi });
+                }
+                const pers = acc.persiana;
+                if (pers?.attivo) {
+                  const pPersMq = parseFloat(az.prezzoPersiana || c.prezzoPersiana || 0);
+                  const pP = pPersMq > 0 ? Math.round(((pers.l || lmm) / 1000) * ((pers.h || hmm) / 1000) * pPersMq * 100) / 100 : 0;
+                  accVoci.push({ label: ["Persiana", pers.tipo, pers.colore].filter(Boolean).join(" "), prezzo: pP, qta: pezzi });
+                }
+                const zanz = acc.zanzariera;
+                if (zanz?.attivo) {
+                  const pZanzMq = parseFloat(az.prezzoZanzariera || c.prezzoZanzariera || 0);
+                  const pZ = pZanzMq > 0 ? Math.round(((zanz.l || lmm) / 1000) * ((zanz.h || hmm) / 1000) * pZanzMq * 100) / 100 : 0;
+                  accVoci.push({ label: ["Zanzariera", zanz.tipo, zanz.colore].filter(Boolean).join(" "), prezzo: pZ, qta: pezzi });
+                }
+                if (v.controtelaio && v.controtelaio !== "Nessuno") {
+                  const pCT = parseFloat(az.prezzoControtelaio || 0);
+                  accVoci.push({ label: `Controtelaio ${v.controtelaio}`, prezzo: pCT, qta: pezzi });
+                }
+                const pPosa = parseFloat(az.prezzoPosaVano || 0);
+                if (pPosa > 0 && az.includePosaInPreventivo) {
+                  accVoci.push({ label: "Posa in opera", prezzo: pPosa, qta: pezzi });
+                }
+                (v.accessoriCatalogo || []).forEach((a: any) => {
+                  if (!a?.nome) return;
+                  const label = [a.nome, a.codice ? `(${a.codice})` : "", a.colore || ""].filter(Boolean).join(" ");
+                  accVoci.push({ label, prezzo: parseFloat(a.prezzoUnitario) || 0, qta: a.quantita || 1 });
+                });
+                (v.vociLibere || []).forEach((vl: any) => {
+                  if (!vl.desc) return;
+                  accVoci.push({ label: vl.desc, prezzo: vl.prezzo || 0, qta: vl.qta || 1 });
+                });
+                // Prezzo infisso = totale - somma accessori
+                const totAcc = accVoci.reduce((s, a) => s + a.prezzo * a.qta, 0);
+                const pInfisso = Math.max(0, pUnit - accVoci.filter(a => a.qta === pezzi).reduce((s, a) => s + a.prezzo, 0) - accVoci.filter(a => a.qta !== pezzi).reduce((s, a) => s + a.prezzo * a.qta, 0) / pezzi);
+
                 return (
                   <div key={v.id} style={{ background: T.card, borderRadius: 12, marginBottom: 6, border: `1.5px solid ${isEd ? T.acc : T.bdr}`, overflow: "hidden" }}>
                     {/* Row compatta */}
-                    <div onClick={() => setEditingVanoId(isEd ? null : v.id)} style={{ display: "flex", alignItems: "center", padding: 12, cursor: "pointer", gap: 8 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, background: `${T.acc}12`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: T.acc, flexShrink: 0 }}>{vi + 1}</div>
+                    <div onClick={() => setEditingVanoId(isEd ? null : v.id)} style={{ display: "flex", alignItems: "flex-start", padding: 12, cursor: "pointer", gap: 8 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 8, background: `${T.acc}12`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, color: T.acc, flexShrink: 0, marginTop: 2 }}>{vi + 1}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {v.nome || `Vano ${vi + 1}`}
-                          <span style={{ fontWeight: 400, color: T.sub, fontSize: 10 }}> {v.tipo || "F2A"} · {v.pezzi || 1}pz</span>
+                          <span style={{ fontWeight: 400, color: T.sub, fontSize: 10 }}> {v.tipo || "F2A"} · {pezzi}pz</span>
                           {v.parentId && <span style={{ fontSize: 8, background: `${T.orange}15`, color: T.orange, padding: "1px 4px", borderRadius: 3, marginLeft: 4 }}>MOD</span>}
                         </div>
-                        <div style={{ fontSize: 10, color: T.sub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lv}×{hv} · {v.colore || "Bianco"}{v.controtelaio && v.controtelaio !== "Nessuno" ? " · CT" : ""}{acc.tapparella?.attivo ? " · T" : ""}{acc.persiana?.attivo ? " · P" : ""}{acc.zanzariera?.attivo ? " · Z" : ""}</div>
+                        <div style={{ fontSize: 10, color: T.sub, marginBottom: accVoci.length > 0 ? 6 : 0 }}>{lv}×{hv} · {v.colore || "Bianco"}</div>
+                        {/* ── Breakdown accessori con prezzo ── */}
+                        {accVoci.length > 0 && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: T.sub }}>
+                              <span>↳ Infisso {lv}×{hv}mm</span>
+                              <span style={{ fontFamily: "monospace" }}>€{pwFmt(pInfisso)} × {pezzi}</span>
+                            </div>
+                            {accVoci.map((a, ai) => (
+                              <div key={ai} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: T.sub }}>
+                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "65%" }}>↳ {a.label}</span>
+                                <span style={{ fontFamily: "monospace", flexShrink: 0, marginLeft: 4, color: a.prezzo > 0 ? T.text : T.sub }}>
+                                  {a.prezzo > 0 ? `€${pwFmt(a.prezzo)} × ${a.qta}` : "incluso"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div style={{ textAlign: "right" as any, flexShrink: 0 }}>
+                      <div style={{ textAlign: "right" as any, flexShrink: 0, marginLeft: 4 }}>
                         <div style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{pwFmt(pTot)}</div>
-                        {(v.pezzi || 1) > 1 && <div style={{ fontSize: 9, color: T.sub }}>€{pwFmt(pUnit)}/pz</div>}
+                        {pezzi > 1 && <div style={{ fontSize: 9, color: T.sub }}>€{pwFmt(pUnit)}/pz</div>}
                       </div>
-                      <span style={{ fontSize: 12, color: T.sub, transform: isEd ? "rotate(180deg)" : "", transition: "0.2s" }}>▾</span>
+                      <span style={{ fontSize: 12, color: T.sub, transform: isEd ? "rotate(180deg)" : "", transition: "0.2s", marginTop: 2 }}>▾</span>
                     </div>
 
                     {/* ══ EXPANDED EDITOR ══ */}
