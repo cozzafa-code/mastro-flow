@@ -1,9 +1,9 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 
-// ── ICONS ─────────────────────────────────────────────────────
+// â”€â”€ ICONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const IcoShield = () => (
   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -35,11 +35,11 @@ const IcoCopy = () => (
   </svg>
 )
 
-// ── TYPES ─────────────────────────────────────────────────────
+// â”€â”€ TYPES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type MfaFactor = { id: string; type: string; status: string; created_at: string }
 type Step = 'idle' | 'setup_qr' | 'verify' | 'done'
 
-// ── CARD COMPONENT ────────────────────────────────────────────
+// â”€â”€ CARD COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div style={{
@@ -75,9 +75,9 @@ function SectionTitle({ icon, title, badge }: { icon: React.ReactNode; title: st
   )
 }
 
-// ── MAIN ──────────────────────────────────────────────────────
+// â”€â”€ MAIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function SecuritySettings() {
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [factors, setFactors] = useState<MfaFactor[]>([])
   const [step, setStep] = useState<Step>('idle')
   const [qrCode, setQrCode] = useState('')
@@ -130,7 +130,7 @@ export default function SecuritySettings() {
   // Rimuovi 2FA
   const removeFactor = async () => {
     if (!enrolledFactor) return
-    if (!confirm('Disabilitare il 2FA? Il tuo account sarà meno sicuro.')) return
+    if (!confirm('Disabilitare il 2FA? Il tuo account sarÃ  meno sicuro.')) return
     setLoading(true)
     await supabase.auth.mfa.unenroll({ factorId: enrolledFactor.id })
     await loadFactors()
@@ -166,7 +166,7 @@ export default function SecuritySettings() {
         {!enrolledFactor && step === 'idle' && (
           <div>
             <p style={{ fontSize: 14, color: '#6B6B6B', margin: '0 0 20px', lineHeight: 1.6 }}>
-              Aggiungi un secondo livello di sicurezza. Dopo il login ti verrà chiesto
+              Aggiungi un secondo livello di sicurezza. Dopo il login ti verrÃ  chiesto
               un codice dall'app Google Authenticator o Authy.
             </p>
             <button
@@ -223,7 +223,7 @@ export default function SecuritySettings() {
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}
                 >
-                  Ho scansionato →
+                  Ho scansionato â†’
                 </button>
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function SecuritySettings() {
                 <IcoCheck />
               </div>
               <span style={{ fontSize: 14, color: '#065F46', fontWeight: 500 }}>
-                2FA attivo — il tuo account è protetto
+                2FA attivo â€” il tuo account Ã¨ protetto
               </span>
             </div>
             <button
@@ -311,7 +311,7 @@ export default function SecuritySettings() {
   )
 }
 
-// ── CHANGE PASSWORD ───────────────────────────────────────────
+// â”€â”€ CHANGE PASSWORD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ChangePasswordForm({ supabase }: { supabase: any }) {
   const [newPwd, setNewPwd] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -377,3 +377,4 @@ function ChangePasswordForm({ supabase }: { supabase: any }) {
     </div>
   )
 }
+

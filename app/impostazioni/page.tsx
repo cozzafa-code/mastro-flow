@@ -1,14 +1,14 @@
 ﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import SecuritySettings from '@/components/SecuritySettings'
 
 type Tab = 'account' | 'sicurezza' | 'dati' | 'azienda'
 
 export default function ImpostazioniPage() {
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('account')
   const [user, setUser] = useState<any>(null)
@@ -309,4 +309,5 @@ function Row({ label, value, link }: { label: string; value: string; link?: { hr
     </div>
   )
 }
+
 

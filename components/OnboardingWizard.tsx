@@ -1,10 +1,10 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
-// ── TYPES ─────────────────────────────────────────────────────
+// â”€â”€ TYPES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type Settore = 'serramenti' | 'tendaggi' | 'fabbro' | 'zanzariere' | 'pergole'
 
 interface OnboardingData {
@@ -17,11 +17,11 @@ interface OnboardingData {
 }
 
 const SETTORI_CONFIG: { id: Settore; label: string; emoji: string; desc: string }[] = [
-  { id: 'serramenti', label: 'Serramenti', emoji: '🪟', desc: 'Finestre, porte, infissi PVC/alluminio/legno' },
-  { id: 'tendaggi',   label: 'Tendaggi',   emoji: '🪄', desc: 'Tende, veneziane, oscuranti, tessuti' },
-  { id: 'fabbro',     label: 'Fabbro',     emoji: '⚙️', desc: 'Cancelli, ringhiere, strutture metalliche' },
-  { id: 'zanzariere', label: 'Zanzariere', emoji: '🔲', desc: 'Zanzariere plissé, avvolgibili, laterali' },
-  { id: 'pergole',    label: 'Pergole',    emoji: '🏡', desc: 'Pergole bioclimatiche, coperture, LED' },
+  { id: 'serramenti', label: 'Serramenti', emoji: 'ðŸªŸ', desc: 'Finestre, porte, infissi PVC/alluminio/legno' },
+  { id: 'tendaggi',   label: 'Tendaggi',   emoji: 'ðŸª„', desc: 'Tende, veneziane, oscuranti, tessuti' },
+  { id: 'fabbro',     label: 'Fabbro',     emoji: 'âš™ï¸', desc: 'Cancelli, ringhiere, strutture metalliche' },
+  { id: 'zanzariere', label: 'Zanzariere', emoji: 'ðŸ”²', desc: 'Zanzariere plissÃ©, avvolgibili, laterali' },
+  { id: 'pergole',    label: 'Pergole',    emoji: 'ðŸ¡', desc: 'Pergole bioclimatiche, coperture, LED' },
 ]
 
 const STEPS = [
@@ -31,7 +31,7 @@ const STEPS = [
   { n: 4, label: 'Riepilogo' },
 ]
 
-// ── ICONS ─────────────────────────────────────────────────────
+// â”€â”€ ICONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const IcoArrow = () => (
   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
@@ -48,7 +48,7 @@ const IcoStar = () => (
   </svg>
 )
 
-// ── FIELD COMPONENT ────────────────────────────────────────────
+// â”€â”€ FIELD COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Field({
   label, value, onChange, placeholder, type = 'text', optional = false
 }: {
@@ -83,10 +83,10 @@ function Field({
   )
 }
 
-// ── MAIN COMPONENT ────────────────────────────────────────────
+// â”€â”€ MAIN COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function OnboardingWizard() {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -122,7 +122,7 @@ export default function OnboardingWizard() {
       const { data: azienda, error: errAz } = await supabase
         .from('aziende')
         .upsert({
-          id: user.id, // temporaneo, verrà sovrascritto
+          id: user.id, // temporaneo, verrÃ  sovrascritto
           ragione: data.ragione_sociale,
           piva: data.piva || null,
           settori: data.settori,
@@ -150,7 +150,7 @@ export default function OnboardingWizard() {
     }
   }
 
-  // ── DONE SCREEN ─────────────────────────────────────────────
+  // â”€â”€ DONE SCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (done) {
     return (
       <div style={{
@@ -167,11 +167,11 @@ export default function OnboardingWizard() {
             <IcoStar />
           </div>
           <h2 style={{ color: '#F2F1EC', fontSize: 28, fontWeight: 700, margin: '0 0 12px' }}>
-            MASTRO è pronto.
+            MASTRO Ã¨ pronto.
           </h2>
           <p style={{ color: '#9B9B9B', fontSize: 15, lineHeight: 1.6, margin: '0 0 32px' }}>
-            Il tuo gestionale è configurato e pronto all'uso.<br />
-            Il tuo trial di <strong style={{ color: '#D08008' }}>30 giorni</strong> è attivo.
+            Il tuo gestionale Ã¨ configurato e pronto all'uso.<br />
+            Il tuo trial di <strong style={{ color: '#D08008' }}>30 giorni</strong> Ã¨ attivo.
           </p>
 
           {/* Checklist */}
@@ -209,14 +209,14 @@ export default function OnboardingWizard() {
             onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
             onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
           >
-            Entra in MASTRO →
+            Entra in MASTRO â†’
           </button>
         </div>
       </div>
     )
   }
 
-  // ── WIZARD ──────────────────────────────────────────────────
+  // â”€â”€ WIZARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div style={{
       minHeight: '100vh', background: '#F2F1EC',
@@ -284,7 +284,7 @@ export default function OnboardingWizard() {
           boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
         }}>
 
-          {/* STEP 1 — Azienda */}
+          {/* STEP 1 â€” Azienda */}
           {step === 1 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A1C', margin: '0 0 6px' }}>
@@ -309,14 +309,14 @@ export default function OnboardingWizard() {
             </div>
           )}
 
-          {/* STEP 2 — Settori */}
+          {/* STEP 2 â€” Settori */}
           {step === 2 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A1C', margin: '0 0 6px' }}>
                 Di cosa ti occupi?
               </h2>
               <p style={{ color: '#6B6B6B', fontSize: 14, margin: '0 0 24px' }}>
-                Seleziona uno o più settori. MASTRO si adatta automaticamente.
+                Seleziona uno o piÃ¹ settori. MASTRO si adatta automaticamente.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {SETTORI_CONFIG.map(s => {
@@ -355,7 +355,7 @@ export default function OnboardingWizard() {
             </div>
           )}
 
-          {/* STEP 3 — Contatti */}
+          {/* STEP 3 â€” Contatti */}
           {step === 3 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A1C', margin: '0 0 6px' }}>
@@ -378,7 +378,7 @@ export default function OnboardingWizard() {
                 optional
               />
               <Field
-                label="Città"
+                label="CittÃ "
                 value={data.citta}
                 onChange={v => set('citta', v)}
                 placeholder="es. Napoli"
@@ -387,7 +387,7 @@ export default function OnboardingWizard() {
             </div>
           )}
 
-          {/* STEP 4 — Riepilogo */}
+          {/* STEP 4 â€” Riepilogo */}
           {step === 4 && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1A1C', margin: '0 0 6px' }}>
@@ -398,11 +398,11 @@ export default function OnboardingWizard() {
               </p>
               {[
                 { label: 'Azienda', value: data.ragione_sociale },
-                { label: 'P.IVA', value: data.piva || '—' },
+                { label: 'P.IVA', value: data.piva || 'â€”' },
                 { label: 'Settori', value: data.settori.map(s => SETTORI_CONFIG.find(c => c.id === s)?.label).join(', ') },
                 { label: 'Titolare', value: data.nome_titolare },
-                { label: 'Telefono', value: data.telefono || '—' },
-                { label: 'Città', value: data.citta || '—' },
+                { label: 'Telefono', value: data.telefono || 'â€”' },
+                { label: 'CittÃ ', value: data.citta || 'â€”' },
               ].map((row, i) => (
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -420,7 +420,7 @@ export default function OnboardingWizard() {
                 borderRadius: 10, border: '1px solid #F5D89A',
               }}>
                 <p style={{ margin: 0, fontSize: 13, color: '#8B5E08' }}>
-                  🎉 <strong>Trial gratuito di 30 giorni</strong> attivato automaticamente.
+                  ðŸŽ‰ <strong>Trial gratuito di 30 giorni</strong> attivato automaticamente.
                   Nessuna carta di credito richiesta.
                 </p>
               </div>
@@ -442,7 +442,7 @@ export default function OnboardingWizard() {
                 cursor: step === 1 ? 'default' : 'pointer', fontFamily: 'inherit',
               }}
             >
-              ← Indietro
+              â† Indietro
             </button>
 
             {step < 4 ? (
@@ -477,7 +477,7 @@ export default function OnboardingWizard() {
                   fontFamily: 'inherit', transition: 'all 0.15s',
                 }}
               >
-                {loading ? 'Salvataggio...' : 'Attiva MASTRO →'}
+                {loading ? 'Salvataggio...' : 'Attiva MASTRO â†’'}
               </button>
             )}
           </div>
@@ -492,3 +492,4 @@ export default function OnboardingWizard() {
     </div>
   )
 }
+
