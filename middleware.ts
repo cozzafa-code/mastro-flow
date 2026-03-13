@@ -1,4 +1,4 @@
-﻿import { createServerClient } from '@supabase/ssr'
+﻿import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Ratelimit } from '@upstash/ratelimit'
@@ -24,7 +24,6 @@ const API_ROUTES = [
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // --- RATE LIMITING ---
   const isApiProtected = API_ROUTES.some(route => pathname.startsWith(route))
   if (isApiProtected) {
     const ip =
@@ -48,47 +47,17 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // --- AUTH Supabase ---
-  let response = NextResponse.next({ request: req })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return req.cookies.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
-          response = NextResponse.next({ request: req })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-
   const publicPaths = ['/login', '/signup', '/auth', '/onboarding', '/privacy', '/termini']
-  if (publicPaths.some(p => pathname.startsWith(p))) return response
+  if (publicPaths.some(p => pathname.startsWith(p))) return NextResponse.next()
 
-  if (!user) {
+  const token = req.cookies.get('sb-fgefcigxlbrmbeqqzjmo-auth-token')?.value
+    ?? req.cookies.get('sb-session')?.value
+
+  if (!token) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  if (pathname === '/' || pathname === '/dashboard') {
-    const { data: profilo } = await supabase
-      .from('profili')
-      .select('onboarding_completato')
-      .eq('id', user.id)
-      .single()
-    if (!profilo?.onboarding_completato) {
-      return NextResponse.redirect(new URL('/onboarding', req.url))
-    }
-  }
-
-  return response
+  return NextResponse.next()
 }
 
 export const config = {
