@@ -3016,7 +3016,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         <div onClick={() => setFabOpen(!fabOpen)} style={{
           position: "fixed",
           top: "50%",
-          right: fabOpen ? 0 : -52,
+          right: fabOpen ? 0 : -16,
           transform: "translateY(-50%)",
           zIndex: 91,
           width: 28,
