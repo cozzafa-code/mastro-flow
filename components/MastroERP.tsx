@@ -2998,10 +2998,13 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           }
           return fabItems.map((item, i) => (
             <div key={item.id} onClick={item.action} style={{
-              position: "fixed", bottom: 90 + (i + 1) * 58, right: 20, zIndex: 90,
+              position: "fixed",
+              top: `calc(50% + ${(i - 2.5) * 62}px)`,
+              right: 70, zIndex: 90,
               display: "flex", alignItems: "center", gap: 10, flexDirection: "row-reverse",
-              opacity: fabOpen ? 1 : 0, transform: fabOpen ? "translateY(0) scale(1)" : "translateY(30px) scale(0.5)",
-              transition: `all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabOpen ? i * 0.06 : 0}s`,
+              opacity: fabOpen ? 1 : 0,
+              transform: fabOpen ? "translateX(0) scale(1)" : "translateX(60px) scale(0.7)",
+              transition: `all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabOpen ? i * 0.05 : 0}s`,
               pointerEvents: fabOpen ? "auto" : "none",
             }}>
               <div style={{ width: item.id === "ultima" ? 52 : 48, height: item.id === "ultima" ? 52 : 48, borderRadius: "50%", background: item.id === "ultima" ? `linear-gradient(135deg, ${item.c}, ${item.c}cc)` : item.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: item.id === "ultima" ? 22 : 20, boxShadow: `0 4px 16px ${item.c}50`, cursor: "pointer", border: item.id === "ultima" ? "2px solid #fff" : "none" }}>
