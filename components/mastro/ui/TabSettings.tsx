@@ -941,7 +941,7 @@ export default function TabSettings() {
                           <input value={p.emailTemplate?.oggetto || ""} placeholder={`es: Conferma ${p.nome} - {{cliente}}`}
                             onChange={e=>setPipelineDB(db=>db.map((x,j)=>j===i?{...x,emailTemplate:{...(x.emailTemplate||{}),oggetto:e.target.value}}:x))}
                             style={{...S.input,width:"100%",fontSize:12,marginBottom:8,boxSizing:"border-box"}} />
-                          <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>CORPO (usa \{\{cliente\}\}, \{\{commessa\}\}, \{\{data\}\}, \{\{indirizzo\}\})</div>
+                          <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>CORPO (usa {{cliente}}, {{commessa}}, {{data}}, {{indirizzo}})</div>
                           <textarea value={p.emailTemplate?.corpo || ""} placeholder="Gentile {{cliente}},\nla informiamo che..."
                             onChange={e=>setPipelineDB(db=>db.map((x,j)=>j===i?{...x,emailTemplate:{...(x.emailTemplate||{}),corpo:e.target.value}}:x))}
                             style={{...S.input,width:"100%",minHeight:80,fontSize:11,lineHeight:1.5,boxSizing:"border-box",resize:"vertical"}} />
