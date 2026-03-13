@@ -3015,15 +3015,20 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         })()}
         <div onClick={() => setFabOpen(!fabOpen)} style={{
           position: "fixed", bottom: 160, right: 20, zIndex: 91,
-          width: 60, height: 60, borderRadius: "50%",
-          background: T.acc,
+          width: fabOpen ? 60 : 36,
+          height: fabOpen ? 60 : 36,
+          borderRadius: "50%",
+          background: fabOpen ? T.acc : T.acc + "55",
+          border: fabOpen ? "none" : `2px solid ${T.acc}99`,
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `0 6px 24px ${T.acc}50`,
-          cursor: "pointer", transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          boxShadow: fabOpen ? `0 6px 24px ${T.acc}50` : "none",
+          cursor: "pointer",
+          transition: "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          backdropFilter: "blur(4px)",
         }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.3s ease", transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)" }}>
-            <span style={{ fontSize: 26, color: "#fff", fontWeight: 800, lineHeight: 1 }}>{fabOpen ? "✕" : "M"}</span>
-          </div>
+          <span style={{ fontSize: fabOpen ? 24 : 14, color: "#fff", fontWeight: 800, lineHeight: 1, transition: "all 0.25s ease" }}>
+            {fabOpen ? "✕" : "M"}
+          </span>
         </div>
 
         {/* MESSAGE DETAIL OVERLAY */}
