@@ -1,5 +1,5 @@
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — lib/pdf-preventivo.ts
+﻿// ═══════════════════════════════════════════════════════════
+// MASTRO ERP - lib/pdf-preventivo.ts
 // Genera PDF preventivo professionale con jsPDF
 // Firma cliente embedded, totali IVA, logo azienda
 // ═══════════════════════════════════════════════════════════
@@ -131,7 +131,7 @@ function drawHeader(doc: jsPDF, az: any, c: any) {
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(200, 200, 200);
-  const subLine = [az.indirizzo, az.piva ? `P.IVA ${az.piva}` : ""].filter(Boolean).join(" · ");
+  const subLine = [az.indirizzo, az.piva ? `P.IVA ${az.piva}` : ""].filter(Boolean).join(" . ");
   if (subLine) doc.text(subLine, 34, 19);
 
   // Label PREVENTIVO (destra)
@@ -183,7 +183,7 @@ function drawInfo(doc: jsPDF, az: any, c: any, startY: number): number {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...C.dark as [number,number,number]);
   const infoRows = [
-    ["N°", c.code || "—"],
+    ["N°", c.code || "-"],
     ["Data", new Date().toLocaleDateString("it-IT")],
     ["Validità", "30 giorni"],
     ["Pagamento", c.condPagamento || "Da concordare"],
@@ -318,23 +318,23 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
     const ct = v.controtelaio || {};
     const acc = v._calc.acc || {};
     const colore = v.bicolore
-      ? `${v.coloreInt || "—"} int. / ${v.coloreEst || "—"} est.`
+      ? `${v.coloreInt || "-"} int. / ${v.coloreEst || "-"} est.`
       : (v.coloreInt || v.colore || "");
 
     // Riga 1: nome + tipo + misure + sistema
     const descLine1 = [
       v._calc.sistema || v.sistema || "",
-      m.lCentro && m.hCentro ? `${m.lCentro}×${m.hCentro}mm` : "",
+      m.lCentro && m.hCentro ? `${m.lCentro}x${m.hCentro}mm` : "",
       v.vetro || "",
       colore,
-    ].filter(Boolean).join(" · ");
+    ].filter(Boolean).join(" . ");
 
     // Riga 2: dettagli tecnici (telaio, coprifilo, controtelaio, stanza)
     const descLine2Parts: string[] = [];
     if (v.stanza) descLine2Parts.push(`📍 ${v.stanza}${v.piano ? " " + v.piano : ""}`);
     if (ct.tipo && ct.tipo !== "Nessuno") {
       const ctStr = ct.tipo === "singolo" ? "CT Singolo" : ct.tipo === "doppio" ? "CT Doppio" : "CT Cassonetto";
-      const ctMis = ct.l && ct.h ? ` ${ct.l}×${ct.h}` : "";
+      const ctMis = ct.l && ct.h ? ` ${ct.l}x${ct.h}` : "";
       descLine2Parts.push(ctStr + ctMis);
     }
     if (v.telaio) descLine2Parts.push(`Telaio ${v.telaio === "Z" ? "a Z" : "a L"}${v.telaioAlaZ ? " " + v.telaioAlaZ + "mm" : ""}`);
@@ -351,7 +351,7 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
     if (m.lBasso && m.lBasso !== m.lCentro) misure2.push(`lBasso ${m.lBasso}`);
     if (m.hSx && m.hSx !== m.hCentro) misure2.push(`hSx ${m.hSx}`);
     if (m.hDx && m.hDx !== m.hCentro) misure2.push(`hDx ${m.hDx}`);
-    if (m.d1 || m.d2) misure2.push(`D1 ${m.d1 || "—"} / D2 ${m.d2 || "—"}`);
+    if (m.d1 || m.d2) misure2.push(`D1 ${m.d1 || "-"} / D2 ${m.d2 || "-"}`);
     if (m.spSx || m.spDx || m.spSopra) misure2.push(`Sp ${[m.spSx,m.spDx,m.spSopra].filter(Boolean).join("/")} mm`);
     if (m.davProf || m.davSporg) misure2.push(`Dav ${m.davProf || ""}${m.davSporg ? "/"+m.davSporg : ""}`);
     if (m.soglia) misure2.push(`Soglia ${m.soglia}mm`);
@@ -361,8 +361,8 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
     const descParts = [
       `${v.nome || "Vano " + (i+1)}  [${v.tipo || ""}]`,
       descLine1,
-      descLine2Parts.length > 0 ? descLine2Parts.join("  ·  ") : null,
-      misure2.length > 0 ? misure2.join("  ·  ") + " mm" : null,
+      descLine2Parts.length > 0 ? descLine2Parts.join("  .  ") : null,
+      misure2.length > 0 ? misure2.join("  .  ") + " mm" : null,
     ].filter(Boolean);
     const desc = descParts.join("\n");
 
@@ -371,8 +371,8 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
       String(i + 1),
       desc,
       String(pezzi),
-      `€ ${fmt(v._calc.infisso)}`,
-      `€ ${fmt(v._calc.infisso * pezzi)}`,
+      `EUR ${fmt(v._calc.infisso)}`,
+      `EUR ${fmt(v._calc.infisso * pezzi)}`,
     ]);
 
     // ── Sub-righe accessori con prezzo reale ──
@@ -382,61 +382,61 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
     // Tapparella
     const tapp = acc.tapparella;
     if (tapp?.attivo) {
-      const tDesc = ["Tapparella", tapp.tipo, tapp.colore, tapp.azionamento, tapp.motorizzata ? "Motorizzata" : null, tapp.l && tapp.h ? `${tapp.l}×${tapp.h}mm` : null].filter(Boolean).join(" ");
+      const tDesc = ["Tapparella", tapp.tipo, tapp.colore, tapp.azionamento, tapp.motorizzata ? "Motorizzata" : null, tapp.l && tapp.h ? `${tapp.l}x${tapp.h}mm` : null].filter(Boolean).join(" ");
       const p = prezzi.tapparella || 0;
-      rows.push(["", `  ↳ ${tDesc}`, String(pezzi), p > 0 ? `€ ${fmt(p)}` : "incluso", p > 0 ? `€ ${fmt(p * pezzi)}` : ""]);
+      rows.push(["", `  > ${tDesc}`, String(pezzi), p > 0 ? `EUR ${fmt(p)}` : "incluso", p > 0 ? `EUR ${fmt(p * pezzi)}` : ""]);
     }
     // Persiana
     const pers = acc.persiana;
     if (pers?.attivo) {
       const pDesc = ["Persiana", pers.tipo, pers.colore].filter(Boolean).join(" ");
       const p = prezzi.persiana || 0;
-      rows.push(["", `  ↳ ${pDesc}`, String(pezzi), p > 0 ? `€ ${fmt(p)}` : "incluso", p > 0 ? `€ ${fmt(p * pezzi)}` : ""]);
+      rows.push(["", `  > ${pDesc}`, String(pezzi), p > 0 ? `EUR ${fmt(p)}` : "incluso", p > 0 ? `EUR ${fmt(p * pezzi)}` : ""]);
     }
     // Zanzariera
     const zanz = acc.zanzariera;
     if (zanz?.attivo) {
       const zDesc = ["Zanzariera", zanz.tipo, zanz.colore].filter(Boolean).join(" ");
       const p = prezzi.zanzariera || 0;
-      rows.push(["", `  ↳ ${zDesc}`, String(pezzi), p > 0 ? `€ ${fmt(p)}` : "incluso", p > 0 ? `€ ${fmt(p * pezzi)}` : ""]);
+      rows.push(["", `  > ${zDesc}`, String(pezzi), p > 0 ? `EUR ${fmt(p)}` : "incluso", p > 0 ? `EUR ${fmt(p * pezzi)}` : ""]);
     }
     // Controtelaio
     const ctInf = v.controtelaio || {};
     if (ctInf.tipo && ctInf.tipo !== "Nessuno") {
       const ctLabel = ctInf.tipo === "singolo" ? "Singolo" : ctInf.tipo === "doppio" ? "Doppio" : "Con cassonetto";
-      const ctMis = ctInf.l && ctInf.h ? ` ${ctInf.l}×${ctInf.h}mm` : "";
+      const ctMis = ctInf.l && ctInf.h ? ` ${ctInf.l}x${ctInf.h}mm` : "";
       const p = prezzi.controtelaio || 0;
-      rows.push(["", `  ↳ Controtelaio ${ctLabel}${ctMis}`, String(pezzi), p > 0 ? `€ ${fmt(p)}` : "incluso", p > 0 ? `€ ${fmt(p * pezzi)}` : ""]);
+      rows.push(["", `  > Controtelaio ${ctLabel}${ctMis}`, String(pezzi), p > 0 ? `EUR ${fmt(p)}` : "incluso", p > 0 ? `EUR ${fmt(p * pezzi)}` : ""]);
     }
     // Posa
     if (prezzi.posa) {
-      rows.push(["", `  ↳ Posa in opera`, String(pezzi), `€ ${fmt(prezzi.posa)}`, `€ ${fmt(prezzi.posa * pezzi)}`]);
+      rows.push(["", `  > Posa in opera`, String(pezzi), `EUR ${fmt(prezzi.posa)}`, `EUR ${fmt(prezzi.posa * pezzi)}`]);
     }
     // Accessori catalogo (maniglie, cilindri, molle, ecc.)
     (v.accessoriCatalogo || []).forEach((a: any) => {
       if (!a?.nome) return;
-      const aDesc = [a.nome, a.codice ? `(${a.codice})` : "", a.colore || "", a.nota || ""].filter(Boolean).join(" · ");
+      const aDesc = [a.nome, a.codice ? `(${a.codice})` : "", a.colore || "", a.nota || ""].filter(Boolean).join(" . ");
       const qta = a.quantita || 1;
       const pu = parseFloat(a.prezzoUnitario) || 0;
-      rows.push(["", `  ↳ ${aDesc}`, String(qta), pu > 0 ? `€ ${fmt(pu)}` : "incluso", pu > 0 ? `€ ${fmt(pu * qta)}` : ""]);
+      rows.push(["", `  > ${aDesc}`, String(qta), pu > 0 ? `EUR ${fmt(pu)}` : "incluso", pu > 0 ? `EUR ${fmt(pu * qta)}` : ""]);
     });
     // Voci libere vano
     (v.vociLibere || []).forEach((vl: any) => {
       if (!vl.desc) return;
       const qta = vl.qta || 1;
       const p = vl.prezzo || 0;
-      rows.push(["", `  ↳ ${vl.desc}`, String(qta), `€ ${fmt(p)}`, `€ ${fmt(p * qta)}`]);
+      rows.push(["", `  > ${vl.desc}`, String(qta), `EUR ${fmt(p)}`, `EUR ${fmt(p * qta)}`]);
     });
   });
 
   // Voci libere commessa
   (c.vociLibere || []).forEach((vl: any) => {
     rows.push([
-      "—",
+      "-",
       vl.desc || vl.descrizione || "Voce aggiuntiva",
       String(vl.qta || 1),
-      `€ ${fmt(vl.importo || 0)}`,
-      `€ ${fmt((vl.importo || 0) * (vl.qta || 1))}`,
+      `EUR ${fmt(vl.importo || 0)}`,
+      `EUR ${fmt((vl.importo || 0) * (vl.qta || 1))}`,
     ]);
   });
 
@@ -504,13 +504,13 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
   const totX = W - totW - 12;
 
   const totRows: [string, string, boolean][] = [];
-  if (sconto > 0) totRows.push([`Sconto ${c.sconto}%`, `− € ${fmt(sconto)}`, false]);
-  totRows.push(["Imponibile", `€ ${fmt(imponibile)}`, false]);
-  totRows.push([`IVA ${ivaPerc}%`, `€ ${fmt(iva)}`, false]);
-  totRows.push(["TOTALE IVA INCLUSA", `€ ${fmt(totIva)}`, true]);
+  if (sconto > 0) totRows.push([`Sconto ${c.sconto}%`, `− EUR ${fmt(sconto)}`, false]);
+  totRows.push(["Imponibile", `EUR ${fmt(imponibile)}`, false]);
+  totRows.push([`IVA ${ivaPerc}%`, `EUR ${fmt(iva)}`, false]);
+  totRows.push(["TOTALE IVA INCLUSA", `EUR ${fmt(totIva)}`, true]);
   if (acconto > 0) {
-    totRows.push([`Acconto ricevuto`, `− € ${fmt(acconto)}`, false]);
-    totRows.push(["Saldo da pagare", `€ ${fmt(saldo)}`, true]);
+    totRows.push([`Acconto ricevuto`, `− EUR ${fmt(acconto)}`, false]);
+    totRows.push(["Saldo da pagare", `EUR ${fmt(saldo)}`, true]);
   }
 
   let ty = y;
@@ -565,7 +565,7 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C.dark as [number,number,number]);
-    doc.text(`${c.cliente}${c.cognome ? " " + c.cognome : ""} — ${c.dataFirma || new Date().toLocaleDateString("it-IT")}`, 14, y + 13);
+    doc.text(`${c.cliente}${c.cognome ? " " + c.cognome : ""} - ${c.dataFirma || new Date().toLocaleDateString("it-IT")}`, 14, y + 13);
 
     try {
       doc.addImage(c.firmaCliente, "PNG", 14, y + 16, 80, 18);
@@ -592,7 +592,7 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
     doc.setFontSize(7.5);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...C.sub as [number,number,number]);
-    const footLeft = [az.telefono, az.email].filter(Boolean).join(" · ");
+    const footLeft = [az.telefono, az.email].filter(Boolean).join(" . ");
     if (footLeft) doc.text(footLeft, 12, pH - 5);
     doc.text(`Pag. ${i} / ${pageCount}`, W - 12, pH - 5, { align: "right" });
   }
