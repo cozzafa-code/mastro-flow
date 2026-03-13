@@ -1,5 +1,5 @@
-// ============================================================
-// MASTRO ERP — Supabase Client + Auth
+﻿// ============================================================
+// MASTRO ERP â€” Supabase Client + Auth
 // lib/supabase.ts
 // ============================================================
 
@@ -13,10 +13,26 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    storageKey: "sb-session",
+    storage: {
+      getItem: (key: string) => {
+        if (typeof document === "undefined") return null;
+        const match = document.cookie.match(new RegExp("(^| )" + key + "=([^;]+)"));
+        return match ? decodeURIComponent(match[2]) : null;
+      },
+      setItem: (key: string, value: string) => {
+        if (typeof document === "undefined") return;
+        document.cookie = key + "=" + encodeURIComponent(value) + "; path=/; max-age=31536000; SameSite=Lax";
+      },
+      removeItem: (key: string) => {
+        if (typeof document === "undefined") return;
+        document.cookie = key + "=; path=/; max-age=0";
+      },
+    },
   },
 });
 
-// ── Auth Helpers ──────────────────────────────────────────
+// â”€â”€ Auth Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({ email, password });
@@ -58,7 +74,7 @@ export function onAuthChange(callback: (event: string, session: any) => void) {
   return supabase.auth.onAuthStateChange(callback);
 }
 
-// ── Onboarding ───────────────────────────────────────────
+// â”€â”€ Onboarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function onboardNewUser(
   ragione: string,
@@ -78,7 +94,7 @@ export async function onboardNewUser(
   return data as string; // azienda_id
 }
 
-// ── Profile ──────────────────────────────────────────────
+// â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getMyProfile() {
   const user = await getUser();
@@ -105,7 +121,7 @@ export async function updateProfile(updates: Record<string, any>) {
   return data;
 }
 
-// ── Azienda ──────────────────────────────────────────────
+// â”€â”€ Azienda â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getAzienda() {
   const { data, error } = await supabase
@@ -128,3 +144,4 @@ export async function updateAzienda(updates: Record<string, any>) {
   if (error) throw error;
   return data;
 }
+
