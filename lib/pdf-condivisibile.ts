@@ -51,11 +51,40 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
     rigaIndex++;
     const idx = rigaIndex;
     const m = v.misure || {};
+    const ct = v.controtelaio || {};
     const misureStr = m.lCentro && m.hCentro ? `${m.lCentro}×${m.hCentro} mm` : "";
-    const colori = v.coloreInt && v.coloreEst && v.coloreInt !== v.coloreEst
-      ? `${v.coloreInt} int. / ${v.coloreEst} est.`
+    const colori = v.bicolore
+      ? `${v.coloreInt || "—"} int. / ${v.coloreEst || "—"} est.`
       : (v.coloreInt || v.coloreEst || v.colore || "");
-    const dettagli = [v.tipo || "", misureStr, v.sistema || v.modello || "", v.vetro || "", colori].filter(Boolean).join(" · ");
+
+    // Riga 1: sistema · misure · vetro · colore
+    const riga1 = [v.tipo, misureStr, v.sistema || v.modello, v.vetro, colori].filter(Boolean).join(" · ");
+    // Riga 2: posizione + finiture tecniche
+    const riga2Parts = [
+      v.stanza ? `${v.stanza}${v.piano ? " "+v.piano : ""}` : null,
+      ct.tipo && ct.tipo !== "Nessuno" ? `CT ${ct.tipo === "singolo" ? "Singolo" : ct.tipo === "doppio" ? "Doppio" : "Cassonetto"}${ct.l && ct.h ? " "+ct.l+"×"+ct.h : ""}` : null,
+      v.telaio ? `Telaio ${v.telaio}${v.telaioAlaZ ? " "+v.telaioAlaZ+"mm" : ""}` : null,
+      v.rifilato ? `Rifilato${[v.rifilSx,v.rifilDx,v.rifilSopra,v.rifilSotto].filter(Boolean).length > 0 ? " "+[v.rifilSx,v.rifilDx,v.rifilSopra,v.rifilSotto].filter(Boolean).join("/")+"mm" : ""}` : null,
+      v.coprifilo ? `Coprifilo ${v.coprifilo}` : null,
+    ].filter(Boolean);
+    // Riga 3: misure secondarie
+    const misure2 = [
+      m.lAlto && m.lAlto !== m.lCentro ? `lAlto ${m.lAlto}` : null,
+      m.lBasso && m.lBasso !== m.lCentro ? `lBasso ${m.lBasso}` : null,
+      m.hSx && m.hSx !== m.hCentro ? `hSx ${m.hSx}` : null,
+      m.hDx && m.hDx !== m.hCentro ? `hDx ${m.hDx}` : null,
+      m.d1 || m.d2 ? `D ${m.d1||"—"}/${m.d2||"—"}` : null,
+      m.spSx || m.spDx ? `Sp ${[m.spSx,m.spDx,m.spSopra].filter(Boolean).join("/")}` : null,
+      m.soglia ? `Soglia ${m.soglia}` : null,
+      m.imbotte ? `Imbotte ${m.imbotte}` : null,
+      m.davProf ? `Dav ${m.davProf}${m.davSporg ? "/"+m.davSporg : ""}` : null,
+    ].filter(Boolean);
+
+    const dettagliHTML = [
+      `<div style="font-size:11px;color:#444;margin-top:3px">${riga1}</div>`,
+      riga2Parts.length > 0 ? `<div style="font-size:10px;color:#86868b;margin-top:2px">${riga2Parts.join("  ·  ")}</div>` : "",
+      misure2.length > 0 ? `<div style="font-size:10px;color:#aaa;margin-top:1px">${misure2.join("  ·  ")} mm</div>` : "",
+    ].join("");
 
     // ─── Disegno SVG del vano ───
     let disegnoHTML = "";
@@ -91,8 +120,8 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
     <tr>
       <td style="vertical-align:top;padding-top:12px">${idx}</td>
       <td style="vertical-align:top;padding-top:12px">
-        <div style="font-weight:700">${v.nome || `Vano ${idx}`}</div>
-        <div style="font-size:11px;color:#86868b;margin-top:2px">${dettagli}</div>
+        <div style="font-weight:700;font-size:13px">${v.nome || `Vano ${idx}`}</div>
+        ${dettagliHTML}
         ${disegnoHTML}
       </td>
       <td class="num" style="vertical-align:top;padding-top:12px">${pezzi}</td>

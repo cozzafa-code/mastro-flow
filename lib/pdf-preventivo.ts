@@ -313,17 +313,58 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
   vaniCalc.forEach((v: any, i: number) => {
     const m = v.misure || {};
     const pezzi = v.pezzi || 1;
-    const colori = v.coloreInt && v.coloreEst && v.coloreInt !== v.coloreEst
-      ? `${v.coloreInt} int. / ${v.coloreEst} est.`
-      : (v.coloreInt || v.coloreEst || v.colore || "");
-    const desc = [
-      v.nome || `Vano ${i + 1}`,
-      v._calc.sistema || "",
+
+    // ── Descrizione completa vano (tutti i campi rilevanti) ──
+    const ct = v.controtelaio || {};
+    const acc = v._calc.acc || {};
+    const colore = v.bicolore
+      ? `${v.coloreInt || "—"} int. / ${v.coloreEst || "—"} est.`
+      : (v.coloreInt || v.colore || "");
+
+    // Riga 1: nome + tipo + misure + sistema
+    const descLine1 = [
+      v._calc.sistema || v.sistema || "",
       m.lCentro && m.hCentro ? `${m.lCentro}×${m.hCentro}mm` : "",
-      v.tipo || "",
       v.vetro || "",
-      colori,
+      colore,
     ].filter(Boolean).join(" · ");
+
+    // Riga 2: dettagli tecnici (telaio, coprifilo, controtelaio, stanza)
+    const descLine2Parts: string[] = [];
+    if (v.stanza) descLine2Parts.push(`📍 ${v.stanza}${v.piano ? " " + v.piano : ""}`);
+    if (ct.tipo && ct.tipo !== "Nessuno") {
+      const ctStr = ct.tipo === "singolo" ? "CT Singolo" : ct.tipo === "doppio" ? "CT Doppio" : "CT Cassonetto";
+      const ctMis = ct.l && ct.h ? ` ${ct.l}×${ct.h}` : "";
+      descLine2Parts.push(ctStr + ctMis);
+    }
+    if (v.telaio) descLine2Parts.push(`Telaio ${v.telaio === "Z" ? "a Z" : "a L"}${v.telaioAlaZ ? " " + v.telaioAlaZ + "mm" : ""}`);
+    if (v.rifilato) {
+      const rif = [v.rifilSx ? `Sx${v.rifilSx}` : null, v.rifilDx ? `Dx${v.rifilDx}` : null, v.rifilSopra ? `S${v.rifilSopra}` : null, v.rifilSotto ? `I${v.rifilSotto}` : null].filter(Boolean).join("/");
+      descLine2Parts.push(`Rifilato${rif ? " " + rif : ""}`);
+    }
+    if (v.coprifilo) descLine2Parts.push(`Coprifilo ${v.coprifilo}`);
+    if (v.lamiera) descLine2Parts.push(`Lamiera ${v.lamiera}`);
+
+    // Riga 3: misure secondarie (se presenti)
+    const misure2: string[] = [];
+    if (m.lAlto && m.lAlto !== m.lCentro) misure2.push(`lAlto ${m.lAlto}`);
+    if (m.lBasso && m.lBasso !== m.lCentro) misure2.push(`lBasso ${m.lBasso}`);
+    if (m.hSx && m.hSx !== m.hCentro) misure2.push(`hSx ${m.hSx}`);
+    if (m.hDx && m.hDx !== m.hCentro) misure2.push(`hDx ${m.hDx}`);
+    if (m.d1 || m.d2) misure2.push(`D1 ${m.d1 || "—"} / D2 ${m.d2 || "—"}`);
+    if (m.spSx || m.spDx || m.spSopra) misure2.push(`Sp ${[m.spSx,m.spDx,m.spSopra].filter(Boolean).join("/")} mm`);
+    if (m.davProf || m.davSporg) misure2.push(`Dav ${m.davProf || ""}${m.davSporg ? "/"+m.davSporg : ""}`);
+    if (m.soglia) misure2.push(`Soglia ${m.soglia}mm`);
+    if (m.imbotte) misure2.push(`Imbotte ${m.imbotte}mm`);
+
+    // Componi descrizione finale per autoTable (usa \n per andare a capo)
+    const descParts = [
+      `${v.nome || "Vano " + (i+1)}  [${v.tipo || ""}]`,
+      descLine1,
+      descLine2Parts.length > 0 ? descLine2Parts.join("  ·  ") : null,
+      misure2.length > 0 ? misure2.join("  ·  ") + " mm" : null,
+    ].filter(Boolean);
+    const desc = descParts.join("\n");
 
     // Riga principale: solo infisso (senza accessori scorpati)
     rows.push([
@@ -360,9 +401,12 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
       rows.push(["", `  ↳ ${zDesc}`, String(pezzi), p > 0 ? `€ ${fmt(p)}` : "incluso", p > 0 ? `€ ${fmt(p * pezzi)}` : ""]);
     }
     // Controtelaio
-    if (v.controtelaio && v.controtelaio !== "Nessuno") {
+    const ctInf = v.controtelaio || {};
+    if (ctInf.tipo && ctInf.tipo !== "Nessuno") {
+      const ctLabel = ctInf.tipo === "singolo" ? "Singolo" : ctInf.tipo === "doppio" ? "Doppio" : "Con cassonetto";
+      const ctMis = ctInf.l && ctInf.h ? ` ${ctInf.l}×${ctInf.h}mm` : "";
       const p = prezzi.controtelaio || 0;
-      rows.push(["", `  ↳ Controtelaio ${v.controtelaio}`, String(pezzi), p > 0 ? `€ ${fmt(p)}` : "incluso", p > 0 ? `€ ${fmt(p * pezzi)}` : ""]);
+      rows.push(["", `  ↳ Controtelaio ${ctLabel}${ctMis}`, String(pezzi), p > 0 ? `€ ${fmt(p)}` : "incluso", p > 0 ? `€ ${fmt(p * pezzi)}` : ""]);
     }
     // Posa
     if (prezzi.posa) {

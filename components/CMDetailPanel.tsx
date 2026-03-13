@@ -572,9 +572,11 @@ export default function CMDetailPanel() {
                   const pZ = pZanzMq > 0 ? Math.round(((zanz.l || lmm) / 1000) * ((zanz.h || hmm) / 1000) * pZanzMq * 100) / 100 : 0;
                   accVoci.push({ label: ["Zanzariera", zanz.tipo, zanz.colore].filter(Boolean).join(" "), prezzo: pZ, qta: pezzi });
                 }
-                if (v.controtelaio && v.controtelaio !== "Nessuno") {
-                  const pCT = parseFloat(az.prezzoControtelaio || 0);
-                  accVoci.push({ label: `Controtelaio ${v.controtelaio}`, prezzo: pCT, qta: pezzi });
+                if (v.controtelaio?.tipo && v.controtelaio.tipo !== "Nessuno") {
+                  const ctL = v.controtelaio.tipo === "singolo" ? "CT Singolo" : v.controtelaio.tipo === "doppio" ? "CT Doppio" : "CT Cassonetto";
+                  const ctM = v.controtelaio.l && v.controtelaio.h ? ` ${v.controtelaio.l}×${v.controtelaio.h}mm` : "";
+                  const p = prezzi.controtelaio || 0;
+                  accVoci.push({ label: ctL + ctM, prezzo: p, qta: pezzi });
                 }
                 const pPosa = parseFloat(az.prezzoPosaVano || 0);
                 if (pPosa > 0 && az.includePosaInPreventivo) {
@@ -604,7 +606,16 @@ export default function CMDetailPanel() {
                           <span style={{ fontWeight: 400, color: T.sub, fontSize: 10 }}> {v.tipo || "F2A"} · {pezzi}pz</span>
                           {v.parentId && <span style={{ fontSize: 8, background: `${T.orange}15`, color: T.orange, padding: "1px 4px", borderRadius: 3, marginLeft: 4 }}>MOD</span>}
                         </div>
-                        <div style={{ fontSize: 10, color: T.sub, marginBottom: accVoci.length > 0 ? 6 : 0 }}>{lv}×{hv} · {v.colore || "Bianco"}</div>
+                        <div style={{ fontSize: 10, color: T.sub, marginBottom: accVoci.length > 0 ? 6 : 0 }}>
+                          {[
+                            `${lv}×${hv}`,
+                            v.colore || v.coloreInt || "",
+                            v.stanza ? `${v.stanza}${v.piano ? " "+v.piano : ""}` : null,
+                            v.vetro || null,
+                            (v.telaio ? `Telaio ${v.telaio}` : null),
+                            (v.rifilato ? "Rifilato" : null),
+                          ].filter(Boolean).join(" · ")}
+                        </div>
                         {/* ── Breakdown accessori con prezzo ── */}
                         {accVoci.length > 0 && (
                           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
