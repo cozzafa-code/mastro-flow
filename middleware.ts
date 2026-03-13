@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+﻿import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { Ratelimit } from '@upstash/ratelimit'
@@ -53,19 +53,29 @@ export async function middleware(req: NextRequest) {
 
   // --- AUTH Supabase ---
   const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return req.cookies.get(name)?.value },
+        set(name: string, value: string, options: any) { res.cookies.set({ name, value, ...options }) },
+        remove(name: string, options: any) { res.cookies.set({ name, value: '', ...options }) },
+      },
+    }
+  )
   const { data: { session } } = await supabase.auth.getSession()
 
-  // Percorsi pubblici — non richiedono auth
+  // Percorsi pubblici â€” non richiedono auth
   const publicPaths = ['/login', '/signup', '/auth', '/onboarding', '/privacy', '/termini']
   if (publicPaths.some(p => pathname.startsWith(p))) return res
 
-  // Non autenticato → login
+  // Non autenticato â†’ login
   if (!session) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  // Autenticato → controlla onboarding completato
+  // Autenticato â†’ controlla onboarding completato
   if (pathname === '/' || pathname === '/dashboard') {
     const { data: profilo } = await supabase
       .from('profili')
@@ -86,3 +96,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
+
