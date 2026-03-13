@@ -47,37 +47,42 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
     // Accessori su sub-riga — legge struttura con/senza .attivo
     const acc = v.accessori || {};
     const accList: string[] = [];
-    // Tapparella
-    const tapp = acc.tapparella;
-    if (tapp && (tapp.attivo || tapp === true)) {
+    
+    // Helper: controlla se un accessorio è attivo in qualsiasi formato
+    const isAttivo = (a: any) => a && (a === true || a.attivo === true || a.presente === true || a.inclusa === true || a.incluso === true);
+    
+    // Tapparella — sia da v.accessori.tapparella che da v.tapparella diretto
+    const tapp = acc.tapparella || (v.tapparella ? { attivo: true } : null);
+    if (isAttivo(tapp)) {
       const parts = ["Tapparella"];
-      if (tapp.tipo) parts.push(tapp.tipo);
+      if (tapp.tipo && tapp.tipo !== true) parts.push(tapp.tipo);
       if (tapp.colore) parts.push(tapp.colore);
       if (tapp.azionamento) parts.push(tapp.azionamento);
+      if (tapp.motorizzata) parts.push("Motorizzata");
       if (tapp.l && tapp.h) parts.push(`${tapp.l}×${tapp.h} mm`);
       accList.push(parts.join(" "));
     }
     // Persiana
-    const pers = acc.persiana;
-    if (pers && (pers.attivo || pers === true)) {
+    const pers = acc.persiana || (v.persiana ? { attivo: true } : null);
+    if (isAttivo(pers)) {
       const parts = ["Persiana"];
-      if (pers.tipo) parts.push(pers.tipo);
+      if (pers.tipo && pers.tipo !== true) parts.push(pers.tipo);
       if (pers.colore) parts.push(pers.colore);
       accList.push(parts.join(" "));
     }
     // Zanzariera
-    const zanz = acc.zanzariera;
-    if (zanz && (zanz.attivo || zanz === true)) {
+    const zanz = acc.zanzariera || (v.zanzariera ? { attivo: true } : null);
+    if (isAttivo(zanz)) {
       const parts = ["Zanzariera"];
-      if (zanz.tipo) parts.push(zanz.tipo);
+      if (zanz.tipo && zanz.tipo !== true) parts.push(zanz.tipo);
       if (zanz.colore) parts.push(zanz.colore);
       accList.push(parts.join(" "));
     }
     // Controtelaio
-    if (v.controtelaio) accList.push(`Controtelaio`);
+    if (v.controtelaio || acc.cassonetto?.attivo) accList.push(`Controtelaio`);
     // Accessori catalogo aggiuntivi
     (v.accessoriCatalogo || []).forEach((ac: any) => {
-      if (ac.nome) accList.push(`${ac.quantita > 1 ? ac.quantita + "× " : ""}${ac.nome}${ac.colore ? " " + ac.colore : ""}`);
+      if (ac.nome) accList.push(`${(ac.quantita || 1) > 1 ? (ac.quantita || 1) + "× " : ""}${ac.nome}${ac.colore ? " " + ac.colore : ""}`);
     });
     // Voci libere vano
     (v.vociLibere || []).forEach((vl: any) => {
