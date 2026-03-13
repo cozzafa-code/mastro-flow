@@ -376,7 +376,7 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
     ]);
 
     // ── Sub-righe accessori con prezzo reale ──
-    const acc = v._calc.acc || {};
+
     const prezzi = v._calc.prezzi || {};
 
     // Tapparella
@@ -601,3 +601,4 @@ export async function generaPreventivoPDF(c: any, ctx: any) {
   const filename = `preventivo_${c.code || c.id}_${c.cliente?.replace(/\s/g, "_") || "cliente"}.pdf`;
   doc.save(filename);
 }
+
