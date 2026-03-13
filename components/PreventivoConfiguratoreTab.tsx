@@ -394,6 +394,7 @@ function AccessoriCatalogoSection({ vano, updV, T }: any) {
 function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any) {
   const [open, setOpen] = useState(idx === 0);
   const [showDisegno, setShowDisegno] = useState(false);
+  const [innerTab, setInnerTab] = useState<"info"|"disegno"|"accessori">("info");
 
   const m = vano.misure || {};
   const pezzi = vano.pezzi || 1;
@@ -452,7 +453,38 @@ function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any)
         {open && (
           <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${T.bdr}` }}>
 
-            {/* ── MISURE ── */}
+            {/* ── TAB INTERNI ── */}
+            <div style={{ display: "flex", gap: 6, marginTop: 10, marginBottom: 4 }}>
+              {([
+                { id: "info", label: "📐 Info & Prezzi" },
+                { id: "disegno", label: `✏️ Disegno${vano.prevPaths ? " ✓" : ""}` },
+                { id: "accessori", label: `🏷 Accessori${(vano.accessoriCatalogo?.length || 0) > 0 ? ` (${vano.accessoriCatalogo.length})` : ""}` },
+              ] as const).map(tab => (
+                <div
+                  key={tab.id}
+                  onClick={() => setInnerTab(tab.id)}
+                  style={{
+                    flex: 1, padding: "7px 4px", borderRadius: 10, textAlign: "center",
+                    fontSize: 11, fontWeight: innerTab === tab.id ? 800 : 600,
+                    background: innerTab === tab.id
+                      ? (tab.id === "disegno" ? AMB + "18" : tab.id === "accessori" ? ACC_COLOR + "15" : GRN + "12")
+                      : T.bg,
+                    color: innerTab === tab.id
+                      ? (tab.id === "disegno" ? AMB : tab.id === "accessori" ? ACC_COLOR : GRN)
+                      : T.sub,
+                    border: `1.5px solid ${innerTab === tab.id
+                      ? (tab.id === "disegno" ? AMB + "50" : tab.id === "accessori" ? ACC_COLOR + "40" : GRN + "40")
+                      : T.bdr}`,
+                    cursor: "pointer", transition: "all 0.15s",
+                  }}
+                >
+                  {tab.label}
+                </div>
+              ))}
+            </div>
+
+            {/* ══ TAB: INFO & PREZZI ══ */}
+            {innerTab === "info" && (<>
             <div style={{ marginTop: 12 }}>
               <SectionLabel>📐 Misure (mm)</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
@@ -645,60 +677,77 @@ function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any)
               </div>
             </div>
 
-            {/* ── ACCESSORI CATALOGO ── */}
-            <AccessoriCatalogoSection vano={vano} updV={updV} T={T} />
+            {/* chiude tab INFO */}
+            </>)}
 
-            {/* ── VOCI LIBERE VANO ── */}
-            <div style={{ marginTop: 14 }}>
-              <SectionLabel>➕ Voci libere vano</SectionLabel>
-              {(vano.vociLibere || []).map((vl: any, vi: number) => (
-                <div key={vi} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                  <input value={vl.desc || ""} placeholder="Descrizione voce..."
-                    onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], desc: e.target.value }; updV({ vociLibere: nl }); }}
-                    style={{ ...inputStyle, flex: 2 }} />
-                  <input type="number" value={vl.qta || ""} placeholder="Qta"
-                    onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], qta: Number(e.target.value) }; updV({ vociLibere: nl }); }}
-                    style={{ ...inputStyle, width: 54 }} />
-                  <input type="number" value={vl.prezzo || ""} placeholder="€"
-                    onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], prezzo: Number(e.target.value) }; updV({ vociLibere: nl }); }}
-                    style={{ ...inputStyle, width: 70 }} />
-                  <div style={{ fontSize: 11, fontWeight: 800, color: GRN, fontFamily: FM, minWidth: 50, textAlign: "right" }}>€{fmt((vl.prezzo || 0) * (vl.qta || 1))}</div>
-                  <div onClick={() => { const nl = (vano.vociLibere || []).filter((_: any, i: number) => i !== vi); updV({ vociLibere: nl }); }}
-                    style={{ padding: "4px 6px", cursor: "pointer", color: RED, fontSize: 14, fontWeight: 800 }}>×</div>
-                </div>
-              ))}
-              <div onClick={() => updV({ vociLibere: [...(vano.vociLibere || []), { desc: "", qta: 1, prezzo: 0 }] })}
-                style={{ padding: "8px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 11, color: T.sub, marginTop: 2 }}>
-                + Aggiungi voce
-              </div>
-            </div>
-
-            {/* ── NOTE VANO ── */}
-            <div style={{ marginTop: 14 }}>
-              <SectionLabel>📝 Note vano</SectionLabel>
-              <textarea value={vano.prevNote || ""} onChange={e => updV({ prevNote: e.target.value })}
-                placeholder="Note specifiche per questo vano..."
-                style={{ ...inputStyle, minHeight: 60, resize: "vertical", lineHeight: 1.5 }} />
-            </div>
-
-            {/* ── DISEGNO LIBERO ── */}
-            <div style={{ marginTop: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>✏️ Disegno libero vano</div>
-                  <div style={{ fontSize: 10, color: T.sub }}>Disegna a mano, carica foto, annota quote</div>
-                </div>
-                <div onClick={() => setShowDisegno(true)}
-                  style={{ padding: "8px 14px", borderRadius: 10, background: AMB + "15", border: `1px solid ${AMB}40`, fontSize: 12, fontWeight: 700, color: AMB, cursor: "pointer" }}>
-                  ✏️ {vano.prevPaths ? "Modifica" : "Apri"} disegno
+            {/* ══ TAB: DISEGNO ══ */}
+            {innerTab === "disegno" && (
+              <div style={{ marginTop: 12 }}>
+                {vano.prevPaths ? (
+                  <div>
+                    <img src={vano.prevPaths} style={{ width: "100%", borderRadius: 12, border: `1px solid ${AMB}40`, maxHeight: 280, objectFit: "contain", background: "#fff" }} alt="disegno vano" />
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <div onClick={() => setShowDisegno(true)}
+                        style={{ flex: 1, padding: "10px", borderRadius: 10, textAlign: "center", background: AMB + "15", border: `1px solid ${AMB}40`, fontSize: 12, fontWeight: 700, color: AMB, cursor: "pointer" }}>
+                        ✏️ Modifica disegno
+                      </div>
+                      <div onClick={() => updV({ prevPaths: null })}
+                        style={{ padding: "10px 14px", borderRadius: 10, textAlign: "center", background: RED + "10", border: `1px solid ${RED}30`, fontSize: 12, fontWeight: 700, color: RED, cursor: "pointer" }}>
+                        🗑
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => setShowDisegno(true)}
+                    style={{ marginTop: 8, padding: "40px 20px", borderRadius: 14, border: `2px dashed ${AMB}50`, textAlign: "center", cursor: "pointer", background: AMB + "05" }}>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}>✏️</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: AMB }}>Apri disegno</div>
+                    <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Disegna a mano libera, carica foto, annota quote</div>
+                  </div>
+                )}
+                {/* Note vano in tab disegno */}
+                <div style={{ marginTop: 14 }}>
+                  <SectionLabel>📝 Note vano</SectionLabel>
+                  <textarea value={vano.prevNote || ""} onChange={e => updV({ prevNote: e.target.value })}
+                    placeholder="Note specifiche per questo vano..."
+                    style={{ ...inputStyle, minHeight: 70, resize: "vertical", lineHeight: 1.5 }} />
                 </div>
               </div>
-              {vano.prevPaths && (
-                <img src={vano.prevPaths} style={{ width: "100%", borderRadius: 10, border: `1px solid ${T.bdr}`, marginTop: 8, maxHeight: 180, objectFit: "contain", background: "#fff" }} alt="disegno" />
-              )}
-            </div>
+            )}
 
-            {/* ── SUBTOTALE VANO ── */}
+            {/* ══ TAB: ACCESSORI ══ */}
+            {innerTab === "accessori" && (
+              <div style={{ marginTop: 12 }}>
+                <AccessoriCatalogoSection vano={vano} updV={updV} T={T} />
+                {/* Voci libere */}
+                <div style={{ marginTop: 14 }}>
+                  <SectionLabel>➕ Voci libere vano</SectionLabel>
+                  {(vano.vociLibere || []).map((vl: any, vi: number) => (
+                    <div key={vi} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+                      <input value={vl.desc || ""} placeholder="Descrizione voce..."
+                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], desc: e.target.value }; updV({ vociLibere: nl }); }}
+                        style={{ ...inputStyle, flex: 2 }} />
+                      <input type="number" value={vl.qta || ""} placeholder="Qta"
+                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], qta: Number(e.target.value) }; updV({ vociLibere: nl }); }}
+                        style={{ ...inputStyle, width: 54 }} />
+                      <input type="number" value={vl.prezzo || ""} placeholder="€"
+                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], prezzo: Number(e.target.value) }; updV({ vociLibere: nl }); }}
+                        style={{ ...inputStyle, width: 70 }} />
+                      <div style={{ fontSize: 11, fontWeight: 800, color: GRN, fontFamily: FM, minWidth: 50, textAlign: "right" }}>€{fmt((vl.prezzo || 0) * (vl.qta || 1))}</div>
+                      <div onClick={() => { const nl = (vano.vociLibere || []).filter((_: any, i: number) => i !== vi); updV({ vociLibere: nl }); }}
+                        style={{ padding: "4px 6px", cursor: "pointer", color: RED, fontSize: 14, fontWeight: 800 }}>×</div>
+                    </div>
+                  ))}
+                  <div onClick={() => updV({ vociLibere: [...(vano.vociLibere || []), { desc: "", qta: 1, prezzo: 0 }] })}
+                    style={{ padding: "8px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 11, color: T.sub, marginTop: 2 }}>
+                    + Aggiungi voce
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── SUBTOTALE VANO — sempre visibile ── */}
             <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: GRN + "08", border: `1px solid ${GRN}20`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>Totale vano</span>
               <span style={{ fontSize: 16, fontWeight: 900, color: GRN, fontFamily: FM }}>€{fmt(subtotale)}</span>
