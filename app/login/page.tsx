@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -25,8 +25,7 @@ export default function LoginPage() {
       setError('Email o password non corretti')
       setLoading(false)
     } else {
-      router.push('/dashboard')
-      router.refresh()
+      window.location.href = '/dashboard'
     }
   }
 
@@ -50,7 +49,7 @@ export default function LoginPage() {
 
     if (authError) {
       setError(authError.message === 'User already registered'
-        ? 'Questa email è già registrata. Prova ad accedere.'
+        ? 'Questa email Ã¨ giÃ  registrata. Prova ad accedere.'
         : authError.message)
       setLoading(false)
       return
@@ -129,7 +128,7 @@ export default function LoginPage() {
           <div style={{ marginBottom: 24 }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: '#86868b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Password</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" required minLength={6}
+              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required minLength={6}
               style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e5e5ea', fontSize: 15, boxSizing: 'border-box', background: '#fff', outline: 'none', fontFamily: 'inherit' }}
             />
           </div>
@@ -153,7 +152,7 @@ export default function LoginPage() {
           }}>
             {loading
               ? (mode === 'login' ? 'Accesso in corso...' : 'Registrazione...')
-              : (mode === 'login' ? 'Accedi →' : 'Crea account →')}
+              : (mode === 'login' ? 'Accedi â†’' : 'Crea account â†’')}
           </button>
         </form>
 
@@ -164,7 +163,7 @@ export default function LoginPage() {
                 style={{ color: '#D08008', fontWeight: 700, cursor: 'pointer' }}>Registrati gratis</span>
             </>
           ) : (
-            <>Hai già un account?{' '}
+            <>Hai giÃ  un account?{' '}
               <span onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
                 style={{ color: '#D08008', fontWeight: 700, cursor: 'pointer' }}>Accedi</span>
             </>
@@ -174,3 +173,4 @@ export default function LoginPage() {
     </div>
   )
 }
+
