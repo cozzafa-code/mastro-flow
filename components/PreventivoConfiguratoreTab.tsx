@@ -667,13 +667,15 @@ export default function PreventivoConfiguratoreTab() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
                   <div>
                     <label style={{ fontSize: 10, color: T.sub, fontWeight: 600, display: "block", marginBottom: 3 }}>Prezzo unitario (€)</label>
-                    <input type="number" style={inp} value={vano.prezzoUnitario || vano.prezzoTotale || 0}
-                      onChange={(e) => updV({ prezzoUnitario: Number(e.target.value), prezzoTotale: Number(e.target.value) })} />
+                    <input type="number" style={inp} value={(vano.prezzoUnitario || vano.prezzoTotale) > 0 ? (vano.prezzoUnitario || vano.prezzoTotale) : ""}
+                      placeholder="0"
+                      onChange={(e) => { const n = e.target.value === "" ? 0 : Number(e.target.value); updV({ prezzoUnitario: n, prezzoTotale: n }); }} />
                   </div>
                   <div>
                     <label style={{ fontSize: 10, color: T.sub, fontWeight: 600, display: "block", marginBottom: 3 }}>N. pezzi</label>
-                    <input type="number" style={inp} value={vano.pezzi || vano.nPezzi || 1}
-                      onChange={(e) => updV({ pezzi: Number(e.target.value), nPezzi: Number(e.target.value) })} />
+                    <input type="number" style={inp} value={(vano.pezzi || vano.nPezzi) > 1 ? (vano.pezzi || vano.nPezzi) : ""}
+                      placeholder="1"
+                      onChange={(e) => { const n = e.target.value === "" ? 1 : Number(e.target.value); updV({ pezzi: n, nPezzi: n }); }} />
                   </div>
                   <div>
                     <label style={{ fontSize: 10, color: T.sub, fontWeight: 600, display: "block", marginBottom: 3 }}>Subtotale</label>
