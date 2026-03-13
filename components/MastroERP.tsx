@@ -3034,7 +3034,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             transform: "rotate(180deg)",
             userSelect: "none",
           }}>
-            {fabOpen ? "✕" : "MASTRO"}
+            MASTRO
           </span>
         </div>
 
