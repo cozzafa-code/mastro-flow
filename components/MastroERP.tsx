@@ -3014,16 +3014,16 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           ));
         })()}
         <div onClick={() => setFabOpen(!fabOpen)} style={{
-          position: "fixed", bottom: 120, right: fabOpen ? 20 : -18, zIndex: 91,
-          width: 52, height: 80, borderRadius: "12px 0 0 12px",
+          position: "fixed", bottom: 200, right: fabOpen ? 16 : -14, zIndex: 91,
+          width: 44, height: 64, borderRadius: "10px 0 0 10px",
           background: T.acc,
           display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `-4px 4px 20px ${T.acc}60`,
-          cursor: "pointer", transition: "right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          boxShadow: `-3px 3px 16px ${T.acc}70`,
+          cursor: "pointer", transition: "right 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
         }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-            <span style={{ fontSize: 22, color: "#fff", fontWeight: 800, lineHeight: 1 }}>M</span>
-            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>{fabOpen ? "CHIUDI" : "MENU"}</span>
+            <span style={{ fontSize: 20, color: "#fff", fontWeight: 800, lineHeight: 1 }}>M</span>
+            <span style={{ fontSize: 8, color: "rgba(255,255,255,0.8)", fontWeight: 700, letterSpacing: 0.5 }}>{fabOpen ? "✕" : "+"}</span>
           </div>
         </div>
 
