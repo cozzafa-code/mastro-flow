@@ -29,81 +29,123 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
   // Fix decimali: sempre 2 cifre
   const fmt = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  // ─── Righe vani con dettaglio completo ───
-  const righeHTML = vaniCalc.map((v: any, i: number) => {
+  // ─── Helper accessori attivi ───
+  const isAttivo = (a: any) => a && (a === true || a.attivo === true || a.presente === true || a.inclusa === true || a.incluso === true);
+
+  // ─── Calcolo prezzo singolo accessorio (stessa logica di calcolaVanoPrezzo) ───
+  const prezzoAcc = (tipo: "tapparella"|"persiana"|"zanzariera"|"controtelaio", v: any): number => {
+    const m = v.misure || {};
+    const lmm = parseFloat(m.lCentro || 0);
+    const hmm = parseFloat(m.hCentro || 0);
+    const acc = v.accessori?.[tipo];
+    if (tipo === "controtelaio") return parseFloat(az.prezzoControtelaio || 0);
+    if (!acc?.attivo) return 0;
+    const al = acc.l || lmm, ah = acc.h || hmm;
+    const fb = parseFloat(az[`prezzo${tipo.charAt(0).toUpperCase()+tipo.slice(1)}`] || 0);
+    return fb > 0 ? Math.round((al/1000)*(ah/1000)*fb * 100)/100 : 0;
+  };
+
+  // ─── Righe vani: riga principale + sub-righe accessori ───
+  let rigaIndex = 0;
+  const righeHTML = vaniCalc.map((v: any) => {
+    rigaIndex++;
+    const idx = rigaIndex;
     const m = v.misure || {};
     const misureStr = m.lCentro && m.hCentro ? `${m.lCentro}×${m.hCentro} mm` : "";
     const colori = v.coloreInt && v.coloreEst && v.coloreInt !== v.coloreEst
       ? `${v.coloreInt} int. / ${v.coloreEst} est.`
       : (v.coloreInt || v.coloreEst || v.colore || "");
-    const dettagli = [
-      v.tipo || "",
-      misureStr,
-      v.sistema || v.modello || "",
-      v.vetro || "",
-      colori,
-    ].filter(Boolean).join(" · ");
+    const dettagli = [v.tipo || "", misureStr, v.sistema || v.modello || "", v.vetro || "", colori].filter(Boolean).join(" · ");
 
-    // Accessori su sub-riga — legge struttura con/senza .attivo
+    // ─── Disegno SVG del vano ───
+    let disegnoHTML = "";
+    if (v.disegno?.elements?.length > 0) {
+      const els = v.disegno.elements;
+      // Bounding box
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      els.forEach((el: any) => {
+        const x = el.x || 0, y = el.y || 0, w = el.w || el.width || 0, h = el.h || el.height || 0;
+        minX = Math.min(minX, x); minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + w); maxY = Math.max(maxY, y + h);
+      });
+      const vw = Math.max(maxX - minX + 20, 100), vh = Math.max(maxY - minY + 20, 100);
+      const svgEls = els.map((el: any) => {
+        const x = (el.x || 0) - minX + 10, y = (el.y || 0) - minY + 10;
+        const w = el.w || el.width || 40, h = el.h || el.height || 40;
+        if (el.type === "rect" || el.type === "window") return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#1A1A1C" stroke-width="1.5" rx="2"/>`;
+        if (el.type === "line") return `<line x1="${x}" y1="${y}" x2="${x + w}" y2="${y + h}" stroke="#1A1A1C" stroke-width="1.5"/>`;
+        if (el.type === "circle") return `<circle cx="${x}" cy="${y}" r="${w/2}" fill="none" stroke="#1A1A1C" stroke-width="1.5"/>`;
+        if (el.type === "text") return `<text x="${x}" y="${y}" font-size="8" fill="#555">${el.text || ""}</text>`;
+        return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#aaa" stroke-width="1"/>`;
+      }).join("");
+      disegnoHTML = `<svg viewBox="0 0 ${vw} ${vh}" style="max-width:120px;max-height:90px;border:1px solid #e5e5ea;border-radius:6px;padding:4px;margin-top:4px;display:block;" xmlns="http://www.w3.org/2000/svg">${svgEls}</svg>`;
+    }
+
+    // ─── Riga principale infisso ───
+    const pezzi = v.pezzi || 1;
+    const prezzoInfissoUnit = v.prezzoUnit - prezzoAcc("tapparella",v) - prezzoAcc("persiana",v) - prezzoAcc("zanzariera",v) - prezzoAcc("controtelaio",v)
+      - (v.vociLibere||[]).reduce((s:number,vl:any)=>s+(vl.prezzo||0)*(vl.qta||1),0)/pezzi
+      - (v.accessoriCatalogo||[]).reduce((s:number,ac:any)=>s+((ac.prezzoUnitario||0)*(ac.quantita||1)),0)/pezzi;
+    
+    let rows = `
+    <tr>
+      <td style="vertical-align:top;padding-top:12px">${idx}</td>
+      <td style="vertical-align:top;padding-top:12px">
+        <div style="font-weight:700">${v.nome || `Vano ${idx}`}</div>
+        <div style="font-size:11px;color:#86868b;margin-top:2px">${dettagli}</div>
+        ${disegnoHTML}
+      </td>
+      <td class="num" style="vertical-align:top;padding-top:12px">${pezzi}</td>
+      <td class="num" style="vertical-align:top;padding-top:12px">€ ${fmt(Math.max(0, prezzoInfissoUnit))}</td>
+      <td class="num bold" style="vertical-align:top;padding-top:12px">€ ${fmt(Math.max(0, prezzoInfissoUnit) * pezzi)}</td>
+    </tr>`;
+
+    // ─── Sub-righe accessori con prezzo ───
     const acc = v.accessori || {};
-    const accList: string[] = [];
     
-    // Helper: controlla se un accessorio è attivo in qualsiasi formato
-    const isAttivo = (a: any) => a && (a === true || a.attivo === true || a.presente === true || a.inclusa === true || a.incluso === true);
-    
-    // Tapparella — sia da v.accessori.tapparella che da v.tapparella diretto
-    const tapp = acc.tapparella || (v.tapparella ? { attivo: true } : null);
+    // Tapparella
+    const tapp = acc.tapparella;
     if (isAttivo(tapp)) {
-      const parts = ["Tapparella"];
-      if (tapp.tipo && tapp.tipo !== true) parts.push(tapp.tipo);
-      if (tapp.colore) parts.push(tapp.colore);
-      if (tapp.azionamento) parts.push(tapp.azionamento);
-      if (tapp.motorizzata) parts.push("Motorizzata");
-      if (tapp.l && tapp.h) parts.push(`${tapp.l}×${tapp.h} mm`);
-      accList.push(parts.join(" "));
+      const desc = ["Tapparella", tapp.tipo, tapp.colore, tapp.azionamento, tapp.motorizzata?"Motorizzata":null, tapp.l&&tapp.h?`${tapp.l}×${tapp.h} mm`:null].filter(Boolean).join(" ");
+      const p = prezzoAcc("tapparella", v);
+      rows += `<tr style="background:#fafafa"><td></td><td style="font-size:11px;color:#555;padding-left:16px">↳ ${desc}</td><td class="num" style="font-size:11px;color:#555">${pezzi}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p)}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p*pezzi)}</td></tr>`;
     }
     // Persiana
-    const pers = acc.persiana || (v.persiana ? { attivo: true } : null);
+    const pers = acc.persiana;
     if (isAttivo(pers)) {
-      const parts = ["Persiana"];
-      if (pers.tipo && pers.tipo !== true) parts.push(pers.tipo);
-      if (pers.colore) parts.push(pers.colore);
-      accList.push(parts.join(" "));
+      const desc = ["Persiana", pers.tipo, pers.colore].filter(Boolean).join(" ");
+      const p = prezzoAcc("persiana", v);
+      rows += `<tr style="background:#fafafa"><td></td><td style="font-size:11px;color:#555;padding-left:16px">↳ ${desc}</td><td class="num" style="font-size:11px;color:#555">${pezzi}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p)}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p*pezzi)}</td></tr>`;
     }
     // Zanzariera
-    const zanz = acc.zanzariera || (v.zanzariera ? { attivo: true } : null);
+    const zanz = acc.zanzariera;
     if (isAttivo(zanz)) {
-      const parts = ["Zanzariera"];
-      if (zanz.tipo && zanz.tipo !== true) parts.push(zanz.tipo);
-      if (zanz.colore) parts.push(zanz.colore);
-      accList.push(parts.join(" "));
+      const desc = ["Zanzariera", zanz.tipo, zanz.colore].filter(Boolean).join(" ");
+      const p = prezzoAcc("zanzariera", v);
+      rows += `<tr style="background:#fafafa"><td></td><td style="font-size:11px;color:#555;padding-left:16px">↳ ${desc}</td><td class="num" style="font-size:11px;color:#555">${pezzi}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p)}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p*pezzi)}</td></tr>`;
     }
     // Controtelaio
-    if (v.controtelaio || acc.cassonetto?.attivo) accList.push(`Controtelaio`);
-    // Accessori catalogo aggiuntivi
+    if (v.controtelaio && v.controtelaio !== "Nessuno") {
+      const p = prezzoAcc("controtelaio", v);
+      rows += `<tr style="background:#fafafa"><td></td><td style="font-size:11px;color:#555;padding-left:16px">↳ Controtelaio ${v.controtelaio}</td><td class="num" style="font-size:11px;color:#555">${pezzi}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p)}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p*pezzi)}</td></tr>`;
+    }
+    // Accessori catalogo
     (v.accessoriCatalogo || []).forEach((ac: any) => {
-      if (ac.nome) accList.push(`${(ac.quantita || 1) > 1 ? (ac.quantita || 1) + "× " : ""}${ac.nome}${ac.colore ? " " + ac.colore : ""}`);
+      if (!ac.nome) return;
+      const qta = ac.quantita || 1;
+      const p = ac.prezzoUnitario || 0;
+      const desc = [ac.nome, ac.colore].filter(Boolean).join(" ");
+      rows += `<tr style="background:#fafafa"><td></td><td style="font-size:11px;color:#555;padding-left:16px">↳ ${desc}</td><td class="num" style="font-size:11px;color:#555">${qta}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p)}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p*qta)}</td></tr>`;
     });
     // Voci libere vano
     (v.vociLibere || []).forEach((vl: any) => {
-      if (vl.desc) accList.push(vl.desc);
+      if (!vl.desc) return;
+      const qta = vl.qta || 1;
+      const p = vl.prezzo || 0;
+      rows += `<tr style="background:#fafafa"><td></td><td style="font-size:11px;color:#555;padding-left:16px">↳ ${vl.desc}</td><td class="num" style="font-size:11px;color:#555">${qta}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p)}</td><td class="num" style="font-size:11px;color:#555">€ ${fmt(p*qta)}</td></tr>`;
     });
-    const accHTML = accList.length > 0
-      ? `<div style="font-size:11px;color:#86868b;margin-top:3px;">↳ ${accList.join(" · ")}</div>`
-      : "";
 
-    return `
-    <tr>
-      <td style="vertical-align:top">${i + 1}</td>
-      <td>
-        <div style="font-weight:700">${v.nome || `Vano ${i + 1}`}</div>
-        <div style="font-size:11px;color:#86868b;margin-top:2px">${dettagli}</div>
-        ${accHTML}
-      </td>
-      <td class="num" style="vertical-align:top">${v.pezzi || 1}</td>
-      <td class="num" style="vertical-align:top">€ ${fmt(v.prezzoUnit)}</td>
-      <td class="num bold" style="vertical-align:top">€ ${fmt(v.prezzo)}</td>
-    </tr>`;
+    return rows;
   }).join("");
 
   const vociLibHTML = (c.vociLibere || []).map((vl: any) => `
