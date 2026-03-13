@@ -90,24 +90,101 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
     let disegnoHTML = "";
     if (v.disegno?.elements?.length > 0) {
       const els = v.disegno.elements;
-      // Bounding box
+      const PAD = 20, PAD_DIM = 24;
+
+      // Bounding box su tutti gli elementi
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      const expandBB = (x: number, y: number) => {
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      };
       els.forEach((el: any) => {
-        const x = el.x || 0, y = el.y || 0, w = el.w || el.width || 0, h = el.h || el.height || 0;
-        minX = Math.min(minX, x); minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + w); maxY = Math.max(maxY, y + h);
+        if (el.type === "rect") { expandBB(el.x, el.y); expandBB(el.x + el.w, el.y + el.h); }
+        else if (el.type === "montante") { expandBB(el.x, el.y1 ?? 0); expandBB(el.x, el.y2 ?? 0); }
+        else if (el.type === "traverso") { expandBB(el.x1 ?? 0, el.y); expandBB(el.x2 ?? 0, el.y); }
+        else if (el.type === "freeLine" || el.type === "apLine" || el.type === "dim") {
+          expandBB(el.x1 ?? 0, el.y1 ?? 0); expandBB(el.x2 ?? 0, el.y2 ?? 0);
+        } else if (el.type === "polyAnta" || el.type === "polyGlass") {
+          (el.poly || []).forEach((p: any) => expandBB(p.x ?? 0, p.y ?? 0));
+        }
       });
-      const vw = Math.max(maxX - minX + 20, 100), vh = Math.max(maxY - minY + 20, 100);
-      const svgEls = els.map((el: any) => {
-        const x = (el.x || 0) - minX + 10, y = (el.y || 0) - minY + 10;
-        const w = el.w || el.width || 40, h = el.h || el.height || 40;
-        if (el.type === "rect" || el.type === "window") return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#1A1A1C" stroke-width="1.5" rx="2"/>`;
-        if (el.type === "line") return `<line x1="${x}" y1="${y}" x2="${x + w}" y2="${y + h}" stroke="#1A1A1C" stroke-width="1.5"/>`;
-        if (el.type === "circle") return `<circle cx="${x}" cy="${y}" r="${w/2}" fill="none" stroke="#1A1A1C" stroke-width="1.5"/>`;
-        if (el.type === "text") return `<text x="${x}" y="${y}" font-size="8" fill="#555">${el.text || ""}</text>`;
-        return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#aaa" stroke-width="1"/>`;
-      }).join("");
-      disegnoHTML = `<svg viewBox="0 0 ${vw} ${vh}" style="max-width:120px;max-height:90px;border:1px solid #e5e5ea;border-radius:6px;padding:4px;margin-top:4px;display:block;" xmlns="http://www.w3.org/2000/svg">${svgEls}</svg>`;
+      if (!isFinite(minX)) { minX = 0; minY = 0; maxX = 300; maxY = 250; }
+
+      const cW = Math.max(maxX - minX, 10), cH = Math.max(maxY - minY, 10);
+      const svgW = 280, svgH = Math.min(220, Math.round(svgW * cH / cW));
+      const sc = Math.min((svgW - PAD * 2 - PAD_DIM) / cW, (svgH - PAD * 2 - PAD_DIM) / cH);
+      const ox = PAD_DIM + (svgW - PAD_DIM - PAD - cW * sc) / 2 - minX * sc;
+      const oy = PAD + (svgH - PAD * 2 - cH * sc) / 2 - minY * sc;
+      const tx = (x: number) => Math.round((ox + x * sc) * 10) / 10;
+      const ty = (y: number) => Math.round((oy + y * sc) * 10) / 10;
+      const sw = (w: number) => Math.round(w * sc * 10) / 10;
+
+      const TK = 4 * sc; // spessore telaio
+
+      let svgEls = "";
+      els.forEach((el: any) => {
+        if (el.type === "rect") {
+          // Cornice esterna
+          svgEls += `<rect x="${tx(el.x)}" y="${ty(el.y)}" width="${sw(el.w)}" height="${sw(el.h)}" fill="#E8F0FE" stroke="#1A1A1C" stroke-width="2" rx="1"/>`;
+          // Cornice interna (telaio)
+          svgEls += `<rect x="${tx(el.x)+TK}" y="${ty(el.y)+TK}" width="${sw(el.w)-TK*2}" height="${sw(el.h)-TK*2}" fill="none" stroke="#1A1A1C" stroke-width="1"/>`;
+        } else if (el.type === "montante") {
+          svgEls += `<line x1="${tx(el.x)}" y1="${ty(el.y1 ?? 0)}" x2="${tx(el.x)}" y2="${ty(el.y2 ?? 0)}" stroke="#1A1A1C" stroke-width="2"/>`;
+        } else if (el.type === "traverso") {
+          svgEls += `<line x1="${tx(el.x1 ?? 0)}" y1="${ty(el.y)}" x2="${tx(el.x2 ?? 0)}" y2="${ty(el.y)}" stroke="#1A1A1C" stroke-width="2"/>`;
+        } else if (el.type === "freeLine") {
+          svgEls += `<line x1="${tx(el.x1)}" y1="${ty(el.y1)}" x2="${tx(el.x2)}" y2="${ty(el.y2)}" stroke="#555" stroke-width="1" stroke-dasharray="none"/>`;
+        } else if (el.type === "apLine") {
+          // Linea apertura (arco anta) — tratteggiata
+          svgEls += `<line x1="${tx(el.x1)}" y1="${ty(el.y1)}" x2="${tx(el.x2)}" y2="${ty(el.y2)}" stroke="#3B7FE0" stroke-width="0.8" stroke-dasharray="3,2"/>`;
+        } else if (el.type === "dim") {
+          // Quota dimensionale
+          const x1 = tx(el.x1 ?? 0), y1 = ty(el.y1 ?? 0), x2 = tx(el.x2 ?? 0), y2 = ty(el.y2 ?? 0);
+          const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+          const isH = Math.abs(y2 - y1) < Math.abs(x2 - x1);
+          svgEls += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#888" stroke-width="0.5"/>`;
+          // Frecce
+          svgEls += `<polygon points="${x1},${y1} ${x1+3},${y1-2} ${x1+3},${y1+2}" fill="#888"/>`;
+          svgEls += `<polygon points="${x2},${y2} ${x2-3},${y2-2} ${x2-3},${y2+2}" fill="#888"/>`;
+          if (el.label) {
+            const rot = isH ? "0" : `rotate(-90 ${mx} ${my})`;
+            svgEls += `<text x="${mx}" y="${isH ? my - 3 : my}" transform="${rot}" font-size="7" fill="#555" text-anchor="middle" font-family="Arial">${el.label}</text>`;
+          }
+        } else if (el.type === "polyAnta" || el.type === "polyGlass") {
+          const poly = el.poly || [];
+          if (poly.length >= 2) {
+            const pts = poly.map((p: any) => `${tx(p.x)},${ty(p.y)}`).join(" ");
+            if (el.type === "polyGlass") {
+              svgEls += `<polygon points="${pts}" fill="#B3D4FF40" stroke="#3B7FE0" stroke-width="0.8"/>`;
+            } else {
+              // Anta: riempimento + diagonale apertura
+              svgEls += `<polygon points="${pts}" fill="#1A9E7308" stroke="#1A9E73" stroke-width="1"/>`;
+              // Linea diagonale che indica apertura
+              if (poly.length >= 3) {
+                svgEls += `<line x1="${tx(poly[0].x)}" y1="${ty(poly[0].y)}" x2="${tx(poly[2].x)}" y2="${ty(poly[2].y)}" stroke="#1A9E7360" stroke-width="0.5" stroke-dasharray="3,2"/>`;
+              }
+            }
+          }
+        }
+      });
+
+      // Quote esterne larghezza e altezza (solo se non ci sono già dim)
+      const hasDim = els.some((e: any) => e.type === "dim");
+      const lmm2 = v.misure?.lCentro || 0, hmm2 = v.misure?.hCentro || 0;
+      if (!hasDim && lmm2 && hmm2) {
+        const frame = els.find((e: any) => e.type === "rect");
+        if (frame) {
+          const fx1 = tx(frame.x), fy1 = ty(frame.y), fx2 = tx(frame.x + frame.w), fy2 = ty(frame.y + frame.h);
+          // Larghezza (sotto)
+          svgEls += `<line x1="${fx1}" y1="${fy2+8}" x2="${fx2}" y2="${fy2+8}" stroke="#888" stroke-width="0.5"/>`;
+          svgEls += `<text x="${(fx1+fx2)/2}" y="${fy2+17}" font-size="7" fill="#555" text-anchor="middle" font-family="Arial">${lmm2} mm</text>`;
+          // Altezza (sinistra)
+          svgEls += `<line x1="${fx1-8}" y1="${fy1}" x2="${fx1-8}" y2="${fy2}" stroke="#888" stroke-width="0.5"/>`;
+          svgEls += `<text x="${fx1-10}" y="${(fy1+fy2)/2}" font-size="7" fill="#555" text-anchor="middle" font-family="Arial" transform="rotate(-90 ${fx1-10} ${(fy1+fy2)/2})">${hmm2} mm</text>`;
+        }
+      }
+
+      disegnoHTML = `<svg viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}" style="max-width:100%;border:1px solid #e5e5ea;border-radius:8px;background:#fafafa;display:block;margin-top:8px;" xmlns="http://www.w3.org/2000/svg">${svgEls}</svg>`;
     }
 
     // ─── Riga principale infisso ───
