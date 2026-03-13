@@ -1909,7 +1909,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               <div style={{marginTop:8,padding:"12px",borderRadius:8,background:T.grn+"15",border:`1px solid ${T.grn}30`,textAlign:"center"}}>
                 <div style={{ display:"flex",alignItems:"center",justifyContent:"center" }}><I d={ICO.sparkles} s={22} c={T.acc} /></div>
                 <div style={{fontSize:13,fontWeight:800,color:T.grn,marginTop:4}}>Commessa completata!</div>
-                <div style={{fontSize:11,color:T.sub,marginTop:2}}>{c.code} Â· {c.cliente} {c.cognome||""}</div>
+                <div style={{fontSize:11,color:T.sub,marginTop:2}}>{c.code} · {c.cliente} {c.cognome||""}</div>
               </div>
             )}
           </div>
@@ -2363,7 +2363,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                     {occ && (
                       <div style={{ fontSize: 7, fontWeight: 700, color: sq.colore, lineHeight: 1.2 }}>
                         <div>{(occ as any).cliente?.slice(0, 8)}</div>
-                        <div style={{ color: T.sub }}>{(occ as any).vaniCount}v Â· {(occ as any).durata === "mezza" ? "Â½" : (occ as any).durata === "2giorni" ? "2g" : (occ as any).durata === "3giorni" ? "3g" : "1g"}</div>
+                        <div style={{ color: T.sub }}>{(occ as any).vaniCount}v · {(occ as any).durata === "mezza" ? "Â½" : (occ as any).durata === "2giorni" ? "2g" : (occ as any).durata === "3giorni" ? "3g" : "1g"}</div>
                       </div>
                     )}
                     {canClick && !occ && (
@@ -2961,7 +2961,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 9999, background: T.bg, borderRadius: 16, padding: 20, width: "90%", maxWidth: 420, boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 9, fontWeight: 800, color: prioColor, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: FM }}>âœ… TASK Â· {prioLabel}</div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: prioColor, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: FM }}>âœ… TASK · {prioLabel}</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: T.text, textDecoration: t.done ? "line-through" : "none", opacity: t.done ? 0.6 : 1 }}>{t.text}</div>
                     {t.date && <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}><I d={ICO.calendar} /> {new Date(t.date + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}{t.time ? " alle " + t.time : ""}</div>}
                   </div>
@@ -2975,7 +2975,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   {t.done && <span style={S.badge(T.grnLt, T.grn)}>âœ… Completato</span>}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div onClick={() => { toggleTask(t.id); setSelectedTask({ ...t, done: !t.done }); }} style={{ padding: "14px", borderRadius: 12, background: t.done ? T.bg : T.grn, color: t.done ? T.sub : "#fff", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: `1px solid ${t.done ? T.bdr : T.grn}` }}>{t.done ? "â†© Riapri" : "âœ“ Completa"}</div>
+                  <div onClick={() => { toggleTask(t.id); setSelectedTask({ ...t, done: !t.done }); }} style={{ padding: "14px", borderRadius: 12, background: t.done ? T.bg : T.grn, color: t.done ? T.sub : "#fff", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: `1px solid ${t.done ? T.bdr : T.grn}` }}>{t.done ? "↩ Riapri" : "âœ“ Completa"}</div>
                   <div onClick={() => { setTasks(ts => ts.filter(x => x.id !== t.id)); setSelectedTask(null); }} style={{ padding: "14px", borderRadius: 12, background: "#FF3B3010", color: "#FF3B30", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: "1px solid #FF3B3020" }}><><Ico d={ICO.trash} s={14} c="#FF3B30" /></> Elimina</div>
                 </div>
               </div>
@@ -2994,7 +2994,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           ];
           if (lastCM) {
             const p = PIPELINE.find(x => x.id === lastCM.fase);
-            fabItems.push({ id: "ultima", ico: <Ico d={ICO[p?.ico || "folder"]} s={22} c="#fff" />, l: `${lastCM.code} Â· ${lastCM.cliente}`, c: p?.color || T.acc, action: () => { setFabOpen(false); setSelectedCM(lastCM); setTab("commesse"); } });
+            fabItems.push({ id: "ultima", ico: <Ico d={ICO[p?.ico || "folder"]} s={22} c="#fff" />, l: `${lastCM.code} · ${lastCM.cliente}`, c: p?.color || T.acc, action: () => { setFabOpen(false); setSelectedCM(lastCM); setTab("commesse"); } });
           }
           return fabItems.map((item, i) => (
             <div key={item.id} onClick={item.action} style={{
@@ -3011,7 +3011,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 {item.ico}
               </div>
               <div style={{ padding: "6px 12px", borderRadius: 8, background: T.card, border: `1px solid ${item.id === "ultima" ? item.c + "40" : T.bdr}`, boxShadow: "0 2px 12px rgba(0,0,0,0.1)", fontSize: item.id === "ultima" ? 11 : 12, fontWeight: 700, color: item.c, whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>
-                {item.id === "ultima" ? `â†© ${item.l}` : item.l}
+                {item.id === "ultima" ? `↩ ${item.l}` : item.l}
               </div>
             </div>
           ));
@@ -3054,7 +3054,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <div style={{ fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
                   <span>{chIco[selectedMsg.canale]}</span> {selectedMsg.from}
                 </div>
-                <div style={{ fontSize: 11, color: T.sub }}>{selectedMsg.cm ? `${selectedMsg.cm} Â· ` : ""}{selectedMsg.thread?.length || 0} messaggi</div>
+                <div style={{ fontSize: 11, color: T.sub }}>{selectedMsg.cm ? `${selectedMsg.cm} · ` : ""}{selectedMsg.thread?.length || 0} messaggi</div>
               </div>
               {selectedMsg.cm && (
                 <div onClick={() => { const cm = cantieri.find(c => c.code === selectedMsg.cm); if (cm) { setSelectedMsg(null); setSelectedCM(cm); setTab("commesse"); } }} style={{ padding: "4px 10px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 700, color: T.acc, cursor: "pointer" }}>
@@ -3097,7 +3097,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 const mChIco = chIco[msg.canale] || chIco[selectedMsg.canale] || chIco.whatsapp;
                 return (
                   <div key={i} style={{ marginBottom: 12, display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
-                    <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontWeight: 600 }}>{mChIco} {msg.who} Â· {msg.date} {msg.time}</div>
+                    <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontWeight: 600 }}>{mChIco} {msg.who} · {msg.date} {msg.time}</div>
                     <div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: isMe ? "14px 14px 4px 14px" : "14px 14px 14px 4px", background: isMe ? (chCol[msg.canale || selectedMsg.canale] || T.acc) : T.card, color: isMe ? "#fff" : T.text, border: isMe ? "none" : `1px solid ${T.bdr}`, fontSize: 13, lineHeight: 1.4 }}>
                       {msg.text}
                     </div>
@@ -3266,7 +3266,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#FF3B30" }}><I d={ICO.alertTriangle} /> Segnala problema</div>
                   <div onClick={() => setShowProblemaModal(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}>âœ•</div>
                 </div>
-                <div style={{ fontSize: 11, color: T.sub, marginBottom: 14, padding: "8px 12px", background: T.accLt, borderRadius: 8 }}><Ico d={ICO.folder} s={12} c={T.acc} /> {c.code} Â· {c.cliente} Â· Fase: <b>{c.fase}</b></div>
+                <div style={{ fontSize: 11, color: T.sub, marginBottom: 14, padding: "8px 12px", background: T.accLt, borderRadius: 8 }}><Ico d={ICO.folder} s={12} c={T.acc} /> {c.code} · {c.cliente} · Fase: <b>{c.fase}</b></div>
 
                 <label style={S.fieldLabel}>Titolo *</label>
                 <input style={S.input} placeholder="Es: Profilo arrivato danneggiato" value={problemaForm.titolo} onChange={e => setProblemaForm(f => ({ ...f, titolo: e.target.value }))} />
@@ -3342,7 +3342,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowProblemiView(false)}>
               <div style={{ ...S.modalInner, maxWidth: 500, maxHeight: "90vh", overflow: "auto" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}><I d={ICO.alertTriangle} /> Problemi {cmFilter ? `Â· ${selectedCM.code}` : "â€” Tutti"}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}><I d={ICO.alertTriangle} /> Problemi {cmFilter ? `· ${selectedCM.code}` : "â€” Tutti"}</div>
                   <div onClick={() => setShowProblemiView(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}>âœ•</div>
                 </div>
 
@@ -3377,7 +3377,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{prio.l} {p.titolo}</div>
-                          <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{p.commessaCode} Â· {p.cliente} Â· {p.fase}</div>
+                          <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{p.commessaCode} · {p.cliente} · {p.fase}</div>
                         </div>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: st.c + "18", color: st.c }}>{st.l}</span>
                       </div>
@@ -3401,7 +3401,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                         )}
                         {p.stato === "risolto" && (
                           <button onClick={() => setProblemi(prev => prev.map(x => x.id === p.id ? { ...x, stato: "aperto", dataRisoluzione: null } : x))} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.bg, color: T.sub, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>
-                            â†© Riapri
+                            ↩ Riapri
                           </button>
                         )}
                         <button onClick={() => { if (confirm("Eliminare questo problema?")) setProblemi(prev => prev.filter(x => x.id !== p.id)); }} style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid #FF3B3030`, background: "#FF3B3008", color: "#FF3B30", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>
@@ -3670,7 +3670,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <label style={S.fieldLabel}>Collega a commessa</label>
                 <select style={S.select} value={newEvent.cm} onChange={e => setNewEvent(ev => ({ ...ev, cm: e.target.value }))}>
                   <option value="">â€” Nessuna â€”</option>
-                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} Â· {c.cliente}</option>)}
+                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} · {c.cliente}</option>)}
                 </select>
               </div>
               <div style={{ marginBottom: 14 }}>
@@ -3714,7 +3714,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <label style={S.fieldLabel}>Collega a commessa</label>
                 <select style={S.select} value={newEvent.cm} onChange={e => setNewEvent(ev => ({ ...ev, cm: e.target.value }))}>
                   <option value="">â€” Nessuna â€”</option>
-                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} Â· {c.cliente}</option>)}
+                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} · {c.cliente}</option>)}
                 </select>
               </div>
               <div style={{ marginBottom: 14 }}>
@@ -3803,7 +3803,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <label style={S.fieldLabel}>Collega a commessa (opzionale)</label>
                 <select style={S.select} value={composeMsg.cm} onChange={e => setComposeMsg(c => ({ ...c, cm: e.target.value }))}>
                   <option value="">â€” Nessuna â€”</option>
-                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} Â· {c.cliente}</option>)}
+                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} · {c.cliente}</option>)}
                 </select>
               </div>
               <div style={{ marginBottom: 14 }}>
@@ -4040,7 +4040,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   <div style={{ width: 60, height: 60, borderRadius: "50%", border: "4px solid #af52de20", borderTopColor: "#af52de", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
                   <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
                   <div style={{ fontSize: 15, fontWeight: 700, color: "#af52de" }}>Analisi AI in corso...</div>
-                  <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Rilevamento bordi Â· Edge detection Â· Stima dimensioni</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Rilevamento bordi · Edge detection · Stima dimensioni</div>
                   <div style={{ fontSize: 10, color: T.sub, marginTop: 8 }}>Analizzando "{selectedVano?.nome}"...</div>
                 </div>
               )}
@@ -4182,7 +4182,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   <div style={{ ...S.card, padding: 12, marginBottom: 12, background: "#1A9E7308", border: `2px solid #1A9E73` }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", marginBottom: 6 }}>âœ… ORDINE TROVATO</div>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{inboxResult.matchedCommessa?.code} â€” {inboxResult.matchedCommessa?.cliente}</div>
-                    <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedOrdine.fornitore?.nome || "â€”"} Â· â‚¬{(inboxResult.matchedOrdine.totaleIva || 0).toLocaleString("it-IT")}</div>
+                    <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedOrdine.fornitore?.nome || "â€”"} · â‚¬{(inboxResult.matchedOrdine.totaleIva || 0).toLocaleString("it-IT")}</div>
                     <button onClick={() => confermaInboxDoc(inboxResult.matchedOrdine.id)} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                       âœ… ASSEGNA A QUESTO ORDINE
                     </button>
@@ -4224,7 +4224,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                       <div key={cm.id} onClick={() => assegnaDocUniversale(cm.id, inboxResult.docTipo)} style={{ ...S.card, padding: "10px 12px", marginBottom: 6, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${T.bdr}` }}>
                         <div>
                           <div style={{ fontSize: 12, fontWeight: 700 }}>{cm.code} â€” {cm.cliente} {cm.cognome || ""}</div>
-                          <div style={{ fontSize: 10, color: T.sub }}>{cm.fase} Â· {cm.indirizzo || "â€”"}</div>
+                          <div style={{ fontSize: 10, color: T.sub }}>{cm.fase} · {cm.indirizzo || "â€”"}</div>
                         </div>
                         <span style={{ fontSize: 16 }}>â†’</span>
                       </div>
