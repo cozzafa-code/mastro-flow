@@ -3014,7 +3014,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             </div>
           ));
         })()}
-        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} />
+        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} />
 
         {/* MESSAGE DETAIL OVERLAY */}
         {selectedMsg && (() => {
