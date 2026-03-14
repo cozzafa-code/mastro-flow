@@ -1,4 +1,5 @@
 "use client";
+import DraggableFAB from "@/components/DraggableFAB";
 // =======================================================
 // MASTRO ERP v2 — PARTE 1/5
 // Righe 1-1280: Costanti, Dati Demo (incluse visite/vaniList/euro/scadenza),
@@ -3013,18 +3014,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             </div>
           ));
         })()}
-        <div onClick={() => setFabOpen(!fabOpen)} style={{
-          position: "fixed", bottom: 90, right: 20, zIndex: 91,
-          width: 60, height: 60, borderRadius: "50%",
-          background: T.acc,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: `0 6px 24px ${T.acc}50`,
-          cursor: "pointer", transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", transition: "transform 0.3s ease", transform: fabOpen ? "rotate(360deg)" : "rotate(0deg)" }}>
-            <span style={{ fontSize: 26, color: "#fff", fontWeight: 800, fontFamily: "'Plus Jakarta Sans',sans-serif", lineHeight: 1 }}>{fabOpen ? "F" : "M"}</span>
-          </div>
-        </div>
+        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} />
 
         {/* MESSAGE DETAIL OVERLAY */}
         {selectedMsg && (() => {
