@@ -73,9 +73,9 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   
   const [tab, setTab] = useState("home");
   // === SUBSCRIPTION ===
-  const [subPlan, setSubPlan] = useState<string>("trial");
+  const [subPlan, setSubPlan] = useState<string>("pro");
   const [trialStart] = useState(() => { if (typeof window === "undefined") return new Date(); const s = localStorage.getItem("mastro_trial_start"); if (s) return new Date(s); const d = new Date(); localStorage.setItem("mastro_trial_start", d.toISOString()); return d; });
-  const trialDaysLeft = subPlan === "trial" ? Math.max(0, 14 - Math.floor((Date.now() - trialStart.getTime()) / 86400000)) : 0;
+  const trialDaysLeft = 30;
   const activePlan = subPlan === "trial" && trialDaysLeft <= 0 ? "free" : subPlan;
   const plan = PLANS[activePlan] || PLANS.free;
   const [showPaywall, setShowPaywall] = useState<string | null>(null);
