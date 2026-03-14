@@ -6,13 +6,14 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
   const drag = useRef({ active: false, moved: false, startY: 0, startTop: 300 });
   useEffect(() => {
     const s = localStorage.getItem("mastro:fab_top");
-    setTopPx(s ? parseInt(s) : window.innerHeight - 300);
+    setTopPx(s ? parseInt(s) : window.innerHeight / 2);
   }, []);
   const onDown = (e) => {
     const y = e.touches ? e.touches[0].clientY : e.clientY;
     drag.current = { active: true, moved: false, startY: y, startTop: topPx };
     setDragging(true);
     e.preventDefault();
+    e.stopPropagation();
   };
   useEffect(() => {
     const onMove = (e) => {
@@ -20,7 +21,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
       const y = e.touches ? e.touches[0].clientY : e.clientY;
       const delta = y - drag.current.startY;
       if (Math.abs(delta) > 4) drag.current.moved = true;
-      const newY = Math.max(60, Math.min(window.innerHeight - 120, drag.current.startTop + delta));
+      const newY = Math.max(60, Math.min(window.innerHeight - 180, drag.current.startTop + delta));
       setTopPx(newY);
     };
     const onUp = () => {
@@ -48,64 +49,61 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     { l: "Nuova commessa", c: "#E8A020", emoji: "??", a: onCommessa },
     { l: "Messaggio", c: "#8B5CF6", emoji: "??", a: onMessaggio },
   ];
-  const goesDown = topPx > (typeof window !== "undefined" ? window.innerHeight / 2 : 400);
+  const itemsHeight = items.length * 76;
+  const spaceBelow = typeof window !== "undefined" ? window.innerHeight - topPx - 160 : 300;
+  const goUp = spaceBelow < itemsHeight;
   return (
     <>
       {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}
-      <div style={{ position: "fixed", right: 0, top: topPx, zIndex: 92, display: "flex", alignItems: "flex-start",
-        transition: dragging ? "none" : "top 0.15s ease", flexDirection: goesDown ? "column-reverse" : "column" }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ display: "flex", flexDirection: goesDown ? "column-reverse" : "column", gap: 18, marginRight: 20 }}>
-            {items.map((item, i) => (
-              <div key={i} onClick={() => { if(item.a) item.a(); setFabOpen(false); }}
-                style={{ display: "flex", alignItems: "center", gap: 14, flexDirection: "row-reverse",
-                  opacity: fabOpen ? 1 : 0,
-                  transform: fabOpen ? "translateX(0) scale(1)" : "translateX(40px) scale(0.7)",
-                  transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1) " + (fabOpen ? i*55 : 0) + "ms",
-                  pointerEvents: fabOpen ? "auto" : "none" }}>
-                <div style={{ width: 58, height: 58, borderRadius: "50%", background: item.c,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 26, boxShadow: "0 4px 16px " + item.c + "70" }}>{item.emoji}</div>
-                <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 14, fontWeight: 700,
-                  padding: "8px 14px", borderRadius: 10, whiteSpace: "nowrap",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>{item.l}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {fabOpen && (
-              <div onTouchEnd={(e) => { e.stopPropagation(); setFabOpen(false); }} onClick={() => setFabOpen(false)}
-                style={{ width: 46, height: 56, background: acc, borderRadius: "12px 0 0 0",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-                <span style={{ fontSize: 22, color: "#fff" }}>?</span>
-              </div>
-            )}
-            <div onMouseDown={onDown} onTouchStart={onDown}
-              style={{ width: fabOpen ? 46 : 26, height: fabOpen ? 100 : 110,
-                background: acc, borderRadius: fabOpen ? "0 0 0 12px" : "12px 0 0 12px",
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-                cursor: "grab", userSelect: "none", touchAction: "none",
-                transition: "width 0.25s ease, height 0.25s ease",
-                boxShadow: "-4px 0 20px " + acc + "60" }}>
-              {fabOpen ? (
-                <>
-                  <span style={{ fontSize: 18, color: "#fff" }}>?</span>
-                  <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: 1.5,
-                    writingMode: "vertical-rl", transform: "rotate(180deg)" }}>SPOSTA</span>
-                </>
-              ) : (
-                <>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "#fff",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
-                    <span style={{ fontSize: 18, fontWeight: 900, color: acc, lineHeight: 1 }}>M</span>
-                  </div>
-                  <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)",
-                    fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: 2 }}>MASTRO</span>
-                </>
-              )}
+      {fabOpen && (
+        <div style={{ position: "fixed", right: 70, zIndex: 92,
+          top: goUp ? topPx - itemsHeight - 10 : topPx + 10,
+          display: "flex", flexDirection: "column", gap: 14 }}>
+          {items.map((item, i) => (
+            <div key={i} onClick={() => { if(item.a) item.a(); setFabOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 14, flexDirection: "row-reverse",
+                opacity: fabOpen ? 1 : 0,
+                transform: fabOpen ? "translateX(0) scale(1)" : "translateX(40px) scale(0.7)",
+                transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1) " + i*55 + "ms",
+                pointerEvents: "auto" }}>
+              <div style={{ width: 58, height: 58, borderRadius: "50%", background: item.c,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 26, boxShadow: "0 4px 16px " + item.c + "70" }}>{item.emoji}</div>
+              <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 14, fontWeight: 700,
+                padding: "8px 14px", borderRadius: 10, whiteSpace: "nowrap",
+                boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>{item.l}</div>
             </div>
+          ))}
+        </div>
+      )}
+      <div style={{ position: "fixed", right: 0, top: topPx, zIndex: 92,
+        transition: dragging ? "none" : "top 0.15s ease" }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setFabOpen(false); }}
+               onClick={() => setFabOpen(false)}
+            style={{ width: 46, height: 70, background: fabOpen ? "#DC4444" : acc,
+              borderRadius: "12px 0 0 0",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
+              cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.15)",
+              transition: "background 0.2s" }}>
+            <span style={{ fontSize: fabOpen ? 22 : 0, color: "#fff", transition: "font-size 0.2s" }}>?</span>
+            <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: 1,
+              writingMode: "vertical-rl", transform: "rotate(180deg)",
+              opacity: fabOpen ? 1 : 0, transition: "opacity 0.2s" }}>CHIUDI</span>
+          </div>
+          <div onMouseDown={onDown} onTouchStart={onDown}
+            style={{ width: 46, height: 130,
+              background: acc, borderRadius: "0 0 0 12px",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
+              cursor: "grab", userSelect: "none", touchAction: "none",
+              boxShadow: "-4px 0 20px " + acc + "60" }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+              <span style={{ fontSize: 20, fontWeight: 900, color: acc, lineHeight: 1 }}>M</span>
+            </div>
+            <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)",
+              fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: 2 }}>MASTRO</span>
           </div>
         </div>
       </div>
