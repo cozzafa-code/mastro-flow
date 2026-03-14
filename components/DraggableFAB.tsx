@@ -98,13 +98,13 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
           <div onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setFabOpen(false); }}
                onClick={() => setFabOpen(false)}
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 80 : 0, overflow: "hidden",
-              background: "linear-gradient(160deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF)",
+              background: "#0A5940",
               borderRadius: "12px 0 0 0",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
               cursor: "pointer", borderBottom: fabOpen ? "1px solid rgba(255,255,255,0.2)" : "none",
               transition: "width 0.25s ease, height 0.25s ease" }}>
             <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", letterSpacing: 1, textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>CHIUDI</span>
-            <span style={{ fontSize: 16, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>?</span>
+            
           </div>
           <div onMouseDown={onDown} onTouchStart={onDown}
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 100 : 90,
