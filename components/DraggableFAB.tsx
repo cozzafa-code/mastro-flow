@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function DraggableFAB({ fabOpen, setFabOpen, acc }: Props) {
-  const [posY, setPosY] = useState(400);
+  const [posY, setPosY] = useState<number | null>(null);
   const dragging = useRef(false);
   const moved = useRef(false);
   const startY = useRef(0);
@@ -24,25 +24,27 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc }: Props) {
     dragging.current = true;
     moved.current = false;
     startY.current = e.touches[0].clientY;
-    startPosY.current = posY;
+    startPosY.current = posY ?? 400;
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (!dragging.current) return;
     const delta = e.touches[0].clientY - startY.current;
     if (Math.abs(delta) > 4) moved.current = true;
-    const newY = Math.max(60, Math.min(window.innerHeight - 80, startPosY.current + delta));
+    const newY = Math.max(60, Math.min(window.innerHeight - 80, (startPosY.current) + delta));
     setPosY(newY);
   };
 
   const onTouchEnd = () => {
     dragging.current = false;
-    localStorage.setItem("mastro-fab-y", String(posY));
+    if (posY !== null) localStorage.setItem("mastro-fab-y", String(posY));
   };
 
   const onClick = () => {
     if (!moved.current) setFabOpen(!fabOpen);
   };
+
+  if (posY === null) return null;
 
   return (
     <div
