@@ -7,6 +7,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
+import InfissoConfigurator from "./InfissoConfigurator";
 
 // ── Palette colori ──
 const GRN = "#1A9E73";
@@ -457,7 +458,7 @@ function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any)
             <div style={{ display: "flex", gap: 6, marginTop: 10, marginBottom: 4 }}>
               {([
                 { id: "info", label: "📐 Info & Prezzi" },
-                { id: "disegno", label: `✏️ Disegno${vano.prevPaths ? " ✓" : ""}` },
+                { id: "disegno", label: `📐 Config${vano.infissoConfig?.tipo ? " ✓" : ""}` },
                 { id: "accessori", label: `🏷 Accessori${(vano.accessoriCatalogo?.length || 0) > 0 ? ` (${vano.accessoriCatalogo.length})` : ""}` },
               ] as const).map(tab => (
                 <div
@@ -680,39 +681,10 @@ function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any)
             {/* chiude tab INFO */}
             </>)}
 
-            {/* ══ TAB: DISEGNO ══ */}
+            {/* ══ TAB: CONFIGURATORE ══ */}
             {innerTab === "disegno" && (
               <div style={{ marginTop: 12 }}>
-                {vano.prevPaths ? (
-                  <div>
-                    <img src={vano.prevPaths} style={{ width: "100%", borderRadius: 12, border: `1px solid ${AMB}40`, maxHeight: 280, objectFit: "contain", background: "#fff" }} alt="disegno vano" />
-                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <div onClick={() => setShowDisegno(true)}
-                        style={{ flex: 1, padding: "10px", borderRadius: 10, textAlign: "center", background: AMB + "15", border: `1px solid ${AMB}40`, fontSize: 12, fontWeight: 700, color: AMB, cursor: "pointer" }}>
-                        ✏️ Modifica disegno
-                      </div>
-                      <div onClick={() => updV({ prevPaths: null })}
-                        style={{ padding: "10px 14px", borderRadius: 10, textAlign: "center", background: RED + "10", border: `1px solid ${RED}30`, fontSize: 12, fontWeight: 700, color: RED, cursor: "pointer" }}>
-                        🗑
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => setShowDisegno(true)}
-                    style={{ marginTop: 8, padding: "40px 20px", borderRadius: 14, border: `2px dashed ${AMB}50`, textAlign: "center", cursor: "pointer", background: AMB + "05" }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>✏️</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: AMB }}>Apri disegno</div>
-                    <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Disegna a mano libera, carica foto, annota quote</div>
-                  </div>
-                )}
-                {/* Note vano in tab disegno */}
-                <div style={{ marginTop: 14 }}>
-                  <SectionLabel>📝 Note vano</SectionLabel>
-                  <textarea value={vano.prevNote || ""} onChange={e => updV({ prevNote: e.target.value })}
-                    placeholder="Note specifiche per questo vano..."
-                    style={{ ...inputStyle, minHeight: 70, resize: "vertical", lineHeight: 1.5 }} />
-                </div>
+                <InfissoConfigurator vano={vano} updVano={updVano} T={T} />
               </div>
             )}
 
