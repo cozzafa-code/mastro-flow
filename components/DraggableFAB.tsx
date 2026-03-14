@@ -11,21 +11,12 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     setTopPx(s ? parseInt(s) : window.innerHeight / 2);
     if (sd) setSide(sd);
   }, []);
-  const longPressTimer = useRef(null);
   const onDown = (e) => {
     const y = e.touches ? e.touches[0].clientY : e.clientY;
-    drag.current = { active: false, moved: false, startY: y, startTop: topPx };
-    longPressTimer.current = setTimeout(() => {
-      drag.current.active = true;
-      setDragging(true);
-    }, 250);
-  };
-  const onDownCancel = () => {
-    clearTimeout(longPressTimer.current);
-    if (!drag.current.moved) {
-      drag.current.active = false;
-      setDragging(false);
-    }
+    drag.current = { active: true, moved: false, startY: y, startTop: topPx };
+    setDragging(true);
+    e.preventDefault();
+    e.stopPropagation();
   };
   useEffect(() => {
     const onMove = (e) => {
@@ -86,7 +77,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
           display: "flex", flexDirection: "column", gap: 10,
           transition: dragging ? "none" : "top 0.18s ease" }}>
           {items.map((item, i) => item.t === "SEP" ? (
-            <div key={i} style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "center", letterSpacing: 2, padding: "2px 0" }}>RECENTI</div>
+            <div key={i} style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "center", letterSpacing: 2 }}>RECENTI</div>
           ) : (
             <div key={i} onClick={() => { if (item.a) { item.a(); setFabOpen(false); } }}
               style={{ display: "flex", alignItems: "center", gap: 12, flexDirection: isRight ? "row-reverse" : "row",
@@ -114,12 +105,12 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
               cursor: "pointer", transition: "width 0.25s ease, height 0.25s ease" }}>
             <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", letterSpacing: 1 }}>CHIUDI</span>
             <div onClick={(e) => { e.stopPropagation(); const ns = side === "right" ? "left" : "right"; setSide(ns); localStorage.setItem("mastro:fab_side", ns); }}
-              style={{ fontSize: 7, color: "rgba(255,255,255,0.7)", fontWeight: 700, cursor: "pointer",
-                padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.15)", marginTop: 2 }}>
+              style={{ fontSize: 8, color: "rgba(255,255,255,0.8)", fontWeight: 800, cursor: "pointer",
+                padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.15)" }}>
               {side === "right" ? "<" : ">"}
             </div>
           </div>
-          <div onMouseDown={onDown} onTouchStart={onDown} onMouseUp={onDownCancel} onTouchEnd={onDownCancel}
+          <div onMouseDown={onDown} onTouchStart={onDown}
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 100 : 90,
               background: acc, borderRadius: isRight ? (fabOpen ? "0 0 0 12px" : "12px 0 0 12px") : (fabOpen ? "0 0 12px 0" : "0 12px 12px 0"),
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
