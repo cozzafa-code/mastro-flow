@@ -494,6 +494,10 @@ export default function InfissoConfigurator({ vano, updVano, T }: Props) {
 // ─────────────────────────────────────────────────────────
 // Mini preview per griglia selezione tipo
 // ─────────────────────────────────────────────────────────
+export function generaSVGMini(tipo: string, W: number = 900, H: number = 1400, tapp: boolean = false, zanz: boolean = false): string {
+  return miniPreview(tipo);
+}
+
 function miniPreview(tipo: string): string {
   const W = 44, H = 34, f = 2, s = 2;
   const base = `<rect x="1" y="1" width="${W-2}" height="${H-2}" fill="#e8f0fe" stroke="#1A1A1C" stroke-width="${f}" rx="1"/>`;
