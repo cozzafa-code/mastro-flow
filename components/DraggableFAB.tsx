@@ -54,7 +54,10 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     { l: "Messaggio", c: "#8B5CF6", emoji: "??", a: onMessaggio },
   ];
   const itemsH = items.length * 72 + 56;
-  const actionsTop = goUp ? topPx - itemsH : topPx + 60;
+  const minTop = 60;
+  const maxTop = typeof window !== "undefined" ? window.innerHeight - 80 : 600;
+  const rawTop = goUp ? topPx - itemsH : topPx + 60;
+  const actionsTop = Math.max(minTop, Math.min(maxTop - itemsH, rawTop));
   return (
     <>
       {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}
@@ -85,7 +88,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setFabOpen(false); }}
                onClick={() => setFabOpen(false)}
-            style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 56 : 0, overflow: "hidden",
+            style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 80 : 0, overflow: "hidden",
               background: "#DC4444", borderRadius: "12px 0 0 0",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
               cursor: "pointer", borderBottom: fabOpen ? "1px solid rgba(255,255,255,0.15)" : "none",
