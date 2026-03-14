@@ -20,46 +20,36 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc }: Props) {
     else setPosY(window.innerHeight - 160);
   }, []);
 
-  const onStart = (e: React.TouchEvent | React.MouseEvent) => {
+  const onTouchStart = (e: React.TouchEvent) => {
     dragging.current = true;
     moved.current = false;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    startY.current = clientY;
+    startY.current = e.touches[0].clientY;
     startPosY.current = posY;
   };
 
-  useEffect(() => {
-    const onMove = (e: TouchEvent | MouseEvent) => {
-      if (!dragging.current) return;
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-      const delta = clientY - startY.current;
-      if (Math.abs(delta) > 4) moved.current = true;
-      const newY = Math.max(60, Math.min(window.innerHeight - 80, startPosY.current + delta));
-      setPosY(newY);
-    };
-    const onEnd = () => {
-      if (dragging.current) {
-        dragging.current = false;
-        localStorage.setItem("mastro-fab-y", String(posY));
-      }
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onEnd);
-    window.addEventListener("touchmove", onMove, { passive: true });
-    window.addEventListener("touchend", onEnd);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onEnd);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onEnd);
-    };
-  }, [posY]);
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!dragging.current) return;
+    const delta = e.touches[0].clientY - startY.current;
+    if (Math.abs(delta) > 4) moved.current = true;
+    const newY = Math.max(60, Math.min(window.innerHeight - 80, startPosY.current + delta));
+    setPosY(newY);
+  };
+
+  const onTouchEnd = () => {
+    dragging.current = false;
+    localStorage.setItem("mastro-fab-y", String(posY));
+  };
+
+  const onClick = () => {
+    if (!moved.current) setFabOpen(!fabOpen);
+  };
 
   return (
     <div
-      onMouseDown={onStart}
-      onTouchStart={onStart}
-      onClick={() => { if (!moved.current) setFabOpen(!fabOpen); }}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onClick={onClick}
       style={{
         position: "fixed",
         top: posY,
@@ -69,10 +59,9 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc }: Props) {
         background: acc,
         display: "flex", alignItems: "center", justifyContent: "center",
         boxShadow: `0 6px 24px ${acc}50`,
-        cursor: "grab",
+        cursor: "pointer",
         touchAction: "none",
         userSelect: "none",
-        transition: "box-shadow 0.2s ease",
       }}
     >
       <div style={{ transition: "transform 0.3s ease", transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
