@@ -1,227 +1,200 @@
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — lib/pdf-misure.ts
-// PDF misure per produzione/fornitore
-// Griglia compatta, ogni vano su riga, dati tecnici completi
-// ═══════════════════════════════════════════════════════════
+// =====================================================================
+// MASTRO ERP - lib/pdf-misure.ts
+// PDF Scheda Misure per produzione/fornitore
+// Campi reali: lAlto/lCentro/lBasso, hSx/hCentro/hDx, d1/d2,
+//              spSx/spDx, arch, davInt/davEst, casL/casH/casP
+// =====================================================================
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const C = {
-  dark:  [26,  26,  28],
-  amber: [208, 128,  8],
-  green: [26,  158, 115],
-  sub:   [134, 134, 139],
-  bg:    [242, 241, 236],
-  white: [255, 255, 255],
-  blue:  [59,  127, 224],
+  dark:  [26,  26,  28]  as [number,number,number],
+  amber: [208, 128,  8]  as [number,number,number],
+  green: [26,  158, 115] as [number,number,number],
+  sub:   [134, 134, 139] as [number,number,number],
+  bg:    [242, 241, 236] as [number,number,number],
+  white: [255, 255, 255] as [number,number,number],
+  blue:  [59,  127, 224] as [number,number,number],
+  line:  [220, 220, 220] as [number,number,number],
 };
 
-const PUNTI_LABEL: Record<string, string> = {
-  lCentro: "L Centro", hCentro: "H Centro",
-  lMuro:   "L Muro",   hMuro:   "H Muro",
-  lLuce:   "L Luce",   hLuce:   "H Luce",
-  profondo: "Profondo", spessore: "Spessore",
-  ribassato: "Ribassato", soglia: "Soglia",
-};
+function cl(s) {
+  if (!s) return "";
+  return String(s).replace(/[^\x20-\x7E\xA0-\xFF]/g, "").replace(/\s+/g, " ").trim();
+}
 
-function drawHeaderMisure(doc: jsPDF, az: any, c: any) {
+function drawHeader(doc, az) {
   const W = doc.internal.pageSize.width;
-
-  doc.setFillColor(...C.dark as [number,number,number]);
+  doc.setFillColor(...C.dark);
   doc.rect(0, 0, W, 22, "F");
-
-  doc.setFillColor(...C.blue as [number,number,number]);
+  doc.setFillColor(...C.blue);
   doc.roundedRect(8, 4, 14, 14, 2, 2, "F");
-  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.setTextColor(...C.dark);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.text("M", 15, 13.5, { align: "center" });
-
-  doc.setTextColor(...C.white as [number,number,number]);
+  doc.setTextColor(...C.white);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(az.nome || "MASTRO ERP", 26, 10);
-
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(200, 200, 200);
+  doc.text(cl(az.ragione || az.nome) || "MASTRO ERP", 26, 10);
   if (az.telefono || az.email) {
-    doc.text([az.telefono, az.email].filter(Boolean).join(" · "), 26, 16);
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(200, 200, 200);
+    doc.text([cl(az.telefono), cl(az.email)].filter(Boolean).join("  |  "), 26, 16);
   }
-
-  // Label destra
-  doc.setFontSize(13);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.blue as [number,number,number]);
+  doc.setTextColor(...C.blue);
   doc.text("SCHEDA MISURE", W - 10, 14, { align: "right" });
-
-  doc.setTextColor(...C.dark as [number,number,number]);
+  doc.setTextColor(...C.dark);
 }
 
-export function generaPDFMisure(c: any, ctx: any) {
+function drawVanoSchema(doc, v, x, y, w, h) {
+  const m = v.misure || {};
+  const lC = m.lCentro || 0;
+  const hC = m.hCentro || 0;
+  const lA = m.lAlto || lC;
+  const lB = m.lBasso || lC;
+  const hSx = m.hSx || hC;
+  const hDx = m.hDx || hC;
+  const maxL = Math.max(lA, lC, lB, 100);
+  const maxH = Math.max(hSx, hC, hDx, 100);
+  const scale = Math.min((w - 20) / maxL, (h - 16) / maxH);
+  const dw = maxL * scale;
+  const dh = maxH * scale;
+  const ox = x + (w - dw) / 2;
+  const oy = y + 4;
+  const midL = lC * scale;
+  const midOx = ox + (dw - midL) / 2;
+  const leftH = hSx * scale;
+  doc.setDrawColor(...C.dark);
+  doc.setLineWidth(0.6);
+  doc.setFillColor(230, 240, 255);
+  doc.rect(midOx, oy, midL, leftH, "FD");
+  doc.setDrawColor(...C.blue);
+  doc.setLineWidth(0.2);
+  doc.setLineDashPattern([1, 1], 0);
+  doc.line(midOx + midL / 2, oy + 2, midOx + midL / 2, oy + leftH - 2);
+  doc.line(midOx + 2, oy + leftH / 2, midOx + midL - 2, oy + leftH / 2);
+  doc.setLineDashPattern([], 0);
+  doc.setFontSize(5.5);
+  doc.setFont("helvetica", "bold");
+  if (lC > 0) { doc.setTextColor(...C.blue); doc.text("L:" + lC, midOx + midL / 2, oy - 1.5, { align: "center" }); }
+  if (hC > 0) { doc.setTextColor(...C.green); doc.text("H:" + hC, midOx - 1, oy + leftH / 2, { align: "right" }); }
+  if (m.d1 > 0 || m.d2 > 0) {
+    doc.setTextColor(...C.amber);
+    const ds = [m.d1 ? "D1:" + m.d1 : "", m.d2 ? "D2:" + m.d2 : ""].filter(Boolean).join(" ");
+    doc.text(ds, midOx + midL / 2, oy + leftH + 3, { align: "center" });
+  }
+  doc.setTextColor(...C.dark);
+}
+
+export function generaPDFMisure(c, ctx) {
   const { aziendaInfo, getVaniAttivi } = ctx;
   const az = aziendaInfo || {};
-
+  const vani = getVaniAttivi(c);
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.width;
-
-  drawHeaderMisure(doc, az, c);
-
-  // Info commessa
-  let y = 28;
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.sub as [number,number,number]);
-
+  const H = doc.internal.pageSize.height;
+  drawHeader(doc, az);
+  let y = 27;
+  doc.setFillColor(...C.bg);
+  doc.rect(8, y, W - 16, 14, "F");
   const infoItems = [
-    ["COMMESSA", c.code || "—"],
-    ["CLIENTE", `${c.cliente || ""}${c.cognome ? " " + c.cognome : ""}`],
-    ["INDIRIZZO", c.indirizzo || "—"],
+    ["COMMESSA", cl(c.code) || "-"],
+    ["CLIENTE", [cl(c.cliente), cl(c.cognome)].filter(Boolean).join(" ") || "-"],
+    ["INDIRIZZO", cl(c.indirizzo) || "-"],
+    ["SISTEMA", cl(c.sistema) || "-"],
     ["DATA", new Date().toLocaleDateString("it-IT")],
   ];
-
+  const colW = (W - 16) / infoItems.length;
   infoItems.forEach(([k, v], i) => {
-    const x = 10 + i * (W / 4);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...C.sub as [number,number,number]);
-    doc.text(k, x, y);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...C.dark as [number,number,number]);
-    doc.setFontSize(9);
-    doc.text(String(v), x, y + 5);
-    doc.setFontSize(7);
+    const cx = 10 + i * colW;
+    doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.setTextColor(...C.sub); doc.text(k, cx, y + 5);
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...C.dark); doc.text(cl(v), cx, y + 11);
   });
-
-  y += 14;
-
-  // Linea separatore
-  doc.setDrawColor(...C.sub as [number,number,number]);
-  doc.setLineWidth(0.3);
-  doc.line(10, y, W - 10, y);
-  y += 4;
-
-  const vani = getVaniAttivi(c);
-
+  y += 18;
   if (vani.length === 0) {
-    doc.setFontSize(12);
-    doc.setTextColor(...C.sub as [number,number,number]);
-    doc.text("Nessun vano attivo in questa commessa.", W / 2, 100, { align: "center" });
-    doc.save(`misure_${c.code || c.id}.pdf`);
+    doc.setFontSize(11); doc.setTextColor(...C.sub);
+    doc.text("Nessun vano attivo.", W / 2, 110, { align: "center" });
+    doc.save("misure_" + (c.code || c.id) + ".pdf");
     return;
   }
-
-  // Colonne dinamiche: cerca tutti i punti misura presenti
-  const tuttiPunti = new Set<string>();
-  vani.forEach((v: any) => {
-    Object.keys(v.misure || {}).forEach(k => {
-      if ((v.misure[k] || 0) > 0) tuttiPunti.add(k);
-    });
-  });
-
-  const puntiCols = Array.from(tuttiPunti);
-
-  const head = [
-    [
-      "#", "Vano / Nome", "Tipo", "Settore", "Sistema / Modello",
-      "Col. Int.", "Col. Est.", "Vetro",
-      ...puntiCols.map(p => PUNTI_LABEL[p] || p),
-      "Pz", "Tappar.", "Persiana", "Zanzar.", "Controtelaio", "Note",
-    ]
-  ];
-
-  const rows = vani.map((v: any, i: number) => {
+  const head = [[
+    "#", "Vano", "Tipo", "Piano",
+    "L Alto", "L Cen.", "L Basso",
+    "H Sx", "H Cen.", "H Dx",
+    "D1", "D2", "Sp.Sx", "Sp.Dx", "Arch.",
+    "Dav.Int", "Dav.Est", "Cas.LxH",
+    "Sistema / Colore", "Vetro", "Pz", "Acc.", "Note",
+  ]];
+  const rows = vani.map((v, i) => {
     const m = v.misure || {};
-    const settore = v.settore || "serramenti";
-    const sistema = v.sistema || v.modello || v.tipoBox || v.tipoCancello || "—";
     const acc = v.accessori || {};
-    const tappStr = acc.tapparella?.attivo
-      ? [acc.tapparella.tipo || "Si", acc.tapparella.colore, acc.tapparella.l && acc.tapparella.h ? `${acc.tapparella.l}x${acc.tapparella.h}` : ""].filter(Boolean).join(" ")
-      : "";
-    const persianaStr = acc.persiana?.attivo
-      ? [acc.persiana.tipo || "Si", acc.persiana.colore].filter(Boolean).join(" ")
-      : "";
-    const zanzStr = acc.zanzariera?.attivo
-      ? [acc.zanzariera.tipo || "Si", acc.zanzariera.colore].filter(Boolean).join(" ")
-      : "";
-    const colInt = v.coloreInt || v.colore || "";
-    const colEst = v.coloreEst || "";
-
+    const accStr = [acc.tapparella?.attivo ? "Tapp" : "", acc.persiana?.attivo ? "Pers" : "", acc.zanzariera?.attivo ? "Zanz" : ""].filter(Boolean).join(" ");
+    const sistemaStr = [cl(v.sistema), cl(v.coloreEst || v.coloreInt)].filter(Boolean).join(" / ");
+    const casStr = v.cassonetto ? (m.casL || "-") + "x" + (m.casH || "-") : "-";
     return [
-      String(i + 1),
-      v.nome || `Vano ${i + 1}`,
-      v.tipo || "—",
-      settore.charAt(0).toUpperCase() + settore.slice(1),
-      sistema,
-      colInt || "—",
-      colEst && colEst !== colInt ? colEst : "=",
-      v.vetro || "—",
-      ...puntiCols.map(p => m[p] ? `${m[p]}` : "—"),
-      String(v.pezzi || 1),
-      tappStr || "—",
-      persianaStr || "—",
-      zanzStr || "—",
-      v.controtelaio || "—",
-      v.note || "",
+      String(i + 1), cl(v.nome || ("V" + (i + 1))), cl(v.tipo || "-"), cl(v.piano || "-"),
+      m.lAlto   ? String(m.lAlto)   : "-",
+      m.lCentro ? String(m.lCentro) : "-",
+      m.lBasso  ? String(m.lBasso)  : "-",
+      m.hSx     ? String(m.hSx)     : "-",
+      m.hCentro ? String(m.hCentro) : "-",
+      m.hDx     ? String(m.hDx)     : "-",
+      m.d1      ? String(m.d1)      : "-",
+      m.d2      ? String(m.d2)      : "-",
+      m.spSx    ? String(m.spSx)    : "-",
+      m.spDx    ? String(m.spDx)    : "-",
+      m.arch    ? String(m.arch)    : "-",
+      m.davInt  ? String(m.davInt)  : "-",
+      m.davEst  ? String(m.davEst)  : "-",
+      casStr,
+      sistemaStr || "-", cl(v.vetro || "-"), String(v.pezzi || 1), accStr || "-", cl(v.note || ""),
     ];
   });
-
   autoTable(doc, {
-    startY: y,
-    head,
-    body: rows,
-    theme: "striped",
-    styles: {
-      fontSize: 8,
-      cellPadding: 2.5,
-      textColor: C.dark,
-      font: "helvetica",
-    },
-    headStyles: {
-      fillColor: C.dark as [number,number,number],
-      textColor: C.white as [number,number,number],
-      fontStyle: "bold",
-      fontSize: 7,
-    },
+    startY: y, head, body: rows, theme: "striped",
+    styles: { fontSize: 7, cellPadding: 1.8, textColor: C.dark, font: "helvetica", overflow: "ellipsize" },
+    headStyles: { fillColor: C.dark, textColor: C.white, fontStyle: "bold", fontSize: 6.5, halign: "center" },
     columnStyles: {
-      0: { cellWidth: 7,  halign: "center" },
-      1: { cellWidth: 22 },
-      2: { cellWidth: 12 },
-      3: { cellWidth: 16 },
-      4: { cellWidth: 28 },
-      5: { cellWidth: 16 },  // Col Int
-      6: { cellWidth: 16 },  // Col Est
-      7: { cellWidth: 20 },  // Vetro
+      0: { cellWidth: 5, halign: "center" }, 1: { cellWidth: 18 }, 2: { cellWidth: 10 }, 3: { cellWidth: 8, halign: "center" },
+      4: { cellWidth: 9, halign: "center" }, 5: { cellWidth: 10, halign: "center" }, 6: { cellWidth: 9, halign: "center" },
+      7: { cellWidth: 9, halign: "center" }, 8: { cellWidth: 10, halign: "center" }, 9: { cellWidth: 9, halign: "center" },
+      10: { cellWidth: 8, halign: "center" }, 11: { cellWidth: 8, halign: "center" },
+      12: { cellWidth: 8, halign: "center" }, 13: { cellWidth: 8, halign: "center" }, 14: { cellWidth: 8, halign: "center" },
+      15: { cellWidth: 9, halign: "center" }, 16: { cellWidth: 9, halign: "center" }, 17: { cellWidth: 11, halign: "center" },
+      18: { cellWidth: 22 }, 19: { cellWidth: 14 }, 20: { cellWidth: 5, halign: "center" }, 21: { cellWidth: 12 },
     },
     alternateRowStyles: { fillColor: [248, 248, 250] },
   });
-
-  const finalY = (doc as any).lastAutoTable.finalY + 6;
-
-  // Riepilogo conteggio
-  const totalePezzi = vani.reduce((s: number, v: any) => s + (v.pezzi || 1), 0);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...C.dark as [number,number,number]);
-  doc.text(`Totale vani: ${vani.length}  ·  Totale pezzi: ${totalePezzi}`, 10, finalY);
-
-  // Casella firma tecnico
-  doc.setFillColor(...C.bg as [number,number,number]);
-  doc.roundedRect(W - 80, finalY - 6, 70, 22, 3, 3, "F");
-  doc.setFontSize(7);
-  doc.setTextColor(...C.sub as [number,number,number]);
-  doc.text("Verificato da:", W - 78, finalY);
-  doc.setDrawColor(...C.sub as [number,number,number]);
-  doc.setLineWidth(0.3);
-  doc.line(W - 78, finalY + 14, W - 12, finalY + 14);
-  doc.text("Firma", W - 45, finalY + 18, { align: "center" });
-
-  // Footer
-  const pH = doc.internal.pageSize.height;
-  doc.setFontSize(7);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...C.sub as [number,number,number]);
-  doc.text(`Generato da MASTRO ERP · ${new Date().toLocaleString("it-IT")}`, 10, pH - 6);
-  doc.text(`Commessa ${c.code || c.id}`, W - 10, pH - 6, { align: "right" });
-
-  doc.save(`misure_produzione_${c.code || c.id}_${c.cliente?.replace(/\s/g, "_") || "cliente"}.pdf`);
+  const tableEndY = doc.lastAutoTable.finalY;
+  const spazio = H - tableEndY - 14;
+  if (spazio >= 32 && vani.length <= 8) {
+    const nPerRiga = Math.min(vani.length, Math.floor((W - 16) / 34));
+    const sw = Math.min(34, (W - 16) / nPerRiga);
+    const sh = Math.min(spazio - 10, sw * 1.3);
+    const sx0 = 8;
+    const sy0 = tableEndY + 5;
+    doc.setFontSize(6); doc.setFont("helvetica", "bold"); doc.setTextColor(...C.sub);
+    doc.text("SCHEMI VANI (mm)", sx0, sy0 - 1);
+    vani.slice(0, nPerRiga).forEach((v, i) => {
+      drawVanoSchema(doc, v, sx0 + i * sw, sy0 + 1, sw - 2, sh);
+      doc.setFontSize(5); doc.setFont("helvetica", "normal"); doc.setTextColor(...C.sub);
+      doc.text(cl(v.nome || ("V" + (i + 1))).slice(0, 10), sx0 + i * sw + (sw - 2) / 2, sy0 + sh + 4, { align: "center" });
+    });
+  }
+  const footY = H - 8;
+  const totalePezzi = vani.reduce((s, v) => s + (v.pezzi || 1), 0);
+  doc.setFillColor(...C.bg); doc.rect(0, footY - 4, W, 12, "F");
+  doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(...C.dark);
+  doc.text("Totale vani: " + vani.length + "   Totale pezzi: " + totalePezzi, 10, footY + 2);
+  doc.setFillColor(...C.white); doc.roundedRect(W - 85, footY - 3, 75, 10, 2, 2, "FD");
+  doc.setFontSize(6); doc.setFont("helvetica", "normal"); doc.setTextColor(...C.sub);
+  doc.text("Verificato / Firma:", W - 83, footY + 1);
+  doc.setDrawColor(...C.sub); doc.setLineWidth(0.3); doc.line(W - 55, footY + 6, W - 12, footY + 6);
+  doc.setFontSize(6); doc.setTextColor(...C.sub);
+  doc.text("MASTRO ERP  |  " + new Date().toLocaleString("it-IT"), W / 2, footY + 8, { align: "center" });
+  doc.save("misure_" + cl(c.code || c.id) + "_" + (cl(c.cliente) || "cliente").replace(/\s/g, "_") + ".pdf");
 }
