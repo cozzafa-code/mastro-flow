@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEvento, onCliente, onCommessa, onMessaggio }) {
   const [topPx, setTopPx] = useState(300);
+  const [dragging, setDragging] = useState(false);
   const drag = useRef({ active: false, moved: false, startY: 0, startTop: 300 });
   useEffect(() => {
     const s = localStorage.getItem("mastro:fab_top");
@@ -10,6 +11,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
   const onDown = (e) => {
     const y = e.touches ? e.touches[0].clientY : e.clientY;
     drag.current = { active: true, moved: false, startY: y, startTop: topPx };
+    setDragging(true);
     e.preventDefault();
   };
   useEffect(() => {
@@ -24,6 +26,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     const onUp = () => {
       if (!drag.current.active) return;
       drag.current.active = false;
+      setDragging(false);
       if (!drag.current.moved) setFabOpen(v => !v);
       localStorage.setItem("mastro:fab_top", String(topPx));
     };
@@ -48,7 +51,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
   return (
     <>
       {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}
-      <div style={{ position: "fixed", right: 0, top: topPx, zIndex: 92, display: "flex", alignItems: "center" }}>
+      <div style={{ position: "fixed", right: 0, top: topPx, zIndex: 92, display: "flex", alignItems: "center",
+        transition: dragging ? "none" : "top 0.15s ease" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginRight: 16 }}>
           {items.map((item, i) => (
             <div key={i} onClick={() => { if(item.a) item.a(); setFabOpen(false); }}
@@ -74,16 +78,17 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
               <span style={{ fontSize: 20, color: "#fff" }}>?</span>
             </div>
           )}
-          <div onMouseDown={onDown} onTouchStart={onDown}
+          <div onMouseDown={fabOpen ? undefined : onDown} onTouchStart={fabOpen ? undefined : onDown}
+            onClick={fabOpen ? () => setFabOpen(false) : undefined}
             style={{ width: fabOpen ? 72 : 28, height: fabOpen ? 86 : 90,
               background: acc, borderRadius: fabOpen ? "0 0 0 10px" : "10px 0 0 10px",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
-              cursor: "grab", userSelect: "none", touchAction: "none",
+              cursor: fabOpen ? "pointer" : "grab", userSelect: "none", touchAction: "none",
               transition: "width 0.25s ease, height 0.25s ease",
               boxShadow: "-4px 0 18px " + acc + "50" }}>
             {fabOpen ? (
               <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: 2,
-                writingMode: "vertical-rl", transform: "rotate(180deg)" }}>TRASCINA</span>
+                writingMode: "vertical-rl", transform: "rotate(180deg)" }}>CHIUDI</span>
             ) : (
               <>
                 <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>M</span>
