@@ -39,11 +39,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     };
   }, [topPx, setFabOpen]);
   const items = [
-    { l: "Nota vocale", c: "#E53935", a: onVoice },
-    { l: "Appuntamento", c: "#1A9E73", a: onEvento },
-    { l: "Nuovo cliente", c: "#3B7FE0", a: onCliente },
-    { l: "Nuova commessa", c: "#E8A020", a: onCommessa },
-    { l: "Messaggio", c: "#8B5CF6", a: onMessaggio },
+    { l: "Nota vocale", c: "#E53935", emoji: "??", a: onVoice },
+    { l: "Appuntamento", c: "#1A9E73", emoji: "??", a: onEvento },
+    { l: "Nuovo cliente", c: "#3B7FE0", emoji: "??", a: onCliente },
+    { l: "Nuova commessa", c: "#E8A020", emoji: "??", a: onCommessa },
+    { l: "Messaggio", c: "#8B5CF6", emoji: "??", a: onMessaggio },
   ];
   return (
     <>
@@ -57,22 +57,25 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
                 transform: fabOpen ? "translateX(0) scale(1)" : "translateX(40px) scale(0.7)",
                 transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1) " + (fabOpen ? i*55 : 0) + "ms",
                 pointerEvents: fabOpen ? "auto" : "none" }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: item.c,
+              <div style={{ width: 48, height: 48, borderRadius: "50%", background: item.c,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 4px 14px " + item.c + "60" }} />
-              <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 12, fontWeight: 700,
-                padding: "5px 10px", borderRadius: 7, whiteSpace: "nowrap" }}>{item.l}</div>
+                fontSize: 22, boxShadow: "0 4px 14px " + item.c + "60" }}>{item.emoji}</div>
+              <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 13, fontWeight: 700,
+                padding: "6px 12px", borderRadius: 8, whiteSpace: "nowrap" }}>{item.l}</div>
             </div>
           ))}
         </div>
         <div onMouseDown={onDown} onTouchStart={onDown}
-          style={{ width: 28, height: 90, background: acc, borderRadius: "10px 0 0 10px",
+          style={{ width: fabOpen ? 52 : 28, height: fabOpen ? 110 : 90, background: acc, borderRadius: "10px 0 0 10px",
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
             cursor: "grab", userSelect: "none", touchAction: "none",
+            transition: "width 0.2s ease, height 0.2s ease",
             boxShadow: "-4px 0 18px " + acc + "50" }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>M</span>
-          <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)",
-            fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.65)", letterSpacing: 2, marginTop: 4 }}>MASTRO</span>
+          <span style={{ fontSize: fabOpen ? 20 : 16, fontWeight: 800, color: "#fff", lineHeight: 1, transition: "font-size 0.2s" }}>
+            {fabOpen ? "?" : "M"}
+          </span>
+          {!fabOpen && <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)",
+            fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.65)", letterSpacing: 2, marginTop: 4 }}>MASTRO</span>}
         </div>
       </div>
     </>
