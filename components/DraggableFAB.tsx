@@ -4,11 +4,16 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
   const [topPx, setTopPx] = useState(300);
   const [side, setSide] = useState("right");
   const [dragging, setDragging] = useState(false);
-  const state = useRef({ active: false, moved: false, startY: 0, startTop: 300 });
+  const topRef = useRef(300);
+  const state = useRef({ active: false, moved: false, startY: 0 });
+  const fabOpenRef = useRef(fabOpen);
+  useEffect(() => { fabOpenRef.current = fabOpen; }, [fabOpen]);
   useEffect(() => {
     const s = localStorage.getItem("mastro:fab_top");
     const sd = localStorage.getItem("mastro:fab_side");
-    setTopPx(s ? parseInt(s) : window.innerHeight / 2);
+    const y = s ? parseInt(s) : window.innerHeight / 2;
+    topRef.current = y;
+    setTopPx(y);
     if (sd) setSide(sd);
   }, []);
   useEffect(() => {
@@ -16,44 +21,47 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     if (!el) return;
     const onStart = (e) => {
       const y = e.touches ? e.touches[0].clientY : e.clientY;
-      state.current = { active: true, moved: false, startY: y, startTop: topPx };
+      state.current = { active: true, moved: false, startY: y };
       e.preventDefault();
     };
     const onMove = (e) => {
       if (!state.current.active) return;
       const y = e.touches ? e.touches[0].clientY : e.clientY;
       const delta = y - state.current.startY;
-      if (Math.abs(delta) > 6) {
-        state.current.moved = true;
-        setDragging(true);
-      }
+      if (Math.abs(delta) > 5) state.current.moved = true;
       if (state.current.moved) {
-        const newY = Math.max(60, Math.min(window.innerHeight - 180, state.current.startTop + delta));
-        setTopPx(newY);
+        const newY = Math.max(60, Math.min(window.innerHeight - 180, topRef.current + delta));
+        el.parentElement.parentElement.style.top = newY + "px";
       }
     };
-    const onEnd = () => {
+    const onEnd = (e) => {
       if (!state.current.active) return;
       state.current.active = false;
+      if (state.current.moved) {
+        const currentTop = parseInt(el.parentElement.parentElement.style.top) || topRef.current;
+        topRef.current = currentTop;
+        setTopPx(currentTop);
+        localStorage.setItem("mastro:fab_top", String(currentTop));
+      } else {
+        if (!fabOpenRef.current) setFabOpen(true);
+      }
       setDragging(false);
-      if (!state.current.moved && !fabOpen) setFabOpen(true);
-      localStorage.setItem("mastro:fab_top", String(topPx));
     };
     el.addEventListener("touchstart", onStart, { passive: false });
-    el.addEventListener("touchmove", onMove, { passive: false });
-    el.addEventListener("touchend", onEnd);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onEnd);
     el.addEventListener("mousedown", onStart);
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onEnd);
     return () => {
       el.removeEventListener("touchstart", onStart);
-      el.removeEventListener("touchmove", onMove);
-      el.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
       el.removeEventListener("mousedown", onStart);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onEnd);
     };
-  }, [topPx, fabOpen, setFabOpen]);
+  }, [setFabOpen]);
   const isRight = side === "right";
   const baseItems = [
     { l: "Nota vocale", c: "#E53935", t: "MIC", a: onVoice },
@@ -84,7 +92,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
       {fabOpen && (
         <div style={{ position: "fixed", zIndex: 92, [isRight ? "right" : "left"]: 58, top: actionsTop,
           display: "flex", flexDirection: "column", gap: 10,
-          transition: dragging ? "none" : "top 0.18s ease" }}>
+          transition: "top 0.18s ease" }}>
           {items.map((item, i) => item.t === "SEP" ? (
             <div key={i} style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "center", letterSpacing: 2 }}>RECENTI</div>
           ) : (
@@ -103,8 +111,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
           ))}
         </div>
       )}
-      <div style={{ position: "fixed", [isRight ? "right" : "left"]: 0, top: topPx, zIndex: 92,
-        transition: dragging ? "none" : "top 0.15s ease" }}>
+      <div style={{ position: "fixed", [isRight ? "right" : "left"]: 0, top: topPx, zIndex: 92 }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setFabOpen(false); }}
                onClick={() => setFabOpen(false)}
@@ -123,7 +130,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 100 : 90,
               background: acc, borderRadius: isRight ? (fabOpen ? "0 0 0 12px" : "12px 0 0 12px") : (fabOpen ? "0 0 12px 0" : "0 12px 12px 0"),
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-              cursor: "grab", userSelect: "none", WebkitUserSelect: "none", touchAction: "none",
+              touchAction: "none", userSelect: "none", WebkitUserSelect: "none",
               transition: "width 0.25s ease, height 0.25s ease",
               boxShadow: isRight ? "-4px 0 20px " + acc + "60" : "4px 0 20px " + acc + "60" }}>
             <div style={{ width: fabOpen ? 30 : 18, height: fabOpen ? 30 : 18, borderRadius: fabOpen ? 8 : 5,
