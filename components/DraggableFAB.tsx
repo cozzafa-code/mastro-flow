@@ -45,6 +45,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     { l: "Nuova commessa", c: "#E8A020", emoji: "??", a: onCommessa },
     { l: "Messaggio", c: "#8B5CF6", emoji: "??", a: onMessaggio },
   ];
+  const tabW = fabOpen ? 72 : 28;
+  const tabH = fabOpen ? 130 : 90;
   return (
     <>
       {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}
@@ -66,17 +68,22 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
           ))}
         </div>
         <div onMouseDown={onDown} onTouchStart={onDown}
-          style={{ width: fabOpen ? 64 : 28, height: fabOpen ? 120 : 90, background: acc, borderRadius: "10px 0 0 10px",
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          style={{ width: tabW, height: tabH, background: acc, borderRadius: "10px 0 0 10px",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
             cursor: "grab", userSelect: "none", touchAction: "none",
             transition: "width 0.25s ease, height 0.25s ease",
             boxShadow: "-4px 0 18px " + acc + "50" }}>
-          <span style={{ fontSize: fabOpen ? 26 : 16, fontWeight: 800, color: "#fff", lineHeight: 1, transition: "font-size 0.2s" }}>
-            {fabOpen ? "F" : "M"}
-          </span>
-          {!fabOpen && <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)",
-            fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.65)", letterSpacing: 2, marginTop: 4 }}>MASTRO</span>}
-          {fabOpen && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>chiudi</span>}
+          {fabOpen ? (
+            <>
+              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: 2, writingMode: "vertical-rl", transform: "rotate(180deg)" }}>CHIUDI</span>
+              <span style={{ fontSize: 18, color: "#fff" }}>?</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>M</span>
+              <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.65)", letterSpacing: 2 }}>MASTRO</span>
+            </>
+          )}
         </div>
       </div>
     </>
