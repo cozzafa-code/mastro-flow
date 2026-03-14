@@ -107,7 +107,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
             <div onClick={(e) => { e.stopPropagation(); const ns = side === "right" ? "left" : "right"; setSide(ns); localStorage.setItem("mastro:fab_side", ns); }}
               style={{ fontSize: 7, color: "rgba(255,255,255,0.7)", fontWeight: 700, cursor: "pointer",
                 padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.15)", marginTop: 2 }}>
-              {side === "right" ? "SX" : "DX"}
+              {side === "right" ? "<" : ">"}
             </div>
           </div>
           <div onMouseDown={onDown} onTouchStart={onDown}
