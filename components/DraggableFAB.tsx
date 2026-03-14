@@ -54,17 +54,20 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     { l: "Messaggio", c: "#8B5CF6", emoji: "??", a: onMessaggio },
   ];
   const itemsH = items.length * 72 + 56;
-  const minTop = 60;
-  const maxTop = typeof window !== "undefined" ? window.innerHeight - 80 : 600;
-  const rawTop = goUp ? topPx - itemsH : topPx + 60;
-  const actionsTop = Math.max(minTop, Math.min(maxTop - itemsH, rawTop));
+  const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
+  const spaceBelow = screenH - topPx - 60;
+  const spaceAbove = topPx;
+  const showAbove = spaceBelow < itemsH && spaceAbove > spaceBelow;
+  const actionsTop = showAbove
+    ? Math.max(20, topPx - itemsH - 10)
+    : Math.min(screenH - itemsH - 20, topPx + 60);
   return (
     <>
       {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}
       {fabOpen && (
         <div style={{ position: "fixed", right: 60, zIndex: 92,
           top: actionsTop,
-          display: "flex", flexDirection: goUp ? "column-reverse" : "column", gap: 14,
+          display: "flex", flexDirection: "column", gap: 14,
           transition: dragging ? "top 0.1s ease" : "top 0.25s ease" }}>
           {items.map((item, i) => (
             <div key={i} onClick={() => { if(item.a) item.a(); setFabOpen(false); }}
