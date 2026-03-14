@@ -2983,36 +2983,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             </div>
           );
         })()}
-        {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)", zIndex: 89 }} />}
-        {(() => {
-          const lastCM = lastOpenedCMId ? cantieri.find(c => c.id === lastOpenedCMId) : (cantieri.find(c => c.fase === "sopralluogo") || cantieri.find(c => c.fase !== "chiusura") || cantieri[0]);
-          const fabItems: Array<{id:string;ico:any;l:string;c:string;action:()=>void}> = [
-            { id: "voce", ico: <Ico d={ICO.mic} s={20} c="#fff" />, l: "Nota vocale", c: "#DC4444", action: () => { setFabOpen(false); setShowVoice(true); } },
-            { id: "evento", ico: <Ico d={ICO.calendar} s={20} c="#fff" />, l: "Appuntamento", c: "#0D7C6B", action: () => { setFabOpen(false); setShowNewEvent(true); } },
-            { id: "cliente", ico: <Ico d={ICO.user} s={20} c="#fff" />, l: "Nuovo cliente", c: "#1A9E73", action: () => { setFabOpen(false); setShowModal("contatto"); } },
-            { id: "commessa", ico: <Ico d={ICO.folder} s={20} c="#fff" />, l: "Nuova commessa", c: "#E8A020", action: () => { setFabOpen(false); setShowModal("commessa"); } },
-            { id: "messaggio", ico: <Ico d={ICO.messageCircle} s={20} c="#fff" />, l: "Messaggio", c: "#8B5CF6", action: () => { setFabOpen(false); setShowCompose(true); } },
-          ];
-          if (lastCM) {
-            const p = PIPELINE.find(x => x.id === lastCM.fase);
-            fabItems.push({ id: "ultima", ico: <Ico d={ICO[p?.ico || "folder"]} s={22} c="#fff" />, l: `${lastCM.code} · ${lastCM.cliente}`, c: p?.color || T.acc, action: () => { setFabOpen(false); setSelectedCM(lastCM); setTab("commesse"); } });
-          }
-          return fabItems.map((item, i) => (
-            <div key={item.id} onClick={item.action} style={{
-              position: "fixed", bottom: 90 + (i + 1) * 58, right: 20, zIndex: 90,
-              display: "flex", alignItems: "center", gap: 10, flexDirection: "row-reverse",
-              opacity: fabOpen ? 1 : 0, transform: fabOpen ? "translateY(0) scale(1)" : "translateY(30px) scale(0.5)",
-              transition: `all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabOpen ? i * 0.06 : 0}s`,
-              pointerEvents: fabOpen ? "auto" : "none",
-            }}>
-              <div style={{ width: item.id === "ultima" ? 52 : 48, height: item.id === "ultima" ? 52 : 48, borderRadius: "50%", background: item.id === "ultima" ? `linear-gradient(135deg, ${item.c}, ${item.c}cc)` : item.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: item.id === "ultima" ? 22 : 20, boxShadow: `0 4px 16px ${item.c}50`, cursor: "pointer", border: item.id === "ultima" ? "2px solid #fff" : "none" }}>
-                {item.ico}
-              </div>
-              <div style={{ padding: "6px 12px", borderRadius: 8, background: T.card, border: `1px solid ${item.id === "ultima" ? item.c + "40" : T.bdr}`, boxShadow: "0 2px 12px rgba(0,0,0,0.1)", fontSize: item.id === "ultima" ? 11 : 12, fontWeight: 700, color: item.c, whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>
-                {item.id === "ultima" ? `↩ ${item.l}` : item.l}
-              </div>
-            </div>
-          ));
         })()}
         <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} />
 
