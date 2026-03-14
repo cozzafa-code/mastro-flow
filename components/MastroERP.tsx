@@ -2984,7 +2984,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           );
         })()}
         })()}
-        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} />
+        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} lastCM={lastOpenedCMId ? cantieri.find(c => c.id === lastOpenedCMId) : cantieri[0]} onLastCM={(cm) => { setSelectedCM(cm); setTab("commesse"); }} />
 
         {/* MESSAGE DETAIL OVERLAY */}
         {selectedMsg && (() => {
