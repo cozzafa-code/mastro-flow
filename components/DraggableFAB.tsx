@@ -1,16 +1,58 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions }) {
-  const [pos, setPos] = useState("center");
   const [side, setSide] = useState("right");
+  const [topPx, setTopPx] = useState(300);
+  const wrapRef = useRef(null);
+  const posRef = useRef(300);
+  const dragRef = useRef({ on: false, moved: false, startY: 0, startTop: 300 });
+  const fabOpenRef = useRef(fabOpen);
+  useEffect(() => { fabOpenRef.current = fabOpen; }, [fabOpen]);
   useEffect(() => {
-    const p = localStorage.getItem("mastro:fab_pos");
     const sd = localStorage.getItem("mastro:fab_side");
-    if (p) setPos(p);
+    const sp = localStorage.getItem("mastro:fab_top");
     if (sd) setSide(sd);
+    const y = sp ? parseInt(sp) : Math.round(window.innerHeight / 2);
+    posRef.current = y;
+    setTopPx(y);
   }, []);
-  const posMap = { top: 80, center: Math.round(window?.innerHeight / 2 || 400), bottom: (window?.innerHeight || 800) - 180 };
-  const topPx = posMap[pos] || 400;
+  useEffect(() => {
+    const onTouchStart = (e) => {
+      dragRef.current = { on: true, moved: false, startY: e.touches[0].clientY, startTop: posRef.current };
+      e.preventDefault();
+    };
+    const onTouchMove = (e) => {
+      if (!dragRef.current.on) return;
+      const dy = e.touches[0].clientY - dragRef.current.startY;
+      if (Math.abs(dy) > 4) dragRef.current.moved = true;
+      if (dragRef.current.moved && wrapRef.current) {
+        const ny = Math.max(60, Math.min(window.innerHeight - 160, dragRef.current.startTop + dy));
+        wrapRef.current.style.top = ny + "px";
+        posRef.current = ny;
+      }
+      e.preventDefault();
+    };
+    const onTouchEnd = () => {
+      if (!dragRef.current.on) return;
+      dragRef.current.on = false;
+      if (dragRef.current.moved) {
+        setTopPx(posRef.current);
+        localStorage.setItem("mastro:fab_top", String(posRef.current));
+      } else {
+        if (!fabOpenRef.current) setFabOpen(true);
+      }
+    };
+    const tab = document.getElementById("mastro-fab-tab");
+    if (!tab) return;
+    tab.addEventListener("touchstart", onTouchStart, { passive: false });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd);
+    return () => {
+      tab.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [setFabOpen]);
   const isRight = side === "right";
   const baseItems = [
     { l: "Nota vocale", c: "#E53935", t: "MIC", a: onVoice },
@@ -28,8 +70,6 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
   const itemsH = items.filter(i => i.t !== "SEP").length * 70 + 20;
   const showAbove = (screenH - topPx - 60) < itemsH;
   const actionsTop = showAbove ? Math.max(20, topPx - itemsH - 10) : Math.min(screenH - itemsH - 20, topPx + 60);
-  const cyclePos = () => { const next = pos === "top" ? "center" : pos === "center" ? "bottom" : "top"; setPos(next); localStorage.setItem("mastro:fab_pos", next); };
-  const cycleSide = () => { const ns = side === "right" ? "left" : "right"; setSide(ns); localStorage.setItem("mastro:fab_side", ns); };
   const MIC = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>;
   const CAL = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
   const USR = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>;
@@ -41,53 +81,42 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     <>
       {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}
       {fabOpen && (
-        <div style={{ position: "fixed", zIndex: 92, [isRight ? "right" : "left"]: 58, top: actionsTop,
-          display: "flex", flexDirection: "column", gap: 10, transition: "top 0.3s ease" }}>
+        <div style={{ position: "fixed", zIndex: 92, [isRight ? "right" : "left"]: 58, top: actionsTop, display: "flex", flexDirection: "column", gap: 10, transition: "top 0.18s ease" }}>
           {items.map((item, i) => item.t === "SEP" ? (
             <div key={i} style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.5)", textAlign: "center", letterSpacing: 2 }}>RECENTI</div>
           ) : (
-            <div key={i} onClick={() => { if (item.a) { item.a(); setFabOpen(false); } }}
-              style={{ display: "flex", alignItems: "center", gap: 12, flexDirection: isRight ? "row-reverse" : "row", cursor: "pointer" }}>
-              <div style={{ width: 54, height: 54, borderRadius: "50%", background: item.c, flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px " + item.c + "70" }}>
+            <div key={i} onClick={() => { if (item.a) { item.a(); setFabOpen(false); } }} style={{ display: "flex", alignItems: "center", gap: 12, flexDirection: isRight ? "row-reverse" : "row", cursor: "pointer" }}>
+              <div style={{ width: 54, height: 54, borderRadius: "50%", background: item.c, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px " + item.c + "70" }}>
                 {icons[item.t] && icons[item.t]()}
               </div>
-              <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 13, fontWeight: 700,
-                padding: "7px 13px", borderRadius: 10, whiteSpace: "nowrap", maxWidth: 160,
-                overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>{item.l}</div>
+              <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 13, fontWeight: 700, padding: "7px 13px", borderRadius: 10, whiteSpace: "nowrap", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>{item.l}</div>
             </div>
           ))}
         </div>
       )}
-      <div style={{ position: "fixed", [isRight ? "right" : "left"]: 0, top: topPx, zIndex: 92, transition: "top 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}>
+      <div ref={wrapRef} style={{ position: "fixed", [isRight ? "right" : "left"]: 0, top: topPx, zIndex: 92 }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 110 : 0, overflow: "hidden",
-            background: "#0A5940", borderRadius: isRight ? "12px 0 0 0" : "0 12px 0 0",
+          <div style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 110 : 0, overflow: "hidden", background: "#0A5940",
+            borderRadius: isRight ? "12px 0 0 0" : "0 12px 0 0",
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
             transition: "width 0.25s ease, height 0.25s ease" }}>
-            <div onClick={() => setFabOpen(false)} style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <div onClick={() => setFabOpen(false)} style={{ cursor: "pointer", textAlign: "center" }}>
               <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", letterSpacing: 1 }}>CHIUDI</span>
             </div>
             <div style={{ width: "80%", height: 1, background: "rgba(255,255,255,0.2)" }} />
-            <div onClick={cyclePos} style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-              <span style={{ fontSize: 14, color: "#fff" }}>{pos === "top" ? "?" : pos === "center" ? "?" : "?"}</span>
-              <span style={{ fontSize: 7, color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>SPOSTA</span>
-            </div>
-            <div style={{ width: "80%", height: 1, background: "rgba(255,255,255,0.2)" }} />
-            <div onClick={cycleSide} style={{ cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+            <div onClick={(e) => { e.stopPropagation(); const ns = side === "right" ? "left" : "right"; setSide(ns); localStorage.setItem("mastro:fab_side", ns); }} style={{ cursor: "pointer", textAlign: "center" }}>
               <span style={{ fontSize: 14, color: "#fff" }}>{side === "right" ? "<" : ">"}</span>
-              <span style={{ fontSize: 7, color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>LATO</span>
+              <div style={{ fontSize: 7, color: "rgba(255,255,255,0.6)", fontWeight: 700 }}>LATO</div>
             </div>
           </div>
-          <div onClick={() => { if (!fabOpen) setFabOpen(true); }}
-            style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 90 : 90,
+          <div id="mastro-fab-tab" onClick={() => { if (!fabOpen) setFabOpen(true); }}
+            style={{ width: fabOpen ? 44 : 24, height: 90,
               background: acc, borderRadius: isRight ? (fabOpen ? "0 0 0 12px" : "12px 0 0 12px") : (fabOpen ? "0 0 12px 0" : "0 12px 12px 0"),
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-              cursor: "pointer", userSelect: "none", transition: "width 0.25s ease",
+              cursor: "grab", userSelect: "none", WebkitUserSelect: "none", touchAction: "none",
+              transition: "width 0.25s ease",
               boxShadow: isRight ? "-4px 0 20px " + acc + "60" : "4px 0 20px " + acc + "60" }}>
-            <div style={{ width: fabOpen ? 30 : 18, height: fabOpen ? 30 : 18, borderRadius: fabOpen ? 8 : 5,
-              background: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.25s ease", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+            <div style={{ width: fabOpen ? 30 : 18, height: fabOpen ? 30 : 18, borderRadius: fabOpen ? 8 : 5, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.25s ease", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
               <span style={{ fontSize: fabOpen ? 17 : 11, fontWeight: 900, color: acc, lineHeight: 1, transition: "font-size 0.25s" }}>M</span>
             </div>
             <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: 7, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: 2 }}>MASTRO</span>
