@@ -44,11 +44,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     };
   }, [topPx, fabOpen, setFabOpen]);
   const items = [
-    { l: "Nota vocale", c: "#E53935", emoji: "??", a: onVoice },
-    { l: "Appuntamento", c: "#1A9E73", emoji: "??", a: onEvento },
-    { l: "Nuovo cliente", c: "#3B7FE0", emoji: "??", a: onCliente },
-    { l: "Nuova commessa", c: "#E8A020", emoji: "??", a: onCommessa },
-    { l: "Messaggio", c: "#8B5CF6", emoji: "??", a: onMessaggio },
+    { l: "Nota vocale", c: "#E53935", emoji: "?", a: onVoice },
+    { l: "Appuntamento", c: "#1A9E73", emoji: "?", a: onEvento },
+    { l: "Nuovo cliente", c: "#3B7FE0", emoji: "?", a: onCliente },
+    { l: "Nuova commessa", c: "#E8A020", emoji: "?", a: onCommessa },
+    { l: "Messaggio", c: "#8B5CF6", emoji: "?", a: onMessaggio },
   ];
   const itemsH = items.length * 72;
   const tabCenterY = topPx + 65;
@@ -89,7 +89,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
               transition: "width 0.25s ease, height 0.25s ease" }}>
             <span style={{ fontSize: 9, fontWeight: 800, color: "#fff", letterSpacing: 1,
               textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>CHIUDI</span>
-            <span style={{ fontSize: 16, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>?</span>
+            
           </div>
           <div onMouseDown={onDown} onTouchStart={onDown}
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 100 : 90,
