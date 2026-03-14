@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function DraggableFAB({ fabOpen, setFabOpen, acc }: Props) {
-  const [posY, setPosY] = useState<number | null>(null);
+  const [posY, setPosY] = useState(300);
   const dragging = useRef(false);
   const moved = useRef(false);
   const startY = useRef(0);
@@ -16,42 +16,38 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc }: Props) {
 
   useEffect(() => {
     const saved = localStorage.getItem("mastro-fab-y");
-    if (saved) setPosY(parseInt(saved));
-    else setPosY(window.innerHeight - 160);
+    setPosY(saved ? parseInt(saved) : window.innerHeight - 250);
   }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
     dragging.current = true;
     moved.current = false;
     startY.current = e.touches[0].clientY;
-    startPosY.current = posY ?? 400;
+    startPosY.current = posY;
+    e.stopPropagation();
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (!dragging.current) return;
     const delta = e.touches[0].clientY - startY.current;
     if (Math.abs(delta) > 4) moved.current = true;
-    const newY = Math.max(60, Math.min(window.innerHeight - 80, (startPosY.current) + delta));
+    const newY = Math.max(80, Math.min(window.innerHeight - 150, startPosY.current + delta));
     setPosY(newY);
+    e.stopPropagation();
   };
 
   const onTouchEnd = () => {
+    if (!dragging.current) return;
     dragging.current = false;
-    if (posY !== null) localStorage.setItem("mastro-fab-y", String(posY));
+    localStorage.setItem("mastro-fab-y", String(posY));
   };
-
-  const onClick = () => {
-    if (!moved.current) setFabOpen(!fabOpen);
-  };
-
-  if (posY === null) return null;
 
   return (
     <div
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      onClick={onClick}
+      onClick={() => { if (!moved.current) setFabOpen(!fabOpen); }}
       style={{
         position: "fixed",
         top: posY,
