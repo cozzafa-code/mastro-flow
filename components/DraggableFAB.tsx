@@ -1,48 +1,57 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEvento, onCliente, onCommessa, onMessaggio, lastCM, onLastCM, recentActions }) {
+export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions }) {
   const [topPx, setTopPx] = useState(300);
   const [side, setSide] = useState("right");
   const [dragging, setDragging] = useState(false);
-  const drag = useRef({ active: false, moved: false, startY: 0, startTop: 300 });
+  const state = useRef({ active: false, moved: false, startY: 0, startTop: 300 });
   useEffect(() => {
     const s = localStorage.getItem("mastro:fab_top");
     const sd = localStorage.getItem("mastro:fab_side");
     setTopPx(s ? parseInt(s) : window.innerHeight / 2);
     if (sd) setSide(sd);
   }, []);
-  const onDown = (e) => {
-    const y = e.touches ? e.touches[0].clientY : e.clientY;
-    drag.current = { active: true, moved: false, startY: y, startTop: topPx };
-    setDragging(true);
-    e.preventDefault();
-    e.stopPropagation();
-  };
   useEffect(() => {
-    const onMove = (e) => {
-      if (!drag.current.active) return;
+    const el = document.getElementById("mastro-fab-tab");
+    if (!el) return;
+    const onStart = (e) => {
       const y = e.touches ? e.touches[0].clientY : e.clientY;
-      const delta = y - drag.current.startY;
-      if (Math.abs(delta) > 4) drag.current.moved = true;
-      const newY = Math.max(60, Math.min(window.innerHeight - 180, drag.current.startTop + delta));
-      setTopPx(newY);
+      state.current = { active: true, moved: false, startY: y, startTop: topPx };
+      e.preventDefault();
     };
-    const onUp = () => {
-      if (!drag.current.active) return;
-      drag.current.active = false;
+    const onMove = (e) => {
+      if (!state.current.active) return;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      const delta = y - state.current.startY;
+      if (Math.abs(delta) > 6) {
+        state.current.moved = true;
+        setDragging(true);
+      }
+      if (state.current.moved) {
+        const newY = Math.max(60, Math.min(window.innerHeight - 180, state.current.startTop + delta));
+        setTopPx(newY);
+      }
+    };
+    const onEnd = () => {
+      if (!state.current.active) return;
+      state.current.active = false;
       setDragging(false);
-      if (!drag.current.moved && !fabOpen) setFabOpen(true);
+      if (!state.current.moved && !fabOpen) setFabOpen(true);
       localStorage.setItem("mastro:fab_top", String(topPx));
     };
+    el.addEventListener("touchstart", onStart, { passive: false });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("mousedown", onStart);
     window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", onUp);
+    window.addEventListener("mouseup", onEnd);
     return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("mousedown", onStart);
       window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onUp);
+      window.removeEventListener("mouseup", onEnd);
     };
   }, [topPx, fabOpen, setFabOpen]);
   const isRight = side === "right";
@@ -57,7 +66,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     l: ra.label, c: "#0D7C6B", t: "BCK",
     a: () => { try { const d = JSON.parse(ra.action); if (d.type === "commessa" && onLastCM) onLastCM({ id: d.id }); } catch {} }
   }));
-  const items = recent.length > 0 ? [...baseItems, { l: "RECENTI", c: "#555", t: "SEP", a: null }, ...recent] : baseItems;
+  const items = recent.length > 0 ? [...baseItems, { l: "SEP", c: "#555", t: "SEP", a: null }, ...recent] : baseItems;
   const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
   const itemsH = items.filter(i => i.t !== "SEP").length * 70 + 20;
   const showAbove = (screenH - topPx - 60) < itemsH;
@@ -110,11 +119,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
               {side === "right" ? "<" : ">"}
             </div>
           </div>
-          <div onMouseDown={onDown} onTouchStart={onDown}
+          <div id="mastro-fab-tab"
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 100 : 90,
               background: acc, borderRadius: isRight ? (fabOpen ? "0 0 0 12px" : "12px 0 0 12px") : (fabOpen ? "0 0 12px 0" : "0 12px 12px 0"),
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-              cursor: "grab", userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none",
+              cursor: "grab", userSelect: "none", WebkitUserSelect: "none", touchAction: "none",
               transition: "width 0.25s ease, height 0.25s ease",
               boxShadow: isRight ? "-4px 0 20px " + acc + "60" : "4px 0 20px " + acc + "60" }}>
             <div style={{ width: fabOpen ? 30 : 18, height: fabOpen ? 30 : 18, borderRadius: fabOpen ? 8 : 5,
