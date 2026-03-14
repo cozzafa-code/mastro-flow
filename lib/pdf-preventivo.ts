@@ -163,7 +163,25 @@ export async function generaPreventivoPDF(c: any, ctx: any): Promise<void> {
   const az = aziendaInfo || {};
 
   // ── Calcola prezzo singolo vano ──
+  // Usa calcolaVanoPrezzo dal context se disponibile (stesso calcolo del Centro Comando)
   const calcolaVano = (v: any): { prezzoBase: number; accessoriCat: number; posa: number; totUnitario: number; totaleVano: number } => {
+    const pezzi = v.pezzi || 1;
+    if (ctx.calcolaVanoPrezzo) {
+      const tot = ctx.calcolaVanoPrezzo(v, c);
+      const acc = v.accessori || {};
+      const m = v.misure || {};
+      const lmm = m.lCentro || 0, hmm = m.hCentro || 0;
+      const pTapp = parseFloat(az.prezzoTapparella || c.prezzoTapparella || 0);
+      const pZanz = parseFloat(az.prezzoZanzariera || c.prezzoZanzariera || 0);
+      let accFisici = 0;
+      if (acc.tapparella?.attivo && pTapp > 0) accFisici += Math.round(((acc.tapparella.l||lmm)/1000)*((acc.tapparella.h||hmm)/1000)*pTapp*100)/100;
+      if (acc.zanzariera?.attivo && pZanz > 0) accFisici += Math.round(((acc.zanzariera.l||lmm)/1000)*((acc.zanzariera.h||hmm)/1000)*pZanz*100)/100;
+      const accCat = (v.accessoriCatalogo||[]).reduce((s:number,a:any)=>s+(parseFloat(a.prezzoUnitario)||0)*(a.quantita||1),0);
+      const posa = v.prevPosaPrezzo || (parseFloat(az.prezzoPosaVano||0)>0&&az.includePosaInPreventivo?parseFloat(az.prezzoPosaVano):0);
+      return { prezzoBase: tot, accessoriCat: accCat, posa, totUnitario: tot+accFisici, totaleVano: (tot+accFisici)*pezzi+accCat+posa };
+    }
+    // Fallback calcolo interno
+    const _ORIG_calcolaVano = (v: any): { prezzoBase: number; accessoriCat: number; posa: number; totUnitario: number; totaleVano: number } => {
     const m = v.misure || {};
     const lc = (m.lCentro || 0) / 1000;
     const hc = (m.hCentro || 0) / 1000;
@@ -235,6 +253,8 @@ export async function generaPreventivoPDF(c: any, ctx: any): Promise<void> {
       totUnitario: infisso + accFisici,
       totaleVano: (infisso + accFisici) * pezzi + accCat + posa,
     };
+  };
+  return _ORIG_calcolaVano(v);
   };
 
   // ── Ottieni e calcola vani ──

@@ -1988,6 +1988,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
   const generaPreventivoPDF = (c) => _generaPreventivoPDF(c, {
     sistemiDB, vetriDB, coprifiliDB, lamiereDB, aziendaInfo, getVaniAttivi,
+    calcolaVanoPrezzo, tapparelleListino, persianeListino, zanzariereListino,
   });
 
 
