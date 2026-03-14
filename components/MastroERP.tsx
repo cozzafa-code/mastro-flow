@@ -455,6 +455,16 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [showCompose, setShowCompose] = useState(false);
   const [composeMsg, setComposeMsg] = useState({ to: "", text: "", canale: "whatsapp", cm: "" });
   const [fabOpen, setFabOpen] = useState(false);
+  const [recentActions, setRecentActions] = useState(() => {
+    try { const s = localStorage.getItem("mastro:recent_actions"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const trackAction = (type, label, action) => {
+    setRecentActions(prev => {
+      const next = [{ type, label, action, ts: Date.now() }, ...prev.filter(a => a.label !== label)].slice(0, 3);
+      try { localStorage.setItem("mastro:recent_actions", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const [showVoice, setShowVoice] = useState(false);
   const [contatti, setContatti] = useState(CONTATTI_INIT);
   const [msgSubTab, setMsgSubTab] = useState("chat"); // "chat" | "rubrica" | "ai" | "email"
@@ -603,7 +613,12 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "contatti", contatti), [contatti]);
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "pipeline", pipelineDB), [pipelineDB]);
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "azienda", aziendaInfo), [aziendaInfo]);
-  useEffect(() => { if (selectedCM?.id) setLastOpenedCMId(selectedCM.id); }, [selectedCM]);
+  useEffect(() => {
+    if (selectedCM?.id) {
+      setLastOpenedCMId(selectedCM.id);
+      trackAction("commessa", selectedCM.code + " " + selectedCM.cliente, JSON.stringify({ type: "commessa", id: selectedCM.id }));
+    }
+  }, [selectedCM?.id]);
 
   const PIPELINE = pipelineDB.filter(p => p.attiva !== false);
   const aziendaDB = aziendaInfo; // alias used by PDF/email helpers
@@ -1316,6 +1331,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     if (!newEvent.time) newEvent.time = "09:00";
     setEvents(ev => [...ev, { id: Date.now(), ...newEvent, date: newEvent.date || selDate.toISOString().split("T")[0], addr: newEvent.addr || "", color: tipoEvColor(newEvent.tipo) }]);
     setNewEvent({ text: "", time: "", tipo: "sopralluogo", cm: "", persona: "", date: "", reminder: "", addr: "" });
+    trackAction("evento", newEvent.text || "Evento", JSON.stringify({ type: "evento" }));
     setShowNewEvent(false);
   };
 
@@ -2984,7 +3000,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           );
         })()}
         })()}
-        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} lastCM={lastOpenedCMId ? cantieri.find(c => c.id === lastOpenedCMId) : cantieri[0]} onLastCM={(cm) => { setSelectedCM(cm); setTab("commesse"); }} />
+        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} lastCM={lastOpenedCMId ? cantieri.find(c => c.id === lastOpenedCMId) : cantieri[0]} recentActions={recentActions} trackAction={trackAction} onLastCM={(cm) => { setSelectedCM(cm); setTab("commesse"); }} />
 
         {/* MESSAGE DETAIL OVERLAY */}
         {selectedMsg && (() => {
