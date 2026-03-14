@@ -11,12 +11,21 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     setTopPx(s ? parseInt(s) : window.innerHeight / 2);
     if (sd) setSide(sd);
   }, []);
+  const longPressTimer = useRef(null);
   const onDown = (e) => {
     const y = e.touches ? e.touches[0].clientY : e.clientY;
-    drag.current = { active: true, moved: false, startY: y, startTop: topPx };
-    setDragging(true);
-    e.preventDefault();
-    e.stopPropagation();
+    drag.current = { active: false, moved: false, startY: y, startTop: topPx };
+    longPressTimer.current = setTimeout(() => {
+      drag.current.active = true;
+      setDragging(true);
+    }, 250);
+  };
+  const onDownCancel = () => {
+    clearTimeout(longPressTimer.current);
+    if (!drag.current.moved) {
+      drag.current.active = false;
+      setDragging(false);
+    }
   };
   useEffect(() => {
     const onMove = (e) => {
@@ -110,7 +119,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
               {side === "right" ? "<" : ">"}
             </div>
           </div>
-          <div onMouseDown={onDown} onTouchStart={onDown}
+          <div onMouseDown={onDown} onTouchStart={onDown} onMouseUp={onDownCancel} onTouchEnd={onDownCancel}
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 100 : 90,
               background: acc, borderRadius: isRight ? (fabOpen ? "0 0 0 12px" : "12px 0 0 12px") : (fabOpen ? "0 0 12px 0" : "0 12px 12px 0"),
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
