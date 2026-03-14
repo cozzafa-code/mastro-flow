@@ -114,7 +114,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 100 : 90,
               background: acc, borderRadius: isRight ? (fabOpen ? "0 0 0 12px" : "12px 0 0 12px") : (fabOpen ? "0 0 12px 0" : "0 12px 12px 0"),
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-              cursor: "grab", userSelect: "none", touchAction: "none",
+              cursor: "grab", userSelect: "none", WebkitUserSelect: "none", touchAction: "none", WebkitTouchCallout: "none",
               transition: "width 0.25s ease, height 0.25s ease",
               boxShadow: isRight ? "-4px 0 20px " + acc + "60" : "4px 0 20px " + acc + "60" }}>
             <div style={{ width: fabOpen ? 30 : 18, height: fabOpen ? 30 : 18, borderRadius: fabOpen ? 8 : 5,
