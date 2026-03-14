@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
 
-import { generaSVGMini } from "./InfissoConfigurator";
+import InfissoSVG, { buildMiniPreview, type WindowConfig } from "./InfissoSVG";
 
 
 // ── Palette colori ──
@@ -442,8 +442,16 @@ function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any)
   };
   const lbl = { fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase" as const, letterSpacing: 0.7, marginBottom: 4 };
 
-  // SVG inline del tipo infisso
-  const svgHtml = useMemo(() => generaSVGMini(cfg, m.lCentro || 900, m.hCentro || 1400, tappOn, zanzOn), [cfg, m.lCentro, m.hCentro, tappOn, zanzOn]);
+  // Config SVG
+  const svgConfig: WindowConfig = {
+    tipo: cfg as any,
+    W: m.lCentro || 900,
+    H: m.hCentro || 1400,
+    tapparella: tappOn,
+    zanzariera: zanzOn,
+    showQuote: false,
+    showApertura: true,
+  };
 
   return (
     <div style={{ background: T.card, borderRadius: 16, border: `1.5px solid ${open ? "#1A9E73" : T.bdr}`, marginBottom: 12, overflow: "hidden" }}>
@@ -473,33 +481,38 @@ function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any)
       {open && (
         <div style={{ padding: "0 14px 16px", borderTop: `1px solid ${T.bdr}` }}>
 
-          {/* ── RIGA: TIPO + SVG PREVIEW ── */}
-          <div style={{ display: "flex", gap: 10, marginTop: 14, marginBottom: 14, alignItems: "flex-start" }}>
-            {/* Selezione tipo rapida */}
-            <div style={{ flex: 1 }}>
-              <div style={lbl}>Tipo</div>
-              <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5 }}>
-                {[
-                  { id: "F1A_DX", l: "1A→" }, { id: "F1A_SX", l: "←1A" },
-                  { id: "F2A", l: "2A" }, { id: "F3A", l: "3A" },
-                  { id: "F_FISSO", l: "Fisso" }, { id: "PF1_DX", l: "PF→" },
-                  { id: "PF2", l: "PF2" }, { id: "SC2", l: "Scorr" },
-                  { id: "ALZ", l: "Alz" }, { id: "P1_DX", l: "Porta" },
-                  { id: "ARCO", l: "Arco" }, { id: "VASISTAS", l: "Vas" },
-                ].map(t => (
-                  <button key={t.id} onClick={() => { setCfg(t.id); updV({ infissoConfig: { ...(vano.infissoConfig || {}), tipo: t.id } }); }}
-                    style={{ padding: "5px 9px", borderRadius: 8, border: `1.5px solid ${cfg === t.id ? "#D08008" : T.bdr}`,
-                      background: cfg === t.id ? "#D0800815" : T.bg, color: cfg === t.id ? "#D08008" : T.sub,
-                      fontSize: 10, fontWeight: cfg === t.id ? 800 : 600, cursor: "pointer", fontFamily: "Inter,system-ui" }}>
-                    {t.l}
-                  </button>
-                ))}
-              </div>
+          {/* ── SVG PREVIEW GRANDE ── */}
+          <div style={{ marginTop: 14, marginBottom: 10, background: "#f8f9ff", borderRadius: 14, border: `1.5px solid ${T.bdr}`, overflow: "hidden", position: "relative" }}>
+            <InfissoSVG config={{ ...svgConfig, showQuote: true }} style={{ width: "100%", maxHeight: 300, display: "block" }} />
+            <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(255,255,255,0.9)", borderRadius: 8, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#555" }}>
+              {m.lCentro || "—"}×{m.hCentro || "—"} mm
             </div>
-            {/* Preview SVG */}
-            <div style={{ width: 90, height: 90, background: "#f0f4ff", borderRadius: 10, border: `1px solid ${T.bdr}`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}
-              dangerouslySetInnerHTML={{ __html: svgHtml }} />
           </div>
+
+          {/* ── SELEZIONE TIPO ── */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={lbl}>Tipo infisso</div>
+            <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5, marginTop: 6 }}>
+              {[
+                { id: "F1A_DX", l: "1A→" }, { id: "F1A_SX", l: "←1A" },
+                { id: "F2A", l: "2 ante" }, { id: "F3A", l: "3 ante" },
+                { id: "F_FISSO", l: "Fisso" }, { id: "FISSO_TRAV", l: "F+Trav" },
+                { id: "PF1_DX", l: "PF→" }, { id: "PF2", l: "PF 2a" },
+                { id: "SC2", l: "Scorr." }, { id: "ALZ", l: "Alzante" },
+                { id: "P1_DX", l: "Porta→" }, { id: "P2", l: "Porta 2a" },
+                { id: "ARCO", l: "Arco" }, { id: "VASISTAS", l: "Vasistas" },
+                { id: "ANTA_RIBALTA", l: "A+Rib." },
+              ].map(t => (
+                <button key={t.id} onClick={() => { setCfg(t.id); updV({ infissoConfig: { ...(vano.infissoConfig || {}), tipo: t.id } }); }}
+                  style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${cfg === t.id ? "#D08008" : T.bdr}`,
+                    background: cfg === t.id ? "#D0800815" : T.bg, color: cfg === t.id ? "#D08008" : T.sub,
+                    fontSize: 11, fontWeight: cfg === t.id ? 800 : 600, cursor: "pointer", fontFamily: "Inter,system-ui" }}>
+                  {t.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
 
           {/* ── MISURE PRINCIPALI ── */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
