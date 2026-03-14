@@ -78,8 +78,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
               <span style={{ fontSize: 20, color: "#fff" }}>?</span>
             </div>
           )}
-          <div onMouseDown={fabOpen ? undefined : onDown} onTouchStart={fabOpen ? undefined : onDown}
-            onClick={fabOpen ? () => setFabOpen(false) : undefined}
+          <div onMouseDown={onDown} onTouchStart={onDown}
+            
             style={{ width: fabOpen ? 72 : 28, height: fabOpen ? 86 : 90,
               background: acc, borderRadius: fabOpen ? "0 0 0 10px" : "10px 0 0 10px",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3,
