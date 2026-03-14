@@ -1,182 +1,123 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — PreventivoModal
-// Estratto S2: ~569 righe (Modale Preventivo completa)
-// ═══════════════════════════════════════════════════════════
-import React from "react";
+import React, { useState } from "react";
 import { useMastro } from "./MastroContext";
-import { FM, tipoToMinCat, TIPOLOGIE_RAPIDE } from "./mastro-constants";
+import { TIPOLOGIE_RAPIDE } from "./mastro-constants";
 
 export default function PreventivoModal() {
-  const {
-    T, S, PIPELINE,
-    // State
-    showPreventivoModal, setShowPreventivoModal,
-    selectedCM, setSelectedCM, cantieri, setCantieri,
-    selectedVano, setSelectedVano, vanoStep, setVanoStep,
-    sistemiDB, vetriDB, coprifiliDB, lamiereDB,
-    fattureDB, setFattureDB, montaggiDB, setMontaggiDB,
-    ordiniFornDB, setOrdiniFornDB, squadreDB, problemi,
-    showCalMontaggi, setShowCalMontaggi,
-    calMontaggiTarget, setCalMontaggiTarget,
-    showFirmaModal, setShowFirmaModal,
-    // Helpers
-    calcolaTotaleCommessa, calcolaVanoPrezzo, getVaniAttivi, setFaseTo,
-    ORDINE_STATI, renderCalendarioMontaggi,
-    // Business logic + state
-    ordineDetail, setOrdineDetail,
-    generaPreventivoPDF, generaPDFMisure, creaFattura, generaFatturaPDF, inviaWhatsApp, inviaEmail, creaOrdineFornitore, ricalcolaOrdine, updateOrdine, calcolaScadenzaPagamento, generaOrdinePDF, generaConfermaFirmataPDF, inviaOrdineFornitore, creaMontaggio, generaTrackingCliente,
-    aziendaInfo,
-  } = useMastro();
-
-    if (!showPreventivoModal || !selectedCM) return null;
-    const c = selectedCM;
-    const updateCMp = (field, val) => { setCantieri(cs=>cs.map(x=>x.id===c.id?{...x,[field]:val}:x)); setSelectedCM(p=>({...p,[field]:val})); };
-
-    // ── Usa calcolaVanoPrezzo dal context (identico a Centro Comando) ──
-    const vaniAttivi = getVaniAttivi(c);
-    const vaniCalc = vaniAttivi.map(v => {
-      const tot = calcolaVanoPrezzo(v, c) * (v.pezzi || 1);
-      const m = v.misure || {};
-      const mq = ((m.lCentro||0)/1000) * ((m.hCentro||0)/1000);
-      const sysRec = sistemiDB.find(s => (s.marca+" "+s.sistema)===v.sistema || s.sistema===v.sistema);
-      return { ...v, calc: { tot, mq, sysRec, settore: v.settore || "serramenti" } };
-    });
-    const totale = vaniCalc.reduce((s,v)=>s+v.calc.tot, 0)
-      + (c.vociLibere||[]).reduce((s,vl)=>s+(vl.importo||0)*(vl.qta||1), 0);
-    const vaniSenzaSistema = vaniCalc.filter(v=>!v.calc.sysRec && !v.sistema && v.calc.settore==="serramenti");
-    const vaniSenzaMisure = vaniCalc.filter(v=>!(v.misure?.lCentro) || !(v.misure?.hCentro));
-    const hasWarnings = vaniSenzaSistema.length>0 || vaniSenzaMisure.length>0;
-    const vaniNonConfermati = vaniCalc.filter(v=>(v.statoMisure||"provvisorie")!=="confermate");
-    const bloccatoPerMisure = vaniNonConfermati.length > 0;
-    // ── Blocco disegno tecnico ──
-    const dtConf = aziendaInfo?.disegnoTecnico || {};
-    const DISEGNO_DEFAULT: Record<string,boolean> = { serramenti: true, fabbro: true, pergole: true, porte: false, zanzariere: false, tendaggi: false, tapparelle: false };
-    const vaniSenzaDisegno = vaniCalc.filter(v => {
-      const settore = TIPOLOGIE_RAPIDE.find((t: any) => t.code === v.tipo)?.settore || "serramenti";
-      const obbligatorio = settore in dtConf ? dtConf[settore] : (DISEGNO_DEFAULT[settore] ?? false);
-      if (!obbligatorio) return false;
-      return !(v.disegno && (v.disegno.pagine?.length > 0 || v.disegno.paths?.length > 0)) && !v.pdfFornitore;
-    });
-    const bloccatoPerDisegno = vaniSenzaDisegno.length > 0;
-    const scontoVal = totale * parseFloat(c.scontoPerc || c.sconto || 0) / 100;
-    const ivaPerc = c.ivaPerc || 10;
-    const imponibile = totale - scontoVal;
-    const iva = imponibile * ivaPerc / 100;
-    const totIva = imponibile + iva;
-    return (
-      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&setShowPreventivoModal(false)}>
-        <div style={{background:"#f5f5f7",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:480,maxHeight:"90vh",overflow:"auto",paddingBottom:24}}>
-          <div style={{padding:"16px 16px 10px",display:"flex",alignItems:"center",gap:10,position:"sticky",top:0,background:"#f5f5f7",zIndex:1}}>
-            <span style={{fontSize:20}}>📄</span>
-            <div><div style={{fontSize:15,fontWeight:800}}>Preventivo</div><div style={{fontSize:11,color:"#666"}}>{c.code} — {c.cliente} {c.cognome||""}</div></div>
-            <div onClick={()=>setShowPreventivoModal(false)} style={{marginLeft:"auto",width:28,height:28,borderRadius:"50%",background:"#e5e5ea",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>✕</div>
+  const { T, showPreventivoModal, setShowPreventivoModal, selectedCM, setSelectedCM, cantieri, setCantieri, setSelectedVano, setVanoStep, sistemiDB, calcolaVanoPrezzo, getVaniAttivi, generaPreventivoPDF, generaPreventivoCondivisibile, setShowFirmaModal, aziendaInfo, toast } = useMastro();
+  const [invioLink, setInvioLink] = useState(false);
+  const [linkCopiato, setLinkCopiato] = useState(false);
+  if (!showPreventivoModal || !selectedCM) return null;
+  const c = selectedCM;
+  const upd = (f, v) => { setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, [f]: v } : x)); setSelectedCM(p => ({ ...p, [f]: v })); };
+  const az = aziendaInfo || {};
+  const vani = getVaniAttivi(c);
+  const vaniCalc = vani.map(v => {
+    const prezzoBase = calcolaVanoPrezzo(v, c);
+    const pezzi = v.pezzi || 1;
+    const acc = v.accessori || {};
+    const m = v.misure || {};
+    const lmm = m.lCentro || 0, hmm = m.hCentro || 0;
+    const accFisici = [];
+    if (acc.tapparella?.attivo) { const p = parseFloat(az.prezzoTapparella || c.prezzoTapparella || 0); accFisici.push({ label: "Tapparella" + (acc.tapparella.colore ? " " + acc.tapparella.colore : "") + (acc.tapparella.motorizzata ? " (motorizzata)" : ""), prezzo: p > 0 ? Math.round(((acc.tapparella.l||lmm)/1000)*((acc.tapparella.h||hmm)/1000)*p*100)/100 : 0, pezzi }); }
+    if (acc.persiana?.attivo) { const p = parseFloat(az.prezzoPersiana || c.prezzoPersiana || 0); accFisici.push({ label: "Persiana" + (acc.persiana.colore ? " " + acc.persiana.colore : ""), prezzo: p > 0 ? Math.round(((acc.persiana.l||lmm)/1000)*((acc.persiana.h||hmm)/1000)*p*100)/100 : 0, pezzi }); }
+    if (acc.zanzariera?.attivo) { const p = parseFloat(az.prezzoZanzariera || c.prezzoZanzariera || 0); accFisici.push({ label: "Zanzariera" + (acc.zanzariera.tipo ? " " + acc.zanzariera.tipo : ""), prezzo: p > 0 ? Math.round(((acc.zanzariera.l||lmm)/1000)*((acc.zanzariera.h||hmm)/1000)*p*100)/100 : 0, pezzi }); }
+    const accCatalogo = (v.accessoriCatalogo || []).map(a => ({ label: a.nome || "Accessorio", prezzo: parseFloat(a.prezzoUnitario) || 0, pezzi: a.quantita || 1 }));
+    const posaPrezzo = v.prevPosaPrezzo || (parseFloat(az.prezzoPosaVano||0) > 0 && az.includePosaInPreventivo ? parseFloat(az.prezzoPosaVano) : 0);
+    if (posaPrezzo > 0) accFisici.push({ label: "Posa in opera", prezzo: posaPrezzo, pezzi });
+    const vociVano = (v.vociLibere || []).map(vl => ({ label: vl.desc || "Voce extra", prezzo: vl.prezzo || 0, pezzi: vl.qta || 1 }));
+    const allAcc = [...accFisici, ...accCatalogo, ...vociVano];
+    const totAccessori = allAcc.reduce((s, a) => s + a.prezzo * a.pezzi, 0);
+    const totVano = prezzoBase * pezzi + totAccessori;
+    const confermato = (v.statoMisure || "provvisorie") === "confermate";
+    const sysRec = sistemiDB?.find(s => (s.marca+" "+s.sistema) === v.sistema || s.sistema === v.sistema);
+    return { ...v, _prezzoBase: prezzoBase, _allAcc: allAcc, _totVano: totVano, _confermato: confermato, _sysRec: sysRec };
+  });
+  const vociCommessa = (c.vociLibere || []).map(vl => ({ label: vl.desc || "Voce extra", importo: (vl.importo || 0) * (vl.qta || 1) }));
+  const totVani = vaniCalc.reduce((s, v) => s + v._totVano, 0);
+  const totVoci = vociCommessa.reduce((s, v) => s + v.importo, 0);
+  const totBase = totVani + totVoci;
+  const scontoPerc = parseFloat(c.scontoPerc || c.sconto || 0);
+  const scontoVal = totBase * scontoPerc / 100;
+  const imponibile = totBase - scontoVal;
+  const ivaPerc = parseFloat(c.ivaPerc || 10);
+  const ivaVal = imponibile * ivaPerc / 100;
+  const totIva = imponibile + ivaVal;
+  const acconto = parseFloat(c.accontoRicevuto || 0);
+  const saldo = totIva - acconto;
+  const vaniNonConfermati = vaniCalc.filter(v => !v._confermato);
+  const bloccato = vaniNonConfermati.length > 0;
+  const fmt = n => (n || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const settoreColor = v => { const s = TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.settore || "serramenti"; return { serramenti: T.acc, fabbro: "#8B5E34", pergole: "#1A9E73", porte: "#D08008", zanzariere: "#3B7FE0", boxdoccia: "#0088cc", tendaggi: "#8B5CF6" }[s] || T.acc; };
+  const handleGeneraPDF = () => { if (!bloccato) { generaPreventivoPDF(c); toast && toast("PDF generato", "success"); } };
+  const handleInviaLink = async () => { setInvioLink(true); try { const url = await generaPreventivoCondivisibile(c); if (url) { await navigator.clipboard.writeText(url); setLinkCopiato(true); upd("preventivoLink", url); setTimeout(() => setLinkCopiato(false), 3000); toast && toast("Link copiato!", "success"); } } catch { toast && toast("Errore link", "error"); } setInvioLink(false); };
+  const bg = T.bg, card = T.card, text = T.text, sub = T.sub, bdr = T.bdr, acc = T.acc, red = T.red, grn = T.grn;
+  return (
+    <div onClick={e => e.target === e.currentTarget && setShowPreventivoModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+      <div style={{ background: bg, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, maxHeight: "92vh", overflow: "auto", paddingBottom: 32 }}>
+        <div style={{ padding: "16px 16px 12px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, background: bg, zIndex: 1, borderBottom: "1px solid " + bdr }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: acc, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <div style={{ flex: 1 }}><div style={{ fontSize: 16, fontWeight: 800, color: text }}>Preventivo</div><div style={{ fontSize: 11, color: sub }}>{c.code} — {c.cliente} {c.cognome || ""}</div></div>
+          <div onClick={() => setShowPreventivoModal(false)} style={{ width: 28, height: 28, borderRadius: "50%", background: bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>X</div>
+        </div>
+        <div style={{ padding: "0 14px" }}>
+          {bloccato && <div style={{ background: red + "10", border: "1.5px solid " + red + "40", borderRadius: 12, padding: "12px 14px", marginTop: 14, marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: red, marginBottom: 6 }}>Misure non confermate</div>
+            <div style={{ fontSize: 11, color: red, marginBottom: 8 }}>{vaniNonConfermati.length} vano/i con misure provvisorie. Conferma per procedere.</div>
+            {vaniNonConfermati.map(v => (<div key={v.id} onClick={() => { setShowPreventivoModal(false); setSelectedVano(v); setVanoStep(0); }} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: "1px solid " + red + "20", cursor: "pointer" }}><span style={{ fontSize: 11, color: red }}>{v.nome} — {v.statoMisure === "da_rivedere" ? "Da rivedere" : "Provvisorie"}</span><span style={{ fontSize: 11, color: "#007aff", fontWeight: 700 }}>Vai</span></div>))}
+          </div>}
+          <div style={{ marginTop: 14, marginBottom: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: sub, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Voci preventivo</div>
+            {vaniCalc.length === 0 ? <div style={{ background: card, borderRadius: 12, padding: 20, textAlign: "center", color: sub, fontSize: 13 }}>Nessun vano</div> : vaniCalc.map((v, i) => {
+              const colore = settoreColor(v);
+              const m = v.misure || {};
+              return (<div key={v.id} style={{ background: card, borderRadius: 12, marginBottom: 8, borderLeft: "3px solid " + colore, overflow: "hidden" }}>
+                <div style={{ padding: "11px 12px 8px", display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: text, marginBottom: 2 }}>{v.nome || "Vano " + (i+1)}{!v._confermato && <span style={{ marginLeft: 6, fontSize: 9, background: "#FF950020", color: "#FF9500", padding: "1px 6px", borderRadius: 4, fontWeight: 800 }}>PROVVISORIE</span>}</div>
+                    <div style={{ fontSize: 10, color: sub }}>{v.tipo}{v._sysRec ? " - " + v._sysRec.sistema : v.sistema ? " - " + v.sistema : ""}{(m.lCentro && m.hCentro) ? " - " + m.lCentro + "x" + m.hCentro + "mm" : ""}{v.pezzi > 1 ? " - " + v.pezzi + " pz" : ""}</div>
+                    {v.coloreInt && <div style={{ fontSize: 10, color: sub }}>{v.bicolore ? v.coloreInt + " int. / " + v.coloreEst + " est." : v.coloreInt}{v.vetro ? " - " + v.vetro : ""}</div>}
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: v._prezzoBase === 0 ? red : text }}>EUR {fmt(v._prezzoBase * (v.pezzi || 1))}</div>
+                    {(v.pezzi || 1) > 1 && <div style={{ fontSize: 9, color: sub }}>EUR {fmt(v._prezzoBase)} / pz</div>}
+                  </div>
+                </div>
+                {v._allAcc.length > 0 && <div style={{ borderTop: "1px solid " + bdr, padding: "6px 12px 8px" }}>
+                  {v._allAcc.map((a, ai) => <div key={ai} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0" }}><span style={{ fontSize: 11, color: sub }}>{"  > " + a.label + (a.pezzi > 1 ? " x" + a.pezzi : "")}</span><span style={{ fontSize: 11, color: a.prezzo === 0 ? sub : text, fontWeight: a.prezzo > 0 ? 700 : 400 }}>{a.prezzo === 0 ? "inclusa" : "EUR " + fmt(a.prezzo * a.pezzi)}</span></div>)}
+                </div>}
+                {v._allAcc.length > 0 && <div style={{ padding: "6px 12px 8px", borderTop: "1px solid " + bdr, display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 11, color: sub, fontWeight: 700 }}>Totale vano</span><span style={{ fontSize: 12, fontWeight: 800, color: text }}>EUR {fmt(v._totVano)}</span></div>}
+              </div>);
+            })}
+            {vociCommessa.map((vl, i) => <div key={i} style={{ background: card, borderRadius: 12, marginBottom: 8, padding: "10px 12px", display: "flex", justifyContent: "space-between", borderLeft: "3px solid " + sub }}><span style={{ fontSize: 12, color: text }}>{vl.label}</span><span style={{ fontSize: 13, fontWeight: 700, color: text }}>EUR {fmt(vl.importo)}</span></div>)}
           </div>
-          <div style={{padding:"0 16px"}}>
-            <div style={{background:"#fff",borderRadius:12,padding:"14px",marginBottom:10}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:10}}>Parametri</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                <div><div style={{fontSize:10,fontWeight:700,color:"#999",marginBottom:4}}>SCONTO %</div><input type="number" value={c.sconto||0} onChange={e=>updateCMp("sconto",e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #e5e5ea",fontSize:15,fontWeight:700,textAlign:"right",boxSizing:"border-box"}}/></div>
-                <div><div style={{fontSize:10,fontWeight:700,color:"#999",marginBottom:4}}>ACCONTO €</div><input type="number" value={c.accontoRicevuto||0} onChange={e=>updateCMp("accontoRicevuto",e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #e5e5ea",fontSize:15,fontWeight:700,textAlign:"right",boxSizing:"border-box"}}/></div>
-              </div>
-              <div><div style={{fontSize:10,fontWeight:700,color:"#999",marginBottom:4}}>NOTE</div><textarea value={c.notePreventivo||""} onChange={e=>updateCMp("notePreventivo",e.target.value)} placeholder="Condizioni, garanzie..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #e5e5ea",fontSize:12,minHeight:50,resize:"none",boxSizing:"border-box",fontFamily:"inherit"}}/></div>
+          <div style={{ background: card, borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: sub, textTransform: "uppercase", marginBottom: 10 }}>Parametri</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+              <div><div style={{ fontSize: 10, fontWeight: 700, color: sub, marginBottom: 4 }}>SCONTO %</div><input type="number" value={c.scontoPerc || c.sconto || 0} min={0} max={100} onChange={e => upd("scontoPerc", e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid " + bdr, fontSize: 15, fontWeight: 700, textAlign: "right", boxSizing: "border-box", background: bg, color: text }} /></div>
+              <div><div style={{ fontSize: 10, fontWeight: 700, color: sub, marginBottom: 4 }}>IVA %</div><input type="number" value={c.ivaPerc || 10} min={0} max={22} onChange={e => upd("ivaPerc", e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid " + bdr, fontSize: 15, fontWeight: 700, textAlign: "right", boxSizing: "border-box", background: bg, color: text }} /></div>
             </div>
-            {hasWarnings && (
-              <div style={{background:"#fff8ec",borderRadius:12,padding:"12px 14px",marginBottom:10,border:"1.5px solid #ff9500"}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                  <span style={{fontSize:16}}>⚠️</span>
-                  <span style={{fontSize:12,fontWeight:800,color:"#7a4500"}}>Preventivo incompleto</span>
-                </div>
-                {vaniSenzaSistema.length>0 && (
-                  <div style={{fontSize:11,color:"#7a4500",marginBottom:4}}>
-                    • {vaniSenzaSistema.length} vano/i senza sistema assegnato → prezzo €0
-                    <div onClick={()=>{setShowPreventivoModal(false);setSelectedVano(vaniSenzaSistema[0]);setVanoStep(0);}} style={{display:"inline",marginLeft:8,color:"#007aff",fontWeight:700,cursor:"pointer"}}>Vai →</div>
-                  </div>
-                )}
-                {vaniSenzaMisure.length>0 && (
-                  <div style={{fontSize:11,color:"#7a4500"}}>
-                    • {vaniSenzaMisure.length} vano/i senza misure → calcolo non accurato
-                    <div onClick={()=>{setShowPreventivoModal(false);setSelectedVano(vaniSenzaMisure[0]);setVanoStep(0);}} style={{display:"inline",marginLeft:8,color:"#007aff",fontWeight:700,cursor:"pointer"}}>Vai →</div>
-                  </div>
-                )}
-              </div>
-            )}
-            <div style={{background:"#fff",borderRadius:12,padding:"14px",marginBottom:10}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#999",textTransform:"uppercase",marginBottom:8}}>Voci</div>
-              {vaniCalc.length===0?<div style={{fontSize:12,color:"#999",textAlign:"center",padding:12}}>Nessun vano</div>:vaniCalc.map((v,i)=>(
-                <div key={v.id} style={{padding:"8px 0",borderBottom:"1px solid #f5f5f7",background:v.calc.tot===0&&v.calc.settore==="serramenti"?"#fff5f5":"transparent",borderRadius:v.calc.tot===0&&v.calc.settore==="serramenti"?8:0}}>
-                  <div style={{display:"flex",gap:8,alignItems:"flex-start"}}><div style={{flex:1}}><div style={{fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:4}}>{v.nome||"Vano "+(i+1)}{v.calc.tot===0&&v.calc.settore==="serramenti"&&<span style={{fontSize:9,background:"#ff3b30",color:"#fff",padding:"1px 5px",borderRadius:3,fontWeight:800}}>MANCA SISTEMA</span>}{v.calc.tot===0&&v.calc.settore!=="serramenti"&&<span style={{fontSize:9,background:"#ff950040",color:"#7a4500",padding:"1px 5px",borderRadius:3,fontWeight:800}}>INSERISCI PREZZO</span>}</div><div style={{fontSize:10,color:"#666"}}>{v.tipo} · {(v.misure?.lCentro||0)}×{(v.misure?.hCentro||0)}mm · {v.calc.mq.toFixed(2)} mq</div></div><div style={{fontSize:13,fontWeight:800,color:v.calc.tot===0?"#ff3b30":"#1a1a1c"}}>€ {v.calc.tot.toFixed(2)}</div></div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:3}}>
-                    {/* Serramenti badges */}
-                    {v.calc.sysRec&&<span style={{fontSize:9,background:"#007aff15",color:"#007aff",padding:"1px 5px",borderRadius:4}}>{v.calc.sysRec.sistema}</span>}
-                    {v.calc.vetroRec&&<span style={{fontSize:9,background:"#34c75915",color:"#1a9e40",padding:"1px 5px",borderRadius:4}}>{v.calc.vetroRec.code}</span>}
-                    {v.calc.copRec&&<span style={{fontSize:9,background:"#ff950015",color:"#7a4500",padding:"1px 5px",borderRadius:4}}>{v.calc.copRec.cod}</span>}
-                    {v.calc.lamRec&&<span style={{fontSize:9,background:"#af52de15",color:"#7c2d9e",padding:"1px 5px",borderRadius:4}}>{v.calc.lamRec.cod}</span>}
-                    {/* Porte badges */}
-                    {v.calc.settore==="porte"&&v.materiale&&<span style={{fontSize:9,background:"#D0800815",color:"#D08008",padding:"1px 5px",borderRadius:4}}>🚪 {v.materiale}</span>}
-                    {v.calc.settore==="porte"&&v.apertura&&<span style={{fontSize:9,background:"#D0800815",color:"#D08008",padding:"1px 5px",borderRadius:4}}>{v.apertura}</span>}
-                    {v.calc.settore==="porte"&&v.maniglia&&<span style={{fontSize:9,background:"#507aff15",color:"#507aff",padding:"1px 5px",borderRadius:4}}>🔑 {v.maniglia}</span>}
-                    {/* Box Doccia badges */}
-                    {v.calc.settore==="boxdoccia"&&v.tipoBox&&<span style={{fontSize:9,background:"#3B7FE015",color:"#3B7FE0",padding:"1px 5px",borderRadius:4}}>🚿 {v.tipoBox}</span>}
-                    {v.calc.settore==="boxdoccia"&&v.vetroBox&&<span style={{fontSize:9,background:"#3B7FE015",color:"#3B7FE0",padding:"1px 5px",borderRadius:4}}>{v.vetroBox}</span>}
-                    {v.calc.settore==="boxdoccia"&&v.profiloBox&&<span style={{fontSize:9,background:"#af52de15",color:"#7c2d9e",padding:"1px 5px",borderRadius:4}}>{v.profiloBox}</span>}
-                    {/* Cancelli badges */}
-                    {v.calc.settore==="cancelli"&&v.tipoCancello&&<span style={{fontSize:9,background:"#8B5E3415",color:"#8B5E34",padding:"1px 5px",borderRadius:4}}>🏗️ {v.tipoCancello}</span>}
-                    {v.calc.settore==="cancelli"&&v.materialeCancello&&<span style={{fontSize:9,background:"#8B5E3415",color:"#8B5E34",padding:"1px 5px",borderRadius:4}}>{v.materialeCancello}</span>}
-                    {v.calc.settore==="cancelli"&&v.automazione&&v.automazione!=="Nessuna"&&<span style={{fontSize:9,background:"#e6394615",color:"#e63946",padding:"1px 5px",borderRadius:4}}>⚡ {v.automazione}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{background:"#fff",borderRadius:12,padding:"14px",marginBottom:10}}>
-              {parseFloat(c.sconto||0)>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#ff9500",marginBottom:6}}><span>Sconto {c.sconto}%</span><span>− € {scontoVal.toFixed(2)}</span></div>}
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#666",marginBottom:6}}><span>Imponibile</span><span>€ {imponibile.toFixed(2)}</span></div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#666",marginBottom:10}}><span>IVA 10%</span><span>€ {iva.toFixed(2)}</span></div>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:18,fontWeight:900,paddingTop:10,borderTop:"2px solid #1a1a1c"}}><span>TOTALE</span><span style={{color:"#007aff"}}>€ {totIva.toFixed(2)}</span></div>
-              {parseFloat(c.accontoRicevuto||0)>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:13,color:"#34c759",marginTop:8,fontWeight:700}}><span>Saldo da incassare</span><span>€ {(totIva-parseFloat(c.accontoRicevuto)).toFixed(2)}</span></div>}
-            </div>
-            {c.firmaCliente?(<div style={{background:"#f0fdf4",borderRadius:12,padding:14,border:"1.5px solid #34c759",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><span>✅</span><span style={{fontSize:12,fontWeight:700,color:"#1a9e40"}}>Firmato {c.dataFirma}</span><div onClick={()=>{setCantieri(cs=>cs.map(x=>x.id===c.id?{...x,firmaCliente:null,dataFirma:null}:x));setSelectedCM(p=>({...p,firmaCliente:null,dataFirma:null}));}} style={{marginLeft:"auto",fontSize:11,color:"#ff3b30",cursor:"pointer"}}>✕ Rimuovi</div></div><img src={c.firmaCliente} style={{width:"100%",maxHeight:70,objectFit:"contain",background:"#fff",borderRadius:8}} alt=""/></div>):(<button onClick={()=>{setShowPreventivoModal(false);setShowFirmaModal(true);}} style={{width:"100%",padding:13,borderRadius:12,border:"1.5px solid #34c759",background:"#f0fdf4",color:"#1a9e40",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>✍️ Firma cliente sul telefono</button>)}
-            {hasWarnings && (
-              <div style={{fontSize:11,color:"#999",textAlign:"center",marginBottom:6}}>⚠️ Correggi i problemi per un preventivo accurato</div>
-            )}
-            {bloccatoPerMisure && (
-              <div style={{background:"#DC444410",border:"1.5px solid #DC444440",borderRadius:10,padding:"10px 14px",marginBottom:10}}>
-                <div style={{fontSize:12,fontWeight:800,color:"#DC4444",marginBottom:4}}>🔒 Misure non confermate</div>
-                <div style={{fontSize:11,color:"#DC4444",marginBottom:6}}>
-                  {vaniNonConfermati.length} vano/i con misure non ancora confermate. Conferma le misure per sbloccare il preventivo.
-                </div>
-                {vaniNonConfermati.map(v => (
-                  <div key={v.id} style={{fontSize:10,color:"#7a0000",padding:"3px 0",borderTop:"1px solid #DC444420",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <span>• {v.nome} — <b>{v.statoMisure === "da_rivedere" ? "⚠️ Da rivedere" : v.statoMisure === "verificate" ? "👁 Verificate" : "✏️ Provvisorie"}</b></span>
-                    <span onClick={()=>{setShowPreventivoModal(false);setSelectedVano(v);setVanoStep(0);}} style={{color:"#007aff",fontWeight:700,cursor:"pointer",fontSize:10}}>Vai →</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {bloccatoPerDisegno && (
-              <div style={{background:"#3B7FE010",border:"1.5px solid #3B7FE040",borderRadius:10,padding:"10px 14px",marginBottom:10}}>
-                <div style={{fontSize:12,fontWeight:800,color:"#3B7FE0",marginBottom:4}}>📐 Disegno tecnico mancante</div>
-                <div style={{fontSize:11,color:"#3B7FE0",marginBottom:6}}>
-                  {vaniSenzaDisegno.length} vano/i richiedono un disegno tecnico prima di generare il preventivo.
-                </div>
-                {vaniSenzaDisegno.map(v => (
-                  <div key={v.id} style={{fontSize:10,color:"#1a3a6e",padding:"3px 0",borderTop:"1px solid #3B7FE020",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <span>• {v.nome} — {TIPOLOGIE_RAPIDE.find((t: any) => t.code === v.tipo)?.label || v.tipo}</span>
-                    <span onClick={()=>{setShowPreventivoModal(false);setSelectedVano(v);setVanoStep(1);}} style={{color:"#007aff",fontWeight:700,cursor:"pointer",fontSize:10}}>Disegna →</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <button onClick={()=>{ if(!bloccatoPerMisure && !bloccatoPerDisegno) generaPreventivoPDF(c); }} style={{width:"100%",padding:14,borderRadius:12,border:"none",background:(bloccatoPerMisure||bloccatoPerDisegno)?"linear-gradient(135deg,#DC4444,#b83030)":hasWarnings?"linear-gradient(135deg,#8e8e93,#636366)":"linear-gradient(135deg,#007aff,#0055cc)",color:"#fff",fontSize:15,fontWeight:800,cursor:(bloccatoPerMisure||bloccatoPerDisegno)?"not-allowed":"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",justifyContent:"center",gap:8,boxShadow:(bloccatoPerMisure||bloccatoPerDisegno)?"none":hasWarnings?"none":"0 4px 12px rgba(0,122,255,0.3)",opacity:(bloccatoPerMisure||bloccatoPerDisegno)?0.8:1}}>
-              {bloccatoPerMisure?"🔒 Conferma le misure per generare":bloccatoPerDisegno?"📐 Disegno tecnico mancante":hasWarnings?"⚠️ Genera PDF (incompleto)":"📄 Genera & Scarica PDF"}
-            </button>
-            <div style={{ marginTop: 8, fontSize: 11, color: T.sub, textAlign: "center" as any }}>
-              Il PDF verrà salvato automaticamente nella commessa
-            </div>
+            <div style={{ marginBottom: 8 }}><div style={{ fontSize: 10, fontWeight: 700, color: sub, marginBottom: 4 }}>ACCONTO EUR</div><input type="number" value={c.accontoRicevuto || 0} min={0} onChange={e => upd("accontoRicevuto", e.target.value)} style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid " + bdr, fontSize: 15, fontWeight: 700, textAlign: "right", boxSizing: "border-box", background: bg, color: text }} /></div>
+            <div><div style={{ fontSize: 10, fontWeight: 700, color: sub, marginBottom: 4 }}>NOTE</div><textarea value={c.notePreventivo || ""} onChange={e => upd("notePreventivo", e.target.value)} placeholder="Condizioni, garanzie, tempi..." style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid " + bdr, fontSize: 12, minHeight: 56, resize: "none", boxSizing: "border-box", fontFamily: "inherit", background: bg, color: text }} /></div>
           </div>
+          <div style={{ background: card, borderRadius: 12, padding: 14, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: sub, textTransform: "uppercase", marginBottom: 10 }}>Riepilogo</div>
+            {scontoPerc > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#FF9500", marginBottom: 5 }}><span>Sconto {scontoPerc}%</span><span>- EUR {fmt(scontoVal)}</span></div>}
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: sub, marginBottom: 5 }}><span>Imponibile</span><span style={{ fontWeight: 700, color: text }}>EUR {fmt(imponibile)}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: sub, marginBottom: 10 }}><span>IVA {ivaPerc}%</span><span>EUR {fmt(ivaVal)}</span></div>
+            <div style={{ background: text, borderRadius: 10, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>TOTALE IVA INCLUSA</span><span style={{ fontSize: 18, fontWeight: 900, color: acc }}>EUR {fmt(totIva)}</span></div>
+            {acconto > 0 && <div style={{ marginTop: 8, background: grn + "15", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}><div><div style={{ fontSize: 11, color: sub }}>Acconto: EUR {fmt(acconto)}</div><div style={{ fontSize: 13, fontWeight: 800, color: grn }}>Saldo da incassare</div></div><span style={{ fontSize: 16, fontWeight: 900, color: grn }}>EUR {fmt(saldo)}</span></div>}
+          </div>
+          {c.firmaCliente ? (<div style={{ background: grn + "10", borderRadius: 12, padding: 14, border: "1.5px solid " + grn + "40", marginBottom: 10 }}><div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><span style={{ fontSize: 16 }}>OK</span><span style={{ fontSize: 12, fontWeight: 700, color: grn }}>Firmato {c.dataFirma || ""}</span><div onClick={() => { upd("firmaCliente", null); upd("dataFirma", null); }} style={{ marginLeft: "auto", fontSize: 11, color: red, cursor: "pointer", fontWeight: 700 }}>Rimuovi</div></div><img src={c.firmaCliente} alt="Firma" style={{ width: "100%", maxHeight: 60, objectFit: "contain", background: "#fff", borderRadius: 8 }} /></div>
+          ) : (<div style={{ marginBottom: 10 }}>
+            <button onClick={() => { setShowPreventivoModal(false); setShowFirmaModal(true); }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "1.5px solid " + grn, background: grn + "10", color: grn, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>Firma qui sul dispositivo</button>
+            <button onClick={handleInviaLink} disabled={invioLink} style={{ width: "100%", padding: 12, borderRadius: 10, border: "1.5px solid " + acc, background: acc + "10", color: acc, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: invioLink ? 0.6 : 1 }}>{linkCopiato ? "Link copiato!" : invioLink ? "Generazione..." : "Invia link al cliente per firma"}</button>
+          </div>)}
+          <button onClick={handleGeneraPDF} disabled={bloccato} style={{ width: "100%", padding: 15, borderRadius: 12, border: "none", fontSize: 15, fontWeight: 800, cursor: bloccato ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8, background: bloccato ? "#8e8e93" : "linear-gradient(135deg, " + acc + ", " + acc + "cc)", color: "#fff", opacity: bloccato ? 0.7 : 1, boxShadow: bloccato ? "none" : "0 4px 16px " + acc + "50" }}>{bloccato ? "Conferma le misure per generare" : "Genera e Scarica PDF"}</button>
+          {!bloccato && <div style={{ fontSize: 11, color: sub, textAlign: "center" }}>Il PDF include tutti i vani e gli accessori</div>}
         </div>
       </div>
-    );
-
+    </div>
+  );
 }
