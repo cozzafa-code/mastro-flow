@@ -44,11 +44,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
     };
   }, [topPx, fabOpen, setFabOpen]);
   const items = [
-    { l: "Nota vocale", c: "#E53935", emoji: "?", a: onVoice },
-    { l: "Appuntamento", c: "#1A9E73", emoji: "?", a: onEvento },
-    { l: "Nuovo cliente", c: "#3B7FE0", emoji: "?", a: onCliente },
-    { l: "Nuova commessa", c: "#E8A020", emoji: "?", a: onCommessa },
-    { l: "Messaggio", c: "#8B5CF6", emoji: "?", a: onMessaggio },
+    { l: "Nota vocale", c: "#E53935", emoji: "MIC", a: onVoice },
+    { l: "Appuntamento", c: "#1A9E73", emoji: "CAL", a: onEvento },
+    { l: "Nuovo cliente", c: "#3B7FE0", emoji: "USR", a: onCliente },
+    { l: "Nuova commessa", c: "#E8A020", emoji: "FLD", a: onCommessa },
+    { l: "Messaggio", c: "#8B5CF6", emoji: "MSG", a: onMessaggio },
   ];
   const itemsH = items.length * 72;
   const tabCenterY = topPx + 65;
@@ -61,14 +61,20 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
         <div style={{ position: "fixed", right: 58, zIndex: 92,
           top: actionsTop,
           display: "flex", flexDirection: "column", gap: 14,
-          transition: dragging ? "top 0.05s linear" : "top 0.2s ease" }}>
+          transition: dragging ? "top 0.0s linear" : "top 0.18s cubic-bezier(0.4,0,0.2,1)" }}>
           {items.map((item, i) => (
             <div key={i} onClick={() => { if(item.a) item.a(); setFabOpen(false); }}
               style={{ display: "flex", alignItems: "center", gap: 14, flexDirection: "row-reverse",
                 opacity: 1, pointerEvents: "auto" }}>
               <div style={{ width: 54, height: 54, borderRadius: "50%", background: item.c,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 24, boxShadow: "0 4px 16px " + item.c + "70" }}>{item.emoji}</div>
+                boxShadow: "0 4px 16px " + item.c + "70" }}>
+                {item.emoji === "MIC" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
+                {item.emoji === "CAL" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+                {item.emoji === "USR" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>}
+                {item.emoji === "FLD" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>}
+                {item.emoji === "MSG" && <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>}
+              </div>
               <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 14, fontWeight: 700,
                 padding: "8px 14px", borderRadius: 10, whiteSpace: "nowrap",
                 boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>{item.l}</div>
@@ -82,7 +88,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onVoice, onEven
           <div onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); setFabOpen(false); }}
                onClick={() => setFabOpen(false)}
             style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 80 : 0, overflow: "hidden",
-              background: "linear-gradient(160deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF)",
+              background: "#0D6B50",
               borderRadius: "12px 0 0 0",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
               cursor: "pointer", borderBottom: fabOpen ? "1px solid rgba(255,255,255,0.2)" : "none",
