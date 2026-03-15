@@ -395,47 +395,120 @@ export default function MastroCAD2({
     x: number, y: number, w: number, h: number,
     apertura: string, isTec: boolean
   ) {
-    ctx.strokeStyle = isTec ? "rgba(60,100,200,0.7)" : "rgba(150,200,255,0.5)";
+    const col = isTec ? "#1A4A8A" : "rgba(150,200,255,0.7)";
+    ctx.strokeStyle = col;
     ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 3]);
+    ctx.setLineDash([]);
 
     if (apertura === "sx") {
-      // Arco apertura da sinistra
+      // Cerniera a sinistra — linea verticale sx + arco apertura
+      // Linea anta (diagonale dal cardine)
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x, y+h);
+      ctx.moveTo(x, y+h); ctx.lineTo(x+w, y+h); // base
+      ctx.moveTo(x, y);   ctx.lineTo(x, y+h);    // lato cerniera
+      ctx.moveTo(x, y);   ctx.lineTo(x+w, y+h);  // linea apertura
       ctx.stroke();
+      // Arco traiettoria
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5,4]);
       ctx.beginPath();
       ctx.arc(x, y+h, w, -Math.PI/2, 0);
       ctx.stroke();
+      ctx.setLineDash([]);
+      // Pallino cerniera
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(x, y+h, 4, 0, Math.PI*2); ctx.fill();
+
     } else if (apertura === "dx") {
+      // Cerniera a destra
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x+w, y);
-      ctx.lineTo(x+w, y+h);
+      ctx.moveTo(x, y+h);   ctx.lineTo(x+w, y+h); // base
+      ctx.moveTo(x+w, y);   ctx.lineTo(x+w, y+h); // lato cerniera
+      ctx.moveTo(x+w, y);   ctx.lineTo(x, y+h);   // linea apertura
       ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5,4]);
       ctx.beginPath();
       ctx.arc(x+w, y+h, w, Math.PI, -Math.PI/2);
       ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(x+w, y+h, 4, 0, Math.PI*2); ctx.fill();
+
     } else if (apertura === "bilico") {
+      // Bilico verticale — cerniere su e giù al centro
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x, y+h/2); ctx.lineTo(x+w, y+h/2);
-      ctx.moveTo(x+w/2, y); ctx.lineTo(x+w/2, y+h);
+      ctx.moveTo(x+w/2, y); ctx.lineTo(x+w/2, y+h); // asse
+      ctx.moveTo(x, y+h/2); ctx.lineTo(x+w/2, y);    // metà anta sx
+      ctx.moveTo(x+w, y+h/2); ctx.lineTo(x+w/2, y);  // metà anta dx
       ctx.stroke();
+      ctx.setLineDash([5,4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(x+w/2, y, w/2, 0, Math.PI);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(x+w/2, y, 4, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w/2, y+h, 4, 0, Math.PI*2); ctx.fill();
+
     } else if (apertura === "vasistas") {
+      // Vasistas — cerniere in alto, apertura in basso
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(x, y); ctx.lineTo(x+w/2, y+h*0.3); ctx.lineTo(x+w, y);
+      ctx.moveTo(x, y); ctx.lineTo(x+w, y);   // lato cerniera (top)
+      ctx.moveTo(x, y); ctx.lineTo(x+w/2, y+h*0.7); // linea apertura sx
+      ctx.moveTo(x+w, y); ctx.lineTo(x+w/2, y+h*0.7); // linea apertura dx
       ctx.stroke();
+      ctx.setLineDash([5,4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y+h*0.1);
+      ctx.quadraticCurveTo(x+w/2, y+h*0.85, x+w, y+h*0.1);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w, y, 4, 0, Math.PI*2); ctx.fill();
+
     } else if (apertura === "scorrevole") {
-      // Freccia scorrevole
+      // Frecce scorrevole bidirezionale
+      ctx.lineWidth = 2;
+      const cy = y + h/2;
       ctx.beginPath();
-      ctx.moveTo(x+w*0.2, y+h/2);
-      ctx.lineTo(x+w*0.8, y+h/2);
-      ctx.moveTo(x+w*0.6, y+h*0.35);
-      ctx.lineTo(x+w*0.8, y+h/2);
-      ctx.lineTo(x+w*0.6, y+h*0.65);
+      ctx.moveTo(x+w*0.1, cy); ctx.lineTo(x+w*0.9, cy);
       ctx.stroke();
+      // Punta sinistra
+      ctx.beginPath();
+      ctx.moveTo(x+w*0.25, cy-h*0.12); ctx.lineTo(x+w*0.1, cy); ctx.lineTo(x+w*0.25, cy+h*0.12);
+      ctx.stroke();
+      // Punta destra
+      ctx.beginPath();
+      ctx.moveTo(x+w*0.75, cy-h*0.12); ctx.lineTo(x+w*0.9, cy); ctx.lineTo(x+w*0.75, cy+h*0.12);
+      ctx.stroke();
+      // Binario
+      ctx.setLineDash([4,3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, cy-h*0.06); ctx.lineTo(x+w, cy-h*0.06);
+      ctx.moveTo(x, cy+h*0.06); ctx.lineTo(x+w, cy+h*0.06);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
-    ctx.setLineDash([]);
+
+    // Label apertura in basso a destra della specchiatura
+    ctx.fillStyle = col;
+    ctx.font = `bold ${Math.min(11, w*0.12)}px system-ui`;
+    ctx.textAlign = "right";
+    const labels: Record<string,string> = {
+      sx:"◁ SX", dx:"▷ DX", bilico:"⬡ BIL",
+      vasistas:"△ VAS", scorrevole:"↔ SCO"
+    };
+    ctx.fillText(labels[apertura]||apertura.toUpperCase(), x+w-4, y+h-4);
   }
 
   function drawQuote(
