@@ -190,7 +190,16 @@ export default function MastroCAD2({
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(wrap);
-    return () => ro.disconnect();
+    // Touch listeners con passive:false per preventDefault
+    cvs.addEventListener('touchstart', handleDown as any, { passive: false });
+    cvs.addEventListener('touchmove',  handleMove as any, { passive: false });
+    cvs.addEventListener('touchend',   handleUp   as any, { passive: false });
+    return () => {
+      ro.disconnect();
+      cvs.removeEventListener('touchstart', handleDown as any);
+      cvs.removeEventListener('touchmove',  handleMove as any);
+      cvs.removeEventListener('touchend',   handleUp   as any);
+    };
   }, [infisso]);
 
   // ── DISEGNO CANVAS ───────────────────────────────────
@@ -594,7 +603,7 @@ export default function MastroCAD2({
     if (tool === "disegna" && !infisso) {
       drawing.current = { active:true, startX:sx, startY:sy, curX:sx, curY:sy, pts:[] };
     } else if (tool === "disegna" && infisso) {
-      // Tocco dentro telaio con tool disegna → incrementa numero ante
+      // Tocco dentro telaio → incrementa ante
       const { x,y,w,h } = infisso.telaio;
       const s2 = SCALE.current * vp.current.zoom;
       const ps2 = mm2s(x,y);
@@ -602,6 +611,7 @@ export default function MastroCAD2({
         const nCorrente = infisso.montanti.length + 1;
         const nNuovo = nCorrente >= 6 ? 1 : nCorrente + 1;
         dividiInAnte(nNuovo);
+        return;
       }
     } else if (tool === "montante" && infisso) {
       addMontante(sx);
@@ -818,11 +828,12 @@ export default function MastroCAD2({
 
   function setApertura(col: number, row: number, apertura: string) {
     if (!infisso) return;
-    setInfisso({ ...infisso, ante: infisso.ante.map(a =>
+    const updated = { ...infisso, ante: infisso.ante.map(a =>
       a.col===col && a.row===row ? { ...a, apertura: apertura as any } : a
-    )});
+    )};
+    setInfisso(updated);
     setMenuAnta(null);
-    redraw();
+    setTimeout(redraw, 50);
   }
 
   function findSpecchiatura(sx: number, sy: number): {col:number,row:number} {
@@ -1017,7 +1028,7 @@ export default function MastroCAD2({
 
         {/* Tool */}
         {[
-          {id:"disegna",l:"✏️ Disegna",dis:!!infisso},
+          {id:"disegna",l:"✏️ Disegna",dis:false},
           {id:"montante",l:"⬍ Montante",dis:!infisso},
           {id:"traverso",l:"⬌ Traverso",dis:!infisso},
           {id:"anta",l:"🔄 Anta",dis:!infisso},
@@ -1066,7 +1077,6 @@ export default function MastroCAD2({
           <canvas ref={canvasRef}
             style={{display:"block",touchAction:"none"}}
             onMouseDown={handleDown} onMouseMove={handleMove} onMouseUp={handleUp}
-            onTouchStart={handleDown} onTouchMove={handleMove} onTouchEnd={handleUp}
           />
 
           {/* Empty state */}
@@ -1117,7 +1127,7 @@ export default function MastroCAD2({
             transition:"opacity 0.2s"
           }}>
             {tool==="disegna" && !infisso && "Trascina per disegnare il telaio"}
-            {tool==="disegna" && infisso && `Tocca per aggiungere ante (${infisso.montanti.length+1} → ${infisso.montanti.length+2 > 6 ? 1 : infisso.montanti.length+2})`}
+            {tool==="disegna" && infisso && `Tocca dentro: ${infisso.montanti.length+1} ante → ${infisso.montanti.length+2 > 6 ? 1 : infisso.montanti.length+2} ante`}
             {tool==="montante" && "Tocca per inserire un montante verticale"}
             {tool==="traverso" && "Tocca per inserire un traverso orizzontale"}
             {tool==="anta"     && "Tocca una specchiatura per cambiare apertura"}
