@@ -13,6 +13,8 @@ import { generaExcelFascicolo } from "../lib/excel-fascicolo";
 import InterventoTab from "./InterventoTab";
 import InterventoFlowPanel from "./InterventoFlowPanel";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
+import MastroCadDraw from "./MastroCadDraw";
+// @cadDraw state added below
 
 export default function CMDetailPanel() {
   const {
@@ -65,6 +67,7 @@ export default function CMDetailPanel() {
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [accontoImporto, setAccontoImporto] = useState<string>("");
     const [showOrdinePreview, setShowOrdinePreview] = useState(false);
+    const [showCadDraw, setShowCadDraw] = useState(false);
     const [interventoOpen, setInterventoOpen] = useState(null);
     const [showFascicoloModal, setShowFascicoloModal] = useState(false);
     const [fascicoloLoading, setFascicoloLoading] = useState(false);
@@ -74,6 +77,40 @@ export default function CMDetailPanel() {
     const [fascicoliStorico, setFascicoliStorico] = useState<any[]>([]);
 
     if (!selectedCM) return null;
+
+  // ── CAD DRAW FULLSCREEN ──
+  if (showCadDraw) {
+    return (
+      <MastroCadDraw
+        vanoNome={selectedCM?.nome || "Disegno"}
+        vanoId={selectedCM?.id}
+        misureIniziali={{
+          lCentro: selectedCM?.misure?.lCentro || selectedCM?.larghezza || 0,
+          hCentro: selectedCM?.misure?.hCentro || selectedCM?.altezza || 0,
+        }}
+        onMisureUpdate={(misure: any) => {
+          // Aggiorna misure in tempo reale mentre si disegna
+          const newMisure = {
+            ...(selectedCM?.misure || {}),
+            lCentro: misure.lCentro,
+            hCentro: misure.hCentro,
+            lMuro: misure.lCentro,
+            hMuro: misure.hCentro,
+          };
+          setCantieri((cs: any[]) => cs.map(x =>
+            x.id === selectedCM.id ? { ...x, misure: newMisure } : x
+          ));
+          setSelectedCM((p: any) => ({ ...p, misure: newMisure }));
+        }}
+        onClose={() => setShowCadDraw(false)}
+        onSalva={(data: any) => {
+          setCantieri((cs: any[]) => cs.map(x => x.id === selectedCM.id ? { ...x, cadData: data } : x));
+          setSelectedCM((p: any) => ({ ...p, cadData: data }));
+          setShowCadDraw(false);
+        }}
+      />
+    );
+  }
     const c = selectedCM;
     const r = selectedRilievo; // rilievo corrente
     const fase = PIPELINE.find(p => p.id === c.fase);
@@ -185,6 +222,7 @@ export default function CMDetailPanel() {
             <div onClick={() => setPrevTab("preventivo")} style={tabPw("preventivo")}><I d={ICO.clipboard} /> Preventivo</div>
             <div onClick={() => setPrevTab("riepilogo")} style={tabPw("riepilogo")}><I d={ICO.barChart} /> Riepilogo</div>
             <div onClick={() => setPrevTab("importa")} style={tabPw("importa")}><I d={ICO.download} /> Importa</div>
+            <div onClick={() => setPrevTab("cad")} style={tabPw("cad")}>✏ Disegna</div>
           </div>
 
           <div style={{ paddingTop: 12 }}>
@@ -437,6 +475,31 @@ export default function CMDetailPanel() {
           )}
 
           {/* ════════ TAB IMPORTA (da competitor / documento) ════════ */}
+          {prevTab === "cad" && (
+            <div style={{ padding: 16 }}>
+              <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: 20, textAlign: "center" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>✏</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: T.text, marginBottom: 6 }}>Disegnatore tecnico</div>
+                <div style={{ fontSize: 12, color: T.sub, marginBottom: 16, lineHeight: 1.6 }}>
+                  Disegna profili, telai, forme libere direttamente sul tablet.<br/>
+                  Ogni linea diventa un profilo serramentistico con quote automatiche.
+                </div>
+                <button
+                  onClick={() => setShowCadDraw(true)}
+                  style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                  ✏ Apri disegnatore
+                </button>
+                {c.cadData && (
+                  <div style={{ marginTop: 12, padding: "10px 14px", background: "#1A9E7312", borderRadius: 10, border: "1px solid #1A9E7330" }}>
+                    <div style={{ fontSize: 11, color: "#1A9E73", fontWeight: 700 }}>
+                      ✓ {c.cadData.oggetti?.length || 0} elementi disegnati
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {prevTab === "importa" && (
             <div style={{ padding: "0 12px 20px" }}>
               <div style={{ padding: 16, background: `${T.blue}08`, borderRadius: 12, marginBottom: 12, border: `1px solid ${T.blue}20` }}>

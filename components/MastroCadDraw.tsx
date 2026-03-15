@@ -6,7 +6,10 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 interface Props {
   onClose: () => void;
   onSalva?: (data: any) => void;
+  onMisureUpdate?: (misure: { lCentro: number; hCentro: number }) => void;
   vanoNome?: string;
+  vanoId?: any;
+  misureIniziali?: { lCentro?: number; hCentro?: number };
 }
 
 const PROF: any = {
@@ -29,7 +32,7 @@ const JOIN: any = { deg45:"45°", deg90:"90°", butt:"Battuta" };
 
 const AMB = "#D08008", GRN = "#1A9E73", RED = "#DC4444", BLU = "#3B7FE0";
 
-export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
+export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNome, vanoId, misureIniziali }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,6 +54,10 @@ export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
   const [tool, setToolState] = useState("line");
   const [snap, setSnapState] = useState({ grid: false, angle: true, obj: false });
   const [calibrated, setCalibrated] = useState(false);
+  const [showCalibModal, setShowCalibModal] = useState(true); // obbligatoria all'apertura
+  const [calibStep, setCalibStep] = useState<"intro"|"draw"|"input">("intro");
+  const [calibInputMm, setCalibInputMm] = useState("1000");
+  const [misureEstratte, setMisureEstratte] = useState<{L:number,H:number}|null>(null);
   const [showNumpad, setShowNumpad] = useState(false);
   const [npValue, setNpValue] = useState("");
   const [npLabel, setNpLabel] = useState("Quota (mm)");
@@ -114,6 +121,22 @@ export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
     ctx.clearRect(0,0,W,H);
     ctx.fillStyle = m === "tecnico" ? "#ffffff" : "#1a1c22";
     ctx.fillRect(0,0,W,H);
+
+    // Punti calibrazione in corso
+    if (S.current.calibMode && S.current.calibPts.length > 0) {
+      S.current.calibPts.forEach((p: any) => {
+        const s = m2s(p.x, p.y);
+        ctx.beginPath(); ctx.arc(s.x,s.y,7,0,Math.PI*2);
+        ctx.fillStyle=AMB; ctx.fill();
+        ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke();
+      });
+      if (S.current.calibPts.length===2) {
+        const s1=m2s(S.current.calibPts[0].x,S.current.calibPts[0].y);
+        const s2=m2s(S.current.calibPts[1].x,S.current.calibPts[1].y);
+        ctx.beginPath(); ctx.moveTo(s1.x,s1.y); ctx.lineTo(s2.x,s2.y);
+        ctx.strokeStyle=AMB; ctx.lineWidth=2.5; ctx.setLineDash([8,4]); ctx.stroke(); ctx.setLineDash([]);
+      }
+    }
 
     // Foto sfondo
     if (bgImage) {
@@ -482,10 +505,7 @@ export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
       const mm=s2m(sx,sy);
       S.current.calibPts.push(mm); draw();
       if (S.current.calibPts.length===2) {
-        const realMm=parseFloat(prompt("Lunghezza reale in mm?","1000")||"1000");
-        const dpx=dst(S.current.calibPts[0],S.current.calibPts[1]);
-        if(dpx>2){ S.current.cal.mmPerPx=realMm/dpx; S.current.cal.calibrated=true; setCalibrated(true); }
-        S.current.calibMode=false; S.current.calibPts=[]; draw();
+        setCalibStep("input"); // mostra modale input mm
       }
       return;
     }
@@ -507,14 +527,14 @@ export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
     S.current.history.push(JSON.stringify(S.current.objects));
     const obj={type:"line",pts:[...S.current.pts],prof:S.current.curProf,join:S.current.curJoin,confirmed:false};
     weld(obj); S.current.objects.push(obj); S.current.pts=[];
-    setObjCount(S.current.objects.length); draw();
+    setObjCount(S.current.objects.length); draw(); aggiornaDB();
     setPanelData({idx:S.current.objects.length-1,type:"line",obj}); setPanelOpen(true);
   }
   function completePoly() {
     S.current.history.push(JSON.stringify(S.current.objects));
     const obj={type:"poly",pts:[...S.current.pts],prof:S.current.curProf,apert:S.current.curApert,confirmed:false};
     S.current.objects.push(obj); S.current.pts=[];
-    setObjCount(S.current.objects.length); draw();
+    setObjCount(S.current.objects.length); draw(); aggiornaDB();
     setPanelData({idx:S.current.objects.length-1,type:"poly",obj}); setPanelOpen(true);
   }
   function weld(newObj: any) {
@@ -527,11 +547,65 @@ export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
       });
     });
   }
+  // ── ESTRAI MISURE DAL DISEGNO ──────────────────────────
+  // Cerca il rettangolo più grande (telaio esterno) e ne estrae L e H
+  function estraiMisure() {
+    const objs = S.current.objects.filter((o: any) => o.type==="poly" && o.confirmed);
+    if (objs.length === 0) return null;
+    // Prendi il bounding box più grande tra i poly confermati
+    let maxArea = 0, best: any = null;
+    objs.forEach((o: any) => {
+      const bb = o.pts.reduce((b: any, p: any) => ({
+        x1:Math.min(b.x1,p.x),y1:Math.min(b.y1,p.y),
+        x2:Math.max(b.x2,p.x),y2:Math.max(b.y2,p.y)
+      }), {x1:1e9,y1:1e9,x2:-1e9,y2:-1e9});
+      const area = (bb.x2-bb.x1)*(bb.y2-bb.y1);
+      if (area > maxArea) { maxArea=area; best=bb; }
+    });
+    if (!best) {
+      // Fallback: usa tutte le linee
+      const allPts = S.current.objects.flatMap((o: any) => o.pts);
+      if (allPts.length < 2) return null;
+      const bb = allPts.reduce((b: any, p: any) => ({
+        x1:Math.min(b.x1,p.x),y1:Math.min(b.y1,p.y),
+        x2:Math.max(b.x2,p.x),y2:Math.max(b.y2,p.y)
+      }), {x1:1e9,y1:1e9,x2:-1e9,y2:-1e9});
+      best = bb;
+    }
+    return {
+      L: Math.round(best.x2 - best.x1),
+      H: Math.round(best.y2 - best.y1),
+    };
+  }
+
+  // Chiama ogni volta che si completa un oggetto
+  function aggiornaDB() {
+    const mis = estraiMisure();
+    if (!mis || !onMisureUpdate) return;
+    setMisureEstratte(mis);
+    onMisureUpdate({ lCentro: mis.L, hCentro: mis.H });
+  }
+
   function selObj(mm: any) {
     let found=-1;
     S.current.objects.forEach((o: any,i: number)=>o.pts.forEach((p: any)=>{if(dst(p,mm)<25)found=i;}));
     S.current.selIdx=found;
     if(found>=0){ const o=S.current.objects[found]; setPanelData({idx:found,type:o.type,obj:o}); setPanelOpen(true); }
+    draw();
+  }
+
+  // ── CONFERMA CALIBRAZIONE ─────────────────────────────
+  function confirmCalib() {
+    const realMm = parseFloat(calibInputMm) || 1000;
+    const dpx = dst(S.current.calibPts[0], S.current.calibPts[1]);
+    if (dpx < 2) return;
+    S.current.cal.mmPerPx = realMm / dpx;
+    S.current.cal.calibrated = true;
+    S.current.calibMode = false;
+    S.current.calibPts = [];
+    setCalibrated(true);
+    setShowCalibModal(false);
+    setCalibStep("intro");
     draw();
   }
 
@@ -606,7 +680,7 @@ export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
             }}>{l}</button>
           ))}
         </div>
-        <div onClick={()=>{S.current.calibMode=true;S.current.calibPts=[];}} style={{
+        <div onClick={()=>{S.current.calibMode=true;S.current.calibPts=[];setCalibStep("draw");setShowCalibModal(true);}} style={{
           padding:"3px 10px",borderRadius:5,fontSize:10,fontWeight:700,cursor:"pointer",
           background:calibrated?GRN+"18":RED+"18",color:calibrated?GRN:RED,border:`1px solid ${calibrated?GRN+"40":RED+"40"}`,
         }}>{calibrated?"✓ Cal.":"⚠ Calibra"}</div>
@@ -644,7 +718,90 @@ export default function MastroCadDraw({ onClose, onSalva, vanoNome }: Props) {
           <canvas ref={canvasRef} style={{display:"block",touchAction:"none",cursor:tool==="sel"?"default":"crosshair"}}
             onMouseMove={onMove} onTouchMove={onMove} onClick={onTap} onTouchEnd={onTap}
           />
-          {objCount===0&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",opacity:0.3,pointerEvents:"none"}}>
+          {/* BADGE MISURE ESTRATTE */}
+          {misureEstratte && (
+            <div style={{position:"absolute",top:10,left:10,background:GRN+"ee",color:"#fff",padding:"5px 12px",borderRadius:8,fontSize:12,fontWeight:700,fontFamily:"monospace",pointerEvents:"none"}}>
+              L {misureEstratte.L}mm × H {misureEstratte.H}mm
+            </div>
+          )}
+
+          {/* MODALE CALIBRAZIONE */}
+          {showCalibModal && (
+            <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:30}}>
+              <div style={{background:isTec?"#fff":"#0e1016",border:`1px solid ${AMB}50`,borderRadius:16,padding:24,width:300,textAlign:"center"}}>
+
+                {calibStep==="intro" && <>
+                  <div style={{fontSize:32,marginBottom:10}}>📐</div>
+                  <div style={{fontSize:15,fontWeight:800,color:AMB,marginBottom:8}}>Calibra prima di disegnare</div>
+                  <div style={{fontSize:12,color:isTec?"#555":"#888",marginBottom:16,lineHeight:1.7}}>
+                    Per avere misure reali in mm devi prima calibrare.<br/>
+                    Carica una foto del vano o disegna subito e calibra dopo.
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column" as const,gap:8}}>
+                    <button onClick={()=>{setCalibStep("draw");S.current.calibMode=true;S.current.calibPts=[];}} style={{padding:14,borderRadius:10,border:"none",background:AMB,color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+                      📐 Calibra ora
+                    </button>
+                    <button onClick={()=>setShowCalibModal(false)} style={{padding:12,borderRadius:10,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
+                      Salta — disegno senza misure reali
+                    </button>
+                  </div>
+                </>}
+
+                {calibStep==="draw" && <>
+                  <div style={{fontSize:28,marginBottom:10}}>✏️</div>
+                  <div style={{fontSize:14,fontWeight:700,color:AMB,marginBottom:8}}>Tocca 2 punti sul canvas</div>
+                  <div style={{fontSize:12,color:isTec?"#555":"#888",marginBottom:14,lineHeight:1.7}}>
+                    Traccia una linea su qualcosa che conosci la misura —<br/>
+                    un metro appoggiato al muro, il bordo del controtelaio, ecc.
+                  </div>
+                  <div style={{fontSize:11,color:AMB,marginBottom:14,fontWeight:700}}>
+                    {S.current.calibPts.length===0 ? "Tocca il primo punto..." : "Tocca il secondo punto..."}
+                  </div>
+                  <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setShowCalibModal(false);}} style={{padding:10,borderRadius:9,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:12,cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
+                    Annulla
+                  </button>
+                </>}
+
+                {calibStep==="input" && <>
+                  <div style={{fontSize:14,fontWeight:700,color:AMB,marginBottom:8}}>Quanti mm è quella linea?</div>
+                  <div style={{fontSize:11,color:isTec?"#888":"#666",marginBottom:12}}>
+                    Inserisci la misura reale in millimetri
+                  </div>
+                  {/* Numpad integrato nella modale */}
+                  <div style={{background:isTec?"#f8f9fa":"#131318",borderRadius:10,padding:12,marginBottom:12}}>
+                    <div style={{fontSize:28,fontWeight:800,fontFamily:"monospace",textAlign:"right" as const,color:isTec?"#1a2a3a":"#fff",marginBottom:8,padding:"6px 10px",background:isTec?"#fff":"#0a0c10",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`}}>
+                      {calibInputMm || "—"} mm
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4}}>
+                      {["7","8","9","4","5","6","1","2","3","0","⌫","OK"].map(k=>(
+                        <button key={k} onClick={()=>{
+                          if(k==="OK"){confirmCalib();return;}
+                          if(k==="⌫"){setCalibInputMm(v=>v.slice(0,-1));return;}
+                          setCalibInputMm(v=>v+k);
+                        }} style={{
+                          padding:0,minHeight:50,borderRadius:8,
+                          border:`1px solid ${k==="OK"?GRN:k==="⌫"?"#DC4444":isTec?"#ddd":"#333"}`,
+                          background:k==="OK"?GRN:k==="⌫"?"#DC4444":isTec?"#fff":"#1a1a1a",
+                          color:k==="OK"||k==="⌫"?"#fff":isTec?"#1a2a3a":"#fff",
+                          fontSize:k==="OK"||k==="⌫"?12:20,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
+                        }}>{k}</button>
+                      ))}
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3,marginTop:4}}>
+                      {[["100","100"],["500","500"],["1000","1000"],["2000","2000"]].map(([v,l])=>(
+                        <button key={v} onClick={()=>setCalibInputMm(v)} style={{padding:"6px 2px",borderRadius:6,border:`1px solid ${AMB}40`,background:AMB+"15",color:AMB,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textAlign:"center" as const}}>{l}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setCalibStep("intro");}} style={{width:"100%",padding:10,borderRadius:9,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
+                    ← Ridisegna la linea
+                  </button>
+                </>}
+              </div>
+            </div>
+          )}
+
+          {objCount===0&&!showCalibModal&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",opacity:0.3,pointerEvents:"none"}}>
             <div style={{fontSize:14,fontWeight:600,color:subCol,marginBottom:6}}>Disegna qui</div>
             <div style={{fontSize:11,color:subCol,lineHeight:1.8}}>╱ Linea = profilo<br/>□ Rettangolo = campitura<br/>Tocca una quota per modificarla</div>
           </div>}
