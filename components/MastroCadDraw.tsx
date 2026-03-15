@@ -506,6 +506,9 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
       S.current.calibPts.push(mm); draw();
       if (S.current.calibPts.length===2) {
         setCalibStep("input"); // mostra modale input mm
+      } else {
+        // Forza re-render per aggiornare il testo "Tocca il 2° punto"
+        setCalibStep("draw");
       }
       return;
     }
@@ -727,8 +730,30 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
 
           {/* MODALE CALIBRAZIONE */}
           {showCalibModal && (
-            <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:30}}>
-              <div style={{background:isTec?"#fff":"#0e1016",border:`1px solid ${AMB}50`,borderRadius:16,padding:24,width:300,textAlign:"center"}}>
+            <div style={{
+              position:"absolute",
+              // step draw: solo banner in basso, canvas libero
+              // step intro/input: overlay completo
+              ...(calibStep==="draw" ? {
+                bottom:0,left:0,right:0,
+                background:"transparent",
+                display:"flex",alignItems:"flex-end",justifyContent:"center",
+                zIndex:30,pointerEvents:"none",
+              } : {
+                inset:0,background:"rgba(0,0,0,0.75)",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                zIndex:30,
+              })
+            }}>
+              <div style={{
+                background:isTec?"#fff":"#0e1016",
+                border:`1px solid ${AMB}50`,
+                borderRadius:calibStep==="draw"?"12px 12px 0 0":16,
+                padding:calibStep==="draw"?"12px 20px":24,
+                width:calibStep==="draw"?"100%":"300px",
+                textAlign:"center",
+                pointerEvents:"all",
+              }}>
 
                 {calibStep==="intro" && <>
                   <div style={{fontSize:32,marginBottom:10}}>📐</div>
@@ -748,18 +773,20 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
                 </>}
 
                 {calibStep==="draw" && <>
-                  <div style={{fontSize:28,marginBottom:10}}>✏️</div>
-                  <div style={{fontSize:14,fontWeight:700,color:AMB,marginBottom:8}}>Tocca 2 punti sul canvas</div>
-                  <div style={{fontSize:12,color:isTec?"#555":"#888",marginBottom:14,lineHeight:1.7}}>
-                    Traccia una linea su qualcosa che conosci la misura —<br/>
-                    un metro appoggiato al muro, il bordo del controtelaio, ecc.
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{fontSize:22}}>📐</div>
+                    <div style={{flex:1,textAlign:"left" as const}}>
+                      <div style={{fontSize:13,fontWeight:700,color:AMB}}>
+                        {S.current.calibPts.length===0 ? "Tocca il 1° punto sul canvas sopra" : "✓ Primo punto — tocca il 2° punto"}
+                      </div>
+                      <div style={{fontSize:11,color:isTec?"#888":"#aaa",marginTop:2}}>
+                        Traccia una linea su una misura nota (metro, bordo muro...)
+                      </div>
+                    </div>
+                    <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setShowCalibModal(false);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+                      Salta
+                    </button>
                   </div>
-                  <div style={{fontSize:11,color:AMB,marginBottom:14,fontWeight:700}}>
-                    {S.current.calibPts.length===0 ? "Tocca il primo punto..." : "Tocca il secondo punto..."}
-                  </div>
-                  <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setShowCalibModal(false);}} style={{padding:10,borderRadius:9,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:12,cursor:"pointer",fontFamily:"inherit",width:"100%"}}>
-                    Annulla
-                  </button>
                 </>}
 
                 {calibStep==="input" && <>
