@@ -688,7 +688,7 @@ export default function MastroCAD2({
       const s2 = SCALE.current * vp.current.zoom;
       const ps2 = mm2s(x,y);
       if (sx>=ps2.x && sx<=ps2.x+w*s2 && sy>=ps2.y && sy<=ps2.y+h*s2) {
-        const nCorrente = infisso.montanti.length + 1;
+        const nCorrente = (infissoRef.current?.montanti.length || 0) + 1;
         const nNuovo = nCorrente >= 6 ? 1 : nCorrente + 1;
         dividiInAnte(nNuovo);
         lastTap.current = { t:0, x:0, y:0 };
@@ -856,6 +856,7 @@ export default function MastroCAD2({
   }
 
   function dividiInAnte(n: number) {
+    const infisso = infissoRef.current;
     if (!infisso) return;
     const sys = SISTEMI[infisso.telaio.sistema];
     // Crea n-1 montanti equidistanti
@@ -1157,22 +1158,7 @@ export default function MastroCAD2({
             onMouseDown={handleDown} onMouseMove={handleMove} onMouseUp={handleUp}
           />
 
-          {/* Empty state */}
-          {!infisso && !drawing.current.active && (
-            <div style={{
-              position:"absolute",top:"50%",left:"50%",
-              transform:"translate(-50%,-50%)",
-              textAlign:"center",opacity:0.35,pointerEvents:"none"
-            }}>
-              <div style={{fontSize:48,marginBottom:8}}>✏️</div>
-              <div style={{fontSize:14,fontWeight:700,color:isTec?"#666":"#888"}}>
-                Trascina per disegnare il telaio
-              </div>
-              <div style={{fontSize:11,color:isTec?"#999":"#666",marginTop:4}}>
-                Poi: doppio tap per aggiungere montanti/traversi
-              </div>
-            </div>
-          )}
+
 
           {/* Quote cliccabili */}
           {infisso && (
