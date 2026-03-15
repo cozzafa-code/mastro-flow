@@ -88,7 +88,8 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
       if (!touch) return;
       const rect = cvs.getBoundingClientRect();
       const sx = touch.clientX - rect.left;
-      const sy = touch.clientY - rect.top;
+      // Fat finger offset: il punto appare 40px sopra il dito
+      const sy = touch.clientY - rect.top - 40;
       handleCanvasTap(sx, sy);
     };
 
@@ -99,7 +100,7 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
       if (!touch) return;
       const rect = cvs.getBoundingClientRect();
       const sx = touch.clientX - rect.left;
-      const sy = touch.clientY - rect.top;
+      const sy = touch.clientY - rect.top - 40; // fat finger offset
       const raw = s2m(sx, sy);
       const prev = S.current.pts.length > 0 ? S.current.pts[S.current.pts.length-1] : null;
       S.current.hoverMm = applySnap(raw.x, raw.y, prev);
@@ -816,14 +817,19 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
           )}
           {showCalibModal && calibStep==="draw" && (
             <div style={{position:"absolute",bottom:0,left:0,right:0,background:isTec?"#fffbe6":"#1a1400",borderTop:`2px solid ${AMB}`,padding:"10px 16px",zIndex:30,display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:10,height:10,borderRadius:5,background:S.current.calibPts.length>0?GRN:AMB,flexShrink:0}}/>
-              <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:700,color:AMB}}>
-                  {S.current.calibPts.length===0?"Tocca il 1° punto sul canvas":"✓ Primo punto — tocca il 2°"}
-                </div>
-                <div style={{fontSize:10,color:isTec?"#888":"#aaa",marginTop:1}}>Traccia su metro, bordo muro o controtelaio</div>
+              <div style={{display:"flex",gap:4,flexShrink:0}}>
+                <div style={{width:12,height:12,borderRadius:6,background:S.current.calibPts.length>0?GRN:AMB,border:`2px solid ${S.current.calibPts.length>0?GRN:AMB}`}}/>
+                <div style={{width:12,height:12,borderRadius:6,background:S.current.calibPts.length>1?GRN:"transparent",border:`2px solid ${AMB}`}}/>
               </div>
-              <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setCalibStep("intro");}} style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>Annulla</button>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:800,color:AMB}}>
+                  {S.current.calibPts.length===0?"📍 Tocca punto 1 sulla foto":S.current.calibPts.length===1?"📍 Tocca punto 2 sulla foto":"✓ Pronti — inserisci mm"}
+                </div>
+                <div style={{fontSize:10,color:isTec?"#888":"#aaa",marginTop:1}}>
+                  {S.current.calibPts.length===0?"Es. un bordo del vano che conosci":"Il punto appare sopra il dito — regola se serve"}
+                </div>
+              </div>
+              <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setShowCalibModal(false);}} style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>Salta</button>
             </div>
           )}
           {showCalibModal && calibStep==="input" && (
