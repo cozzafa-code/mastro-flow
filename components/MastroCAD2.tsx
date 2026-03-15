@@ -669,6 +669,7 @@ export default function MastroCAD2({
     };
     setInfisso(newInfisso);
     setTool("sel");
+    lastTap.current = { t:0, x:0, y:0 };
     redraw();
     if (onMisureUpdate) onMisureUpdate({ lCentro: mmW, hCentro: mmH });
     draw();
