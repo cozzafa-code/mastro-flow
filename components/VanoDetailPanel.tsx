@@ -2446,6 +2446,7 @@ export default function VanoDetailPanel() {
         </div>
       
       {/* ÔòÉÔòÉ NUMPAD OVERLAY ÔòÉÔòÉ */}
+
 {showMastroCAD && (
         <MastroCAD
           vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
