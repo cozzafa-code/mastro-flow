@@ -354,26 +354,42 @@ export default function MastroCAD2({
         const gw = sw - (c > 0 ? montSp : 0) - (c < colPosArr.length-2 ? montSp : 0);
         const gh = sh - (r > 0 ? travSp : 0) - (r < rowPosArr.length-2 ? travSp : 0);
 
-        // Vetro
-        ctx.fillStyle = isTec ? VETRO_COL : "rgba(100,160,220,0.25)";
-        ctx.fillRect(gx, gy, gw, gh);
-        ctx.strokeStyle = VETRO_STROKE;
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(gx, gy, gw, gh);
-
-        // Riflesso vetro
-        if (!isTec) {
-          const grad = ctx.createLinearGradient(gx, gy, gx+gw*0.4, gy+gh*0.4);
-          grad.addColorStop(0, "rgba(255,255,255,0.18)");
-          grad.addColorStop(1, "rgba(255,255,255,0)");
-          ctx.fillStyle = grad;
-          ctx.fillRect(gx, gy, gw, gh);
-        }
-
-        // Anta
+        // Anta corrente
         const anta = inf.ante.find(a => a.col===c && a.row===r);
-        if (anta && anta.apertura !== "fisso") {
-          drawAntaSymbol(ctx, gx, gy, gw, gh, anta.apertura, isTec);
+        const hasAnta = anta && anta.apertura !== "fisso";
+        const antaSp = sys.anta * s;
+
+        if (hasAnta) {
+          // Profilo anta — doppio rettangolo
+          ctx.fillStyle = isTec ? "#ddd5c8" : ral;
+          ctx.fillRect(gx, gy, gw, gh);
+          ctx.strokeStyle = isTec ? "#555" : ral;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(gx, gy, gw, gh);
+          ctx.strokeStyle = isTec ? "#777" : ral;
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(gx+antaSp, gy+antaSp, gw-antaSp*2, gh-antaSp*2);
+          // Vetro dentro anta
+          ctx.fillStyle = isTec ? VETRO_COL : "rgba(100,160,220,0.3)";
+          ctx.fillRect(gx+antaSp, gy+antaSp, gw-antaSp*2, gh-antaSp*2);
+          ctx.strokeStyle = VETRO_STROKE; ctx.lineWidth = 0.5;
+          ctx.strokeRect(gx+antaSp, gy+antaSp, gw-antaSp*2, gh-antaSp*2);
+          // Simbolo apertura
+          drawAntaSymbol(ctx, gx+antaSp, gy+antaSp, gw-antaSp*2, gh-antaSp*2, anta.apertura, isTec);
+        } else {
+          // Fisso — solo vetro
+          ctx.fillStyle = isTec ? VETRO_COL : "rgba(100,160,220,0.25)";
+          ctx.fillRect(gx, gy, gw, gh);
+          ctx.strokeStyle = VETRO_STROKE; ctx.lineWidth = 0.5;
+          ctx.strokeRect(gx, gy, gw, gh);
+        }
+        if (!isTec) {
+          const vx=hasAnta?gx+antaSp:gx, vy=hasAnta?gy+antaSp:gy;
+          const vw2=hasAnta?gw-antaSp*2:gw, vh2=hasAnta?gh-antaSp*2:gh;
+          const grad=ctx.createLinearGradient(vx,vy,vx+vw2*0.4,vy+vh2*0.4);
+          grad.addColorStop(0,"rgba(255,255,255,0.2)");
+          grad.addColorStop(1,"rgba(255,255,255,0)");
+          ctx.fillStyle=grad; ctx.fillRect(vx,vy,vw2,vh2);
         }
 
         // Quote specchiatura (solo tecnico, se è l'unica o selezionata)
