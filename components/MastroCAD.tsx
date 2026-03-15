@@ -241,23 +241,109 @@ export default function MastroCAD({ onClose, onSalva, onMisureUpdate, vanoNome, 
       const dx = x1-x0, dy = y1-y0;
       const mmW = Math.abs(pxToMm(dx/zoom)), mmH = Math.abs(pxToMm(dy/zoom));
       drawRectSolid(ctx, Math.min(x0,x1), Math.min(y0,y1), Math.abs(dx), Math.abs(dy), s, false, isTec, S.current.coloreRAL);
-      // Quote live
       ctx.fillStyle = AMB; ctx.font = `bold 14px monospace`;
       ctx.textAlign = "center";
       ctx.fillText(`${Math.round(mmW)}×${Math.round(mmH)} mm`, (x0+x1)/2, Math.min(y0,y1)-12);
     }
+
+    // Linea misura in disegno
+    if (S.current.drawing && S.current.tool === "line") {
+      const x0 = S.current.startSx, y0 = S.current.startSy;
+      const x1 = S.current.hoverSx || x0, y1 = S.current.hoverSy || y0;
+      const dx = x1-x0, dy = y1-y0;
+      const mmLen = Math.sqrt(pxToMm(dx/zoom)**2 + pxToMm(dy/zoom)**2);
+      // Linea principale
+      ctx.save();
+      ctx.strokeStyle = BLU; ctx.lineWidth = 2.5; ctx.setLineDash([10,5]);
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      ctx.setLineDash([]);
+      // Tacche estremità
+      const angle = Math.atan2(dy, dx);
+      const perp = angle + Math.PI/2;
+      [{ x:x0,y:y0 },{ x:x1,y:y1 }].forEach(pt => {
+        ctx.beginPath();
+        ctx.moveTo(pt.x + Math.cos(perp)*8, pt.y + Math.sin(perp)*8);
+        ctx.lineTo(pt.x - Math.cos(perp)*8, pt.y - Math.sin(perp)*8);
+        ctx.stroke();
+      });
+      // Quote
+      ctx.fillStyle = BLU; ctx.font = `bold 13px monospace`;
+      ctx.textAlign = "center";
+      const midX = (x0+x1)/2, midY = (y0+y1)/2;
+      // Badge bianco sotto il testo
+      const label = `${Math.round(mmLen)} mm`;
+      ctx.fillStyle = isTec ? "#ffffffcc" : "#111111cc";
+      ctx.fillRect(midX - 38, midY - 22, 76, 20);
+      ctx.fillStyle = BLU;
+      ctx.fillText(label, midX, midY - 6);
+      ctx.restore();
+    }
+
+    // Render linee misura salvate (type:"line")
+    objs.filter((o:any) => o.type === "line").forEach((o:any, i:number) => {
+      const p1 = m2s(o.x1, o.y1), p2 = m2s(o.x2, o.y2);
+      const isSel = i === S.current.selIdx && objs[S.current.selIdx]?.type === "line";
+      ctx.save();
+      ctx.strokeStyle = isSel ? AMB : BLU+"99";
+      ctx.lineWidth = isSel ? 2.5 : 1.5;
+      ctx.setLineDash([8,4]);
+      ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+      ctx.setLineDash([]);
+      // Tacche
+      const angle = Math.atan2(p2.y-p1.y, p2.x-p1.x);
+      const perp = angle + Math.PI/2;
+      [p1, p2].forEach(pt => {
+        ctx.beginPath();
+        ctx.moveTo(pt.x + Math.cos(perp)*6, pt.y + Math.sin(perp)*6);
+        ctx.lineTo(pt.x - Math.cos(perp)*6, pt.y - Math.sin(perp)*6);
+        ctx.stroke();
+      });
+      // Etichetta
+      const mmLen = Math.round(Math.sqrt((o.x2-o.x1)**2 + (o.y2-o.y1)**2));
+      ctx.fillStyle = isSel ? AMB : BLU;
+      ctx.font = `bold ${isSel?13:11}px monospace`;
+      ctx.textAlign = "center";
+      const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+      ctx.fillStyle = isTec ? "#ffffffcc" : "#0f1117cc";
+      ctx.fillRect(mx-32, my-18, 64, 16);
+      ctx.fillStyle = isSel ? AMB : BLU;
+      ctx.fillText(`${mmLen}mm`, mx, my-5);
+      ctx.restore();
+    });
   }, []);
 
   function drawObj(ctx: any, o: any, sel: boolean, isTec: boolean, s: any) {
     ctx.globalAlpha = o.confirmed ? 1 : 0.55;
     if (o.type === "rect") {
       const p1 = m2s(o.x, o.y);
-      const p2 = m2s(o.x + o.mmW / S.current.cal.mmPerPx * S.current.zoom, o.y);
       const sw = mmToPx(o.mmW) * S.current.zoom;
       const sh = mmToPx(o.mmH) * S.current.zoom;
       drawRectSolid(ctx, p1.x, p1.y, sw, sh, s, sel, isTec, S.current.coloreRAL);
       // Quote
       if (o.confirmed) drawQuoteRect(ctx, p1.x, p1.y, sw, sh, o.mmW, o.mmH, isTec, sel);
+      // Divisori ante
+      const nAnte = o.nAnte || 1;
+      if (o.confirmed && nAnte > 1) {
+        const sp = mmToPx(s.telaio/2) * S.current.zoom;
+        const antaW = sw / nAnte;
+        ctx.save();
+        ctx.strokeStyle = sel ? "#D08008" : (isTec ? s.col : "#fff8");
+        ctx.lineWidth = isTec ? 1.5 : 1;
+        ctx.setLineDash([]);
+        for (let i = 1; i < nAnte; i++) {
+          const lx = p1.x + antaW * i;
+          ctx.beginPath();
+          ctx.moveTo(lx, p1.y + sp);
+          ctx.lineTo(lx, p1.y + sh - sp);
+          ctx.stroke();
+        }
+        // Label nAnte
+        ctx.font = `bold ${Math.max(10, 12 * S.current.zoom)}px system-ui`;
+        ctx.fillStyle = sel ? "#D08008" : (isTec ? s.col : "#D08008");
+        ctx.textAlign = "center";
+        ctx.fillText(`${nAnte}A`, p1.x + sw / 2, p1.y + sh / 2 + 4);
+        ctx.restore();
+      }
     }
     ctx.globalAlpha = 1;
   }
@@ -390,6 +476,30 @@ export default function MastroCAD({ onClose, onSalva, onMisureUpdate, vanoNome, 
         return;
       }
 
+      // Primo tap — controlla se dentro telaio confermato (tool sel → incrementa ante)
+      if (S.current.tool === "sel") {
+        const objs = S.current.objects;
+        for (let i = objs.length - 1; i >= 0; i--) {
+          const o = objs[i];
+          if (!o.confirmed || o.type !== "rect") continue;
+          // calcola posizione screen del rettangolo
+          const p1x = (o.x / S.current.cal.mmPerPx) * S.current.zoom + S.current.pan.x;
+          const p1y = (o.y / S.current.cal.mmPerPx) * S.current.zoom + S.current.pan.y;
+          const sw = (o.mmW / S.current.cal.mmPerPx) * S.current.zoom;
+          const sh = (o.mmH / S.current.cal.mmPerPx) * S.current.zoom;
+          if (sx >= p1x && sx <= p1x + sw && sy >= p1y && sy <= p1y + sh) {
+            o.nAnte = ((o.nAnte || 1) % 6) + 1;
+            S.current.selIdx = i;
+            setSelData({ idx: i, obj: o });
+            draw();
+            // aggiornaOutput è definita fuori, chiamiamo via ref workaround
+            const confirmed = S.current.objects.filter((x:any) => x.confirmed);
+            setBom(calcolaBOM(confirmed, S.current.sistema));
+            return;
+          }
+        }
+      }
+
       // Doppio tap: primo → mirino, secondo → conferma
       if (S.current.pendingTap) {
         const prev = S.current.pendingTap;
@@ -399,6 +509,8 @@ export default function MastroCAD({ onClose, onSalva, onMisureUpdate, vanoNome, 
           S.current.pendingTap = null;
           if (S.current.tool === "rect") {
             startRect(prev.sx, prev.sy);
+          } else if (S.current.tool === "line") {
+            startLine(prev.sx, prev.sy);
           }
           draw();
           return;
@@ -432,7 +544,8 @@ export default function MastroCAD({ onClose, onSalva, onMisureUpdate, vanoNome, 
       e.preventDefault();
       if (!S.current.drawing) return;
       const { sx, sy } = getTouchPos(e);
-      endRect(sx, sy);
+      if (S.current.tool === "rect") endRect(sx, sy);
+      else if (S.current.tool === "line") endLine(sx, sy);
     };
 
     cvs.addEventListener("touchstart", onTouchStart, { passive: false });
@@ -454,6 +567,20 @@ export default function MastroCAD({ onClose, onSalva, onMisureUpdate, vanoNome, 
     if (S.current.drawing) { S.current.hoverSx = sx; S.current.hoverSy = sy; }
     draw();
   };
+  // Hit test: punto screen inside rettangolo confermato
+  function hitTestRect(sx: number, sy: number): number {
+    const objs = S.current.objects;
+    for (let i = objs.length - 1; i >= 0; i--) {
+      const o = objs[i];
+      if (!o.confirmed || o.type !== "rect") continue;
+      const p1 = m2s(o.x, o.y);
+      const sw = mmToPx(o.mmW) * S.current.zoom;
+      const sh = mmToPx(o.mmH) * S.current.zoom;
+      if (sx >= p1.x && sx <= p1.x + sw && sy >= p1.y && sy <= p1.y + sh) return i;
+    }
+    return -1;
+  }
+
   const onMouseDown = (e: any) => {
     const r = canvasRef.current!.getBoundingClientRect();
     const sx = e.clientX - r.left, sy = e.clientY - r.top;
@@ -464,18 +591,82 @@ export default function MastroCAD({ onClose, onSalva, onMisureUpdate, vanoNome, 
       else setCalibStep("pt2");
       return;
     }
+    if (S.current.tool === "sel") {
+      // Prima controlla linee (priorità bassa z-order)
+      const objs = S.current.objects;
+      for (let i = objs.length - 1; i >= 0; i--) {
+        const o = objs[i];
+        if (o.type !== "line") continue;
+        const p1 = m2s(o.x1, o.y1), p2 = m2s(o.x2, o.y2);
+        // Distanza punto-segmento
+        const len2 = (p2.x-p1.x)**2 + (p2.y-p1.y)**2;
+        if (len2 < 1) continue;
+        const t = Math.max(0, Math.min(1, ((sx-p1.x)*(p2.x-p1.x) + (sy-p1.y)*(p2.y-p1.y)) / len2));
+        const dist = Math.sqrt((sx - (p1.x + t*(p2.x-p1.x)))**2 + (sy - (p1.y + t*(p2.y-p1.y)))**2);
+        if (dist < 14) {
+          S.current.selIdx = i;
+          setSelData({ idx: i, obj: o });
+          draw();
+          return;
+        }
+      }
+      // Poi rettangoli confermati → incrementa ante
+      const hit = hitTestRect(sx, sy);
+      if (hit >= 0) {
+        const obj = S.current.objects[hit];
+        obj.nAnte = ((obj.nAnte || 1) % 6) + 1;
+        S.current.selIdx = hit;
+        setSelData({ idx: hit, obj });
+        draw();
+        aggiornaOutput();
+        return;
+      }
+    }
     if (S.current.tool === "rect") startRect(sx, sy);
+    if (S.current.tool === "line") startLine(sx, sy);
   };
   const onMouseUp = (e: any) => {
     if (!S.current.drawing) return;
     const r = canvasRef.current!.getBoundingClientRect();
-    endRect(e.clientX - r.left, e.clientY - r.top);
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+    if (S.current.tool === "rect") endRect(sx, sy);
+    else if (S.current.tool === "line") endLine(sx, sy);
   };
 
   function startRect(sx: number, sy: number) {
     S.current.drawing = true;
     S.current.startSx = sx; S.current.startSy = sy;
     S.current.hoverSx = sx; S.current.hoverSy = sy;
+  }
+
+  function startLine(sx: number, sy: number) {
+    S.current.drawing = true;
+    S.current.startSx = sx; S.current.startSy = sy;
+    S.current.hoverSx = sx; S.current.hoverSy = sy;
+  }
+
+  function endLine(sx: number, sy: number) {
+    if (!S.current.drawing) return;
+    S.current.drawing = false;
+    const x0 = S.current.startSx, y0 = S.current.startSy;
+    const dx = sx - x0, dy = sy - y0;
+    if (Math.sqrt(dx*dx + dy*dy) < 10) { draw(); return; }
+    const mm0 = s2m(x0, y0);
+    const mm1 = s2m(sx, sy);
+    const mmLen = Math.round(Math.sqrt((mm1.x-mm0.x)**2 + (mm1.y-mm0.y)**2));
+    const obj: any = {
+      type: "line", zOrder: -1,
+      x1: mm0.x, y1: mm0.y,
+      x2: mm1.x, y2: mm1.y,
+      mmLen,
+      confirmed: true,
+    };
+    S.current.history.push(JSON.stringify(S.current.objects));
+    S.current.objects.push(obj);
+    S.current.selIdx = S.current.objects.length - 1;
+    setSelData({ idx: S.current.objects.length - 1, obj });
+    setObjCount(S.current.objects.length);
+    draw();
   }
 
   function endRect(sx: number, sy: number) {
@@ -730,31 +921,88 @@ export default function MastroCAD({ onClose, onSalva, onMisureUpdate, vanoNome, 
           )}
 
           {/* Panel oggetto selezionato */}
-          {selData && (
-            <div style={{ position:"absolute", bottom:0, left:0, right:0, background: isTec?"#f8f9faee":"#0e1016ee", borderTop:`1px solid ${bdr}`, padding:"10px 12px 20px", borderRadius:"12px 12px 0 0", backdropFilter:"blur(8px)", zIndex:10 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                <div style={{ fontSize:12, fontWeight:700, color:AMB }}>
-                  {Math.round(S.current.objects[selData.idx]?.mmW||0)} × {Math.round(S.current.objects[selData.idx]?.mmH||0)} mm
+          {selData && (() => {
+            const obj = S.current.objects[selData.idx];
+            if (!obj) return null;
+
+            // ── LINEA MISURA ──
+            if (obj.type === "line") {
+              return (
+                <div style={{ position:"absolute", bottom:0, left:0, right:0, background: isTec?"#f8f9faee":"#0e1016ee", borderTop:`2px solid ${BLU}`, padding:"12px 16px 20px", borderRadius:"12px 12px 0 0", backdropFilter:"blur(8px)", zIndex:10 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+                    <div style={{ fontSize:13, fontWeight:800, color:BLU }}>╱ Linea misura — {Math.round(obj.mmLen)} mm</div>
+                    <div onClick={()=>{ S.current.selIdx=-1; setSelData(null); draw(); }} style={{ color:sub, cursor:"pointer", fontSize:18 }}>×</div>
+                  </div>
+                  <div style={{ fontSize:11, color:sub, marginBottom:10 }}>
+                    Larghezza da usare per il nuovo infisso: <strong style={{color:text}}>{Math.round(obj.mmLen)} mm</strong>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+                    <div style={{ fontSize:11, color:sub, whiteSpace:"nowrap" }}>Altezza (mm):</div>
+                    <input
+                      id="lineH"
+                      type="number"
+                      defaultValue={1200}
+                      style={{ flex:1, padding:"8px 10px", borderRadius:8, border:`1.5px solid ${BLU}`, fontSize:15, fontWeight:700, color:BLU, background: isTec?"#f8f9fa":"#111", fontFamily:"inherit", outline:"none" }}
+                    />
+                  </div>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button onClick={()=>{
+                      const hInput = (document.getElementById("lineH") as HTMLInputElement);
+                      const mmH = parseFloat(hInput?.value) || 1200;
+                      const mmW = Math.round(obj.mmLen);
+                      // Piazza il rettangolo sotto il punto iniziale della linea
+                      const newObj: any = {
+                        type:"rect", zOrder:0,
+                        x: obj.x1, y: obj.y1,
+                        mmW, mmH,
+                        sistema: S.current.sistema,
+                        colore: S.current.coloreRAL,
+                        confirmed: false,
+                        nAnte: 1,
+                      };
+                      S.current.history.push(JSON.stringify(S.current.objects));
+                      S.current.objects.push(newObj);
+                      S.current.selIdx = S.current.objects.length - 1;
+                      setSelData({ idx: S.current.objects.length - 1, obj: newObj });
+                      setObjCount(S.current.objects.length);
+                      draw();
+                    }} style={{ flex:2, padding:11, borderRadius:9, border:"none", background:GRN, color:"#fff", fontSize:13, fontWeight:800, cursor:"pointer", fontFamily:"inherit" }}>
+                      □ Crea infisso {Math.round(obj.mmLen)}mm
+                    </button>
+                    <button onClick={eliminaSel} style={{ flex:1, padding:10, borderRadius:9, border:`1px solid ${RED}`, background:RED+"18", color:RED, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>✕</button>
+                  </div>
                 </div>
-                <div onClick={()=>{ S.current.selIdx=-1; setSelData(null); draw(); }} style={{ color:sub, cursor:"pointer", fontSize:18 }}>×</div>
+              );
+            }
+
+            // ── RETTANGOLO ──
+            return (
+              <div style={{ position:"absolute", bottom:0, left:0, right:0, background: isTec?"#f8f9faee":"#0e1016ee", borderTop:`1px solid ${bdr}`, padding:"10px 12px 20px", borderRadius:"12px 12px 0 0", backdropFilter:"blur(8px)", zIndex:10 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:AMB }}>
+                    {Math.round(obj.mmW||0)} × {Math.round(obj.mmH||0)} mm
+                    {(obj.nAnte||1) > 1 && <span style={{ marginLeft:8, color:BLU, fontSize:11 }}>{obj.nAnte} ante</span>}
+                  </div>
+                  <div onClick={()=>{ S.current.selIdx=-1; setSelData(null); draw(); }} style={{ color:sub, cursor:"pointer", fontSize:18 }}>×</div>
+                </div>
+                {/* Colore RAL */}
+                <div style={{ fontSize:9, color:sub, textTransform:"uppercase", letterSpacing:0.6, marginBottom:5 }}>Colore</div>
+                <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:8 }}>
+                  {Object.entries(RAL).map(([name,hex])=>(
+                    <div key={name} onClick={()=>{ setColoreRAL(name); }} title={name} style={{
+                      width:24, height:24, borderRadius:4, background:hex, cursor:"pointer",
+                      border:`2px solid ${coloreRAL===name?AMB:"transparent"}`,
+                      boxShadow: coloreRAL===name?`0 0 0 2px ${AMB}40`:"none",
+                    }}/>
+                  ))}
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button onClick={confermaSel} style={{ flex:1, padding:10, borderRadius:9, border:`1px solid ${GRN}`, background:GRN+"18", color:GRN, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>✓ Conferma</button>
+                  <button onClick={eliminaSel} style={{ flex:1, padding:10, borderRadius:9, border:`1px solid ${RED}`, background:RED+"18", color:RED, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>✕ Elimina</button>
+                </div>
               </div>
-              {/* Colore RAL */}
-              <div style={{ fontSize:9, color:sub, textTransform:"uppercase", letterSpacing:0.6, marginBottom:5 }}>Colore</div>
-              <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:8 }}>
-                {Object.entries(RAL).map(([name,hex])=>(
-                  <div key={name} onClick={()=>{ setColoreRAL(name); }} title={name} style={{
-                    width:24, height:24, borderRadius:4, background:hex, cursor:"pointer",
-                    border:`2px solid ${coloreRAL===name?AMB:"transparent"}`,
-                    boxShadow: coloreRAL===name?`0 0 0 2px ${AMB}40`:"none",
-                  }}/>
-                ))}
-              </div>
-              <div style={{ display:"flex", gap:8 }}>
-                <button onClick={confermaSel} style={{ flex:1, padding:10, borderRadius:9, border:`1px solid ${GRN}`, background:GRN+"18", color:GRN, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>✓ Conferma</button>
-                <button onClick={eliminaSel} style={{ flex:1, padding:10, borderRadius:9, border:`1px solid ${RED}`, background:RED+"18", color:RED, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }}>✕ Elimina</button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* ── SIDEBAR DESTRA — Colore + BOM + Logistica ── */}
