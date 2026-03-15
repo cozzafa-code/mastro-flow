@@ -54,7 +54,7 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
   const [tool, setToolState] = useState("line");
   const [snap, setSnapState] = useState({ grid: false, angle: true, obj: false });
   const [calibrated, setCalibrated] = useState(false);
-  const [showCalibModal, setShowCalibModal] = useState(true); // obbligatoria all'apertura
+  const [showCalibModal, setShowCalibModal] = useState(false);
   const [calibStep, setCalibStep] = useState<"intro"|"draw"|"input">("intro");
   const [calibInputMm, setCalibInputMm] = useState("1000");
   const [misureEstratte, setMisureEstratte] = useState<{L:number,H:number}|null>(null);
@@ -713,7 +713,12 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
             }}>{l}</button>
           ))}
         </div>
-        <div onClick={()=>{S.current.calibMode=true;S.current.calibPts=[];setCalibStep("draw");setShowCalibModal(true);}} style={{
+        <div onClick={()=>{
+              S.current.calibMode=true;
+              S.current.calibPts=[];
+              setCalibStep("draw");
+              setShowCalibModal(true);
+            }} style={{
           padding:"3px 10px",borderRadius:5,fontSize:10,fontWeight:700,cursor:"pointer",
           background:calibrated?GRN+"18":RED+"18",color:calibrated?GRN:RED,border:`1px solid ${calibrated?GRN+"40":RED+"40"}`,
         }}>{calibrated?"✓ Cal.":"⚠ Calibra"}</div>
@@ -733,8 +738,8 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
         <button onClick={()=>{if(S.current.pts.length>0){S.current.pts=[];draw();}else if(S.current.history.length>0){S.current.objects=JSON.parse(S.current.history.pop());setObjCount(S.current.objects.length);draw();}}} style={tbtn(false,RED)}>↩</button>
         <button onClick={()=>{S.current.pts=[];S.current.objects=[];S.current.history=[];S.current.selIdx=-1;setObjCount(0);draw();}} style={tbtn(false,RED)}>✕</button>
         <div style={{width:1,height:18,background:bdrCol}}/>
-        <label style={{fontSize:11,color:subCol,cursor:"pointer",padding:"5px 8px",borderRadius:7,border:`1px solid ${bdrCol}`,background:cardBg}}>
-          📷 Foto
+        <label style={{fontSize:11,fontWeight:700,color:calibrated?subCol:AMB,cursor:"pointer",padding:"5px 10px",borderRadius:7,border:`1px solid ${calibrated?bdrCol:AMB+"60"}`,background:calibrated?cardBg:AMB+"12"}}>
+          📷 {S.current.bgImage ? "Cambia foto" : "1. Carica foto"}
           <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
             const f=e.target.files?.[0];if(!f)return;
             const img=new Image();img.onload=()=>{S.current.bgImage=img;draw();};
