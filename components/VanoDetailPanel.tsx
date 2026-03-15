@@ -1510,7 +1510,7 @@ export default function VanoDetailPanel() {
               </div>
               {detailOpen.disegno && (
                 <div style={{ marginBottom: 12 }}>
-{showMastroCAD && (
+
         <MastroCAD
           vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
           piano={selectedCM?.piano || 1}
@@ -1523,6 +1523,18 @@ export default function VanoDetailPanel() {
         />
       )}
 
+      {showMastroCAD && (
+        <MastroCAD
+          vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
+          piano={selectedCM?.piano || 1}
+          onClose={() => setShowMastroCAD(false)}
+          onSalva={(data: any) => { setShowMastroCAD(false); }}
+          onMisureUpdate={(mis: any) => {
+            if (v && mis.lCentro) updateMisura(v.id, "lCentro", mis.lCentro);
+            if (v && mis.hCentro) updateMisura(v.id, "hCentro", mis.hCentro);
+          }}
+        />
+      )}
       {/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
                 const W = drawFullscreen ? 760 : 380;
