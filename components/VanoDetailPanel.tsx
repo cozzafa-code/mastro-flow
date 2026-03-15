@@ -1156,8 +1156,8 @@ export default function VanoDetailPanel() {
               {/* ÔòÉÔòÉÔòÉ DISEGNO TECNICO ÔÇö Condiviso con preventivo ÔòÉÔòÉÔòÉ */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ marginBottom: 10 }}>
-                  <button
-                    onClick={() => setShowMastroCAD(true)}
+                  <div
+                    onPointerDown={() => setShowMastroCAD(true)}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 10,
                       padding: "11px 14px", borderRadius: 10,
@@ -1171,7 +1171,7 @@ export default function VanoDetailPanel() {
                       <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>Foto → Calibra → Disegna → BOM</div>
                     </div>
                     <span style={{ fontSize: 10, color: "#D08008", fontWeight: 700 }}>Apri →</span>
-                  </button>
+                  </div>
                 </div>
                                 <div onClick={() => setShowDisegno(!showDisegno)}
                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}>
