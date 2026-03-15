@@ -116,6 +116,10 @@ export default function MastroCAD2({
   const [mode,    setMode]    = useState<"tecnico"|"render">("tecnico");
   const [tool,    setTool]    = useState<"disegna"|"montante"|"traverso"|"anta"|"sel">("disegna");
 
+  // Redraw trigger
+  const [drawTick, setDrawTick] = useState(0);
+  const redraw = () => setDrawTick(t => t+1);
+
   // Infisso corrente (uno alla volta per ora)
   const [infisso, setInfisso] = useState<Infisso | null>(null);
   const [selItem, setSelItem] = useState<{tipo:string,id:string}|null>(null);
@@ -945,8 +949,6 @@ export default function MastroCAD2({
   }
 
   const [showBOM, setShowBOM] = useState(false);
-  const [drawTick, setDrawTick] = useState(0);
-  const redraw = () => setDrawTick(t => t+1);
   const [menuAnta, setMenuAnta] = useState<{col:number,row:number}|null>(null);
   const bom = calcolaBOM();
   const sys = SISTEMI[sistema];
