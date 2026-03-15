@@ -12,16 +12,45 @@ interface Props {
   misureIniziali?: { lCentro?: number; hCentro?: number };
 }
 
-const PROF: any = {
-  telaio:   { n:"Telaio",    sp:60, zOrder:0, tCol:"#3a5a7a", rFill:"#3a5a7a", rCol:"#5a8ab0" },
-  anta:     { n:"Anta",      sp:50, zOrder:1, tCol:"#2a5070", rFill:"#243a54", rCol:"#3a6a90" },
-  montante: { n:"Montante",  sp:58, zOrder:0, tCol:"#3a5a7a", rFill:"#3a5a7a", rCol:"#5a8ab0" },
-  traverso: { n:"Traverso",  sp:52, zOrder:0, tCol:"#3a5a7a", rFill:"#3a5a7a", rCol:"#5a8ab0" },
-  soglia:   { n:"Soglia",    sp:38, zOrder:0, tCol:"#4a6a5a", rFill:"#3a5a4a", rCol:"#5a8a6a" },
-  ferro:    { n:"Ferro",     sp:40, zOrder:0, tCol:"#6a5a4a", rFill:"#5a4a3a", rCol:"#8a7a6a" },
-  legno:    { n:"Legno",     sp:68, zOrder:0, tCol:"#8a6a40", rFill:"#7a5a30", rCol:"#aa8a58" },
-  free:     { n:"Libero",    sp:0,  zOrder:2, tCol:"#D08008", rFill:"#a06000", rCol:"#D08008" },
+// ── SISTEMI — spessori reali per materiale ──────────────
+// Cambio sistema → spessori cambiano istantaneamente nel disegno
+const SISTEMI: any = {
+  alluminio: {
+    n:"Alluminio", col:"#3a5a7a", rCol:"#5a8ab0",
+    telaio:60, anta:50, montante:58, traverso:52, soglia:38,
+  },
+  pvc: {
+    n:"PVC", col:"#4a6a4a", rCol:"#6a9a6a",
+    telaio:80, anta:70, montante:76, traverso:70, soglia:46,
+  },
+  legno: {
+    n:"Legno", col:"#8a6a40", rCol:"#aa8a58",
+    telaio:92, anta:78, montante:86, traverso:78, soglia:52,
+  },
+  ferro: {
+    n:"Ferro", col:"#5a5a5a", rCol:"#8a8a8a",
+    telaio:40, anta:35, montante:38, traverso:35, soglia:30,
+  },
 };
+
+// Genera PROF dinamicamente dal sistema attivo
+// Chiamata ogni volta che cambia il sistema
+function buildProf(sistemaId: string): any {
+  const s = SISTEMI[sistemaId] || SISTEMI.alluminio;
+  return {
+    telaio:   { n:"Telaio",    sp:s.telaio,    zOrder:0, tCol:s.col,         rFill:s.col,         rCol:s.rCol },
+    anta:     { n:"Anta",      sp:s.anta,       zOrder:1, tCol:s.col+"cc",    rFill:s.col+"aa",    rCol:s.rCol },
+    montante: { n:"Montante",  sp:s.montante,   zOrder:0, tCol:s.col,         rFill:s.col,         rCol:s.rCol },
+    traverso: { n:"Traverso",  sp:s.traverso,   zOrder:0, tCol:s.col,         rFill:s.col,         rCol:s.rCol },
+    soglia:   { n:"Soglia",    sp:s.soglia,     zOrder:0, tCol:"#4a6a5a",     rFill:"#3a5a4a",     rCol:"#5a8a6a" },
+    ferro:    { n:"Ferro",     sp:40,           zOrder:0, tCol:"#6a5a4a",     rFill:"#5a4a3a",     rCol:"#8a7a6a" },
+    legno:    { n:"Legno",     sp:92,           zOrder:0, tCol:"#8a6a40",     rFill:"#7a5a30",     rCol:"#aa8a58" },
+    free:     { n:"Libero",    sp:0,            zOrder:2, tCol:"#D08008",     rFill:"#a06000",     rCol:"#D08008" },
+  };
+}
+
+// PROF è inizialmente alluminio — si aggiorna con setSistema
+let PROF: any = buildProf("alluminio");
 
 const APERT: any = {
   fisso:"Fisso", anta_dx:"Anta →", anta_sx:"← Anta",
@@ -51,6 +80,7 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
   });
 
   const [mode, setModeState] = useState<"tecnico"|"render">("tecnico");
+  const [sistema, setSistemaState] = useState("alluminio");
   const [tool, setToolState] = useState("line");
   const [snap, setSnapState] = useState({ grid: false, angle: true, obj: false });
   const [calibrated, setCalibrated] = useState(false);
@@ -749,6 +779,14 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
     draw();
   }
 
+  // ── CAMBIO SISTEMA ────────────────────────────────────
+  // Aggiorna spessori profili istantaneamente nel disegno
+  function setSistema(id: string) {
+    PROF = buildProf(id);
+    setSistemaState(id);
+    draw();
+  }
+
   // ── CONFERMA CALIBRAZIONE ─────────────────────────────
   function confirmCalib() {
     const realMm = parseFloat(calibInputMm) || 1000;
@@ -870,6 +908,17 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
         </label>
         <input type="range" min={0} max={100} value={bgOpacity} onChange={e=>{setBgOpacity(Number(e.target.value));S.current.bgOpacity=Number(e.target.value)/100;draw();}} style={{width:70,accentColor:AMB}}/>
         <span style={{fontSize:10,color:subCol}}>{bgOpacity}%</span>
+        <div style={{width:1,height:18,background:bdrCol}}/>
+        {/* SELECTOR SISTEMA */}
+        {Object.entries(SISTEMI).map(([id,s]: any)=>(
+          <button key={id} onClick={()=>setSistema(id)} style={{
+            padding:"4px 9px",borderRadius:6,fontSize:10,fontWeight:700,
+            cursor:"pointer",fontFamily:"inherit",
+            border:`1px solid ${sistema===id?s.col:bdrCol}`,
+            background:sistema===id?s.col+"20":cardBg,
+            color:sistema===id?s.col:subCol,
+          }}>{s.n}</button>
+        ))}
       </div>
 
       {/* CANVAS + NUMPAD */}
