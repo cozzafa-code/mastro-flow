@@ -143,6 +143,63 @@ export default function MastroCAD2({
   // Il canvas ha uno spazio virtuale in mm centrato
   const SCALE = useRef(1); // px per mm al zoom=1
 
+  // ── TOUCH PINCH ZOOM + PAN ──────────────────────────
+  useEffect(() => {
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    let lastDist = 0;
+    let lastMidX = 0, lastMidY = 0;
+    let touches: Touch[] = [];
+    function onTouchStart(e: TouchEvent) {
+      e.preventDefault();
+      touches = Array.from(e.touches);
+      if (touches.length === 2) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        lastDist = Math.sqrt(dx*dx + dy*dy);
+        lastMidX = (touches[0].clientX + touches[1].clientX) / 2;
+        lastMidY = (touches[0].clientY + touches[1].clientY) / 2;
+      } else if (touches.length === 1) {
+        handleDown(e as any);
+      }
+    }
+    function onTouchMove(e: TouchEvent) {
+      e.preventDefault();
+      touches = Array.from(e.touches);
+      if (touches.length === 2) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const midX = (touches[0].clientX + touches[1].clientX) / 2;
+        const midY = (touches[0].clientY + touches[1].clientY) / 2;
+        if (lastDist > 0) {
+          const scale = dist / lastDist;
+          vp.current.zoom = Math.max(0.1, Math.min(10, vp.current.zoom * scale));
+          vp.current.panX += (midX - lastMidX);
+          vp.current.panY += (midY - lastMidY);
+        }
+        lastDist = dist;
+        lastMidX = midX;
+        lastMidY = midY;
+        draw();
+      } else if (touches.length === 1) {
+        handleMove(e as any);
+      }
+    }
+    function onTouchEnd(e: TouchEvent) {
+      e.preventDefault();
+      lastDist = 0;
+      if (e.touches.length === 0) handleUp(e as any);
+    }
+    cvs.addEventListener("touchstart", onTouchStart, { passive: false });
+    cvs.addEventListener("touchmove", onTouchMove, { passive: false });
+    cvs.addEventListener("touchend", onTouchEnd, { passive: false });
+    return () => {
+      cvs.removeEventListener("touchstart", onTouchStart);
+      cvs.removeEventListener("touchmove", onTouchMove);
+      cvs.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
   function initScale() {
     const cvs = canvasRef.current;
     if (!cvs) return;
