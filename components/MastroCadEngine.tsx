@@ -1549,10 +1549,30 @@ export default function MastroCadEngine({
         const newT: TraversoConfig[] = [...configRef.current.traversi, { mm }].sort((a, b) => a.mm - b.mm);
         onChange({ ...configRef.current, traversi: newT });
       }
+    } else if (tool === "anta") {
+      // Click dentro il telaio → cicla numero ante 1→2→3→4→5→6→1
+      const tip = configRef.current.tipologia;
+      const nAnte = tip.cols.length;
+      const next = (nAnte % 6) + 1;
+      const cols = Array(next).fill(Math.round(100 / next));
+      // Aggiusta per arrivare esattamente a 100
+      cols[0] += 100 - cols.reduce((s: number, c: number) => s + c, 0);
+      const celle: Cella[] = Array(next).fill(null).map((_, i) => ({
+        tipo: "anta" as const,
+        verso: i % 2 === 0 ? "sx" as const : "dx" as const,
+      }));
+      const newTip: Tipologia = {
+        id: `custom_${next}a`,
+        nome: `${next} ante`,
+        cols,
+        righe: Array(next).fill([100]),
+        celle,
+      };
+      onChange({ ...configRef.current, tipologia: newTip });
     } else if (tool === "sel") {
       // Selezione oggetto — gestita da Fabric
     }
-  }, [tool, config, onChange]);
+  }, [tool, onChange]);
 
   const fitScreen = useCallback(() => {
     const canvas = fabricRef.current;
@@ -1631,6 +1651,7 @@ export default function MastroCadEngine({
         <div style={{ background: "#111", padding: "6px 12px", display: "flex", gap: 6, borderBottom: "1px solid #2a2a2a", flexWrap: "wrap", alignItems: "center", flexShrink: 0 }}>
           {[
             { id: "sel", ico: "↖", l: "Seleziona" },
+            { id: "anta", ico: "▷", l: "Anta" },
             { id: "mont", ico: "|", l: "Montante" },
             { id: "trav", ico: "—", l: "Traverso" },
           ].map(t => (
@@ -1698,6 +1719,65 @@ export default function MastroCadEngine({
               ? `Nodo M${selData.mi+1}×T${selData.ti+1} — ${selData.tipoNodo}`
               : `Montante @ ${selData.mm}mm`
             }
+          </div>
+        )}
+
+        {/* PANNELLO NODO ─ bottom sheet */}
+        {showNodoPanel && selData?.tipo === "nodo" && onChange && (
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            background: "#111", borderTop: `1px solid ${AMB}40`,
+            padding: "12px 16px", borderRadius: "12px 12px 0 0",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: AMB }}>
+                Nodo M{selData.mi+1} × T{selData.ti+1}
+              </span>
+              <button onClick={() => setShowNodoPanel(false)} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 16 }}>×</button>
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(["croce","T-mont","T-trav","passante-mont","passante-trav","coprigiunto","L"] as TipoNodo[]).map(tipo => {
+                const sel = (config.nodi?.[`m${selData.mi}-t${selData.ti}`]?.tipo || "croce") === tipo;
+                const labels: Record<string,string> = {
+                  "croce":"✕ Croce","T-mont":"T Mont.","T-trav":"T Trav.",
+                  "passante-mont":"║ Pass.M","passante-trav":"═ Pass.T",
+                  "coprigiunto":"▣ Coprig.","L":"L Angolo"
+                };
+                return (
+                  <button key={tipo} onClick={() => {
+                    const newNodi = { ...(config.nodi || {}), [`m${selData.mi}-t${selData.ti}`]: { tipo } };
+                    onChange({ ...configRef.current, nodi: newNodi });
+                  }} style={{
+                    padding: "6px 10px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                    border: `1px solid ${sel ? AMB : "#333"}`,
+                    background: sel ? AMB+"20" : "#1a1a1a",
+                    color: sel ? AMB : "#888", fontSize: 11, fontWeight: sel ? 700 : 500,
+                  }}>
+                    {labels[tipo]}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 10, color: "#555" }}>
+              {selData.tipoNodo === "croce" && "Entrambi i profili si interrompono — nodo a croce standard"}
+              {selData.tipoNodo === "T-mont" && "Traverso si ferma sul montante — montante continuo"}
+              {selData.tipoNodo === "T-trav" && "Montante si ferma sul traverso — traverso continuo"}
+              {selData.tipoNodo === "passante-mont" && "Montante attraversa senza interrompersi"}
+              {selData.tipoNodo === "passante-trav" && "Traverso attraversa senza interrompersi"}
+              {selData.tipoNodo === "coprigiunto" && "Profilo coprigiunto a copertura del nodo"}
+              {selData.tipoNodo === "L" && "Nodo ad angolo — solo per composizioni speciali"}
+            </div>
+          </div>
+        )}
+        {/* TOAST ANTE — mostra numero ante correnti quando tool=anta */}
+        {tool === "anta" && onChange && (
+          <div style={{
+            position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
+            background: "#111e", border: `1px solid ${AMB}60`,
+            padding: "6px 16px", borderRadius: 20, fontSize: 12, color: AMB,
+            fontWeight: 700, pointerEvents: "none", whiteSpace: "nowrap",
+          }}>
+            {configRef.current.tipologia.cols.length} {configRef.current.tipologia.cols.length === 1 ? "anta" : "ante"} — tocca per aggiungere
           </div>
         )}
 
