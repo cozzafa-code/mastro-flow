@@ -454,8 +454,11 @@ export default function MastroCadEngine({
     }
 
     // ── SEZIONE ORIZZONTALE ──
-    if (vista === "sez-h") {
+    if (vista === "sez-h" || vista === "sez-v") {
       drawSezioneOrizzontale(canvas, fabric, ox, oy + H * SCALE + 50, W, TF, TA, TM, tip);
+    }
+    if (vista === "sez-v") {
+      drawSezioneVerticale(canvas, fabric, ox, oy, W, H, TF, TA, 52, tip);
     }
 
     canvas.renderAll();
@@ -1069,6 +1072,379 @@ export default function MastroCadEngine({
     });
   }
 
+  // ── SEZIONE VERTICALE COMPLETA ──────────────────────────────
+  function drawSezioneVerticale(canvas: any, fabric: any, ox: number, oy: number, W: number, H: number, TF: number, TA: number, TT: number, tip: Tipologia) {
+    const sW = 80; // larghezza vista sezione verticale in px
+    const pxH = H * SCALE;
+    const startX = ox + W * SCALE + 60; // a destra del prospetto
+
+    // Label
+    canvas.add(new fabric.Text("SEZ. VERTICALE", {
+      left: startX, top: oy - 14, fontSize: 8, fill: "#3B7FE0",
+      fontFamily: "system-ui", fontWeight: "bold",
+      selectable: false, evented: false
+    }));
+
+    // Sfondo
+    canvas.add(new fabric.Rect({
+      left: startX, top: oy, width: sW, height: pxH,
+      fill: "#12181e", stroke: "#2a3a4a", strokeWidth: 1,
+      selectable: false, evented: false
+    }));
+
+    // Profilo telaio top
+    const barH = TF * SCALE;
+    canvas.add(new fabric.Rect({
+      left: startX, top: oy, width: sW, height: barH,
+      fill: createHatchPattern("#3a5070"), stroke: "#8aaabb", strokeWidth: 1,
+      selectable: false, evented: false
+    }));
+    // Profilo telaio bottom
+    canvas.add(new fabric.Rect({
+      left: startX, top: oy + pxH - barH, width: sW, height: barH,
+      fill: createHatchPattern("#3a5070"), stroke: "#8aaabb", strokeWidth: 1,
+      selectable: false, evented: false
+    }));
+
+    // Profili anta top e bottom di ogni cella
+    const righe0 = tip.righe[0] || [100];
+    const totalH = righe0.reduce((s: number, r: number) => s + r, 0);
+    const availH = H - TF * 2 - 52 * (righe0.length - 1);
+    let curY = TF;
+    righe0.forEach((rh: number, ri: number) => {
+      const cellH = (rh / totalH) * availH;
+      const taH = TA * SCALE;
+      // anta top
+      canvas.add(new fabric.Rect({
+        left: startX, top: oy + curY * SCALE, width: sW, height: taH,
+        fill: createHatchPattern("#2c4060"), stroke: "#8aaabb", strokeWidth: 0.8,
+        selectable: false, evented: false
+      }));
+      // anta bottom
+      canvas.add(new fabric.Rect({
+        left: startX, top: oy + (curY + cellH - TA) * SCALE, width: sW, height: taH,
+        fill: createHatchPattern("#2c4060"), stroke: "#8aaabb", strokeWidth: 0.8,
+        selectable: false, evented: false
+      }));
+      // vetro
+      canvas.add(new fabric.Rect({
+        left: startX + sW * 0.2,
+        top: oy + (curY + TA) * SCALE,
+        width: sW * 0.6,
+        height: (cellH - TA * 2) * SCALE,
+        fill: createVetroPattern(), stroke: "#4a96b8", strokeWidth: 0.5,
+        selectable: false, evented: false
+      }));
+
+      // Traverso se non ultima riga
+      if (ri < righe0.length - 1) {
+        const travY = curY + cellH;
+        canvas.add(new fabric.Rect({
+          left: startX, top: oy + travY * SCALE, width: sW, height: 52 * SCALE,
+          fill: createHatchPattern("#3a5a7a"), stroke: "#9ab0c0", strokeWidth: 1,
+          selectable: false, evented: false
+        }));
+      }
+
+      // Quote riga
+      addQuota(canvas, fabric,
+        startX + sW + 6, oy + curY * SCALE,
+        startX + sW + 6, oy + (curY + cellH) * SCALE,
+        Math.round(cellH) + "", false, "#D08008", 8
+      );
+
+      curY += cellH + 52;
+    });
+
+    // Quote totale altezza
+    addQuota(canvas, fabric,
+      startX - 16, oy,
+      startX - 16, oy + pxH,
+      H + " mm", false, "#b0c0d0", 10
+    );
+  }
+
+  // ── EXPORT PDF OFFICINA ──────────────────────────────────────
+  // Genera un SVG string del disegno tecnico completo
+  // per poi convertirlo in PDF con pdf-lib o jsPDF
+  function generaSvgOfficina(): string {
+    const { W, H, tipologia: tip, montanti, traversi, profili, cassonetto, cassH, fuoriSquadro } = config;
+    const TF = profili.telaio.larghezza;
+    const TA = profili.anta.larghezza;
+    const TM = profili.montante.larghezza;
+    const TT = 52;
+    const SCALE_SVG = 0.4; // scala per PDF (più grande)
+    const ox = 80, oy = 80;
+    const cassHmm = (cassonetto && cassH) ? cassH : 0;
+    const cassHpx = cassHmm * SCALE_SVG;
+    const oyR = oy + cassHpx;
+    const W2 = W * SCALE_SVG;
+    const H2 = H * SCALE_SVG;
+    const TF2 = TF * SCALE_SVG;
+    const TA2 = TA * SCALE_SVG;
+    const TM2 = TM * SCALE_SVG;
+    const TT2 = TT * SCALE_SVG;
+    const vW = W2 + ox * 2 + 100;
+    const vH = H2 + oyR + 100 + (cassHpx > 0 ? cassHpx + 20 : 0);
+
+    let s = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vW} ${vH}" width="${vW}" height="${vH}" style="background:#fff">
+<defs>
+  <pattern id="hp" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="5" stroke="#8a9ab0" stroke-width="1.3"/>
+  </pattern>
+  <pattern id="gp" width="14" height="14" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="14" x2="14" y2="0" stroke="#4a90b8" stroke-width="0.5" opacity="0.6"/>
+  </pattern>
+</defs>`;
+
+    // TITOLO
+    s += `<text x="${vW/2}" y="32" text-anchor="middle" font-size="14" fill="#1a2a3a" font-family="Arial" font-weight="bold">MASTRO ERP — DISEGNO TECNICO OFFICINA</text>`;
+    s += `<text x="${vW/2}" y="50" text-anchor="middle" font-size="10" fill="#555" font-family="Arial">${tip.nome} — ${W}×${H} mm — Telaio ${profili.telaio.nome}</text>`;
+    s += `<line x1="${ox}" y1="58" x2="${vW-ox}" y2="58" stroke="#ccc" stroke-width="0.5"/>`;
+
+    const C45F = (c: number, f = 0.65) => c * f;
+
+    // CASSONETTO
+    if (cassHpx > 0) {
+      s += svgRect(ox, oy, W2, cassHpx, "url(#hp)", "#6a8aaa", 1.5);
+      s += `<text x="${ox+W2/2}" y="${oy+cassHpx/2+4}" text-anchor="middle" font-size="10" fill="#D08008" font-family="Arial" font-weight="bold">CASSONETTO H=${cassHmm}mm</text>`;
+    }
+
+    // TELAIO
+    const c45 = C45F(TF2);
+    // top
+    s += svgPoly([[ox,oyR],[ox+W2,oyR],[ox+W2,oyR+TF2-c45*0.3],[ox+W2-c45*0.7,oyR+TF2],[ox+c45*0.7,oyR+TF2],[ox,oyR+TF2-c45*0.3]]);
+    // bot
+    s += svgPoly([[ox+c45*0.7,oyR+H2-TF2],[ox+W2-c45*0.7,oyR+H2-TF2],[ox+W2,oyR+H2-TF2+c45*0.3],[ox+W2,oyR+H2],[ox,oyR+H2],[ox,oyR+H2-TF2+c45*0.3]]);
+    // sx
+    s += svgPoly([[ox,oyR+TF2-c45*0.3],[ox+TF2-c45*0.3,oyR+TF2],[ox+TF2,oyR+TF2+c45*0.3],[ox+TF2,oyR+H2-TF2-c45*0.3],[ox+TF2-c45*0.3,oyR+H2-TF2],[ox,oyR+H2-TF2+c45*0.3]]);
+    // dx
+    s += svgPoly([[ox+W2-TF2,oyR+TF2+c45*0.3],[ox+W2,oyR+TF2-c45*0.3],[ox+W2,oyR+H2-TF2+c45*0.3],[ox+W2-TF2,oyR+H2-TF2-c45*0.3],[ox+W2-TF2+c45*0.3,oyR+H2-TF2],[ox+W2-TF2,oyR+H2-TF2],[ox+W2-TF2+c45*0.3,oyR+TF2],[ox+W2-TF2,oyR+TF2+c45*0.3]]);
+    s += `<rect x="${ox}" y="${oyR}" width="${W2}" height="${H2}" fill="none" stroke="#1a2a3a" stroke-width="2"/>`;
+
+    // MONTANTI
+    montanti.forEach((mm) => {
+      const mx = ox + mm * SCALE_SVG;
+      const mxL = mx - TM2/2, mxR = mx + TM2/2;
+      const mc45 = C45F(TM2/2);
+      s += svgPoly([
+        mxL+mc45,oyR+TF2, mxR-mc45,oyR+TF2, mxR,oyR+TF2+mc45,
+        mxR,oyR+H2-TF2-mc45, mxR-mc45,oyR+H2-TF2, mxL+mc45,oyR+H2-TF2,
+        mxL,oyR+H2-TF2-mc45, mxL,oyR+TF2+mc45
+      ]);
+      s += `<line x1="${mx}" y1="${oyR+TF2}" x2="${mx}" y2="${oyR+H2-TF2}" stroke="#D08008" stroke-width="0.7" stroke-dasharray="6,3,1,3" opacity="0.5"/>`;
+    });
+
+    // TRAVERSI
+    const totalW2 = tip.cols.reduce((s: number,c: number)=>s+c,0);
+    const availW2 = W - TF*2 - TM*(tip.cols.length-1);
+
+    traversi.forEach((trav) => {
+      const mm = typeof trav === "number" ? trav : trav.mm;
+      const ty = oyR + mm * SCALE_SVG;
+      s += svgPoly([
+        ox+TF2+C45F(TT2/2), ty-TT2/2,
+        ox+W2-TF2-C45F(TT2/2), ty-TT2/2,
+        ox+W2-TF2, ty-TT2/2+C45F(TT2/2),
+        ox+W2-TF2, ty+TT2/2-C45F(TT2/2),
+        ox+W2-TF2-C45F(TT2/2), ty+TT2/2,
+        ox+TF2+C45F(TT2/2), ty+TT2/2,
+        ox+TF2, ty+TT2/2-C45F(TT2/2),
+        ox+TF2, ty-TT2/2+C45F(TT2/2)
+      ]);
+    });
+
+    // CAMPITURE
+    const cols2 = tip.cols;
+    let curX2 = TF;
+    cols2.forEach((cw: number, ci: number) => {
+      const colW = (cw/totalW2)*availW2;
+      const righe2 = tip.righe[ci] || [100];
+      const totalH2 = righe2.reduce((s: number,r: number)=>s+r,0);
+      const availH2 = H - TF*2 - TT*(righe2.length-1);
+      let curY2 = TF;
+      righe2.forEach((rh: number, ri: number) => {
+        const cellH = (rh/totalH2)*availH2;
+        const cellaIdx = cols2.slice(0,ci).reduce((s: number,_: any,i: number)=>(tip.righe[i]||[1]).length+s,0)+ri;
+        const cella = tip.celle[cellaIdx] || {tipo:"fisso",verso:"dx"};
+        const ax = ox + curX2*SCALE_SVG;
+        const ay = oyR + curY2*SCALE_SVG;
+        const aw = colW*SCALE_SVG;
+        const ah = cellH*SCALE_SVG;
+        const c45a = C45F(TA2*0.7, 0.7);
+
+        // 4 barre anta
+        s += svgPoly([ax+c45a,ay, ax+aw-c45a,ay, ax+aw,ay+c45a, ax+aw,ay+TA2-c45a, ax+aw-c45a,ay+TA2, ax+c45a,ay+TA2, ax,ay+TA2-c45a, ax,ay+c45a]);
+        s += svgPoly([ax+c45a,ay+ah-TA2, ax+aw-c45a,ay+ah-TA2, ax+aw,ay+ah-TA2+c45a, ax+aw,ay+ah-c45a, ax+aw-c45a,ay+ah, ax+c45a,ay+ah, ax,ay+ah-c45a, ax,ay+ah-TA2+c45a]);
+        s += svgPoly([ax,ay+TA2, ax+TA2-c45a,ay+TA2, ax+TA2,ay+TA2+c45a, ax+TA2,ay+ah-TA2-c45a, ax+TA2-c45a,ay+ah-TA2, ax,ay+ah-TA2]);
+        s += svgPoly([ax+aw-TA2,ay+TA2, ax+aw,ay+TA2, ax+aw,ay+ah-TA2, ax+aw-TA2,ay+ah-TA2, ax+aw-TA2,ay+ah-TA2-c45a, ax+aw-TA2+c45a,ay+ah-TA2, ax+aw,ay+ah-TA2, ax+aw,ay+TA2, ax+aw-TA2+c45a,ay+TA2, ax+aw-TA2,ay+TA2+c45a]);
+        s += `<rect x="${ax}" y="${ay}" width="${aw}" height="${ah}" fill="none" stroke="#2c3e50" stroke-width="1.5"/>`;
+
+        // Vetro
+        const gx=ax+TA2,gy=ay+TA2,gw=aw-TA2*2,gh=ah-TA2*2;
+        s += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" fill="url(#gp)" stroke="#4a96b8" stroke-width="0.8"/>`;
+
+        // Apertura
+        if(cella.tipo==="anta"||cella.tipo==="portafinestra") {
+          const r = Math.min(gw*0.82,gh*0.78);
+          const cx = cella.verso==="sx" ? ax+aw-TA2 : ax+TA2;
+          const sweep = cella.verso==="sx" ? 1 : 0;
+          const ex = cella.verso==="sx" ? ax+TA2 : ax+aw-TA2;
+          s += `<path d="M${cx} ${ay+ah} A${r} ${r} 0 0 ${sweep} ${ex} ${ay+ah}" fill="rgba(26,158,115,0.08)" stroke="#1A9E73" stroke-width="1.3" stroke-dasharray="8,4"/>`;
+          // Maniglia
+          const mx3 = cella.verso==="dx" ? ax+aw-TA2-4 : ax+TA2+4;
+          s += `<rect x="${mx3-2.5}" y="${ay+ah/2-10}" width="5" height="20" rx="2.5" fill="#D08008"/>`;
+        } else if(cella.tipo==="scorrevole"||cella.tipo==="alzante") {
+          const dir = cella.verso==="dx"?1:-1;
+          const cxA = ax+aw/2+dir*8, cyA = ay+ah/2;
+          s += `<line x1="${cxA-16*dir}" y1="${cyA}" x2="${cxA+18*dir}" y2="${cyA}" stroke="#1A9E73" stroke-width="2" stroke-linecap="round"/>`;
+          s += `<polygon points="${cxA+18*dir},${cyA-5} ${cxA+18*dir+10*dir},${cyA} ${cxA+18*dir},${cyA+5}" fill="#1A9E73"/>`;
+        } else if(cella.tipo==="fisso") {
+          s += `<line x1="${gx+3}" y1="${gy+3}" x2="${gx+gw-3}" y2="${gy+gh-3}" stroke="#4a7a9a" stroke-width="0.8" opacity="0.5"/>`;
+          s += `<line x1="${gx+gw-3}" y1="${gy+3}" x2="${gx+3}" y2="${gy+gh-3}" stroke="#4a7a9a" stroke-width="0.8" opacity="0.5"/>`;
+        }
+
+        // Quote cella
+        s += `<text x="${ax+aw/2}" y="${ay+ah/2+4}" text-anchor="middle" font-size="9" fill="#5a8898" font-family="Arial">${Math.round(colW)}×${Math.round(cellH)}</text>`;
+        curY2 += cellH + TT;
+      });
+      curX2 += colW + TM;
+    });
+
+    // QUOTE TOTALI
+    // Larghezza
+    s += svgQuota(ox, oyR-18, ox+W2, oyR-18, W+"mm", true, "#1a2a3a", 11);
+    // Altezza
+    s += svgQuota(ox+W2+18, oyR, ox+W2+18, oyR+H2, H+"mm", false, "#1a2a3a", 11);
+    // Quote colonne
+    if(cols2.length > 1) {
+      const totalW3 = cols2.reduce((s: number,c: number)=>s+c,0);
+      const availW3 = W - TF*2 - TM*(cols2.length-1);
+      let curX3 = TF;
+      cols2.forEach((cw: number) => {
+        const colW = (cw/totalW3)*availW3;
+        s += svgQuota((ox+curX3)*SCALE_SVG, oyR+H2+16, (ox+curX3+colW)*SCALE_SVG, oyR+H2+16, Math.round(colW)+"", true, "#D08008", 9);
+        curX3 += colW + TM;
+      });
+    }
+
+    // SEZIONE ORIZZONTALE (in basso)
+    const sezY = oyR + H2 + 50;
+    const sezH = 72;
+    s += `<text x="${ox}" y="${sezY-8}" font-size="9" fill="#3B7FE0" font-family="Arial" font-weight="bold">SEZIONE ORIZZONTALE</text>`;
+    s += `<rect x="${ox}" y="${sezY}" width="${W2}" height="${sezH}" fill="#f8f9ff" stroke="#aaa" stroke-width="0.8"/>`;
+    // Telai
+    s += svgRect(ox, sezY+sezH*0.1, TF2, sezH*0.8, "url(#hp)", "#8aaabb", 1);
+    s += svgRect(ox+W2-TF2, sezY+sezH*0.1, TF2, sezH*0.8, "url(#hp)", "#8aaabb", 1);
+    let curX4 = TF;
+    const totalW4 = cols2.reduce((s: number,c: number)=>s+c,0);
+    const availW4 = W - TF*2 - TM*(cols2.length-1);
+    cols2.forEach((cw: number, ci: number) => {
+      const colW = (cw/totalW4)*availW4;
+      s += svgRect((ox+curX4)*SCALE_SVG, sezY+sezH*0.1, TA2, sezH*0.8, "url(#hp)", "#8aaabb", 0.8);
+      s += svgRect((ox+curX4+colW-TA)*SCALE_SVG, sezY+sezH*0.1, TA2, sezH*0.8, "url(#hp)", "#8aaabb", 0.8);
+      s += svgRect((ox+curX4+TA)*SCALE_SVG, sezY+sezH*0.2, (colW-TA*2)*SCALE_SVG, sezH*0.6, "url(#gp)", "#4a96b8", 0.5);
+      if(ci < cols2.length-1) {
+        // montante
+        s += svgRect((ox+curX4+colW)*SCALE_SVG, sezY, TM2, sezH, "url(#hp)", "#6a8aaa", 1);
+      }
+      curX4 += colW + TM;
+    });
+
+    // SEZIONE VERTICALE
+    const sezVX = ox + W2 + 80;
+    const sezVW = 80;
+    s += `<text x="${sezVX}" y="${oyR-8}" font-size="9" fill="#3B7FE0" font-family="Arial" font-weight="bold">SEZIONE VERTICALE</text>`;
+    s += `<rect x="${sezVX}" y="${oyR}" width="${sezVW}" height="${H2}" fill="#f8f9ff" stroke="#aaa" stroke-width="0.8"/>`;
+    s += svgRect(sezVX, oyR, sezVW, TF2, "url(#hp)", "#8aaabb", 1);
+    s += svgRect(sezVX, oyR+H2-TF2, sezVW, TF2, "url(#hp)", "#8aaabb", 1);
+    const righeV = tip.righe[0]||[100];
+    const totalHV = righeV.reduce((s: number,r: number)=>s+r,0);
+    const availHV = H-TF*2-TT*(righeV.length-1);
+    let curYV = TF;
+    righeV.forEach((rh: number, ri: number) => {
+      const cellH = (rh/totalHV)*availHV;
+      s += svgRect(sezVX, oyR+curYV*SCALE_SVG, sezVW, TA2, "url(#hp)", "#8aaabb", 0.8);
+      s += svgRect(sezVX, oyR+(curYV+cellH-TA)*SCALE_SVG, sezVW, TA2, "url(#hp)", "#8aaabb", 0.8);
+      s += svgRect(sezVX+sezVW*0.2, oyR+(curYV+TA)*SCALE_SVG, sezVW*0.6, (cellH-TA*2)*SCALE_SVG, "url(#gp)", "#4a96b8", 0.5);
+      if(ri < righeV.length-1) {
+        s += svgRect(sezVX, oyR+(curYV+cellH)*SCALE_SVG, sezVW, TT2, "url(#hp)", "#6a8aaa", 1);
+      }
+      curYV += cellH + TT;
+    });
+
+    // CARTIGLIO (tabella info in basso)
+    const cartY = Math.max(sezY+sezH, oyR+H2) + 30;
+    s += svgCartello(ox, cartY, vW-ox*2);
+
+    s += "</svg>";
+    return s;
+  }
+
+  // Helpers SVG per export
+  function svgPoly(coords: number[], fill="url(#hp)", stroke="#3a5a7a", sw=1.2) {
+    const pts = [];
+    for(let i=0;i<coords.length;i+=2) pts.push(`${coords[i].toFixed(1)},${coords[i+1].toFixed(1)}`);
+    return `<polygon points="${pts.join(" ")}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+  }
+  function svgRect(x: number,y: number,w: number,h: number,fill: string,stroke: string,sw: number) {
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+  }
+  function svgQuota(x1: number,y1: number,x2: number,y2: number,label: string,horiz: boolean,col: string,fs: number) {
+    if(horiz) {
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="0.8"/>
+<line x1="${x1}" y1="${y1-4}" x2="${x1}" y2="${y1+4}" stroke="${col}" stroke-width="0.8"/>
+<line x1="${x2}" y1="${y2-4}" x2="${x2}" y2="${y2+4}" stroke="${col}" stroke-width="0.8"/>
+<text x="${(x1+x2)/2}" y="${y1-5}" text-anchor="middle" font-size="${fs}" fill="${col}" font-family="Arial" font-weight="bold">${label}</text>`;
+    } else {
+      const mx = x1+fs+4;
+      return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="0.8"/>
+<line x1="${x1-4}" y1="${y1}" x2="${x1+4}" y2="${y1}" stroke="${col}" stroke-width="0.8"/>
+<line x1="${x2-4}" y1="${y2}" x2="${x2+4}" y2="${y2}" stroke="${col}" stroke-width="0.8"/>
+<text x="${mx}" y="${(y1+y2)/2}" text-anchor="middle" font-size="${fs}" fill="${col}" font-family="Arial" font-weight="bold" transform="rotate(90,${mx},${(y1+y2)/2})">${label}</text>`;
+    }
+  }
+  function svgCartello(x: number, y: number, w: number) {
+    const h = 60;
+    const now = new Date().toLocaleDateString("it-IT");
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#f8f9ff" stroke="#aaa" stroke-width="0.8"/>
+<line x1="${x+w*0.4}" y1="${y}" x2="${x+w*0.4}" y2="${y+h}" stroke="#aaa" stroke-width="0.5"/>
+<line x1="${x+w*0.7}" y1="${y}" x2="${x+w*0.7}" y2="${y+h}" stroke="#aaa" stroke-width="0.5"/>
+<line x1="${x}" y1="${y+h*0.5}" x2="${x+w}" y2="${y+h*0.5}" stroke="#aaa" stroke-width="0.5"/>
+<text x="${x+8}" y="${y+18}" font-size="9" fill="#555" font-family="Arial" font-weight="bold">PROGETTO</text>
+<text x="${x+8}" y="${y+34}" font-size="10" fill="#1a2a3a" font-family="Arial">MASTRO ERP</text>
+<text x="${x+8}" y="${y+50}" font-size="8" fill="#888" font-family="Arial">www.mastroerp.com</text>
+<text x="${x+w*0.4+8}" y="${y+18}" font-size="9" fill="#555" font-family="Arial" font-weight="bold">DATA</text>
+<text x="${x+w*0.4+8}" y="${y+34}" font-size="10" fill="#1a2a3a" font-family="Arial">${now}</text>
+<text x="${x+w*0.7+8}" y="${y+18}" font-size="9" fill="#555" font-family="Arial" font-weight="bold">SCALA</text>
+<text x="${x+w*0.7+8}" y="${y+34}" font-size="10" fill="#1a2a3a" font-family="Arial">1:10</text>`;
+  }
+
+  // ── DOWNLOAD SVG/PDF ─────────────────────────────────────────
+  function downloadSVG() {
+    const svgStr = generaSvgOfficina();
+    const blob = new Blob([svgStr], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `mastro-disegno-${config.tipologia.id}-${config.W}x${config.H}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadPDFviaSVG() {
+    // Apre il SVG in nuova finestra → stampa come PDF
+    const svgStr = generaSvgOfficina();
+    const htmlStr = `<!DOCTYPE html><html><head><title>Disegno Officina MASTRO</title>
+<style>body{margin:0;padding:0}@media print{body{margin:0}svg{max-width:100%;height:auto}}</style>
+</head><body>${svgStr}<script>window.onload=()=>setTimeout(()=>window.print(),500)</script></body></html>`;
+    const blob = new Blob([htmlStr], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
   // ── HELPERS ─────────────────────────────────────────────────
   function ptsToFabric(coords: number[]) {
     const pts: { x: number; y: number }[] = [];
@@ -1232,6 +1608,9 @@ export default function MastroCadEngine({
 
           <div style={{ flex: 1 }} />
 
+          <button onClick={downloadSVG} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #1A9E73", background: "#1A9E7315", color: "#1A9E73", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>↓ SVG</button>
+          <button onClick={downloadPDFviaSVG} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #D08008", background: "#D0800815", color: "#D08008", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>↓ PDF</button>
+          <div style={{ width: 1, height: 20, background: "#2a2a2a" }} />
           <button onClick={fitScreen} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #2a2a2a", background: "#1a1a1a", color: "#888", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>⊡ Fit</button>
           <button onClick={zoomIn} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #2a2a2a", background: "#1a1a1a", color: "#888", fontSize: 14, cursor: "pointer" }}>+</button>
           <span style={{ fontSize: 10, color: "#555", padding: "0 4px" }}>{Math.round(zoomLevel * 100)}%</span>
