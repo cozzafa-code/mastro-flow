@@ -146,57 +146,59 @@ export default function MastroCAD2({
   const SCALE = useRef(1); // px per mm al zoom=1
 
   // ── TOUCH PINCH ZOOM + PAN ──────────────────────────
+  const isPinching = useRef(false);
   useEffect(() => {
     const cvs = canvasRef.current;
     if (!cvs) return;
     let lastDist = 0;
     let lastMidX = 0, lastMidY = 0;
-    let touches: Touch[] = [];
-    let isPinching = false;
+
     function onTouchStart(e: TouchEvent) {
       e.preventDefault();
-      touches = Array.from(e.touches);
-      if (touches.length === 2) {
-        isPinching = true;
+      if (e.touches.length === 2) {
+        isPinching.current = true;
         drawing.current.active = false;
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
         lastDist = Math.sqrt(dx*dx + dy*dy);
-        lastMidX = (touches[0].clientX + touches[1].clientX) / 2;
-        lastMidY = (touches[0].clientY + touches[1].clientY) / 2;
-      } else if (touches.length === 1 && !isPinching) {
+        lastMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        lastMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      } else if (e.touches.length === 1 && !isPinching.current) {
         handleDown(e as any);
       }
     }
     function onTouchMove(e: TouchEvent) {
       e.preventDefault();
-      touches = Array.from(e.touches);
-      if (touches.length === 2) {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
+      if (e.touches.length === 2 && isPinching.current) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.sqrt(dx*dx + dy*dy);
-        const midX = (touches[0].clientX + touches[1].clientX) / 2;
-        const midY = (touches[0].clientY + touches[1].clientY) / 2;
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         if (lastDist > 0) {
-          const scale = dist / lastDist;
-          vp.current.zoom = Math.max(0.1, Math.min(10, vp.current.zoom * scale));
+          const factor = dist / lastDist;
+          vp.current.zoom = Math.max(0.1, Math.min(10, vp.current.zoom * factor));
+          vp.current.panX += midX - lastMidX;
+          vp.current.panY += midY - lastMidY;
           userZoomed.current = true;
-          vp.current.panX += (midX - lastMidX);
-          vp.current.panY += (midY - lastMidY);
+          drawRef.current();
         }
         lastDist = dist;
         lastMidX = midX;
         lastMidY = midY;
-        drawRef.current();
-      } else if (touches.length === 1 && !isPinching) {
+      } else if (e.touches.length === 1 && !isPinching.current) {
         handleMove(e as any);
       }
     }
     function onTouchEnd(e: TouchEvent) {
       e.preventDefault();
-      lastDist = 0;
-      if (e.touches.length < 2) isPinching = false;
-      if (e.touches.length === 0 && !isPinching) handleUp(e as any);
+      if (e.touches.length < 2) {
+        lastDist = 0;
+        if (e.touches.length === 0) {
+          if (!isPinching.current) handleUp(e as any);
+          isPinching.current = false;
+        }
+      }
     }
     cvs.addEventListener("touchstart", onTouchStart, { passive: false });
     cvs.addEventListener("touchmove", onTouchMove, { passive: false });
