@@ -411,120 +411,113 @@ export default function MastroCAD2({
     x: number, y: number, w: number, h: number,
     apertura: string, isTec: boolean
   ) {
-    const col = isTec ? "#1A4A8A" : "rgba(150,200,255,0.7)";
+    const col = isTec ? "#1A4A8A" : "rgba(150,200,255,0.8)";
+    ctx.save();
     ctx.strokeStyle = col;
-    ctx.lineWidth = 1.5;
+    ctx.fillStyle = col;
     ctx.setLineDash([]);
 
     if (apertura === "sx") {
-      // Cerniera a sinistra — linea verticale sx + arco apertura
-      // Linea anta (diagonale dal cardine)
-      ctx.strokeStyle = col;
-      ctx.lineWidth = 2;
+      // ISO: cerniera in basso a sinistra, anta apre verso sinistra
+      // Linea diagonale dal cardine (basso-sx) all'angolo opposto (alto-dx)
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(x, y+h); ctx.lineTo(x+w, y+h); // base
-      ctx.moveTo(x, y);   ctx.lineTo(x, y+h);    // lato cerniera
-      ctx.moveTo(x, y);   ctx.lineTo(x+w, y+h);  // linea apertura
+      ctx.moveTo(x, y+h);     // cardine basso sx
+      ctx.lineTo(x+w, y);     // diagonale principale
       ctx.stroke();
-      // Arco traiettoria
+      // Arco traiettoria (quarto di cerchio)
       ctx.lineWidth = 1;
-      ctx.setLineDash([5,4]);
+      ctx.setLineDash([6,4]);
       ctx.beginPath();
       ctx.arc(x, y+h, w, -Math.PI/2, 0);
       ctx.stroke();
       ctx.setLineDash([]);
-      // Pallino cerniera
-      ctx.fillStyle = col;
-      ctx.beginPath(); ctx.arc(x, y+h, 4, 0, Math.PI*2); ctx.fill();
+      // Cardine
+      ctx.beginPath(); ctx.arc(x, y+h, 5, 0, Math.PI*2); ctx.fill();
 
     } else if (apertura === "dx") {
-      // Cerniera a destra
-      ctx.lineWidth = 2;
+      // ISO: cerniera basso destra
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(x, y+h);   ctx.lineTo(x+w, y+h); // base
-      ctx.moveTo(x+w, y);   ctx.lineTo(x+w, y+h); // lato cerniera
-      ctx.moveTo(x+w, y);   ctx.lineTo(x, y+h);   // linea apertura
+      ctx.moveTo(x+w, y+h);   // cardine basso dx
+      ctx.lineTo(x, y);       // diagonale
       ctx.stroke();
       ctx.lineWidth = 1;
-      ctx.setLineDash([5,4]);
+      ctx.setLineDash([6,4]);
       ctx.beginPath();
-      ctx.arc(x+w, y+h, w, Math.PI, -Math.PI/2);
+      ctx.arc(x+w, y+h, w, Math.PI, Math.PI/2, true);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = col;
-      ctx.beginPath(); ctx.arc(x+w, y+h, 4, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x+w, y+h, 5, 0, Math.PI*2); ctx.fill();
 
     } else if (apertura === "bilico") {
-      // Bilico verticale — cerniere su e giù al centro
-      ctx.lineWidth = 2;
+      // Bilico verticale: asse centrale, due diagonali simmetriche
+      ctx.lineWidth = 1.5;
+      // Asse
       ctx.beginPath();
-      ctx.moveTo(x+w/2, y); ctx.lineTo(x+w/2, y+h); // asse
-      ctx.moveTo(x, y+h/2); ctx.lineTo(x+w/2, y);    // metà anta sx
-      ctx.moveTo(x+w, y+h/2); ctx.lineTo(x+w/2, y);  // metà anta dx
+      ctx.moveTo(x+w/2, y); ctx.lineTo(x+w/2, y+h);
       ctx.stroke();
+      // Apertura sinistra e destra
       ctx.setLineDash([5,4]);
-      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(x+w/2, y, w/2, 0, Math.PI);
+      ctx.moveTo(x+w/2, y+h/2); ctx.lineTo(x, y+h*0.1);
+      ctx.moveTo(x+w/2, y+h/2); ctx.lineTo(x+w, y+h*0.1);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = col;
+      // Cardini top e bottom
       ctx.beginPath(); ctx.arc(x+w/2, y, 4, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(x+w/2, y+h, 4, 0, Math.PI*2); ctx.fill();
 
     } else if (apertura === "vasistas") {
-      // Vasistas — cerniere in alto, apertura in basso
-      ctx.lineWidth = 2;
+      // Cerniere in alto, apertura basso
+      ctx.lineWidth = 1.5;
+      // Diagonali da angoli alti al punto centrale in basso
       ctx.beginPath();
-      ctx.moveTo(x, y); ctx.lineTo(x+w, y);   // lato cerniera (top)
-      ctx.moveTo(x, y); ctx.lineTo(x+w/2, y+h*0.7); // linea apertura sx
-      ctx.moveTo(x+w, y); ctx.lineTo(x+w/2, y+h*0.7); // linea apertura dx
+      ctx.moveTo(x, y);       ctx.lineTo(x+w/2, y+h*0.7);
+      ctx.moveTo(x+w, y);     ctx.lineTo(x+w/2, y+h*0.7);
       ctx.stroke();
       ctx.setLineDash([5,4]);
-      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(x, y+h*0.1);
-      ctx.quadraticCurveTo(x+w/2, y+h*0.85, x+w, y+h*0.1);
+      ctx.moveTo(x+w*0.1, y+h*0.15);
+      ctx.quadraticCurveTo(x+w/2, y+h*0.9, x+w*0.9, y+h*0.15);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = col;
       ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.arc(x+w, y, 4, 0, Math.PI*2); ctx.fill();
 
     } else if (apertura === "scorrevole") {
-      // Frecce scorrevole bidirezionale
+      const cy = y+h/2;
+      // Freccia doppia orizzontale
       ctx.lineWidth = 2;
-      const cy = y + h/2;
       ctx.beginPath();
-      ctx.moveTo(x+w*0.1, cy); ctx.lineTo(x+w*0.9, cy);
+      ctx.moveTo(x+w*0.12, cy); ctx.lineTo(x+w*0.88, cy);
       ctx.stroke();
-      // Punta sinistra
+      // Punta sx
       ctx.beginPath();
-      ctx.moveTo(x+w*0.25, cy-h*0.12); ctx.lineTo(x+w*0.1, cy); ctx.lineTo(x+w*0.25, cy+h*0.12);
+      ctx.moveTo(x+w*0.27, cy-h*0.1); ctx.lineTo(x+w*0.12, cy); ctx.lineTo(x+w*0.27, cy+h*0.1);
       ctx.stroke();
-      // Punta destra
+      // Punta dx
       ctx.beginPath();
-      ctx.moveTo(x+w*0.75, cy-h*0.12); ctx.lineTo(x+w*0.9, cy); ctx.lineTo(x+w*0.75, cy+h*0.12);
+      ctx.moveTo(x+w*0.73, cy-h*0.1); ctx.lineTo(x+w*0.88, cy); ctx.lineTo(x+w*0.73, cy+h*0.1);
       ctx.stroke();
-      // Binario
-      ctx.setLineDash([4,3]);
-      ctx.lineWidth = 1;
+      // Binari tratteggiati
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([5,4]);
       ctx.beginPath();
-      ctx.moveTo(x, cy-h*0.06); ctx.lineTo(x+w, cy-h*0.06);
-      ctx.moveTo(x, cy+h*0.06); ctx.lineTo(x+w, cy+h*0.06);
+      ctx.moveTo(x, cy-h*0.07); ctx.lineTo(x+w, cy-h*0.07);
+      ctx.moveTo(x, cy+h*0.07); ctx.lineTo(x+w, cy+h*0.07);
       ctx.stroke();
       ctx.setLineDash([]);
     }
 
-    // Label apertura in basso a destra della specchiatura
-    ctx.fillStyle = col;
-    ctx.font = `bold ${Math.min(11, w*0.12)}px system-ui`;
-    ctx.textAlign = "right";
+    // Label piccola in basso a destra
     const labels: Record<string,string> = {
-      sx:"◁ SX", dx:"▷ DX", bilico:"⬡ BIL",
-      vasistas:"△ VAS", scorrevole:"↔ SCO"
+      sx:"SX", dx:"DX", bilico:"BIL", vasistas:"VAS", scorrevole:"SCO"
     };
-    ctx.fillText(labels[apertura]||apertura.toUpperCase(), x+w-4, y+h-4);
+    ctx.font = `bold ${Math.max(9, Math.min(12, w*0.1))}px system-ui`;
+    ctx.textAlign = "right";
+    ctx.fillText(labels[apertura]||"", x+w-3, y+h-3);
+    ctx.restore();
   }
 
   function drawQuote(
@@ -761,15 +754,15 @@ export default function MastroCAD2({
     if (!infisso) return;
     const { col, row } = findSpecchiatura(sx, sy);
     if (col < 0) return;
-    const aperture: Anta["apertura"][] = ["fisso","sx","dx","bilico","vasistas","scorrevole"];
-    const updated = { ...infisso, ante: infisso.ante.map(a => {
-      if (a.col===col && a.row===row) {
-        const idx = aperture.indexOf(a.apertura);
-        return { ...a, apertura: aperture[(idx+1) % aperture.length] };
-      }
-      return a;
-    })};
-    setInfisso(updated);
+    setMenuAnta({ col, row });
+  }
+
+  function setApertura(col: number, row: number, apertura: string) {
+    if (!infisso) return;
+    setInfisso({ ...infisso, ante: infisso.ante.map(a =>
+      a.col===col && a.row===row ? { ...a, apertura: apertura as any } : a
+    )});
+    setMenuAnta(null);
   }
 
   function findSpecchiatura(sx: number, sy: number): {col:number,row:number} {
@@ -895,6 +888,7 @@ export default function MastroCAD2({
   }
 
   const [showBOM, setShowBOM] = useState(false);
+  const [menuAnta, setMenuAnta] = useState<{col:number,row:number}|null>(null);
   const bom = calcolaBOM();
   const sys = SISTEMI[sistema];
   const isTec = mode === "tecnico";
@@ -1091,6 +1085,51 @@ export default function MastroCAD2({
           </div>
         )}
       </div>
+
+      {/* ── MENU ANTA ── */}
+      {menuAnta && infisso && (
+        <div style={{
+          position:"fixed",inset:0,zIndex:850,background:"rgba(0,0,0,0.6)",
+          display:"flex",alignItems:"flex-end"
+        }} onClick={()=>setMenuAnta(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            width:"100%",background:"#1a1a1c",borderTop:"2px solid #D08008",
+            borderRadius:"16px 16px 0 0",padding:"16px 16px 32px"
+          }}>
+            <div style={{fontSize:13,fontWeight:700,color:"#D08008",marginBottom:12}}>
+              Apertura specchiatura ({menuAnta.col+1},{menuAnta.row+1})
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+              {[
+                {id:"fisso",   l:"Fisso",      icon:"▭"},
+                {id:"sx",      l:"Anta SX",    icon:"◁"},
+                {id:"dx",      l:"Anta DX",    icon:"▷"},
+                {id:"bilico",  l:"Bilico",     icon:"⬡"},
+                {id:"vasistas",l:"Vasistas",   icon:"△"},
+                {id:"scorrevole",l:"Scorrevole",icon:"↔"},
+              ].map(opt => {
+                const current = infisso.ante.find(a=>a.col===menuAnta.col&&a.row===menuAnta.row)?.apertura;
+                const isActive = current === opt.id;
+                return (
+                  <button key={opt.id}
+                    onPointerDown={()=>setApertura(menuAnta.col,menuAnta.row,opt.id)}
+                    style={{
+                      padding:"12px 8px",borderRadius:10,
+                      border:`2px solid ${isActive?"#D08008":"#333"}`,
+                      background:isActive?"#D0800820":"#111",
+                      color:isActive?"#D08008":"#aaa",
+                      fontSize:11,fontWeight:700,cursor:"pointer",
+                      display:"flex",flexDirection:"column",alignItems:"center",gap:4
+                    }}>
+                    <span style={{fontSize:20}}>{opt.icon}</span>
+                    {opt.l}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── NUMPAD QUOTE ── */}
       {numpad && (
