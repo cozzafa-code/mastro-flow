@@ -907,7 +907,7 @@ export default function PreventivoConfiguratoreTab() {
       <div onClick={() => {
         const newV = { id: Date.now(), nome: `Vano ${vani.length + 1}`, tipo: "F2A", pezzi: 1, misure: {}, accessori: { tapparella: { attivo: false }, zanzariera: { attivo: false } }, accessoriCatalogo: [], vociLibere: [] };
         updCM("vani", [...(c.vani || []), newV]);
-        setVanoInConfig(newV);
+        setVanoRilievo(newV);
       }} style={{ padding: "14px", borderRadius: 14, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.sub, marginBottom: 10, background: T.card }}>
         + Aggiungi vano
       </div>
