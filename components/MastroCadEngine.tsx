@@ -232,6 +232,7 @@ export default function MastroCadEngine({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const configRef = useRef<CadConfig>(config);
   const [tool, setTool] = useState<string>("sel");
   const [vista, setVista] = useState<string>("prospetto");
   const [selData, setSelData] = useState<any>(null);
@@ -344,7 +345,8 @@ export default function MastroCadEngine({
   useEffect(() => {
     if (!fabricRef.current || !isLoaded) return;
     drawAll();
-  }, [config, isLoaded, vista]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.W, config.H, config.tipologia, config.montanti, config.traversi, config.nodi, config.fuoriSquadro, config.cassonetto, config.cassH, config.showQuote, isLoaded, vista]);
 
   // ── Resize ──────────────────────────────────────────────────
   useEffect(() => {
@@ -370,7 +372,7 @@ export default function MastroCadEngine({
     canvas.clear();
     canvas.backgroundColor = "#1e2028";
 
-    const { W, H, tipologia: tip, montanti, traversi, profili, cassonetto, cassH, showQuote } = config;
+    const { W, H, tipologia: tip, montanti, traversi, profili, cassonetto, cassH, showQuote } = configRef.current;
     const TF = profili.telaio.larghezza;
     const TA = profili.anta.larghezza;
     const TM = profili.montante.larghezza;
@@ -389,7 +391,7 @@ export default function MastroCadEngine({
     }
 
     // ── TELAIO (con eventuale fuorisquadro) ──
-    const fq = config.fuoriSquadro;
+    const fq = configRef.current.fuoriSquadro;
     if (fq?.abilitato) {
       drawTelaioFuoriSquadro(canvas, fabric, ox, oy, W * SCALE, H * SCALE, TF * SCALE, profili.telaio.color, fq);
       // ── DRAG HANDLES FUORISQUADRO ──
@@ -437,7 +439,7 @@ export default function MastroCadEngine({
             else if (key === "tr") { fqCopy.trX = Math.round((newCx - (ox + W*s)) / s); fqCopy.trY = Math.round((newCy - oy) / s); }
             else if (key === "bl") { fqCopy.blX = Math.round((newCx - ox) / s); fqCopy.blY = Math.round((newCy - (oy + H*s)) / s); }
             else if (key === "br") { fqCopy.brX = Math.round((newCx - (ox + W*s)) / s); fqCopy.brY = Math.round((newCy - (oy + H*s)) / s); }
-            onChange({ ...config, fuoriSquadro: fqCopy });
+            onChange({ ...configRef.current, fuoriSquadro: fqCopy });
           });
         });
       }
@@ -1538,14 +1540,14 @@ export default function MastroCadEngine({
     if (tool === "mont") {
       const mm = Math.round(mmX / 5) * 5;
       if (mm > 0 && mm < config.W) {
-        const newM = [...config.montanti, mm].sort((a, b) => a - b);
-        onChange({ ...config, montanti: newM });
+        const newM = [...configRef.current.montanti, mm].sort((a, b) => a - b);
+        onChange({ ...configRef.current, montanti: newM });
       }
     } else if (tool === "trav") {
       const mm = Math.round(mmY / 5) * 5;
       if (mm > 0 && mm < config.H) {
-        const newT: TraversoConfig[] = [...config.traversi, { mm }].sort((a, b) => a.mm - b.mm);
-        onChange({ ...config, traversi: newT });
+        const newT: TraversoConfig[] = [...configRef.current.traversi, { mm }].sort((a, b) => a.mm - b.mm);
+        onChange({ ...configRef.current, traversi: newT });
       }
     } else if (tool === "sel") {
       // Selezione oggetto — gestita da Fabric
@@ -1559,8 +1561,8 @@ export default function MastroCadEngine({
     const aW = container.clientWidth;
     const aH = container.clientHeight;
     // Disegno occupa W+160 per quote, H+120 per quote
-    const drawW = (config.W + 180) * SCALE;
-    const drawH = (config.H + 160) * SCALE;
+    const drawW = (configRef.current.W + 180) * SCALE;
+    const drawH = (configRef.current.H + 160) * SCALE;
     const z = Math.min((aW - 20) / drawW, (aH - 20) / drawH, 3);
     // Centra il disegno nel canvas
     const panX = -(aW / 2 - drawW * z / 2) + 30;
@@ -1610,6 +1612,9 @@ export default function MastroCadEngine({
 
   const iconStyle = { fontSize: 13, width: 18, textAlign: "center" as const };
 
+  // Aggiorna sempre configRef con la prop corrente
+  configRef.current = config;
+
   if (!isLoaded) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height, background: "#1a1a1c", borderRadius: 12, color: "#555", fontSize: 13 }}>
@@ -1655,10 +1660,10 @@ export default function MastroCadEngine({
 
           {onChange && (
             <>
-              <button onClick={() => onChange({ ...config, montanti: [] })} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #2a2a2a", background: "#1a1a1a", color: "#DC4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => onChange({ ...configRef.current, montanti: [] })} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #2a2a2a", background: "#1a1a1a", color: "#DC4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                 ✕ Mont.
               </button>
-              <button onClick={() => onChange({ ...config, traversi: [] })} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #2a2a2a", background: "#1a1a1a", color: "#DC4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => onChange({ ...configRef.current, traversi: [] })} style={{ padding: "5px 10px", borderRadius: 7, border: "1px solid #2a2a2a", background: "#1a1a1a", color: "#DC4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>
                 ✕ Trav.
               </button>
             </>
@@ -1720,7 +1725,7 @@ export default function MastroCadEngine({
                 return (
                   <button key={tipo} onClick={() => {
                     const newNodi = { ...(config.nodi || {}), [`m${selData.mi}-t${selData.ti}`]: { tipo } };
-                    onChange({ ...config, nodi: newNodi });
+                    onChange({ ...configRef.current, nodi: newNodi });
                   }} style={{
                     padding: "6px 10px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
                     border: `1px solid ${sel ? AMB : "#333"}`,
@@ -1773,13 +1778,13 @@ export default function MastroCadEngine({
                 return (
                   <button key={tipo + (verso||"")} onClick={() => {
                     // Aggiorna la tipologia: trova la cella per ci/ri e modifica tipo+verso
-                    const tip = config.tipologia;
+                    const tip = configRef.current.tipologia;
                     const newCelle = [...(tip.celle || [])];
                     newCelle[selData.cellaIdx] = {
                       tipo: tipo as any,
                       verso: (verso || selData.verso || "dx") as any,
                     };
-                    onChange({ ...config, tipologia: { ...tip, celle: newCelle } });
+                    onChange({ ...configRef.current, tipologia: { ...tip, celle: newCelle } });
                     // selData si aggiornerà al prossimo drawAll via useEffect[config]
                     setShowCellaPanel(false);
                   }} style={{
