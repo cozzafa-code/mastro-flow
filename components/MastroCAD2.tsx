@@ -626,6 +626,8 @@ export default function MastroCAD2({
         const nCorrente = infisso.montanti.length + 1;
         const nNuovo = nCorrente >= 6 ? 1 : nCorrente + 1;
         dividiInAnte(nNuovo);
+        lastTap.current = { t:0, x:0, y:0 };
+        return;
       }
     } else if (tool === "sel") {
       handleSel(sx, sy);
