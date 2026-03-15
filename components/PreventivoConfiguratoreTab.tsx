@@ -9,9 +9,6 @@ import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
 import VanoConfiguratoreFullscreen from "./VanoConfiguratoreFullscreen";
 
-import InfissoSVG, { buildMiniPreview, type WindowConfig } from "./InfissoSVG";
-
-
 // ── Palette colori ──
 const GRN = "#1A9E73";
 const AMB = "#D08008";
@@ -35,7 +32,6 @@ function NumInput({ value, onChange, placeholder = "0", style = {} }: any) {
       onChange={e => { setLocal(e.target.value); onChange(e.target.value === "" ? 0 : Number(e.target.value)); }}
       style={{ fontFamily: FM, textAlign: "right", ...style }}
     />
-    </>
   );
 }
 
@@ -394,326 +390,376 @@ function AccessoriCatalogoSection({ vano, updV, T }: any) {
 }
 
 // ═══════════════════════════════════════════════════════
-// CARD VANO — mobile-first, niente tab, tutto in pagina
+// CARD VANO — tutto il dettaglio editabile
 // ═══════════════════════════════════════════════════════
-function Toggle({ on, onToggle, T }: any) {
-  return (
-    <div onClick={onToggle}
-      style={{ width: 44, height: 26, borderRadius: 13, background: on ? "#1A9E73" : T.bdr,
-        position: "relative", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }}>
-      <div style={{ position: "absolute", top: 3, left: on ? 21 : 3, width: 20, height: 20,
-        borderRadius: "50%", background: "#fff", transition: "left 0.2s",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.2)" }} />
-    </div>
-  );
-}
-
 function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any) {
   const [open, setOpen] = useState(idx === 0);
-  const [showMisureExtra, setShowMisureExtra] = useState(false);
-  const [cfg, setCfg] = useState(vano.infissoConfig?.tipo || "F2A");
+  const [innerTab, setInnerTab] = useState<"info"|"disegno"|"accessori">("info");
+  const [showConfig, setShowConfig] = useState(false);
 
   const m = vano.misure || {};
   const pezzi = vano.pezzi || 1;
+
+  // Prezzo base dal context
   const prezzoBase = calcolaVanoPrezzo ? calcolaVanoPrezzo(vano, selectedCM) : 0;
+  // Prezzo override manuale
   const prezzoOverride = vano.prevPrezzoOverride;
   const prezzoUnitario = prezzoOverride !== undefined && prezzoOverride !== null ? prezzoOverride : prezzoBase;
   const accCat = (vano.accessoriCatalogo || []).reduce((s: number, a: any) => s + (a.prezzoUnitario || 0) * (a.quantita || 1), 0);
   const posaPrezzo = vano.prevPosaPrezzo || 0;
-  const subtotale = (prezzoUnitario * pezzi) + accCat + posaPrezzo;
+  const smontaggio = vano.prevSmontaggio || 0;
+  const subtotale = (prezzoUnitario * pezzi) + accCat + posaPrezzo + smontaggio;
 
   const updV = (patch: any) => updVano(vano.id, patch);
-  const updM = (patch: any) => updV({ misure: { ...m, ...patch } });
-  const updAcc = (key: string, patch: any) => updV({ accessori: { ...vano.accessori, [key]: { ...(vano.accessori?.[key] || {}), ...patch } } });
 
-  const hasMisureExtra = (m.lAlto && m.lAlto !== m.lCentro) || (m.lBasso && m.lBasso !== m.lCentro) || m.davInt || m.davEst;
-  const tappOn = !!vano.accessori?.tapparella?.attivo;
-  const zanzOn = !!vano.accessori?.zanzariera?.attivo;
-
-  const inputBig = {
-    width: "100%", padding: "12px 14px", borderRadius: 12,
-    border: `1.5px solid ${T.bdr}`, fontSize: 22, fontWeight: 800,
-    textAlign: "right" as const, boxSizing: "border-box" as const,
-    background: T.bg, color: T.text, fontFamily: "Inter,system-ui",
-  };
-  const inputSm = {
+  const inputStyle = {
     width: "100%", padding: "8px 10px", borderRadius: 8,
-    border: `1px solid ${T.bdr}`, fontSize: 13, fontWeight: 600,
-    textAlign: "right" as const, boxSizing: "border-box" as const,
-    background: T.bg, color: T.text, fontFamily: "Inter,system-ui",
+    border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "Inter",
+    background: T.bg, color: T.text, boxSizing: "border-box" as const,
   };
-  const lbl = { fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase" as const, letterSpacing: 0.7, marginBottom: 4 };
 
-  // Config SVG
-  const svgConfig: WindowConfig = {
-    tipo: cfg as any,
-    W: m.lCentro || 900,
-    H: m.hCentro || 1400,
-    tapparella: tappOn,
-    zanzariera: zanzOn,
-    showQuote: false,
-    showApertura: true,
-  };
+  const labelStyle = { fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase" as const, marginBottom: 3, display: "block" };
 
   return (
-    <div style={{ background: T.card, borderRadius: 16, border: `1.5px solid ${open ? "#1A9E73" : T.bdr}`, marginBottom: 12, overflow: "hidden" }}>
+    <>
+      {showConfig && (
+        <VanoConfiguratoreFullscreen
+          vano={vano}
+          onSalva={(patch: any) => { updVano(vano.id, patch); setShowConfig(false); }}
+          onChiudi={() => setShowConfig(false)}
+          T={T}
+        />
+      )}
 
-      {/* ── HEADER ── */}
-      <div onClick={() => setOpen(!open)}
-        style={{ padding: "13px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: open ? "#1A9E7306" : "transparent" }}>
-        <div style={{ width: 30, height: 30, borderRadius: 9, background: "#1A9E73", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{idx + 1}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>
-            {vano.nome || `Vano ${idx + 1}`}
-            {vano.tipo && <span style={{ fontSize: 10, color: T.sub, marginLeft: 6, fontWeight: 600 }}>{cfg}</span>}
-            {pezzi > 1 && <span style={{ fontSize: 11, color: "#1A9E73", marginLeft: 4, fontWeight: 800 }}>×{pezzi}</span>}
-          </div>
-          <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>
-            {m.lCentro && m.hCentro ? `${m.lCentro}×${m.hCentro} mm` : "Inserisci misure"}
-            {tappOn && " · Tapp."}{zanzOn && " · Zanz."}
-          </div>
-        </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: "#1A9E73", fontFamily: "monospace" }}>€{fmt(subtotale)}</div>
-          {pezzi > 1 && <div style={{ fontSize: 9, color: T.sub }}>€{fmt(prezzoUnitario)}/pz</div>}
-        </div>
-        <div style={{ color: T.sub, fontSize: 14, transform: open ? "rotate(0)" : "rotate(-90deg)", transition: "0.2s" }}>▾</div>
-      </div>
-
-      {open && (
-        <div style={{ padding: "0 14px 16px", borderTop: `1px solid ${T.bdr}` }}>
-
-          {/* ── SVG PREVIEW GRANDE ── */}
-          <div style={{ marginTop: 14, marginBottom: 10, background: "#f8f9ff", borderRadius: 14, border: `1.5px solid ${T.bdr}`, overflow: "hidden", position: "relative" }}>
-            <InfissoSVG config={{ ...svgConfig, showQuote: true }} style={{ width: "100%", maxHeight: 300, display: "block" }} />
-            <div style={{ position: "absolute", top: 8, right: 8, background: "rgba(255,255,255,0.9)", borderRadius: 8, padding: "3px 8px", fontSize: 10, fontWeight: 700, color: "#555" }}>
-              {m.lCentro || "—"}×{m.hCentro || "—"} mm
+      <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${open ? GRN + "40" : T.bdr}`, marginBottom: 10, overflow: "hidden" }}>
+        {/* Header vano */}
+        <div onClick={() => setOpen(!open)} style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: open ? GRN + "06" : "transparent" }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: GRN, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{idx + 1}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{vano.nome || `Vano ${idx + 1}`}
+              {vano.tipo && <span style={{ fontSize: 10, fontWeight: 600, color: T.sub, marginLeft: 6 }}>{vano.tipo}</span>}
+              {pezzi > 1 && <span style={{ fontSize: 10, fontWeight: 700, color: GRN, marginLeft: 4 }}>×{pezzi}</span>}
+            </div>
+            <div style={{ fontSize: 10, color: T.sub }}>
+              {m.lCentro && m.hCentro ? `${m.lCentro}×${m.hCentro}mm` : "Misure da inserire"}
+              {vano.coloreInt ? ` · ${vano.coloreInt}` : ""}
             </div>
           </div>
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: GRN, fontFamily: FM }}>€{fmt(subtotale)}</div>
+            <div style={{ fontSize: 9, color: T.sub, fontFamily: FM }}>€{fmt(prezzoUnitario)}/pz</div>
+          </div>
+          <div style={{ fontSize: 14, color: T.sub, transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "0.2s" }}>▾</div>
+        </div>
 
-          {/* ── SELEZIONE TIPO ── */}
-          <div style={{ marginBottom: 14 }}>
-            <div style={lbl}>Tipo infisso</div>
-            <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5, marginTop: 6 }}>
-              {[
-                { id: "F1A_DX", l: "1A→" }, { id: "F1A_SX", l: "←1A" },
-                { id: "F2A", l: "2 ante" }, { id: "F3A", l: "3 ante" },
-                { id: "F_FISSO", l: "Fisso" }, { id: "FISSO_TRAV", l: "F+Trav" },
-                { id: "PF1_DX", l: "PF→" }, { id: "PF2", l: "PF 2a" },
-                { id: "SC2", l: "Scorr." }, { id: "ALZ", l: "Alzante" },
-                { id: "P1_DX", l: "Porta→" }, { id: "P2", l: "Porta 2a" },
-                { id: "ARCO", l: "Arco" }, { id: "VASISTAS", l: "Vasistas" },
-                { id: "ANTA_RIBALTA", l: "A+Rib." },
-              ].map(t => (
-                <button key={t.id} onClick={() => { setCfg(t.id); updV({ infissoConfig: { ...(vano.infissoConfig || {}), tipo: t.id } }); }}
-                  style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${cfg === t.id ? "#D08008" : T.bdr}`,
-                    background: cfg === t.id ? "#D0800815" : T.bg, color: cfg === t.id ? "#D08008" : T.sub,
-                    fontSize: 11, fontWeight: cfg === t.id ? 800 : 600, cursor: "pointer", fontFamily: "Inter,system-ui" }}>
-                  {t.l}
-                </button>
+        {open && (
+          <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${T.bdr}` }}>
+
+            {/* ── TAB INTERNI ── */}
+            <div style={{ display: "flex", gap: 6, marginTop: 10, marginBottom: 4 }}>
+              {([
+                { id: "info", label: "📐 Info & Prezzi" },
+                { id: "disegno", label: `📐 Config${vano.infissoConfig?.tipo ? " ✓" : ""}` },
+                { id: "accessori", label: `🏷 Accessori${(vano.accessoriCatalogo?.length || 0) > 0 ? ` (${vano.accessoriCatalogo.length})` : ""}` },
+              ] as const).map(tab => (
+                <div
+                  key={tab.id}
+                  onClick={() => setInnerTab(tab.id)}
+                  style={{
+                    flex: 1, padding: "7px 4px", borderRadius: 10, textAlign: "center",
+                    fontSize: 11, fontWeight: innerTab === tab.id ? 800 : 600,
+                    background: innerTab === tab.id
+                      ? (tab.id === "disegno" ? AMB + "18" : tab.id === "accessori" ? ACC_COLOR + "15" : GRN + "12")
+                      : T.bg,
+                    color: innerTab === tab.id
+                      ? (tab.id === "disegno" ? AMB : tab.id === "accessori" ? ACC_COLOR : GRN)
+                      : T.sub,
+                    border: `1.5px solid ${innerTab === tab.id
+                      ? (tab.id === "disegno" ? AMB + "50" : tab.id === "accessori" ? ACC_COLOR + "40" : GRN + "40")
+                      : T.bdr}`,
+                    cursor: "pointer", transition: "all 0.15s",
+                  }}
+                >
+                  {tab.label}
+                </div>
               ))}
             </div>
-          </div>
 
-
-          {/* ── MISURE PRINCIPALI ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-            <div>
-              <div style={lbl}>Larghezza mm</div>
-              <input type="number" inputMode="numeric" value={m.lCentro || ""} placeholder="1200"
-                onChange={e => { const v = Number(e.target.value); updM({ lCentro: v }); }}
-                style={inputBig} />
-            </div>
-            <div>
-              <div style={lbl}>Altezza mm</div>
-              <input type="number" inputMode="numeric" value={m.hCentro || ""} placeholder="1500"
-                onChange={e => { const v = Number(e.target.value); updM({ hCentro: v }); }}
-                style={inputBig} />
-            </div>
-          </div>
-
-          {/* ── MISURE EXTRA collassate ── */}
-          <div onClick={() => setShowMisureExtra(!showMisureExtra)}
-            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderRadius: 10,
-              background: hasMisureExtra ? "#D0800810" : T.bg, border: `1px solid ${hasMisureExtra ? "#D08008" : T.bdr}`,
-              cursor: "pointer", marginBottom: showMisureExtra ? 10 : 14 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: hasMisureExtra ? "#D08008" : T.sub }}>
-              Fuorisquadro / misure dettaglio
-            </span>
-            <span style={{ fontSize: 11, color: hasMisureExtra ? "#D08008" : T.sub }}>
-              {hasMisureExtra ? "⚠ attivo" : showMisureExtra ? "▲" : "▼"}
-            </span>
-          </div>
-
-          {showMisureExtra && (
-            <div style={{ background: T.bg, borderRadius: 12, padding: 12, border: `1px solid ${T.bdr}`, marginBottom: 14 }}>
+            {/* ══ TAB: INFO & PREZZI ══ */}
+            {innerTab === "info" && (<>
+            <div style={{ marginTop: 12 }}>
+              <SectionLabel>📐 Misure (mm)</SectionLabel>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-                {[["lAlto","L. Alto"],["lCentro","L. Centro"],["lBasso","L. Basso"],
-                  ["hSx","H. Sx"],["hCentro","H. Centro"],["hDx","H. Dx"]].map(([k,l]) => (
+                {[
+                  { k: "lCentro", label: "L. Centro" },
+                  { k: "hCentro", label: "H. Centro" },
+                  { k: "lForo", label: "L. Foro" },
+                  { k: "hForo", label: "H. Foro" },
+                  { k: "lMuro", label: "L. Muro" },
+                  { k: "hMuro", label: "H. Muro" },
+                ].map(({ k, label }) => (
                   <div key={k}>
-                    <div style={{ ...lbl, fontSize: 9 }}>{l}</div>
-                    <input type="number" inputMode="numeric" value={m[k] || ""} placeholder="0"
-                      onChange={e => updM({ [k]: Number(e.target.value) })}
-                      style={{ ...inputSm }} />
+                    <label style={labelStyle}>{label}</label>
+                    <input
+                      type="number"
+                      value={m[k] || ""}
+                      placeholder="0"
+                      onChange={e => updV({ misure: { ...m, [k]: Number(e.target.value) } })}
+                      style={{ ...inputStyle }}
+                    />
                   </div>
                 ))}
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-                {[["d1","D1"],["d2","D2"],["spSx","Sp.Sx"],["spDx","Sp.Dx"],
-                  ["davInt","Dav.Int"],["davEst","Dav.Est"],["soglia","Soglia"],["imbotte","Imbotte"]].map(([k,l]) => (
+                {[
+                  { k: "davProf", label: "Dav. Prof" },
+                  { k: "davSporg", label: "Dav. Sporg" },
+                  { k: "soglia", label: "Soglia" },
+                  { k: "imbotte", label: "Imbotte" },
+                ].map(({ k, label }) => (
                   <div key={k}>
-                    <div style={{ ...lbl, fontSize: 9 }}>{l}</div>
-                    <input type="number" inputMode="numeric" value={m[k] || ""} placeholder="0"
-                      onChange={e => updM({ [k]: Number(e.target.value) })}
-                      style={{ ...inputSm, fontSize: 12 }} />
+                    <label style={labelStyle}>{label}</label>
+                    <input
+                      type="number"
+                      value={m[k] || ""}
+                      placeholder="0"
+                      onChange={e => updV({ misure: { ...m, [k]: Number(e.target.value) } })}
+                      style={{ ...inputStyle }}
+                    />
                   </div>
                 ))}
               </div>
             </div>
-          )}
 
-          {/* ── PREZZO + PEZZI ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-            <div>
-              <div style={lbl}>Prezzo unitario €</div>
-              <input type="number" inputMode="decimal"
-                value={prezzoOverride !== undefined && prezzoOverride !== null ? prezzoOverride : (prezzoBase || "")}
-                placeholder={prezzoBase > 0 ? `${fmt(prezzoBase)}` : "0,00"}
-                onChange={e => updV({ prevPrezzoOverride: e.target.value === "" ? null : Number(e.target.value) })}
-                style={{ ...inputSm, fontSize: 16, fontWeight: 800, borderColor: prezzoOverride !== undefined && prezzoOverride !== null ? "#D08008" : T.bdr }} />
-              {prezzoOverride !== null && prezzoOverride !== undefined && (
-                <div onClick={() => updV({ prevPrezzoOverride: null })} style={{ fontSize: 9, color: T.sub, cursor: "pointer", marginTop: 2 }}>↩ Auto €{fmt(prezzoBase)}</div>
-              )}
-            </div>
-            <div>
-              <div style={lbl}>Pezzi</div>
-              <input type="number" inputMode="numeric" value={pezzi > 1 ? pezzi : ""} placeholder="1" min={1}
-                onChange={e => updV({ pezzi: e.target.value === "" ? 1 : Math.max(1, Number(e.target.value)) })}
-                style={{ ...inputSm, fontSize: 16, fontWeight: 800 }} />
-            </div>
-            <div>
-              <div style={lbl}>Subtotale</div>
-              <div style={{ padding: "8px 10px", borderRadius: 8, background: "#1A9E7312", border: `1px solid #1A9E7330`, fontSize: 14, fontWeight: 900, color: "#1A9E73", fontFamily: "monospace", textAlign: "right" }}>
-                €{fmt(prezzoUnitario * pezzi)}
+            {/* ── PREZZO INFISSO ── */}
+            <div style={{ marginTop: 14 }}>
+              <SectionLabel>💰 Prezzo infisso</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div>
+                  <label style={labelStyle}>Prezzo unitario (€)</label>
+                  <input
+                    type="number"
+                    value={prezzoOverride !== undefined && prezzoOverride !== null ? prezzoOverride : (prezzoBase || "")}
+                    placeholder={prezzoBase > 0 ? `Auto: €${fmt(prezzoBase)}` : "0"}
+                    onChange={e => updV({ prevPrezzoOverride: e.target.value === "" ? null : Number(e.target.value) })}
+                    style={{ ...inputStyle, borderColor: prezzoOverride !== undefined && prezzoOverride !== null ? AMB : T.bdr }}
+                  />
+                  {prezzoOverride !== null && prezzoOverride !== undefined && (
+                    <div onClick={() => updV({ prevPrezzoOverride: null })} style={{ fontSize: 9, color: T.sub, cursor: "pointer", marginTop: 2 }}>↩ Ripristina auto (€{fmt(prezzoBase)})</div>
+                  )}
+                </div>
+                <div>
+                  <label style={labelStyle}>N. pezzi</label>
+                  <input
+                    type="number"
+                    value={pezzi > 1 ? pezzi : ""}
+                    placeholder="1"
+                    min={1}
+                    onChange={e => updV({ pezzi: e.target.value === "" ? 1 : Math.max(1, Number(e.target.value)) })}
+                    style={{ ...inputStyle }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Subtotale infisso</label>
+                  <div style={{ padding: "8px 10px", borderRadius: 8, background: GRN + "12", border: `1px solid ${GRN}40`, fontSize: 13, fontWeight: 900, color: GRN, fontFamily: FM }}>
+                    €{fmt(prezzoUnitario * pezzi)}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* ── TAPPARELLA toggle ── */}
-          <div style={{ background: T.bg, borderRadius: 12, border: `1px solid ${tappOn ? "#D0800840" : T.bdr}`, marginBottom: 10, overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 10 }}>
-              <span style={{ fontSize: 13, flex: 1, fontWeight: 700, color: T.text }}>⬇ Tapparella</span>
-              {tappOn && (
-                <select value={vano.accessori?.tapparella?.tipo || "Manuale"}
-                  onChange={e => updAcc("tapparella", { tipo: e.target.value })}
-                  style={{ ...inputSm, width: "auto", fontSize: 12, padding: "6px 8px" }}>
-                  <option>Manuale</option><option>Motorizzata</option><option>Avvolgibile</option>
+            {/* ── TAPPARELLA ── */}
+            <div style={{ marginTop: 14 }}>
+              <SectionLabel>⬇ Tapparella</SectionLabel>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <select value={(vano.accessori?.tapparella?.tipo) || "Non inclusa"}
+                  onChange={e => updV({ accessori: { ...vano.accessori, tapparella: { ...(vano.accessori?.tapparella || {}), tipo: e.target.value, attivo: e.target.value !== "Non inclusa" } } })}
+                  style={{ ...inputStyle, flex: 1 }}>
+                  <option>Non inclusa</option>
+                  <option>Motorizzata</option>
+                  <option>Manuale</option>
+                  <option>Avvolgibile</option>
                 </select>
-              )}
-              <Toggle on={tappOn} onToggle={() => updAcc("tapparella", { attivo: !tappOn })} T={T} />
-            </div>
-            {tappOn && (
-              <div style={{ borderTop: `1px solid ${T.bdr}`, padding: "10px 14px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                  {[["colore","Colore","text"],["larghezza","L (mm)","number"],["prezzo","Prezzo €","number"]].map(([k,l,t]) => (
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, color: T.sub }}>Inclusa</span>
+                  <div onClick={() => updV({ accessori: { ...vano.accessori, tapparella: { ...(vano.accessori?.tapparella || {}), inclusa: !vano.accessori?.tapparella?.inclusa } } })}
+                    style={{ width: 40, height: 22, borderRadius: 11, background: vano.accessori?.tapparella?.inclusa ? GRN : T.bdr, position: "relative", cursor: "pointer", transition: "0.2s" }}>
+                    <div style={{ position: "absolute", top: 2, left: vano.accessori?.tapparella?.inclusa ? 20 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "0.2s" }} />
+                  </div>
+                </div>
+              </div>
+              {vano.accessori?.tapparella?.attivo && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
+                  {[
+                    { k: "colore", label: "Colore", type: "text" },
+                    { k: "larghezza", label: "L (mm)", type: "number" },
+                    { k: "altezza", label: "H (mm)", type: "number" },
+                    { k: "spessore", label: "Spessore", type: "text" },
+                    { k: "prezzoTapp", label: "Prezzo €", type: "number" },
+                  ].map(({ k, label, type }) => (
                     <div key={k}>
-                      <div style={{ ...lbl, fontSize: 9 }}>{l}</div>
-                      <input type={t} value={(vano.accessori?.tapparella || {})[k] || ""}
-                        onChange={e => updAcc("tapparella", { [k]: t === "number" ? Number(e.target.value) : e.target.value })}
-                        style={inputSm} />
+                      <label style={labelStyle}>{label}</label>
+                      <input type={type} value={(vano.accessori?.tapparella || {})[k] || ""}
+                        onChange={e => updV({ accessori: { ...vano.accessori, tapparella: { ...(vano.accessori?.tapparella || {}), [k]: type === "number" ? Number(e.target.value) : e.target.value } } })}
+                        style={{ ...inputStyle }} />
                     </div>
                   ))}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                  <span style={{ fontSize: 11, color: T.sub }}>Inclusa nel prezzo</span>
-                  <Toggle on={!!vano.accessori?.tapparella?.inclusa} onToggle={() => updAcc("tapparella", { inclusa: !vano.accessori?.tapparella?.inclusa })} T={T} />
+              )}
+            </div>
+
+            {/* ── ZANZARIERA ── */}
+            <div style={{ marginTop: 14 }}>
+              <SectionLabel>🕸 Zanzariera</SectionLabel>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <select value={(vano.accessori?.zanzariera?.tipo) || "Non inclusa"}
+                  onChange={e => updV({ accessori: { ...vano.accessori, zanzariera: { ...(vano.accessori?.zanzariera || {}), tipo: e.target.value, attivo: e.target.value !== "Non inclusa" } } })}
+                  style={{ ...inputStyle, flex: 1 }}>
+                  <option>Non inclusa</option>
+                  <option>Avvolgente</option>
+                  <option>Plissé</option>
+                  <option>Laterale</option>
+                  <option>Battente</option>
+                  <option>ZIP</option>
+                </select>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, color: T.sub }}>Inclusa</span>
+                  <div onClick={() => updV({ accessori: { ...vano.accessori, zanzariera: { ...(vano.accessori?.zanzariera || {}), inclusa: !vano.accessori?.zanzariera?.inclusa } } })}
+                    style={{ width: 40, height: 22, borderRadius: 11, background: vano.accessori?.zanzariera?.inclusa ? GRN : T.bdr, position: "relative", cursor: "pointer", transition: "0.2s" }}>
+                    <div style={{ position: "absolute", top: 2, left: vano.accessori?.zanzariera?.inclusa ? 20 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "0.2s" }} />
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* ── ZANZARIERA toggle ── */}
-          <div style={{ background: T.bg, borderRadius: 12, border: `1px solid ${zanzOn ? "#3B7FE040" : T.bdr}`, marginBottom: 10, overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", padding: "11px 14px", gap: 10 }}>
-              <span style={{ fontSize: 13, flex: 1, fontWeight: 700, color: T.text }}>🕸 Zanzariera</span>
-              {zanzOn && (
-                <select value={vano.accessori?.zanzariera?.tipo || "Avvolgente"}
-                  onChange={e => updAcc("zanzariera", { tipo: e.target.value })}
-                  style={{ ...inputSm, width: "auto", fontSize: 12, padding: "6px 8px" }}>
-                  <option>Avvolgente</option><option>Plissé</option><option>Laterale</option><option>Battente</option><option>ZIP</option>
-                </select>
-              )}
-              <Toggle on={zanzOn} onToggle={() => updAcc("zanzariera", { attivo: !zanzOn })} T={T} />
-            </div>
-            {zanzOn && (
-              <div style={{ borderTop: `1px solid ${T.bdr}`, padding: "10px 14px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                  {[["colore","Colore","text"],["larghezza","L (mm)","number"],["prezzo","Prezzo €","number"]].map(([k,l,t]) => (
+              {vano.accessori?.zanzariera?.attivo && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
+                  {[
+                    { k: "colore", label: "Colore", type: "text" },
+                    { k: "larghezza", label: "L (mm)", type: "number" },
+                    { k: "altezza", label: "H (mm)", type: "number" },
+                    { k: "rete", label: "Rete", type: "text" },
+                    { k: "prezzoZanz", label: "Prezzo €", type: "number" },
+                  ].map(({ k, label, type }) => (
                     <div key={k}>
-                      <div style={{ ...lbl, fontSize: 9 }}>{l}</div>
-                      <input type={t} value={(vano.accessori?.zanzariera || {})[k] || ""}
-                        onChange={e => updAcc("zanzariera", { [k]: t === "number" ? Number(e.target.value) : e.target.value })}
-                        style={inputSm} />
+                      <label style={labelStyle}>{label}</label>
+                      <input type={type} value={(vano.accessori?.zanzariera || {})[k] || ""}
+                        onChange={e => updV({ accessori: { ...vano.accessori, zanzariera: { ...(vano.accessori?.zanzariera || {}), [k]: type === "number" ? Number(e.target.value) : e.target.value } } })}
+                        style={{ ...inputStyle }} />
                     </div>
                   ))}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                  <span style={{ fontSize: 11, color: T.sub }}>Inclusa nel prezzo</span>
-                  <Toggle on={!!vano.accessori?.zanzariera?.inclusa} onToggle={() => updAcc("zanzariera", { inclusa: !vano.accessori?.zanzariera?.inclusa })} T={T} />
+              )}
+            </div>
+
+            {/* ── POSA ── */}
+            <div style={{ marginTop: 14 }}>
+              <SectionLabel>🔧 Posa e smontaggio</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div>
+                  <label style={labelStyle}>Posa</label>
+                  <select value={vano.prevPosa || "Inclusa"} onChange={e => updV({ prevPosa: e.target.value })} style={{ ...inputStyle }}>
+                    <option>Inclusa</option>
+                    <option>A parte</option>
+                    <option>Non prevista</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Smontaggio</label>
+                  <select value={vano.prevSmDes || "Non richiesto"} onChange={e => updV({ prevSmDes: e.target.value })} style={{ ...inputStyle }}>
+                    <option>Non richiesto</option>
+                    <option>Incluso</option>
+                    <option>A parte</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Prezzo posa (€)</label>
+                  <input type="number" value={posaPrezzo || ""} placeholder="0"
+                    onChange={e => updV({ prevPosaPrezzo: Number(e.target.value) })}
+                    style={{ ...inputStyle }} />
+                </div>
+              </div>
+            </div>
+
+            {/* chiude tab INFO */}
+            </>)}
+
+            {/* ══ TAB: DISEGNO ══ */}
+            {innerTab === "disegno" && (
+              <div style={{ marginTop: 12 }}>
+                {vano.infissoConfig ? (
+                  <div style={{ background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}`, padding: 10, marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 6 }}>
+                      {vano.infissoConfig.tipId || "Configurato"} · {vano.misure?.lCentro || "—"}×{vano.misure?.hCentro || "—"} mm
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <div onClick={() => setShowConfig(true)}
+                        style={{ flex: 1, padding: "10px", borderRadius: 10, textAlign: "center", background: AMB + "15", border: `1px solid ${AMB}40`, fontSize: 12, fontWeight: 700, color: AMB, cursor: "pointer" }}>
+                        ✏️ Modifica configurazione
+                      </div>
+                      <div onClick={() => updV({ infissoConfig: null })}
+                        style={{ padding: "10px 14px", borderRadius: 10, textAlign: "center", background: RED + "10", border: `1px solid ${RED}30`, fontSize: 12, fontWeight: 700, color: RED, cursor: "pointer" }}>
+                        🗑
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div onClick={() => setShowConfig(true)}
+                    style={{ marginTop: 8, padding: "40px 20px", borderRadius: 14, border: `2px dashed ${AMB}50`, textAlign: "center", cursor: "pointer", background: AMB + "05" }}>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}>📐</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: AMB }}>Apri configuratore infisso</div>
+                    <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Scegli tipologia, misure, campiture, accessori</div>
+                  </div>
+                )}
+                <div style={{ marginTop: 10 }}>
+                  <SectionLabel>📝 Note vano</SectionLabel>
+                  <textarea value={vano.prevNote || ""} onChange={e => updV({ prevNote: e.target.value })}
+                    placeholder="Note specifiche per questo vano..."
+                    style={{ ...inputStyle, minHeight: 70, resize: "vertical", lineHeight: 1.5 }} />
                 </div>
               </div>
             )}
-          </div>
 
-          {/* ── POSA semplificata ── */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-            <div>
-              <div style={lbl}>Posa</div>
-              <select value={vano.prevPosa || "Inclusa"} onChange={e => updV({ prevPosa: e.target.value })} style={inputSm}>
-                <option>Inclusa</option><option>A parte</option><option>Non prevista</option>
-              </select>
-            </div>
-            <div>
-              <div style={lbl}>Smontaggio</div>
-              <select value={vano.prevSmDes || "Non richiesto"} onChange={e => updV({ prevSmDes: e.target.value })} style={inputSm}>
-                <option>Non richiesto</option><option>Incluso</option><option>A parte</option>
-              </select>
-            </div>
-            <div>
-              <div style={lbl}>€ posa</div>
-              <input type="number" value={posaPrezzo || ""} placeholder="0"
-                onChange={e => updV({ prevPosaPrezzo: Number(e.target.value) })}
-                style={inputSm} />
-            </div>
-          </div>
-
-          {/* ── ACCESSORI catalogo se presenti ── */}
-          {(vano.accessoriCatalogo?.length || 0) > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ ...lbl, marginBottom: 6 }}>Accessori catalogo ({vano.accessoriCatalogo.length})</div>
-              {vano.accessoriCatalogo.map((a: any, ai: number) => (
-                <div key={ai} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: `1px solid ${T.bdr}` }}>
-                  <span style={{ flex: 1, fontSize: 12, color: T.text }}>{a.nome}</span>
-                  <span style={{ fontSize: 11, color: T.sub }}>×{a.quantita}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: ACC_COLOR, fontFamily: "monospace" }}>€{fmt((a.prezzoUnitario || 0) * (a.quantita || 1))}</span>
-                  <div onClick={() => updV({ accessoriCatalogo: vano.accessoriCatalogo.filter((_: any, i: number) => i !== ai) })}
-                    style={{ color: RED, fontWeight: 800, cursor: "pointer", padding: "2px 6px" }}>×</div>
+            {/* ══ TAB: ACCESSORI ══ */}
+            {innerTab === "accessori" && (
+              <div style={{ marginTop: 12 }}>
+                <AccessoriCatalogoSection vano={vano} updV={updV} T={T} />
+                {/* Voci libere */}
+                <div style={{ marginTop: 14 }}>
+                  <SectionLabel>➕ Voci libere vano</SectionLabel>
+                  {(vano.vociLibere || []).map((vl: any, vi: number) => (
+                    <div key={vi} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+                      <input value={vl.desc || ""} placeholder="Descrizione voce..."
+                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], desc: e.target.value }; updV({ vociLibere: nl }); }}
+                        style={{ ...inputStyle, flex: 2 }} />
+                      <input type="number" value={vl.qta || ""} placeholder="Qta"
+                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], qta: Number(e.target.value) }; updV({ vociLibere: nl }); }}
+                        style={{ ...inputStyle, width: 54 }} />
+                      <input type="number" value={vl.prezzo || ""} placeholder="€"
+                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], prezzo: Number(e.target.value) }; updV({ vociLibere: nl }); }}
+                        style={{ ...inputStyle, width: 70 }} />
+                      <div style={{ fontSize: 11, fontWeight: 800, color: GRN, fontFamily: FM, minWidth: 50, textAlign: "right" }}>€{fmt((vl.prezzo || 0) * (vl.qta || 1))}</div>
+                      <div onClick={() => { const nl = (vano.vociLibere || []).filter((_: any, i: number) => i !== vi); updV({ vociLibere: nl }); }}
+                        style={{ padding: "4px 6px", cursor: "pointer", color: RED, fontSize: 14, fontWeight: 800 }}>×</div>
+                    </div>
+                  ))}
+                  <div onClick={() => updV({ vociLibere: [...(vano.vociLibere || []), { desc: "", qta: 1, prezzo: 0 }] })}
+                    style={{ padding: "8px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 11, color: T.sub, marginTop: 2 }}>
+                    + Aggiungi voce
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            )}
 
-          {/* ── TOTALE VANO ── */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderRadius: 12, background: "#1A9E7308", border: `1px solid #1A9E7320` }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: T.sub }}>Totale vano</span>
-            <span style={{ fontSize: 18, fontWeight: 900, color: "#1A9E73", fontFamily: "monospace" }}>€{fmt(subtotale)}</span>
+            {/* ── SUBTOTALE VANO — sempre visibile ── */}
+            <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: GRN + "08", border: `1px solid ${GRN}20`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>Totale vano</span>
+              <span style={{ fontSize: 16, fontWeight: 900, color: GRN, fontFamily: FM }}>€{fmt(subtotale)}</span>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }
-
 
 // ═══════════════════════════════════════════════════════
 // COMPONENTE PRINCIPALE
@@ -730,19 +776,6 @@ export default function PreventivoConfiguratoreTab() {
   const c = selectedCM;
 
   const [vanoInConfig, setVanoInConfig] = useState<any>(null);
-
-  // Apre il configuratore fullscreen per un vano
-  const apriConfiguratoreVano = (vano: any) => setVanoInConfig(vano);
-
-  // Salva il vano dal configuratore
-  const salvaVanoConfigurato = (patch: any) => {
-    if (!vanoInConfig) return;
-    const newVani = (c.vani || []).map((v: any) =>
-      v.id === vanoInConfig.id ? { ...v, ...patch } : v
-    );
-    updCM("vani", newVani);
-    setVanoInConfig(null);
-  };
 
   // ── Aggiorna commessa ──
   const updCM = useCallback((field: string, val: any) => {
@@ -789,7 +822,13 @@ export default function PreventivoConfiguratoreTab() {
       {vanoInConfig && (
         <VanoConfiguratoreFullscreen
           vano={vanoInConfig}
-          onSalva={salvaVanoConfigurato}
+          onSalva={(patch: any) => {
+            const newVani = (c.vani || []).map((v: any) =>
+              v.id === vanoInConfig.id ? { ...v, ...patch } : v
+            );
+            updCM("vani", newVani);
+            setVanoInConfig(null);
+          }}
           onChiudi={() => setVanoInConfig(null)}
           T={T}
         />
@@ -851,8 +890,7 @@ export default function PreventivoConfiguratoreTab() {
       {/* Aggiungi vano */}
       <div onClick={() => {
         const newV = { id: Date.now(), nome: `Vano ${vani.length + 1}`, tipo: "F2A", pezzi: 1, misure: {}, accessori: { tapparella: { attivo: false }, zanzariera: { attivo: false } }, accessoriCatalogo: [], vociLibere: [] };
-        const newVani = [...(c.vani || []), newV];
-        updCM("vani", newVani);
+        updCM("vani", [...(c.vani || []), newV]);
         setVanoInConfig(newV);
       }} style={{ padding: "14px", borderRadius: 14, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.sub, marginBottom: 10, background: T.card }}>
         + Aggiungi vano
@@ -939,5 +977,6 @@ export default function PreventivoConfiguratoreTab() {
         )}
       </div>
     </div>
+    </>
   );
 }
