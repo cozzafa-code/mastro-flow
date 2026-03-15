@@ -55,6 +55,9 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
   const [snap, setSnapState] = useState({ grid: false, angle: true, obj: false });
   const [calibrated, setCalibrated] = useState(false);
   const [showCalibModal, setShowCalibModal] = useState(false);
+  // Doppio tap: primo tap = mirino pendente, secondo tap = conferma
+  const pendingPt = useRef<{sx:number,sy:number}|null>(null);
+  const pendingTimer = useRef<any>(null);
   const [calibStep, setCalibStep] = useState<"intro"|"draw"|"input">("intro");
   const [calibInputMm, setCalibInputMm] = useState("1000");
   const [misureEstratte, setMisureEstratte] = useState<{L:number,H:number}|null>(null);
@@ -88,19 +91,49 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
       if (!touch) return;
       const rect = cvs.getBoundingClientRect();
       const sx = touch.clientX - rect.left;
-      // Fat finger offset: il punto appare 40px sopra il dito
-      const sy = touch.clientY - rect.top - 40;
-      handleCanvasTap(sx, sy);
+      const sy = touch.clientY - rect.top;
+
+      // Se c'è già un punto pendente vicino → CONFERMA
+      if (pendingPt.current) {
+        const dx = sx - pendingPt.current.sx;
+        const dy = sy - pendingPt.current.sy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 80) {
+          // Secondo tap vicino → conferma il punto pendente
+          clearTimeout(pendingTimer.current);
+          const confirmed = pendingPt.current;
+          pendingPt.current = null;
+          S.current.hoverMm = null;
+          handleCanvasTap(confirmed.sx, confirmed.sy);
+          draw();
+          return;
+        }
+      }
+
+      // Primo tap → mostra mirino pendente
+      if (pendingTimer.current) clearTimeout(pendingTimer.current);
+      pendingPt.current = { sx, sy };
+      // Aggiorna crosshair nella posizione del mirino
+      const raw = s2m(sx, sy);
+      const prev = S.current.pts.length > 0 ? S.current.pts[S.current.pts.length-1] : null;
+      S.current.hoverMm = applySnap(raw.x, raw.y, prev);
+      drawWithPending(sx, sy);
+      // Auto-annulla dopo 3 secondi senza secondo tap
+      pendingTimer.current = setTimeout(() => {
+        pendingPt.current = null;
+        draw();
+      }, 3000);
     };
 
     // Touch move — aggiorna crosshair
     const handleTouchMove2 = (e: TouchEvent) => {
       e.preventDefault();
+      if (pendingPt.current) return; // non aggiornare hover se c'è punto pendente
       const touch = e.touches[0];
       if (!touch) return;
       const rect = cvs.getBoundingClientRect();
       const sx = touch.clientX - rect.left;
-      const sy = touch.clientY - rect.top - 40; // fat finger offset
+      const sy = touch.clientY - rect.top;
       const raw = s2m(sx, sy);
       const prev = S.current.pts.length > 0 ? S.current.pts[S.current.pts.length-1] : null;
       S.current.hoverMm = applySnap(raw.x, raw.y, prev);
@@ -160,6 +193,54 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
   // ══════════════════════════════════════════════════════
   // DRAW
   // ══════════════════════════════════════════════════════
+  // Disegna con mirino pendente sovrapposto
+  function drawWithPending(sx: number, sy: number) {
+    draw();
+    const cvs = canvasRef.current;
+    if (!cvs) return;
+    const ctx = cvs.getContext("2d")!;
+    const isTecnico = S.current.mode === "tecnico";
+
+    // Cerchio grande semitrasparente attorno al punto
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 36, 0, Math.PI * 2);
+    ctx.fillStyle = AMB;
+    ctx.fill();
+    ctx.restore();
+
+    // Mirino a croce sopra il dito
+    ctx.strokeStyle = AMB;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([]);
+    // Linea orizzontale
+    ctx.beginPath();
+    ctx.moveTo(sx - 28, sy);
+    ctx.lineTo(sx + 28, sy);
+    ctx.stroke();
+    // Linea verticale
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - 28);
+    ctx.lineTo(sx, sy + 28);
+    ctx.stroke();
+    // Cerchio centrale
+    ctx.beginPath();
+    ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+    ctx.fillStyle = AMB;
+    ctx.fill();
+
+    // Label "Tocca di nuovo per confermare"
+    ctx.fillStyle = AMB;
+    ctx.font = `bold ${12 * S.current.zoom}px system-ui`;
+    ctx.textAlign = "center";
+    const labelY = sy - 42;
+    ctx.fillStyle = "#0a0c10cc";
+    ctx.fillRect(sx - 80, labelY - 14, 160, 20);
+    ctx.fillStyle = AMB;
+    ctx.fillText("Tocca di nuovo per confermare", sx, labelY);
+  }
+
   const draw = useCallback(() => {
     const cvs = canvasRef.current;
     if (!cvs) return;
@@ -171,7 +252,11 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
     ctx.fillStyle = m === "tecnico" ? "#ffffff" : "#1a1c22";
     ctx.fillRect(0,0,W,H);
 
-    // Punti calibrazione in corso
+    // ── DRAW CON MIRINO PENDENTE ──
+    // Disegna un mirino grande e visibile nella posizione del primo tap
+    // così l'utente vede esattamente dove andrà il punto PRIMA di confermare
+
+    // ── PUNTI CALIBRAZIONE IN CORSO
     if (S.current.calibMode && S.current.calibPts.length > 0) {
       S.current.calibPts.forEach((p: any) => {
         const s = m2s(p.x, p.y);
