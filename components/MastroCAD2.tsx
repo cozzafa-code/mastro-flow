@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO CAD v2 — Motore Parametrico Gerarchico
@@ -1035,7 +1035,7 @@ export default function MastroCAD2({
           {id:"sel",l:"↖ Sel",dis:false},
         ].map(t=>(
           <button key={t.id}
-            onClick={()=>!t.dis&&setTool(t.id as any)}
+            onClick={()=>!t.dis&&setTool(t.id==="anta"?"disegna":t.id as any)}
             style={{
               padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600,
               cursor:t.dis?"not-allowed":"pointer",border:`1px solid ${tool===t.id?AMB:isTec?"#ccc":"#333"}`,
