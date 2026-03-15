@@ -619,7 +619,14 @@ export default function MastroCAD2({
     } else if (tool === "traverso" && infisso) {
       addTraverso(sy);
     } else if (tool === "anta" && infisso) {
-      cycleAnta(sx, sy);
+      const { x,y,w,h } = infisso.telaio;
+      const s2 = SCALE.current * vp.current.zoom;
+      const ps2 = mm2s(x,y);
+      if (sx>=ps2.x && sx<=ps2.x+w*s2 && sy>=ps2.y && sy<=ps2.y+h*s2) {
+        const nCorrente = infisso.montanti.length + 1;
+        const nNuovo = nCorrente >= 6 ? 1 : nCorrente + 1;
+        dividiInAnte(nNuovo);
+      }
     } else if (tool === "sel") {
       handleSel(sx, sy);
     }
@@ -1038,7 +1045,7 @@ export default function MastroCAD2({
           {id:"sel",l:"↖ Sel",dis:false},
         ].map(t=>(
           <button key={t.id}
-            onClick={()=>!t.dis&&setTool(t.id==="anta"?"disegna":t.id as any)}
+            onClick={()=>!t.dis&&setTool(t.id as any)}
             style={{
               padding:"5px 10px",borderRadius:7,fontSize:11,fontWeight:600,
               cursor:t.dis?"not-allowed":"pointer",border:`1px solid ${tool===t.id?AMB:isTec?"#ccc":"#333"}`,
