@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// MASTRO ERP â€” VanoDetailPanel
+// ═══════════════════════════════════════════════════════════
+// MASTRO ERP — VanoDetailPanel
 // Estratto S4: ~1.505 righe (Dettaglio vano + misure + disegno + accessori)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
@@ -51,9 +51,9 @@ export default function VanoDetailPanel() {
   } = useMastro();
 
   const STEPS = [
-    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "ðŸ“" },
-    { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: "âš™" },
-    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#34c759", icon: "ðŸ“‹" },
+    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "📏" },
+    { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: "⚙" },
+    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#34c759", icon: "📋" },
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
@@ -64,7 +64,7 @@ export default function VanoDetailPanel() {
   const sectionRefs = useRef<Record<string,HTMLDivElement|null>>({});
   const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","finiture","controtelaio"];
   const flashAndAdvance = (secId: string) => {
-    console.log("ðŸ”¥ FLASH:", secId);
+    console.log("🔥 FLASH:", secId);
     setCompletedSecs(prev => new Set([...prev, secId]));
     setFlashSec(secId);
     setTimeout(() => {
@@ -82,7 +82,7 @@ export default function VanoDetailPanel() {
     }, 450);
   };
 
-  // â•â•â• VOICE RECOGNITION â€” Self-contained implementation â•â•â•
+  // ═══ VOICE RECOGNITION — Self-contained implementation ═══
   const [vrActive, setVrActive] = useState(false);
   const [vrTranscripts, setVrTranscripts] = useState<{text:string,time:string,parsed?:Record<string,any>}[]>([]);
   const [vrInterim, setVrInterim] = useState("");
@@ -225,7 +225,7 @@ export default function VanoDetailPanel() {
     const mid = selectedVano.id;
     const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     const parsedKeys = Object.keys(parsed);
-    const prefix = parsedKeys.length > 0 ? "ðŸŽ¤" : "ðŸŽ¤ðŸ’¬";
+    const prefix = parsedKeys.length > 0 ? "🎤" : "🎤💬";
     const newNote = `${prefix} [${time}] ${text}`;
     const existing = selectedVano.note || "";
     const updatedNote = existing ? `${existing}\n${newNote}` : newNote;
@@ -243,7 +243,7 @@ export default function VanoDetailPanel() {
     rec.onstart = () => { setVrActive(true); setVrError(""); };
     rec.onerror = (e: any) => {
       if (e.error === "not-allowed") setVrError("Microfono non autorizzato. Controlla i permessi del browser.");
-      else if (e.error === "no-speech") setVrError("Nessun audio rilevato. Parla piÃ¹ forte.");
+      else if (e.error === "no-speech") setVrError("Nessun audio rilevato. Parla più forte.");
       else setVrError(`Errore: ${e.error}`);
     };
     rec.onend = () => {
@@ -295,7 +295,7 @@ export default function VanoDetailPanel() {
     const m = v.misure || {};
     const step = STEPS[vanoStep];
     const filled = Object.values(m).filter(x => (x as number) > 0).length;
-    const TIPO_TIPS = { Scorrevole: { t: "Scorrevole (alzante/traslante)", dim: "2000 Ã— 2200 mm", w: ["Binario inferiore: serve spazio incasso", "Verifica portata parete"] }, Portafinestra: { t: "Portafinestra standard", dim: "800-900 Ã— 2200 mm", w: ["Soglia a taglio termico", "Verifica altezza architrave"] }, Finestra: { t: "Finestra", dim: "1200 Ã— 1400 mm", w: ["Verifica spazio per anta"] } };
+    const TIPO_TIPS = { Scorrevole: { t: "Scorrevole (alzante/traslante)", dim: "2000 × 2200 mm", w: ["Binario inferiore: serve spazio incasso", "Verifica portata parete"] }, Portafinestra: { t: "Portafinestra standard", dim: "800-900 × 2200 mm", w: ["Soglia a taglio termico", "Verifica altezza architrave"] }, Finestra: { t: "Finestra", dim: "1200 × 1400 mm", w: ["Verifica spazio per anta"] } };
     const tip = TIPO_TIPS[v.tipo] || null;
     const hasWarnings = !m.lAlto && !m.lCentro && !m.lBasso;
     const hasHWarnings = !m.hSx && !m.hCentro && !m.hDx;
@@ -353,32 +353,32 @@ export default function VanoDetailPanel() {
           <div onClick={() => { setSelectedVano(null); setVanoStep(0); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 700 }}>{v.nome}</div>
-            <div style={{ fontSize: 10, color: T.sub }}>{TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo} Â· {v.stanza} Â· {v.piano}</div>
+            <div style={{ fontSize: 10, color: T.sub }}>{TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo} · {v.stanza} · {v.piano}</div>
           </div>
           <div onClick={() => { setShowAIPhoto(true); setAiPhotoStep(0); }} style={{ padding: "5px 10px", borderRadius: 8, background: "linear-gradient(135deg, #af52de20, #007aff20)", border: "1px solid #af52de40", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 14 }}>ðŸ¤–</span>
+            <span style={{ fontSize: 14 }}>🤖</span>
             <span style={{ fontSize: 10, fontWeight: 700, color: "#af52de" }}>AI</span>
           </div>
         </div>
 
-        {/* â•â•â• STORICO: BANNER SOLA LETTURA â•â•â• */}
+        {/* ═══ STORICO: BANNER SOLA LETTURA ═══ */}
         {isStorico && (
           <div style={{ margin: "0 16px 8px", padding: "10px 14px", borderRadius: 10, background: "#5856d610", border: "1.5px solid #5856d630", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 16 }}>ðŸ”’</span>
+            <span style={{ fontSize: 16 }}>🔒</span>
             <div style={{ flex: 1, fontSize: 11, fontWeight: 700, color: "#5856d6" }}>
-              Rilievo storico â€” sola lettura
+              Rilievo storico — sola lettura
             </div>
           </div>
         )}
 
-        {/* â•â•â• VOCE AI SOPRALLUOGO â€” Self-contained â•â•â• */}
+        {/* ═══ VOCE AI SOPRALLUOGO — Self-contained ═══ */}
         <div style={{ margin: "8px 16px" }}>
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 20px", borderRadius: 16, background: vrActive ? "linear-gradient(135deg, #ff3b30, #ff6b6b)" : "linear-gradient(135deg, #D08008, #b86e00)", border: "none", cursor: "pointer", justifyContent: "center", boxShadow: vrActive ? "0 0 20px rgba(255,59,48,0.4)" : "0 2px 8px rgba(208,128,8,0.3)" }}>
-            <span style={{ fontSize: 22 }}>{vrActive ? "â¹" : "ðŸŽ™ï¸"}</span>
+            <span style={{ fontSize: 22 }}>{vrActive ? "⏹" : "🎙️"}</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>
-              {vrActive ? "âº STOP REGISTRAZIONE" : "ðŸŽ™ï¸ Avvia Dettatura"}
+              {vrActive ? "⏺ STOP REGISTRAZIONE" : "🎙️ Avvia Dettatura"}
             </span>
             {vrActive && <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff", animation: "pulse 1s infinite" }} />}
           </div>
@@ -387,21 +387,21 @@ export default function VanoDetailPanel() {
           {/* Error */}
           {vrError && (
             <div style={{ marginTop: 6, padding: "6px 12px", borderRadius: 8, background: "#ffebee", border: "1px solid #ef9a9a", fontSize: 10, color: "#c62828", textAlign: "center" }}>
-              âš ï¸ {vrError}
+              ⚠️ {vrError}
             </div>
           )}
 
           {/* Hint when active */}
           {vrActive && (
             <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 8, background: "#ff3b3008", border: "1px dashed #ff3b3040", fontSize: 9, color: "#666", textAlign: "center", lineHeight: 1.6 }}>
-              ðŸ”´ <b>Parla ora</b> â€” Es: "Finestra due ante, soggiorno, piano terra, larghezza 1400, altezza 1200, tapparella motorizzata, bicolore bianco grigio"
+              🔴 <b>Parla ora</b> — Es: "Finestra due ante, soggiorno, piano terra, larghezza 1400, altezza 1200, tapparella motorizzata, bicolore bianco grigio"
             </div>
           )}
 
           {/* Interim (live) */}
           {vrActive && vrInterim && (
             <div style={{ marginTop: 6, padding: "8px 12px", borderRadius: 8, background: "#fff8e1", border: "1px solid #ffe082", fontSize: 12, color: "#f57f17", fontStyle: "italic" }}>
-              ðŸŽ¤ {vrInterim}...
+              🎤 {vrInterim}...
             </div>
           )}
 
@@ -409,8 +409,8 @@ export default function VanoDetailPanel() {
           {vrTranscripts.length > 0 && (
             <div style={{ marginTop: 8, borderRadius: 10, border: `1px solid ${T.bdr}`, overflow: "hidden", maxHeight: 200, overflowY: "auto" }}>
               <div style={{ padding: "4px 10px", background: T.acc + "10", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 9, fontWeight: 800, color: T.acc, textTransform: "uppercase" }}>ðŸ“ Trascrizioni ({vrTranscripts.length})</span>
-                <span onClick={() => setVrTranscripts([])} style={{ fontSize: 9, color: T.red, cursor: "pointer", fontWeight: 700 }}>ðŸ—‘ Pulisci</span>
+                <span style={{ fontSize: 9, fontWeight: 800, color: T.acc, textTransform: "uppercase" }}>📝 Trascrizioni ({vrTranscripts.length})</span>
+                <span onClick={() => setVrTranscripts([])} style={{ fontSize: 9, color: T.red, cursor: "pointer", fontWeight: 700 }}>🗑 Pulisci</span>
               </div>
               {vrTranscripts.map((tr, i) => (
                 <div key={i} style={{ padding: "6px 10px", borderTop: `1px solid ${T.bdr}`, fontSize: 11 }}>
@@ -422,13 +422,13 @@ export default function VanoDetailPanel() {
                     <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginTop: 2 }}>
                       {Object.entries(tr.parsed).map(([k, val]) => (
                         <span key={k} style={{ padding: "1px 5px", borderRadius: 4, background: T.grn + "18", fontSize: 8, fontWeight: 700, color: T.grn }}>
-                          âœ“ {k}: {String(val)}
+                          ✓ {k}: {String(val)}
                         </span>
                       ))}
                     </div>
                   )}
                   {tr.parsed && Object.keys(tr.parsed).length === 0 && (
-                    <div style={{ fontSize: 8, color: T.orange, fontWeight: 600, marginTop: 1 }}>âš  Nessun campo riconosciuto â€” salvata come nota</div>
+                    <div style={{ fontSize: 8, color: T.orange, fontWeight: 600, marginTop: 1 }}>⚠ Nessun campo riconosciuto — salvata come nota</div>
                   )}
                 </div>
               ))}
@@ -436,7 +436,7 @@ export default function VanoDetailPanel() {
           )}
         </div>
 
-        {/* == INFO VANO â€” fisarmoniche (solo step 0) == */}
+        {/* == INFO VANO — fisarmoniche (solo step 0) == */}
         {vanoStep === 0 && (() => {
           const updateV = (field, val) => {
             const updRil = selectedRilievo ? { ...selectedRilievo, vani: selectedRilievo.vani.map(vn => vn.id === v.id ? { ...vn, [field]: val } : vn) } : null;
@@ -451,11 +451,11 @@ export default function VanoDetailPanel() {
           const coloriRAL = ["RAL 9010","RAL 9016","RAL 9001","RAL 7016","RAL 7021","RAL 8014","RAL 8016","RAL 1013","Altro"];
 
           const sections = [
-            { id:"accesso", icon:"ðŸ—", label:"Accesso / DifficoltÃ ",
+            { id:"accesso", icon:"🏗", label:"Accesso / Difficoltà",
               badge: v.difficoltaSalita||null, filled: [v.difficoltaSalita, v.mezzoSalita].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:4}}>
-                  {[{id:"facile",l:"Facile",c:T.grn,e:"âœ…"},{id:"media",l:"Media",c:T.orange,e:"âš ï¸"},{id:"difficile",l:"Difficile",c:T.red,e:"ðŸ”´"}].map(d=>(
+                  {[{id:"facile",l:"Facile",c:T.grn,e:"✅"},{id:"media",l:"Media",c:T.orange,e:"⚠️"},{id:"difficile",l:"Difficile",c:T.red,e:"🔴"}].map(d=>(
                     <div key={d.id} onClick={()=>{updateV("difficoltaSalita",d.id);}}
                       style={{flex:1,padding:"7px 4px",borderRadius:8,border:`1.5px solid ${v.difficoltaSalita===d.id?d.c:T.bdr}`,background:v.difficoltaSalita===d.id?d.c+"15":T.card,textAlign:"center",cursor:"pointer"}}>
                       <div style={{fontSize:13}}>{d.e}</div>
@@ -474,7 +474,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"tipologia", icon:"ðŸªŸ", label:"Tipologia",
+            { id:"tipologia", icon:"🪟", label:"Tipologia",
               badge: v.tipo||null, filled: v.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:2,borderBottom:`1px solid ${T.bdr}`,paddingBottom:0,marginBottom:4}}>
@@ -487,7 +487,7 @@ export default function VanoDetailPanel() {
                 </div>
                 <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
                   {tipologieFiltrate.filter(t=>t.cat===tipCat).map(t=>(
-                    <div key={t.code} onClick={()=>{console.log("ðŸªŸ TIPO TAP:",t.code);updateV("tipo",t.code);flashAndAdvance("tipologia");}}
+                    <div key={t.code} onClick={()=>{console.log("🪟 TIPO TAP:",t.code);updateV("tipo",t.code);flashAndAdvance("tipologia");}}
                       style={{padding:"7px 10px",borderRadius:10,border:`1.5px solid ${v.tipo===t.code?T.acc:T.bdr}`,background:v.tipo===t.code?T.accLt:T.card,fontSize:11,fontWeight:700,color:v.tipo===t.code?T.acc:T.text,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
                       {t.icon} {t.code}
                     </div>
@@ -495,8 +495,8 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"posizione", icon:"ðŸ ", label:"Stanza / Piano",
-              badge: v.stanza?`${v.stanza} Â· ${v.piano}`:null, filled: [v.stanza, v.piano].filter(Boolean).length, total: 2,
+            { id:"posizione", icon:"🏠", label:"Stanza / Piano",
+              badge: v.stanza?`${v.stanza} · ${v.piano}`:null, filled: [v.stanza, v.piano].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px"}}>STANZA</div>
@@ -523,15 +523,15 @@ export default function VanoDetailPanel() {
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>PEZZI</div>
                   <div style={{display:"flex",alignItems:"center",gap:4,maxWidth:120}}>
-                    <div onClick={()=>updateV("pezzi",Math.max(1,(v.pezzi||1)-1))} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>âˆ’</div>
+                    <div onClick={()=>updateV("pezzi",Math.max(1,(v.pezzi||1)-1))} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>−</div>
                     <div style={{flex:1,textAlign:"center",fontSize:18,fontWeight:800,color:T.acc}}>{v.pezzi||1}</div>
                     <div onClick={()=>updateV("pezzi",(v.pezzi||1)+1)} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>+</div>
                   </div>
                 </div>
               </div>
             },
-            { id:"sistema", icon:"âš™ï¸", label:"Sistema / Vetro",
-              badge: v.sistema?v.sistema.split(" ").slice(0,2).join(" Â· "):null, filled: [v.sistema, v.vetro].filter(Boolean).length, total: 2,
+            { id:"sistema", icon:"⚙️", label:"Sistema / Vetro",
+              badge: v.sistema?v.sistema.split(" ").slice(0,2).join(" · "):null, filled: [v.sistema, v.vetro].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px"}}>SISTEMA PROFILI</div>
@@ -561,16 +561,16 @@ export default function VanoDetailPanel() {
                   </div>
                 </div>
               </div>},
-            { id:"colori", icon:"ðŸŽ¨", label:"Colori profili",
+            { id:"colori", icon:"🎨", label:"Colori profili",
               badge: v.coloreInt||null, filled: [v.coloreInt, v.bicolore && v.coloreEst, v.coloreAcc].filter(Boolean).length, total: v.bicolore ? 3 : 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                {!v.sistema && <div style={{padding:"14px",textAlign:"center",color:T.sub,fontSize:12,background:T.bg,borderRadius:10,border:"1px dashed "+T.bdr}}>âš ï¸ Scegli prima il sistema profili</div>}
+                {!v.sistema && <div style={{padding:"14px",textAlign:"center",color:T.sub,fontSize:12,background:T.bg,borderRadius:10,border:"1px dashed "+T.bdr}}>⚠️ Scegli prima il sistema profili</div>}
                 {v.sistema && <>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub}}>COLORE {v.bicolore?"INTERNO":"PROFILI"}</div>
                   <div onClick={()=>updateV("bicolore",!v.bicolore)}
                     style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:v.bicolore?T.accLt:"transparent",border:"1px solid "+(v.bicolore?T.acc:T.bdr),color:v.bicolore?T.acc:T.sub,cursor:"pointer",fontWeight:600}}>
-                    Bicolore {v.bicolore?"âœ“":""}
+                    Bicolore {v.bicolore?"✓":""}
                   </div>
                 </div>
                 <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
@@ -599,14 +599,14 @@ export default function VanoDetailPanel() {
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>ACCESSORI</div>
                   <select style={S.select} value={v.coloreAcc||""} onChange={e=>updateV("coloreAcc",e.target.value)}>
-                    <option value="">â€” Come profili â€”</option>
-                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} â€” {c.nome}</option>)}
+                    <option value="">— Come profili —</option>
+                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                   </select>
                 </div>
                 </>}
               </div>
             },
-            { id:"telaio", icon:"ðŸ“", label:"Telaio / Rifilato",
+            { id:"telaio", icon:"📐", label:"Telaio / Rifilato",
               badge: v.telaio?(v.telaio==="Z"?"Telaio Z":"Telaio L"):(v.rifilato?"Rifilato":null), filled: [v.telaio, v.rifilato, v.telaioAlaZ].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:6}}>
@@ -629,15 +629,15 @@ export default function VanoDetailPanel() {
                   <span style={{fontSize:12,fontWeight:600,color:T.text}}>Rifilato</span>
                 </div>
                 {v.rifilato && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                  {[["rifilSx","â†™ Sx"],["rifilDx","â†˜ Dx"],["rifilSopra","â†‘ Sopra"],["rifilSotto","â†“ Sotto"]].map(([f,l])=>(
+                  {[["rifilSx","↙ Sx"],["rifilDx","↘ Dx"],["rifilSopra","↑ Sopra"],["rifilSotto","↓ Sotto"]].map(([f,l])=>(
                     <div key={f}><div style={{fontSize:9,color:T.sub,fontWeight:600,marginBottom:2}}>{l} (mm)</div>
                     <input style={S.input} type="number" inputMode="numeric" placeholder="0" value={v[f]||""} onChange={e=>updateV(f,e.target.value)}/></div>
                   ))}
                 </div>}
               </div>
             },
-            { id:"finiture", icon:"ðŸ”©", label:"Coprifilo / Lamiera",
-              badge: (v.coprifilo||v.lamiera)?"âœ“":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
+            { id:"finiture", icon:"🔩", label:"Coprifilo / Lamiera",
+              badge: (v.coprifilo||v.lamiera)?"✓":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase"}}>COPRIFILO</div>
@@ -666,7 +666,7 @@ export default function VanoDetailPanel() {
                   </div>
                 </div>
               </div>},
-            { id:"controtelaio", icon:"ðŸ”²", label:"Controtelaio",
+            { id:"controtelaio", icon:"🔲", label:"Controtelaio",
               badge: v.controtelaio?.tipo ? (v.controtelaio.tipo==="singolo"?"Singolo":v.controtelaio.tipo==="doppio"?"Doppio":"Con cassonetto") : null, filled: v.controtelaio?.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:2}}>TIPO CONTROTELAIO</div>
@@ -685,9 +685,9 @@ export default function VanoDetailPanel() {
                     <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>ALTEZZA</div>
                       <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.h||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,h:parseInt(e.target.value)||0})}/></div>
                   </div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>PROFONDITÃ€</div>
+                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>PROFONDITÀ</div>
                     <select style={S.select} value={v.controtelaio?.prof||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,prof:e.target.value})}>
-                      <option value="">â€” Seleziona â€”</option>
+                      <option value="">— Seleziona —</option>
                       {ctProfDB.map(p=><option key={p.id} value={p.code}>{p.code} mm</option>)}
                     </select></div>
                   {v.controtelaio?.l > 0 && v.controtelaio?.h > 0 && (
@@ -698,8 +698,8 @@ export default function VanoDetailPanel() {
                       updateMisureBatch(v.id, { lAlto: cl, lCentro: cl, lBasso: cl });
                       updateMisureBatch(v.id, { hSx: ch, hCentro: ch, hDx: ch });
                     }} style={{padding:"10px",borderRadius:10,background:"#2563eb15",border:"1.5px solid #2563eb40",textAlign:"center",cursor:"pointer"}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#2563eb"}}>âš¡ Calcola infisso (offset âˆ’{ctOffset}mm/lato)</div>
-                      <div style={{fontSize:10,color:"#2563eb80",marginTop:2}}>{v.controtelaio.l-ctOffset*2} Ã— {v.controtelaio.h-ctOffset*2} mm</div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#2563eb"}}>⚡ Calcola infisso (offset −{ctOffset}mm/lato)</div>
+                      <div style={{fontSize:10,color:"#2563eb80",marginTop:2}}>{v.controtelaio.l-ctOffset*2} × {v.controtelaio.h-ctOffset*2} mm</div>
                     </div>
                   )}
                 </>}
@@ -712,12 +712,12 @@ export default function VanoDetailPanel() {
                   </div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE INTERNA (infisso interno)</div>
                     <select style={S.select} value={v.controtelaio?.sezInt||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezInt:e.target.value})}>
-                      <option value="">â€” Seleziona â€”</option>
+                      <option value="">— Seleziona —</option>
                       {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
                     </select></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE ESTERNA (infisso esterno)</div>
                     <select style={S.select} value={v.controtelaio?.sezEst||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezEst:e.target.value})}>
-                      <option value="">â€” Seleziona â€”</option>
+                      <option value="">— Seleziona —</option>
                       {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
                     </select></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>DISTANZIALE</div>
@@ -730,8 +730,8 @@ export default function VanoDetailPanel() {
                       updateMisureBatch(v.id, { lAlto: cl, lCentro: cl, lBasso: cl });
                       updateMisureBatch(v.id, { hSx: ch, hCentro: ch, hDx: ch });
                     }} style={{padding:"10px",borderRadius:10,background:"#7c3aed15",border:"1.5px solid #7c3aed40",textAlign:"center",cursor:"pointer"}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>âš¡ Calcola infisso (offset âˆ’{ctOffset}mm/lato)</div>
-                      <div style={{fontSize:10,color:"#7c3aed80",marginTop:2}}>{v.controtelaio.l-ctOffset*2} Ã— {v.controtelaio.h-ctOffset*2} mm</div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}>⚡ Calcola infisso (offset −{ctOffset}mm/lato)</div>
+                      <div style={{fontSize:10,color:"#7c3aed80",marginTop:2}}>{v.controtelaio.l-ctOffset*2} × {v.controtelaio.h-ctOffset*2} mm</div>
                     </div>
                   )}
                 </>}
@@ -753,14 +753,14 @@ export default function VanoDetailPanel() {
                   </div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE CONTROTELAIO</div>
                     <select style={S.select} value={v.controtelaio?.sezione||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezione:e.target.value})}>
-                      <option value="">â€” Seleziona â€”</option>
+                      <option value="">— Seleziona —</option>
                       {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
                     </select></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SPALLA CONTROTELAIO</div>
                     <input style={S.input} type="text" placeholder="es. 120mm" value={v.controtelaio?.spalla||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,spalla:e.target.value})}/></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>MODELLO CIELINO</div>
                     <select style={S.select} value={v.controtelaio?.cielino||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,cielino:e.target.value})}>
-                      <option value="">â€” Seleziona â€”</option>
+                      <option value="">— Seleziona —</option>
                       {ctCieliniDB.map(c=><option key={c.id} value={c.code}>{c.code}</option>)}
                     </select></div>
                   {v.controtelaio?.l > 0 && v.controtelaio?.h > 0 && (
@@ -771,8 +771,8 @@ export default function VanoDetailPanel() {
                       updateMisureBatch(v.id, { lAlto: cl, lCentro: cl, lBasso: cl });
                       updateMisura(v.id,"hSx",hInf); updateMisura(v.id,"hCentro",hInf); updateMisura(v.id,"hDx",hInf);
                     }} style={{padding:"10px",borderRadius:10,background:"#b4530915",border:"1.5px solid #b4530940",textAlign:"center",cursor:"pointer"}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#b45309"}}>âš¡ Calcola infisso (offset âˆ’{ctOffset}mm/lato)</div>
-                      <div style={{fontSize:10,color:"#b4530980",marginTop:2}}>L: {v.controtelaio.l-ctOffset*2} Â· H: {v.controtelaio.h-(v.controtelaio.hCass||0)-ctOffset*2} mm</div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#b45309"}}>⚡ Calcola infisso (offset −{ctOffset}mm/lato)</div>
+                      <div style={{fontSize:10,color:"#b4530980",marginTop:2}}>L: {v.controtelaio.l-ctOffset*2} · H: {v.controtelaio.h-(v.controtelaio.hCass||0)-ctOffset*2} mm</div>
                     </div>
                   )}
                 </>}
@@ -781,7 +781,7 @@ export default function VanoDetailPanel() {
           ];
 
           // Build chip summary
-          const configChips = [v.tipo, v.stanza && v.piano ? v.stanza+" "+v.piano : "", v.sistema ? v.sistema.split(" ").slice(0,2).join(" Â· ") : "", v.coloreInt && v.coloreEst && v.bicolore ? v.coloreInt+"/"+v.coloreEst : v.coloreInt||"", v.vetro||""].filter(Boolean);
+          const configChips = [v.tipo, v.stanza && v.piano ? v.stanza+" "+v.piano : "", v.sistema ? v.sistema.split(" ").slice(0,2).join(" · ") : "", v.coloreInt && v.coloreEst && v.bicolore ? v.coloreInt+"/"+v.coloreEst : v.coloreInt||"", v.vetro||""].filter(Boolean);
           const prevVani = selectedRilievo ? selectedRilievo.vani.filter(vn => vn.id !== v.id && vn.tipo) : [];
           const handleClone = (src) => { ["tipo","stanza","piano","sistema","vetro","coloreInt","coloreEst","bicolore","coloreAcc","telaio","telaioAlaZ","rifilato","coprifilo","lamiera","controtelaio","difficoltaSalita","mezzoSalita"].forEach(f => { if(src[f]!==undefined&&src[f]!==null&&src[f]!=="") updateV(f,src[f]); }); };
 
@@ -800,8 +800,8 @@ export default function VanoDetailPanel() {
               {/* Chip riepilogo */}
               {configChips.length >= 2 && (
                 <div style={{display:"flex",alignItems:"center",gap:6,padding:"9px 12px",borderRadius:10,background:T.grn+"10",border:"1.5px solid "+T.grn+"30",marginBottom:8,flexWrap:"wrap"}}>
-                  <span style={{fontSize:12}}>âœ…</span>
-                  <span style={{fontSize:11,fontWeight:700,color:T.grn,fontFamily:FF}}>{configChips.join(" Â· ")}</span>
+                  <span style={{fontSize:12}}>✅</span>
+                  <span style={{fontSize:11,fontWeight:700,color:T.grn,fontFamily:FF}}>{configChips.join(" · ")}</span>
                 </div>
               )}
 
@@ -811,7 +811,7 @@ export default function VanoDetailPanel() {
                   <span style={{fontSize:10,fontWeight:700,color:T.sub,whiteSpace:"nowrap"}}>Clona:</span>
                   {prevVani.map(pv=>(
                     <div key={pv.id} onClick={()=>handleClone(pv)} style={{padding:"4px 10px",borderRadius:8,border:"1px dashed "+T.acc+"60",background:T.card,fontSize:10,fontWeight:600,color:T.acc,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                      {pv.tipo||"?"} {pv.stanza?"Â· "+pv.stanza:""}
+                      {pv.tipo||"?"} {pv.stanza?"· "+pv.stanza:""}
                     </div>
                   ))}
                 </div>
@@ -840,35 +840,35 @@ export default function VanoDetailPanel() {
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
                         {isDone && <span style={{width:8,height:8,borderRadius:"50%",background:T.grn,display:"inline-block"}} />}
                         {hasFill && !isDone && <span style={{fontSize:9,fontWeight:700,color:allFill?T.grn:T.orange}}>{sec.filled}/{sec.total}</span>}
-                        <span style={{fontSize:9,color:T.sub,display:"inline-block",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>â–¼</span>
+                        <span style={{fontSize:9,color:T.sub,display:"inline-block",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▼</span>
                       </div>
                     </div>
                     {isOpen && <div className="m-slide" style={{padding:"12px",background:T.bg,borderTop:"1px solid "+T.bdr}}>
                       {sec.body}
-                      {isOptional && <div onClick={()=>flashAndAdvance(sec.id)} style={{marginTop:8,padding:"8px",borderRadius:8,border:"1px dashed "+T.bdr,textAlign:"center",fontSize:11,color:T.sub,cursor:"pointer"}}>Salta â†’</div>}
+                      {isOptional && <div onClick={()=>flashAndAdvance(sec.id)} style={{marginTop:8,padding:"8px",borderRadius:8,border:"1px dashed "+T.bdr,textAlign:"center",fontSize:11,color:T.sub,cursor:"pointer"}}>Salta →</div>}
                     </div>}
                   </div>
                 );
               })}
             </div>
 
-            {/* â•â•â•â•â•â• STRUTTURE â•â•â•â•â•â• */}
+            {/* ══════ STRUTTURE ══════ */}
             <div style={{marginTop:8,borderRadius:10,border:"1px solid #3B7FE030",overflow:"hidden"}}>
               <div onClick={()=>setVanoInfoOpen(vanoInfoOpen==="strutture"?null:"strutture")}
                 style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",background:"rgba(59,127,224,0.05)",cursor:"pointer"}}>
-                <span style={{fontSize:14}}>ðŸ—ï¸</span>
+                <span style={{fontSize:14}}>🏗️</span>
                 <span style={{fontSize:12,fontWeight:600,color:vanoInfoOpen==="strutture"?"#3B7FE0":T.text}}>Strutture</span>
                 <span style={{fontSize:9,color:T.sub,fontStyle:"italic"}}>Pergole, Verande, Box</span>
-                <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="strutture"?"rotate(180deg)":"none",transition:"transform 0.15s"}}>â–¼</span>
+                <span style={{marginLeft:"auto",fontSize:9,color:T.sub,transform:vanoInfoOpen==="strutture"?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▼</span>
               </div>
               {vanoInfoOpen==="strutture" && (
                 <div style={{padding:12,background:T.bg,borderTop:"1px solid "+T.bdr}}>
                   <div style={{textAlign:"center",padding:"20px 10px"}}>
-                    <div style={{fontSize:36,marginBottom:8}}>ðŸ—ï¸</div>
+                    <div style={{fontSize:36,marginBottom:8}}>🏗️</div>
                     <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:4}}>Configuratore Strutture</div>
-                    <div style={{fontSize:11,color:T.sub}}>Pianta â†’ Lati â†’ 3D per Pergole, Verande, Box Doccia, Ferro</div>
+                    <div style={{fontSize:11,color:T.sub}}>Pianta → Lati → 3D per Pergole, Verande, Box Doccia, Ferro</div>
                     <div style={{marginTop:12,padding:"10px 14px",borderRadius:8,background:"#3B7FE010",border:"1px solid #3B7FE025",fontSize:11,color:"#3B7FE0",fontWeight:600}}>
-                      âœ… Sezione attiva â€” Configuratore in arrivo
+                      ✅ Sezione attiva — Configuratore in arrivo
                     </div>
                   </div>
                 </div>
@@ -899,15 +899,15 @@ export default function VanoDetailPanel() {
           {/* Warnings */}
           {vanoStep === 0 && (hasWarnings || hasHWarnings) && (
             <div style={{ padding: "8px 14px", borderRadius: 10, background: "#fff3e0", border: "1px solid #ffe0b2", marginBottom: 12, fontSize: 11, color: "#e65100" }}>
-              {hasWarnings && <div>âš  Nessuna larghezza inserita</div>}
-              {hasHWarnings && <div>âš  Nessuna altezza inserita</div>}
+              {hasWarnings && <div>⚠ Nessuna larghezza inserita</div>}
+              {hasHWarnings && <div>⚠ Nessuna altezza inserita</div>}
             </div>
           )}
 
           {/* === STEP 0: MISURE (larghezze + altezze + diagonali) === */}
           {vanoStep === 0 && (
             <>
-              {/* â•â•â• MISURE OUTDOOR: Tende / Pergole â•â•â• */}
+              {/* ═══ MISURE OUTDOOR: Tende / Pergole ═══ */}
               {(() => {
                 const outdoorCodes = ["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"];
                 if (!outdoorCodes.includes(v.tipo)) return null;
@@ -917,43 +917,43 @@ export default function VanoDetailPanel() {
                 return (
                   <div style={{ marginBottom:16 }}>
                     <div style={{ padding:"10px 14px", borderRadius:10, background:"#ff950010", border:"1px solid #ff950030", marginBottom:12 }}>
-                      <div style={{ fontSize:11, fontWeight:700, color:"#ff9500" }}>â˜€ï¸ Misure {isPergola ? "Pergola" : isBracci ? "Tenda a bracci" : isVela ? "Vela ombreggiante" : "Tenda/Schermatura"}</div>
-                      <div style={{ fontSize:10, color:T.sub, marginTop:2 }}>{isPergola ? "Larghezza Ã— ProfonditÃ  Ã— Altezza colonne" : isBracci ? "Larghezza telo Ã— Sporgenza (aggetto)" : "Larghezza Ã— Altezza (caduta)"}</div>
+                      <div style={{ fontSize:11, fontWeight:700, color:"#ff9500" }}>☀️ Misure {isPergola ? "Pergola" : isBracci ? "Tenda a bracci" : isVela ? "Vela ombreggiante" : "Tenda/Schermatura"}</div>
+                      <div style={{ fontSize:10, color:T.sub, marginTop:2 }}>{isPergola ? "Larghezza × Profondità × Altezza colonne" : isBracci ? "Larghezza telo × Sporgenza (aggetto)" : "Larghezza × Altezza (caduta)"}</div>
                     </div>
 
-                    {/* LARGHEZZA â€” sempre presente */}
-                    <div style={{ fontSize:11, fontWeight:800, color:"#507aff", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>ðŸ“ Larghezza</div>
+                    {/* LARGHEZZA — sempre presente */}
+                    <div style={{ fontSize:11, fontWeight:800, color:"#507aff", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>📏 Larghezza</div>
                     {bInput("Larghezza mm", "lCentro")}
 
-                    {/* ALTEZZA/DROP â€” sempre presente */}
-                    <div style={{ fontSize:11, fontWeight:800, color:"#34c759", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>ðŸ“ {isPergola ? "Altezza colonne" : "Altezza / Drop"}</div>
+                    {/* ALTEZZA/DROP — sempre presente */}
+                    <div style={{ fontSize:11, fontWeight:800, color:"#34c759", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>📐 {isPergola ? "Altezza colonne" : "Altezza / Drop"}</div>
                     {bInput(isPergola ? "Altezza colonne mm" : "Altezza (caduta) mm", "hCentro")}
 
-                    {/* PROFONDITA/SPORGENZA â€” pergole e bracci */}
+                    {/* PROFONDITA/SPORGENZA — pergole e bracci */}
                     {(isPergola || isBracci) && (<>
-                      <div style={{ fontSize:11, fontWeight:800, color:"#ff9500", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>â†•ï¸ {isPergola ? "ProfonditÃ " : "Sporgenza (Aggetto)"}</div>
-                      {bInput(isPergola ? "ProfonditÃ  mm" : "Sporgenza/Aggetto mm", "sporgenza")}
+                      <div style={{ fontSize:11, fontWeight:800, color:"#ff9500", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>↕️ {isPergola ? "Profondità" : "Sporgenza (Aggetto)"}</div>
+                      {bInput(isPergola ? "Profondità mm" : "Sporgenza/Aggetto mm", "sporgenza")}
                     </>)}
 
                     {/* VELA: 3 lati */}
                     {isVela && (<>
-                      <div style={{ fontSize:11, fontWeight:800, color:"#ff9500", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>ðŸ“ Lati vela</div>
+                      <div style={{ fontSize:11, fontWeight:800, color:"#ff9500", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>📐 Lati vela</div>
                       {bInput("Lato 2 mm", "lAlto")}
                       {bInput("Lato 3 mm", "lBasso")}
                     </>)}
 
                     {/* PERGOLA: extra fields */}
                     {isPergola && (<>
-                      <div style={{ fontSize:11, fontWeight:800, color:"#5856d6", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:16, borderTop:"1px solid "+T.bdr, paddingTop:12 }}>ðŸ— Configurazione Pergola</div>
+                      <div style={{ fontSize:11, fontWeight:800, color:"#5856d6", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:16, borderTop:"1px solid "+T.bdr, paddingTop:12 }}>🏗 Configurazione Pergola</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
                         <div>
-                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>NÂ° MODULI</div>
+                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>N° MODULI</div>
                           <input style={S.input} type="number" placeholder="1" value={v.nModuli||""} onChange={e => updateV("nModuli", parseInt(e.target.value)||1)}/>
                         </div>
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>TIPO LAMA</div>
                           <select style={S.select} value={v.tipoLama||""} onChange={e => updateV("tipoLama", e.target.value)}>
-                            <option value="">â€” Tipo â€”</option>
+                            <option value="">— Tipo —</option>
                             <option value="orientabile">Orientabile</option>
                             <option value="retrattile">Retrattile</option>
                             <option value="impacchettabile">Impacchettabile</option>
@@ -965,7 +965,7 @@ export default function VanoDetailPanel() {
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>STRUTTURA</div>
                           <select style={S.select} value={v.struttura||""} onChange={e => updateV("struttura", e.target.value)}>
-                            <option value="">â€” Struttura â€”</option>
+                            <option value="">— Struttura —</option>
                             <option value="alluminio">Alluminio</option>
                             <option value="acciaio">Acciaio</option>
                             <option value="legno">Legno</option>
@@ -974,7 +974,7 @@ export default function VanoDetailPanel() {
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>TIPO</div>
                           <select style={S.select} value={v.tipoPergola||""} onChange={e => updateV("tipoPergola", e.target.value)}>
-                            <option value="">â€” Tipo â€”</option>
+                            <option value="">— Tipo —</option>
                             <option value="addossata">Addossata a muro</option>
                             <option value="freestanding">Autoportante</option>
                           </select>
@@ -983,12 +983,12 @@ export default function VanoDetailPanel() {
                     </>)}
 
                     {/* COMUNE: montaggio + motorizzazione */}
-                    <div style={{ fontSize:11, fontWeight:800, color:"#86868b", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:16, borderTop:"1px solid "+T.bdr, paddingTop:12 }}>âš™ï¸ Installazione</div>
+                    <div style={{ fontSize:11, fontWeight:800, color:"#86868b", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:16, borderTop:"1px solid "+T.bdr, paddingTop:12 }}>⚙️ Installazione</div>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>MONTAGGIO</div>
                         <select style={S.select} value={v.montaggio||""} onChange={e => updateV("montaggio", e.target.value)}>
-                          <option value="">â€” Montaggio â€”</option>
+                          <option value="">— Montaggio —</option>
                           <option value="parete">A parete</option>
                           <option value="soffitto">A soffitto</option>
                           <option value="nicchia">In nicchia</option>
@@ -998,7 +998,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>ORIENTAMENTO</div>
                         <select style={S.select} value={v.orientamento||""} onChange={e => updateV("orientamento", e.target.value)}>
-                          <option value="">â€” Orientamento â€”</option>
+                          <option value="">— Orientamento —</option>
                           <option value="nord">Nord</option>
                           <option value="sud">Sud</option>
                           <option value="est">Est</option>
@@ -1010,7 +1010,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>MOTORIZZAZIONE</div>
                         <select style={S.select} value={v.motorizzazione||""} onChange={e => updateV("motorizzazione", e.target.value)}>
-                          <option value="">â€” Motorizzazione â€”</option>
+                          <option value="">— Motorizzazione —</option>
                           <option value="manuale">Manuale</option>
                           <option value="motore">Motore tubolare</option>
                           <option value="motore_radio">Motore + radiocomando</option>
@@ -1033,12 +1033,12 @@ export default function VanoDetailPanel() {
                     {/* Riepilogo visivo */}
                     {m.lCentro > 0 && m.hCentro > 0 && (
                       <div style={{ marginTop:12, padding:12, borderRadius:10, background:T.card, border:"1px solid "+T.bdr, textAlign:"center" }}>
-                        <div style={{ fontSize:10, color:T.sub, fontWeight:700, marginBottom:4 }}>ðŸ“ RIEPILOGO</div>
+                        <div style={{ fontSize:10, color:T.sub, fontWeight:700, marginBottom:4 }}>📐 RIEPILOGO</div>
                         <div style={{ fontSize:16, fontWeight:900, color:T.text }}>
-                          {m.lCentro} Ã— {m.hCentro} {(m.sporgenza||isPergola) ? " Ã— " + (m.sporgenza||"â€”") : ""} mm
+                          {m.lCentro} × {m.hCentro} {(m.sporgenza||isPergola) ? " × " + (m.sporgenza||"—") : ""} mm
                         </div>
                         <div style={{ fontSize:11, color:T.sub }}>
-                          {((m.lCentro/1000) * (isPergola ? (m.sporgenza||m.hCentro)/1000 : m.hCentro/1000)).toFixed(2)} mÂ²
+                          {((m.lCentro/1000) * (isPergola ? (m.sporgenza||m.hCentro)/1000 : m.hCentro/1000)).toFixed(2)} m²
                         </div>
                       </div>
                     )}
@@ -1046,36 +1046,36 @@ export default function VanoDetailPanel() {
                 );
               })()}
 
-              {/* â•â•â• MISURE STANDARD: Serramenti (8 punti) â•â•â• */}
+              {/* ═══ MISURE STANDARD: Serramenti (8 punti) ═══ */}
               {!["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"].includes(v.tipo) && (<>
 
-              {/* â•â•â• DISEGNO TECNICO â€” Condiviso con preventivo â•â•â• */}
-              <div style={{ marginBottom: 10 }}>
-                <button
-                  onClick={() => setShowMastroCAD(true)}
-                  style={{
-                    width: "100%", display: "flex", alignItems: "center", gap: 10,
-                    padding: "11px 14px", borderRadius: 10,
-                    border: "1.5px solid #D08008", background: "#D0800812",
-                    cursor: "pointer",
-                  }}
-                >
-                  <span style={{ fontSize: 16 }}>ðŸ“</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: "#D08008" }}>MASTRO CAD</div>
-                    <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>Foto â†’ Calibra â†’ Disegna â†’ BOM</div>
-                  </div>
-                  <span style={{ fontSize: 10, color: "#D08008", fontWeight: 700 }}>Apri â†’</span>
-                </button>
-              </div>
+              {/* ═══ DISEGNO TECNICO — Condiviso con preventivo ═══ */}
               <div style={{ marginBottom: 14 }}>
-                <div             <div onClick={() => setShowDisegno(!showDisegno)}
+                <div style={{ marginBottom: 10 }}>
+                  <button
+                    onClick={() => setShowMastroCAD(true)}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", gap: 10,
+                      padding: "11px 14px", borderRadius: 10,
+                      border: "1.5px solid #D08008", background: "#D0800812",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{ fontSize: 16 }}>📐</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "#D08008" }}>MASTRO CAD</div>
+                      <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>Foto → Calibra → Disegna → BOM</div>
+                    </div>
+                    <span style={{ fontSize: 10, color: "#D08008", fontWeight: 700 }}>Apri →</span>
+                  </button>
+                </div>
+                <div onClick={() => setShowDisegno(!showDisegno)}
                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}>
-                  <span style={{ fontSize: 14 }}>âœï¸</span>
+                  <span style={{ fontSize: 14 }}>✏️</span>
                   <span style={{ fontSize: 12, fontWeight: 800, color: showDisegno ? T.purple : T.text, flex: 1 }}>Disegno tecnico</span>
-                  <span style={{ fontSize: 9, color: T.sub, fontFamily: FM }}>{(m.lCentro || m.lAlto || 1200)}Ã—{(m.hCentro || m.hSx || 1400)}mm</span>
+                  <span style={{ fontSize: 9, color: T.sub, fontFamily: FM }}>{(m.lCentro || m.lAlto || 1200)}×{(m.hCentro || m.hSx || 1400)}mm</span>
                   {(v.disegno?.elements?.length > 0) && <span style={{ padding: "1px 6px", borderRadius: 4, background: `${T.grn}18`, fontSize: 8, fontWeight: 800, color: T.grn }}>{v.disegno.elements.length} el.</span>}
-                  <span style={{ fontSize: 9, color: T.sub, transform: showDisegno ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>â–¼</span>
+                  <span style={{ fontSize: 9, color: T.sub, transform: showDisegno ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>▼</span>
                 </div>
                 {showDisegno && (
                   <DisegnoTecnico
@@ -1094,7 +1094,7 @@ export default function VanoDetailPanel() {
                   />
                 )}
               </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#507aff", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>ðŸ“ Larghezze</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#507aff", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>📏 Larghezze</div>
               {bInput("Larghezza ALTO", "lAlto")}
               {m.lAlto > 0 && !m.lCentro && !m.lBasso && (
                 <div onClick={() => { updateMisura(v.id, "lCentro", m.lAlto); updateMisura(v.id, "lBasso", m.lAlto); }} style={{ margin: "-4px 0 12px", padding: "10px", borderRadius: 10, background: T.accLt, border: `1px solid ${T.acc}40`, textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 700, color: T.acc }}>
@@ -1105,7 +1105,7 @@ export default function VanoDetailPanel() {
               {bInput("Larghezza BASSO", "lBasso")}
 
               {/* ALTEZZE */}
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#34c759", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>ðŸ“ Altezze</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#34c759", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>📐 Altezze</div>
               {bInput("Altezza SINISTRA", "hSx")}
               {m.hSx > 0 && !m.hCentro && !m.hDx && (
                 <div onClick={() => { updateMisura(v.id, "hCentro", m.hSx); updateMisura(v.id, "hDx", m.hSx); }} style={{ margin: "-4px 0 12px", padding: "10px", borderRadius: 10, background: T.accLt, border: `1px solid ${T.acc}40`, textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 700, color: T.acc }}>
@@ -1116,18 +1116,18 @@ export default function VanoDetailPanel() {
               {bInput("Altezza DESTRA", "hDx")}
 
               {/* DIAGONALI */}
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#ff9500", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>âœ• Diagonali</div>
-              {bInput("Diagonale 1 â†—", "d1")}
-              {bInput("Diagonale 2 â†˜", "d2")}
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#ff9500", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>✕ Diagonali</div>
+              {bInput("Diagonale 1 ↗", "d1")}
+              {bInput("Diagonale 2 ↘", "d2")}
               {fSq !== null && fSq > 3 && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}>âš  Fuori squadra: {fSq}mm</div>
-                  <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm â€” segnalare in ufficio</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}>⚠ Fuori squadra: {fSq}mm</div>
+                  <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm — segnalare in ufficio</div>
                 </div>
               )}
               {fSq !== null && fSq <= 3 && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>âœ… In squadra â€” differenza: {fSq}mm</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>✅ In squadra — differenza: {fSq}mm</div>
                 </div>
               )}
             </>)}
@@ -1140,25 +1140,25 @@ export default function VanoDetailPanel() {
               {/* Spallette */}
               <div onClick={() => setDetailOpen(d => ({...d, spallette: !d.spallette}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.spallette ? "#32ade6" : T.bdr}`, background: detailOpen.spallette ? "#32ade608" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>ðŸ§±</span>
+                  <span style={{ fontSize: 16 }}>🧱</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.spallette ? "#32ade6" : T.text }}>Spallette</span>
                   {(m.spSx||m.spDx||m.spSopra||m.imbotte) && <span style={{ fontSize: 10, color: "#32ade6", fontWeight: 700, background: "#32ade615", padding: "2px 8px", borderRadius: 6 }}>{[m.spSx,m.spDx,m.spSopra,m.imbotte].filter(x=>x>0).length}/4</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.spallette ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.spallette ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
               {detailOpen.spallette && (
                 <div style={{ marginBottom: 12 }}>
               {bInput("Spalletta SINISTRA", "spSx")}
               {bInput("Spalletta DESTRA", "spDx")}
               {bInput("Spalletta SOPRA", "spSopra")}
-              {bInput("ProfonditÃ  IMBOTTE", "imbotte")}
+              {bInput("Profondità IMBOTTE", "imbotte")}
               {/* DISEGNO LIBERO SPALLETTE */}
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginTop: 8, overflow: "hidden" }}>
                 <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#32ade6" }}>âœï¸ Disegno spallette</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#32ade6" }}>✏️ Disegno spallette</span>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => { const ctx = spCanvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, 380, 200); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸ—â€˜ Pulisci</button>
-                    <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.grn, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸ’¾ Salva</button>
+                    <button onClick={() => { const ctx = spCanvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, 380, 200); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗝‘ Pulisci</button>
+                    <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.grn, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
                   </div>
                 </div>
                 <canvas ref={spCanvasRef} width={380} height={200} style={{ width: "100%", height: 200, background: "#fff", touchAction: "none", cursor: "crosshair" }}
@@ -1185,15 +1185,15 @@ export default function VanoDetailPanel() {
               {/* Davanzale + Cassonetto */}
               <div onClick={() => setDetailOpen(d => ({...d, davanzale: !d.davanzale}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.davanzale ? "#ff2d55" : T.bdr}`, background: detailOpen.davanzale ? "#ff2d5508" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>â¬‡</span>
+                  <span style={{ fontSize: 16 }}>⬇</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.davanzale ? "#ff2d55" : T.text }}>Davanzale + Cassonetto</span>
-                  {(m.davProf||m.davSporg||m.soglia||v.cassonetto) && <span style={{ fontSize: 10, color: "#ff2d55", fontWeight: 700, background: "#ff2d5515", padding: "2px 8px", borderRadius: 6 }}>{v.cassonetto ? "ðŸ§Š" : ""} {[m.davProf,m.davSporg,m.soglia].filter(x=>x>0).length}/3</span>}
+                  {(m.davProf||m.davSporg||m.soglia||v.cassonetto) && <span style={{ fontSize: 10, color: "#ff2d55", fontWeight: 700, background: "#ff2d5515", padding: "2px 8px", borderRadius: 6 }}>{v.cassonetto ? "🧊" : ""} {[m.davProf,m.davSporg,m.soglia].filter(x=>x>0).length}/3</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.davanzale ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.davanzale ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
               {detailOpen.davanzale && (
                 <div style={{ marginBottom: 12 }}>
-              {bInput("Davanzale PROFONDITÃ€", "davProf")}
+              {bInput("Davanzale PROFONDITÀ", "davProf")}
               {bInput("Davanzale SPORGENZA", "davSporg")}
               {bInput("Altezza SOGLIA", "soglia")}
               {/* Cassonetto toggle */}
@@ -1203,16 +1203,16 @@ export default function VanoDetailPanel() {
                 if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);}
               }}>
                 <span style={{ fontSize: 12, color: T.sub }}>+</span>
-                <span style={{ fontSize: 14 }}>ðŸ§Š</span>
+                <span style={{ fontSize: 14 }}>🧊</span>
                 <span style={{ fontSize: 13, color: T.sub }}>{v.cassonetto ? "Cassonetto attivo" : "Ha un cassonetto? Tocca per aggiungere"}</span>
               </div>
               {v.cassonetto && (
                 <div style={{ marginTop: 8 }}>
                   {bInput("Cassonetto LARGHEZZA", "casL")}
                   {bInput("Cassonetto ALTEZZA", "casH")}
-                  {bInput("Cassonetto PROFONDITÃ€", "casP")}
+                  {bInput("Cassonetto PROFONDITÀ", "casP")}
                   {bInput("Cielino LARGHEZZA", "casLCiel")}
-                  {bInput("Cielino PROFONDITÃ€", "casPCiel")}
+                  {bInput("Cielino PROFONDITÀ", "casPCiel")}
                 </div>
               )}
                 </div>
@@ -1220,11 +1220,11 @@ export default function VanoDetailPanel() {
               {/* Accessori */}
               <div onClick={() => setDetailOpen(d => ({...d, accessori: !d.accessori}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.accessori ? "#af52de" : T.bdr}`, background: detailOpen.accessori ? "#af52de08" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>âœš</span>
+                  <span style={{ fontSize: 16 }}>✚</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.accessori ? "#af52de" : T.text }}>Accessori</span>
                   {(v.accessori?.tapparella?.attivo||v.accessori?.persiana?.attivo||v.accessori?.zanzariera?.attivo) && <span style={{ fontSize: 10, color: "#af52de", fontWeight: 700, background: "#af52de15", padding: "2px 8px", borderRadius: 6 }}>{[v.accessori?.tapparella?.attivo,v.accessori?.persiana?.attivo,v.accessori?.zanzariera?.attivo].filter(Boolean).length} attivi</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.accessori ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.accessori ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
               {detailOpen.accessori && (
                 <div style={{ marginBottom: 12 }}>
@@ -1239,7 +1239,7 @@ export default function VanoDetailPanel() {
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <input id={casIds[idx]} style={{ flex: 1, padding: "10px", fontSize: 14, fontFamily: FM, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card }} type="number" inputMode="numeric" enterKeyHint={idx < 4 ? "next" : "done"} placeholder="" value={m[field] || ""} onChange={e => updateMisura(v.id, field, e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNext(casIds, casIds[idx]); } }} />
                         <span style={{ fontSize: 11, color: T.sub, background: T.bg, padding: "6px 8px", borderRadius: 6 }}>mm</span>
-                        {idx < 4 && <div onClick={() => focusNext(casIds, casIds[idx])} style={{ padding: "8px 12px", borderRadius: 8, background: casColor, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>â†’</div>}
+                        {idx < 4 && <div onClick={() => focusNext(casIds, casIds[idx])} style={{ padding: "8px 12px", borderRadius: 8, background: casColor, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>→</div>}
                       </div>
                     </div>
                   );
@@ -1247,13 +1247,13 @@ export default function VanoDetailPanel() {
                     <div key={acc} style={{ marginBottom: 8, borderRadius: 12, border: `1px ${v.cassonetto ? "solid" : "dashed"} ${v.cassonetto ? casColor + "40" : T.bdr}`, overflow: "hidden", background: T.card }}>
                       {!v.cassonetto ? (
                         <div onClick={() => { const nv = { ...v, cassonetto: true }; setSelectedVano(nv); if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);} }} style={{ padding: "14px 16px", textAlign: "center", cursor: "pointer" }}>
-                          <span style={{ fontSize: 12, color: T.sub }}>+ ðŸ§Š Aggiungi Cassonetto</span>
+                          <span style={{ fontSize: 12, color: T.sub }}>+ 🧊 Aggiungi Cassonetto</span>
                         </div>
                       ) : (
                         <>
                           <div style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.bdr}` }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: casColor }}>ðŸ§Š Cassonetto</span>
-                            <div onClick={() => { const nv = { ...v, cassonetto: false }; setSelectedVano(nv); if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);} }} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}>â–² Chiudi</div>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: casColor }}>🧊 Cassonetto</span>
+                            <div onClick={() => { const nv = { ...v, cassonetto: false }; setSelectedVano(nv); if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);} }} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}>▲ Chiudi</div>
                           </div>
                           <div style={{ padding: "12px 16px" }}>
                             <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Cassonetto</div>
@@ -1264,14 +1264,14 @@ export default function VanoDetailPanel() {
                             </div>
                             {casInput("Larghezza", "casL", 0)}
                             {casInput("Altezza", "casH", 1)}
-                            {casInput("ProfonditÃ ", "casP", 2)}
+                            {casInput("Profondità", "casP", 2)}
                             <div style={{ marginTop: 4, marginBottom: 4, padding: "6px 0", borderTop: `1px dashed ${T.bdr}` }}>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 2 }}>Cielino</div>
                             </div>
                             {casInput("Larghezza Cielino", "casLCiel", 3)}
-                            {casInput("ProfonditÃ  Cielino", "casPCiel", 4)}
+                            {casInput("Profondità Cielino", "casPCiel", 4)}
                             <div onClick={() => { const nv = { ...v, cassonetto: false }; setSelectedVano(nv); if(selectedRilievo){const updR3={...selectedRilievo,vani:selectedRilievo.vani.map(x=>x.id===v.id?nv:x)};setCantieri(cs=>cs.map(c=>c.id===selectedCM?.id?{...c,rilievi:c.rilievi.map(r2=>r2.id===selectedRilievo.id?updR3:r2)}:c));setSelectedRilievo(updR3);} }} style={{ marginTop: 10, padding: "8px", borderRadius: 8, border: `1px dashed #ef5350`, textAlign: "center", fontSize: 11, color: "#ef5350", cursor: "pointer" }}>
-                              ðŸ—‘ Rimuovi cassonetto
+                              🗑 Rimuovi cassonetto
                             </div>
                           </div>
                         </>
@@ -1281,7 +1281,7 @@ export default function VanoDetailPanel() {
                 }
                 const a = v.accessori?.[acc] || { attivo: false };
                 const accColors = { tapparella: "#ff9500", persiana: "#007aff", zanzariera: "#ff2d55" };
-                const accIcons = { tapparella: "ðŸªŸ", persiana: "ðŸ ", zanzariera: "ðŸ¦Ÿ" };
+                const accIcons = { tapparella: "🪟", persiana: "🏠", zanzariera: "🦟" };
                 const focusNextAcc = (ids, cur) => { const i = ids.indexOf(cur); if (i < ids.length - 1) { const el = document.getElementById(ids[i + 1]); if (el) { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); } } };
                 const accInputIds = [`${acc}-L-${v.id}`, `${acc}-H-${v.id}`];
                 return (
@@ -1294,7 +1294,7 @@ export default function VanoDetailPanel() {
                       <>
                         <div style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.bdr}` }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: accColors[acc] }}>{accIcons[acc]} {acc.charAt(0).toUpperCase() + acc.slice(1)}</span>
-                          <div onClick={() => toggleAccessorio(v.id, acc)} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}>â–² Chiudi</div>
+                          <div onClick={() => toggleAccessorio(v.id, acc)} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}>▲ Chiudi</div>
                         </div>
                         <div style={{ padding: "12px 16px" }}>
                           <div style={{ marginBottom: 10 }}>
@@ -1302,7 +1302,7 @@ export default function VanoDetailPanel() {
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <input id={accInputIds[0]} style={{ flex: 1, padding: "10px", fontSize: 14, fontFamily: FM, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card }} type="number" inputMode="numeric" enterKeyHint="next" placeholder="" value={v.accessori?.[acc]?.l || ""} onChange={e => updateAccessorio(v.id, acc, "l", parseInt(e.target.value) || 0)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); focusNextAcc(accInputIds, accInputIds[0]); } }} />
                               <span style={{ fontSize: 11, color: T.sub, background: T.bg, padding: "6px 8px", borderRadius: 6 }}>mm</span>
-                              <div onClick={() => focusNextAcc(accInputIds, accInputIds[0])} style={{ padding: "8px 12px", borderRadius: 8, background: accColors[acc], color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>â†’</div>
+                              <div onClick={() => focusNextAcc(accInputIds, accInputIds[0])} style={{ padding: "8px 12px", borderRadius: 8, background: accColors[acc], color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>→</div>
                             </div>
                           </div>
                           <div style={{ marginBottom: 10 }}>
@@ -1322,13 +1322,13 @@ export default function VanoDetailPanel() {
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Motorizzata</div>
                               <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
-                                {["SÃ¬", "No"].map(mot => (
+                                {["Sì", "No"].map(mot => (
                                   <div key={mot} onClick={() => updateAccessorio(v.id, acc, "motorizzata", mot)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${v.accessori?.[acc]?.motorizzata === mot ? "#34c759" : T.bdr}`, background: v.accessori?.[acc]?.motorizzata === mot ? "#34c75918" : T.card, fontSize: 12, cursor: "pointer", fontWeight: v.accessori?.[acc]?.motorizzata === mot ? 700 : 400, color: v.accessori?.[acc]?.motorizzata === mot ? "#34c759" : T.text }}>{mot}</div>
                                 ))}
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">â€” Seleziona tipo misura â€”</option>
+                                <option value="">— Seleziona tipo misura —</option>
                                 {tipoMisuraTappDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -1341,7 +1341,7 @@ export default function VanoDetailPanel() {
                                   <div key={tp.id} onClick={() => updateAccessorio(v.id, acc, "telaio", tp.code)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${v.accessori?.[acc]?.telaio === tp.code ? "#007aff" : T.bdr}`, background: v.accessori?.[acc]?.telaio === tp.code ? "#007aff18" : T.card, fontSize: 12, cursor: "pointer", fontWeight: v.accessori?.[acc]?.telaio === tp.code ? 700 : 400, color: v.accessori?.[acc]?.telaio === tp.code ? "#007aff" : T.text }}>{tp.code}</div>
                                 ))}
                               </div>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>4Â° Lato / Posizionamento</div>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>4° Lato / Posizionamento</div>
                               <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
                                 {posPersianaDB.map(pp => (
                                   <div key={pp.id} onClick={() => updateAccessorio(v.id, acc, "posizionamento", pp.code)} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${v.accessori?.[acc]?.posizionamento === pp.code ? "#007aff" : T.bdr}`, background: v.accessori?.[acc]?.posizionamento === pp.code ? "#007aff18" : T.card, fontSize: 12, cursor: "pointer", fontWeight: v.accessori?.[acc]?.posizionamento === pp.code ? 700 : 400, color: v.accessori?.[acc]?.posizionamento === pp.code ? "#007aff" : T.text }}>{pp.code}</div>
@@ -1349,7 +1349,7 @@ export default function VanoDetailPanel() {
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">â€” Seleziona tipo misura â€”</option>
+                                <option value="">— Seleziona tipo misura —</option>
                                 {tipoMisuraDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -1358,7 +1358,7 @@ export default function VanoDetailPanel() {
                             <>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">â€” Seleziona tipo misura â€”</option>
+                                <option value="">— Seleziona tipo misura —</option>
                                 {tipoMisuraZanzDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -1366,10 +1366,10 @@ export default function VanoDetailPanel() {
                           <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Colore</div>
                           <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF }} value={v.accessori?.[acc]?.colore || ""} onChange={e => updateAccessorio(v.id, acc, "colore", e.target.value)}>
                             <option value="">Colore</option>
-                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} â€” {c.nome}</option>)}
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                           </select>
                           <div onClick={() => toggleAccessorio(v.id, acc)} style={{ marginTop: 10, padding: "8px", borderRadius: 8, border: `1px dashed #ef5350`, textAlign: "center", fontSize: 11, color: "#ef5350", cursor: "pointer" }}>
-                            ðŸ—â€˜ Rimuovi {acc}
+                            🗝‘ Rimuovi {acc}
                           </div>
                         </div>
                       </>
@@ -1382,11 +1382,11 @@ export default function VanoDetailPanel() {
               {/* Voci Libere */}
               <div onClick={() => setDetailOpen(d => ({...d, vociLibere: !d.vociLibere}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.vociLibere ? "#ff9500" : T.bdr}`, background: detailOpen.vociLibere ? "#ff950008" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>ðŸ“¦</span>
+                  <span style={{ fontSize: 16 }}>📦</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.vociLibere ? "#ff9500" : T.text }}>Voci libere</span>
                   {v.vociLibere?.length > 0 && <span style={{ fontSize: 10, color: "#ff9500", fontWeight: 700, background: "#ff950015", padding: "2px 8px", borderRadius: 6 }}>{v.vociLibere.length} voc{v.vociLibere.length === 1 ? "e" : "i"}</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.vociLibere ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.vociLibere ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
               {detailOpen.vociLibere && (
                 <div style={{ marginBottom: 12, padding: "0 4px" }}>
@@ -1397,7 +1397,7 @@ export default function VanoDetailPanel() {
                         <div onClick={() => {
                           const newVoci = (v.vociLibere || []).filter((_, i) => i !== vi);
                           updateVanoField(v.id, "vociLibere", newVoci);
-                        }} style={{ fontSize: 10, color: T.red, cursor: "pointer", fontWeight: 600 }}>âœ• Rimuovi</div>
+                        }} style={{ fontSize: 10, color: T.red, cursor: "pointer", fontWeight: 600 }}>✕ Rimuovi</div>
                       </div>
                       {/* Foto */}
                       <div style={{ marginBottom: 6 }}>
@@ -1407,11 +1407,11 @@ export default function VanoDetailPanel() {
                             <div onClick={() => {
                               const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], foto: undefined };
                               updateVanoField(v.id, "vociLibere", newVoci);
-                            }} style={{ fontSize: 9, color: T.red, cursor: "pointer" }}>âœ•</div>
+                            }} style={{ fontSize: 9, color: T.red, cursor: "pointer" }}>✕</div>
                           </div>
                         ) : (
                           <label style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 6, background: "#ff950012", color: "#ff9500", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>
-                            ðŸ“· Foto
+                            📷 Foto
                             <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
                               const file = e.target.files?.[0]; if (!file) return;
                               const reader = new FileReader();
@@ -1429,17 +1429,17 @@ export default function VanoDetailPanel() {
                         const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], descrizione: e.target.value };
                         updateVanoField(v.id, "vociLibere", newVoci);
                       }} />
-                      {/* Prezzo + UnitÃ  + QuantitÃ  */}
+                      {/* Prezzo + Unità + Quantità */}
                       <div style={{ display: "flex", gap: 6 }}>
                         <div style={{ flex: 1 }}>
-                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Prezzo â‚¬</label>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Prezzo €</label>
                           <input style={{ ...S.input, fontSize: 12, fontFamily: FM }} type="number" step="0.01" placeholder="0.00" defaultValue={voce.prezzo || ""} onBlur={e => {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], prezzo: parseFloat(e.target.value) || 0 };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }} />
                         </div>
                         <div style={{ width: 80 }}>
-                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>UnitÃ </label>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Unità</label>
                           <select style={{ ...S.select, fontSize: 11 }} value={voce.unita || "pz"} onChange={e => {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], unita: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
@@ -1452,14 +1452,14 @@ export default function VanoDetailPanel() {
                           </select>
                         </div>
                         <div style={{ width: 60 }}>
-                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>QtÃ </label>
+                          <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Qtà</label>
                           <input style={{ ...S.input, fontSize: 12, fontFamily: FM, textAlign: "center" }} type="number" step="0.1" defaultValue={voce.qta || 1} onBlur={e => {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], qta: parseFloat(e.target.value) || 1 };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }} />
                         </div>
                       </div>
-                      {voce.prezzo > 0 && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 700, color: T.grn, fontFamily: FM, marginTop: 4 }}>= â‚¬{((voce.prezzo || 0) * (voce.qta || 1)).toFixed(2)}</div>}
+                      {voce.prezzo > 0 && <div style={{ textAlign: "right", fontSize: 11, fontWeight: 700, color: T.grn, fontFamily: FM, marginTop: 4 }}>= €{((voce.prezzo || 0) * (voce.qta || 1)).toFixed(2)}</div>}
                     </div>
                   ))}
                   <div style={{ display: "flex", gap: 8 }}>
@@ -1469,7 +1469,7 @@ export default function VanoDetailPanel() {
                     }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed #ff9500`, textAlign: "center", cursor: "pointer", color: "#ff9500", fontSize: 12, fontWeight: 600 }}>+ Voce vuota</div>
                     <div onClick={() => {
                       setDetailOpen(d => ({ ...d, showLibreria: !d.showLibreria }));
-                    }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>ðŸ“¦ Da libreria</div>
+                    }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>📦 Da libreria</div>
                   </div>
                   {detailOpen.showLibreria && libreriaDB.length > 0 && (
                     <div style={{ marginTop: 8, padding: 8, borderRadius: 10, border: `1px solid ${T.acc}30`, background: T.acc + "06" }}>
@@ -1485,13 +1485,13 @@ export default function VanoDetailPanel() {
                             {item.foto ? (
                               <img src={item.foto} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: 4, flexShrink: 0 }} alt="" />
                             ) : (
-                              <div style={{ width: 32, height: 32, borderRadius: 4, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>ðŸ“¦</div>
+                              <div style={{ width: 32, height: 32, borderRadius: 4, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>📦</div>
                             )}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.nome}</div>
                               <div style={{ fontSize: 9, color: T.sub }}>{item.categoria}</div>
                             </div>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: T.grn, fontFamily: FM, flexShrink: 0 }}>â‚¬{item.prezzo}/{item.unita || "pz"}</div>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: T.grn, fontFamily: FM, flexShrink: 0 }}>€{item.prezzo}/{item.unita || "pz"}</div>
                           </div>
                         ))}
                       </div>
@@ -1502,11 +1502,11 @@ export default function VanoDetailPanel() {
               {/* Foto + Note */}
               <div onClick={() => setDetailOpen(d => ({...d, disegno: !d.disegno}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.disegno ? "#ff6b6b" : T.bdr}`, background: detailOpen.disegno ? "#ff6b6b08" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>ðŸ“·</span>
+                  <span style={{ fontSize: 16 }}>📷</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.disegno ? "#ff6b6b" : T.text }}>Foto + Note</span>
-                  {(v.note) && <span style={{ fontSize: 10, color: "#ff6b6b", fontWeight: 700, background: "#ff6b6b15", padding: "2px 8px", borderRadius: 6 }}>ðŸ“</span>}
+                  {(v.note) && <span style={{ fontSize: 10, color: "#ff6b6b", fontWeight: 700, background: "#ff6b6b15", padding: "2px 8px", borderRadius: 6 }}>📝</span>}
                 </div>
-                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.disegno ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.disegno ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
               {detailOpen.disegno && (
                 <div style={{ marginBottom: 12 }}>
@@ -1523,7 +1523,7 @@ export default function VanoDetailPanel() {
         />
       )}
 
-      {/* Disegno mano libera â€” Enhanced: eraser, multi-page, fullscreen */}
+      {/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
                 const W = drawFullscreen ? 760 : 380;
                 const H = drawFullscreen ? 680 : 340;
@@ -1561,7 +1561,7 @@ export default function VanoDetailPanel() {
                     {/* Gomma */}
                     <div onClick={() => setDrawTool(drawTool === "eraser" ? "pen" : "eraser")}
                       style={{ width: 32, height: 32, borderRadius: 8, background: drawTool === "eraser" ? "#ff3b30" + "18" : T.bg, border: drawTool === "eraser" ? "2px solid #ff3b30" : `1px solid ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "âœ•" : "ðŸ§¹"}</span>
+                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "✕" : "🧹"}</span>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
                       {[1, 2, 4, 6].map(s => (
@@ -1586,7 +1586,7 @@ export default function VanoDetailPanel() {
                     <div style={{ marginLeft: "auto" }} />
                     <div onClick={() => { savePageData(); setDrawFullscreen(!drawFullscreen); }}
                       style={{ padding: "3px 8px", borderRadius: 6, background: drawFullscreen ? T.acc + "12" : T.bg, border: `1px solid ${drawFullscreen ? T.acc : T.bdr}`, fontSize: 10, fontWeight: 700, color: drawFullscreen ? T.acc : T.sub, cursor: "pointer" }}>
-                      {drawFullscreen ? "â†™ Riduci" : "â†— Ingrandisci"}
+                      {drawFullscreen ? "↙ Riduci" : "↗ Ingrandisci"}
                     </div>
                   </div>
                 );
@@ -1594,11 +1594,11 @@ export default function VanoDetailPanel() {
                 if (drawFullscreen) return (
                   <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff", display: "flex", flexDirection: "column" as const }}>
                     <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#ff6b6b" }}>âœï¸ Disegno â€” Foglio {drawPageIdx + 1}/{drawPages.length}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#ff6b6b" }}>✏️ Disegno — Foglio {drawPageIdx + 1}/{drawPages.length}</span>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸ—‘ Pulisci foglio</button>
-                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#ff3b30", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸ’¾ Salva</button>
-                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>âœ• Chiudi</button>
+                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci foglio</button>
+                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#ff3b30", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
+                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>✕ Chiudi</button>
                       </div>
                     </div>
                     <div style={{ flex: 1, overflow: "hidden" }}>{canvasEl}</div>
@@ -1610,10 +1610,10 @@ export default function VanoDetailPanel() {
                 return (
                   <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginBottom: 12, overflow: "hidden" }}>
                     <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#ff6b6b" }}>âœï¸ Disegno a mano libera</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#ff6b6b" }}>✏️ Disegno a mano libera</span>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸ—‘ Pulisci foglio</button>
-                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#ff3b30", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸ’¾ Salva</button>
+                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci foglio</button>
+                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#ff3b30", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
                       </div>
                     </div>
                     {canvasEl}
@@ -1625,12 +1625,12 @@ export default function VanoDetailPanel() {
               {/* Foto */}
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14, marginBottom: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.blue }}>ðŸ“· FOTO ({(v.foto && Object.keys(v.foto).length) || 0})</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.blue }}>📷 FOTO ({(v.foto && Object.keys(v.foto).length) || 0})</div>
                   <div style={{ display: "flex", gap: 4 }}>
                     <button onClick={() => openCamera("foto", null)}
-                      style={{ padding: "4px 10px", borderRadius: 6, background: T.acc, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸ“· Foto</button>
+                      style={{ padding: "4px 10px", borderRadius: 6, background: T.acc, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>📷 Foto</button>
                     <button onClick={() => openCamera("video", null)}
-                      style={{ padding: "4px 10px", borderRadius: 6, background: T.blue, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>ðŸŽ¬ Video</button>
+                      style={{ padding: "4px 10px", borderRadius: 6, background: T.blue, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🎬 Video</button>
                   </div>
                 </div>
                 {/* Hidden file inputs as fallback */}
@@ -1675,14 +1675,14 @@ export default function VanoDetailPanel() {
                     return (
                     <div key={i} onClick={()=>{ openCamera("foto", cat.n); }}
                       style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${fotoCount>0 ? "#34c759" : cat.r ? cat.c + "40" : T.bdr}`, background: fotoCount>0 ? "#34c75915" : cat.r ? cat.c + "08" : "transparent", fontSize: 10, fontWeight: 600, color: fotoCount>0 ? "#1a9e40" : cat.r ? cat.c : T.sub, cursor: "pointer", display: "flex", alignItems: "center", gap: 3, position:"relative" }}>
-                      {fotoCount>0 ? <span style={{fontSize:8,background:"#34c759",color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900}}>{fotoCount}</span> : cat.r ? <span style={{ fontSize: 8 }}>âœ•</span> : null}
-                      <span style={{ fontSize: 10 }}>ðŸ“·</span> {cat.n}
+                      {fotoCount>0 ? <span style={{fontSize:8,background:"#34c759",color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900}}>{fotoCount}</span> : cat.r ? <span style={{ fontSize: 8 }}>✕</span> : null}
+                      <span style={{ fontSize: 10 }}>📷</span> {cat.n}
                     </div>
                     );
                   })}
                 </div>
                 {Object.keys(v.foto||{}).length === 0
-                  ? <div style={{ textAlign: "center", padding: "16px 0", color: T.sub, fontSize: 11 }}>Nessun allegato â€” tocca ðŸ“· Foto o ðŸŽ¬ Video</div>
+                  ? <div style={{ textAlign: "center", padding: "16px 0", color: T.sub, fontSize: 11 }}>Nessun allegato — tocca 📷 Foto o 🎬 Video</div>
                   : <>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                       {Object.entries(v.foto||{}).map(([k, f]) => (
@@ -1692,10 +1692,10 @@ export default function VanoDetailPanel() {
                             ? <img src={f.dataUrl} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={f.nome}/>
                             : f.tipo === "video" && f.dataUrl
                               ? <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#111" }}>
-                                  <span style={{ fontSize: 28, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}>â–¶</span>
+                                  <span style={{ fontSize: 28, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}>▶</span>
                                 </div>
                               : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 2 }}>
-                                  <span style={{ fontSize: 24 }}>ðŸŽ¬</span>
+                                  <span style={{ fontSize: 24 }}>🎬</span>
                                   <span style={{ fontSize: 8, color: T.sub, textAlign: "center", padding: "0 4px" }}>{f.nome?.slice(0,12)}</span>
                                 </div>
                           }
@@ -1705,7 +1705,7 @@ export default function VanoDetailPanel() {
                             const newFoto = { ...(v.foto||{}) }; delete newFoto[k];
                             setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, rilievi: c.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: newFoto } : vn) } : r2) } : c));
                             setSelectedVano(prev => ({ ...prev, foto: newFoto }));
-                          }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>âœ•</div>
+                          }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>✕</div>
                         </div>
                       ))}
                     </div>
@@ -1716,7 +1716,7 @@ export default function VanoDetailPanel() {
                           ? <video src={(v.foto||{})[viewingPhotoId as any]?.dataUrl} controls playsInline autoPlay style={{ width: "100%", maxHeight: 300 }} />
                           : <img src={(v.foto||{})[viewingPhotoId as any]?.dataUrl} style={{ width: "100%", maxHeight: 300, objectFit: "contain" }} alt="" />
                         }
-                        <div onClick={() => setViewingPhotoId(null)} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>âœ•</div>
+                        <div onClick={() => setViewingPhotoId(null)} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>✕</div>
                       </div>
                     )}
                   </>
@@ -1725,7 +1725,7 @@ export default function VanoDetailPanel() {
 
               {/* Note */}
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#ff9500", marginBottom: 8 }}>ðŸ“ NOTE</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#ff9500", marginBottom: 8 }}>📝 NOTE</div>
                 <textarea style={{ width: "100%", padding: 10, fontSize: 13, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, minHeight: 60, resize: "vertical", fontFamily: FF, boxSizing: "border-box" }} placeholder="Note sul vano..." defaultValue={v.note || ""} />
               </div>
                 </div>
@@ -1740,7 +1740,7 @@ export default function VanoDetailPanel() {
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 16, marginBottom: 12 }}>
                 <div style={{ textAlign: "center", marginBottom: 14 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>{v.nome}</div>
-                  <div style={{ fontSize: 12, color: T.sub }}>{v.tipo} â€¢ {v.stanza} â€¢ {v.piano} â€¢ {v.pezzi||1}pz</div>
+                  <div style={{ fontSize: 12, color: T.sub }}>{v.tipo} • {v.stanza} • {v.piano} • {v.pezzi||1}pz</div>
                 </div>
 
                 {/* Helper row renderer */}
@@ -1756,7 +1756,7 @@ export default function VanoDetailPanel() {
                         {rows.map(([l, val, highlight], ri) => (
                           <div key={ri} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
                             <span style={{ color: T.text }}>{l}</span>
-                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || "â€”"}</span>
+                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || "—"}</span>
                           </div>
                         ))}
                       </div>
@@ -1768,72 +1768,72 @@ export default function VanoDetailPanel() {
 
                   return <>
                     {/* Misure */}
-                    <Sec title="LARGHEZZE" color="#507aff" icon="ðŸ“" rows={[["Alto", m.lAlto], ["Centro", m.lCentro], ["Basso", m.lBasso]]} />
-                    <Sec title="ALTEZZE" color="#34c759" icon="ðŸ“" rows={[["Sinistra", m.hSx], ["Centro", m.hCentro], ["Destra", m.hDx]]} />
-                    <Sec title="DIAGONALI" color="#ff9500" icon="âœ•" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? "#ff3b30" : undefined]]} />
+                    <Sec title="LARGHEZZE" color="#507aff" icon="📏" rows={[["Alto", m.lAlto], ["Centro", m.lCentro], ["Basso", m.lBasso]]} />
+                    <Sec title="ALTEZZE" color="#34c759" icon="📐" rows={[["Sinistra", m.hSx], ["Centro", m.hCentro], ["Destra", m.hDx]]} />
+                    <Sec title="DIAGONALI" color="#ff9500" icon="✕" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? "#ff3b30" : undefined]]} />
 
                     {/* Sistema + Vetro */}
-                    <Sec title="SISTEMA / VETRO" color="#007aff" icon="âš™ï¸" rows={[
+                    <Sec title="SISTEMA / VETRO" color="#007aff" icon="⚙️" rows={[
                       ["Sistema", v.sistema],
                       ["Vetro", v.vetro],
                     ]} />
 
                     {/* Colori */}
-                    <Sec title="COLORI PROFILI" color="#af52de" icon="ðŸŽ¨" rows={[
+                    <Sec title="COLORI PROFILI" color="#af52de" icon="🎨" rows={[
                       ["Colore Int.", v.coloreInt],
                       ...(v.bicolore ? [["Colore Est.", v.coloreEst]] : []),
-                      ...(v.bicolore ? [["Bicolore", "SÃ¬", T.acc]] : []),
+                      ...(v.bicolore ? [["Bicolore", "Sì", T.acc]] : []),
                       ["Colore Accessori", v.coloreAcc || "Come profili"],
                     ]} />
 
                     {/* Telaio */}
-                    <Sec title="TELAIO / RIFILATO" color="#8e8e93" icon="ðŸ“" rows={[
-                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : "â€”"],
+                    <Sec title="TELAIO / RIFILATO" color="#8e8e93" icon="📐" rows={[
+                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : "—"],
                       ...(v.telaio === "Z" && v.telaioAlaZ ? [["Ala Z", `${v.telaioAlaZ}mm`]] : []),
-                      ["Rifilato", v.rifilato ? "SÃ¬" : "No"],
-                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || "â€”"], ["Rifilo Dx", v.rifilDx || "â€”"], ["Rifilo Sopra", v.rifilSopra || "â€”"], ["Rifilo Sotto", v.rifilSotto || "â€”"]] : []),
+                      ["Rifilato", v.rifilato ? "Sì" : "No"],
+                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || "—"], ["Rifilo Dx", v.rifilDx || "—"], ["Rifilo Sopra", v.rifilSopra || "—"], ["Rifilo Sotto", v.rifilSotto || "—"]] : []),
                     ]} />
 
                     {/* Coprifilo / Lamiera */}
-                    <Sec title="COPRIFILO / LAMIERA" color="#b45309" icon="ðŸ”©" rows={[
+                    <Sec title="COPRIFILO / LAMIERA" color="#b45309" icon="🔩" rows={[
                       ["Coprifilo", v.coprifilo],
                       ["Lamiera", v.lamiera],
                     ]} />
 
                     {/* Controtelaio */}
-                    {ct.tipo && <Sec title={`CONTROTELAIO ${ct.tipo === "singolo" ? "SINGOLO" : ct.tipo === "doppio" ? "DOPPIO" : "CON CASSONETTO"}`} color="#2563eb" icon="ðŸ”²" rows={[
+                    {ct.tipo && <Sec title={`CONTROTELAIO ${ct.tipo === "singolo" ? "SINGOLO" : ct.tipo === "doppio" ? "DOPPIO" : "CON CASSONETTO"}`} color="#2563eb" icon="🔲" rows={[
                       ["Larghezza", ct.l ? `${ct.l}mm` : ""],
                       ["Altezza", ct.h ? `${ct.h}mm` : ""],
-                      ...(ct.tipo === "singolo" && ct.prof ? [["ProfonditÃ ", `${ct.prof}mm`]] : []),
+                      ...(ct.tipo === "singolo" && ct.prof ? [["Profondità", `${ct.prof}mm`]] : []),
                       ...(ct.tipo === "doppio" ? [["Sez. Interna", ct.sezInt], ["Sez. Esterna", ct.sezEst], ["Distanziale", ct.distanziale]] : []),
                       ...(ct.tipo === "cassonetto" ? [["H Cassonetto", ct.hCass], ["P Cassonetto", ct.pCass], ["Sezione", ct.sezione], ["Spalla", ct.spalla], ["Cielino", ct.cielino]] : []),
                     ]} />}
 
                     {/* Spallette */}
-                    <Sec title="SPALLETTE" color="#32ade6" icon="ðŸ§±" rows={[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]]} />
+                    <Sec title="SPALLETTE" color="#32ade6" icon="🧱" rows={[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]]} />
 
                     {/* Davanzale */}
-                    <Sec title="DAVANZALE" color="#ff2d55" icon="â¬‡" rows={[["ProfonditÃ ", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
+                    <Sec title="DAVANZALE" color="#ff2d55" icon="⬇" rows={[["Profondità", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
 
-                    {/* Accessori â€” dettagliato */}
+                    {/* Accessori — dettagliato */}
                     {(acc.tapparella?.attivo || acc.persiana?.attivo || acc.zanzariera?.attivo) && (
-                      <Sec title="ACCESSORI" color="#af52de" icon="âœš" rows={[
+                      <Sec title="ACCESSORI" color="#af52de" icon="✚" rows={[
                         ...(acc.tapparella?.attivo ? [
-                          ["ðŸªŸ Tapparella", "SÃ¬", T.grn],
+                          ["🪟 Tapparella", "Sì", T.grn],
                           ...(acc.tapparella.tipo ? [["  Tipo", acc.tapparella.tipo]] : []),
                           ...(acc.tapparella.l ? [["  Larghezza", `${acc.tapparella.l}mm`]] : []),
                           ...(acc.tapparella.h ? [["  Altezza", `${acc.tapparella.h}mm`]] : []),
-                          ...(acc.tapparella.motorizzata !== undefined ? [["  Motorizzata", acc.tapparella.motorizzata ? "SÃ¬" : "No"]] : []),
+                          ...(acc.tapparella.motorizzata !== undefined ? [["  Motorizzata", acc.tapparella.motorizzata ? "Sì" : "No"]] : []),
                           ...(acc.tapparella.colore ? [["  Colore", acc.tapparella.colore]] : []),
                         ] : []),
                         ...(acc.persiana?.attivo ? [
-                          ["ðŸ  Persiana", "SÃ¬", T.grn],
+                          ["🏠 Persiana", "Sì", T.grn],
                           ...(acc.persiana.tipo ? [["  Tipo", acc.persiana.tipo]] : []),
-                          ...(acc.persiana.ante ? [["  NÂ° ante", String(acc.persiana.ante)]] : []),
+                          ...(acc.persiana.ante ? [["  N° ante", String(acc.persiana.ante)]] : []),
                           ...(acc.persiana.colore ? [["  Colore", acc.persiana.colore]] : []),
                         ] : []),
                         ...(acc.zanzariera?.attivo ? [
-                          ["ðŸ¦Ÿ Zanzariera", "SÃ¬", T.grn],
+                          ["🦟 Zanzariera", "Sì", T.grn],
                           ...(acc.zanzariera.tipo ? [["  Tipo", acc.zanzariera.tipo]] : []),
                           ...(acc.zanzariera.colore ? [["  Colore", acc.zanzariera.colore]] : []),
                         ] : []),
@@ -1842,21 +1842,21 @@ export default function VanoDetailPanel() {
 
                     {/* Voci libere */}
                     {v.vociLibere && v.vociLibere.length > 0 && (
-                      <Sec title="VOCI LIBERE" color="#ff9500" icon="ðŸ“" rows={v.vociLibere.map(vl => [vl.nome || "Voce", vl.valore || "â€”"])} />
+                      <Sec title="VOCI LIBERE" color="#ff9500" icon="📝" rows={v.vociLibere.map(vl => [vl.nome || "Voce", vl.valore || "—"])} />
                     )}
 
                     {/* Note */}
                     {v.note && (
                       <div style={{ borderRadius: 10, border: `1px solid ${T.bdr}`, overflow: "hidden", marginBottom: 8 }}>
-                        <div style={{ padding: "6px 12px", background: "#8e8e9310", fontSize: 11, fontWeight: 700, color: "#8e8e93" }}>ðŸ“ NOTE</div>
+                        <div style={{ padding: "6px 12px", background: "#8e8e9310", fontSize: 11, fontWeight: 700, color: "#8e8e93" }}>📝 NOTE</div>
                         <div style={{ padding: "8px 12px", fontSize: 12, lineHeight: 1.5 }}>{v.note}</div>
                       </div>
                     )}
 
                     {/* Accesso */}
                     {(v.difficoltaSalita || v.mezzoSalita) && (
-                      <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? "#ff3b30" : "#ff9500"} icon="ðŸ—" rows={[
-                        ["DifficoltÃ ", v.difficoltaSalita],
+                      <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? "#ff3b30" : "#ff9500"} icon="🏗" rows={[
+                        ["Difficoltà", v.difficoltaSalita],
                         ["Mezzo salita", v.mezzoSalita],
                       ]} />
                     )}
@@ -1864,7 +1864,7 @@ export default function VanoDetailPanel() {
                     {/* Foto gallery */}
                     {Object.values(v.foto || {}).filter(f => f.tipo === "foto" && f.dataUrl).length > 0 && (
                       <div style={{ borderRadius: 10, border: `1px solid #007aff25`, overflow: "hidden", marginBottom: 8 }}>
-                        <div style={{ padding: "6px 12px", background: "#007aff10", fontSize: 11, fontWeight: 700, color: "#007aff" }}>ðŸ“· FOTO ({Object.values(v.foto || {}).filter(f => f.tipo === "foto").length})</div>
+                        <div style={{ padding: "6px 12px", background: "#007aff10", fontSize: 11, fontWeight: 700, color: "#007aff" }}>📷 FOTO ({Object.values(v.foto || {}).filter(f => f.tipo === "foto").length})</div>
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", padding: 8 }}>
                           {Object.entries(v.foto || {}).filter(([, f]) => f.tipo === "foto" && f.dataUrl).map(([k, f]) => (
                             <div key={k} style={{ position: "relative", width: 64, height: 48, borderRadius: 6, overflow: "hidden" }}>
@@ -1896,16 +1896,16 @@ export default function VanoDetailPanel() {
 
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             {vanoStep > 0 && (
-              <button onClick={() => setVanoStep(s => s - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: FF, color: T.text }}>â† Indietro</button>
+              <button onClick={() => setVanoStep(s => s - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: FF, color: T.text }}>← Indietro</button>
             )}
             {vanoStep < 2 && (
-              <button onClick={() => setVanoStep(s => s + 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: step.color, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>{vanoStep === 0 ? "Dettagli â†’" : "Riepilogo â†’"}</button>
+              <button onClick={() => setVanoStep(s => s + 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: step.color, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>{vanoStep === 0 ? "Dettagli →" : "Riepilogo →"}</button>
             )}
             {vanoStep === 0 && (
-              <button onClick={() => setVanoStep(2)} style={{ padding: "14px 16px", borderRadius: 12, border: `1px solid ${T.grn}`, background: T.grn + "15", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FF, color: T.grn }}>âœ“ Fine</button>
+              <button onClick={() => setVanoStep(2)} style={{ padding: "14px 16px", borderRadius: 12, border: `1px solid ${T.grn}`, background: T.grn + "15", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FF, color: T.grn }}>✓ Fine</button>
             )}
             {vanoStep === 2 && (
-              <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>ðŸ’¾ SALVA TUTTO</button>
+              <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>💾 SALVA TUTTO</button>
             )}
           </div>
 
@@ -1920,20 +1920,20 @@ export default function VanoDetailPanel() {
                 ["F.sq", fSq !== null ? `${fSq}` : null, fSq > 3 ? "#ff3b30" : null],
               ].map(([l, val, c]) => (
                 <div key={l} style={{ padding: "3px 8px", borderRadius: 4, background: c ? c + "12" : T.bg, fontSize: 10, fontFamily: FM, color: c || (val ? T.text : T.sub2) }}>
-                  {l}: {val || "â€”"}
+                  {l}: {val || "—"}
                 </div>
               ))}
             </div>
             {/* Row 2: details */}
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
-              {v.sistema && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#007aff12", fontSize: 9, color: "#007aff", fontWeight: 600 }}>âš™ {v.sistema.split(" ").slice(0, 2).join(" ")}</div>}
-              {v.coloreInt && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#af52de12", fontSize: 9, color: "#af52de", fontWeight: 600 }}>ðŸŽ¨ {v.coloreInt}</div>}
-              {v.vetro && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#32ade612", fontSize: 9, color: "#32ade6", fontWeight: 600 }}>ðŸ’Ž {v.vetro}</div>}
-              {v.coprifilo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#b4530912", fontSize: 9, color: "#b45309", fontWeight: 600 }}>ðŸ”© {v.coprifilo}</div>}
-              {v.accessori?.tapparella?.attivo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#34c75912", fontSize: 9, color: "#34c759", fontWeight: 600 }}>ðŸªŸ Tapp.</div>}
-              {v.accessori?.persiana?.attivo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#34c75912", fontSize: 9, color: "#34c759", fontWeight: 600 }}>ðŸ  Pers.</div>}
-              {v.accessori?.zanzariera?.attivo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#af52de12", fontSize: 9, color: "#af52de", fontWeight: 600 }}>ðŸ¦Ÿ Zanz.</div>}
-              {v.controtelaio?.tipo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#2563eb12", fontSize: 9, color: "#2563eb", fontWeight: 600 }}>ðŸ”² CT</div>}
+              {v.sistema && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#007aff12", fontSize: 9, color: "#007aff", fontWeight: 600 }}>⚙ {v.sistema.split(" ").slice(0, 2).join(" ")}</div>}
+              {v.coloreInt && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#af52de12", fontSize: 9, color: "#af52de", fontWeight: 600 }}>🎨 {v.coloreInt}</div>}
+              {v.vetro && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#32ade612", fontSize: 9, color: "#32ade6", fontWeight: 600 }}>💎 {v.vetro}</div>}
+              {v.coprifilo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#b4530912", fontSize: 9, color: "#b45309", fontWeight: 600 }}>🔩 {v.coprifilo}</div>}
+              {v.accessori?.tapparella?.attivo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#34c75912", fontSize: 9, color: "#34c759", fontWeight: 600 }}>🪟 Tapp.</div>}
+              {v.accessori?.persiana?.attivo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#34c75912", fontSize: 9, color: "#34c759", fontWeight: 600 }}>🏠 Pers.</div>}
+              {v.accessori?.zanzariera?.attivo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#af52de12", fontSize: 9, color: "#af52de", fontWeight: 600 }}>🦟 Zanz.</div>}
+              {v.controtelaio?.tipo && <div style={{ padding: "2px 6px", borderRadius: 4, background: "#2563eb12", fontSize: 9, color: "#2563eb", fontWeight: 600 }}>🔲 CT</div>}
             </div>
           </div>
 
@@ -1942,13 +1942,13 @@ export default function VanoDetailPanel() {
           {detailOpen.fabOpen && (
             <div style={{ position: "fixed", bottom: 80, left: 12, right: 12, zIndex: 999, background: "#fff", borderRadius: 16, boxShadow: "0 8px 40px rgba(0,0,0,0.25)", padding: "14px 16px", maxHeight: "75vh", overflowY: "auto" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>âš¡ Accesso rapido</span>
-                <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "4px 10px", borderRadius: 6, background: T.bg, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 600 }}>âœ• Chiudi</div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>⚡ Accesso rapido</span>
+                <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "4px 10px", borderRadius: 6, background: T.bg, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 600 }}>✕ Chiudi</div>
               </div>
 
-              {/* TIPOLOGIA â€” chips scroll */}
+              {/* TIPOLOGIA — chips scroll */}
               <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 4 }}>ðŸªŸ Tipologia</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 4 }}>🪟 Tipologia</div>
                 <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
                   {tipologieFiltrate.map(tp => (
                     <div key={tp.code} onClick={() => updateVanoField(v.id, "tipo", tp.code)} style={{
@@ -1966,16 +1966,16 @@ export default function VanoDetailPanel() {
               {/* SISTEMA + VETRO */}
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>âš™ï¸ Sistema</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>⚙️ Sistema</div>
                   <select style={{ ...S.select, fontSize: 12, padding: "8px" }} value={v.sistema || ""} onChange={e => updateVanoField(v.id, "sistema", e.target.value)}>
-                    <option value="">â€” Sistema â€”</option>
+                    <option value="">— Sistema —</option>
                     {sistemiDB.map(s => <option key={s.id} value={`${s.marca} ${s.sistema}`}>{s.marca} {s.sistema}</option>)}
                   </select>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>ðŸªŸ Vetro</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>🪟 Vetro</div>
                   <select style={{ ...S.select, fontSize: 12, padding: "8px" }} value={v.vetro || ""} onChange={e => updateVanoField(v.id, "vetro", e.target.value)}>
-                    <option value="">â€” Vetro â€”</option>
+                    <option value="">— Vetro —</option>
                     {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}</option>)}
                   </select>
                 </div>
@@ -1984,29 +1984,29 @@ export default function VanoDetailPanel() {
               {/* COLORI */}
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" }}>ðŸŽ¨ Colore</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" }}>🎨 Colore</div>
                   <div onClick={() => updateVanoField(v.id, "bicolore", !v.bicolore)} style={{ fontSize: 9, padding: "2px 8px", borderRadius: 4, background: v.bicolore ? T.accLt : T.bg, border: `1px solid ${v.bicolore ? T.acc : T.bdr}`, color: v.bicolore ? T.acc : T.sub, cursor: "pointer", fontWeight: 600 }}>
-                    Bicolore {v.bicolore ? "âœ“" : ""}
+                    Bicolore {v.bicolore ? "✓" : ""}
                   </div>
                 </div>
                 {!v.bicolore ? (
                   <select style={{ ...S.select, fontSize: 12, padding: "8px" }} value={v.coloreInt || ""} onChange={e => updateVanoField(v.id, "coloreInt", e.target.value)}>
-                    <option value="">â€” Colore â€”</option>
-                    {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} â€” {c.nome}</option>)}
+                    <option value="">— Colore —</option>
+                    {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                   </select>
                 ) : (
                   <div style={{ display: "flex", gap: 6 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 8, color: T.sub, marginBottom: 2 }}>INT</div>
                       <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreInt || ""} onChange={e => updateVanoField(v.id, "coloreInt", e.target.value)}>
-                        <option value="">â€”</option>
+                        <option value="">—</option>
                         {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                       </select>
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 8, color: T.sub, marginBottom: 2 }}>EST</div>
                       <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreEst || ""} onChange={e => updateVanoField(v.id, "coloreEst", e.target.value)}>
-                        <option value="">â€”</option>
+                        <option value="">—</option>
                         {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                       </select>
                     </div>
@@ -2016,27 +2016,27 @@ export default function VanoDetailPanel() {
 
               {/* COLORE ACCESSORI */}
               <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>ðŸ”© Colore accessori</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>🔩 Colore accessori</div>
                 <select style={{ ...S.select, fontSize: 12, padding: "8px" }} value={v.coloreAcc || ""} onChange={e => updateVanoField(v.id, "coloreAcc", e.target.value)}>
-                  <option value="">â€” Come profili â€”</option>
-                  {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} â€” {c.nome}</option>)}
+                  <option value="">— Come profili —</option>
+                  {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                 </select>
               </div>
 
-              {/* MISURE RAPIDE â€” L (tutte e 3) Ã— H (tutte e 3) */}
+              {/* MISURE RAPIDE — L (tutte e 3) × H (tutte e 3) */}
               <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 4 }}>ðŸ“ Misure (mm) â€” compila L e H, inserisce Alto/Centro/Basso e Sx/Centro/Dx</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 4 }}>📏 Misure (mm) — compila L e H, inserisce Alto/Centro/Basso e Sx/Centro/Dx</div>
                 <div style={{ display: "flex", gap: 6 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 8, color: "#507aff", marginBottom: 2, fontWeight: 700 }}>LARGHEZZA</div>
                     <input type="number" inputMode="numeric" style={{ ...S.input, fontSize: 16, fontFamily: FM, fontWeight: 700, textAlign: "center", padding: "10px", borderColor: "#507aff50" }} value={m.lCentro || ""} placeholder="L" onChange={e => { const val = parseInt(e.target.value) || 0; updateMisureBatch(v.id, { lAlto: val, lCentro: val, lBasso: val }); }} />
-                    <div style={{ fontSize: 8, color: T.sub, marginTop: 2, textAlign: "center" }}>â†’ Alto Â· Centro Â· Basso</div>
+                    <div style={{ fontSize: 8, color: T.sub, marginTop: 2, textAlign: "center" }}>→ Alto · Centro · Basso</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", paddingTop: 8, fontSize: 18, color: T.sub, fontWeight: 300 }}>Ã—</div>
+                  <div style={{ display: "flex", alignItems: "center", paddingTop: 8, fontSize: 18, color: T.sub, fontWeight: 300 }}>×</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 8, color: "#507aff", marginBottom: 2, fontWeight: 700 }}>ALTEZZA</div>
                     <input type="number" inputMode="numeric" style={{ ...S.input, fontSize: 16, fontFamily: FM, fontWeight: 700, textAlign: "center", padding: "10px", borderColor: "#507aff50" }} value={m.hCentro || ""} placeholder="H" onChange={e => { const val = parseInt(e.target.value) || 0; updateMisureBatch(v.id, { hSx: val, hCentro: val, hDx: val }); }} />
-                    <div style={{ fontSize: 8, color: T.sub, marginTop: 2, textAlign: "center" }}>â†’ Sx Â· Centro Â· Dx</div>
+                    <div style={{ fontSize: 8, color: T.sub, marginTop: 2, textAlign: "center" }}>→ Sx · Centro · Dx</div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 8 }}>
                     {m.lCentro > 0 && m.hCentro > 0 && (
@@ -2049,7 +2049,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
 
-              {/* Pezzi â€” chips 1-5 + input libero */}
+              {/* Pezzi — chips 1-5 + input libero */}
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 0" }}>
                 <span style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" }}>Pezzi:</span>
                 <div style={{ display: "flex", gap: 3 }}>
@@ -2081,7 +2081,7 @@ export default function VanoDetailPanel() {
             transition: "transform 0.2s, background 0.2s",
             transform: detailOpen.fabOpen ? "rotate(45deg)" : "none"
           }}>
-            <span style={{ fontSize: 20, color: "#fff" }}>âš¡</span>
+            <span style={{ fontSize: 20, color: "#fff" }}>⚡</span>
           </div>
 
         </div>
@@ -2089,5 +2089,3 @@ export default function VanoDetailPanel() {
     );
 
 }
-
-
