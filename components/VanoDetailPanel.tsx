@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
 import DisegnoTecnico from "./DisegnoTecnico";
-import MastroCAD from "./MastroCAD";
+import MastroCAD from "./MastroCAD2";
 import { generaTavolaTecnica } from "../lib/pdf-tavola-tecnica";
 import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
