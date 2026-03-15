@@ -8,6 +8,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
 import VanoConfiguratoreFullscreen from "./VanoConfiguratoreFullscreen";
+import RilievoRapido from "./RilievoRapido";
 
 // ── Palette colori ──
 const GRN = "#1A9E73";
@@ -776,6 +777,7 @@ export default function PreventivoConfiguratoreTab() {
   const c = selectedCM;
 
   const [vanoInConfig, setVanoInConfig] = useState<any>(null);
+  const [vanoRilievo, setVanoRilievo] = useState<any>(null);
 
   // ── Aggiorna commessa ──
   const updCM = useCallback((field: string, val: any) => {
@@ -819,6 +821,20 @@ export default function PreventivoConfiguratoreTab() {
 
   return (
     <>
+      {vanoRilievo && (
+        <RilievoRapido
+          vano={vanoRilievo}
+          T={T}
+          onChiudi={() => setVanoRilievo(null)}
+          onSalva={(patch: any) => {
+            const newVani = (c.vani || []).map((v: any) =>
+              v.id === vanoRilievo.id ? { ...v, ...patch } : v
+            );
+            updCM("vani", newVani);
+            setVanoRilievo(null);
+          }}
+        />
+      )}
       {vanoInConfig && (
         <VanoConfiguratoreFullscreen
           vano={vanoInConfig}
