@@ -152,16 +152,19 @@ export default function MastroCAD2({
     let lastDist = 0;
     let lastMidX = 0, lastMidY = 0;
     let touches: Touch[] = [];
+    let isPinching = false;
     function onTouchStart(e: TouchEvent) {
       e.preventDefault();
       touches = Array.from(e.touches);
       if (touches.length === 2) {
+        isPinching = true;
+        drawing.current.active = false;
         const dx = touches[0].clientX - touches[1].clientX;
         const dy = touches[0].clientY - touches[1].clientY;
         lastDist = Math.sqrt(dx*dx + dy*dy);
         lastMidX = (touches[0].clientX + touches[1].clientX) / 2;
         lastMidY = (touches[0].clientY + touches[1].clientY) / 2;
-      } else if (touches.length === 1) {
+      } else if (touches.length === 1 && !isPinching) {
         handleDown(e as any);
       }
     }
@@ -185,14 +188,15 @@ export default function MastroCAD2({
         lastMidX = midX;
         lastMidY = midY;
         drawRef.current();
-      } else if (touches.length === 1) {
+      } else if (touches.length === 1 && !isPinching) {
         handleMove(e as any);
       }
     }
     function onTouchEnd(e: TouchEvent) {
       e.preventDefault();
       lastDist = 0;
-      if (e.touches.length === 0) handleUp(e as any);
+      if (e.touches.length < 2) isPinching = false;
+      if (e.touches.length === 0 && !isPinching) handleUp(e as any);
     }
     cvs.addEventListener("touchstart", onTouchStart, { passive: false });
     cvs.addEventListener("touchmove", onTouchMove, { passive: false });
