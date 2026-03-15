@@ -8,6 +8,10 @@
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useMastro } from "./MastroContext";
+import MastroCadEngine, {
+  defaultCadConfig, TIPOLOGIE_DEFAULT, PROFILI_DEFAULT,
+  type CadConfig, type Tipologia
+} from "./MastroCadEngine";
 
 // ── Costanti design ─────────────────────────────────────────
 const AMB = "#D08008";
@@ -656,12 +660,32 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
         {step === 1 && (
           <div style={{ padding: 14 }}>
 
-            {/* ANTEPRIMA SVG */}
-            <div style={{
-              background: "#f8f9ff", borderRadius: 14, border: `1.5px solid ${bdr}`,
-              marginBottom: 14, overflow: "hidden",
-            }}
-              dangerouslySetInnerHTML={{ __html: svgStr }}
+            {/* ANTEPRIMA CAD ENGINE */}
+            <MastroCadEngine
+              config={{
+                W: misuraInfisso.L || 1200,
+                H: misuraInfisso.H || 1500,
+                tipologia: TIPOLOGIE_DEFAULT.find(t => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0],
+                montanti: [],
+                traversi: [],
+                profili: {
+                  telaio: PROFILI_DEFAULT[0],
+                  anta: PROFILI_DEFAULT[1],
+                  montante: PROFILI_DEFAULT[2],
+                },
+                cassonetto: cassOn,
+                cassH: cfg.cassH || 200,
+                showQuote: true,
+              }}
+              readonly={false}
+              height={300}
+              onChange={(newCfg: CadConfig) => {
+                setCfg((prev: any) => ({
+                  ...prev,
+                  montanti: newCfg.montanti,
+                  traversi: newCfg.traversi,
+                }));
+              }}
             />
 
             {/* MISURE */}
@@ -873,11 +897,26 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
         {step === 2 && (
           <div style={{ padding: 14 }}>
 
-            {/* MINI PREVIEW */}
-            <div style={{
-              background: "#f8f9ff", borderRadius: 12, border: `1px solid ${bdr}`,
-              marginBottom: 14, overflow: "hidden", maxHeight: 180,
-            }} dangerouslySetInnerHTML={{ __html: svgStr }} />
+            {/* MINI PREVIEW CAD */}
+            <MastroCadEngine
+              config={{
+                W: misuraInfisso.L || 1200,
+                H: misuraInfisso.H || 1500,
+                tipologia: TIPOLOGIE_DEFAULT.find(t => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0],
+                montanti: [],
+                traversi: [],
+                profili: {
+                  telaio: PROFILI_DEFAULT[0],
+                  anta: PROFILI_DEFAULT[1],
+                  montante: PROFILI_DEFAULT[2],
+                },
+                cassonetto: cassOn,
+                cassH: cfg.cassH || 200,
+                showQuote: false,
+              }}
+              readonly={true}
+              height={160}
+            />
 
             {/* PREZZO */}
             <div style={{ background: card, borderRadius: 12, padding: 14, marginBottom: 10, border: `1px solid ${bdr}` }}>
