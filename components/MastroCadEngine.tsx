@@ -232,6 +232,8 @@ export default function MastroCadEngine({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const toolRef = useRef<string>("sel");
+  const configRef = useRef<any>(null);
   const configRef = useRef<CadConfig>(config);
   const [tool, setTool] = useState<string>("sel");
   const [vista, setVista] = useState<string>("prospetto");
@@ -1537,13 +1539,14 @@ export default function MastroCadEngine({
   // ── TOOL HANDLERS ───────────────────────────────────────────
   const handleCanvasClick = useCallback((mmX: number, mmY: number) => {
     if (!onChange) return;
-    if (tool === "mont") {
+    const ct = toolRef.current;
+    if (ct === "mont") {
       const mm = Math.round(mmX / 5) * 5;
       if (mm > 0 && mm < config.W) {
         const newM = [...configRef.current.montanti, mm].sort((a, b) => a - b);
         onChange({ ...configRef.current, montanti: newM });
       }
-    } else if (tool === "trav") {
+    } else if (ct === "trav") {
       const mm = Math.round(mmY / 5) * 5;
       if (mm > 0 && mm < config.H) {
         const newT: TraversoConfig[] = [...configRef.current.traversi, { mm }].sort((a, b) => a.mm - b.mm);
@@ -1569,7 +1572,9 @@ export default function MastroCadEngine({
         celle,
       };
       onChange({ ...configRef.current, tipologia: newTip });
-    } else if (tool === "sel") {
+    } else if (ct === "anta") {
+      if (onChange) { const tip = (configRef.current||{}).tipologia || {}; const n = ((tip.cols||[]).length % 6)+1; const cols = Array(n).fill(Math.floor(100/n)); cols[0]+=100-cols.reduce((s,x)=>s+x,0); const celle = Array.from({length:n},(_,i)=>({tipo:"anta",verso:i%2===0?"sx":"dx"})); onChange({...(configRef.current||{}), tipologia:{...tip,id:"c"+n,nome:n+" ante",cols,righe:Array(n).fill([100]),celle}}); }
+    } else if (ct === "sel") {
       // Selezione oggetto — gestita da Fabric
     }
   }, [tool, onChange]);
@@ -1634,6 +1639,9 @@ export default function MastroCadEngine({
 
   // Aggiorna sempre configRef con la prop corrente
   configRef.current = config;
+
+  configRef.current = configRef.current || {};
+  toolRef.current = tool;
 
   if (!isLoaded) {
     return (
