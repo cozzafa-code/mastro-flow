@@ -7,6 +7,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
+import VanoConfiguratoreFullscreen from "./VanoConfiguratoreFullscreen";
 
 import InfissoSVG, { buildMiniPreview, type WindowConfig } from "./InfissoSVG";
 
@@ -34,6 +35,7 @@ function NumInput({ value, onChange, placeholder = "0", style = {} }: any) {
       onChange={e => { setLocal(e.target.value); onChange(e.target.value === "" ? 0 : Number(e.target.value)); }}
       style={{ fontFamily: FM, textAlign: "right", ...style }}
     />
+    </>
   );
 }
 
@@ -727,6 +729,21 @@ export default function PreventivoConfiguratoreTab() {
   if (!selectedCM) return null;
   const c = selectedCM;
 
+  const [vanoInConfig, setVanoInConfig] = useState<any>(null);
+
+  // Apre il configuratore fullscreen per un vano
+  const apriConfiguratoreVano = (vano: any) => setVanoInConfig(vano);
+
+  // Salva il vano dal configuratore
+  const salvaVanoConfigurato = (patch: any) => {
+    if (!vanoInConfig) return;
+    const newVani = (c.vani || []).map((v: any) =>
+      v.id === vanoInConfig.id ? { ...v, ...patch } : v
+    );
+    updCM("vani", newVani);
+    setVanoInConfig(null);
+  };
+
   // ── Aggiorna commessa ──
   const updCM = useCallback((field: string, val: any) => {
     setCantieri((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, [field]: val } : x));
@@ -768,6 +785,15 @@ export default function PreventivoConfiguratoreTab() {
   };
 
   return (
+    <>
+      {vanoInConfig && (
+        <VanoConfiguratoreFullscreen
+          vano={vanoInConfig}
+          onSalva={salvaVanoConfigurato}
+          onChiudi={() => setVanoInConfig(null)}
+          T={T}
+        />
+      )}
     <div style={{ paddingBottom: 40 }}>
 
       {/* ══ PRATICA FISCALE ══ */}
@@ -824,8 +850,10 @@ export default function PreventivoConfiguratoreTab() {
 
       {/* Aggiungi vano */}
       <div onClick={() => {
-        const newV = { id: Date.now(), nome: `Vano ${vani.length + 1}`, tipo: "F1A", pezzi: 1, misure: {}, accessori: { tapparella: { attivo: false }, zanzariera: { attivo: false } }, accessoriCatalogo: [], vociLibere: [] };
-        updCM("vani", [...(c.vani || []), newV]);
+        const newV = { id: Date.now(), nome: `Vano ${vani.length + 1}`, tipo: "F2A", pezzi: 1, misure: {}, accessori: { tapparella: { attivo: false }, zanzariera: { attivo: false } }, accessoriCatalogo: [], vociLibere: [] };
+        const newVani = [...(c.vani || []), newV];
+        updCM("vani", newVani);
+        setVanoInConfig(newV);
       }} style={{ padding: "14px", borderRadius: 14, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.sub, marginBottom: 10, background: T.card }}>
         + Aggiungi vano
       </div>
