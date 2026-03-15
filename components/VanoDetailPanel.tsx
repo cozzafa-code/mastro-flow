@@ -11,6 +11,7 @@ import DisegnoTecnico from "./DisegnoTecnico";
 import { generaTavolaTecnica } from "../lib/pdf-tavola-tecnica";
 import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
+import MastroCAD from "./MastroCAD";
 import { supabase } from "@/lib/supabase";
 
 // ─── STATI MISURE ──────────────────────────────────────────
@@ -95,6 +96,7 @@ export default function VanoDetailPanel() {
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
+  const [showMastroCAD, setShowMastroCAD] = useState(false);
   // === FLASH CONFIGURATORE ===
   const [flashSec, setFlashSec] = useState<string|null>(null);
   const [completedSecs, setCompletedSecs] = useState<Set<string>>(new Set());
@@ -1151,7 +1153,26 @@ export default function VanoDetailPanel() {
               {/* ═══ MISURE STANDARD: Serramenti (8 punti) ═══ */}
               {!["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"].includes(v.tipo) && (<>
 
-              {/* ═══ DISEGNO TECNICO — Condiviso con preventivo ═══ */}
+              
+              {/* ═══ MASTRO CAD — Motore unificato foto+calibra+disegna ═══ */}
+              <div style={{ marginBottom: 10 }}>
+                <button
+                  onClick={() => setShowMastroCAD(true)}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 10,
+                    padding: "11px 14px", borderRadius: 10, border: "1.5px solid #D08008",
+                    background: "#D0800812", cursor: "pointer", textAlign: "left"
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>📐</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#D08008" }}>MASTRO CAD</div>
+                    <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>Foto → Calibra → Disegna → BOM automatica</div>
+                  </div>
+                  <span style={{ fontSize: 10, color: "#D08008", fontWeight: 700 }}>Apri →</span>
+                </button>
+              </div>
+{/* ═══ DISEGNO TECNICO — Condiviso con preventivo ═══ */}
               <div style={{ marginBottom: 14 }}>
                 <div onClick={() => setShowDisegno(!showDisegno)}
                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}>
@@ -1751,6 +1772,53 @@ export default function VanoDetailPanel() {
               </div>
               {detailOpen.disegno && (
                 <div style={{ marginBottom: 12 }}>
+
+      {/* ═══ MASTRO CAD — Overlay fullscreen ═══ */}
+      {showMastroCAD && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9998,
+          background: "#F2F1EC", display: "flex", flexDirection: "column"
+        }}>
+          {/* Topbar */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 12,
+            padding: "10px 16px", background: "#1A1A1C",
+            borderBottom: "2px solid #D08008"
+          }}>
+            <button
+              onClick={() => setShowMastroCAD(false)}
+              style={{
+                background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
+                color: "#fff", borderRadius: 8, padding: "5px 14px",
+                cursor: "pointer", fontSize: 12, fontWeight: 600
+              }}
+            >← Chiudi</button>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#D08008" }}>
+              MASTRO CAD
+            </span>
+            <span style={{ fontSize: 11, color: "#888" }}>
+              {selectedVano?.nome || (selectedVano ? `Vano ${selectedVano.numero || ""}` : "")}
+            </span>
+          </div>
+          {/* Motore CAD */}
+          <div style={{ flex: 1, overflow: "hidden" }}>
+            <MastroCAD
+              vanoNome={selectedVano?.nome || `Vano ${selectedVano?.numero || ""}`}
+              piano={selectedCM?.piano || 1}
+              onClose={() => setShowMastroCAD(false)}
+              onSalva={(data) => {
+                console.log("[MastroCAD] Salva:", data);
+                setShowMastroCAD(false);
+              }}
+              onMisureUpdate={(mis) => {
+                if (selectedVano && mis.lCentro) updateMisura(selectedVano.id, "lCentro", mis.lCentro);
+                if (selectedVano && mis.hCentro) updateMisura(selectedVano.id, "hCentro", mis.hCentro);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
 {/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
                 const W = drawFullscreen ? 760 : 380;
