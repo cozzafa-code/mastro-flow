@@ -665,7 +665,7 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
               config={{
                 W: misuraInfisso.L || 1200,
                 H: misuraInfisso.H || 1500,
-                tipologia: TIPOLOGIE_DEFAULT.find((t: Tipologia) => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0],
+                tipologia: (() => { const base = TIPOLOGIE_DEFAULT.find((t: Tipologia) => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0]; return cfg.celle ? { ...base, celle: cfg.celle } : base; })(),
                 montanti: cfg.montanti || [],
                 traversi: (cfg.traversi || []) as TraversoConfig[],
                 nodi: cfg.nodi || {},
@@ -684,17 +684,11 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
                   montanti: newCfg.montanti,
                   traversi: newCfg.traversi,
                   nodi: newCfg.nodi,
+                  celle: newCfg.tipologia?.celle,
                 }));
               }}
               readonly={false}
               height={380}
-              onChange={(newCfg: CadConfig) => {
-                setCfg((prev: any) => ({
-                  ...prev,
-                  montanti: newCfg.montanti,
-                  traversi: newCfg.traversi,
-                }));
-              }}
             />
 
             {/* MISURE */}
