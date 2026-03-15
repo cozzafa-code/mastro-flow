@@ -424,6 +424,7 @@ export default function MastroCAD2({
     x: number, y: number, w: number, h: number,
     apertura: string, isTec: boolean
   ) {
+    if (w < 5 || h < 5) return;
     const col = isTec ? "#1A4A8A" : "rgba(150,200,255,0.8)";
     ctx.save();
     ctx.strokeStyle = col;
