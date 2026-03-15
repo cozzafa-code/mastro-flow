@@ -68,7 +68,23 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
   const fileRef = useRef<HTMLInputElement>(null);
 
   // ── CANVAS SETUP ───────────────────────────────────────
-  useEffect(() => { resize(); window.addEventListener("resize", resize); return () => window.removeEventListener("resize", resize); }, []);
+  useEffect(() => {
+    resize();
+    window.addEventListener("resize", resize);
+    // Touch events non-passive per preventDefault
+    const cvs = canvasRef.current;
+    if (cvs) {
+      const opts = { passive: false };
+      cvs.addEventListener("touchmove", onMove as any, opts);
+      cvs.addEventListener("touchend", onTap as any, opts);
+      return () => {
+        cvs.removeEventListener("touchmove", onMove as any);
+        cvs.removeEventListener("touchend", onTap as any);
+        window.removeEventListener("resize", resize);
+      };
+    }
+    return () => window.removeEventListener("resize", resize);
+  }, []);
   useEffect(() => { S.current.bgOpacity = bgOpacity / 100; draw(); }, [bgOpacity]);
 
   function resize() {
@@ -468,14 +484,27 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
 
   // ── EVENTI ─────────────────────────────────────────────
   function getPos(e: any) {
-    const r=canvasRef.current!.getBoundingClientRect();
-    const t=e.touches?e.touches[0]:(e.changedTouches?e.changedTouches[0]:e);
-    return {sx:t.clientX-r.left,sy:t.clientY-r.top};
+    const r = canvasRef.current!.getBoundingClientRect();
+    let clientX = 0, clientY = 0;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else if (e.clientX !== undefined) {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      return { sx: 0, sy: 0 };
+    }
+    return { sx: clientX - r.left, sy: clientY - r.top };
   }
 
   function onMove(e: any) {
-    e.preventDefault();
+    try { e.preventDefault(); } catch(_) {}
     const {sx,sy}=getPos(e);
+    if (sx===0 && sy===0) return;
     const raw=s2m(sx,sy);
     const prev=S.current.pts.length>0?S.current.pts[S.current.pts.length-1]:null;
     S.current.hoverMm=applySnap(raw.x,raw.y,prev);
@@ -483,8 +512,9 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
   }
 
   function onTap(e: any) {
-    e.preventDefault();
+    try { e.preventDefault(); } catch(_) {}
     const {sx,sy}=getPos(e);
+    if (sx===0 && sy===0 && !e.clientX) return;
     // Check click su quote → numpad
     for(let i=0;i<S.current.objects.length;i++) {
       const o=S.current.objects[i];
@@ -719,7 +749,10 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
       <div style={{flex:1,display:"flex",overflow:"hidden"}}>
         <div ref={wrapRef} style={{flex:1,position:"relative",overflow:"hidden",touchAction:"none"}}>
           <canvas ref={canvasRef} style={{display:"block",touchAction:"none",cursor:tool==="sel"?"default":"crosshair"}}
-            onMouseMove={onMove} onTouchMove={onMove} onClick={onTap} onTouchEnd={onTap}
+            onMouseMove={onMove}
+          onTouchMove={(e) => { try{e.preventDefault();}catch(_){} onMove(e); }}
+          onClick={onTap}
+          onTouchEnd={(e) => { try{e.preventDefault();}catch(_){} onTap(e); }}
           />
           {/* BADGE MISURE ESTRATTE */}
           {misureEstratte && (
