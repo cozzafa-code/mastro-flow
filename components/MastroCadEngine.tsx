@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════════
 // MASTRO CAD ENGINE — Componente React con Fabric.js
@@ -1829,58 +1829,14 @@ export default function MastroCadEngine({
           </div>
         )}
         {/* PANNELLO CELLA ─ bottom sheet apertura */}
-        {showCellaPanel && selData?.tipo === "cella" && onChange && (
+        {tool === "anta" && onChange && (
           <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            background: "#111", borderTop: `1px solid ${GRN}40`,
-            padding: "12px 16px 20px", borderRadius: "12px 12px 0 0",
+            position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
+            background: "#111e", border: "1px solid #D0800860",
+            padding: "6px 16px", borderRadius: 20, fontSize: 12, color: "#D08008",
+            fontWeight: 700, pointerEvents: "none", whiteSpace: "nowrap",
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: GRN }}>
-                Apertura — {Math.round(selData.wMm)}×{Math.round(selData.hMm)} mm
-              </span>
-              <button onClick={() => { setShowCellaPanel(false); fabricRef.current?.discardActiveObject(); fabricRef.current?.renderAll(); }}
-                style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 16 }}>×</button>
-            </div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {([
-                { tipo: "fisso",          verso: null,  label: "☐ Fisso" },
-                { tipo: "anta",           verso: "sx",  label: "◁ Anta Sx" },
-                { tipo: "anta",           verso: "dx",  label: "▷ Anta Dx" },
-                { tipo: "portafinestra",  verso: "sx",  label: "◁ P.Fin Sx" },
-                { tipo: "portafinestra",  verso: "dx",  label: "▷ P.Fin Dx" },
-                { tipo: "vasistas",       verso: null,  label: "△ Vasistas" },
-                { tipo: "scorrevole",     verso: "dx",  label: "→ Scorr. Dx" },
-                { tipo: "scorrevole",     verso: "sx",  label: "← Scorr. Sx" },
-                { tipo: "alzante",        verso: "dx",  label: "⇥ Alzante" },
-              ] as const).map(({ tipo, verso, label }) => {
-                const isSel = selData.apertura === tipo && (verso === null || selData.verso === verso);
-                return (
-                  <button key={tipo + (verso||"")} onClick={() => {
-                    // Aggiorna la tipologia: trova la cella per ci/ri e modifica tipo+verso
-                    const tip = configRef.current.tipologia;
-                    const newCelle = [...(tip.celle || [])];
-                    newCelle[selData.cellaIdx] = {
-                      tipo: tipo as any,
-                      verso: (verso || selData.verso || "dx") as any,
-                    };
-                    onChange({ ...configRef.current, tipologia: { ...tip, celle: newCelle } });
-                    // selData si aggiornerà al prossimo drawAll via useEffect[config]
-                    setShowCellaPanel(false);
-                  }} style={{
-                    padding: "7px 11px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
-                    border: `1px solid ${isSel ? GRN : "#333"}`,
-                    background: isSel ? GRN+"20" : "#1a1a1a",
-                    color: isSel ? GRN : "#888", fontSize: 11, fontWeight: isSel ? 700 : 500,
-                  }}>
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ marginTop: 8, fontSize: 10, color: "#555" }}>
-              Tocca per cambiare apertura — il disegno si aggiorna subito
-            </div>
+            Tocca il telaio per aggiungere ante
           </div>
         )}
       </div>
