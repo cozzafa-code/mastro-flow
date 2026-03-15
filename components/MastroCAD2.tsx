@@ -589,6 +589,16 @@ export default function MastroCAD2({
 
     if (tool === "disegna" && !infisso) {
       drawing.current = { active:true, startX:sx, startY:sy, curX:sx, curY:sy, pts:[] };
+    } else if (tool === "disegna" && infisso) {
+      // Tocco dentro telaio con tool disegna → incrementa numero ante
+      const { x,y,w,h } = infisso.telaio;
+      const s2 = SCALE.current * vp.current.zoom;
+      const ps2 = mm2s(x,y);
+      if (sx>=ps2.x && sx<=ps2.x+w*s2 && sy>=ps2.y && sy<=ps2.y+h*s2) {
+        const nCorrente = infisso.montanti.length + 1;
+        const nNuovo = nCorrente >= 6 ? 1 : nCorrente + 1;
+        dividiInAnte(nNuovo);
+      }
     } else if (tool === "montante" && infisso) {
       addMontante(sx);
     } else if (tool === "traverso" && infisso) {
@@ -1028,26 +1038,6 @@ export default function MastroCAD2({
 
         <div style={{width:1,height:18,background:isTec?"#ccc":"#333"}}/>
 
-        {/* Numero ante rapido */}
-        {infisso && (<>
-          <div style={{width:1,height:18,background:isTec?"#ccc":"#333"}}/>
-          <span style={{fontSize:10,color:isTec?"#888":"#666",fontWeight:600}}>Ante:</span>
-          {[1,2,3,4,5].map(n => {
-            const nAnteCorrente = infisso.montanti.length + 1;
-            const isActive = nAnteCorrente === n;
-            return (
-              <button key={n} onPointerDown={()=>dividiInAnte(n)} style={{
-                width:30,height:28,borderRadius:6,
-                border:`1.5px solid ${isActive?"#D08008":isTec?"#ccc":"#333"}`,
-                background:isActive?"#D0800820":isTec?"#fff":"#1a1a1a",
-                color:isActive?"#D08008":isTec?"#555":"#888",
-                fontSize:12,fontWeight:800,cursor:"pointer",
-              }}>{n}</button>
-            );
-          })}
-          <div style={{width:1,height:18,background:isTec?"#ccc":"#333"}}/>
-        </>)}
-
         {/* Reset */}
         {infisso && (
           <button onClick={resetDisegno} style={{
@@ -1117,6 +1107,7 @@ export default function MastroCAD2({
             transition:"opacity 0.2s"
           }}>
             {tool==="disegna" && !infisso && "Trascina per disegnare il telaio"}
+            {tool==="disegna" && infisso && `Tocca per aggiungere ante (${infisso.montanti.length+1} → ${infisso.montanti.length+2 > 6 ? 1 : infisso.montanti.length+2})`}
             {tool==="montante" && "Tocca per inserire un montante verticale"}
             {tool==="traverso" && "Tocca per inserire un traverso orizzontale"}
             {tool==="anta"     && "Tocca una specchiatura per cambiare apertura"}
