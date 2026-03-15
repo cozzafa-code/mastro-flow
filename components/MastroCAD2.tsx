@@ -592,14 +592,15 @@ export default function MastroCAD2({
     const now = Date.now();
 
     // Double tap → aggiungi divisore o anta
-    if (tool === "disegna" || drawing.current.active) { lastTap.current = { t:now, x:sx, y:sy }; }
-    else if (now - lastTap.current.t < 300 &&
+    if (tool !== "disegna" && !drawing.current.active &&
+        now - lastTap.current.t < 300 &&
         Math.abs(sx - lastTap.current.x) < 30 &&
         Math.abs(sy - lastTap.current.y) < 30) {
       handleDoubleTap(sx, sy);
       lastTap.current.t = 0;
       return;
     }
+    lastTap.current = { t:now, x:sx, y:sy };
     if (tool === "disegna" && !infisso) {
       drawing.current = { active:true, startX:sx, startY:sy, curX:sx, curY:sy, pts:[] };
     } else if (tool === "disegna" && infisso) {
