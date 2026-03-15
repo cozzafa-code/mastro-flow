@@ -122,6 +122,8 @@ export default function MastroCAD2({
 
   // Infisso corrente (uno alla volta per ora)
   const [infisso, setInfisso] = useState<Infisso | null>(null);
+  const infissoRef = useRef<Infisso | null>(null);
+  const setInfissoAndRef = (v: Infisso | null) => { infissoRef.current = v; setInfissoAndRef(v); };
   const [selItem, setSelItem] = useState<{tipo:string,id:string}|null>(null);
 
   // Numpad per quote
@@ -281,8 +283,8 @@ export default function MastroCAD2({
     if (isTec) drawGrid(ctx, W, H);
 
     // Se c'è un infisso, disegnalo
-    if (infisso) {
-      drawInfisso(ctx, infisso);
+    if (infissoRef.current) {
+      drawInfisso(ctx, infissoRef.current);
     }
 
     // Gesto in corso
@@ -739,7 +741,7 @@ export default function MastroCAD2({
       lCentro: mmW,
       hCentro: mmH,
     };
-    setInfisso(newInfisso);
+    setInfissoAndRef(newInfisso);
     setTool("sel");
     userZoomed.current = false;
     lastTap.current = { t:0, x:0, y:0 };
@@ -805,7 +807,7 @@ export default function MastroCAD2({
     };
     // Aggiorna ante
     updated.ante = ricalcolaAnte(updated);
-    setInfisso(updated);
+    setInfissoAndRef(updated);
     redraw();
   }
 
@@ -836,7 +838,7 @@ export default function MastroCAD2({
       traversi: [...infisso.traversi, newTrav].sort((a,b)=>a.pos-b.pos),
     };
     updated.ante = ricalcolaAnte(updated);
-    setInfisso(updated);
+    setInfissoAndRef(updated);
     redraw();
   }
 
@@ -891,7 +893,7 @@ export default function MastroCAD2({
       }
     }
     updated.ante = ante;
-    setInfisso(updated);
+    setInfissoAndRef(updated);
     redraw();
   }
 
@@ -907,7 +909,7 @@ export default function MastroCAD2({
     const updated = { ...infisso, ante: infisso.ante.map(a =>
       a.col===col && a.row===row ? { ...a, apertura: apertura as any } : a
     )};
-    setInfisso(updated);
+    setInfissoAndRef(updated);
     setMenuAnta(null);
     setTimeout(redraw, 50);
   }
@@ -955,7 +957,7 @@ export default function MastroCAD2({
 
   // ── AZIONI ──────────────────────────────────────────
   function resetDisegno() {
-    setInfisso(null);
+    setInfissoAndRef(null);
     setSelItem(null);
     setTool("disegna");
     draw();
@@ -966,7 +968,7 @@ export default function MastroCAD2({
     setSistema(id);
     if (!infisso) return;
     const sys = SISTEMI[id];
-    setInfisso(prev => prev ? {
+    setInfissoAndRef(prev => prev ? {
       ...prev,
       telaio: { ...prev.telaio, sistema:id, spessore:sys.telaio },
       montanti: prev.montanti.map(m=>({...m,spessore:sys.mont})),
@@ -984,11 +986,11 @@ export default function MastroCAD2({
     if (v <= 0) { setNumpad(null); return; }
     if (numpad.campo === "larghezza") {
       const updated = { ...infisso, lCentro:v, telaio:{...infisso.telaio,w:v} };
-      setInfisso(updated);
+      setInfissoAndRef(updated);
       if (onMisureUpdate) onMisureUpdate({ lCentro:v, hCentro:infisso.hCentro });
     } else if (numpad.campo === "altezza") {
       const updated = { ...infisso, hCentro:v, telaio:{...infisso.telaio,h:v} };
-      setInfisso(updated);
+      setInfissoAndRef(updated);
       if (onMisureUpdate) onMisureUpdate({ lCentro:infisso.lCentro, hCentro:v });
     }
     setNumpad(null);
