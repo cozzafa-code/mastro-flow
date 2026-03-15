@@ -32,6 +32,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "bcryptjs": "^3.0.3",
+    "fabric": "^5.3.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "next": "^14.2.35",
