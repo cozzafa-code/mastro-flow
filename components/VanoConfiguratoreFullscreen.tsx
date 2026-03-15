@@ -10,7 +10,7 @@ import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useMastro } from "./MastroContext";
 import MastroCadEngine, {
   defaultCadConfig, TIPOLOGIE_DEFAULT, PROFILI_DEFAULT,
-  type CadConfig, type Tipologia
+  type CadConfig, type Tipologia, type TraversoConfig
 } from "./MastroCadEngine";
 
 // ── Costanti design ─────────────────────────────────────────
@@ -665,9 +665,10 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
               config={{
                 W: misuraInfisso.L || 1200,
                 H: misuraInfisso.H || 1500,
-                tipologia: TIPOLOGIE_DEFAULT.find(t => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0],
-                montanti: [],
-                traversi: [],
+                tipologia: TIPOLOGIE_DEFAULT.find((t: Tipologia) => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0],
+                montanti: cfg.montanti || [],
+                traversi: (cfg.traversi || []) as TraversoConfig[],
+                nodi: cfg.nodi || {},
                 profili: {
                   telaio: PROFILI_DEFAULT[0],
                   anta: PROFILI_DEFAULT[1],
@@ -676,6 +677,14 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
                 cassonetto: cassOn,
                 cassH: cfg.cassH || 200,
                 showQuote: true,
+              }}
+              onChange={(newCfg: CadConfig) => {
+                setCfg((prev: any) => ({
+                  ...prev,
+                  montanti: newCfg.montanti,
+                  traversi: newCfg.traversi,
+                  nodi: newCfg.nodi,
+                }));
               }}
               readonly={false}
               height={300}

@@ -36,19 +36,48 @@ export interface Tipologia {
   celle: Cella[];
 }
 
+// Tipi nodo ammicciatura
+export type TipoNodo = "croce" | "T-mont" | "T-trav" | "passante-mont" | "passante-trav" | "coprigiunto" | "L";
+
+export interface NodoConfig {
+  tipo: TipoNodo;
+  // Angolo taglio in gradi (default 45)
+  angolo?: number;
+}
+
+// Traverso parziale — può attraversare solo alcune colonne
+export interface TraversoConfig {
+  mm: number;           // posizione mm dall'alto
+  colonneDa?: number;   // indice colonna inizio (default: tutto)
+  colonneA?: number;    // indice colonna fine (default: tutto)
+}
+
+// Fuorisquadro — 4 punti angolo del telaio
+export interface FuoriSquadro {
+  abilitato: boolean;
+  tlX: number; tlY: number;  // top-left delta mm
+  trX: number; trY: number;  // top-right delta mm
+  blX: number; blY: number;  // bottom-left delta mm
+  brX: number; brY: number;  // bottom-right delta mm
+}
+
 export interface CadConfig {
   W: number;
   H: number;
   tipologia: Tipologia;
-  montanti: number[];    // posizioni mm dal bordo sx
-  traversi: number[];    // posizioni mm dall'alto
+  montanti: number[];          // posizioni mm dal bordo sx
+  traversi: TraversoConfig[];  // traversi parziali configurabili
+  // Nodi: chiave "m{mi}-t{ti}" → config nodo
+  nodi: Record<string, NodoConfig>;
   profili: {
     telaio: Profilo;
     anta: Profilo;
     montante: Profilo;
+    traverso?: Profilo;
   };
   cassonetto?: boolean;
   cassH?: number;
+  fuoriSquadro?: FuoriSquadro;
   showQuote?: boolean;
   showSezOrizzontale?: boolean;
 }
@@ -173,6 +202,7 @@ export const defaultCadConfig = (): CadConfig => ({
   tipologia: TIPOLOGIE_DEFAULT[0],
   montanti: [],
   traversi: [],
+  nodi: {},
   profili: {
     telaio: PROFILI_DEFAULT[0],
     anta: PROFILI_DEFAULT[1],
@@ -180,9 +210,15 @@ export const defaultCadConfig = (): CadConfig => ({
   },
   cassonetto: false,
   cassH: 180,
+  fuoriSquadro: { abilitato: false, tlX:0,tlY:0,trX:0,trY:0,blX:0,blY:0,brX:0,brY:0 },
   showQuote: true,
   showSezOrizzontale: false,
 });
+
+// Helper: ottieni config nodo con default
+export function getNodo(nodi: Record<string,NodoConfig>, mi: number, ti: number): NodoConfig {
+  return nodi[`m${mi}-t${ti}`] || { tipo: "croce" };
+}
 
 // ══════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPALE
@@ -202,6 +238,7 @@ export default function MastroCadEngine({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [isLoaded, setIsLoaded] = useState(false);
   const [rightTab, setRightTab] = useState<"profili" | "tipologie">("tipologie");
+  const [showNodoPanel, setShowNodoPanel] = useState(false);
 
   const SCALE = 0.2; // mm → px nel canvas
 
@@ -254,7 +291,12 @@ export default function MastroCadEngine({
     canvas.on("selection:created", (e: any) => {
       const obj = e.selected?.[0];
       const data = obj?.get?.("cadData");
-      if (data) setSelData(data);
+      if (data) {
+        setSelData(data);
+        if (data.tipo === "nodo" && !readonly) {
+          setShowNodoPanel(true);
+        }
+      }
     });
     canvas.on("selection:cleared", () => setSelData(null));
 
@@ -341,8 +383,13 @@ export default function MastroCadEngine({
       drawCassonetto(canvas, fabric, ox, 50, W * SCALE, cassHpx);
     }
 
-    // ── TELAIO ──
-    drawTelaio(canvas, fabric, ox, oy, W * SCALE, H * SCALE, TF * SCALE, profili.telaio.color);
+    // ── TELAIO (con eventuale fuorisquadro) ──
+    const fq = config.fuoriSquadro;
+    if (fq?.abilitato) {
+      drawTelaioFuoriSquadro(canvas, fabric, ox, oy, W * SCALE, H * SCALE, TF * SCALE, profili.telaio.color, fq);
+    } else {
+      drawTelaio(canvas, fabric, ox, oy, W * SCALE, H * SCALE, TF * SCALE, profili.telaio.color);
+    }
 
     // ── MONTANTI ──
     montanti.forEach((mm, mi) => {
@@ -350,11 +397,51 @@ export default function MastroCadEngine({
       drawMontante(canvas, fabric, x, oy + TF * SCALE, H * SCALE - TF * SCALE * 2, TM * SCALE, mi, mm);
     });
 
-    // ── TRAVERSI ──
+    // ── TRAVERSI PARZIALI ──
     const montsX = montanti.map(m => ox + m * SCALE);
-    traversi.forEach((mm, ti) => {
-      const y = oy + mm * SCALE;
-      drawTraverso(canvas, fabric, ox + TF * SCALE, y, W * SCALE - TF * SCALE * 2, TT * SCALE, ti, mm, montsX, TM * SCALE);
+    const travsY = traversi.map(t => oy + t.mm * SCALE);
+
+    traversi.forEach((trav, ti) => {
+      const y = oy + trav.mm * SCALE;
+      // Calcola range colonne
+      const colDa = trav.colonneDa ?? 0;
+      const colA = trav.colonneA ?? (tip.cols.length - 1);
+      // X1 e X2 del traverso basati sulle colonne
+      const availW2 = W - TF * 2 - TM * (tip.cols.length - 1);
+      const totalW2 = tip.cols.reduce((s:number,c:number)=>s+c,0);
+      let curX2 = TF;
+      const colXs: {x1:number,x2:number}[] = [];
+      tip.cols.forEach((cw:number) => {
+        const colW = (cw/totalW2)*availW2;
+        colXs.push({x1:curX2, x2:curX2+colW});
+        curX2 += colW + TM;
+      });
+      const tx1 = ox + (colXs[colDa]?.x1 ?? TF) * SCALE;
+      const tx2 = ox + (colXs[colA]?.x2 ?? (W-TF)) * SCALE;
+      const travW = tx2 - tx1;
+
+      // Filtra montanti che cadono nel range del traverso
+      const montsInRange = montanti.filter((mm2,mi) => {
+        const mx = ox + mm2 * SCALE;
+        return mx >= tx1 && mx <= tx2;
+      });
+      const montsXInRange = montsInRange.map(m => ox + m * SCALE);
+      const montsIdxInRange = montanti.map((m,mi)=>({m,mi})).filter(({m})=>{
+        const mx = ox + m * SCALE;
+        return mx >= tx1 && mx <= tx2;
+      });
+
+      drawTraverso(canvas, fabric, tx1, y, travW, TT * SCALE, ti, trav.mm, montsXInRange, TM * SCALE, montsIdxInRange, config.nodi);
+    });
+
+    // ── NODI (cerchi visivi alle intersezioni) ──
+    montanti.forEach((mm, mi) => {
+      traversi.forEach((trav, ti) => {
+        const mx = ox + mm * SCALE;
+        const ty = oy + trav.mm * SCALE;
+        const nodo = getNodo(config.nodi, mi, ti);
+        drawNodoIndicator(canvas, fabric, mx, ty, TM * SCALE, TT * SCALE, nodo, mi, ti);
+      });
     });
 
     // ── CAMPITURE ──
@@ -465,6 +552,48 @@ export default function MastroCadEngine({
     }));
   }
 
+  // ── TELAIO FUORISQUADRO ─────────────────────────────────────
+  function drawTelaioFuoriSquadro(canvas: any, fabric: any, ox: number, oy: number, W: number, H: number, TF: number, color: string, fq: FuoriSquadro) {
+    const s = SCALE;
+    // 4 angoli con delta applicati
+    const tl = { x: ox + fq.tlX*s, y: oy + fq.tlY*s };
+    const tr = { x: ox + W + fq.trX*s, y: oy + fq.trY*s };
+    const bl = { x: ox + fq.blX*s, y: oy + H + fq.blY*s };
+    const br = { x: ox + W + fq.brX*s, y: oy + H + fq.brY*s };
+
+    // Outline esterno fuorisquadro
+    const pts = [tl.x,tl.y, tr.x,tr.y, br.x,br.y, bl.x,bl.y];
+    canvas.add(new fabric.Polygon(ptsToFabric(pts), {
+      fill: "transparent", stroke: "#c8d8e8", strokeWidth: 2.5,
+      selectable: false, evented: false
+    }));
+
+    // Barre telaio (approssimate come trapezi)
+    // Top
+    addBarra(canvas, fabric, [tl.x,tl.y, tr.x,tr.y, tr.x+TF*0.3,tr.y+TF, tl.x+TF*0.3,tl.y+TF]);
+    // Bottom
+    addBarra(canvas, fabric, [bl.x+TF*0.3,bl.y-TF, br.x-TF*0.3,br.y-TF, br.x,br.y, bl.x,bl.y]);
+    // Left
+    addBarra(canvas, fabric, [tl.x,tl.y+TF, tl.x+TF,tl.y+TF, bl.x+TF,bl.y-TF, bl.x,bl.y-TF]);
+    // Right
+    addBarra(canvas, fabric, [tr.x-TF,tr.y+TF, tr.x,tr.y+TF, br.x,br.y-TF, br.x-TF,br.y-TF]);
+
+    // Quote fuorisquadro (delta angoli)
+    const dati = [
+      { label: `ΔTL ${fq.tlX},${fq.tlY}`, x: tl.x, y: tl.y - 12 },
+      { label: `ΔTR ${fq.trX},${fq.trY}`, x: tr.x, y: tr.y - 12 },
+      { label: `ΔBL ${fq.blX},${fq.blY}`, x: bl.x, y: bl.y + 14 },
+      { label: `ΔBR ${fq.brX},${fq.brY}`, x: br.x, y: br.y + 14 },
+    ];
+    dati.forEach(d => {
+      canvas.add(new fabric.Text(d.label, {
+        left: d.x, top: d.y, fontSize: 8, fill: "#D08008",
+        fontFamily: "monospace", originX: "center",
+        selectable: false, evented: false
+      }));
+    });
+  }
+
   // ── MONTANTE ────────────────────────────────────────────────
   function drawMontante(canvas: any, fabric: any, cx: number, y1: number, h: number, TM: number, idx: number, mm: number) {
     const c = TM * 0.45;
@@ -499,8 +628,8 @@ export default function MastroCadEngine({
   }
 
   // ── TRAVERSO ────────────────────────────────────────────────
-  function drawTraverso(canvas: any, fabric: any, x1: number, cy: number, w: number, TT: number, idx: number, mm: number, montsX: number[], TM: number) {
-    const segs = calcSegmenti(x1, x1 + w, montsX, TM);
+  function drawTraverso(canvas: any, fabric: any, x1: number, cy: number, w: number, TT: number, idx: number, mm: number, montsX: number[], TM: number, montsIdx?: any[], nodi?: Record<string,NodoConfig>) {
+    const segs = calcSegmentiNodi(x1, x1 + w, montsX, TM, idx, montsIdx||[], nodi||{});
     const c = TT * 0.45;
 
     segs.forEach(([sx1, sx2]) => {
@@ -533,6 +662,89 @@ export default function MastroCadEngine({
       if (punti[i + 1] - punti[i] > 2) segs.push([punti[i], punti[i + 1]]);
     }
     return segs.length > 0 ? segs : [[x1, x2]];
+  }
+
+  // Versione nodo-aware: considera il tipo di nodo per decidere se il traverso passa o si interrompe
+  function calcSegmentiNodi(x1: number, x2: number, montsX: number[], TM: number, ti: number, montsIdx: any[], nodi: Record<string,NodoConfig>): [number, number][] {
+    if (montsX.length === 0) return [[x1, x2]];
+    const punti: number[] = [x1];
+    montsX.forEach((mx, i) => {
+      const mi = montsIdx[i]?.mi ?? i;
+      const nodo = nodi[`m${mi}-t${ti}`] || { tipo: "croce" };
+      if (nodo.tipo === "passante-trav") {
+        // traverso passante: non si interrompe al montante
+        // non aggiungere interruzione
+      } else {
+        // default: traverso si interrompe al montante
+        punti.push(mx - TM / 2);
+        punti.push(mx + TM / 2);
+      }
+    });
+    punti.push(x2);
+    punti.sort((a, b) => a - b);
+    const segs: [number, number][] = [];
+    for (let i = 0; i < punti.length - 1; i += 2) {
+      if (punti[i + 1] - punti[i] > 2) segs.push([punti[i], punti[i + 1]]);
+    }
+    return segs.length > 0 ? segs : [[x1, x2]];
+  }
+
+  // ── INDICATORE NODO (cerchio all'intersezione) ───────────────
+  function drawNodoIndicator(canvas: any, fabric: any, mx: number, ty: number, TM: number, TT: number, nodo: NodoConfig, mi: number, ti: number) {
+    const hw = TM / 2, hh = TT / 2;
+    const col = nodoColor(nodo.tipo);
+
+    // Box nodo
+    const box = new fabric.Rect({
+      left: mx - hw, top: ty - hh,
+      width: TM, height: TT,
+      fill: col.fill, stroke: col.stroke, strokeWidth: 1.5,
+      selectable: !readonly, evented: !readonly,
+      hoverCursor: "pointer",
+      rx: 2,
+    });
+    box.set("cadData", { tipo: "nodo", mi, ti, tipoNodo: nodo.tipo });
+    canvas.add(box);
+
+    // Linee diagonali 45° agli angoli
+    const c = Math.min(hw, hh) * 0.5;
+    const diagPts = [
+      [mx-hw, ty-hh, mx-hw+c, ty-hh+c],
+      [mx+hw, ty-hh, mx+hw-c, ty-hh+c],
+      [mx-hw, ty+hh, mx-hw+c, ty+hh-c],
+      [mx+hw, ty+hh, mx+hw-c, ty+hh-c],
+    ];
+    diagPts.forEach(([x1,y1,x2,y2]) => {
+      canvas.add(new fabric.Line([x1,y1,x2,y2], {
+        stroke: col.stroke, strokeWidth: 1,
+        selectable: false, evented: false
+      }));
+    });
+
+    // Label tipo nodo
+    const labels: Record<string,string> = {
+      "croce":"✕","T-mont":"T","T-trav":"T","passante-mont":"║",
+      "passante-trav":"═","coprigiunto":"CG","L":"L"
+    };
+    canvas.add(new fabric.Text(labels[nodo.tipo] || "?", {
+      left: mx, top: ty,
+      fontSize: 8, fill: col.stroke, fontFamily: "system-ui",
+      originX: "center", originY: "center",
+      selectable: false, evented: false
+    }));
+  }
+
+  function nodoColor(tipo: TipoNodo) {
+    const map: Record<string,{fill:string,stroke:string}> = {
+      "croce":          { fill: "rgba(74,106,138,0.6)",  stroke: "#6a9ab8" },
+      "T-mont":         { fill: "rgba(208,128,8,0.2)",   stroke: "#D08008" },
+      "T-trav":         { fill: "rgba(208,128,8,0.2)",   stroke: "#D08008" },
+      "passante-mont":  { fill: "rgba(26,158,115,0.2)",  stroke: "#1A9E73" },
+      "passante-trav":  { fill: "rgba(26,158,115,0.2)",  stroke: "#1A9E73" },
+      "coprigiunto":    { fill: "rgba(59,127,224,0.2)",  stroke: "#3B7FE0" },
+      "L":              { fill: "rgba(220,68,68,0.15)",  stroke: "#DC4444" },
+    };
+    return map[tipo] || map["croce"];
   }
 
   // ── CAMPITURE ───────────────────────────────────────────────
@@ -902,9 +1114,11 @@ export default function MastroCadEngine({
     } else if (tool === "trav") {
       const mm = Math.round(mmY / 5) * 5;
       if (mm > 0 && mm < config.H) {
-        const newT = [...config.traversi, mm].sort((a, b) => a - b);
+        const newT: TraversoConfig[] = [...config.traversi, { mm }].sort((a, b) => a.mm - b.mm);
         onChange({ ...config, traversi: newT });
       }
+    } else if (tool === "sel") {
+      // Selezione oggetto — gestita da Fabric
     }
   }, [tool, config, onChange]);
 
@@ -946,6 +1160,7 @@ export default function MastroCadEngine({
 
   // ── RENDER ──────────────────────────────────────────────────
   const AMB = "#D08008";
+  type TipoNodo = "croce"|"T-mont"|"T-trav"|"passante-mont"|"passante-trav"|"coprigiunto"|"L";
   const GRN = "#1A9E73";
   const BLU = "#3B7FE0";
 
@@ -1029,7 +1244,7 @@ export default function MastroCadEngine({
         <canvas ref={canvasRef} />
 
         {/* Info selezione */}
-        {selData && (
+        {selData && !showNodoPanel && (
           <div style={{
             position: "absolute", bottom: 10, left: 10,
             background: "#111e", padding: "6px 12px", borderRadius: 8,
@@ -1037,8 +1252,58 @@ export default function MastroCadEngine({
           }}>
             {selData.tipo === "cella"
               ? `${selData.apertura} ${selData.verso || ""} — ${Math.round(selData.wMm)}×${Math.round(selData.hMm)} mm`
+              : selData.tipo === "nodo"
+              ? `Nodo M${selData.mi+1}×T${selData.ti+1} — ${selData.tipoNodo}`
               : `Montante @ ${selData.mm}mm`
             }
+          </div>
+        )}
+
+        {/* PANNELLO NODO ─ bottom sheet */}
+        {showNodoPanel && selData?.tipo === "nodo" && onChange && (
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            background: "#111", borderTop: `1px solid ${AMB}40`,
+            padding: "12px 16px", borderRadius: "12px 12px 0 0",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: AMB }}>
+                Nodo M{selData.mi+1} × T{selData.ti+1}
+              </span>
+              <button onClick={() => setShowNodoPanel(false)} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 16 }}>×</button>
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(["croce","T-mont","T-trav","passante-mont","passante-trav","coprigiunto","L"] as TipoNodo[]).map(tipo => {
+                const sel = (config.nodi?.[`m${selData.mi}-t${selData.ti}`]?.tipo || "croce") === tipo;
+                const labels: Record<string,string> = {
+                  "croce":"✕ Croce","T-mont":"T Mont.","T-trav":"T Trav.",
+                  "passante-mont":"║ Pass.M","passante-trav":"═ Pass.T",
+                  "coprigiunto":"▣ Coprig.","L":"L Angolo"
+                };
+                return (
+                  <button key={tipo} onClick={() => {
+                    const newNodi = { ...(config.nodi || {}), [`m${selData.mi}-t${selData.ti}`]: { tipo } };
+                    onChange({ ...config, nodi: newNodi });
+                  }} style={{
+                    padding: "6px 10px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                    border: `1px solid ${sel ? AMB : "#333"}`,
+                    background: sel ? AMB+"20" : "#1a1a1a",
+                    color: sel ? AMB : "#888", fontSize: 11, fontWeight: sel ? 700 : 500,
+                  }}>
+                    {labels[tipo]}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 10, color: "#555" }}>
+              {selData.tipoNodo === "croce" && "Entrambi i profili si interrompono — nodo a croce standard"}
+              {selData.tipoNodo === "T-mont" && "Traverso si ferma sul montante — montante continuo"}
+              {selData.tipoNodo === "T-trav" && "Montante si ferma sul traverso — traverso continuo"}
+              {selData.tipoNodo === "passante-mont" && "Montante attraversa senza interrompersi"}
+              {selData.tipoNodo === "passante-trav" && "Traverso attraversa senza interrompersi"}
+              {selData.tipoNodo === "coprigiunto" && "Profilo coprigiunto a copertura del nodo"}
+              {selData.tipoNodo === "L" && "Nodo ad angolo — solo per composizioni speciali"}
+            </div>
           </div>
         )}
       </div>
