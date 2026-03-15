@@ -443,7 +443,7 @@ export default function MastroCAD2({
       ctx.lineWidth = 1;
       ctx.setLineDash([6,4]);
       ctx.beginPath();
-      ctx.arc(x, y+h, w, -Math.PI/2, 0);
+      ctx.arc(x, y+h, Math.min(w,h), -Math.PI/2, 0);
       ctx.stroke();
       ctx.setLineDash([]);
       // Cardine
@@ -459,7 +459,7 @@ export default function MastroCAD2({
       ctx.lineWidth = 1;
       ctx.setLineDash([6,4]);
       ctx.beginPath();
-      ctx.arc(x+w, y+h, w, Math.PI, Math.PI/2, true);
+      ctx.arc(x+w, y+h, Math.min(w,h), Math.PI, Math.PI/2, true);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.beginPath(); ctx.arc(x+w, y+h, 5, 0, Math.PI*2); ctx.fill();
@@ -676,6 +676,7 @@ export default function MastroCAD2({
 
   function handleDoubleTap(sx: number, sy: number) {
     if (!infisso) return;
+    if (tool === "disegna") return;
     // Determina se il tap è nel telaio
     const { x,y,w,h,spessore } = infisso.telaio;
     const s = SCALE.current * vp.current.zoom;
