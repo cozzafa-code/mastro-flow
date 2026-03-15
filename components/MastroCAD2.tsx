@@ -259,6 +259,9 @@ export default function MastroCAD2({
     return () => { ro.disconnect(); };
   }, [infisso]);
 
+  // Ridisegna quando infisso/mode/drawTick cambiano — senza resettare zoom
+  useEffect(() => { drawRef.current(); }, [infisso, mode, drawTick]);
+
   // ── DISEGNO CANVAS ───────────────────────────────────
   const draw = () => {
     const cvs = canvasRef.current;
