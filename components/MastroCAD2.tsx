@@ -137,6 +137,7 @@ export default function MastroCAD2({
 
   // Viewport (pan/zoom)
   const vp = useRef({ zoom: 1, panX: 0, panY: 0 });
+  const userZoomed = useRef(false);
 
   // ── CONVERSIONI COORDINATE ───────────────────────────
   // Da px schermo → mm logici (l'infisso vive in spazio mm)
@@ -175,6 +176,7 @@ export default function MastroCAD2({
         if (lastDist > 0) {
           const scale = dist / lastDist;
           vp.current.zoom = Math.max(0.1, Math.min(10, vp.current.zoom * scale));
+          userZoomed.current = true;
           vp.current.panX += (midX - lastMidX);
           vp.current.panY += (midY - lastMidY);
         }
@@ -207,10 +209,12 @@ export default function MastroCAD2({
     const pad = 80;
     const availW = cvs.width - pad*2;
     const availH = cvs.height - pad*2;
-    if (infisso) {
-      SCALE.current = Math.min(availW/infisso.lCentro, availH/infisso.hCentro) * 0.8;
-    } else {
-      SCALE.current = Math.min(availW/lCentroIniziale, availH/hCentroIniziale) * 0.8;
+    if (!userZoomed.current) {
+      if (infisso) {
+        SCALE.current = Math.min(availW/infisso.lCentro, availH/infisso.hCentro) * 0.8;
+      } else {
+        SCALE.current = Math.min(availW/lCentroIniziale, availH/hCentroIniziale) * 0.8;
+      }
     }
   }
 
@@ -247,16 +251,7 @@ export default function MastroCAD2({
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(wrap);
-    // Touch listeners con passive:false per preventDefault
-    cvs.addEventListener('touchstart', handleDown as any, { passive: false });
-    cvs.addEventListener('touchmove',  handleMove as any, { passive: false });
-    cvs.addEventListener('touchend',   handleUp   as any, { passive: false });
-    return () => {
-      ro.disconnect();
-      cvs.removeEventListener('touchstart', handleDown as any);
-      cvs.removeEventListener('touchmove',  handleMove as any);
-      cvs.removeEventListener('touchend',   handleUp   as any);
-    };
+    return () => { ro.disconnect(); };
   }, [infisso]);
 
   // ── DISEGNO CANVAS ───────────────────────────────────
@@ -735,6 +730,7 @@ export default function MastroCAD2({
     };
     setInfisso(newInfisso);
     setTool("sel");
+    userZoomed.current = false;
     lastTap.current = { t:0, x:0, y:0 };
     redraw();
     if (onMisureUpdate) onMisureUpdate({ lCentro: mmW, hCentro: mmH });
