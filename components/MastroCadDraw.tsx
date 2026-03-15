@@ -71,19 +71,51 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
   useEffect(() => {
     resize();
     window.addEventListener("resize", resize);
-    // Touch events non-passive per preventDefault
+
     const cvs = canvasRef.current;
-    if (cvs) {
-      const opts = { passive: false };
-      cvs.addEventListener("touchmove", onMove as any, opts);
-      cvs.addEventListener("touchend", onTap as any, opts);
-      return () => {
-        cvs.removeEventListener("touchmove", onMove as any);
-        cvs.removeEventListener("touchend", onTap as any);
-        window.removeEventListener("resize", resize);
-      };
-    }
-    return () => window.removeEventListener("resize", resize);
+    if (!cvs) return () => window.removeEventListener("resize", resize);
+
+    // Blocca scroll del browser sul canvas
+    const preventScroll = (e: TouchEvent) => { e.preventDefault(); };
+    cvs.addEventListener("touchstart", preventScroll, { passive: false });
+    cvs.addEventListener("touchmove", preventScroll, { passive: false });
+
+    // Touch tap — usa touchstart per massima reattività
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const rect = cvs.getBoundingClientRect();
+      const sx = touch.clientX - rect.left;
+      const sy = touch.clientY - rect.top;
+      handleCanvasTap(sx, sy);
+    };
+
+    // Touch move — aggiorna crosshair
+    const handleTouchMove2 = (e: TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const rect = cvs.getBoundingClientRect();
+      const sx = touch.clientX - rect.left;
+      const sy = touch.clientY - rect.top;
+      const raw = s2m(sx, sy);
+      const prev = S.current.pts.length > 0 ? S.current.pts[S.current.pts.length-1] : null;
+      S.current.hoverMm = applySnap(raw.x, raw.y, prev);
+      draw();
+    };
+
+    cvs.addEventListener("touchstart", handleTouchStart, { passive: false });
+    cvs.addEventListener("touchmove", handleTouchMove2, { passive: false });
+
+    return () => {
+      cvs.removeEventListener("touchstart", preventScroll);
+      cvs.removeEventListener("touchmove", preventScroll);
+      cvs.removeEventListener("touchstart", handleTouchStart);
+      cvs.removeEventListener("touchmove", handleTouchMove2);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
   useEffect(() => { S.current.bgOpacity = bgOpacity / 100; draw(); }, [bgOpacity]);
 
@@ -511,10 +543,7 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
     draw();
   }
 
-  function onTap(e: any) {
-    try { e.preventDefault(); } catch(_) {}
-    const {sx,sy}=getPos(e);
-    if (sx===0 && sy===0 && !e.clientX) return;
+  function handleCanvasTap(sx: number, sy: number) {
     // Check click su quote → numpad
     for(let i=0;i<S.current.objects.length;i++) {
       const o=S.current.objects[i];
@@ -535,9 +564,9 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
       const mm=s2m(sx,sy);
       S.current.calibPts.push(mm); draw();
       if (S.current.calibPts.length===2) {
-        setCalibStep("input"); // mostra modale input mm
+        setCalibStep("input");
+        setShowCalibModal(true);
       } else {
-        // Forza re-render per aggiornare il testo "Tocca il 2° punto"
         setCalibStep("draw");
       }
       return;
@@ -554,6 +583,13 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
       completePoly();
     }
     draw();
+  }
+
+  function onTap(e: any) {
+    try { e.preventDefault(); } catch(_) {}
+    const {sx,sy}=getPos(e);
+    if (sx===0 && sy===0 && !e.clientX) return;
+    handleCanvasTap(sx, sy);
   }
 
   function completeLine() {
@@ -755,9 +791,7 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
         <div ref={wrapRef} style={{flex:1,position:"relative",overflow:"hidden",touchAction:"none"}}>
           <canvas ref={canvasRef} style={{display:"block",touchAction:"none",cursor:tool==="sel"?"default":"crosshair"}}
             onMouseMove={onMove}
-          onTouchMove={(e) => { try{e.preventDefault();}catch(_){} onMove(e); }}
           onClick={onTap}
-          onTouchEnd={(e) => { try{e.preventDefault();}catch(_){} onTap(e); }}
           />
           {/* BADGE MISURE ESTRATTE */}
           {misureEstratte && (
