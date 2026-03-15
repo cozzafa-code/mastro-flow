@@ -138,6 +138,7 @@ export default function MastroCAD2({
   // Viewport (pan/zoom)
   const vp = useRef({ zoom: 1, panX: 0, panY: 0 });
   const userZoomed = useRef(false);
+  const drawRef = useRef<()=>void>(()=>{});
 
   // ── CONVERSIONI COORDINATE ───────────────────────────
   // Da px schermo → mm logici (l'infisso vive in spazio mm)
@@ -183,7 +184,7 @@ export default function MastroCAD2({
         lastDist = dist;
         lastMidX = midX;
         lastMidY = midY;
-        draw();
+        drawRef.current();
       } else if (touches.length === 1) {
         handleMove(e as any);
       }
@@ -258,6 +259,7 @@ export default function MastroCAD2({
   const draw = () => {
     const cvs = canvasRef.current;
     if (!cvs) return;
+    drawRef.current = draw;
     const ctx = cvs.getContext("2d")!;
     const W = cvs.width, H = cvs.height;
     const isTec = mode === "tecnico";
