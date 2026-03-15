@@ -687,7 +687,7 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
                 }));
               }}
               readonly={false}
-              height={300}
+              height={380}
               onChange={(newCfg: CadConfig) => {
                 setCfg((prev: any) => ({
                   ...prev,
@@ -924,7 +924,7 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
                 showQuote: false,
               }}
               readonly={true}
-              height={160}
+              height={180}
             />
 
             {/* PREZZO */}

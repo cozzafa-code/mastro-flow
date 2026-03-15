@@ -1502,13 +1502,17 @@ export default function MastroCadEngine({
     const canvas = fabricRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
-    const aW = container.clientWidth - 80;
-    const aH = container.clientHeight - 80;
-    const cW = (config.W + 140) * SCALE;
-    const cH = (config.H + 140) * SCALE;
-    const z = Math.min(aW / cW, aH / cH, 2);
+    const aW = container.clientWidth;
+    const aH = container.clientHeight;
+    // Disegno occupa W+160 per quote, H+120 per quote
+    const drawW = (config.W + 180) * SCALE;
+    const drawH = (config.H + 160) * SCALE;
+    const z = Math.min((aW - 20) / drawW, (aH - 20) / drawH, 3);
+    // Centra il disegno nel canvas
+    const panX = -(aW / 2 - drawW * z / 2) + 30;
+    const panY = -(aH / 2 - drawH * z / 2) + 20;
     canvas.setZoom(z);
-    canvas.absolutePan({ x: -(aW / 2 - cW * z / 2) + 20, y: -(aH / 2 - cH * z / 2) + 20 });
+    canvas.absolutePan({ x: panX, y: panY });
     setZoomLevel(z);
     canvas.renderAll();
   }, [config.W, config.H]);
