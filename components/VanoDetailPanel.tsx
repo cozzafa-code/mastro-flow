@@ -1508,20 +1508,6 @@ export default function VanoDetailPanel() {
                 </div>
                 <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.disegno ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
-              {detailOpen.disegno && (
-                <div style={{ marginBottom: 12 }}>
-
-        <MastroCAD
-          vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
-          piano={selectedCM?.piano || 1}
-          onClose={() => setShowMastroCAD(false)}
-          onSalva={(data: any) => { setShowMastroCAD(false); }}
-          onMisureUpdate={(mis: any) => {
-            if (v && mis.lCentro) updateMisura(v.id, "lCentro", mis.lCentro);
-            if (v && mis.hCentro) updateMisura(v.id, "hCentro", mis.hCentro);
-          }}
-        />
-      )}
 
       {showMastroCAD && (
         <MastroCAD
