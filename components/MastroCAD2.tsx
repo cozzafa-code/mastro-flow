@@ -750,6 +750,47 @@ export default function MastroCAD2({
     return ante;
   }
 
+  function dividiInAnte(n: number) {
+    if (!infisso) return;
+    const sys = SISTEMI[infisso.telaio.sistema];
+    // Crea n-1 montanti equidistanti
+    const montanti: Divisore[] = [];
+    for (let i = 1; i < n; i++) {
+      const pos = i / n;
+      montanti.push({
+        id: uid(), tipo: "montante",
+        pos, posMm: pos * (infisso.lCentro - infisso.telaio.spessore*2),
+        spessore: sys.mont,
+      });
+    }
+    // Assegna aperture di default: sx per dispari, dx per pari
+    const defaultAperture: Record<number, string> = {
+      1: "sx",
+      2: "dx",
+      3: "sx",
+      4: "dx",
+      5: "sx",
+      6: "dx",
+      7: "sx",
+      8: "dx",
+    };
+    // Se n=1 → fisso, n=2 → sx+dx, n>2 → alterna
+    const updated = { ...infisso, montanti, traversi: infisso.traversi };
+    const rows = infisso.traversi.length + 1;
+    const ante: Anta[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < n; c++) {
+        let apertura: string = "fisso";
+        if (n === 1) apertura = "sx";
+        else if (n === 2) apertura = c === 0 ? "sx" : "dx";
+        else apertura = defaultAperture[c+1] || (c%2===0?"sx":"dx");
+        ante.push({ id: uid(), col: c, row: r, apertura: apertura as any });
+      }
+    }
+    updated.ante = ante;
+    setInfisso(updated);
+  }
+
   function cycleAnta(sx: number, sy: number) {
     if (!infisso) return;
     const { col, row } = findSpecchiatura(sx, sy);
@@ -986,6 +1027,26 @@ export default function MastroCAD2({
         ))}
 
         <div style={{width:1,height:18,background:isTec?"#ccc":"#333"}}/>
+
+        {/* Numero ante rapido */}
+        {infisso && (<>
+          <div style={{width:1,height:18,background:isTec?"#ccc":"#333"}}/>
+          <span style={{fontSize:10,color:isTec?"#888":"#666",fontWeight:600}}>Ante:</span>
+          {[1,2,3,4,5].map(n => {
+            const nAnteCorrente = infisso.montanti.length + 1;
+            const isActive = nAnteCorrente === n;
+            return (
+              <button key={n} onPointerDown={()=>dividiInAnte(n)} style={{
+                width:30,height:28,borderRadius:6,
+                border:`1.5px solid ${isActive?"#D08008":isTec?"#ccc":"#333"}`,
+                background:isActive?"#D0800820":isTec?"#fff":"#1a1a1a",
+                color:isActive?"#D08008":isTec?"#555":"#888",
+                fontSize:12,fontWeight:800,cursor:"pointer",
+              }}>{n}</button>
+            );
+          })}
+          <div style={{width:1,height:18,background:isTec?"#ccc":"#333"}}/>
+        </>)}
 
         {/* Reset */}
         {infisso && (
