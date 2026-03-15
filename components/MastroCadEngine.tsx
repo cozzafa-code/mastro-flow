@@ -233,7 +233,6 @@ export default function MastroCadEngine({
   const fabricRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const toolRef = useRef<string>("sel");
-  const configRef = useRef<any>(null);
   const configRef = useRef<CadConfig>(config);
   const [tool, setTool] = useState<string>("sel");
   const [vista, setVista] = useState<string>("prospetto");
