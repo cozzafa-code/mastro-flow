@@ -190,7 +190,7 @@ export default function MastroCAD2({
   }, [infisso]);
 
   // ── DISEGNO CANVAS ───────────────────────────────────
-  const draw = useCallback(() => {
+  const draw = () => {
     const cvs = canvasRef.current;
     if (!cvs) return;
     const ctx = cvs.getContext("2d")!;
@@ -233,7 +233,7 @@ export default function MastroCAD2({
       ctx.fillText(`${Math.round(snap(mmH))} mm`, 0, 0);
       ctx.restore();
     }
-  }, [infisso, mode, tool]);
+  };
 
   function drawGrid(ctx: CanvasRenderingContext2D, W: number, H: number) {
     const s = SCALE.current * vp.current.zoom;
@@ -654,6 +654,7 @@ export default function MastroCAD2({
     };
     setInfisso(newInfisso);
     setTool("sel");
+    redraw();
     if (onMisureUpdate) onMisureUpdate({ lCentro: mmW, hCentro: mmH });
     draw();
   }
@@ -715,6 +716,7 @@ export default function MastroCAD2({
     // Aggiorna ante
     updated.ante = ricalcolaAnte(updated);
     setInfisso(updated);
+    redraw();
   }
 
   function addTraverso(sy: number) {
@@ -745,6 +747,7 @@ export default function MastroCAD2({
     };
     updated.ante = ricalcolaAnte(updated);
     setInfisso(updated);
+    redraw();
   }
 
   function ricalcolaAnte(inf: Infisso): Anta[] {
@@ -799,6 +802,7 @@ export default function MastroCAD2({
     }
     updated.ante = ante;
     setInfisso(updated);
+    redraw();
   }
 
   function cycleAnta(sx: number, sy: number) {
@@ -814,6 +818,7 @@ export default function MastroCAD2({
       a.col===col && a.row===row ? { ...a, apertura: apertura as any } : a
     )});
     setMenuAnta(null);
+    redraw();
   }
 
   function findSpecchiatura(sx: number, sy: number): {col:number,row:number} {
@@ -855,7 +860,7 @@ export default function MastroCAD2({
   }
 
   // ── EFFETTI ──────────────────────────────────────────
-  useEffect(() => { draw(); }, [infisso, mode, draw]);
+  useEffect(() => { initScale(); draw(); }, [infisso, mode, drawTick]);
 
   // ── AZIONI ──────────────────────────────────────────
   function resetDisegno() {
@@ -866,6 +871,7 @@ export default function MastroCAD2({
   }
 
   function cambiaSistema(id: string) {
+    setTimeout(redraw, 50);
     setSistema(id);
     if (!infisso) return;
     const sys = SISTEMI[id];
@@ -939,6 +945,8 @@ export default function MastroCAD2({
   }
 
   const [showBOM, setShowBOM] = useState(false);
+  const [drawTick, setDrawTick] = useState(0);
+  const redraw = () => setDrawTick(t => t+1);
   const [menuAnta, setMenuAnta] = useState<{col:number,row:number}|null>(null);
   const bom = calcolaBOM();
   const sys = SISTEMI[sistema];
