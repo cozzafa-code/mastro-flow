@@ -1803,7 +1803,7 @@ export default function VanoDetailPanel() {
           {/* Motore CAD */}
           <div style={{ flex: 1, overflow: "hidden" }}>
             <MastroCAD
-              vanoNome={selectedVano?.nome || `Vano ${selectedVano?.numero || ""}`}
+              vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
               piano={selectedCM?.piano || 1}
               onClose={() => setShowMastroCAD(false)}
               onSalva={(data) => {
@@ -2515,17 +2515,7 @@ export default function VanoDetailPanel() {
           }}>
             {numpadVal || "—"} <span style={{fontSize:16,color:"#888"}}>mm</span>
           </div>
-          {/* Tasti rapidi */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:8}}>
-            {["600","800","1000","1200","1400","1500","2000","2200"].map(v2=>(
-              <button key={v2} onPointerDown={e=>{e.preventDefault();setNumpadVal(v2);}} style={{
-                padding:"10px 4px",borderRadius:8,
-                border:"1px solid #D0800840",background:"#D0800812",
-                color:"#D08008",fontSize:13,fontWeight:700,
-                cursor:"pointer",fontFamily:"inherit",
-              }}>{v2}</button>
-            ))}
-          </div>
+
           {/* Numpad */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
             {["7","8","9","4","5","6","1","2","3"].map(k=>(
