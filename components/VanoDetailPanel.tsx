@@ -1771,18 +1771,6 @@ export default function VanoDetailPanel() {
               </div>
               {detailOpen.disegno && (
                 <div style={{ marginBottom: 12 }}>
-{showMastroCAD && (
-        <MastroCAD
-          vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
-          piano={selectedCM?.piano || 1}
-          onClose={() => setShowMastroCAD(false)}
-          onSalva={(data: any) => { setShowMastroCAD(false); }}
-          onMisureUpdate={(mis: any) => {
-            if (v && mis.lCentro) updateMisura(v.id, "lCentro", mis.lCentro);
-            if (v && mis.hCentro) updateMisura(v.id, "hCentro", mis.hCentro);
-          }}
-        />
-      )}
 
       {/* Disegno mano libera ÔÇö Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
@@ -2458,6 +2446,19 @@ export default function VanoDetailPanel() {
         </div>
       
       {/* ÔòÉÔòÉ NUMPAD OVERLAY ÔòÉÔòÉ */}
+{showMastroCAD && (
+        <MastroCAD
+          vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
+          piano={selectedCM?.piano || 1}
+          onClose={() => setShowMastroCAD(false)}
+          onSalva={(data: any) => { setShowMastroCAD(false); }}
+          onMisureUpdate={(mis: any) => {
+            if (v && mis.lCentro) updateMisura(v.id, "lCentro", mis.lCentro);
+            if (v && mis.hCentro) updateMisura(v.id, "hCentro", mis.hCentro);
+          }}
+        />
+      )}
+
       {numpadField && (
         <div style={{
           position:"fixed",bottom:0,left:0,right:0,zIndex:800,
