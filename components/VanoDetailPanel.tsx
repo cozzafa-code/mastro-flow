@@ -1508,7 +1508,11 @@ export default function VanoDetailPanel() {
                 </div>
                 <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.disegno ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
+              {detailOpen.disegno && (
+                <div style={{ marginBottom: 12 }}>
 
+                </div>
+              )}
       {showMastroCAD && (
         <MastroCAD
           vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
