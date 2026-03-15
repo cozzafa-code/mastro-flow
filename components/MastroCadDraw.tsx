@@ -766,107 +766,63 @@ export default function MastroCadDraw({ onClose, onSalva, onMisureUpdate, vanoNo
             </div>
           )}
 
-          {/* MODALE CALIBRAZIONE */}
-          {showCalibModal && (
-            <div style={{
-              position:"absolute",
-              // step draw: solo banner in basso, canvas libero
-              // step intro/input: overlay completo
-              ...(calibStep==="draw" ? {
-                bottom:0,left:0,right:0,
-                background:"transparent",
-                display:"flex",alignItems:"flex-end",justifyContent:"center",
-                zIndex:30,pointerEvents:"none",
-              } : {
-                inset:0,background:"rgba(0,0,0,0.75)",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                zIndex:30,
-              })
-            }}>
-              <div style={{
-                background:isTec?"#fff":"#0e1016",
-                border:`1px solid ${AMB}50`,
-                borderRadius:calibStep==="draw"?"12px 12px 0 0":16,
-                padding:calibStep==="draw"?"12px 20px":24,
-                width:calibStep==="draw"?"100%":"300px",
-                textAlign:"center",
-                pointerEvents:"all",
-              }}>
-
-                {calibStep==="intro" && <>
-                  <div style={{fontSize:32,marginBottom:10}}>📐</div>
-                  <div style={{fontSize:15,fontWeight:800,color:AMB,marginBottom:8}}>Calibra prima di disegnare</div>
-                  <div style={{fontSize:12,color:isTec?"#555":"#888",marginBottom:16,lineHeight:1.7}}>
-                    Per avere misure reali in mm devi prima calibrare.<br/>
-                    Carica una foto del vano o disegna subito e calibra dopo.
-                  </div>
-                  <div style={{display:"flex",flexDirection:"column" as const,gap:8}}>
-                    <button onClick={()=>{setCalibStep("draw");S.current.calibMode=true;S.current.calibPts=[];}} style={{padding:14,borderRadius:10,border:"none",background:AMB,color:"#fff",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
-                      📐 Calibra ora
-                    </button>
-                    <button onClick={()=>setShowCalibModal(false)} style={{padding:12,borderRadius:10,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
-                      Salta — disegno senza misure reali
-                    </button>
-                  </div>
-                </>}
-
-                {calibStep==="draw" && <>
-                  <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{fontSize:22}}>📐</div>
-                    <div style={{flex:1,textAlign:"left" as const}}>
-                      <div style={{fontSize:13,fontWeight:700,color:AMB}}>
-                        {S.current.calibPts.length===0 ? "Tocca il 1° punto sul canvas sopra" : "✓ Primo punto — tocca il 2° punto"}
-                      </div>
-                      <div style={{fontSize:11,color:isTec?"#888":"#aaa",marginTop:2}}>
-                        Traccia una linea su una misura nota (metro, bordo muro...)
-                      </div>
-                    </div>
-                    <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setShowCalibModal(false);}} style={{padding:"6px 12px",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
-                      Salta
-                    </button>
-                  </div>
-                </>}
-
-                {calibStep==="input" && <>
-                  <div style={{fontSize:14,fontWeight:700,color:AMB,marginBottom:8}}>Quanti mm è quella linea?</div>
-                  <div style={{fontSize:11,color:isTec?"#888":"#666",marginBottom:12}}>
-                    Inserisci la misura reale in millimetri
-                  </div>
-                  {/* Numpad integrato nella modale */}
-                  <div style={{background:isTec?"#f8f9fa":"#131318",borderRadius:10,padding:12,marginBottom:12}}>
-                    <div style={{fontSize:28,fontWeight:800,fontFamily:"monospace",textAlign:"right" as const,color:isTec?"#1a2a3a":"#fff",marginBottom:8,padding:"6px 10px",background:isTec?"#fff":"#0a0c10",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`}}>
-                      {calibInputMm || "—"} mm
-                    </div>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4}}>
-                      {["7","8","9","4","5","6","1","2","3","0","⌫","OK"].map(k=>(
-                        <button key={k} onClick={()=>{
-                          if(k==="OK"){confirmCalib();return;}
-                          if(k==="⌫"){setCalibInputMm(v=>v.slice(0,-1));return;}
-                          setCalibInputMm(v=>v+k);
-                        }} style={{
-                          padding:0,minHeight:50,borderRadius:8,
-                          border:`1px solid ${k==="OK"?GRN:k==="⌫"?"#DC4444":isTec?"#ddd":"#333"}`,
-                          background:k==="OK"?GRN:k==="⌫"?"#DC4444":isTec?"#fff":"#1a1a1a",
-                          color:k==="OK"||k==="⌫"?"#fff":isTec?"#1a2a3a":"#fff",
-                          fontSize:k==="OK"||k==="⌫"?12:20,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
-                        }}>{k}</button>
-                      ))}
-                    </div>
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3,marginTop:4}}>
-                      {[["100","100"],["500","500"],["1000","1000"],["2000","2000"]].map(([v,l])=>(
-                        <button key={v} onClick={()=>setCalibInputMm(v)} style={{padding:"6px 2px",borderRadius:6,border:`1px solid ${AMB}40`,background:AMB+"15",color:AMB,fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textAlign:"center" as const}}>{l}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setCalibStep("intro");}} style={{width:"100%",padding:10,borderRadius:9,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
-                    ← Ridisegna la linea
-                  </button>
-                </>}
+          {/* BANNER CALIBRAZIONE — sempre in basso, non copre mai il canvas */}
+          {showCalibModal && calibStep==="intro" && (
+            <div style={{position:"absolute",bottom:0,left:0,right:0,background:isTec?"#fffbe6":"#1a1400",borderTop:`2px solid ${AMB}`,padding:"12px 16px",zIndex:30,display:"flex",alignItems:"center",gap:12}}>
+              <div style={{fontSize:22,flexShrink:0}}>📐</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:800,color:AMB}}>Calibra per misure reali</div>
+                <div style={{fontSize:11,color:isTec?"#777":"#aaa",marginTop:1}}>Carica foto del vano, poi traccia una linea su una misura nota</div>
+              </div>
+              <div style={{display:"flex",gap:6,flexShrink:0}}>
+                <button onClick={()=>{setCalibStep("draw");S.current.calibMode=true;S.current.calibPts=[];}} style={{padding:"8px 14px",borderRadius:9,border:"none",background:AMB,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Calibra</button>
+                <button onClick={()=>setShowCalibModal(false)} style={{padding:"8px 10px",borderRadius:9,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>Salta</button>
               </div>
             </div>
           )}
+          {showCalibModal && calibStep==="draw" && (
+            <div style={{position:"absolute",bottom:0,left:0,right:0,background:isTec?"#fffbe6":"#1a1400",borderTop:`2px solid ${AMB}`,padding:"10px 16px",zIndex:30,display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:10,height:10,borderRadius:5,background:S.current.calibPts.length>0?GRN:AMB,flexShrink:0}}/>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:700,color:AMB}}>
+                  {S.current.calibPts.length===0?"Tocca il 1° punto sul canvas":"✓ Primo punto — tocca il 2°"}
+                </div>
+                <div style={{fontSize:10,color:isTec?"#888":"#aaa",marginTop:1}}>Traccia su metro, bordo muro o controtelaio</div>
+              </div>
+              <button onClick={()=>{S.current.calibMode=false;S.current.calibPts=[];setCalibStep("intro");}} style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>Annulla</button>
+            </div>
+          )}
+          {showCalibModal && calibStep==="input" && (
+            <div style={{position:"absolute",bottom:0,left:0,right:0,background:isTec?"#fff":"#0e1016",borderTop:`2px solid ${AMB}`,padding:"14px 16px",zIndex:30}}>
+              <div style={{fontSize:13,fontWeight:700,color:AMB,marginBottom:8,textAlign:"center" as const}}>Quanti mm è quella linea?</div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:8}}>
+                {["100","500","1000","2000"].map(v=>(
+                  <button key={v} onClick={()=>setCalibInputMm(v)} style={{padding:"11px 4px",borderRadius:8,border:`1px solid ${AMB}50`,background:calibInputMm===v?AMB:AMB+"15",color:calibInputMm===v?"#fff":AMB,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{v}</button>
+                ))}
+              </div>
+              <div style={{fontSize:22,fontWeight:800,fontFamily:"monospace",textAlign:"right" as const,color:isTec?"#1a2a3a":"#fff",padding:"8px 12px",background:isTec?"#f8f9fa":"#131318",borderRadius:8,border:`1px solid ${isTec?"#ddd":"#333"}`,marginBottom:8}}>
+                {calibInputMm||"—"} mm
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4,marginBottom:6}}>
+                {["7","8","9","4","5","6","1","2","3","0","⌫","OK"].map(k=>(
+                  <button key={k} onClick={()=>{
+                    if(k==="OK"){confirmCalib();return;}
+                    if(k==="⌫"){setCalibInputMm((v:string)=>v.slice(0,-1));return;}
+                    setCalibInputMm((v:string)=>v+k);
+                  }} style={{
+                    padding:"13px 4px",borderRadius:8,
+                    border:`1px solid ${k==="OK"?GRN:k==="⌫"?RED:isTec?"#ddd":"#333"}`,
+                    background:k==="OK"?GRN:k==="⌫"?RED:isTec?"#fff":"#1a1a1a",
+                    color:k==="OK"||k==="⌫"?"#fff":isTec?"#1a2a3a":"#fff",
+                    fontSize:k==="OK"||k==="⌫"?13:22,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
+                  }}>{k}</button>
+                ))}
+              </div>
+              <button onClick={()=>{S.current.calibPts=[];setCalibStep("draw");S.current.calibMode=true;}} style={{width:"100%",padding:9,borderRadius:9,border:`1px solid ${isTec?"#ddd":"#333"}`,background:"transparent",color:isTec?"#888":"#666",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>← Ridisegna la linea</button>
+            </div>
+          )}
 
-          {objCount===0&&!showCalibModal&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",opacity:0.3,pointerEvents:"none"}}>
+                    {objCount===0&&!showCalibModal&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",opacity:0.3,pointerEvents:"none"}}>
             <div style={{fontSize:14,fontWeight:600,color:subCol,marginBottom:6}}>Disegna qui</div>
             <div style={{fontSize:11,color:subCol,lineHeight:1.8}}>╱ Linea = profilo<br/>□ Rettangolo = campitura<br/>Tocca una quota per modificarla</div>
           </div>}
