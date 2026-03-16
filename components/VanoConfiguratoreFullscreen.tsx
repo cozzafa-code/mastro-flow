@@ -8,10 +8,7 @@
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useMastro } from "./MastroContext";
-import MastroCadEngine, {
-  defaultCadConfig, TIPOLOGIE_DEFAULT, PROFILI_DEFAULT,
-  type CadConfig, type Tipologia, type TraversoConfig
-} from "./MastroCadEngine";
+// MastroCadEngine rimosso — SVG puro
 
 // ── Costanti design ─────────────────────────────────────────
 const AMB = "#D08008";
@@ -660,36 +657,10 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
         {step === 1 && (
           <div style={{ padding: 14 }}>
 
-            {/* ANTEPRIMA CAD ENGINE */}
-            <MastroCadEngine
-              config={{
-                W: misuraInfisso.L || 1200,
-                H: misuraInfisso.H || 1500,
-                tipologia: (() => { const base = TIPOLOGIE_DEFAULT.find((t: Tipologia) => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0]; return cfg.celle ? { ...base, celle: cfg.celle } : base; })(),
-                montanti: cfg.montanti || [],
-                traversi: (cfg.traversi || []) as TraversoConfig[],
-                nodi: cfg.nodi || {},
-                profili: {
-                  telaio: PROFILI_DEFAULT[0],
-                  anta: PROFILI_DEFAULT[1],
-                  montante: PROFILI_DEFAULT[2],
-                },
-                cassonetto: cassOn,
-                cassH: cfg.cassH || 200,
-                showQuote: true,
-              }}
-              onChange={(newCfg: CadConfig) => {
-                setCfg((prev: any) => ({
-                  ...prev,
-                  montanti: newCfg.montanti,
-                  traversi: newCfg.traversi,
-                  nodi: newCfg.nodi,
-                  celle: newCfg.tipologia?.celle,
-                }));
-              }}
-              readonly={false}
-              height={380}
-            />
+            {/* DISEGNO TECNICO SVG — prospetto live */}
+            <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${bdr}`, marginBottom: 12, background: "#f0f4fa" }}>
+              <div style={{ width: "100%" }} dangerouslySetInnerHTML={{ __html: svgStr.replace('<svg ', '<svg style="width:100%;height:auto;display:block" ') }}/>
+            </div>
 
             {/* MISURE */}
             <div style={{ background: card, borderRadius: 12, padding: 14, marginBottom: 12, border: `1px solid ${bdr}` }}>
@@ -900,26 +871,10 @@ export default function VanoConfiguratoreFullscreen({ vano, onSalva, onChiudi, T
         {step === 2 && (
           <div style={{ padding: 14 }}>
 
-            {/* MINI PREVIEW CAD */}
-            <MastroCadEngine
-              config={{
-                W: misuraInfisso.L || 1200,
-                H: misuraInfisso.H || 1500,
-                tipologia: TIPOLOGIE_DEFAULT.find(t => t.id === cfg.tipId) || TIPOLOGIE_DEFAULT[0],
-                montanti: [],
-                traversi: [],
-                profili: {
-                  telaio: PROFILI_DEFAULT[0],
-                  anta: PROFILI_DEFAULT[1],
-                  montante: PROFILI_DEFAULT[2],
-                },
-                cassonetto: cassOn,
-                cassH: cfg.cassH || 200,
-                showQuote: false,
-              }}
-              readonly={true}
-              height={180}
-            />
+            {/* MINI PREVIEW SVG */}
+            <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${bdr}`, marginBottom: 12, background: "#f0f4fa", maxHeight: 220 }}>
+              <div style={{ width: "100%" }} dangerouslySetInnerHTML={{ __html: svgStr.replace('<svg ', '<svg style="width:100%;height:auto;display:block" ') }}/>
+            </div>
 
             {/* PREZZO */}
             <div style={{ background: card, borderRadius: 12, padding: 14, marginBottom: 10, border: `1px solid ${bdr}` }}>
