@@ -300,7 +300,7 @@ export default function VanoDetailPanel() {
     const fSq = m.d1 > 0 && m.d2 > 0 ? Math.abs(m.d1 - m.d2) : null;
 
     // Mini SVG per step
-    const MiniSVG = ({ type }) => {
+    const renderMiniSVG = (type) => {
       const w = 60, h = 70;
       return (
         <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ display: "block" }}>
