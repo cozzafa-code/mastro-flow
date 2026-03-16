@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 // MASTRO ERP " VanoDetailPanel
@@ -16,10 +16,10 @@ import { supabase } from "@/lib/supabase";
 
 // """ STATI MISURE """"""""""""""""""""""""""""""""""""""""""
 const STATO_MISURE = [
-  { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: ""......", desc: "Misure non ancora verificate" },
-  { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "'", desc: "Verificate sul posto, non ancora confermate" },
-  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "", desc: "Misure definitive " preventivo sbloccato" },
-  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: ""...", desc: "Rilevate discrepanze " ricontrollare" },
+  { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: "clock", desc: "Misure non ancora verificate" },
+  { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "check", desc: "Verificate sul posto, non ancora confermate" },
+  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "checkDouble", desc: "Misure definitive - preventivo sbloccato" },
+  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "warning", desc: "Rilevate discrepanze - ricontrollare" },
 ];
 const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
 
@@ -90,9 +90,9 @@ export default function VanoDetailPanel() {
   } = useMastro();
 
   const STEPS = [
-    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "'" },
+    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "check" },
     { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: ""-" },
-    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: "'" },
+    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: "check" },
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
@@ -533,7 +533,7 @@ export default function VanoDetailPanel() {
           const coloriRAL = ["RAL 9010","RAL 9016","RAL 9001","RAL 7016","RAL 7021","RAL 8014","RAL 8016","RAL 1013","Altro"];
 
           const sections = [
-            { id:"accesso", icon:"'...", label:"Accesso / Difficoltà",
+            { id:"accesso", icon:"'...", label:"Accesso / DifficoltÃ ",
               badge: v.difficoltaSalita||null, filled: [v.difficoltaSalita, v.mezzoSalita].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:4}}>
@@ -1022,7 +1022,7 @@ export default function VanoDetailPanel() {
                   <div style={{ marginBottom:16 }}>
                     <div style={{ padding:"10px 14px", borderRadius:10, background:"#E8A02010", border:"1px solid #E8A02030", marginBottom:12 }}>
                       <div style={{ fontSize:11, fontWeight:700, color:"#E8A020" }}><I d={ICO.sparkles} />... Misure {isPergola ? "Pergola" : isBracci ? "Tenda a bracci" : isVela ? "Vela ombreggiante" : "Tenda/Schermatura"}</div>
-                      <div style={{ fontSize:10, color:T.sub, marginTop:2 }}>{isPergola ? "Larghezza " Profondità /  Altezza colonne" : isBracci ? "Larghezza telo " Sporgenza (aggetto)" : "Larghezza " Altezza (caduta)"}</div>
+                      <div style={{ fontSize:10, color:T.sub, marginTop:2 }}>{isPergola ? "Larghezza " ProfonditÃ  /  Altezza colonne" : isBracci ? "Larghezza telo " Sporgenza (aggetto)" : "Larghezza " Altezza (caduta)"}</div>
                     </div>
 
                     {/* LARGHEZZA " sempre presente */}
@@ -1035,8 +1035,8 @@ export default function VanoDetailPanel() {
 
                     {/* PROFONDITA/SPORGENZA " pergole e bracci */}
                     {(isPergola || isBracci) && (<>
-                      <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>"... {isPergola ? "Profondità : "Sporgenza (Aggetto)"}</div>
-                      {bInput(isPergola ? "Profondità mm" : "Sporgenza/Aggetto mm", "sporgenza")}
+                      <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>"... {isPergola ? "ProfonditÃ  : "Sporgenza (Aggetto)"}</div>
+                      {bInput(isPergola ? "ProfonditÃ  mm" : "Sporgenza/Aggetto mm", "sporgenza")}
                     </>)}
 
                     {/* VELA: 3 lati */}
@@ -1805,7 +1805,7 @@ export default function VanoDetailPanel() {
                     {ct.tipo && <Sec title={`CONTROTELAIO ${ct.tipo === "singolo" ? "SINGOLO" : ct.tipo === "doppio" ? "DOPPIO" : "CON CASSONETTO"}`} color="#2563eb" icon="'-"" rows={[
                       ["Larghezza", ct.l ? `${ct.l}mm` : ""],
                       ["Altezza", ct.h ? `${ct.h}mm` : ""],
-                      ...(ct.tipo === "singolo" && ct.prof ? [["Profondità, `${ct.prof}mm`]] : []),
+                      ...(ct.tipo === "singolo" && ct.prof ? [["ProfonditÃ , `${ct.prof}mm`]] : []),
                       ...(ct.tipo === "doppio" ? [["Sez. Interna", ct.sezInt], ["Sez. Esterna", ct.sezEst], ["Distanziale", ct.distanziale]] : []),
                       ...(ct.tipo === "cassonetto" ? [["H Cassonetto", ct.hCass], ["P Cassonetto", ct.pCass], ["Sezione", ct.sezione], ["Spalla", ct.spalla], ["Cielino", ct.cielino]] : []),
                     ]} />}
@@ -1814,7 +1814,7 @@ export default function VanoDetailPanel() {
                     <Sec title="SPALLETTE" color="#32ade6" icon="" rows={[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]]} />
 
                     {/* Davanzale */}
-                    <Sec title="DAVANZALE" color="#EF4444" icon="" rows={[["Profondità, m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
+                    <Sec title="DAVANZALE" color="#EF4444" icon="" rows={[["ProfonditÃ , m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
 
                     {/* Accessori " dettagliato */}
                     {(acc.tapparella?.attivo || acc.persiana?.attivo || acc.zanzariera?.attivo) && (
@@ -1866,7 +1866,7 @@ export default function VanoDetailPanel() {
                     {/* Accesso */}
                     {(v.difficoltaSalita || v.mezzoSalita) && (
                       <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? "#DC4444" : "#E8A020"} icon="'..." rows={[
-                        ["Difficoltà", v.difficoltaSalita],
+                        ["DifficoltÃ ", v.difficoltaSalita],
                         ["Mezzo salita", v.mezzoSalita],
                       ]} />
                     )}
@@ -1966,8 +1966,8 @@ export default function VanoDetailPanel() {
                   { id: "tipo", label: "Tipo", done: !!v.tipo, icon: ""-" },
                   { id: "sistema", label: "Sistema", done: !!v.sistema, icon: ""-" },
                   { id: "vetro", label: "Vetro", done: !!v.vetro, icon: "" },
-                  { id: "colore", label: "Colore", done: !!v.coloreInt, icon: "'" },
-                  { id: "misure", label: "Misure", done: !!(m.lCentro && m.hCentro), icon: "'" },
+                  { id: "colore", label: "Colore", done: !!v.coloreInt, icon: "check" },
+                  { id: "misure", label: "Misure", done: !!(m.lCentro && m.hCentro), icon: "check" },
                   { id: "pezzi", label: "Pezzi", done: true, icon: "#" },
                 ];
                 const firstIncomplete = steps.findIndex(s => !s.done);
@@ -2147,4 +2147,6 @@ export default function VanoDetailPanel() {
         </div>
       
       {/* "" NUMPAD OVERLAY "" */}
+
+
 
