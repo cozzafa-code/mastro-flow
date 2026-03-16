@@ -367,7 +367,9 @@ function FormaEditor({ T, realW, realH }: any) {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
-  const [viewTab, setViewTab] = React.useState("disegno"); // "disegno" | "forma" | "3d"
+  const [viewTab, setViewTab] = React.useState("disegno");
+  const [editingLine, setEditingLine] = React.useState<any>(null);
+  const [editingLineVal, setEditingLineVal] = React.useState("");
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
                             const dw = vanoDisegno || { elements: [], selectedId: null, drawMode: null, history: [] };
@@ -1097,6 +1099,95 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ _zoom: 1, _panX: 0, _panY: 0 })} style={{ ...bs(), fontSize: 9 }}>Fit</div>
                                 </div>
 
+                                {/* Edit bar per freeLine */}
+                                {editingLine && (
+                                  <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px", background:`${T.acc}10`, borderBottom:`1.5px solid ${T.acc}` }}>
+                                    <span style={{ fontSize:11, fontWeight:700, color:T.acc }}>Misura lato (mm)</span>
+                                    <input
+                                      autoFocus
+                                      type="number"
+                                      value={editingLineVal}
+                                      onChange={e => setEditingLineVal(e.target.value)}
+                                      onKeyDown={e => {
+                                        if (e.key === "Enter") {
+                                          const newMM = parseInt(editingLineVal);
+                                          if (!isNaN(newMM) && newMM > 0 && editingLine?.el) {
+                                            const el2 = editingLine.el;
+                                            const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
+                                            const curLen = Math.hypot(dx2,dy2)||1;
+                                            const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                            const allFL2 = els.filter(e => e.type==="freeLine");
+                                            const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                            const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
+                                            const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
+                                            const curMM = isSegH2
+                                              ? Math.round(Math.abs(dx2)/(bbW3||1)*realW)
+                                              : Math.round(Math.abs(dy2)/(bbH3||1)*realH);
+                                            const ratio = newMM / (curMM||1);
+                                            const pxPerMmW = (bbW3||1)/realW;
+                                            const pxPerMmH = (bbH3||1)/realH;
+                                            const newPxLen = isSegH2 ? newMM*pxPerMmW : newMM*pxPerMmH;
+                                            const ux = dx2/curLen, uy = dy2/curLen;
+                                            const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
+                                            const obx = el2.x2, oby = el2.y2;
+                                            const updEls = els.map(x => {
+                                              if (x.type==="freeLine"||x.type==="apLine") {
+                                                let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
+                                                if (x.id===el2.id) { nx2=newBx; ny2=newBy; changed=true; }
+                                                else {
+                                                  if (Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3) { nx1=newBx; ny1=newBy; changed=true; }
+                                                  if (Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3) { nx2=newBx; ny2=newBy; changed=true; }
+                                                }
+                                                return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                              }
+                                              return x;
+                                            });
+                                            setDW(updEls);
+                                          }
+                                          setEditingLine(null);
+                                        }
+                                        if (e.key === "Escape") setEditingLine(null);
+                                      }}
+                                      style={{ width:80, fontSize:14, fontWeight:700, border:`1.5px solid ${T.acc}`, borderRadius:4, padding:"3px 6px", outline:"none" }}
+                                    />
+                                    <span style={{ fontSize:11, color:T.sub }}>mm</span>
+                                    <div onClick={() => {
+                                      const newMM = parseInt(editingLineVal);
+                                      if (!isNaN(newMM) && newMM > 0 && editingLine?.el) {
+                                        const el2 = editingLine.el;
+                                        const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
+                                        const curLen = Math.hypot(dx2,dy2)||1;
+                                        const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                        const allFL2 = els.filter(e => e.type==="freeLine");
+                                        const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                        const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
+                                        const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
+                                        const pxPerMmW = (bbW3||1)/realW;
+                                        const pxPerMmH = (bbH3||1)/realH;
+                                        const newPxLen = isSegH2 ? newMM*pxPerMmW : newMM*pxPerMmH;
+                                        const ux = dx2/curLen, uy = dy2/curLen;
+                                        const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
+                                        const obx = el2.x2, oby = el2.y2;
+                                        const updEls = els.map(x => {
+                                          if (x.type==="freeLine"||x.type==="apLine") {
+                                            let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
+                                            if (x.id===el2.id) { nx2=newBx; ny2=newBy; changed=true; }
+                                            else {
+                                              if (Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3) { nx1=newBx; ny1=newBy; changed=true; }
+                                              if (Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3) { nx2=newBx; ny2=newBy; changed=true; }
+                                            }
+                                            return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                          }
+                                          return x;
+                                        });
+                                        setDW(updEls);
+                                      }
+                                      setEditingLine(null);
+                                    }} style={{ padding:"4px 12px", background:T.acc, color:"#fff", borderRadius:4, fontSize:12, fontWeight:700, cursor:"pointer" }}>OK</div>
+                                    <div onClick={() => setEditingLine(null)} style={{ padding:"4px 8px", color:T.sub, cursor:"pointer", fontSize:14 }}>×</div>
+                                  </div>
+                                )}
+
                                 {/* SVG Canvas — zoomable with wheel + pannable */}
                                 <div style={{ overflow: "auto", position: "relative", maxHeight: "70vh", border: `1px solid ${T.bdr}` }}>
                                 <svg width={canvasW * Math.max(1, zoom)} height={canvasH * Math.max(1, zoom)}
@@ -1322,48 +1413,43 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                         <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
                                         <line x1={el.x} y1={el.y} x2={el.x + Math.min(el.w, el.h) * 0.3} y2={el.y + Math.min(el.w, el.h) * 0.3} stroke="#b0d4f0" strokeWidth={0.5} />
-                                      </g>
-                                    );
-
-                                    // ═══ POLYGON ANTA — follows actual shape ═══
-                                    if (el.type === "polyAnta" && el.poly) {
-                                      const pts = el.poly;
-                                      const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                      // Outer polygon
-                                      const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — shrink by tk toward centroid
-                                      const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
-                                      const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const innerPts = pts.map(p => {
-                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
-                                        const dist = Math.hypot(dx2, dy2) || 1;
-                                        return [(p[0] + dx2 / dist * tk), (p[1] + dy2 / dist * tk)];
-                                      });
-                                      const innerStr = innerPts.map(p => p.join(",")).join(" ");
+                                    if (el.type === "freeLine") {
+                                      const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
+                                      const len = Math.hypot(dx2, dy2) || 1;
+                                      const halfT = TK_FRAME;
+                                      const nx = -dy2 / len * halfT, ny = dx2 / len * halfT;
+                                      // mm: calcola dalla bbox di tutte le freeLine
+                                      const allFL = els.filter(e => e.type === "freeLine");
+                                      const allPtsBB = allFL.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                      const bbW2 = allPtsBB.length > 1 ? Math.max(...allPtsBB.map(p=>p.x)) - Math.min(...allPtsBB.map(p=>p.x)) : 1;
+                                      const bbH2 = allPtsBB.length > 1 ? Math.max(...allPtsBB.map(p=>p.y)) - Math.min(...allPtsBB.map(p=>p.y)) : 1;
+                                      const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                      const mmLen = el._mmLabel != null ? el._mmLabel
+                                        : (isSegH2 ? Math.round(Math.abs(dx2) / (bbW2 / (realW || 1))) : Math.round(Math.abs(dy2) / (bbH2 / (realH || 1))));
+                                      const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
+                                      // Offset label verso esterno del poligono
+                                      const cx2 = allPtsBB.reduce((s,p)=>s+p.x,0) / (allPtsBB.length||1);
+                                      const cy2 = allPtsBB.reduce((s,p)=>s+p.y,0) / (allPtsBB.length||1);
+                                      const toCx2 = cx2 - midX, toCy2 = cy2 - midY;
+                                      const dist2 = Math.hypot(toCx2, toCy2) || 1;
+                                      const lx = midX - toCx2/dist2 * 22, ly = midY - toCy2/dist2 * 22;
+                                      const isPartOfPoly = poly && poly.length >= 3;
+                                      const lw = String(mmLen).length * 7 + 16;
+                                      const isEditingThis = editingLine && editingLine.elId === el.id;
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
-                                          <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
-                                          {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
-                                        </g>
-                                      );
-                                    }
-
-                                    // ═══ POLYGON VETRO — glass following shape ═══
-                                    if (el.type === "polyGlass" && el.poly) {
-                                      const pts = el.poly;
-                                      const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
-                                      const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const shrink = TK_ANTA + 2;
-                                      const glassPts = pts.map(p => {
-                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
-                                        const dist = Math.hypot(dx2, dy2) || 1;
-                                        return [(p[0] + dx2 / dist * shrink), (p[1] + dy2 / dist * shrink)];
-                                      });
-                                      return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                          <polygon points={glassPts.map(p => p.join(",")).join(" ")} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
-                                          <line x1={glassPts[0][0]} y1={glassPts[0][1]} x2={cx2} y2={cy2} stroke="#b0d4f0" strokeWidth={0.4} />
+                                        <g key={el.id} onClick={(e3) => {
+                                          e3.stopPropagation();
+                                          if (drawMode) return;
+                                          setEditingLine({ elId: el.id, curMM: mmLen, el });
+                                          setEditingLineVal(String(mmLen));
+                                        }} {...(!drawMode ? { onMouseDown: (e3) => { if (!editingLine) onDrag(e3, el.id); } } : {})}>
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
+                                          {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
+                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
+                                          <line x1={midX} y1={midY} x2={lx} y2={ly} stroke={T.acc+"40"} strokeWidth={0.5} strokeDasharray="3,3" />
+                                          <rect x={lx - lw/2} y={ly - 9} width={lw} height={18} fill={isEditingThis ? T.acc+"20" : "#fff"} rx={3} stroke={T.acc} strokeWidth={isEditingThis ? 1.5 : 0.8} style={{cursor:"pointer"}} />
+                                          <text x={lx} y={ly + 4} textAnchor="middle" fontSize={10} fontWeight={800} fill={T.acc} fontFamily="monospace" style={{cursor:"pointer"}}>{mmLen}</text>
+                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={T.purple} /><circle cx={el.x2} cy={el.y2} r={5} fill={T.purple} /></>}
                                         </g>
                                       );
                                     }
@@ -1416,26 +1502,42 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const halfT = TK_FRAME;
                                       const nx = -dy2 / len * halfT, ny = dx2 / len * halfT;
-                                      // Dimension in mm
-                                      const refLen = frame ? Math.max(frame.w, frame.h) : fW;
-                                      const refReal = frame ? (frame.w >= frame.h ? realW : realH) : realW;
-                                      const mmLen = Math.round(len / refLen * refReal);
+                                      // mm calcolato dalla bbox di tutte le freeLine
+                                      const allFL = els.filter(e => e.type === "freeLine");
+                                      const allFLPts = allFL.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                      const bbW2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.x)) - Math.min(...allFLPts.map(p=>p.x)) : fW;
+                                      const bbH2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.y)) - Math.min(...allFLPts.map(p=>p.y)) : fH;
+                                      const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                      const mmLen = isSegH2
+                                        ? Math.round(Math.abs(dx2) / (bbW2||1) * realW)
+                                        : Math.round(Math.abs(dy2) / (bbH2||1) * realH);
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
+                                      // Offset verso esterno (lontano dal centro della forma)
+                                      const allFLcx = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.x,0)/allFLPts.length : midX;
+                                      const allFLcy = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.y,0)/allFLPts.length : midY;
+                                      const toCx = allFLcx - midX, toCy = allFLcy - midY;
+                                      const dist2 = Math.hypot(toCx, toCy) || 1;
+                                      const lx = midX - toCx/dist2 * 20, ly = midY - toCy/dist2 * 20;
                                       const ang = Math.atan2(dy2, dx2) * 180 / Math.PI;
-                                      const lx = midX + nx * 2, ly = midY + ny * 2;
                                       const isPartOfPoly = poly && poly.length >= 3;
+                                      const isEditing = editingLine?.elId === el.id;
+                                      const tw2 = String(mmLen).length * 6 + 16;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
-                                          {/* Wide transparent hit area */}
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
-                                          {/* Individual profile only if NOT part of closed polygon */}
                                           {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
-                                          {/* Dimension label */}
-                                          <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}>
-                                            <rect x={lx - 18} y={ly - 7} width={36} height={14} fill="#fff" rx={3} stroke={T.acc} strokeWidth={0.6} opacity={0.9} />
-                                            <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={T.acc} fontFamily="monospace">{mmLen}</text>
-                                          </g>
+                                          {/* Label cliccabile sul lato */}
+                                          {!drawMode && (
+                                            <g onClick={(e3) => {
+                                              e3.stopPropagation();
+                                              setEditingLine({ elId: el.id, el });
+                                              setEditingLineVal(String(mmLen));
+                                            }} style={{ cursor: "pointer" }}>
+                                              <rect x={lx-tw2/2} y={ly-9} width={tw2} height={18} fill={isEditing ? T.acc : "#fff"} rx={3} stroke={T.acc} strokeWidth={isEditing?1.5:0.8} />
+                                              <text x={lx} y={ly+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={isEditing?"#fff":T.acc} fontFamily="monospace">{mmLen}</text>
+                                            </g>
+                                          )}
                                           {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={T.purple} /><circle cx={el.x2} cy={el.y2} r={5} fill={T.purple} /></>}
                                         </g>
                                       );
