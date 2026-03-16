@@ -1,7 +1,7 @@
 ﻿"use client";
 // @ts-nocheck
 // ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-// MASTRO ERP ÔÇö VanoDetailPanel
+// MASTRO ERP — VanoDetailPanel
 // Estratto S4: ~1.505 righe (Dettaglio vano + misure + disegno + accessori)
 // ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -18,8 +18,8 @@ import { supabase } from "@/lib/supabase";
 const STATO_MISURE = [
   { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: "Ô£Å´©Å", desc: "Misure non ancora verificate" },
   { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "­ƒæü", desc: "Verificate sul posto, non ancora confermate" },
-  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "Ô£à", desc: "Misure definitive ÔÇö preventivo sbloccato" },
-  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "ÔÜá´©Å", desc: "Rilevate discrepanze ÔÇö ricontrollare" },
+  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "Ô£à", desc: "Misure definitive — preventivo sbloccato" },
+  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "ÔÜá´©Å", desc: "Rilevate discrepanze — ricontrollare" },
 ];
 const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
 
@@ -120,7 +120,7 @@ export default function VanoDetailPanel() {
     }, 450);
   };
 
-  // ÔòÉÔòÉÔòÉ VOICE RECOGNITION ÔÇö Self-contained implementation ÔòÉÔòÉÔòÉ
+  // ÔòÉÔòÉÔòÉ VOICE RECOGNITION — Self-contained implementation ÔòÉÔòÉÔòÉ
   const [vrActive, setVrActive] = useState(false);
   const [showFotoMisure, setShowFotoMisure] = useState(false);
   // ÔöÇÔöÇ NUMPAD NATIVO ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -447,12 +447,12 @@ export default function VanoDetailPanel() {
           <div style={{ margin: "0 16px 8px", padding: "10px 14px", borderRadius: 10, background: "#8B5CF610", border: "1.5px solid #8B5CF630", display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 16 }}><I d={ICO.lock} /></span>
             <div style={{ flex: 1, fontSize: 11, fontWeight: 700, color: "#8B5CF6" }}>
-              Rilievo storico ÔÇö sola lettura
+              Rilievo storico — sola lettura
             </div>
           </div>
         )}
 
-        {/* ÔòÉÔòÉÔòÉ VOCE AI SOPRALLUOGO ÔÇö Self-contained ÔòÉÔòÉÔòÉ */}
+        {/* ÔòÉÔòÉÔòÉ VOCE AI SOPRALLUOGO — Self-contained ÔòÉÔòÉÔòÉ */}
         <div style={{ margin: "8px 16px" }}>
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
@@ -475,7 +475,7 @@ export default function VanoDetailPanel() {
           {/* Hint when active */}
           {vrActive && (
             <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 8, background: "#DC444408", border: "1px dashed #DC444440", fontSize: 9, color: "#666", textAlign: "center", lineHeight: 1.6 }}>
-              <I d={ICO.alertTriangle} /> <b>Parla ora</b> ÔÇö Es: "Finestra due ante, soggiorno, piano terra, larghezza 1400, altezza 1200, tapparella motorizzata, bicolore bianco grigio"
+              <I d={ICO.alertTriangle} /> <b>Parla ora</b> — Es: "Finestra due ante, soggiorno, piano terra, larghezza 1400, altezza 1200, tapparella motorizzata, bicolore bianco grigio"
             </div>
           )}
 
@@ -509,7 +509,7 @@ export default function VanoDetailPanel() {
                     </div>
                   )}
                   {tr.parsed && Object.keys(tr.parsed).length === 0 && (
-                    <div style={{ fontSize: 8, color: T.orange, fontWeight: 600, marginTop: 1 }}><I d={ICO.alertTriangle} /> Nessun campo riconosciuto ÔÇö salvata come nota</div>
+                    <div style={{ fontSize: 8, color: T.orange, fontWeight: 600, marginTop: 1 }}><I d={ICO.alertTriangle} /> Nessun campo riconosciuto — salvata come nota</div>
                   )}
                 </div>
               ))}
@@ -517,7 +517,7 @@ export default function VanoDetailPanel() {
           )}
         </div>
 
-        {/* == INFO VANO ÔÇö fisarmoniche (solo step 0) == */}
+        {/* == INFO VANO — fisarmoniche (solo step 0) == */}
         {vanoStep === 0 && (() => {
           const updateV = (field, val) => {
             const updRil = selectedRilievo ? { ...selectedRilievo, vani: selectedRilievo.vani.map(vn => vn.id === v.id ? { ...vn, [field]: val } : vn) } : null;
@@ -669,8 +669,8 @@ export default function VanoDetailPanel() {
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>ACCESSORI</div>
                   <select style={S.select} value={v.coloreAcc||""} onChange={e=>updateV("coloreAcc",e.target.value)}>
-                    <option value="">ÔÇö Come profili ÔÇö</option>
-                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} ÔÇö {c.nome}</option>)}
+                    <option value="">— Come profili —</option>
+                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                   </select>
                 </div>
                 </>}
@@ -757,7 +757,7 @@ export default function VanoDetailPanel() {
                   </div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>PROFONDIT├Ç</div>
                     <select style={S.select} value={v.controtelaio?.prof||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,prof:e.target.value})}>
-                      <option value="">ÔÇö Seleziona ÔÇö</option>
+                      <option value="">— Seleziona —</option>
                       {ctProfDB.map(p=><option key={p.id} value={p.code}>{p.code} mm</option>)}
                     </select></div>
                   {v.controtelaio?.l > 0 && v.controtelaio?.h > 0 && (
@@ -782,12 +782,12 @@ export default function VanoDetailPanel() {
                   </div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE INTERNA (infisso interno)</div>
                     <select style={S.select} value={v.controtelaio?.sezInt||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezInt:e.target.value})}>
-                      <option value="">ÔÇö Seleziona ÔÇö</option>
+                      <option value="">— Seleziona —</option>
                       {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
                     </select></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE ESTERNA (infisso esterno)</div>
                     <select style={S.select} value={v.controtelaio?.sezEst||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezEst:e.target.value})}>
-                      <option value="">ÔÇö Seleziona ÔÇö</option>
+                      <option value="">— Seleziona —</option>
                       {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
                     </select></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>DISTANZIALE</div>
@@ -823,14 +823,14 @@ export default function VanoDetailPanel() {
                   </div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE CONTROTELAIO</div>
                     <select style={S.select} value={v.controtelaio?.sezione||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezione:e.target.value})}>
-                      <option value="">ÔÇö Seleziona ÔÇö</option>
+                      <option value="">— Seleziona —</option>
                       {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
                     </select></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SPALLA CONTROTELAIO</div>
                     <input style={S.input} type="text" placeholder="es. 120mm" value={v.controtelaio?.spalla||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,spalla:e.target.value})}/></div>
                   <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>MODELLO CIELINO</div>
                     <select style={S.select} value={v.controtelaio?.cielino||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,cielino:e.target.value})}>
-                      <option value="">ÔÇö Seleziona ÔÇö</option>
+                      <option value="">— Seleziona —</option>
                       {ctCieliniDB.map(c=><option key={c.id} value={c.code}>{c.code}</option>)}
                     </select></div>
                   {v.controtelaio?.l > 0 && v.controtelaio?.h > 0 && (
@@ -977,7 +977,7 @@ export default function VanoDetailPanel() {
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
-          {/* GALLERY FOTO MISURE ÔÇö sotto il bottone */}
+          {/* GALLERY FOTO MISURE — sotto il bottone */}
           {(() => {
             const fotoMisure = Object.entries(v.foto || {}).filter(([k]) => k.startsWith("misure_")).sort((a, b) => b[0].localeCompare(a[0]));
             if (fotoMisure.length === 0) return <div style={{ marginBottom: 12 }} />;
@@ -1024,15 +1024,15 @@ export default function VanoDetailPanel() {
                       <div style={{ fontSize:10, color:T.sub, marginTop:2 }}>{isPergola ? "Larghezza ├ù Profondit├á ├ù Altezza colonne" : isBracci ? "Larghezza telo ├ù Sporgenza (aggetto)" : "Larghezza ├ù Altezza (caduta)"}</div>
                     </div>
 
-                    {/* LARGHEZZA ÔÇö sempre presente */}
+                    {/* LARGHEZZA — sempre presente */}
                     <div style={{ fontSize:11, fontWeight:800, color:"#507aff", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}><I d={ICO.ruler} /> Larghezza</div>
                     {bInput("Larghezza mm", "lCentro")}
 
-                    {/* ALTEZZA/DROP ÔÇö sempre presente */}
+                    {/* ALTEZZA/DROP — sempre presente */}
                     <div style={{ fontSize:11, fontWeight:800, color:"#1A9E73", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}><I d={ICO.ruler} /> {isPergola ? "Altezza colonne" : "Altezza / Drop"}</div>
                     {bInput(isPergola ? "Altezza colonne mm" : "Altezza (caduta) mm", "hCentro")}
 
-                    {/* PROFONDITA/SPORGENZA ÔÇö pergole e bracci */}
+                    {/* PROFONDITA/SPORGENZA — pergole e bracci */}
                     {(isPergola || isBracci) && (<>
                       <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>Ôåò´©Å {isPergola ? "Profondit├á" : "Sporgenza (Aggetto)"}</div>
                       {bInput(isPergola ? "Profondit├á mm" : "Sporgenza/Aggetto mm", "sporgenza")}
@@ -1056,7 +1056,7 @@ export default function VanoDetailPanel() {
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>TIPO LAMA</div>
                           <select style={S.select} value={v.tipoLama||""} onChange={e => updateV("tipoLama", e.target.value)}>
-                            <option value="">ÔÇö Tipo ÔÇö</option>
+                            <option value="">— Tipo —</option>
                             <option value="orientabile">Orientabile</option>
                             <option value="retrattile">Retrattile</option>
                             <option value="impacchettabile">Impacchettabile</option>
@@ -1068,7 +1068,7 @@ export default function VanoDetailPanel() {
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>STRUTTURA</div>
                           <select style={S.select} value={v.struttura||""} onChange={e => updateV("struttura", e.target.value)}>
-                            <option value="">ÔÇö Struttura ÔÇö</option>
+                            <option value="">— Struttura —</option>
                             <option value="alluminio">Alluminio</option>
                             <option value="acciaio">Acciaio</option>
                             <option value="legno">Legno</option>
@@ -1077,7 +1077,7 @@ export default function VanoDetailPanel() {
                         <div>
                           <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>TIPO</div>
                           <select style={S.select} value={v.tipoPergola||""} onChange={e => updateV("tipoPergola", e.target.value)}>
-                            <option value="">ÔÇö Tipo ÔÇö</option>
+                            <option value="">— Tipo —</option>
                             <option value="addossata">Addossata a muro</option>
                             <option value="freestanding">Autoportante</option>
                           </select>
@@ -1091,7 +1091,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>MONTAGGIO</div>
                         <select style={S.select} value={v.montaggio||""} onChange={e => updateV("montaggio", e.target.value)}>
-                          <option value="">ÔÇö Montaggio ÔÇö</option>
+                          <option value="">— Montaggio —</option>
                           <option value="parete">A parete</option>
                           <option value="soffitto">A soffitto</option>
                           <option value="nicchia">In nicchia</option>
@@ -1101,7 +1101,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>ORIENTAMENTO</div>
                         <select style={S.select} value={v.orientamento||""} onChange={e => updateV("orientamento", e.target.value)}>
-                          <option value="">ÔÇö Orientamento ÔÇö</option>
+                          <option value="">— Orientamento —</option>
                           <option value="nord">Nord</option>
                           <option value="sud">Sud</option>
                           <option value="est">Est</option>
@@ -1113,7 +1113,7 @@ export default function VanoDetailPanel() {
                       <div>
                         <div style={{ fontSize:9, fontWeight:700, color:T.sub, marginBottom:2 }}>MOTORIZZAZIONE</div>
                         <select style={S.select} value={v.motorizzazione||""} onChange={e => updateV("motorizzazione", e.target.value)}>
-                          <option value="">ÔÇö Motorizzazione ÔÇö</option>
+                          <option value="">— Motorizzazione —</option>
                           <option value="manuale">Manuale</option>
                           <option value="motore">Motore tubolare</option>
                           <option value="motore_radio">Motore + radiocomando</option>
@@ -1152,7 +1152,7 @@ export default function VanoDetailPanel() {
               {/* ÔòÉÔòÉÔòÉ MISURE STANDARD: Serramenti (8 punti) ÔòÉÔòÉÔòÉ */}
               {!["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"].includes(v.tipo) && (<>
 
-              {/* ÔòÉÔòÉÔòÉ DISEGNO TECNICO ÔÇö Condiviso con preventivo ÔòÉÔòÉÔòÉ */}
+              {/* ÔòÉÔòÉÔòÉ DISEGNO TECNICO — Condiviso con preventivo ÔòÉÔòÉÔòÉ */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ marginBottom: 10 }}>
                       <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>Foto → Calibra → Disegna → BOM</div>
@@ -1213,12 +1213,12 @@ export default function VanoDetailPanel() {
               {fSq !== null && fSq > 3 && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}><I d={ICO.alertTriangle} /> Fuori squadra: {fSq}mm</div>
-                  <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm ÔÇö segnalare in ufficio</div>
+                  <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm — segnalare in ufficio</div>
                 </div>
               )}
               {fSq !== null && fSq <= 3 && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>Ô£à In squadra ÔÇö differenza: {fSq}mm</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>Ô£à In squadra — differenza: {fSq}mm</div>
                 </div>
               )}
             </>)}
@@ -1489,7 +1489,7 @@ export default function VanoDetailPanel() {
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">ÔÇö Seleziona tipo misura ÔÇö</option>
+                                <option value="">— Seleziona tipo misura —</option>
                                 {tipoMisuraTappDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -1510,7 +1510,7 @@ export default function VanoDetailPanel() {
                               </div>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">ÔÇö Seleziona tipo misura ÔÇö</option>
+                                <option value="">— Seleziona tipo misura —</option>
                                 {tipoMisuraDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -1519,12 +1519,12 @@ export default function VanoDetailPanel() {
                             <>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipologia</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.categoria || ""} onChange={e => updateAccessorio(v.id, acc, "categoria", e.target.value)}>
-                                <option value="">ÔÇö Seleziona tipologia ÔÇö</option>
+                                <option value="">— Seleziona tipologia —</option>
                                 {["Avvolgente verticale","Avvolgente laterale","Avvolgente con bottone","Plissettata verticale","Plissettata laterale","ZIP verticale","Incasso controtelaio","Pannello fisso","Battente 1 anta","Battente 2 ante","Scorrevole su binario"].map(cat => <option key={cat} value={cat}>{cat}</option>)}
                               </select>
                               <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Tipo Misura</div>
                               <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF, marginBottom: 10 }} value={v.accessori?.[acc]?.tipoMisura || ""} onChange={e => updateAccessorio(v.id, acc, "tipoMisura", e.target.value)}>
-                                <option value="">ÔÇö Seleziona tipo misura ÔÇö</option>
+                                <option value="">— Seleziona tipo misura —</option>
                                 {tipoMisuraZanzDB.map(tm => <option key={tm.id} value={tm.code}>{tm.code}</option>)}
                               </select>
                             </>
@@ -1532,7 +1532,7 @@ export default function VanoDetailPanel() {
                           <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Colore</div>
                           <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF }} value={v.accessori?.[acc]?.colore || ""} onChange={e => updateAccessorio(v.id, acc, "colore", e.target.value)}>
                             <option value="">Colore</option>
-                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} ÔÇö {c.nome}</option>)}
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                           </select>
                           <div onClick={() => toggleAccessorio(v.id, acc)} style={{ marginTop: 10, padding: "8px", borderRadius: 8, border: `1px dashed #ef5350`, textAlign: "center", fontSize: 11, color: "#ef5350", cursor: "pointer" }}>
                             <I d={ICO.lock} />ÔÇÿ Rimuovi {acc}
@@ -1578,7 +1578,7 @@ export default function VanoDetailPanel() {
                           }} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", background: (voce.tipo||"generico")===t.id ? t.color+"18" : T.bg, color: (voce.tipo||"generico")===t.id ? t.color : T.sub, border: `1px solid ${(voce.tipo||"generico")===t.id ? t.color+"50" : T.bdr}` }}>{t.label}</div>
                         ))}
                       </div>
-                      {/* Campi vetro ÔÇö da catalogo */}
+                      {/* Campi vetro — da catalogo */}
                       {(voce.tipo === "vetro") && (
                         <div style={{ marginBottom: 8 }}>
                           <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Vetro da catalogo</label>
@@ -1586,7 +1586,7 @@ export default function VanoDetailPanel() {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], vetroCode: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }}>
-                            <option value="">ÔÇö Seleziona vetro ÔÇö</option>
+                            <option value="">— Seleziona vetro —</option>
                             {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}{g.ug ? ` ┬À Ug ${g.ug}` : ""}</option>)}
                           </select>
                           <div style={{ display: "flex", gap: 6 }}>
@@ -1608,7 +1608,7 @@ export default function VanoDetailPanel() {
                           </div>
                         </div>
                       )}
-                      {/* Campi coprifilo ÔÇö da catalogo */}
+                      {/* Campi coprifilo — da catalogo */}
                       {(voce.tipo === "coprifilo") && (
                         <div style={{ marginBottom: 8 }}>
                           <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Coprifilo da catalogo</label>
@@ -1616,7 +1616,7 @@ export default function VanoDetailPanel() {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], coprifiloCode: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }}>
-                            <option value="">ÔÇö Seleziona coprifilo ÔÇö</option>
+                            <option value="">— Seleziona coprifilo —</option>
                             {coprifiliDB.map(c => <option key={c.id} value={c.cod}>{c.cod}</option>)}
                           </select>
                           <label style={{ fontSize: 9, color: T.sub, fontWeight: 700 }}>Lamiera da catalogo</label>
@@ -1624,7 +1624,7 @@ export default function VanoDetailPanel() {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], lamieraCode: e.target.value };
                             updateVanoField(v.id, "vociLibere", newVoci);
                           }}>
-                            <option value="">ÔÇö Seleziona lamiera ÔÇö</option>
+                            <option value="">— Seleziona lamiera —</option>
                             {lamiereDB.map(l => <option key={l.id} value={l.cod}>{l.cod}</option>)}
                           </select>
                           <div style={{ flex: 1 }}>
@@ -1759,7 +1759,7 @@ export default function VanoDetailPanel() {
               {detailOpen.disegno && (
                 <div style={{ marginBottom: 12 }}>
 
-      {/* Disegno mano libera ÔÇö Enhanced: eraser, multi-page, fullscreen */}
+      {/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
                 const W = drawFullscreen ? 760 : 380;
                 const H = drawFullscreen ? 680 : 340;
@@ -1830,7 +1830,7 @@ export default function VanoDetailPanel() {
                 if (drawFullscreen) return (
                   <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff", display: "flex", flexDirection: "column" as const }}>
                     <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#ff6b6b" }}><I d={ICO.edit} /> Disegno ÔÇö Foglio {drawPageIdx + 1}/{drawPages.length}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#ff6b6b" }}><I d={ICO.edit} /> Disegno — Foglio {drawPageIdx + 1}/{drawPages.length}</span>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.trash} /> Pulisci foglio</button>
                         <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#DC4444", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
@@ -1933,7 +1933,7 @@ export default function VanoDetailPanel() {
                   })}
                 </div>
                 {Object.keys(v.foto||{}).length === 0
-                  ? <div style={{ textAlign: "center", padding: "16px 0", color: T.sub, fontSize: 11 }}>Nessun allegato ÔÇö tocca <I d={ICO.camera} /> Foto o <I d={ICO.clapperboard} /> Video</div>
+                  ? <div style={{ textAlign: "center", padding: "16px 0", color: T.sub, fontSize: 11 }}>Nessun allegato — tocca <I d={ICO.camera} /> Foto o <I d={ICO.clapperboard} /> Video</div>
                   : <>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                       {Object.entries(v.foto||{}).map(([k, f]) => (
@@ -2102,7 +2102,7 @@ export default function VanoDetailPanel() {
                     {/* Davanzale */}
                     <Sec title="DAVANZALE" color="#EF4444" icon="Ô¼ç" rows={[["Profondit├á", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
 
-                    {/* Accessori ÔÇö dettagliato */}
+                    {/* Accessori — dettagliato */}
                     {(acc.tapparella?.attivo || acc.persiana?.attivo || acc.zanzariera?.attivo) && (
                       <Sec title="ACCESSORI" color="#af52de" icon="+" rows={[
                         ...(acc.tapparella?.attivo ? [
@@ -2241,7 +2241,7 @@ export default function VanoDetailPanel() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div>
                   <span style={{ fontSize: 14, fontWeight: 900, color: T.text }}>ÔÜí Accesso rapido</span>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} ┬À {v.stanza || "?"} ┬À {v.sistema ? "Ô£ô Sist." : "—"} ┬À {v.coloreInt ? "Ô£ô Col." : "—"} ┬À {(m.lCentro && m.hCentro) ? m.lCentro+"├ù"+m.hCentro : "ÔÇö Mis."}</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} ┬À {v.stanza || "?"} ┬À {v.sistema ? "Ô£ô Sist." : "—"} ┬À {v.coloreInt ? "Ô£ô Col." : "—"} ┬À {(m.lCentro && m.hCentro) ? m.lCentro+"├ù"+m.hCentro : "— Mis."}</div>
                 </div>
                 <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "5px 12px", borderRadius: 8, background: T.bg, border: "1px solid " + T.bdr, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 700 }}>Ô£ò</div>
               </div>
@@ -2297,14 +2297,14 @@ export default function VanoDetailPanel() {
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 1 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}>ÔÜÖ Sistema {v.sistema && <span style={{ color: "#1A9E73" }}>Ô£ô</span>}</div>
                             <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.sistema && activeStep === 1 ? T.acc + "60" : undefined }} value={v.sistema || ""} onChange={e => updateVanoField(v.id, "sistema", e.target.value)}>
-                              <option value="">ÔÇö Sistema ÔÇö</option>
+                              <option value="">— Sistema —</option>
                               {sistemiDB.map(s => <option key={s.id} value={s.marca + " " + s.sistema}>{s.marca} {s.sistema}</option>)}
                             </select>
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 2 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}>Ôûª Vetro {v.vetro && <span style={{ color: "#1A9E73" }}>Ô£ô</span>}</div>
                             <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.vetro && activeStep === 2 ? T.acc + "60" : undefined }} value={v.vetro || ""} onChange={e => updateVanoField(v.id, "vetro", e.target.value)}>
-                              <option value="">ÔÇö Vetro ÔÇö</option>
+                              <option value="">— Vetro —</option>
                               {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}</option>)}
                             </select>
                           </div>
@@ -2323,22 +2323,22 @@ export default function VanoDetailPanel() {
                         </div>
                         {!v.bicolore ? (
                           <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.coloreInt && activeStep === 3 ? T.acc + "60" : undefined }} value={v.coloreInt || ""} onChange={e => updateVanoField(v.id, "coloreInt", e.target.value)}>
-                            <option value="">ÔÇö Colore ÔÇö</option>
-                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} ÔÇö {c.nome}</option>)}
+                            <option value="">— Colore —</option>
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                           </select>
                         ) : (
                           <div style={{ display: "flex", gap: 6 }}>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 8, color: T.sub, marginBottom: 2 }}>INT</div>
                               <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreInt || ""} onChange={e => updateVanoField(v.id, "coloreInt", e.target.value)}>
-                                <option value="">ÔÇö</option>
+                                <option value="">—</option>
                                 {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                               </select>
                             </div>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 8, color: T.sub, marginBottom: 2 }}>EST</div>
                               <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreEst || ""} onChange={e => updateVanoField(v.id, "coloreEst", e.target.value)}>
-                                <option value="">ÔÇö</option>
+                                <option value="">—</option>
                                 {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
                               </select>
                             </div>
@@ -2348,8 +2348,8 @@ export default function VanoDetailPanel() {
                         <div style={{ marginTop: 6 }}>
                           <div style={{ fontSize: 8, fontWeight: 600, color: T.sub, marginBottom: 2 }}>Accessori</div>
                           <select style={{ ...S.select, fontSize: 11, padding: "7px" }} value={v.coloreAcc || ""} onChange={e => updateVanoField(v.id, "coloreAcc", e.target.value)}>
-                            <option value="">ÔÇö Come profili ÔÇö</option>
-                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} ÔÇö {c.nome}</option>)}
+                            <option value="">— Come profili —</option>
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
                           </select>
                         </div>
                       </div>
@@ -2409,7 +2409,7 @@ export default function VanoDetailPanel() {
                         marginTop: 8, padding: "12px", borderRadius: 10, textAlign: "center", cursor: "pointer",
                         background: "linear-gradient(135deg, #1A9E73, #28a745)", color: "#fff",
                         fontSize: 13, fontWeight: 800, boxShadow: "0 3px 12px rgba(26,158,115,0.3)",
-                      }}>Ô£ô Vano configurato ÔÇö Chiudi</div>
+                      }}>Ô£ô Vano configurato — Chiudi</div>
                     )}
 
                     <style>{"@keyframes qpFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }"}</style>
@@ -2493,7 +2493,7 @@ export default function VanoDetailPanel() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "flex-end" }} onClick={() => setShowStatoMisurePanel(false)}>
           <div style={{ width: "100%", background: T.card, borderRadius: "20px 20px 0 0", padding: "20px 16px 32px", maxWidth: 480, margin: "0 auto" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 40, height: 4, borderRadius: 2, background: T.bdr, margin: "0 auto 16px" }} />
-            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 4 }}>Stato misure ÔÇö {v.nome}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 4 }}>Stato misure — {v.nome}</div>
             <div style={{ fontSize: 11, color: T.sub, marginBottom: 16 }}>Imposta lo stato di validazione delle misure di questo vano</div>
             {STATO_MISURE.map(sm => {
               const isActive = (v.statoMisure || "provvisorie") === sm.id;
