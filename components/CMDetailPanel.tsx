@@ -83,13 +83,11 @@ export default function CMDetailPanel() {
     return (
       <MastroCAD
         vanoNome={selectedCM?.nome || "Disegno"}
-        vanoId={selectedCM?.id}
         misureIniziali={{
           lCentro: selectedCM?.misure?.lCentro || selectedCM?.larghezza || 0,
           hCentro: selectedCM?.misure?.hCentro || selectedCM?.altezza || 0,
         }}
         onMisureUpdate={(misure: any) => {
-          // Aggiorna misure in tempo reale mentre si disegna
           const newMisure = {
             ...(selectedCM?.misure || {}),
             lCentro: misure.lCentro,
