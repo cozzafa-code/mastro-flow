@@ -332,7 +332,7 @@ export default function VanoDetailPanel() {
     };
 
     // Inline input renderer (no sub-component = no focus loss)
-    const bInput = (label, field) => (
+    const bInput = (label, field) => { return (
       <div key={field} style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>{label}</div>
         <input
@@ -342,7 +342,7 @@ export default function VanoDetailPanel() {
           onChange={e => updateMisura(v.id, field, e.target.value)}
         />
       </div>
-    );
+    ); };
 
     return (
       <div style={{ paddingBottom: 80, background: T.bg }}>
