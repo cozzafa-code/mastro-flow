@@ -994,17 +994,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => {
                                     // Preserve existing dim labels (user may have edited them)
                                     const oldDims = els.filter(e => e.type === "dim");
-                                    const findOldLabel = (x1, y1, x2, y2, fallback) => {
+                                    const findOldLabel = (x1, y1, x2, y2, fallback, marker?) => {
+                                      // First try marker-based match (survives rescale)
+                                      if (marker) {
+                                        const byMarker = oldDims.find(d => d.isTotalDim === marker);
+                                        if (byMarker) return byMarker.label;
+                                      }
+                                      // Fallback: coordinate match
                                       const match = oldDims.find(d => Math.abs(d.x1 - x1) < 8 && Math.abs(d.y1 - y1) < 8 && Math.abs(d.x2 - x2) < 8 && Math.abs(d.y2 - y2) < 8);
                                       return match ? match.label : fallback;
                                     };
                                     const nEls = els.filter(e => e.type !== "dim");
                                     if (frame) {
-                                      const wLabel = findOldLabel(frame.x, frame.y + frame.h + 14, frame.x + frame.w, frame.y + frame.h + 14, String(realW));
-                                      const hLabel = findOldLabel(frame.x + frame.w + 14, frame.y, frame.x + frame.w + 14, frame.y + frame.h, String(realH));
+                                      const wLabel = findOldLabel(frame.x, frame.y + frame.h + 14, frame.x + frame.w, frame.y + frame.h + 14, String(realW), "W");
+                                      const hLabel = findOldLabel(frame.x + frame.w + 14, frame.y, frame.x + frame.w + 14, frame.y + frame.h, String(realH), "H");
                                       nEls.push(
-                                        { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 14, x2: frame.x + frame.w, y2: frame.y + frame.h + 14, label: wLabel },
-                                        { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 14, y1: frame.y, x2: frame.x + frame.w + 14, y2: frame.y + frame.h, label: hLabel }
+                                        { id: Date.now() + 300, type: "dim", isTotalDim: "W", x1: frame.x, y1: frame.y + frame.h + 14, x2: frame.x + frame.w, y2: frame.y + frame.h + 14, label: wLabel },
+                                        { id: Date.now() + 301, type: "dim", isTotalDim: "H", x1: frame.x + frame.w + 14, y1: frame.y, x2: frame.x + frame.w + 14, y2: frame.y + frame.h, label: hLabel }
                                       );
                                       const iT = frame.y + TK_FRAME, iL = frame.x + TK_FRAME;
                                       const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a, b) => a.x - b.x);
@@ -1462,9 +1468,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               const isColDim = isH && el.y1 < frame.y + frame.h / 2;
                                               // Is this a row height? (vertical dim left of frame)
                                               const isRowDim = !isH && el.x1 < frame.x + frame.w / 2;
-                                              // Is this total width/height? (spans the whole frame)
-                                              const isTotalW = isH && Math.abs(el.x2 - el.x1 - frame.w) < 8;
-                                              const isTotalH = !isH && Math.abs(el.y2 - el.y1 - frame.h) < 8;
+                                              // Is this total width/height? Use marker first, then coordinate fallback
+                                              const isTotalW = el.isTotalDim === "W" || (isH && Math.abs(el.x2 - el.x1 - frame.w) < 8);
+                                              const isTotalH = el.isTotalDim === "H" || (!isH && Math.abs(el.y2 - el.y1 - frame.h) < 8);
 
                                               if (isTotalW) {
                                                 // Rescale entire frame width + all internal elements proportionally
@@ -1476,10 +1482,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                   if (x.type === "montante") return { ...x, x: snap(fx + (x.x - fx) * scaleRatio) };
                                                   if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
                                                     return { ...x, x: snap(fx + (x.x - fx) * scaleRatio), w: snap(x.w * scaleRatio) };
-                                                  if (x.type === "dim" && x.id !== el.id) return { ...x, x1: snap(fx + (x.x1 - fx) * scaleRatio), x2: snap(fx + (x.x2 - fx) * scaleRatio) };
+                                                  if (x.type === "dim" && x.id !== el.id) {
+                                                    // H total dim: reposition to new frame right edge
+                                                    if (x.isTotalDim === "H") return { ...x, x1: fx + newPxW + 14, x2: fx + newPxW + 14 };
+                                                    // Sub-dims: scale proportionally
+                                                    return { ...x, x1: snap(fx + (x.x1 - fx) * scaleRatio), x2: snap(fx + (x.x2 - fx) * scaleRatio) };
+                                                  }
                                                   return x;
                                                 });
-                                                upd = upd.map(x => x.id === el.id ? { ...x, x2: frame.x + snap(oldPxW * scaleRatio) } : x);
+                                                // Update W dim span
+                                                upd = upd.map(x => x.id === el.id ? { ...x, x2: fx + newPxW } : x);
                                                 onUpdateField && onUpdateField("larghezza", newVal);
                                               } else if (isTotalH) {
                                                 // Rescale entire frame height + all internal elements proportionally
@@ -1491,10 +1503,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                   if (x.type === "traverso") return { ...x, y: snap(fy + (x.y - fy) * scaleRatio) };
                                                   if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
                                                     return { ...x, y: snap(fy + (x.y - fy) * scaleRatio), h: snap(x.h * scaleRatio) };
-                                                  if (x.type === "dim" && x.id !== el.id) return { ...x, y1: snap(fy + (x.y1 - fy) * scaleRatio), y2: snap(fy + (x.y2 - fy) * scaleRatio) };
+                                                  if (x.type === "dim" && x.id !== el.id) {
+                                                    // W total dim: reposition to new frame bottom
+                                                    if (x.isTotalDim === "W") return { ...x, y1: fy + newPxH + 14, y2: fy + newPxH + 14 };
+                                                    // H dim span update + sub-dims
+                                                    return { ...x, y1: snap(fy + (x.y1 - fy) * scaleRatio), y2: snap(fy + (x.y2 - fy) * scaleRatio) };
+                                                  }
                                                   return x;
                                                 });
-                                                upd = upd.map(x => x.id === el.id ? { ...x, y2: frame.y + snap(oldPxH * scaleRatio) } : x);
+                                                // Update H dim span
+                                                upd = upd.map(x => x.id === el.id ? { ...x, y2: fy + newPxH } : x);
                                                 onUpdateField && onUpdateField("altezza", newVal);
                                               } else if (isColDim) {
                                                 const oldPixelW = el.x2 - el.x1;
