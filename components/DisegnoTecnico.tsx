@@ -993,8 +993,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                   <div onClick={() => {
                                     const nEls = els.filter(e => e.type !== "dim");
-                                    // Rescale frame to match current realW/realH
-                                    if (frame && realW && realH) {
+                                    const hasFreeLines = els.filter(e => e.type === "freeLine").length >= 2;
+                                    if (frame && !hasFreeLines && realW && realH) {
                                       const scaleX = (realW / realH * frame.h) / frame.w;
                                       const scaleY = (realH / realW * frame.w) / frame.h;
                                       const newW = frame.h * realW / realH;
@@ -1010,7 +1010,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }
                                       });
                                     }
-                                    if (frame) {
+                                    if (frame && !hasFreeLines) {
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: String(realW) },
                                         { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: String(realH) }
