@@ -1163,7 +1163,6 @@ export default function VanoDetailPanel() {
                 </div>
                 {showDisegno && (
                   <DisegnoTecnico
-                    key={`dis-${v.id}-${m.lCentro || m.lAlto || 1200}-${m.hCentro || m.hSx || 1400}`}
                     vanoId={v.id}
                     vanoNome={v.nome || `Vano ${v.numero || ""}`}
                     vanoDisegno={v.disegno}
