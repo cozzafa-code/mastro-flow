@@ -1467,6 +1467,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             const isTotalW = isH && Math.abs(el.x2 - el.x1 - frame.w) < 5;
                                             const isTotalH = !isH && Math.abs(el.y2 - el.y1 - frame.h) < 5;
                                             
+                                            // Rescale total frame when total dim is edited
+                                            if (isTotalW && !isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
+                                              const scale = newVal / oldVal;
+                                              upd = upd.map(x => {
+                                                if (x.type === "rect") return { ...x, w: Math.round(x.w * scale) };
+                                                if (x.type === "montante") return { ...x, x: Math.round(frame.x + (x.x - frame.x) * scale) };
+                                                if (x.type === "dim" && x !== el) return { ...x, x1: Math.round(frame.x + (x.x1 - frame.x) * scale), x2: Math.round(frame.x + (x.x2 - frame.x) * scale) };
+                                                if (x.type === "innerRect" || x.type === "glass") return { ...x, x: Math.round(frame.x + (x.x - frame.x) * scale), w: Math.round(x.w * scale) };
+                                                return x;
+                                              });
+                                            }
+                                            if (isTotalH && !isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
+                                              const scale = newVal / oldVal;
+                                              upd = upd.map(x => {
+                                                if (x.type === "rect") return { ...x, h: Math.round(x.h * scale) };
+                                                if (x.type === "traverso") return { ...x, y: Math.round(frame.y + (x.y - frame.y) * scale) };
+                                                if (x.type === "dim" && x !== el) return { ...x, y1: Math.round(frame.y + (x.y1 - frame.y) * scale), y2: Math.round(frame.y + (x.y2 - frame.y) * scale) };
+                                                if (x.type === "innerRect" || x.type === "glass") return { ...x, y: Math.round(frame.y + (x.y - frame.y) * scale), h: Math.round(x.h * scale) };
+                                                return x;
+                                              });
+                                            }
                                             if (isColDim && !isTotalW) {
                                               // Find which column this dim spans, adjust montante
                                               const dimLeft = el.x1;
