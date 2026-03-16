@@ -1012,8 +1012,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     if (frame && !hasFreeLines) {
                                       const existingDims = els.filter(e => e.type === "dim");
-                                      const exW = existingDims.find(e => Math.abs(e.y1 - (frame.y + frame.h + 28)) < 30);
-                                      const exH = existingDims.find(e => Math.abs(e.x1 - (frame.x + frame.w + 28)) < 30);
+                                      const exW = existingDims.find(e => Math.abs(e.y1 - e.y2) < 2);
+                                      const exH = existingDims.find(e => Math.abs(e.x1 - e.x2) < 2);
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: exW ? exW.label : String(realW) },
                                         { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: exH ? exH.label : String(realH) }
@@ -1028,8 +1028,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
                                       // Bounding box total dims
                                       const existingDimsP = els.filter(e => e.type === "dim");
-                                      const exWP = existingDimsP.find(e => Math.abs(e.y1 - (bB + 14)) < 30 && e.x1 >= bL - 5 && e.x2 <= bR + 5);
-                                      const exHP = existingDimsP.find(e => Math.abs(e.x1 - (bR + 14)) < 30 && e.y1 >= bT - 5 && e.y2 <= bB + 5);
+                                      const exWP = existingDimsP.find(e => Math.abs(e.y1 - e.y2) < 2);
+                                      const exHP = existingDimsP.find(e => Math.abs(e.x1 - e.x2) < 2);
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: exWP ? exWP.label : String(realW) },
                                         { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: exHP ? exHP.label : String(realH) }
