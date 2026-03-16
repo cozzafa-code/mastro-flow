@@ -992,12 +992,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>Aa Testo</div>
 
                                   <div onClick={() => {
-                                    // Toggle: 0=nessuna -> 1=totali -> 2=totali+segmenti -> 0
                                     const dimCount = els.filter(e => e.type === "dim").length;
-                                    const onlyTotali = dimCount === 2;
                                     const hasSegDims = dimCount > 2;
                                     if (hasSegDims) { setDW(els.filter(e => e.type !== "dim")); return; }
-                                    const addSegments = onlyTotali; // se ci sono già le totali, aggiungi segmenti
+                                    const addSegments = dimCount === 2;
                                     const nEls = els.filter(e => e.type !== "dim");
                                     const hasFreeLines = els.filter(e => e.type === "freeLine").length >= 2;
                                     if (frame && !hasFreeLines && realW && realH) {
@@ -1018,10 +1016,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     if (frame && !hasFreeLines) {
                                       const existingDims = els.filter(e => e.type === "dim");
-                                      const horizDimsF = existingDims.filter(e => Math.abs(e.y1 - e.y2) < 4);
-                                      const vertDimsF = existingDims.filter(e => Math.abs(e.x1 - e.x2) < 4);
-                                      const exW = horizDimsF.reduce((best, e) => !best || (e.x2 - e.x1) > (best.x2 - best.x1) ? e : best, null as any);
-                                      const exH = vertDimsF.reduce((best, e) => !best || (e.y2 - e.y1) > (best.y2 - best.y1) ? e : best, null as any);
+                                      const exW = existingDims.find(e => Math.abs(e.y1 - e.y2) < 2);
+                                      const exH = existingDims.find(e => Math.abs(e.x1 - e.x2) < 2);
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: exW ? exW.label : String(realW) },
                                         { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: exH ? exH.label : String(realH) }
@@ -1035,18 +1031,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
                                       const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
                                       // Bounding box total dims
-                                      const existingDimsP = els.filter(e => e.type === "dim");
-                                      // Find total dims: widest horizontal and tallest vertical
-                                      const horizDims = existingDimsP.filter(e => Math.abs(e.y1 - e.y2) < 4);
-                                      const vertDims = existingDimsP.filter(e => Math.abs(e.x1 - e.x2) < 4);
-                                      const exWP = horizDims.reduce((best, e) => !best || (e.x2 - e.x1) > (best.x2 - best.x1) ? e : best, null as any);
-                                      const exHP = vertDims.reduce((best, e) => !best || (e.y2 - e.y1) > (best.y2 - best.y1) ? e : best, null as any);
+                                      const exW3 = els.filter(e => e.type === "dim" && (e as any).isTotalDim === "W")[0];
+                                      const exH3 = els.filter(e => e.type === "dim" && (e as any).isTotalDim === "H")[0];
                                       nEls.push(
-                                        { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: exWP ? exWP.label : String(realW) },
-                                        { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: exHP ? exHP.label : String(realH) }
+                                        { id: Date.now() + 300, type: "dim", isTotalDim: "W", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: exW3 ? exW3.label : String(realW) },
+                                        { id: Date.now() + 301, type: "dim", isTotalDim: "H", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: exH3 ? exH3.label : String(realH) }
                                       );
-                                      // Per-segment dimensions (each freeLine side) — solo se richiesti
                                       if (addSegments) {
+                                      // Per-segment dimensions (each freeLine side)
                                       const freeLines = els.filter(e => e.type === "freeLine");
                                       const totalPx = Math.hypot(bR - bL, bB - bT);
                                       freeLines.forEach((fl, fi) => {
@@ -1556,6 +1548,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 });
                                               }
                                               if (isTotalHP) {
+                                                const scale = newVal / oldVal;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "freeLine") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
+                                                  if (x.type === "dim") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
+                                                  return x;
+                                                });
+                                              }
+                                            }
+                                          }
+                                          // Rescale freeLine on total dim edit
+                                          if (!isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
+                                            const fls = els.filter(e => e.type === "freeLine");
+                                            if (fls.length > 0 && el.isTotalDim) {
+                                              const xs2 = fls.flatMap(fl => [fl.x1, fl.x2]);
+                                              const ys2 = fls.flatMap(fl => [fl.y1, fl.y2]);
+                                              const bL2 = Math.min(...xs2), bR2 = Math.max(...xs2), bT2 = Math.min(...ys2), bB2 = Math.max(...ys2);
+                                              if (el.isTotalDim === "W") {
+                                                const scale = newVal / oldVal;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "freeLine") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
+                                                  if (x.type === "dim") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
+                                                  return x;
+                                                });
+                                              }
+                                              if (el.isTotalDim === "H") {
                                                 const scale = newVal / oldVal;
                                                 upd = upd.map(x => {
                                                   if (x.type === "freeLine") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
