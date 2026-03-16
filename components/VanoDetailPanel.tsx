@@ -96,7 +96,6 @@ export default function VanoDetailPanel() {
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
-  const [showMastroCAD, setShowMastroCAD] = useState(false);
   // === FLASH CONFIGURATORE ===
   const [flashSec, setFlashSec] = useState<string|null>(null);
   const [completedSecs, setCompletedSecs] = useState<Set<string>>(new Set());
@@ -1156,18 +1155,6 @@ export default function VanoDetailPanel() {
               {/* ÔòÉÔòÉÔòÉ DISEGNO TECNICO ÔÇö Condiviso con preventivo ÔòÉÔòÉÔòÉ */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ marginBottom: 10 }}>
-                  <div
-                    onPointerDown={() => setShowMastroCAD(true)}
-                    style={{
-                      width: "100%", display: "flex", alignItems: "center", gap: 10,
-                      padding: "11px 14px", borderRadius: 10,
-                      border: "1.5px solid #D08008", background: "#D0800812",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span style={{ fontSize: 16 }}>📐</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: "#D08008" }}>MASTRO CAD</div>
                       <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>Foto → Calibra → Disegna → BOM</div>
                     </div>
                     <span style={{ fontSize: 10, color: "#D08008", fontWeight: 700 }}>Apri →</span>
@@ -2447,18 +2434,6 @@ export default function VanoDetailPanel() {
       
       {/* ÔòÉÔòÉ NUMPAD OVERLAY ÔòÉÔòÉ */}
 
-{showMastroCAD && (
-        <MastroCAD
-          vanoNome={v?.nome || `Vano ${v?.numero || ""}`}
-          piano={selectedCM?.piano || 1}
-          onClose={() => setShowMastroCAD(false)}
-          onSalva={(data: any) => { setShowMastroCAD(false); }}
-          onMisureUpdate={(mis: any) => {
-            if (v && mis.lCentro) updateMisura(v.id, "lCentro", mis.lCentro);
-            if (v && mis.hCentro) updateMisura(v.id, "hCentro", mis.hCentro);
-          }}
-        />
-      )}
 
       {numpadField && (
         <div style={{
