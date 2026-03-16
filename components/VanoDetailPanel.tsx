@@ -570,7 +570,6 @@ export default function VanoDetailPanel() {
 
     const prefix = parsedKeys.length > 0 ? "[OK] " : "[?] ";
 
-    const prefix = parsedKeys.length > 0 ? " : "
 
     const newNote = `${prefix} [${time}] ${text}`;
 
