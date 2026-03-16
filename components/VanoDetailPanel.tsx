@@ -410,7 +410,7 @@ export default function VanoDetailPanel() {
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
         >
-          {numpadField===field ? (numpadVal || "öçÂ") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
+          {numpadField===field ? (numpadVal || "") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
           {m[field] > 0 && numpadField!==field && <span style={{fontSize:13,color:T.sub}}>mm</span>}
         </div>
       </div>
@@ -2422,7 +2422,7 @@ export default function VanoDetailPanel() {
             padding:"10px 14px",background:"#131318",
             borderRadius:10,border:"1px solid #333",marginBottom:10,
           }}>
-            {numpadVal || "öçÂ"} <span style={{fontSize:16,color:"#888"}}>mm</span>
+            {numpadVal || ""} <span style={{fontSize:16,color:"#888"}}>mm</span>
           </div>
           {/* Numpad */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
