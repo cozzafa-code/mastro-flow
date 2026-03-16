@@ -2519,4 +2519,3 @@ export default function VanoDetailPanel() {
     );
 
 }
-
