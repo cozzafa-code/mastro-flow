@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -992,52 +992,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>Aa Testo</div>
 
                                   <div onClick={() => {
-                                    const dimCount = els.filter(e => e.type === "dim").length;
-                                    const hasSegDims = dimCount > 2;
-                                    if (hasSegDims) { setDW(els.filter(e => e.type !== "dim")); return; }
-                                    const addSegments = dimCount === 2;
                                     const nEls = els.filter(e => e.type !== "dim");
-                                    const hasFreeLines = els.filter(e => e.type === "freeLine").length >= 2;
-                                    if (frame && !hasFreeLines && realW && realH) {
-                                      const scaleX = (realW / realH * frame.h) / frame.w;
-                                      const scaleY = (realH / realW * frame.w) / frame.h;
-                                      const newW = frame.h * realW / realH;
-                                      const newH = frame.w * realH / realW;
-                                      // Use width as reference, adjust height
-                                      const tgtH = Math.round(frame.w * realH / realW);
-                                      nEls.forEach((el, i) => {
-                                        if (el.type === "rect") { nEls[i] = { ...el, h: tgtH }; }
-                                        if (el.type === "montante") { nEls[i] = { ...el, y2: el.y1 + tgtH }; }
-                                        if (el.type === "traverso") {
-                                          const ratio = (el.y - frame.y) / frame.h;
-                                          nEls[i] = { ...el, y: Math.round(frame.y + ratio * tgtH) };
-                                        }
-                                      });
-                                    }
-                                    if (frame && !hasFreeLines) {
-                                      const existingDims = els.filter(e => e.type === "dim");
-                                      const exW = existingDims.find(e => Math.abs(e.y1 - e.y2) < 2);
-                                      const exH = existingDims.find(e => Math.abs(e.x1 - e.x2) < 2);
+                                    if (frame) {
                                       nEls.push(
-                                        { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: exW ? exW.label : String(realW) },
-                                        { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: exH ? exH.label : String(realH) }
+                                        { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 14, x2: frame.x + frame.w, y2: frame.y + frame.h + 14, label: String(realW) },
+                                        { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 14, y1: frame.y, x2: frame.x + frame.w + 14, y2: frame.y + frame.h, label: String(realH) }
                                       );
                                       const iT = frame.y + TK_FRAME, iL = frame.x + TK_FRAME;
                                       const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a, b) => a.x - b.x);
-                                      if (topCells.length > 1) topCells.forEach((c2, i) => nEls.push({ id: Date.now() + 310 + i, type: "dim", x1: c2.x, y1: frame.y - 24, x2: c2.x + c2.w, y2: frame.y - 24, label: String(Math.round(c2.w / fW * realW)) }));
+                                      if (topCells.length > 1) topCells.forEach((c2, i) => nEls.push({ id: Date.now() + 310 + i, type: "dim", x1: c2.x, y1: frame.y - 10, x2: c2.x + c2.w, y2: frame.y - 10, label: String(Math.round(c2.w / fW * realW)) }));
                                       const leftCells = cells.filter(c2 => Math.abs(c2.x - iL) < 4).sort((a, b) => a.y - b.y);
-                                      if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 330 + i, type: "dim", x1: frame.x - 28, y1: c2.y, x2: frame.x - 28, y2: c2.y + c2.h, label: String(Math.round(c2.h / fH * realH)) }));
+                                      if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 330 + i, type: "dim", x1: frame.x - 14, y1: c2.y, x2: frame.x - 14, y2: c2.y + c2.h, label: String(Math.round(c2.h / fH * realH)) }));
                                     } else if (poly) {
                                       const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
                                       const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
                                       // Bounding box total dims
-                                      const exW3 = els.filter(e => e.type === "dim" && (e as any).isTotalDim === "W")[0];
-                                      const exH3 = els.filter(e => e.type === "dim" && (e as any).isTotalDim === "H")[0];
                                       nEls.push(
-                                        { id: Date.now() + 300, type: "dim", isTotalDim: "W", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: exW3 ? exW3.label : String(realW) },
-                                        { id: Date.now() + 301, type: "dim", isTotalDim: "H", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: exH3 ? exH3.label : String(realH) }
+                                        { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: String(realW) },
+                                        { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: String(realH) }
                                       );
-                                      if (addSegments) {
                                       // Per-segment dimensions (each freeLine side)
                                       const freeLines = els.filter(e => e.type === "freeLine");
                                       const totalPx = Math.hypot(bR - bL, bB - bT);
@@ -1062,7 +1035,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const leftCells = cells.filter(c2 => Math.abs(c2.x - bL) < 6).sort((a, b) => a.y - b.y);
                                         if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 390 + i, type: "dim", x1: bL - 14, y1: c2.y, x2: bL - 14, y2: c2.y + c2.h, label: String(Math.round(c2.h / (bB - bT) * realH)) }));
                                       }
-                                      } // end if(addSegments)
                                     }
                                     setDW(nEls);
                                   }} style={bs()}>↔ Misure</div>
@@ -1478,30 +1450,48 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             const isTotalW = isH && Math.abs(el.x2 - el.x1 - frame.w) < 5;
                                             const isTotalH = !isH && Math.abs(el.y2 - el.y1 - frame.h) < 5;
                                             
-                                            // Rescale total frame when total dim is edited
-                                            if (isTotalW && !isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
-                                              const scale = newVal / oldVal;
+                                            if (isTotalW) {
+                                              // Rescale entire frame width + all internal elements proportionally
+                                              const oldPxW = frame.w;
+                                              const scaleW = newVal / oldVal;
+                                              const newPxW = snap(oldPxW * scaleW);
+                                              const fx = frame.x;
                                               upd = upd.map(x => {
-                                                if (x.type === "rect") return { ...x, w: Math.round(x.w * scale) };
-                                                if (x.type === "montante") return { ...x, x: Math.round(frame.x + (x.x - frame.x) * scale) };
-                                                if (x.type === "dim" && x !== el) return { ...x, x1: Math.round(frame.x + (x.x1 - frame.x) * scale), x2: Math.round(frame.x + (x.x2 - frame.x) * scale) };
-                                                if (x.type === "innerRect" || x.type === "glass") return { ...x, x: Math.round(frame.x + (x.x - frame.x) * scale), w: Math.round(x.w * scale) };
+                                                if (x.type === "rect") return { ...x, w: newPxW };
+                                                if (x.type === "montante") return { ...x, x: snap(fx + (x.x - fx) * scaleW) };
+                                                if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
+                                                  return { ...x, x: snap(fx + (x.x - fx) * scaleW), w: snap(x.w * scaleW) };
+                                                if (x.type === "dim" && x.id !== el.id) {
+                                                  const nx1 = snap(fx + (x.x1 - fx) * scaleW);
+                                                  const nx2 = snap(fx + (x.x2 - fx) * scaleW);
+                                                  return { ...x, x1: nx1, x2: nx2 };
+                                                }
                                                 return x;
                                               });
-                                            }
-                                            if (isTotalH && !isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
-                                              const scale = newVal / oldVal;
+                                              // Update this dim span to match new frame width
+                                              upd = upd.map(x => x.id === el.id ? { ...x, x2: fx + newPxW } : x);
+                                            } else if (isTotalH) {
+                                              // Rescale entire frame height + all internal elements proportionally
+                                              const oldPxH = frame.h;
+                                              const scaleH = newVal / oldVal;
+                                              const newPxH = snap(oldPxH * scaleH);
+                                              const fy = frame.y;
                                               upd = upd.map(x => {
-                                                if (x.type === "rect") return { ...x, h: Math.round(x.h * scale) };
-                                                if (x.type === "traverso") return { ...x, y: Math.round(frame.y + (x.y - frame.y) * scale) };
-                                                if (x.type === "dim" && x !== el) return { ...x, y1: Math.round(frame.y + (x.y1 - frame.y) * scale), y2: Math.round(frame.y + (x.y2 - frame.y) * scale) };
-                                                if (x.type === "innerRect" || x.type === "glass") return { ...x, y: Math.round(frame.y + (x.y - frame.y) * scale), h: Math.round(x.h * scale) };
+                                                if (x.type === "rect") return { ...x, h: newPxH };
+                                                if (x.type === "traverso") return { ...x, y: snap(fy + (x.y - fy) * scaleH) };
+                                                if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
+                                                  return { ...x, y: snap(fy + (x.y - fy) * scaleH), h: snap(x.h * scaleH) };
+                                                if (x.type === "dim" && x.id !== el.id) {
+                                                  const ny1 = snap(fy + (x.y1 - fy) * scaleH);
+                                                  const ny2 = snap(fy + (x.y2 - fy) * scaleH);
+                                                  return { ...x, y1: ny1, y2: ny2 };
+                                                }
                                                 return x;
                                               });
-                                            }
-                                            if (isColDim && !isTotalW) {
+                                              // Update this dim span to match new frame height
+                                              upd = upd.map(x => x.id === el.id ? { ...x, y2: fy + newPxH } : x);
+                                            } else if (isColDim) {
                                               // Find which column this dim spans, adjust montante
-                                              const dimLeft = el.x1;
                                               const oldPixelW = el.x2 - el.x1;
                                               const scale = newVal / oldVal;
                                               const newPixelW = oldPixelW * scale;
@@ -1509,77 +1499,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               // Move all montanti and elements that are to the right of this dim's right edge
                                               upd = upd.map(x => {
                                                 if (x.type === "montante" && x.x >= el.x2 - 3) return { ...x, x: snap(x.x + diff) };
-                                                if (x.type === "dim" && x !== el && x.x1 >= el.x2 - 3) return { ...x, x1: x.x1 + diff, x2: x.x2 + diff };
+                                                if (x.type === "dim" && x.id !== el.id && x.x1 >= el.x2 - 3) return { ...x, x1: x.x1 + diff, x2: x.x2 + diff };
                                                 if ((x.type === "innerRect" || x.type === "glass") && x.x >= el.x2 - 5) return { ...x, x: x.x + diff };
                                                 return x;
                                               });
                                               // Update frame width
                                               upd = upd.map(x => x.type === "rect" ? { ...x, w: x.w + diff } : x);
-                                            }
-                                            if (isRowDim && !isTotalH) {
+                                            } else if (isRowDim) {
                                               const oldPixelH = el.y2 - el.y1;
                                               const scale = newVal / oldVal;
                                               const newPixelH = oldPixelH * scale;
                                               const diff = newPixelH - oldPixelH;
                                               upd = upd.map(x => {
                                                 if (x.type === "traverso" && x.y >= el.y2 - 3) return { ...x, y: snap(x.y + diff) };
-                                                if (x.type === "dim" && x !== el && x.y1 >= el.y2 - 3) return { ...x, y1: x.y1 + diff, y2: x.y2 + diff };
+                                                if (x.type === "dim" && x.id !== el.id && x.y1 >= el.y2 - 3) return { ...x, y1: x.y1 + diff, y2: x.y2 + diff };
                                                 if ((x.type === "innerRect" || x.type === "glass") && x.y >= el.y2 - 5) return { ...x, y: x.y + diff };
                                                 return x;
                                               });
                                               upd = upd.map(x => x.type === "rect" ? { ...x, h: x.h + diff } : x);
-                                            }
-                                          }
-                                          // Rescale freeLine elements if total poly dim edited
-                                          if (!isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal && !frame) {
-                                            const freeLines = els.filter(e => e.type === "freeLine");
-                                            if (freeLines.length > 0) {
-                                              const xs2 = freeLines.flatMap(fl => [fl.x1, fl.x2]);
-                                              const ys2 = freeLines.flatMap(fl => [fl.y1, fl.y2]);
-                                              const bL2 = Math.min(...xs2), bR2 = Math.max(...xs2), bT2 = Math.min(...ys2), bB2 = Math.max(...ys2);
-                                              const isTotalWP = isH && Math.abs(el.x1 - bL2) < 10 && Math.abs(el.x2 - bR2) < 10;
-                                              const isTotalHP = !isH && Math.abs(el.y1 - bT2) < 10 && Math.abs(el.y2 - bB2) < 10;
-                                              if (isTotalWP) {
-                                                const scale = newVal / oldVal;
-                                                upd = upd.map(x => {
-                                                  if (x.type === "freeLine") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
-                                                  if (x.type === "dim") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
-                                                  return x;
-                                                });
-                                              }
-                                              if (isTotalHP) {
-                                                const scale = newVal / oldVal;
-                                                upd = upd.map(x => {
-                                                  if (x.type === "freeLine") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
-                                                  if (x.type === "dim") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
-                                                  return x;
-                                                });
-                                              }
-                                            }
-                                          }
-                                          // Rescale freeLine on total dim edit
-                                          if (!isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
-                                            const fls = els.filter(e => e.type === "freeLine");
-                                            if (fls.length > 0 && el.isTotalDim) {
-                                              const xs2 = fls.flatMap(fl => [fl.x1, fl.x2]);
-                                              const ys2 = fls.flatMap(fl => [fl.y1, fl.y2]);
-                                              const bL2 = Math.min(...xs2), bR2 = Math.max(...xs2), bT2 = Math.min(...ys2), bB2 = Math.max(...ys2);
-                                              if (el.isTotalDim === "W") {
-                                                const scale = newVal / oldVal;
-                                                upd = upd.map(x => {
-                                                  if (x.type === "freeLine") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
-                                                  if (x.type === "dim") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
-                                                  return x;
-                                                });
-                                              }
-                                              if (el.isTotalDim === "H") {
-                                                const scale = newVal / oldVal;
-                                                upd = upd.map(x => {
-                                                  if (x.type === "freeLine") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
-                                                  if (x.type === "dim") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
-                                                  return x;
-                                                });
-                                              }
                                             }
                                           }
                                           setDW(upd);
