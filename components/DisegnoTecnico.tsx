@@ -1004,6 +1004,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const match = oldDims.find(d => Math.abs(d.x1 - x1) < 8 && Math.abs(d.y1 - y1) < 8 && Math.abs(d.x2 - x2) < 8 && Math.abs(d.y2 - y2) < 8);
                                       return match ? match.label : fallback;
                                     };
+                                    // Remove ALL dims (they get fully regenerated below, deduplicating any legacy orphans)
                                     const nEls = els.filter(e => e.type !== "dim");
                                     if (frame) {
                                       const wLabel = findOldLabel(frame.x, frame.y + frame.h + 14, frame.x + frame.w, frame.y + frame.h + 14, String(realW), "W");
@@ -1012,15 +1013,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         { id: Date.now() + 300, type: "dim", isTotalDim: "W", x1: frame.x, y1: frame.y + frame.h + 14, x2: frame.x + frame.w, y2: frame.y + frame.h + 14, label: wLabel },
                                         { id: Date.now() + 301, type: "dim", isTotalDim: "H", x1: frame.x + frame.w + 14, y1: frame.y, x2: frame.x + frame.w + 14, y2: frame.y + frame.h, label: hLabel }
                                       );
+                                      // Use frame.w/frame.h as px reference, and dim labels as mm reference
+                                      const totalWmm = parseInt(wLabel) || realW;
+                                      const totalHmm = parseInt(hLabel) || realH;
                                       const iT = frame.y + TK_FRAME, iL = frame.x + TK_FRAME;
                                       const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a, b) => a.x - b.x);
                                       if (topCells.length > 1) topCells.forEach((c2, i) => {
-                                        const def = String(Math.round(c2.w / fW * realW));
+                                        const def = String(Math.round(c2.w / frame.w * totalWmm));
                                         nEls.push({ id: Date.now() + 310 + i, type: "dim", x1: c2.x, y1: frame.y - 10, x2: c2.x + c2.w, y2: frame.y - 10, label: findOldLabel(c2.x, frame.y - 10, c2.x + c2.w, frame.y - 10, def) });
                                       });
                                       const leftCells = cells.filter(c2 => Math.abs(c2.x - iL) < 4).sort((a, b) => a.y - b.y);
                                       if (leftCells.length > 1) leftCells.forEach((c2, i) => {
-                                        const def = String(Math.round(c2.h / fH * realH));
+                                        const def = String(Math.round(c2.h / frame.h * totalHmm));
                                         nEls.push({ id: Date.now() + 330 + i, type: "dim", x1: frame.x - 14, y1: c2.y, x2: frame.x - 14, y2: c2.y + c2.h, label: findOldLabel(frame.x - 14, c2.y, frame.x - 14, c2.y + c2.h, def) });
                                       });
                                     } else if (poly) {
