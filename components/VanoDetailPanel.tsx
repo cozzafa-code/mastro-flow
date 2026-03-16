@@ -410,7 +410,7 @@ export default function VanoDetailPanel() {
             cursor: "pointer", userSelect: "none" as const,
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
-        >
+          {numpadField===field ? (numpadVal || "—") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
           {numpadField===field ? (numpadVal || "—") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
           {m[field] > 0 && numpadField!==field && <span style={{fontSize:13,color:T.sub}}>mm</span>}
         </div>
