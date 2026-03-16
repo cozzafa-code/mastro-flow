@@ -1011,10 +1011,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       });
                                     }
                                     if (frame && !hasFreeLines) {
-                                      // Preserva label esistenti se già presenti
                                       const existingDims = els.filter(e => e.type === "dim");
-                                      const exW = existingDims.find(e => Math.abs(e.y1 - (frame.y + frame.h + 28)) < 30 && Math.abs(e.x2 - e.x1 - frame.w) < frame.w * 0.3);
-                                      const exH = existingDims.find(e => Math.abs(e.x1 - (frame.x + frame.w + 28)) < 30 && Math.abs(e.y2 - e.y1 - frame.h) < frame.h * 0.3);
+                                      const exW = existingDims.find(e => Math.abs(e.y1 - (frame.y + frame.h + 28)) < 30);
+                                      const exH = existingDims.find(e => Math.abs(e.x1 - (frame.x + frame.w + 28)) < 30);
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: exW ? exW.label : String(realW) },
                                         { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: exH ? exH.label : String(realH) }
@@ -1028,9 +1027,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
                                       const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
                                       // Bounding box total dims
+                                      const existingDimsP = els.filter(e => e.type === "dim");
+                                      const exWP = existingDimsP.find(e => Math.abs(e.y1 - (bB + 14)) < 30 && e.x1 >= bL - 5 && e.x2 <= bR + 5);
+                                      const exHP = existingDimsP.find(e => Math.abs(e.x1 - (bR + 14)) < 30 && e.y1 >= bT - 5 && e.y2 <= bB + 5);
                                       nEls.push(
-                                        { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: String(realW) },
-                                        { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: String(realH) }
+                                        { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: exWP ? exWP.label : String(realW) },
+                                        { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: exHP ? exHP.label : String(realH) }
                                       );
                                       // Per-segment dimensions (each freeLine side)
                                       const freeLines = els.filter(e => e.type === "freeLine");
@@ -1521,6 +1523,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 return x;
                                               });
                                               upd = upd.map(x => x.type === "rect" ? { ...x, h: x.h + diff } : x);
+                                            }
+                                          }
+                                          // Rescale freeLine elements if total poly dim edited
+                                          if (!isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal && !frame) {
+                                            const freeLines = els.filter(e => e.type === "freeLine");
+                                            if (freeLines.length > 0) {
+                                              const xs2 = freeLines.flatMap(fl => [fl.x1, fl.x2]);
+                                              const ys2 = freeLines.flatMap(fl => [fl.y1, fl.y2]);
+                                              const bL2 = Math.min(...xs2), bR2 = Math.max(...xs2), bT2 = Math.min(...ys2), bB2 = Math.max(...ys2);
+                                              const isTotalWP = isH && Math.abs(el.x1 - bL2) < 10 && Math.abs(el.x2 - bR2) < 10;
+                                              const isTotalHP = !isH && Math.abs(el.y1 - bT2) < 10 && Math.abs(el.y2 - bB2) < 10;
+                                              if (isTotalWP) {
+                                                const scale = newVal / oldVal;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "freeLine") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
+                                                  if (x.type === "dim") return { ...x, x1: Math.round(bL2 + (x.x1 - bL2) * scale), x2: Math.round(bL2 + (x.x2 - bL2) * scale) };
+                                                  return x;
+                                                });
+                                              }
+                                              if (isTotalHP) {
+                                                const scale = newVal / oldVal;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "freeLine") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
+                                                  if (x.type === "dim") return { ...x, y1: Math.round(bT2 + (x.y1 - bT2) * scale), y2: Math.round(bT2 + (x.y2 - bT2) * scale) };
+                                                  return x;
+                                                });
+                                              }
                                             }
                                           }
                                           setDW(upd);
