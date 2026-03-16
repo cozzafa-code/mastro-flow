@@ -1011,9 +1011,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       });
                                     }
                                     if (frame && !hasFreeLines) {
+                                      // Preserva label esistenti se già presenti
+                                      const existingDims = els.filter(e => e.type === "dim");
+                                      const exW = existingDims.find(e => Math.abs(e.y1 - (frame.y + frame.h + 28)) < 30 && Math.abs(e.x2 - e.x1 - frame.w) < frame.w * 0.3);
+                                      const exH = existingDims.find(e => Math.abs(e.x1 - (frame.x + frame.w + 28)) < 30 && Math.abs(e.y2 - e.y1 - frame.h) < frame.h * 0.3);
                                       nEls.push(
-                                        { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: String(realW) },
-                                        { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: String(realH) }
+                                        { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: exW ? exW.label : String(realW) },
+                                        { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: exH ? exH.label : String(realH) }
                                       );
                                       const iT = frame.y + TK_FRAME, iL = frame.x + TK_FRAME;
                                       const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a, b) => a.x - b.x);
