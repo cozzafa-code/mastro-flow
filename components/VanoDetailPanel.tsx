@@ -17,8 +17,8 @@ import { supabase } from "@/lib/supabase";
 const STATO_MISURE = [
   { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: "clock", desc: "Misure non ancora verificate" },
   { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "check", desc: "Verificate sul posto, non ancora confermate" },
-  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "checkDouble", desc: "Misure definitive - preventivo sbloccato" },
-  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "warning", desc: "Rilevate discrepanze - ricontrollare" },
+  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "checkDouble", desc: "Misure definitive öçÂ preventivo sbloccato" },
+  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "warning", desc: "Rilevate discrepanze öçÂ ricontrollare" },
 ];
 const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
 
@@ -89,9 +89,9 @@ export default function VanoDetailPanel() {
   } = useMastro();
 
   const STEPS = [
-    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "¡ãÆë" },
+    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "ruler" },
     { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: "settings" },
-    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: "¡ãÆ»" },
+    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: "check" },
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
@@ -101,7 +101,7 @@ export default function VanoDetailPanel() {
   const sectionRefs = useRef<Record<string,HTMLDivElement|null>>({});
   const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","finiture","controtelaio"];
   const flashAndAdvance = (secId: string) => {
-    console.log("", secId);
+    console.log("ö£¡ FLASH:", secId);
     setCompletedSecs(prev => new Set([...prev, secId]));
     setFlashSec(secId);
     setTimeout(() => {
@@ -135,7 +135,7 @@ export default function VanoDetailPanel() {
     closeNumpad();
   };
   const numpadTap = (k: string) => {
-    if (k === "") { setNumpadVal(n => n.slice(0,-1)); return; }
+    if (k === "ö«¢") { setNumpadVal(n => n.slice(0,-1)); return; }
     if (numpadVal.length >= 5) return;
     setNumpadVal(n => n + k);
   };
@@ -410,7 +410,7 @@ export default function VanoDetailPanel() {
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
         >
-          {numpadField===field ? (numpadVal || "") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
+          {numpadField===field ? (numpadVal || "öçÂ") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
           {m[field] > 0 && numpadField!==field && <span style={{fontSize:13,color:T.sub}}>mm</span>}
         </div>
       </div>
@@ -456,7 +456,7 @@ export default function VanoDetailPanel() {
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 20px", borderRadius: 16, background: vrActive ? "linear-gradient(135deg, #DC4444, #ff6b6b)" : "linear-gradient(135deg, #D08008, #b86e00)", border: "none", cursor: "pointer", justifyContent: "center", boxShadow: vrActive ? "0 0 20px rgba(255,59,48,0.4)" : "0 2px 8px rgba(208,128,8,0.3)" }}>
-            <span style={{ fontSize: 22 }}>{vrActive ? "" : "¡ãÆä®à"}</span>
+            <span style={{ fontSize: 22 }}>{vrActive ? "öàÔòú" : "¡ãÆä®à"}</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>
               {vrActive ? "STOP" : "Avvia Dettatura"}
             </span>
@@ -535,7 +535,7 @@ export default function VanoDetailPanel() {
               badge: v.difficoltaSalita||null, filled: [v.difficoltaSalita, v.mezzoSalita].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:4}}>
-                  {[{id:"facile",l:"Facile",c:T.grn,e: ""},{id:"media",l:"Media",c:T.orange,e: ""},{id:"difficile",l:"Difficile",c:T.red,e: ""}].map(d=>(
+                  {[{id:"facile",l:"Facile",c:T.grn,e:"öúá"},{id:"media",l:"Media",c:T.orange,e:"ö£í®à"},{id:"difficile",l:"Difficile",c:T.red,e:"ö£í"}].map(d=>(
                     <div key={d.id} onClick={()=>{updateV("difficoltaSalita",d.id);}}
                       style={{flex:1,padding:"7px 4px",borderRadius:8,border:`1.5px solid ${v.difficoltaSalita===d.id?d.c:T.bdr}`,background:v.difficoltaSalita===d.id?d.c+"15":T.card,textAlign:"center",cursor:"pointer"}}>
                       <div style={{fontSize:13}}>{d.e}</div>
@@ -554,7 +554,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"tipologia", icon: "", label:"Tipologia",
+            { id:"tipologia", icon:"ö¿ù", label:"Tipologia",
               badge: v.tipo||null, filled: v.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:2,borderBottom:`1px solid ${T.bdr}`,paddingBottom:0,marginBottom:4}}>
@@ -567,7 +567,7 @@ export default function VanoDetailPanel() {
                 </div>
                 <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
                   {tipologieFiltrate.filter(t=>t.cat===tipCat).map(t=>(
-                    <div key={t.code} onClick={()=>{console.log("",t.code);updateV("tipo",t.code);flashAndAdvance("tipologia");}}
+                    <div key={t.code} onClick={()=>{console.log("ö¿ù TIPO TAP:",t.code);updateV("tipo",t.code);flashAndAdvance("tipologia");}}
                       style={{padding:"7px 10px",borderRadius:10,border:`1.5px solid ${v.tipo===t.code?T.acc:T.bdr}`,background:v.tipo===t.code?T.accLt:T.card,fontSize:11,fontWeight:700,color:v.tipo===t.code?T.acc:T.text,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
                       {t.icon} {t.code}
                     </div>
@@ -599,7 +599,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"sistema", icon: "", label:"Sistema / Vetro",
+            { id:"sistema", icon:"ö£û", label:"Sistema / Vetro",
               badge: v.sistema?v.sistema.split(" ").slice(0,2).join(" Ôö¼Ç "):null, filled: [v.sistema, v.vetro].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
@@ -639,7 +639,7 @@ export default function VanoDetailPanel() {
                   <div style={{fontSize:10,fontWeight:700,color:T.sub}}>COLORE {v.bicolore?"INTERNO":"PROFILI"}</div>
                   <div onClick={()=>updateV("bicolore",!v.bicolore)}
                     style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:v.bicolore?T.accLt:"transparent",border:"1px solid "+(v.bicolore?T.acc:T.bdr),color:v.bicolore?T.acc:T.sub,cursor:"pointer",fontWeight:600}}>
-                    Bicolore {v.bicolore?"":""}
+                    Bicolore {v.bicolore?"öú":""}
                   </div>
                 </div>
                 <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
@@ -698,15 +698,15 @@ export default function VanoDetailPanel() {
                   <span style={{fontSize:12,fontWeight:600,color:T.text}}>Rifilato</span>
                 </div>
                 {v.rifilato && <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                  {[["rifilSx",""],["rifilDx",""],["rifilSopra",""],["rifilSotto",""]].map(([f,l])=>(
+                  {[["rifilSx","öÑû Sx"],["rifilDx","öÑ Dx"],["rifilSopra","öÑª Sopra"],["rifilSotto","öÑ Sotto"]].map(([f,l])=>(
                     <div key={f}><div style={{fontSize:9,color:T.sub,fontWeight:600,marginBottom:2}}>{l} (mm)</div>
                     <input style={S.input} type="number" inputMode="numeric" placeholder="0" value={v[f]||""} onChange={e=>updateV(f,e.target.value)}/></div>
                   ))}
                 </div>}
               </div>
             },
-            { id:"finiture", icon: "", label:"Coprifilo / Lamiera",
-              badge: (v.coprifilo||v.lamiera)?"":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
+            { id:"finiture", icon:"ö£û", label:"Coprifilo / Lamiera",
+              badge: (v.coprifilo||v.lamiera)?"öú":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase"}}>COPRIFILO</div>
@@ -735,7 +735,7 @@ export default function VanoDetailPanel() {
                   </div>
                 </div>
               </div>},
-            { id:"controtelaio", icon: "", label:"Controtelaio",
+            { id:"controtelaio", icon:"öÔòù", label:"Controtelaio",
               badge: v.controtelaio?.tipo ? (v.controtelaio.tipo==="singolo"?"Singolo":v.controtelaio.tipo==="doppio"?"Doppio":"Con cassonetto") : null, filled: v.controtelaio?.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:2}}>TIPO CONTROTELAIO</div>
@@ -1137,7 +1137,7 @@ export default function VanoDetailPanel() {
                       <div style={{ marginTop:12, padding:12, borderRadius:10, background:T.card, border:"1px solid "+T.bdr, textAlign:"center" }}>
                         <div style={{ fontSize:10, color:T.sub, fontWeight:700, marginBottom:4 }}><I d={ICO.ruler} /> RIEPILOGO</div>
                         <div style={{ fontSize:16, fontWeight:900, color:T.text }}>
-                          {m.lCentro} Ôö£ {m.hCentro} {(m.sporgenza||isPergola) ? " Ôö£ " + (m.sporgenza||"") : ""} mm
+                          {m.lCentro} Ôö£ {m.hCentro} {(m.sporgenza||isPergola) ? " Ôö£ " + (m.sporgenza||"öçÂ") : ""} mm
                         </div>
                         <div style={{ fontSize:11, color:T.sub }}>
                           {((m.lCentro/1000) * (isPergola ? (m.sporgenza||m.hCentro)/1000 : m.hCentro/1000)).toFixed(2)} mÔö¼Ôûô
@@ -1151,9 +1151,6 @@ export default function VanoDetailPanel() {
               {/* öëöëöë MISURE STANDARD: Serramenti (8 punti) öëöëöë */}
               {!["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"].includes(v.tipo) && (<>
 
-              {/* öëöëöë DISEGNO TECNICO öçÂ Condiviso con preventivo öëöëöë */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ marginBottom: 10 }}>
               </div>
               <div style={{ fontSize: 11, fontWeight: 800, color: "#507aff", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><I d={ICO.ruler} /> Larghezze</div>
               {bInput("Larghezza ALTO", "lAlto")}
@@ -1412,7 +1409,7 @@ export default function VanoDetailPanel() {
                 }
                 const a = v.accessori?.[acc] || { attivo: false };
                 const accColors = { tapparella: "#E8A020", persiana: "#0D7C6B", zanzariera: "#EF4444" };
-                const accIcons = { tapparella: "", persiana: "¡ãÆàí", zanzariera: "¡ãÆ¬ãÆ" };
+                const accIcons = { tapparella: "ö¿ù", persiana: "¡ãÆàí", zanzariera: "¡ãÆ¬ãÆ" };
                 const focusNextAcc = (ids, cur) => { const i = ids.indexOf(cur); if (i < ids.length - 1) { const el = document.getElementById(ids[i + 1]); if (el) { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); } } };
                 const accInputIds = [`${acc}-L-${v.id}`, `${acc}-H-${v.id}`];
                 return (
@@ -1767,7 +1764,7 @@ export default function VanoDetailPanel() {
                     {/* Gomma */}
                     <div onClick={() => setDrawTool(drawTool === "eraser" ? "pen" : "eraser")}
                       style={{ width: 32, height: 32, borderRadius: 8, background: drawTool === "eraser" ? "#DC4444" + "18" : T.bg, border: drawTool === "eraser" ? "2px solid #DC4444" : `1px solid ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "" : "¡ãÆª"}</span>
+                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "öú" : "¡ãÆª"}</span>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
                       {[1, 2, 4, 6].map(s => (
@@ -1792,7 +1789,7 @@ export default function VanoDetailPanel() {
                     <div style={{ marginLeft: "auto" }} />
                     <div onClick={() => { savePageData(); setDrawFullscreen(!drawFullscreen); }}
                       style={{ padding: "3px 8px", borderRadius: 6, background: drawFullscreen ? T.acc + "12" : T.bg, border: `1px solid ${drawFullscreen ? T.acc : T.bdr}`, fontSize: 10, fontWeight: 700, color: drawFullscreen ? T.acc : T.sub, cursor: "pointer" }}>
-                      {drawFullscreen ? "" : ""}
+                      {drawFullscreen ? "öÑû Riduci" : "öÑ Ingrandisci"}
                     </div>
                   </div>
                 );
@@ -2013,7 +2010,7 @@ export default function VanoDetailPanel() {
                         {rows.map(([l, val, highlight], ri) => (
                           <div key={ri} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
                             <span style={{ color: T.text }}>{l}</span>
-                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || ""}</span>
+                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || "öçÂ"}</span>
                           </div>
                         ))}
                       </div>
@@ -2027,10 +2024,10 @@ export default function VanoDetailPanel() {
                     {/* Misure */}
                     <Sec title="LARGHEZZE" color="#507aff" icon="¡ãÆë" rows={[["Alto", m.lAlto], ["Centro", m.lCentro], ["Basso", m.lBasso]]} />
                     <Sec title="ALTEZZE" color="#1A9E73" icon="¡ãÆë" rows={[["Sinistra", m.hSx], ["Centro", m.hCentro], ["Destra", m.hDx]]} />
-                    <Sec title="DIAGONALI" color="#E8A020" icon="" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? "#DC4444" : undefined]]} />
+                    <Sec title="DIAGONALI" color="#E8A020" icon="öú" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? "#DC4444" : undefined]]} />
 
                     {/* Sistema + Vetro */}
-                    <Sec title="SISTEMA / VETRO" color="#0D7C6B" icon="" rows={[
+                    <Sec title="SISTEMA / VETRO" color="#0D7C6B" icon="ö£û" rows={[
                       ["Sistema", v.sistema],
                       ["Vetro", v.vetro],
                     ]} />
@@ -2045,14 +2042,14 @@ export default function VanoDetailPanel() {
 
                     {/* Telaio */}
                     <Sec title="TELAIO / RIFILATO" color="#8e8e93" icon="¡ãÆë" rows={[
-                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : ""],
+                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : "öçÂ"],
                       ...(v.telaio === "Z" && v.telaioAlaZ ? [["Ala Z", `${v.telaioAlaZ}mm`]] : []),
                       ["Rifilato", v.rifilato ? "SÔö£" : "No"],
-                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || ""], ["Rifilo Dx", v.rifilDx || ""], ["Rifilo Sopra", v.rifilSopra || ""], ["Rifilo Sotto", v.rifilSotto || ""]] : []),
+                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || "öçÂ"], ["Rifilo Dx", v.rifilDx || "öçÂ"], ["Rifilo Sopra", v.rifilSopra || "öçÂ"], ["Rifilo Sotto", v.rifilSotto || "öçÂ"]] : []),
                     ]} />
 
                     {/* Coprifilo / Lamiera */}
-                    <Sec title="COPRIFILO / LAMIERA" color="#b45309" icon="" rows={[
+                    <Sec title="COPRIFILO / LAMIERA" color="#b45309" icon="ö£û" rows={[
                       ["Coprifilo", v.coprifilo],
                       ["Lamiera", v.lamiera],
                     ]} />
@@ -2067,16 +2064,16 @@ export default function VanoDetailPanel() {
                     ]} />}
 
                     {/* Spallette */}
-                    <Sec title="SPALLETTE" color="#32ade6" icon="" rows={[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]]} />
+                    <Sec title="SPALLETTE" color="#32ade6" icon="ö" rows={[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]]} />
 
                     {/* Davanzale */}
-                    <Sec title="DAVANZALE" color="#EF4444" icon="" rows={[["ProfonditÔö£í", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
+                    <Sec title="DAVANZALE" color="#EF4444" icon="öº" rows={[["ProfonditÔö£í", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]]} />
 
                     {/* Accessori öçÂ dettagliato */}
                     {(acc.tapparella?.attivo || acc.persiana?.attivo || acc.zanzariera?.attivo) && (
                       <Sec title="ACCESSORI" color="#af52de" icon="+" rows={[
                         ...(acc.tapparella?.attivo ? [
-                          ["Tapparella", "SÔö£", T.grn],
+                          ["ö¿ù Tapparella", "SÔö£", T.grn],
                           ...(acc.tapparella.tipo ? [["  Tipo", acc.tapparella.tipo]] : []),
                           ...(acc.tapparella.l ? [["  Larghezza", `${acc.tapparella.l}mm`]] : []),
                           ...(acc.tapparella.h ? [["  Altezza", `${acc.tapparella.h}mm`]] : []),
@@ -2186,7 +2183,7 @@ export default function VanoDetailPanel() {
                 ["F.sq", fSq !== null ? `${fSq}` : null, fSq > 3 ? "#DC4444" : null],
               ].map(([l, val, c]) => (
                 <div key={l} style={{ padding: "3px 8px", borderRadius: 4, background: c ? c + "12" : T.bg, fontSize: 10, fontFamily: FM, color: c || (val ? T.text : T.sub2) }}>
-                  {l}: {val || ""}
+                  {l}: {val || "öçÂ"}
                 </div>
               ))}
             </div>
@@ -2211,7 +2208,7 @@ export default function VanoDetailPanel() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div>
                   <span style={{ fontSize: 14, fontWeight: 900, color: T.text }}>ö£¡ Accesso rapido</span>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} Ôö¼Ç {v.stanza || "?"} Ôö¼Ç {v.sistema ? "" : ""} Ôö¼Ç {v.coloreInt ? "" : ""} Ôö¼Ç {(m.lCentro && m.hCentro) ? m.lCentro+"Ôö£"+m.hCentro : ""}</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} Ôö¼Ç {v.stanza || "?"} Ôö¼Ç {v.sistema ? "öú Sist." : "öçÂ"} Ôö¼Ç {v.coloreInt ? "öú Col." : "öçÂ"} Ôö¼Ç {(m.lCentro && m.hCentro) ? m.lCentro+"Ôö£"+m.hCentro : "öçÂ Mis."}</div>
                 </div>
                 <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "5px 12px", borderRadius: 8, background: T.bg, border: "1px solid " + T.bdr, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 700 }}>öú</div>
               </div>
@@ -2219,9 +2216,9 @@ export default function VanoDetailPanel() {
               {/* STEP INDICATORS */}
               {(() => {
                 const steps = [
-                  { id: "tipo", label: "Tipo", done: !!v.tipo, icon: "" },
-                  { id: "sistema", label: "Sistema", done: !!v.sistema, icon: "" },
-                  { id: "vetro", label: "Vetro", done: !!v.vetro, icon: "" },
+                  { id: "tipo", label: "Tipo", done: !!v.tipo, icon: "ö¿ù" },
+                  { id: "sistema", label: "Sistema", done: !!v.sistema, icon: "ö£û" },
+                  { id: "vetro", label: "Vetro", done: !!v.vetro, icon: "ö¬" },
                   { id: "colore", label: "Colore", done: !!v.coloreInt, icon: "¡ãÆä" },
                   { id: "misure", label: "Misure", done: !!(m.lCentro && m.hCentro), icon: "¡ãÆë" },
                   { id: "pezzi", label: "Pezzi", done: true, icon: "#" },
@@ -2238,7 +2235,7 @@ export default function VanoDetailPanel() {
                           background: s.done ? "#1A9E7315" : i === activeStep ? T.acc + "15" : T.bg,
                           color: s.done ? "#1A9E73" : i === activeStep ? T.acc : T.sub,
                           border: "1px solid " + (s.done ? "#1A9E7330" : i === activeStep ? T.acc + "40" : T.bdr),
-                        }}>{s.done ? "" : s.icon} {s.label}</div>
+                        }}>{s.done ? "öú" : s.icon} {s.label}</div>
                       ))}
                     </div>
 
@@ -2288,7 +2285,7 @@ export default function VanoDetailPanel() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
                           <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 3 ? T.acc : T.sub, textTransform: "uppercase" }}>¡ãÆä Colore {v.coloreInt && <span style={{ color: "#1A9E73" }}>öú</span>}</div>
                           <div onClick={() => updateVanoField(v.id, "bicolore", !v.bicolore)} style={{ fontSize: 9, padding: "2px 8px", borderRadius: 4, background: v.bicolore ? T.accLt : T.bg, border: "1px solid " + (v.bicolore ? T.acc : T.bdr), color: v.bicolore ? T.acc : T.sub, cursor: "pointer", fontWeight: 600 }}>
-                            Bicolore {v.bicolore ? "" : ""}
+                            Bicolore {v.bicolore ? "öú" : ""}
                           </div>
                         </div>
                         {!v.bicolore ? (
@@ -2425,7 +2422,7 @@ export default function VanoDetailPanel() {
             padding:"10px 14px",background:"#131318",
             borderRadius:10,border:"1px solid #333",marginBottom:10,
           }}>
-            {numpadVal || ""} <span style={{fontSize:16,color:"#888"}}>mm</span>
+            {numpadVal || "öçÂ"} <span style={{fontSize:16,color:"#888"}}>mm</span>
           </div>
           {/* Numpad */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
@@ -2437,7 +2434,7 @@ export default function VanoDetailPanel() {
               }}>{k}</button>
             ))}
             <button onPointerDown={e=>{e.preventDefault();numpadTap("0");}} style={{minHeight:58,borderRadius:10,border:"1px solid #2a2a2a",background:"#1a1a1a",color:"#fff",fontSize:24,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>0</button>
-            <button onPointerDown={e=>{e.preventDefault();numpadTap("");}} style={{minHeight:58,borderRadius:10,border:"1px solid #DC444440",background:"#DC444418",color:"#DC4444",fontSize:22,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ö«¢</button>
+            <button onPointerDown={e=>{e.preventDefault();numpadTap("ö«¢");}} style={{minHeight:58,borderRadius:10,border:"1px solid #DC444440",background:"#DC444418",color:"#DC4444",fontSize:22,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>ö«¢</button>
             <button onPointerDown={e=>{e.preventDefault();confirmNumpad();}} style={{minHeight:58,borderRadius:10,border:"none",background:"#1A9E73",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>OK öú</button>
           </div>
         </div>
