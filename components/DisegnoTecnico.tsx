@@ -993,6 +993,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                   <div onClick={() => {
                                     const nEls = els.filter(e => e.type !== "dim");
+                                    // Rescale frame to match current realW/realH
+                                    if (frame && realW && realH) {
+                                      const scaleX = (realW / realH * frame.h) / frame.w;
+                                      const scaleY = (realH / realW * frame.w) / frame.h;
+                                      const newW = frame.h * realW / realH;
+                                      const newH = frame.w * realH / realW;
+                                      // Use width as reference, adjust height
+                                      const tgtH = Math.round(frame.w * realH / realW);
+                                      nEls.forEach((el, i) => {
+                                        if (el.type === "rect") { nEls[i] = { ...el, h: tgtH }; }
+                                        if (el.type === "montante") { nEls[i] = { ...el, y2: el.y1 + tgtH }; }
+                                        if (el.type === "traverso") {
+                                          const ratio = (el.y - frame.y) / frame.h;
+                                          nEls[i] = { ...el, y: Math.round(frame.y + ratio * tgtH) };
+                                        }
+                                      });
+                                    }
                                     if (frame) {
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: String(realW) },
