@@ -992,6 +992,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>Aa Testo</div>
 
                                   <div onClick={() => {
+                                    // Toggle: 0=nessuna -> 1=totali -> 2=totali+segmenti -> 0
+                                    const dimCount = els.filter(e => e.type === "dim").length;
+                                    const onlyTotali = dimCount === 2;
+                                    const hasSegDims = dimCount > 2;
+                                    if (hasSegDims) { setDW(els.filter(e => e.type !== "dim")); return; }
+                                    const addSegments = onlyTotali; // se ci sono già le totali, aggiungi segmenti
                                     const nEls = els.filter(e => e.type !== "dim");
                                     const hasFreeLines = els.filter(e => e.type === "freeLine").length >= 2;
                                     if (frame && !hasFreeLines && realW && realH) {
@@ -1012,8 +1018,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     if (frame && !hasFreeLines) {
                                       const existingDims = els.filter(e => e.type === "dim");
-                                      const exW = existingDims.find(e => Math.abs(e.y1 - e.y2) < 2);
-                                      const exH = existingDims.find(e => Math.abs(e.x1 - e.x2) < 2);
+                                      const horizDimsF = existingDims.filter(e => Math.abs(e.y1 - e.y2) < 4);
+                                      const vertDimsF = existingDims.filter(e => Math.abs(e.x1 - e.x2) < 4);
+                                      const exW = horizDimsF.reduce((best, e) => !best || (e.x2 - e.x1) > (best.x2 - best.x1) ? e : best, null as any);
+                                      const exH = vertDimsF.reduce((best, e) => !best || (e.y2 - e.y1) > (best.y2 - best.y1) ? e : best, null as any);
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 28, x2: frame.x + frame.w, y2: frame.y + frame.h + 28, label: exW ? exW.label : String(realW) },
                                         { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 28, y1: frame.y, x2: frame.x + frame.w + 28, y2: frame.y + frame.h, label: exH ? exH.label : String(realH) }
@@ -1028,13 +1036,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
                                       // Bounding box total dims
                                       const existingDimsP = els.filter(e => e.type === "dim");
-                                      const exWP = existingDimsP.find(e => Math.abs(e.y1 - e.y2) < 2);
-                                      const exHP = existingDimsP.find(e => Math.abs(e.x1 - e.x2) < 2);
+                                      // Find total dims: widest horizontal and tallest vertical
+                                      const horizDims = existingDimsP.filter(e => Math.abs(e.y1 - e.y2) < 4);
+                                      const vertDims = existingDimsP.filter(e => Math.abs(e.x1 - e.x2) < 4);
+                                      const exWP = horizDims.reduce((best, e) => !best || (e.x2 - e.x1) > (best.x2 - best.x1) ? e : best, null as any);
+                                      const exHP = vertDims.reduce((best, e) => !best || (e.y2 - e.y1) > (best.y2 - best.y1) ? e : best, null as any);
                                       nEls.push(
                                         { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: exWP ? exWP.label : String(realW) },
                                         { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: exHP ? exHP.label : String(realH) }
                                       );
-                                      // Per-segment dimensions (each freeLine side)
+                                      // Per-segment dimensions (each freeLine side) — solo se richiesti
+                                      if (addSegments) {
                                       const freeLines = els.filter(e => e.type === "freeLine");
                                       const totalPx = Math.hypot(bR - bL, bB - bT);
                                       freeLines.forEach((fl, fi) => {
@@ -1058,6 +1070,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const leftCells = cells.filter(c2 => Math.abs(c2.x - bL) < 6).sort((a, b) => a.y - b.y);
                                         if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 390 + i, type: "dim", x1: bL - 14, y1: c2.y, x2: bL - 14, y2: c2.y + c2.h, label: String(Math.round(c2.h / (bB - bT) * realH)) }));
                                       }
+                                      } // end if(addSegments)
                                     }
                                     setDW(nEls);
                                   }} style={bs()}>↔ Misure</div>
