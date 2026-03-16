@@ -411,7 +411,7 @@ export default function VanoDetailPanel() {
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
         >
-          {numpadField===field ? (numpadVal || "ÔÇö") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
+          {numpadField===field ? (numpadVal || "—") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
           {m[field] > 0 && numpadField!==field && <span style={{fontSize:13,color:T.sub}}>mm</span>}
         </div>
       </div>
@@ -1138,7 +1138,7 @@ export default function VanoDetailPanel() {
                       <div style={{ marginTop:12, padding:12, borderRadius:10, background:T.card, border:"1px solid "+T.bdr, textAlign:"center" }}>
                         <div style={{ fontSize:10, color:T.sub, fontWeight:700, marginBottom:4 }}><I d={ICO.ruler} /> RIEPILOGO</div>
                         <div style={{ fontSize:16, fontWeight:900, color:T.text }}>
-                          {m.lCentro} ├ù {m.hCentro} {(m.sporgenza||isPergola) ? " ├ù " + (m.sporgenza||"ÔÇö") : ""} mm
+                          {m.lCentro} ├ù {m.hCentro} {(m.sporgenza||isPergola) ? " ├ù " + (m.sporgenza||"—") : ""} mm
                         </div>
                         <div style={{ fontSize:11, color:T.sub }}>
                           {((m.lCentro/1000) * (isPergola ? (m.sporgenza||m.hCentro)/1000 : m.hCentro/1000)).toFixed(2)} m┬▓
@@ -2043,7 +2043,7 @@ export default function VanoDetailPanel() {
                         {rows.map(([l, val, highlight], ri) => (
                           <div key={ri} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
                             <span style={{ color: T.text }}>{l}</span>
-                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || "ÔÇö"}</span>
+                            <span style={{ fontFamily: FM, fontWeight: 600, color: highlight ? highlight : val ? T.text : T.sub2, maxWidth: "60%", textAlign: "right" }}>{val || "—"}</span>
                           </div>
                         ))}
                       </div>
@@ -2075,10 +2075,10 @@ export default function VanoDetailPanel() {
 
                     {/* Telaio */}
                     <Sec title="TELAIO / RIFILATO" color="#8e8e93" icon="­ƒôÉ" rows={[
-                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : "ÔÇö"],
+                      ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : "—"],
                       ...(v.telaio === "Z" && v.telaioAlaZ ? [["Ala Z", `${v.telaioAlaZ}mm`]] : []),
                       ["Rifilato", v.rifilato ? "S├¼" : "No"],
-                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || "ÔÇö"], ["Rifilo Dx", v.rifilDx || "ÔÇö"], ["Rifilo Sopra", v.rifilSopra || "ÔÇö"], ["Rifilo Sotto", v.rifilSotto || "ÔÇö"]] : []),
+                      ...(v.rifilato ? [["Rifilo Sx", v.rifilSx || "—"], ["Rifilo Dx", v.rifilDx || "—"], ["Rifilo Sopra", v.rifilSopra || "—"], ["Rifilo Sotto", v.rifilSotto || "—"]] : []),
                     ]} />
 
                     {/* Coprifilo / Lamiera */}
@@ -2216,7 +2216,7 @@ export default function VanoDetailPanel() {
                 ["F.sq", fSq !== null ? `${fSq}` : null, fSq > 3 ? "#DC4444" : null],
               ].map(([l, val, c]) => (
                 <div key={l} style={{ padding: "3px 8px", borderRadius: 4, background: c ? c + "12" : T.bg, fontSize: 10, fontFamily: FM, color: c || (val ? T.text : T.sub2) }}>
-                  {l}: {val || "ÔÇö"}
+                  {l}: {val || "—"}
                 </div>
               ))}
             </div>
@@ -2241,7 +2241,7 @@ export default function VanoDetailPanel() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div>
                   <span style={{ fontSize: 14, fontWeight: 900, color: T.text }}>ÔÜí Accesso rapido</span>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} ┬À {v.stanza || "?"} ┬À {v.sistema ? "Ô£ô Sist." : "ÔÇö"} ┬À {v.coloreInt ? "Ô£ô Col." : "ÔÇö"} ┬À {(m.lCentro && m.hCentro) ? m.lCentro+"├ù"+m.hCentro : "ÔÇö Mis."}</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} ┬À {v.stanza || "?"} ┬À {v.sistema ? "Ô£ô Sist." : "—"} ┬À {v.coloreInt ? "Ô£ô Col." : "—"} ┬À {(m.lCentro && m.hCentro) ? m.lCentro+"├ù"+m.hCentro : "ÔÇö Mis."}</div>
                 </div>
                 <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "5px 12px", borderRadius: 8, background: T.bg, border: "1px solid " + T.bdr, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 700 }}>Ô£ò</div>
               </div>
@@ -2455,7 +2455,7 @@ export default function VanoDetailPanel() {
             padding:"10px 14px",background:"#131318",
             borderRadius:10,border:"1px solid #333",marginBottom:10,
           }}>
-            {numpadVal || "ÔÇö"} <span style={{fontSize:16,color:"#888"}}>mm</span>
+            {numpadVal || "—"} <span style={{fontSize:16,color:"#888"}}>mm</span>
           </div>
           {/* Numpad */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
