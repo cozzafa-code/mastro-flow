@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // 
 // MASTRO ERP  VanoDetailPanel
@@ -89,9 +89,9 @@ export default function VanoDetailPanel() {
   } = useMastro();
 
   const STEPS = [
-    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: " / },
-    { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: " / },
-    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: " / },
+    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "ruler" },
+    { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: "settings" },
+    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: "check" },
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
@@ -303,7 +303,7 @@ export default function VanoDetailPanel() {
     rec.onstart = () => { setVrActive(true); setVrError(" / };
     rec.onerror = (e: any) => {
       if (e.error === "not-allowed", setVrError("Microfono non autorizzato. Controlla i permessi del browser.");
-      else if (e.error === "no-speech", setVrError("Nessun audio rilevato. Parla più forte.");
+      else if (e.error === "no-speech", setVrError("Nessun audio rilevato. Parla piÃ¹ forte.");
       else setVrError(`Errore: ${e.error}`);
     };
     rec.onend = () => {
@@ -2217,12 +2217,12 @@ export default function VanoDetailPanel() {
               {/* STEP INDICATORS */}
               {(() => {
                 const steps = [
-                  { id: "tipo", label: "Tipo", done: !!v.tipo, icon: " / },
-                  { id: "sistema", label: "Sistema", done: !!v.sistema, icon: " / },
-                  { id: "vetro", label: "Vetro", done: !!v.vetro, icon: " / },
-                  { id: "colore", label: "Colore", done: !!v.coloreInt, icon: " / },
-                  { id: "misure", label: "Misure", done: !!(m.lCentro && m.hCentro), icon: " / },
-                  { id: "pezzi", label: "Pezzi", done: true, icon: " / },
+                  { id: "tipo", label: "Tipo", done: !!v.tipo, icon: "check" },
+                  { id: "sistema", label: "Sistema", done: !!v.sistema, icon: "check" },
+                  { id: "vetro", label: "Vetro", done: !!v.vetro, icon: "check" },
+                  { id: "colore", label: "Colore", done: !!v.coloreInt, icon: "check" },
+                  { id: "misure", label: "Misure", done: !!(m.lCentro && m.hCentro), icon: "check" },
+                  { id: "pezzi", label: "Pezzi", done: true, icon: "check" },
                 ];
                 const firstIncomplete = steps.findIndex(s => !s.done);
                 const activeStep = firstIncomplete >= 0 ? firstIncomplete : steps.length - 1;
