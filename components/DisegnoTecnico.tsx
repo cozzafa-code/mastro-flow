@@ -1507,11 +1507,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const clr = hc || "#1A1A1C";
                                       const swOuter = el.subType === "porta" ? 2 : 1.2;
                                       const swInner = el.subType === "porta" ? 1.5 : 0.8;
+                                      const isPorta = el.subType === "porta";
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          {/* Outer rect */}
                                           <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="none" stroke={clr} strokeWidth={swOuter} />
-                                          <rect x={el.x + tk} y={el.y + tk} width={el.w - tk * 2} height={el.h - tk * 2} fill="none" stroke={clr} strokeWidth={swInner} />
-                                          {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 14} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700}>PORTA</text>}
+                                          {/* Fill spessore profilo — grigio tra outer e inner */}
+                                          {isPorta && <rect x={el.x + 1} y={el.y + 1} width={el.w - 2} height={el.h - 2} fill="#d0cec8" stroke="none" />}
+                                          {/* Inner rect con fill bianco per svuotare il centro */}
+                                          <rect x={el.x + tk} y={el.y + tk} width={el.w - tk * 2} height={el.h - tk * 2} fill={isPorta ? "#f8f8f6" : "none"} stroke={clr} strokeWidth={swInner} />
+                                          {isPorta && <text x={el.x + el.w / 2} y={el.y + 14} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
                                     }
@@ -1547,6 +1552,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const clr = hc || "#1A1A1C";
                                       const swOuter = el.subType === "porta" ? 2 : 1.2;
                                       const swInner = el.subType === "porta" ? 1.5 : 0.8;
+                                      const isPorta = el.subType === "porta";
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
@@ -1558,9 +1564,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const innerStr = innerPts.map(p => p.join(",")).join(" ");
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={clr} strokeWidth={swOuter} />
-                                          <polygon points={innerStr} fill="none" stroke={clr} strokeWidth={swInner} />
-                                          {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
+                                          <polygon points={outerPts} fill={isPorta ? "#d0cec8" : "#f8f8f6"} fillOpacity={isPorta ? 1 : 0.3} stroke={clr} strokeWidth={swOuter} />
+                                          <polygon points={innerStr} fill="#f8f8f6" stroke={clr} strokeWidth={swInner} />
+                                          {isPorta && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
                                     }
