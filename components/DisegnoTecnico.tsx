@@ -1105,15 +1105,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const el2 = editingLine.el;
                                           const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
                                           const curLen = Math.hypot(dx2,dy2)||1;
-                                          // Scala il lato direttamente: ratio = newMM / currentMM
-                                          // currentMM è mmLen del lato (calcolato dalla bbox)
-                                          const allFL2 = els.filter(e => e.type==="freeLine");
-                                          const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                          const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
-                                          const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
-                                          const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
-                                          const currentMM = isSegH2 ? Math.round(Math.abs(dx2)/(bbW3||1)*realW) : Math.round(Math.abs(dy2)/(bbH3||1)*realH);
-                                          if (currentMM === 0) { setEditingLine(null); return; }
+                                          // Usa mmLen salvato al momento del click (stesso valore mostrato nel label)
+                                          const currentMM = editingLine.mmLen || 1;
                                           const ratio = newMM / currentMM;
                                           const newPxLen = curLen * ratio;
                                           const ux = dx2/curLen, uy = dy2/curLen;
@@ -1144,12 +1137,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const el2 = editingLine.el;
                                         const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
                                         const curLen = Math.hypot(dx2,dy2)||1;
-                                        const allFL2 = els.filter(e => e.type==="freeLine");
-                                        const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                        const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
-                                        const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
-                                        const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
-                                        const currentMM = isSegH2 ? Math.round(Math.abs(dx2)/(bbW3||1)*realW) : Math.round(Math.abs(dy2)/(bbH3||1)*realH);
+                                        const currentMM = editingLine.mmLen || 1;
                                         if (currentMM > 0) {
                                           const ratio = newMM / currentMM;
                                           const newPxLen = curLen * ratio;
@@ -1517,7 +1505,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
                                           {!drawMode && (
-                                            <g onClick={(e3) => { e3.stopPropagation(); setEditingLine({ elId: el.id, el }); setEditingLineVal(String(mmLen)); }} style={{ cursor: "pointer" }}>
+                                            <g onClick={(e3) => { e3.stopPropagation(); setEditingLine({ elId: el.id, el, mmLen }); setEditingLineVal(String(mmLen)); }} style={{ cursor: "pointer" }}>
                                               <rect x={lx-tw2/2} y={ly-9} width={tw2} height={18} fill={isEditing ? T.acc : "#fff"} rx={3} stroke={T.acc} strokeWidth={isEditing?1.5:0.8} />
                                               <text x={lx} y={ly+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={isEditing?"#fff":T.acc} fontFamily="monospace">{mmLen}</text>
                                             </g>
