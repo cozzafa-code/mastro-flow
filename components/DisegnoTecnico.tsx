@@ -1372,8 +1372,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
                                   })()}
 
-                                  {/* ══ ELEMENTS ══ */}
-                                  {els.map(el => {
+                                  {/* ══ ELEMENTS (non-strutturali) ══ */}
+                                  {els.filter(el => el.type !== "montante" && el.type !== "traverso").map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? T.purple : undefined;
                                     const dp = !drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id), style: { cursor: "move" } } : {};
@@ -1440,40 +1440,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // ═══ TRAVERSO — clipped to polygon ═══
                                     if (el.type === "traverso") {
                                       let tx1: number, tx2: number;
-                                      if (frame) {
-                                        // Base bounds from stored x1/x2 (set at placement from cell)
-                                        tx1 = el.x1 !== undefined ? el.x1 : frame.x;
-                                        tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
-                                        // Raccorda ai montanti che intersecano la stessa cella del traverso
-                                        // Un montante è "a sinistra" del traverso se m.x < el traverso x1+qualcosa
-                                        // e la sua cella (y1,y2) copre el.y
+                                      // Helper: raccorda traverso ai montanti che coprono la sua y
+                                      // Usa x1/x2 originali come riferimento (non aggiornati in loop)
+                                      const raccordaMontanti = (baseX1: number, baseX2: number, frameRef: any) => {
+                                        const mid = (baseX1 + baseX2) / 2;
+                                        let r1 = baseX1, r2 = baseX2;
                                         allMontanti.forEach(m => {
-                                          const my1 = m.y1 !== undefined ? m.y1 : frame.y;
-                                          const my2 = m.y2 !== undefined ? m.y2 : frame.y + frame.h;
-                                          // Montante copre questa y E sta dentro il range orizzontale del traverso
-                                          if (el.y > my1 - 4 && el.y < my2 + 4 && m.x > tx1 && m.x < tx2) {
-                                            if (m.x - tx1 < tx2 - m.x) tx1 = m.x + HM;
-                                            else tx2 = m.x - HM;
+                                          const my1r = m.y1 !== undefined ? m.y1 : (frameRef ? frameRef.y : fY);
+                                          const my2r = m.y2 !== undefined ? m.y2 : (frameRef ? frameRef.y + frameRef.h : fY + fH);
+                                          if (el.y > my1r - 4 && el.y < my2r + 4) {
+                                            if (m.x < mid && m.x > baseX1 - 2) r1 = Math.max(r1, m.x + HM);
+                                            if (m.x > mid && m.x < baseX2 + 2) r2 = Math.min(r2, m.x - HM);
                                           }
                                         });
+                                        return { r1, r2 };
+                                      };
+                                      if (frame) {
+                                        const baseX1 = el.x1 !== undefined ? el.x1 : frame.x;
+                                        const baseX2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
+                                        const { r1, r2 } = raccordaMontanti(baseX1, baseX2, frame);
+                                        tx1 = r1; tx2 = r2;
                                       } else if (poly) {
-                                        // Use stored x1/x2 from placement — already clamped to cell
-                                        tx1 = el.x1 !== undefined ? el.x1 : fX;
-                                        tx2 = el.x2 !== undefined ? el.x2 : fX + fW;
+                                        let baseX1 = el.x1 !== undefined ? el.x1 : fX;
+                                        let baseX2 = el.x2 !== undefined ? el.x2 : fX + fW;
                                         // Clamp to actual poly boundary at this Y
                                         const xsClip = segIntersectH(el.y, poly);
-                                        if (xsClip) { tx1 = Math.max(tx1, xsClip[0]); tx2 = Math.min(tx2, xsClip[1]); }
-                                        // Raccorda solo ai montanti che stanno DENTRO la cella del traverso (tra tx1 e tx2)
-                                        allMontanti.forEach(m => {
-                                          const my1p = m.y1 !== undefined ? m.y1 : fY;
-                                          const my2p = m.y2 !== undefined ? m.y2 : fY + fH;
-                                          // Il montante copre questa y E sta dentro il range orizzontale del traverso
-                                          if (el.y > my1p - 4 && el.y < my2p + 4 && m.x > tx1 && m.x < tx2) {
-                                            // Bordo sinistro del traverso → montante a destra di tx1
-                                            if (m.x - tx1 < tx2 - m.x) tx1 = m.x + HM; // montante è più vicino a sx
-                                            else tx2 = m.x - HM; // montante è più vicino a dx
-                                          }
-                                        });
+                                        if (xsClip) { baseX1 = Math.max(baseX1, xsClip[0]); baseX2 = Math.min(baseX2, xsClip[1]); }
+                                        const { r1, r2 } = raccordaMontanti(baseX1, baseX2, null);
+                                        tx1 = r1; tx2 = r2;
                                       } else {
                                         const fls2 = els.filter(e => e.type === "freeLine");
                                         const pts2b = (() => {
@@ -1852,6 +1846,67 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       );
                                     }
                                     return null;
+                                  })}
+
+                                  {/* ══ MONTANTI — sempre sotto i traversi ══ */}
+                                  {els.filter(el => el.type === "montante").map(el => {
+                                    const sel = el.id === selId;
+                                    const hc = sel ? T.purple : undefined;
+                                    let my1: number, my2: number;
+                                    if (frame) {
+                                      my1 = el.y1 !== undefined ? el.y1 : frame.y;
+                                      my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
+                                    } else if (poly) {
+                                      my1 = el.y1 !== undefined ? el.y1 : fY;
+                                      my2 = el.y2 !== undefined ? el.y2 : fY + fH;
+                                      const ysClip = segIntersectV(el.x, poly);
+                                      if (ysClip) { my1 = Math.max(my1, ysClip[0]); my2 = Math.min(my2, ysClip[1]); }
+                                    } else { my1 = fY; my2 = fY + fH; }
+                                    return (
+                                      <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
+                                        <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                        {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
+                                      </g>
+                                    );
+                                  })}
+
+                                  {/* ══ TRAVERSI — sempre sopra i montanti ══ */}
+                                  {els.filter(el => el.type === "traverso").map(el => {
+                                    const sel = el.id === selId;
+                                    const hc = sel ? T.purple : undefined;
+                                    let tx1: number, tx2: number;
+                                    const raccordaMontanti = (baseX1: number, baseX2: number, frameRef: any) => {
+                                      const mid = (baseX1 + baseX2) / 2;
+                                      let r1 = baseX1, r2 = baseX2;
+                                      allMontanti.forEach(m => {
+                                        const my1r = m.y1 !== undefined ? m.y1 : (frameRef ? frameRef.y : fY);
+                                        const my2r = m.y2 !== undefined ? m.y2 : (frameRef ? frameRef.y + frameRef.h : fY + fH);
+                                        if (el.y > my1r - 4 && el.y < my2r + 4) {
+                                          if (m.x < mid && m.x > baseX1 - 2) r1 = Math.max(r1, m.x + HM);
+                                          if (m.x > mid && m.x < baseX2 + 2) r2 = Math.min(r2, m.x - HM);
+                                        }
+                                      });
+                                      return { r1, r2 };
+                                    };
+                                    if (frame) {
+                                      const baseX1 = el.x1 !== undefined ? el.x1 : frame.x;
+                                      const baseX2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
+                                      const { r1, r2 } = raccordaMontanti(baseX1, baseX2, frame);
+                                      tx1 = r1; tx2 = r2;
+                                    } else if (poly) {
+                                      let baseX1 = el.x1 !== undefined ? el.x1 : fX;
+                                      let baseX2 = el.x2 !== undefined ? el.x2 : fX + fW;
+                                      const xsClip = segIntersectH(el.y, poly);
+                                      if (xsClip) { baseX1 = Math.max(baseX1, xsClip[0]); baseX2 = Math.min(baseX2, xsClip[1]); }
+                                      const { r1, r2 } = raccordaMontanti(baseX1, baseX2, null);
+                                      tx1 = r1; tx2 = r2;
+                                    } else { tx1 = fX; tx2 = fX + fW; }
+                                    return (
+                                      <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
+                                        <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                        {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
+                                      </g>
+                                    );
                                   })}
 
                                   {/* Pending line point + GUIDE */}
