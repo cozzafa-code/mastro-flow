@@ -478,12 +478,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               allMontanti.forEach((m, mi) => {
                                 const next = [];
                                 cl.forEach(c => {
-                                  const my1 = m.y1 !== undefined ? m.y1 : c.y;
-                                  const my2 = m.y2 !== undefined ? m.y2 : c.y + c.h;
-                                  // Accept if montante covers at least 60% of cell height and is within cell x bounds
-                                  const coverH = Math.min(my2, c.y + c.h) - Math.max(my1, c.y);
-                                  const covers = coverH >= c.h * 0.6;
-                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && covers) {
+                                  // Use cellY1/Y2 if available (more reliable for poly shapes)
+                                  const my1 = m.cellY1 !== undefined ? m.cellY1 : (m.y1 !== undefined ? m.y1 : c.y);
+                                  const my2 = m.cellY2 !== undefined ? m.cellY2 : (m.y2 !== undefined ? m.y2 : c.y + c.h);
+                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + 2 && my2 >= c.y + c.h - 2) {
                                     next.push({ x: c.x, y: c.y, w: m.x - HM - c.x, h: c.h, id: c.id + "L" + mi });
                                     next.push({ x: m.x + HM, y: c.y, w: c.x + c.w - m.x - HM, h: c.h, id: c.id + "R" + mi });
                                   } else { next.push(c); }
@@ -697,8 +695,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (cell) {
                                   const cx = snap(mx);
                                   const clampedX = Math.max(cell.x + 10, Math.min(cell.x + cell.w - 10, cx));
-                                  // Always use cell bounds so bspSplit works correctly
-                                  setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
+                                  if (poly) {
+                                    const ys = segIntersectV(clampedX, poly);
+                                    // Store cell y bounds for bspSplit, but render will use poly intersection
+                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: ys ? ys[0] : cell.y, y2: ys ? ys[1] : cell.y + cell.h, cellY1: cell.y, cellY2: cell.y + cell.h }]);
+                                  } else {
+                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
+                                  }
                                 } else if (poly) {
                                   // No cells yet but polygon exists — clip to polygon
                                   const cx = snap(mx);
@@ -714,7 +717,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (cell) {
                                   const cy = snap(my);
                                   const clampedY = Math.max(cell.y + 10, Math.min(cell.y + cell.h - 10, cy));
-                                  setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
+                                  // Use poly intersection for x limits when poly exists
+                                  if (poly) {
+                                    const xs = segIntersectH(clampedY, poly);
+                                    if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: xs[0], x2: xs[1] }]);
+                                  } else {
+                                    setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
+                                  }
                                 } else if (poly) {
                                   const cy = snap(my);
                                   const xs = segIntersectH(cy, poly);
@@ -1355,8 +1364,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         my1 = el.y1 !== undefined ? el.y1 : frame.y;
                                         my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                       } else if (poly) {
+                                        // y1/y2 already from poly intersection at placement
                                         my1 = (el.y1 !== undefined ? el.y1 : fY) + TK_FRAME;
                                         my2 = (el.y2 !== undefined ? el.y2 : fY + fH) - TK_FRAME;
+                                        // Use cellY1/cellY2 for bspSplit check if available
                                       } else {
                                         // Forma aperta: interseca con i segmenti freeLine
                                         const fls2 = els.filter(e => e.type === "freeLine");
@@ -1399,6 +1410,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         tx1 = el.x1 !== undefined ? el.x1 : frame.x;
                                         tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
                                       } else if (poly) {
+                                        // x1/x2 already from poly intersection at placement
                                         tx1 = (el.x1 !== undefined ? el.x1 : fX) + TK_FRAME;
                                         tx2 = (el.x2 !== undefined ? el.x2 : fX + fW) - TK_FRAME;
                                       } else {
