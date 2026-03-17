@@ -434,7 +434,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               }
                               return pts.length >= 3 ? pts : null;
                             };
-                            const poly = !frame ? getPolygon() : null;
+                            const getPolyRaw = !frame ? getPolygon() : null;
+                            // Show polygon only if explicitly closed (first point ≈ last point)
+                            const poly = (() => {
+                              if (!getPolyRaw || getPolyRaw.length < 3) return null;
+                              const first = getPolyRaw[0], last = getPolyRaw[getPolyRaw.length - 1];
+                              const isClosed = Math.hypot(first[0]-last[0], first[1]-last[1]) < 15;
+                              return isClosed ? getPolyRaw : null;
+                            })();
 
                             // ══ Line-segment intersection helpers ══
                             const segIntersectV = (x, pts2) => {
@@ -1687,17 +1694,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {gx === p.x1 && <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
                                         {gy === p.y1 && <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
                                         {/* Angle label near cursor */}
-                                        <rect x={gx + 8} y={gy - 22} width={82} height={20} fill="#1A1A1C" rx={4} opacity={0.92} />
-                                        <text x={gx + 49} y={gy - 8} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">
-                                          {dw._guideDeg != null ? `${dw._guideDeg}° ${dw._guideLen}mm` : ""}
+                                        <rect x={gx + 8} y={gy - 22} width={80} height={20} fill="#1A1A1C" rx={4} opacity={0.9} />
+                                        <text x={gx + 48} y={gy - 8} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">
+                                          {dw._guideDeg != null ? `${dw._guideDeg}°` : ""}
                                         </text>
-                                        {/* BIG mid-line mm label */}
-                                        {dw._guideLen != null && gx != null && (() => {
+                                        {/* BIG mm label at mid-line */}
+                                        {dw._guideLen != null && (() => {
                                           const mx3 = (p.x1 + gx) / 2, my3 = (p.y1 + gy) / 2;
-                                          const lw3 = String(dw._guideLen).length * 8 + 20;
+                                          const lw3 = String(dw._guideLen).length * 9 + 22;
                                           return <>
-                                            <rect x={mx3-lw3/2} y={my3-11} width={lw3} height={22} fill={T.acc} rx={4} />
-                                            <text x={mx3} y={my3+5} textAnchor="middle" fontSize={13} fontWeight={800} fill="#fff" fontFamily="monospace">{dw._guideLen}</text>
+                                            <rect x={mx3-lw3/2} y={my3-12} width={lw3} height={24} fill={T.acc} rx={4} />
+                                            <text x={mx3} y={my3+6} textAnchor="middle" fontSize={14} fontWeight={800} fill="#fff" fontFamily="monospace">{dw._guideLen}</text>
                                           </>;
                                         })()}
                                       </>}
