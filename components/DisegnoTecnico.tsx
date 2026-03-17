@@ -1292,58 +1292,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                   {/* ══ CLOSED POLYGON PROFILE (proper mitered corners) ══ */}
                                   {poly && poly.length >= 3 && (() => {
-                                    const n = poly.length;
-                                    const halfT = TK_FRAME;
-                                    // Compute centroid for inner/outer direction
-                                    const cx = poly.reduce((s, p) => s + p[0], 0) / n;
-                                    const cy = poly.reduce((s, p) => s + p[1], 0) / n;
-                                    // Offset each vertex outward and inward
-                                    const outerPts = [];
-                                    const innerPts = [];
-                                    for (let i = 0; i < n; i++) {
-                                      const prev = poly[(i - 1 + n) % n];
-                                      const curr = poly[i];
-                                      const next = poly[(i + 1) % n];
-                                      // Edge normals (pointing outward from centroid)
-                                      const d1x = curr[0] - prev[0], d1y = curr[1] - prev[1];
-                                      const d2x = next[0] - curr[0], d2y = next[1] - curr[1];
-                                      const len1 = Math.hypot(d1x, d1y) || 1;
-                                      const len2 = Math.hypot(d2x, d2y) || 1;
-                                      let n1x = -d1y / len1, n1y = d1x / len1;
-                                      let n2x = -d2y / len2, n2y = d2x / len2;
-                                      // Ensure normals point outward (away from centroid)
-                                      const midE1x = (prev[0] + curr[0]) / 2, midE1y = (prev[1] + curr[1]) / 2;
-                                      if ((midE1x + n1x - cx) * (midE1x + n1x - cx) + (midE1y + n1y - cy) * (midE1y + n1y - cy) <
-                                          (midE1x - n1x - cx) * (midE1x - n1x - cx) + (midE1y - n1y - cy) * (midE1y - n1y - cy)) {
-                                        n1x = -n1x; n1y = -n1y;
-                                      }
-                                      const midE2x = (curr[0] + next[0]) / 2, midE2y = (curr[1] + next[1]) / 2;
-                                      if ((midE2x + n2x - cx) * (midE2x + n2x - cx) + (midE2y + n2y - cy) * (midE2y + n2y - cy) <
-                                          (midE2x - n2x - cx) * (midE2x - n2x - cx) + (midE2y - n2y - cy) * (midE2y - n2y - cy)) {
-                                        n2x = -n2x; n2y = -n2y;
-                                      }
-                                      // Average normal at vertex (bisector)
-                                      let bx = n1x + n2x, by = n1y + n2y;
-                                      const bLen = Math.hypot(bx, by) || 1;
-                                      bx /= bLen; by /= bLen;
-                                      // Miter length
-                                      const dot = n1x * bx + n1y * by;
-                                      const miter = dot > 0.3 ? halfT / dot : halfT;
-                                      outerPts.push([curr[0] + bx * miter, curr[1] + by * miter]);
-                                      innerPts.push([curr[0] - bx * miter, curr[1] - by * miter]);
-                                    }
-                                    const outerStr = outerPts.map(p => p.join(",")).join(" ");
-                                    const innerStr = innerPts.map(p => p.join(",")).join(" ");
+                                    // Usa stesso approccio path SVG del blocco aperto — angoli perfetti
+                                    const pts3 = [...poly, poly[0]]; // chiudi il path
+                                    const d3 = pts3.map((p,i) => `${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ") + " Z";
+                                    const tk = TK_FRAME;
                                     return (
                                       <g>
-                                        {/* Fill between outer and inner */}
-                                        <polygon points={outerStr} fill="#f0efe8" stroke="none" />
-                                        <polygon points={innerStr} fill="#fff" stroke="none" />
-                                        {/* Outer stroke */}
-                                        <polygon points={outerStr} fill="none" stroke="#1A1A1C" strokeWidth={1.5} strokeLinejoin="miter" />
-                                        {/* Inner stroke */}
-                                        <polygon points={innerStr} fill="none" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />
-                                        {/* Corner dots */}
+                                        <path d={d3} fill="none" stroke="#f0efe8" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} />
+                                        <path d={d3} fill="none" stroke="#1A1A1C" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} />
+                                        <path d={d3} fill="none" stroke="#f0efe8" strokeWidth={tk*2} strokeLinejoin="miter" strokeMiterlimit={10} />
+                                        <path d={d3} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit={10} opacity={0.4} />
                                         {poly.map((p, pi) => <circle key={`pc${pi}`} cx={p[0]} cy={p[1]} r={3.5} fill="#333" />)}
                                       </g>
                                     );
