@@ -697,8 +697,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const clampedX = Math.max(cell.x + 10, Math.min(cell.x + cell.w - 10, cx));
                                   if (poly) {
                                     const ys = segIntersectV(clampedX, poly);
-                                    // Store cell y bounds for bspSplit, but render will use poly intersection
-                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: ys ? ys[0] : cell.y, y2: ys ? ys[1] : cell.y + cell.h, cellY1: cell.y, cellY2: cell.y + cell.h }]);
+                                    if (ys) {
+                                      // Clamp to cell y bounds for concave shapes
+                                      const my1c = Math.max(ys[0], cell.y);
+                                      const my2c = Math.min(ys[1], cell.y + cell.h);
+                                      setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: my1c, y2: my2c, cellY1: cell.y, cellY2: cell.y + cell.h }]);
+                                    }
                                   } else {
                                     setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
                                   }
@@ -717,10 +721,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (cell) {
                                   const cy = snap(my);
                                   const clampedY = Math.max(cell.y + 10, Math.min(cell.y + cell.h - 10, cy));
-                                  // Use poly intersection for x limits when poly exists
                                   if (poly) {
                                     const xs = segIntersectH(clampedY, poly);
-                                    if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: xs[0], x2: xs[1] }]);
+                                    if (xs) {
+                                      // Clamp to cell x bounds to handle concave shapes (L, U, etc.)
+                                      const tx1c = Math.max(xs[0], cell.x);
+                                      const tx2c = Math.min(xs[1], cell.x + cell.w);
+                                      setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: tx1c, x2: tx2c }]);
+                                    }
                                   } else {
                                     setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
                                   }
