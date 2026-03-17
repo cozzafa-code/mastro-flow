@@ -1389,9 +1389,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         my1 = el.y1 !== undefined ? el.y1 : frame.y;
                                         my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                       } else if (poly) {
-                                        // Always use stored y1/y2 from placement (clamped to cell)
-                                        my1 = (el.y1 !== undefined ? el.y1 : fY) + TK_FRAME;
-                                        my2 = (el.y2 !== undefined ? el.y2 : fY + fH) - TK_FRAME;
+                                        // Use stored y1/y2 from placement — already clamped to cell, no extra offset
+                                        my1 = el.y1 !== undefined ? el.y1 : fY;
+                                        my2 = el.y2 !== undefined ? el.y2 : fY + fH;
                                       } else {
                                         // Forma aperta: interseca con i segmenti freeLine
                                         const fls2 = els.filter(e => e.type === "freeLine");
@@ -1449,9 +1449,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           }
                                         });
                                       } else if (poly) {
-                                        // Always use stored x1/x2 from placement (clamped to cell)
-                                        tx1 = (el.x1 !== undefined ? el.x1 : fX) + TK_FRAME;
-                                        tx2 = (el.x2 !== undefined ? el.x2 : fX + fW) - TK_FRAME;
+                                        // Use stored x1/x2 from placement — already clamped to cell, no extra offset
+                                        tx1 = el.x1 !== undefined ? el.x1 : fX;
+                                        tx2 = el.x2 !== undefined ? el.x2 : fX + fW;
+                                        // Raccorda ai montanti che coprono verticalmente questa y
+                                        allMontanti.forEach(m => {
+                                          const my1p = m.y1 !== undefined ? m.y1 : fY;
+                                          const my2p = m.y2 !== undefined ? m.y2 : fY + fH;
+                                          if (el.y > my1p - 4 && el.y < my2p + 4) {
+                                            if (m.x + HM <= tx1 + 4 && m.x + HM >= tx1 - 60) tx1 = m.x + HM;
+                                            if (m.x - HM >= tx2 - 4 && m.x - HM <= tx2 + 60) tx2 = m.x - HM;
+                                          }
+                                        });
                                       } else {
                                         const fls2 = els.filter(e => e.type === "freeLine");
                                         const pts2b = (() => {
