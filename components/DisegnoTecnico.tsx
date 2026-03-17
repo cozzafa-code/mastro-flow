@@ -1419,8 +1419,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           else { const allY2=fls2.flatMap(l=>[l.y1,l.y2]); my1=Math.min(...allY2); my2=Math.max(...allY2); }
                                         } else { my1=fY; my2=fY+fH; }
                                       }
+                                      // Clamp montante to actual poly boundary
+                                      if (poly) {
+                                        const ysClip = segIntersectV(el.x, poly);
+                                        if (ysClip) { my1 = Math.max(my1, ysClip[0]); my2 = Math.min(my2, ysClip[1]); }
+                                      }
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
+                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
                                           <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
                                           {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
                                         </g>
@@ -1440,25 +1445,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         allMontanti.forEach(m => {
                                           const my1 = m.y1 !== undefined ? m.y1 : frame.y;
                                           const my2 = m.y2 !== undefined ? m.y2 : frame.y + frame.h;
-                                          // Il montante copre verticalmente la y del traverso?
-                                          if (el.y > my1 - 4 && el.y < my2 + 4) {
-                                            // Montante alla sinistra del traverso — estendi tx1 fino a m.x+HM
-                                            if (m.x + HM <= tx1 + 4 && m.x + HM >= tx1 - 60) tx1 = m.x + HM;
-                                            // Montante alla destra del traverso — estendi tx2 fino a m.x-HM
-                                            if (m.x - HM >= tx2 - 4 && m.x - HM <= tx2 + 60) tx2 = m.x - HM;
+                                          // Montante copre questa y E sta dentro il range orizzontale del traverso
+                                          if (el.y > my1 - 4 && el.y < my2 + 4 && m.x > tx1 && m.x < tx2) {
+                                            if (m.x - tx1 < tx2 - m.x) tx1 = m.x + HM;
+                                            else tx2 = m.x - HM;
                                           }
                                         });
                                       } else if (poly) {
-                                        // Use stored x1/x2 from placement — already clamped to cell, no extra offset
+                                        // Use stored x1/x2 from placement — already clamped to cell
                                         tx1 = el.x1 !== undefined ? el.x1 : fX;
                                         tx2 = el.x2 !== undefined ? el.x2 : fX + fW;
-                                        // Raccorda ai montanti che coprono verticalmente questa y
+                                        // Clamp to actual poly boundary at this Y
+                                        const xsClip = segIntersectH(el.y, poly);
+                                        if (xsClip) { tx1 = Math.max(tx1, xsClip[0]); tx2 = Math.min(tx2, xsClip[1]); }
+                                        // Raccorda solo ai montanti che stanno DENTRO la cella del traverso (tra tx1 e tx2)
                                         allMontanti.forEach(m => {
                                           const my1p = m.y1 !== undefined ? m.y1 : fY;
                                           const my2p = m.y2 !== undefined ? m.y2 : fY + fH;
-                                          if (el.y > my1p - 4 && el.y < my2p + 4) {
-                                            if (m.x + HM <= tx1 + 4 && m.x + HM >= tx1 - 60) tx1 = m.x + HM;
-                                            if (m.x - HM >= tx2 - 4 && m.x - HM <= tx2 + 60) tx2 = m.x - HM;
+                                          // Il montante copre questa y E sta dentro il range orizzontale del traverso
+                                          if (el.y > my1p - 4 && el.y < my2p + 4 && m.x > tx1 && m.x < tx2) {
+                                            // Bordo sinistro del traverso → montante a destra di tx1
+                                            if (m.x - tx1 < tx2 - m.x) tx1 = m.x + HM; // montante è più vicino a sx
+                                            else tx2 = m.x - HM; // montante è più vicino a dx
                                           }
                                         });
                                       } else {
@@ -1487,7 +1495,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         } else { tx1=fX; tx2=fX+fW; }
                                       }
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
+                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
                                           <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
                                           {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
                                         </g>
