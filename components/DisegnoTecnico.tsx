@@ -1686,11 +1686,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {/* H/V snap indicator */}
                                         {gx === p.x1 && <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
                                         {gy === p.y1 && <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
-                                        {/* Angle + length label */}
-                                        <rect x={gx + 8} y={gy - 20} width={72} height={18} fill="#333" rx={4} opacity={0.85} />
-                                        <text x={gx + 44} y={gy - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="#fff" fontFamily="monospace">
+                                        {/* Angle label near cursor */}
+                                        <rect x={gx + 8} y={gy - 22} width={82} height={20} fill="#1A1A1C" rx={4} opacity={0.92} />
+                                        <text x={gx + 49} y={gy - 8} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">
                                           {dw._guideDeg != null ? `${dw._guideDeg}° ${dw._guideLen}mm` : ""}
                                         </text>
+                                        {/* BIG mid-line mm label */}
+                                        {dw._guideLen != null && gx != null && (() => {
+                                          const mx3 = (p.x1 + gx) / 2, my3 = (p.y1 + gy) / 2;
+                                          const lw3 = String(dw._guideLen).length * 8 + 20;
+                                          return <>
+                                            <rect x={mx3-lw3/2} y={my3-11} width={lw3} height={22} fill={T.acc} rx={4} />
+                                            <text x={mx3} y={my3+5} textAnchor="middle" fontSize={13} fontWeight={800} fill="#fff" fontFamily="monospace">{dw._guideLen}</text>
+                                          </>;
+                                        })()}
                                       </>}
                                       <circle cx={p.x1} cy={p.y1} r={6} fill={clr} fillOpacity={0.4} />
                                       <circle cx={p.x1} cy={p.y1} r={10} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="3,2" />
