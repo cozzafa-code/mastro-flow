@@ -383,7 +383,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const panX = dw._panX || 0, panY = dw._panY || 0;
                             const canvasW = Math.min(window.innerWidth - 32, 500);
                             const GRID = 10;
-                            const SNAP_R = 18;
+                            const SNAP_R = 28;
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -412,7 +412,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const frame = frames[0] || null; // primary frame for compat
                             const allMontanti = els.filter(e => e.type === "montante");
                             const allTraversi = els.filter(e => e.type === "traverso");
-                            const TK_FRAME = 6, TK_MONT = 4, TK_ANTA = 4, TK_PORTA = 7;
+                            const TK_FRAME = 6, TK_MONT = 6, TK_ANTA = 4, TK_PORTA = 7;
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGON from freeLines ══
@@ -906,7 +906,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
-                                  setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py }], { _pendingLine: { x1: px, y1: py } });
+                                  // Snap endpoint to any existing freeLine endpoint within snap radius
+                                  const allFLPts3 = els.filter(e => e.type==="freeLine"||e.type==="apLine").flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                  let snapPx = px, snapPy = py;
+                                  for (const pt of allFLPts3) {
+                                    if (Math.hypot(pt.x-px, pt.y-py) < SNAP_R) { snapPx=pt.x; snapPy=pt.y; break; }
+                                  }
+                                  setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: snapPx, y2: snapPy }], { _pendingLine: { x1: snapPx, y1: snapPy } });
                                 }
                                 return;
                               }
