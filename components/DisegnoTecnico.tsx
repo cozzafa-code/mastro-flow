@@ -606,28 +606,35 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (x.id !== elId) return x;
                                   if (x.type === "montante") {
                                     const newX = snap(orig.x + dx);
+                                    // Find which cell the new X falls in
+                                    const newCell = cells.find(c2 => newX > c2.x && newX < c2.x + c2.w);
                                     if (poly) {
-                                      // Find cell at new position and use its bounds
-                                      const newCell = cells.find(c2 => newX > c2.x && newX < c2.x + c2.w);
                                       if (newCell) {
                                         const ys = segIntersectV(newX, poly);
                                         const my1n = ys ? Math.max(ys[0], newCell.y) : newCell.y;
                                         const my2n = ys ? Math.min(ys[1], newCell.y + newCell.h) : newCell.y + newCell.h;
                                         return { ...x, x: newX, y1: my1n, y2: my2n, cellY1: newCell.y, cellY2: newCell.y + newCell.h };
                                       }
+                                    } else if (frame && newCell) {
+                                      // Frame mode: update y1/y2 from new cell bounds
+                                      return { ...x, x: newX, y1: newCell.y, y2: newCell.y + newCell.h };
                                     }
                                     return { ...x, x: newX };
                                   }
                                   if (x.type === "traverso") {
                                     const newY = snap(orig.y + dy);
+                                    // Find which cell the new Y falls in
+                                    const newCell2 = cells.find(c2 => newY > c2.y && newY < c2.y + c2.h);
                                     if (poly) {
-                                      const newCell2 = cells.find(c2 => newY > c2.y && newY < c2.y + c2.h);
                                       const xs2 = segIntersectH(newY, poly);
                                       if (xs2 && newCell2) {
                                         return { ...x, y: newY, x1: Math.max(xs2[0], newCell2.x), x2: Math.min(xs2[1], newCell2.x + newCell2.w) };
                                       } else if (xs2) {
                                         return { ...x, y: newY, x1: xs2[0], x2: xs2[1] };
                                       }
+                                    } else if (frame && newCell2) {
+                                      // Frame mode: update x1/x2 from new cell bounds
+                                      return { ...x, y: newY, x1: newCell2.x, x2: newCell2.x + newCell2.w };
                                     }
                                     return { ...x, y: newY };
                                   }
@@ -1424,8 +1431,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "traverso") {
                                       let tx1: number, tx2: number;
                                       if (frame) {
+                                        // Base bounds from stored x1/x2 (set at placement from cell)
                                         tx1 = el.x1 !== undefined ? el.x1 : frame.x;
                                         tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
+                                        // Raccorda ai montanti che intersecano la stessa cella del traverso
+                                        // Un montante è "a sinistra" del traverso se m.x < el traverso x1+qualcosa
+                                        // e la sua cella (y1,y2) copre el.y
+                                        allMontanti.forEach(m => {
+                                          const my1 = m.y1 !== undefined ? m.y1 : frame.y;
+                                          const my2 = m.y2 !== undefined ? m.y2 : frame.y + frame.h;
+                                          // Il montante copre verticalmente la y del traverso?
+                                          if (el.y > my1 - 4 && el.y < my2 + 4) {
+                                            // Montante alla sinistra del traverso — estendi tx1 fino a m.x+HM
+                                            if (m.x + HM <= tx1 + 4 && m.x + HM >= tx1 - 60) tx1 = m.x + HM;
+                                            // Montante alla destra del traverso — estendi tx2 fino a m.x-HM
+                                            if (m.x - HM >= tx2 - 4 && m.x - HM <= tx2 + 60) tx2 = m.x - HM;
+                                          }
+                                        });
                                       } else if (poly) {
                                         // Always use stored x1/x2 from placement (clamped to cell)
                                         tx1 = (el.x1 !== undefined ? el.x1 : fX) + TK_FRAME;
