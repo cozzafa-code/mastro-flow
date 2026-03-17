@@ -1400,10 +1400,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "traverso") {
                                       let tx1: number, tx2: number;
                                       if (frame) {
-                                        tx1 = frame.x; tx2 = frame.x + frame.w;
+                                        tx1 = el.x1 !== undefined ? el.x1 : frame.x;
+                                        tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
                                       } else if (poly) {
-                                        const xs = segIntersectH(el.y, poly);
-                                        tx1 = xs ? xs[0] + TK_FRAME : fX; tx2 = xs ? xs[1] - TK_FRAME : fX + fW;
+                                        tx1 = el.x1 !== undefined ? el.x1 : fX;
+                                        tx2 = el.x2 !== undefined ? el.x2 : fX + fW;
                                       } else {
                                         const fls2 = els.filter(e => e.type === "freeLine");
                                         const pts2b = (() => {
@@ -1563,7 +1564,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "freeLine") {
                                       // Visual rendering handled by unified path block above
                                       // Here: hit area + label + selection only
-                                      if (poly) return null;
+                                      // Even when poly closed: show labels for editing
                                       const allFL = els.filter(e => e.type === "freeLine");
                                       const allFLPts = allFL.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                                       const bbW2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.x)) - Math.min(...allFLPts.map(p=>p.x)) : fW;
