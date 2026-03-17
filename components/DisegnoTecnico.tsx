@@ -1355,19 +1355,49 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ MONTANTE — clipped to polygon ═══
                                     if (el.type === "montante") {
-                                      // Recalculate y1/y2 from polygon intersection for accuracy
-                                      let my1 = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
-                                      let my2 = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
-                                      if (!frame && poly) {
+                                      let my1: number, my2: number;
+                                      if (frame) {
+                                        my1 = frame.y; my2 = frame.y + frame.h;
+                                      } else if (poly) {
                                         const ys = segIntersectV(el.x, poly);
-                                        if (ys) { my1 = ys[0]; my2 = ys[1]; }
+                                        my1 = ys ? ys[0] : fY; my2 = ys ? ys[1] : fY + fH;
+                                      } else {
+                                        // Forma aperta: interseca con i segmenti freeLine
+                                        const fls2 = els.filter(e => e.type === "freeLine");
+                                        const pts2 = (() => {
+                                          if (fls2.length === 0) return null;
+                                          // Build ordered chain
+                                          const used3 = new Set<number>();
+                                          const ch: [number,number][] = [[fls2[0].x1,fls2[0].y1],[fls2[0].x2,fls2[0].y2]];
+                                          used3.add(0);
+                                          for (let it3=0;it3<fls2.length*2;it3++){
+                                            const last3=ch[ch.length-1];let found3=false;
+                                            for(let li3=0;li3<fls2.length;li3++){
+                                              if(used3.has(li3))continue;
+                                              const l3=fls2[li3];
+                                              if(Math.hypot(l3.x1-last3[0],l3.y1-last3[1])<30){ch.push([l3.x2,l3.y2]);used3.add(li3);found3=true;break;}
+                                              if(Math.hypot(l3.x2-last3[0],l3.y2-last3[1])<30){ch.push([l3.x1,l3.y1]);used3.add(li3);found3=true;break;}
+                                            }
+                                            if(!found3)break;
+                                          }
+                                          return ch;
+                                        })();
+                                        if (pts2 && pts2.length >= 2) {
+                                          const ys2 = segIntersectV(el.x, pts2);
+                                          if (ys2) { my1 = ys2[0]; my2 = ys2[1]; }
+                                          else { const allY2=fls2.flatMap(l=>[l.y1,l.y2]); my1=Math.min(...allY2); my2=Math.max(...allY2); }
+                                        } else { my1=fY; my2=fY+fH; }
                                       }
-                                      // Extend to touch inner face of frame border
                                       const extY1 = my1 - TK_FRAME / 2;
                                       const extY2 = my2 + TK_FRAME / 2;
+                                      // Clip visually to actual freeLine extent
+                                      const clipId2 = `montClip-${el.id}-${vanoId}`;
                                       return (
-                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - TK_MONT / 2} y={extY1} width={TK_MONT} height={extY2 - extY1} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
+                                          <defs><clipPath id={clipId2}><rect x={el.x - TK_MONT * 3} y={extY1} width={TK_MONT * 6} height={extY2 - extY1} /></clipPath></defs>
+                                          <rect x={el.x - TK_MONT / 2} y={extY1} width={TK_MONT} height={extY2 - extY1}
+                                            fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1}
+                                            clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} />
                                           {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
                                         </g>
                                       );
@@ -1375,17 +1405,44 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ TRAVERSO — clipped to polygon ═══
                                     if (el.type === "traverso") {
-                                      let tx1 = el.x1 !== undefined ? el.x1 : (frame ? frame.x : fX);
-                                      let tx2 = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
-                                      if (!frame && poly) {
+                                      let tx1: number, tx2: number;
+                                      if (frame) {
+                                        tx1 = frame.x; tx2 = frame.x + frame.w;
+                                      } else if (poly) {
                                         const xs = segIntersectH(el.y, poly);
-                                        if (xs) { tx1 = xs[0]; tx2 = xs[1]; }
+                                        tx1 = xs ? xs[0] : fX; tx2 = xs ? xs[1] : fX + fW;
+                                      } else {
+                                        const fls2 = els.filter(e => e.type === "freeLine");
+                                        const pts2b = (() => {
+                                          if (fls2.length === 0) return null;
+                                          const used3b = new Set<number>();
+                                          const ch2: [number,number][] = [[fls2[0].x1,fls2[0].y1],[fls2[0].x2,fls2[0].y2]];
+                                          used3b.add(0);
+                                          for(let it3b=0;it3b<fls2.length*2;it3b++){
+                                            const last3b=ch2[ch2.length-1];let found3b=false;
+                                            for(let li3b=0;li3b<fls2.length;li3b++){
+                                              if(used3b.has(li3b))continue;
+                                              const l3b=fls2[li3b];
+                                              if(Math.hypot(l3b.x1-last3b[0],l3b.y1-last3b[1])<30){ch2.push([l3b.x2,l3b.y2]);used3b.add(li3b);found3b=true;break;}
+                                              if(Math.hypot(l3b.x2-last3b[0],l3b.y2-last3b[1])<30){ch2.push([l3b.x1,l3b.y1]);used3b.add(li3b);found3b=true;break;}
+                                            }
+                                            if(!found3b)break;
+                                          }
+                                          return ch2;
+                                        })();
+                                        if (pts2b && pts2b.length >= 2) {
+                                          const xs2b = segIntersectH(el.y, pts2b);
+                                          if (xs2b) { tx1 = xs2b[0]; tx2 = xs2b[1]; }
+                                          else { const allX2=fls2.flatMap(l=>[l.x1,l.x2]); tx1=Math.min(...allX2); tx2=Math.max(...allX2); }
+                                        } else { tx1=fX; tx2=fX+fW; }
                                       }
                                       const extX1 = tx1 - TK_FRAME / 2;
                                       const extX2 = tx2 + TK_FRAME / 2;
                                       return (
-                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
-                                          <rect x={extX1} y={el.y - TK_MONT / 2} width={extX2 - extX1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
+                                          <rect x={extX1} y={el.y - TK_MONT / 2} width={extX2 - extX1} height={TK_MONT}
+                                            fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1}
+                                            clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} />
                                           {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
                                         </g>
                                       );
