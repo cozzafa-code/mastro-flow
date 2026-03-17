@@ -717,17 +717,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (ys) {
                                       const my1c = Math.max(ys[0] + 4, cell.y);
                                       const my2c = Math.min(ys[1] - 4, cell.y + cell.h);
-                                      setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: my1c, y2: my2c, cellY1: cell.y, cellY2: cell.y + cell.h }], { drawMode: null });
+                                      setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: my1c, y2: my2c, cellY1: cell.y, cellY2: cell.y + cell.h }]);
                                     }
                                   } else {
-                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }], { drawMode: null });
+                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
                                   }
                                 } else if (poly) {
                                   const cx = snap(mx);
                                   const ys = segIntersectV(cx, poly);
-                                  if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0] + 4, y2: ys[1] - 4 }], { drawMode: null });
+                                  if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0] + 4, y2: ys[1] - 4 }]);
                                 } else if (!frame) {
-                                  setDW([...els, { id: Date.now(), type: "montante", x: snap(mx), y1: fY, y2: fY + fH }], { drawMode: null });
+                                  setDW([...els, { id: Date.now(), type: "montante", x: snap(mx), y1: fY, y2: fY + fH }]);
                                 }
                                 return;
                               }
@@ -741,17 +741,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (xs) {
                                       const tx1c = Math.max(xs[0] + 4, cell.x);
                                       const tx2c = Math.min(xs[1] - 4, cell.x + cell.w);
-                                      setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: tx1c, x2: tx2c }], { drawMode: null });
+                                      setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: tx1c, x2: tx2c }]);
                                     }
                                   } else {
-                                    setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }], { drawMode: null });
+                                    setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
                                   }
                                 } else if (poly) {
                                   const cy = snap(my);
                                   const xs = segIntersectH(cy, poly);
-                                  if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: xs[0] + 4, x2: xs[1] - 4 }], { drawMode: null });
+                                  if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: xs[0] + 4, x2: xs[1] - 4 }]);
                                 } else if (!frame) {
-                                  setDW([...els, { id: Date.now(), type: "traverso", y: snap(my), x1: fX, x2: fX + fW }], { drawMode: null });
+                                  setDW([...els, { id: Date.now(), type: "traverso", y: snap(my), x1: fX, x2: fX + fW }]);
                                 }
                                 return;
                               }
@@ -1891,7 +1891,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
                                         {/* Copri le linee verticali del montante all'incrocio */}
                                         {incroci.map(m => (
-                                          <rect key={`inc-${m.id}`} x={m.x - TK_MONT / 2 + 1} y={el.y - TK_MONT / 2 + 1} width={TK_MONT - 2} height={TK_MONT - 2} fill="#e8e8e4" stroke="none" />
+                                          <rect key={`inc-${m.id}`} x={m.x - TK_MONT / 2} y={el.y - TK_MONT / 2 + 1} width={TK_MONT} height={TK_MONT - 2} fill="#e8e8e4" stroke="none" />
                                         ))}
                                         {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
                                       </g>
