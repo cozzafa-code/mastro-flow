@@ -1063,7 +1063,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                     }
                                     setDW(nEls);
-                                  }} style={bs()}>↔ Misure</div>
+                                  }} style={{...bs(), display: frames.length > 0 ? undefined : "none"}}>↔ Misure</div>
                                 </div>
 
                                 {/* Row 2: Aperture (blu) */}
@@ -1105,14 +1105,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const el2 = editingLine.el;
                                           const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
                                           const curLen = Math.hypot(dx2,dy2)||1;
-                                          // Usa mmLen salvato al momento del click (stesso valore mostrato nel label)
                                           const currentMM = editingLine.mmLen || 1;
                                           const ratio = newMM / currentMM;
                                           const newPxLen = curLen * ratio;
                                           const ux = dx2/curLen, uy = dy2/curLen;
                                           const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
                                           const obx = el2.x2, oby = el2.y2;
-                                          const updEls = els.map(x => {
+                                          const freshEls = dw.elements || [];
+                                          const updEls = freshEls.map(x => {
                                             if (x.type==="freeLine"||x.type==="apLine") {
                                               let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
                                               if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
@@ -1124,7 +1124,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             }
                                             return x;
                                           });
-                                          setDW(updEls);
+                                          const hist = [...(dw.history||[]).slice(-20), JSON.stringify(freshEls)];
+                                          onUpdate({...dw, elements: updEls, history: hist});
                                         }
                                         setEditingLine(null);
                                       }}
@@ -1138,26 +1139,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
                                         const curLen = Math.hypot(dx2,dy2)||1;
                                         const currentMM = editingLine.mmLen || 1;
-                                        if (currentMM > 0) {
-                                          const ratio = newMM / currentMM;
-                                          const newPxLen = curLen * ratio;
-                                          const ux = dx2/curLen, uy = dy2/curLen;
-                                          const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
-                                          const obx = el2.x2, oby = el2.y2;
-                                          const updEls = els.map(x => {
-                                            if (x.type==="freeLine"||x.type==="apLine") {
-                                              let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
-                                              if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
-                                              else {
-                                                if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
-                                                if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
-                                              }
-                                              return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                        const ratio = newMM / currentMM;
+                                        const newPxLen = curLen * ratio;
+                                        const ux = dx2/curLen, uy = dy2/curLen;
+                                        const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
+                                        const obx = el2.x2, oby = el2.y2;
+                                        // Use fresh elements from dw to avoid stale closure
+                                        const freshEls = dw.elements || [];
+                                        const updEls = freshEls.map(x => {
+                                          if (x.type==="freeLine"||x.type==="apLine") {
+                                            let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
+                                            if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
+                                            else {
+                                              if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
+                                              if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
                                             }
-                                            return x;
-                                          });
-                                          setDW(updEls);
-                                        }
+                                            return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                          }
+                                          return x;
+                                        });
+                                        const hist = [...(dw.history||[]).slice(-20), JSON.stringify(freshEls)];
+                                        onUpdate({...dw, elements: updEls, history: hist});
                                       }
                                       setEditingLine(null);
                                     }} style={{ padding:"4px 12px", background:T.acc, color:"#fff", borderRadius:4, fontSize:12, fontWeight:700, cursor:"pointer" }}>OK</div>
