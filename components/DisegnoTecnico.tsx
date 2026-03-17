@@ -1536,7 +1536,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isEditing = editingLine?.elId === el.id;
                                       const tw2 = String(mmLen).length * 6 + 16;
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
+                                        <g key={el.id} onClick={(e3) => {
+                                            e3.stopPropagation();
+                                            if (drawMode === "line" || drawMode === "apertura") {
+                                              // In draw mode: click on line snaps to nearest endpoint
+                                              const { mx: cx3, my: cy3 } = getSvgXY(e3, e3.currentTarget.closest("svg"));
+                                              const d1 = Math.hypot(el.x1-cx3, el.y1-cy3), d2 = Math.hypot(el.x2-cx3, el.y2-cy3);
+                                              const snapX = d1 < d2 ? el.x1 : el.x2, snapY = d1 < d2 ? el.y1 : el.y2;
+                                              if (!dw._pendingLine) {
+                                                setMode({ _pendingLine: { x1: snapX, y1: snapY } });
+                                              } else {
+                                                const pending = dw._pendingLine;
+                                                const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
+                                                setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: snapX, y2: snapY }], { _pendingLine: { x1: snapX, y1: snapY } });
+                                              }
+                                            } else if (!drawMode) {
+                                              setMode({ selectedId: el.id });
+                                            }
+                                          }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={16} />
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
                                           {!drawMode && (
