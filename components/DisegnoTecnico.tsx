@@ -1539,7 +1539,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         <g key={el.id} onClick={(e3) => {
                                             e3.stopPropagation();
                                             if (drawMode === "line" || drawMode === "apertura") {
-                                              // In draw mode: click on line snaps to nearest endpoint
                                               const { mx: cx3, my: cy3 } = getSvgXY(e3, e3.currentTarget.closest("svg"));
                                               const d1 = Math.hypot(el.x1-cx3, el.y1-cy3), d2 = Math.hypot(el.x2-cx3, el.y2-cy3);
                                               const snapX = d1 < d2 ? el.x1 : el.x2, snapY = d1 < d2 ? el.y1 : el.y2;
@@ -1553,7 +1552,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             } else if (!drawMode) {
                                               setMode({ selectedId: el.id });
                                             }
-                                          }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
+                                          }}
+                                          onTouchEnd={(e3) => {
+                                            if (!(drawMode === "line" || drawMode === "apertura")) return;
+                                            e3.preventDefault(); e3.stopPropagation();
+                                            const svg = e3.currentTarget.closest("svg");
+                                            const t = e3.changedTouches[0];
+                                            const r3 = svg.getBoundingClientRect();
+                                            const vbW = canvasW/zoom, vbH = canvasH/zoom;
+                                            const cx3 = panX + (t.clientX-r3.left)/r3.width*vbW;
+                                            const cy3 = panY + (t.clientY-r3.top)/r3.height*vbH;
+                                            const d1 = Math.hypot(el.x1-cx3, el.y1-cy3), d2 = Math.hypot(el.x2-cx3, el.y2-cy3);
+                                            const snapX = d1 < d2 ? el.x1 : el.x2, snapY = d1 < d2 ? el.y1 : el.y2;
+                                            const curDw = vanoDisegnoRef.current || dw;
+                                            if (!curDw._pendingLine) {
+                                              setMode({ _pendingLine: { x1: snapX, y1: snapY } });
+                                            } else {
+                                              const pending = curDw._pendingLine;
+                                              const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
+                                              const freshEls = curDw.elements || [];
+                                              setDW([...freshEls, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: snapX, y2: snapY }], { _pendingLine: { x1: snapX, y1: snapY } });
+                                            }
+                                          }}
+                                          {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={16} />
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
                                           {!drawMode && (
