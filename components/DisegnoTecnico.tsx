@@ -994,85 +994,77 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>Aa Testo</div>
 
                                   <div onClick={() => {
-                                    // GENERA QUOTE — unico sistema, bounding box come riferimento
+                                    // Preserve existing dim labels (user may have edited them)
                                     const oldDims = els.filter(e => e.type === "dim");
-                                    const getOldLabel = (marker) => {
-                                      const d = oldDims.find(d => d.isTotalDim === marker);
-                                      return d ? d.label : null;
+                                    const findOldLabel = (x1, y1, x2, y2, fallback, marker?) => {
+                                      // First try marker-based match (survives rescale)
+                                      if (marker) {
+                                        const byMarker = oldDims.find(d => d.isTotalDim === marker);
+                                        if (byMarker) return byMarker.label;
+                                      }
+                                      // Fallback: coordinate match
+                                      const match = oldDims.find(d => Math.abs(d.x1 - x1) < 8 && Math.abs(d.y1 - y1) < 8 && Math.abs(d.x2 - x2) < 8 && Math.abs(d.y2 - y2) < 8);
+                                      return match ? match.label : fallback;
                                     };
-                                    const base = els.filter(e => e.type !== "dim");
-
-                                    // Calcola bounding box di tutti gli elementi disegnati
-                                    const allPtsForBB = [];
-                                    els.filter(e => e.type === "rect").forEach(r => {
-                                      allPtsForBB.push({x:r.x,y:r.y},{x:r.x+r.w,y:r.y+r.h});
-                                    });
-                                    els.filter(e => e.type === "freeLine" || e.type === "apLine").forEach(l => {
-                                      allPtsForBB.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2});
-                                    });
-                                    if (allPtsForBB.length === 0) { setDW(base); return; }
-
-                                    const bL = Math.min(...allPtsForBB.map(p=>p.x));
-                                    const bR = Math.max(...allPtsForBB.map(p=>p.x));
-                                    const bT = Math.min(...allPtsForBB.map(p=>p.y));
-                                    const bB = Math.max(...allPtsForBB.map(p=>p.y));
-                                    const bbW = bR - bL, bbH = bB - bT;
-
-                                    // Label mm: usa quello salvato (l'utente potrebbe averlo modificato) o fallback
-                                    const mmW = parseInt(getOldLabel("W") || "") || realW;
-                                    const mmH = parseInt(getOldLabel("H") || "") || realH;
-
-                                    // Dim totale W — sotto la forma
-                                    base.push({ id: Date.now()+300, type:"dim", isTotalDim:"W",
-                                      x1:bL, y1:bB+20, x2:bR, y2:bB+20, label:String(mmW) });
-                                    // Dim totale H — a destra della forma
-                                    base.push({ id: Date.now()+301, type:"dim", isTotalDim:"H",
-                                      x1:bR+20, y1:bT, x2:bR+20, y2:bB, label:String(mmH) });
-
-                                    // Per frame rettangolare: sub-dim celle
+                                    // Remove ALL dims (they get fully regenerated below, deduplicating any legacy orphans)
+                                    const nEls = els.filter(e => e.type !== "dim");
                                     if (frame) {
-                                      const pxPerMmW = bbW / mmW;
-                                      const pxPerMmH = bbH / mmH;
+                                      const wLabel = findOldLabel(frame.x, frame.y + frame.h + 14, frame.x + frame.w, frame.y + frame.h + 14, String(realW), "W");
+                                      const hLabel = findOldLabel(frame.x + frame.w + 14, frame.y, frame.x + frame.w + 14, frame.y + frame.h, String(realH), "H");
+                                      nEls.push(
+                                        { id: Date.now() + 300, type: "dim", isTotalDim: "W", x1: frame.x, y1: frame.y + frame.h + 14, x2: frame.x + frame.w, y2: frame.y + frame.h + 14, label: wLabel },
+                                        { id: Date.now() + 301, type: "dim", isTotalDim: "H", x1: frame.x + frame.w + 14, y1: frame.y, x2: frame.x + frame.w + 14, y2: frame.y + frame.h, label: hLabel }
+                                      );
+                                      // Use frame.w/frame.h as px reference, and dim labels as mm reference
+                                      const totalWmm = parseInt(wLabel) || realW;
+                                      const totalHmm = parseInt(hLabel) || realH;
                                       const iT = frame.y + TK_FRAME, iL = frame.x + TK_FRAME;
-                                      const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a,b) => a.x-b.x);
-                                      if (topCells.length > 1) topCells.forEach((c2,i) => {
-                                        base.push({ id:Date.now()+310+i, type:"dim",
-                                          x1:c2.x, y1:bT-14, x2:c2.x+c2.w, y2:bT-14,
-                                          label:String(Math.round(c2.w/pxPerMmW)) });
+                                      const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a, b) => a.x - b.x);
+                                      if (topCells.length > 1) topCells.forEach((c2, i) => {
+                                        const def = String(Math.round(c2.w / frame.w * totalWmm));
+                                        nEls.push({ id: Date.now() + 310 + i, type: "dim", x1: c2.x, y1: frame.y - 10, x2: c2.x + c2.w, y2: frame.y - 10, label: findOldLabel(c2.x, frame.y - 10, c2.x + c2.w, frame.y - 10, def) });
                                       });
-                                      const leftCells = cells.filter(c2 => Math.abs(c2.x - iL) < 4).sort((a,b) => a.y-b.y);
-                                      if (leftCells.length > 1) leftCells.forEach((c2,i) => {
-                                        base.push({ id:Date.now()+330+i, type:"dim",
-                                          x1:bL-20, y1:c2.y, x2:bL-20, y2:c2.y+c2.h,
-                                          label:String(Math.round(c2.h/pxPerMmH)) });
+                                      const leftCells = cells.filter(c2 => Math.abs(c2.x - iL) < 4).sort((a, b) => a.y - b.y);
+                                      if (leftCells.length > 1) leftCells.forEach((c2, i) => {
+                                        const def = String(Math.round(c2.h / frame.h * totalHmm));
+                                        nEls.push({ id: Date.now() + 330 + i, type: "dim", x1: frame.x - 14, y1: c2.y, x2: frame.x - 14, y2: c2.y + c2.h, label: findOldLabel(frame.x - 14, c2.y, frame.x - 14, c2.y + c2.h, def) });
                                       });
+                                    } else if (poly) {
+                                      const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+                                      const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
+                                      // Bounding box total dims
+                                      nEls.push(
+                                        { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: String(realW) },
+                                        { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: String(realH) }
+                                      );
+                                      // Per-segment dimensions (each freeLine side)
+                                      const freeLines = els.filter(e => e.type === "freeLine");
+                                      const totalPx = Math.hypot(bR - bL, bB - bT);
+                                      freeLines.forEach((fl, fi) => {
+                                        const dx2 = fl.x2 - fl.x1, dy2 = fl.y2 - fl.y1;
+                                        const segPx = Math.hypot(dx2, dy2);
+                                        // Convert px to mm using diagonal ratio
+                                        const diagMM = Math.hypot(realW, realH);
+                                        const segMM = Math.round(segPx / totalPx * diagMM);
+                                        // Offset dim line outward from polygon center
+                                        const cx = (bL + bR) / 2, cy = (bT + bB) / 2;
+                                        const mx = (fl.x1 + fl.x2) / 2, my = (fl.y1 + fl.y2) / 2;
+                                        const toCx = cx - mx, toCy = cy - my;
+                                        const dist = Math.hypot(toCx, toCy) || 1;
+                                        const offX = -toCx / dist * 16, offY = -toCy / dist * 16;
+                                        nEls.push({ id: Date.now() + 350 + fi, type: "dim", x1: fl.x1 + offX, y1: fl.y1 + offY, x2: fl.x2 + offX, y2: fl.y2 + offY, label: String(segMM) });
+                                      });
+                                      // Per-cell dims
+                                      if (cells.length > 1) {
+                                        const topCells = cells.filter(c2 => Math.abs(c2.y - bT) < 6).sort((a, b) => a.x - b.x);
+                                        if (topCells.length > 1) topCells.forEach((c2, i) => nEls.push({ id: Date.now() + 370 + i, type: "dim", x1: c2.x, y1: bT - 10, x2: c2.x + c2.w, y2: bT - 10, label: String(Math.round(c2.w / (bR - bL) * realW)) }));
+                                        const leftCells = cells.filter(c2 => Math.abs(c2.x - bL) < 6).sort((a, b) => a.y - b.y);
+                                        if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 390 + i, type: "dim", x1: bL - 14, y1: c2.y, x2: bL - 14, y2: c2.y + c2.h, label: String(Math.round(c2.h / (bB - bT) * realH)) }));
+                                      }
                                     }
-
-                                    // Per forma libera: quota per ogni freeLine
-                                    if (!frame && poly) {
-                                      const pxPerMmW = bbW / mmW;
-                                      const pxPerMmH = bbH / mmH;
-                                      const cx0=(bL+bR)/2, cy0=(bT+bB)/2;
-                                      els.filter(e => e.type==="freeLine").forEach((fl,fi) => {
-                                        const dx2=fl.x2-fl.x1, dy2=fl.y2-fl.y1;
-                                        const isSegH = Math.abs(dy2) <= Math.abs(dx2);
-                                        const segMM = isSegH
-                                          ? Math.round(Math.abs(dx2)/pxPerMmW)
-                                          : Math.round(Math.abs(dy2)/pxPerMmH);
-                                        const mx0=(fl.x1+fl.x2)/2, my0=(fl.y1+fl.y2)/2;
-                                        const toCx=cx0-mx0, toCy=cy0-my0;
-                                        const dist=Math.hypot(toCx,toCy)||1;
-                                        const offX=-toCx/dist*18, offY=-toCy/dist*18;
-                                        base.push({ id:Date.now()+350+fi, type:"dim",
-                                          isTotalDim: null,
-                                          ptA: {x:fl.x1,y:fl.y1}, ptB: {x:fl.x2,y:fl.y2},
-                                          x1:fl.x1+offX, y1:fl.y1+offY,
-                                          x2:fl.x2+offX, y2:fl.y2+offY,
-                                          label:String(segMM) });
-                                      });
-                                    }
-                                    setDW(base);
+                                    setDW(nEls);
                                   }} style={bs()}>↔ Misure</div>
+                                </div>
 
                                 {/* Row 2: Aperture (blu) */}
                                 <div style={{ display: "flex", gap: 3, padding: "2px 8px 5px", overflowX: "auto" }}>
@@ -1099,54 +1091,45 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ _zoom: 1, _panX: 0, _panY: 0 })} style={{ ...bs(), fontSize: 9 }}>Fit</div>
                                 </div>
 
-                                {/* Edit bar per freeLine */}
+                                {/* Edit bar freeLine */}
                                 {editingLine && (
                                   <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px", background:`${T.acc}10`, borderBottom:`1.5px solid ${T.acc}` }}>
                                     <span style={{ fontSize:11, fontWeight:700, color:T.acc }}>Misura lato (mm)</span>
-                                    <input
-                                      autoFocus
-                                      type="number"
-                                      value={editingLineVal}
+                                    <input autoFocus type="number" value={editingLineVal}
                                       onChange={e => setEditingLineVal(e.target.value)}
                                       onKeyDown={e => {
-                                        if (e.key === "Enter") {
-                                          const newMM = parseInt(editingLineVal);
-                                          if (!isNaN(newMM) && newMM > 0 && editingLine?.el) {
-                                            const el2 = editingLine.el;
-                                            const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
-                                            const curLen = Math.hypot(dx2,dy2)||1;
-                                            const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
-                                            const allFL2 = els.filter(e => e.type==="freeLine");
-                                            const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                            const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
-                                            const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
-                                            const curMM = isSegH2
-                                              ? Math.round(Math.abs(dx2)/(bbW3||1)*realW)
-                                              : Math.round(Math.abs(dy2)/(bbH3||1)*realH);
-                                            const ratio = newMM / (curMM||1);
-                                            const pxPerMmW = (bbW3||1)/realW;
-                                            const pxPerMmH = (bbH3||1)/realH;
-                                            const newPxLen = isSegH2 ? newMM*pxPerMmW : newMM*pxPerMmH;
-                                            const ux = dx2/curLen, uy = dy2/curLen;
-                                            const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
-                                            const obx = el2.x2, oby = el2.y2;
-                                            const updEls = els.map(x => {
-                                              if (x.type==="freeLine"||x.type==="apLine") {
-                                                let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
-                                                if (x.id===el2.id) { nx2=newBx; ny2=newBy; changed=true; }
-                                                else {
-                                                  if (Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3) { nx1=newBx; ny1=newBy; changed=true; }
-                                                  if (Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3) { nx2=newBx; ny2=newBy; changed=true; }
-                                                }
-                                                return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                        if (e.key === "Escape") { setEditingLine(null); return; }
+                                        if (e.key !== "Enter") return;
+                                        const newMM = parseInt(editingLineVal);
+                                        if (!isNaN(newMM) && newMM > 0 && editingLine?.el) {
+                                          const el2 = editingLine.el;
+                                          const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
+                                          const curLen = Math.hypot(dx2,dy2)||1;
+                                          const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                          const allFL2 = els.filter(e => e.type==="freeLine");
+                                          const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                          const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
+                                          const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
+                                          const pxPerMm = isSegH2 ? (bbW3||1)/realW : (bbH3||1)/realH;
+                                          const newPxLen = newMM * pxPerMm;
+                                          const ux = dx2/curLen, uy = dy2/curLen;
+                                          const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
+                                          const obx = el2.x2, oby = el2.y2;
+                                          const updEls = els.map(x => {
+                                            if (x.type==="freeLine"||x.type==="apLine") {
+                                              let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
+                                              if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
+                                              else {
+                                                if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
+                                                if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
                                               }
-                                              return x;
-                                            });
-                                            setDW(updEls);
-                                          }
-                                          setEditingLine(null);
+                                              return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                            }
+                                            return x;
+                                          });
+                                          setDW(updEls);
                                         }
-                                        if (e.key === "Escape") setEditingLine(null);
+                                        setEditingLine(null);
                                       }}
                                       style={{ width:80, fontSize:14, fontWeight:700, border:`1.5px solid ${T.acc}`, borderRadius:4, padding:"3px 6px", outline:"none" }}
                                     />
@@ -1162,19 +1145,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                                         const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
                                         const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
-                                        const pxPerMmW = (bbW3||1)/realW;
-                                        const pxPerMmH = (bbH3||1)/realH;
-                                        const newPxLen = isSegH2 ? newMM*pxPerMmW : newMM*pxPerMmH;
+                                        const pxPerMm = isSegH2 ? (bbW3||1)/realW : (bbH3||1)/realH;
+                                        const newPxLen = newMM * pxPerMm;
                                         const ux = dx2/curLen, uy = dy2/curLen;
                                         const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
                                         const obx = el2.x2, oby = el2.y2;
                                         const updEls = els.map(x => {
                                           if (x.type==="freeLine"||x.type==="apLine") {
                                             let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
-                                            if (x.id===el2.id) { nx2=newBx; ny2=newBy; changed=true; }
+                                            if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
                                             else {
-                                              if (Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3) { nx1=newBx; ny1=newBy; changed=true; }
-                                              if (Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3) { nx2=newBx; ny2=newBy; changed=true; }
+                                              if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
+                                              if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
                                             }
                                             return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
                                           }
@@ -1184,7 +1166,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                       setEditingLine(null);
                                     }} style={{ padding:"4px 12px", background:T.acc, color:"#fff", borderRadius:4, fontSize:12, fontWeight:700, cursor:"pointer" }}>OK</div>
-                                    <div onClick={() => setEditingLine(null)} style={{ padding:"4px 8px", color:T.sub, cursor:"pointer", fontSize:14 }}>×</div>
+                                    <div onClick={() => setEditingLine(null)} style={{ padding:"4px 8px", color:T.sub, cursor:"pointer", fontSize:16 }}>×</div>
                                   </div>
                                 )}
 
@@ -1413,43 +1395,48 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                         <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
                                         <line x1={el.x} y1={el.y} x2={el.x + Math.min(el.w, el.h) * 0.3} y2={el.y + Math.min(el.w, el.h) * 0.3} stroke="#b0d4f0" strokeWidth={0.5} />
-                                    if (el.type === "freeLine") {
-                                      const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
-                                      const len = Math.hypot(dx2, dy2) || 1;
-                                      const halfT = TK_FRAME;
-                                      const nx = -dy2 / len * halfT, ny = dx2 / len * halfT;
-                                      // mm: calcola dalla bbox di tutte le freeLine
-                                      const allFL = els.filter(e => e.type === "freeLine");
-                                      const allPtsBB = allFL.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                      const bbW2 = allPtsBB.length > 1 ? Math.max(...allPtsBB.map(p=>p.x)) - Math.min(...allPtsBB.map(p=>p.x)) : 1;
-                                      const bbH2 = allPtsBB.length > 1 ? Math.max(...allPtsBB.map(p=>p.y)) - Math.min(...allPtsBB.map(p=>p.y)) : 1;
-                                      const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
-                                      const mmLen = el._mmLabel != null ? el._mmLabel
-                                        : (isSegH2 ? Math.round(Math.abs(dx2) / (bbW2 / (realW || 1))) : Math.round(Math.abs(dy2) / (bbH2 / (realH || 1))));
-                                      const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
-                                      // Offset label verso esterno del poligono
-                                      const cx2 = allPtsBB.reduce((s,p)=>s+p.x,0) / (allPtsBB.length||1);
-                                      const cy2 = allPtsBB.reduce((s,p)=>s+p.y,0) / (allPtsBB.length||1);
-                                      const toCx2 = cx2 - midX, toCy2 = cy2 - midY;
-                                      const dist2 = Math.hypot(toCx2, toCy2) || 1;
-                                      const lx = midX - toCx2/dist2 * 22, ly = midY - toCy2/dist2 * 22;
-                                      const isPartOfPoly = poly && poly.length >= 3;
-                                      const lw = String(mmLen).length * 7 + 16;
-                                      const isEditingThis = editingLine && editingLine.elId === el.id;
+                                      </g>
+                                    );
+
+                                    // ═══ POLYGON ANTA — follows actual shape ═══
+                                    if (el.type === "polyAnta" && el.poly) {
+                                      const pts = el.poly;
+                                      const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                      // Outer polygon
+                                      const outerPts = pts.map(p => p.join(",")).join(" ");
+                                      // Inner polygon — shrink by tk toward centroid
+                                      const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+                                      const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+                                      const innerPts = pts.map(p => {
+                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
+                                        const dist = Math.hypot(dx2, dy2) || 1;
+                                        return [(p[0] + dx2 / dist * tk), (p[1] + dy2 / dist * tk)];
+                                      });
+                                      const innerStr = innerPts.map(p => p.join(",")).join(" ");
                                       return (
-                                        <g key={el.id} onClick={(e3) => {
-                                          e3.stopPropagation();
-                                          if (drawMode) return;
-                                          setEditingLine({ elId: el.id, curMM: mmLen, el });
-                                          setEditingLineVal(String(mmLen));
-                                        }} {...(!drawMode ? { onMouseDown: (e3) => { if (!editingLine) onDrag(e3, el.id); } } : {})}>
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
-                                          {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
-                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
-                                          <line x1={midX} y1={midY} x2={lx} y2={ly} stroke={T.acc+"40"} strokeWidth={0.5} strokeDasharray="3,3" />
-                                          <rect x={lx - lw/2} y={ly - 9} width={lw} height={18} fill={isEditingThis ? T.acc+"20" : "#fff"} rx={3} stroke={T.acc} strokeWidth={isEditingThis ? 1.5 : 0.8} style={{cursor:"pointer"}} />
-                                          <text x={lx} y={ly + 4} textAnchor="middle" fontSize={10} fontWeight={800} fill={T.acc} fontFamily="monospace" style={{cursor:"pointer"}}>{mmLen}</text>
-                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={T.purple} /><circle cx={el.x2} cy={el.y2} r={5} fill={T.purple} /></>}
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
+                                          <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
+                                          {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ POLYGON VETRO — glass following shape ═══
+                                    if (el.type === "polyGlass" && el.poly) {
+                                      const pts = el.poly;
+                                      const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+                                      const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+                                      const shrink = TK_ANTA + 2;
+                                      const glassPts = pts.map(p => {
+                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
+                                        const dist = Math.hypot(dx2, dy2) || 1;
+                                        return [(p[0] + dx2 / dist * shrink), (p[1] + dy2 / dist * shrink)];
+                                      });
+                                      return (
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          <polygon points={glassPts.map(p => p.join(",")).join(" ")} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
+                                          <line x1={glassPts[0][0]} y1={glassPts[0][1]} x2={cx2} y2={cy2} stroke="#b0d4f0" strokeWidth={0.4} />
                                         </g>
                                       );
                                     }
@@ -1502,23 +1489,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const halfT = TK_FRAME;
                                       const nx = -dy2 / len * halfT, ny = dx2 / len * halfT;
-                                      // mm calcolato dalla bbox di tutte le freeLine
                                       const allFL = els.filter(e => e.type === "freeLine");
                                       const allFLPts = allFL.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                                       const bbW2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.x)) - Math.min(...allFLPts.map(p=>p.x)) : fW;
                                       const bbH2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.y)) - Math.min(...allFLPts.map(p=>p.y)) : fH;
                                       const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
-                                      const mmLen = isSegH2
-                                        ? Math.round(Math.abs(dx2) / (bbW2||1) * realW)
-                                        : Math.round(Math.abs(dy2) / (bbH2||1) * realH);
+                                      const mmLen = isSegH2 ? Math.round(Math.abs(dx2) / (bbW2||1) * realW) : Math.round(Math.abs(dy2) / (bbH2||1) * realH);
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
-                                      // Offset verso esterno (lontano dal centro della forma)
                                       const allFLcx = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.x,0)/allFLPts.length : midX;
                                       const allFLcy = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.y,0)/allFLPts.length : midY;
                                       const toCx = allFLcx - midX, toCy = allFLcy - midY;
                                       const dist2 = Math.hypot(toCx, toCy) || 1;
                                       const lx = midX - toCx/dist2 * 20, ly = midY - toCy/dist2 * 20;
-                                      const ang = Math.atan2(dy2, dx2) * 180 / Math.PI;
                                       const isPartOfPoly = poly && poly.length >= 3;
                                       const isEditing = editingLine?.elId === el.id;
                                       const tw2 = String(mmLen).length * 6 + 16;
@@ -1527,13 +1509,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
                                           {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
-                                          {/* Label cliccabile sul lato */}
                                           {!drawMode && (
-                                            <g onClick={(e3) => {
-                                              e3.stopPropagation();
-                                              setEditingLine({ elId: el.id, el });
-                                              setEditingLineVal(String(mmLen));
-                                            }} style={{ cursor: "pointer" }}>
+                                            <g onClick={(e3) => { e3.stopPropagation(); setEditingLine({ elId: el.id, el }); setEditingLineVal(String(mmLen)); }} style={{ cursor: "pointer" }}>
                                               <rect x={lx-tw2/2} y={ly-9} width={tw2} height={18} fill={isEditing ? T.acc : "#fff"} rx={3} stroke={T.acc} strokeWidth={isEditing?1.5:0.8} />
                                               <text x={lx} y={ly+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={isEditing?"#fff":T.acc} fontFamily="monospace">{mmLen}</text>
                                             </g>
@@ -1572,115 +1549,125 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           if (nv === null || !nv.trim()) return;
                                           const newVal = parseInt(nv.trim());
                                           const oldVal = parseInt(el.label);
-                                          if (isNaN(newVal) || isNaN(oldVal) || newVal === oldVal) return;
-                                          const ratio = newVal / oldVal;
+                                          let upd = els.map(x => x.id === el.id ? { ...x, label: nv.trim() } : x);
+                                          
+                                          // Rescale structure when dim value changes
+                                          if (!isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
+                                            const scaleRatio = newVal / oldVal;
+                                            if (frame) {
+                                              // Is this a column width? (horizontal dim above or below frame)
+                                              const isColDim = isH && el.y1 < frame.y + frame.h / 2;
+                                              // Is this a row height? (vertical dim left of frame)
+                                              const isRowDim = !isH && el.x1 < frame.x + frame.w / 2;
+                                              // Is this total width/height? Use marker first, then coordinate fallback
+                                              const isTotalW = el.isTotalDim === "W" || (isH && Math.abs(el.x2 - el.x1 - frame.w) < 8);
+                                              const isTotalH = el.isTotalDim === "H" || (!isH && Math.abs(el.y2 - el.y1 - frame.h) < 8);
 
-                                          // Aggiorna label
-                                          let upd = els.map(x => x.id === el.id ? { ...x, label: String(newVal) } : x);
-
-                                          // Calcola bounding box attuale di tutti gli elementi
-                                          const allPts2 = [];
-                                          els.filter(e => e.type==="rect").forEach(r => allPts2.push({x:r.x,y:r.y},{x:r.x+r.w,y:r.y+r.h}));
-                                          els.filter(e => e.type==="freeLine"||e.type==="apLine").forEach(l => allPts2.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2}));
-                                          if (allPts2.length === 0) { setDW(upd); return; }
-                                          const bL2=Math.min(...allPts2.map(p=>p.x));
-                                          const bR2=Math.max(...allPts2.map(p=>p.x));
-                                          const bT2=Math.min(...allPts2.map(p=>p.y));
-                                          const bB2=Math.max(...allPts2.map(p=>p.y));
-
-                                          if (el.isTotalDim === "W") {
-                                            // Scala tutto orizzontalmente dalla bbox sinistra
-                                            upd = upd.map(x => {
-                                              if (x.type==="rect") return {...x, x:snap(bL2+(x.x-bL2)*ratio), w:snap(x.w*ratio)};
-                                              if (x.type==="freeLine"||x.type==="apLine") return {...x, x1:snap(bL2+(x.x1-bL2)*ratio), x2:snap(bL2+(x.x2-bL2)*ratio)};
-                                              if (x.type==="montante") return {...x, x:snap(bL2+(x.x-bL2)*ratio)};
-                                              if (x.type==="innerRect"||x.type==="glass"||x.type==="persiana") return {...x, x:snap(bL2+(x.x-bL2)*ratio), w:snap(x.w*ratio)};
-                                              if (x.type==="dim" && x.id!==el.id) {
-                                                if (x.isTotalDim==="H") return {...x, x1:bL2+(bR2-bL2)*ratio+20, x2:bL2+(bR2-bL2)*ratio+20};
-                                                return {...x, x1:snap(bL2+(x.x1-bL2)*ratio), x2:snap(bL2+(x.x2-bL2)*ratio)};
+                                              if (isTotalW) {
+                                                // Rescale entire frame width + all internal elements proportionally
+                                                const oldPxW = frame.w;
+                                                const newPxW = snap(oldPxW * scaleRatio);
+                                                const fx = frame.x;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "rect") return { ...x, w: newPxW };
+                                                  if (x.type === "montante") return { ...x, x: snap(fx + (x.x - fx) * scaleRatio) };
+                                                  if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
+                                                    return { ...x, x: snap(fx + (x.x - fx) * scaleRatio), w: snap(x.w * scaleRatio) };
+                                                  if (x.type === "dim" && x.id !== el.id) {
+                                                    // H total dim: reposition to new frame right edge
+                                                    if (x.isTotalDim === "H") return { ...x, x1: fx + newPxW + 14, x2: fx + newPxW + 14 };
+                                                    // Sub-dims: scale proportionally
+                                                    return { ...x, x1: snap(fx + (x.x1 - fx) * scaleRatio), x2: snap(fx + (x.x2 - fx) * scaleRatio) };
+                                                  }
+                                                  return x;
+                                                });
+                                                // Update W dim span
+                                                upd = upd.map(x => x.id === el.id ? { ...x, x2: fx + newPxW } : x);
+                                                onUpdateField && onUpdateField("larghezza", newVal);
+                                              } else if (isTotalH) {
+                                                // Rescale entire frame height + all internal elements proportionally
+                                                const oldPxH = frame.h;
+                                                const newPxH = snap(oldPxH * scaleRatio);
+                                                const fy = frame.y;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "rect") return { ...x, h: newPxH };
+                                                  if (x.type === "traverso") return { ...x, y: snap(fy + (x.y - fy) * scaleRatio) };
+                                                  if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
+                                                    return { ...x, y: snap(fy + (x.y - fy) * scaleRatio), h: snap(x.h * scaleRatio) };
+                                                  if (x.type === "dim" && x.id !== el.id) {
+                                                    // W total dim: reposition to new frame bottom
+                                                    if (x.isTotalDim === "W") return { ...x, y1: fy + newPxH + 14, y2: fy + newPxH + 14 };
+                                                    // H dim span update + sub-dims
+                                                    return { ...x, y1: snap(fy + (x.y1 - fy) * scaleRatio), y2: snap(fy + (x.y2 - fy) * scaleRatio) };
+                                                  }
+                                                  return x;
+                                                });
+                                                // Update H dim span
+                                                upd = upd.map(x => x.id === el.id ? { ...x, y2: fy + newPxH } : x);
+                                                onUpdateField && onUpdateField("altezza", newVal);
+                                              } else if (isColDim) {
+                                                const oldPixelW = el.x2 - el.x1;
+                                                const diff = oldPixelW * scaleRatio - oldPixelW;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "montante" && x.x >= el.x2 - 3) return { ...x, x: snap(x.x + diff) };
+                                                  if (x.type === "dim" && x.id !== el.id && x.x1 >= el.x2 - 3) return { ...x, x1: x.x1 + diff, x2: x.x2 + diff };
+                                                  if ((x.type === "innerRect" || x.type === "glass") && x.x >= el.x2 - 5) return { ...x, x: x.x + diff };
+                                                  return x;
+                                                });
+                                                upd = upd.map(x => x.type === "rect" ? { ...x, w: x.w + diff } : x);
+                                              } else if (isRowDim) {
+                                                const oldPixelH = el.y2 - el.y1;
+                                                const diff = oldPixelH * scaleRatio - oldPixelH;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "traverso" && x.y >= el.y2 - 3) return { ...x, y: snap(x.y + diff) };
+                                                  if (x.type === "dim" && x.id !== el.id && x.y1 >= el.y2 - 3) return { ...x, y1: x.y1 + diff, y2: x.y2 + diff };
+                                                  if ((x.type === "innerRect" || x.type === "glass") && x.y >= el.y2 - 5) return { ...x, y: x.y + diff };
+                                                  return x;
+                                                });
+                                                upd = upd.map(x => x.type === "rect" ? { ...x, h: x.h + diff } : x);
                                               }
-                                              return x;
-                                            });
-                                            upd = upd.map(x => x.id===el.id ? {...x, x2:bL2+(bR2-bL2)*ratio} : x);
-                                            onUpdateField && onUpdateField("larghezza", newVal);
-
-                                          } else if (el.isTotalDim === "H") {
-                                            // Scala tutto verticalmente dalla bbox top
-                                            upd = upd.map(x => {
-                                              if (x.type==="rect") return {...x, y:snap(bT2+(x.y-bT2)*ratio), h:snap(x.h*ratio)};
-                                              if (x.type==="freeLine"||x.type==="apLine") return {...x, y1:snap(bT2+(x.y1-bT2)*ratio), y2:snap(bT2+(x.y2-bT2)*ratio)};
-                                              if (x.type==="traverso") return {...x, y:snap(bT2+(x.y-bT2)*ratio)};
-                                              if (x.type==="innerRect"||x.type==="glass"||x.type==="persiana") return {...x, y:snap(bT2+(x.y-bT2)*ratio), h:snap(x.h*ratio)};
-                                              if (x.type==="dim" && x.id!==el.id) {
-                                                if (x.isTotalDim==="W") return {...x, y1:bT2+(bB2-bT2)*ratio+20, y2:bT2+(bB2-bT2)*ratio+20};
-                                                return {...x, y1:snap(bT2+(x.y1-bT2)*ratio), y2:snap(bT2+(x.y2-bT2)*ratio)};
+                                            } else {
+                                              // No frame: poly/freeLine case — rescale all elements from bounding box origin
+                                              const allPts = els.filter(e => e.type === "freeLine" || e.type === "apLine").flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                              if (allPts.length > 0) {
+                                                const ox2 = Math.min(...allPts.map(p => p.x));
+                                                const oy2 = Math.min(...allPts.map(p => p.y));
+                                                const bbW = Math.max(...allPts.map(p => p.x)) - ox2;
+                                                const bbH = Math.max(...allPts.map(p => p.y)) - oy2;
+                                                // Is this a total W or H dim?
+                                                const isTotalW2 = isH && Math.abs(el.x2 - el.x1 - bbW) < 8;
+                                                const isTotalH2 = !isH && Math.abs(el.y2 - el.y1 - bbH) < 8;
+                                                if (isTotalW2) {
+                                                  upd = upd.map(x => {
+                                                    if (x.type === "freeLine" || x.type === "apLine") return { ...x, x1: snap(ox2 + (x.x1 - ox2) * scaleRatio), x2: snap(ox2 + (x.x2 - ox2) * scaleRatio) };
+                                                    if (x.type === "montante") return { ...x, x: snap(ox2 + (x.x - ox2) * scaleRatio) };
+                                                    if (x.type === "dim" && x.id !== el.id) return { ...x, x1: snap(ox2 + (x.x1 - ox2) * scaleRatio), x2: snap(ox2 + (x.x2 - ox2) * scaleRatio) };
+                                                    return x;
+                                                  });
+                                                  onUpdateField && onUpdateField("larghezza", newVal);
+                                                } else if (isTotalH2) {
+                                                  upd = upd.map(x => {
+                                                    if (x.type === "freeLine" || x.type === "apLine") return { ...x, y1: snap(oy2 + (x.y1 - oy2) * scaleRatio), y2: snap(oy2 + (x.y2 - oy2) * scaleRatio) };
+                                                    if (x.type === "traverso") return { ...x, y: snap(oy2 + (x.y - oy2) * scaleRatio) };
+                                                    if (x.type === "dim" && x.id !== el.id) return { ...x, y1: snap(oy2 + (x.y1 - oy2) * scaleRatio), y2: snap(oy2 + (x.y2 - oy2) * scaleRatio) };
+                                                    return x;
+                                                  });
+                                                  onUpdateField && onUpdateField("altezza", newVal);
+                                                }
                                               }
-                                              return x;
-                                            });
-                                            upd = upd.map(x => x.id===el.id ? {...x, y2:bT2+(bB2-bT2)*ratio} : x);
-                                            onUpdateField && onUpdateField("altezza", newVal);
-
-                                          } else if (el.ptA && el.ptB) {
-                                            // Quota di un singolo lato freeLine: allunga/accorcia quel lato
-                                            // ptA fisso, ptB si sposta nella stessa direzione
-                                            const ax=el.ptA.x, ay=el.ptA.y;
-                                            const bx=el.ptB.x, by=el.ptB.y;
-                                            const dx=bx-ax, dy=by-ay;
-                                            const len=Math.hypot(dx,dy)||1;
-                                            const ux=dx/len, uy=dy/len;
-                                            const newLen=oldVal*ratio;
-                                            const newBx=snap(ax+ux*newLen), newBy=snap(ay+uy*newLen);
-                                            const ddx=newBx-bx, ddy=newBy-by;
-                                            upd = upd.map(x => {
-                                              if (x.type==="freeLine"||x.type==="apLine") {
-                                                let changed = false;
-                                                let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2;
-                                                if (Math.abs(x.x1-bx)<3&&Math.abs(x.y1-by)<3) { nx1=newBx; ny1=newBy; changed=true; }
-                                                if (Math.abs(x.x2-bx)<3&&Math.abs(x.y2-by)<3) { nx2=newBx; ny2=newBy; changed=true; }
-                                                return changed ? {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2} : x;
-                                              }
-                                              return x;
-                                            });
-                                            // Rigenera tutte le quote dopo modifica lato
-                                            setDW(upd);
-                                            return;
-
-                                          } else if (isH) {
-                                            // Sub-dim colonna frame
-                                            const diff=(el.x2-el.x1)*(ratio-1);
-                                            upd = upd.map(x => {
-                                              if (x.type==="montante"&&x.x>el.x2-3) return {...x,x:snap(x.x+diff)};
-                                              if ((x.type==="innerRect"||x.type==="glass")&&x.x>el.x2-5) return {...x,x:x.x+diff};
-                                              if (x.type==="dim"&&x.id!==el.id&&!x.isTotalDim&&x.x1>el.x2-3) return {...x,x1:x.x1+diff,x2:x.x2+diff};
-                                              if (x.type==="dim"&&x.isTotalDim==="W") return {...x,x2:x.x2+diff};
-                                              if (x.type==="dim"&&x.isTotalDim==="H") return {...x,x1:x.x1+diff,x2:x.x2+diff};
-                                              return x;
-                                            });
-                                            upd = upd.map(x => x.type==="rect" ? {...x,w:x.w+diff} : x);
-                                          } else {
-                                            // Sub-dim riga frame
-                                            const diff=(el.y2-el.y1)*(ratio-1);
-                                            upd = upd.map(x => {
-                                              if (x.type==="traverso"&&x.y>el.y2-3) return {...x,y:snap(x.y+diff)};
-                                              if ((x.type==="innerRect"||x.type==="glass")&&x.y>el.y2-5) return {...x,y:x.y+diff};
-                                              if (x.type==="dim"&&x.id!==el.id&&!x.isTotalDim&&x.y1>el.y2-3) return {...x,y1:x.y1+diff,y2:x.y2+diff};
-                                              if (x.type==="dim"&&x.isTotalDim==="H") return {...x,y2:x.y2+diff};
-                                              if (x.type==="dim"&&x.isTotalDim==="W") return {...x,y1:x.y1+diff,y2:x.y2+diff};
-                                              return x;
-                                            });
-                                            upd = upd.map(x => x.type==="rect" ? {...x,h:x.h+diff} : x);
+                                            }
                                           }
                                           setDW(upd);
                                         }} style={{ cursor: "pointer" }}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.acc} strokeWidth={0.8} />
-                                          {isH
-                                            ? <><line x1={el.x1} y1={el.y1-5} x2={el.x1} y2={el.y1+5} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2} y1={el.y2-5} x2={el.x2} y2={el.y2+5} stroke={T.acc} strokeWidth={0.8}/></>
+                                          {isH ? <><line x1={el.x1} y1={el.y1-5} x2={el.x1} y2={el.y1+5} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2} y1={el.y2-5} x2={el.x2} y2={el.y2+5} stroke={T.acc} strokeWidth={0.8}/></>
                                             : <><line x1={el.x1-5} y1={el.y1} x2={el.x1+5} y2={el.y1} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2-5} y1={el.y2} x2={el.x2+5} y2={el.y2} stroke={T.acc} strokeWidth={0.8}/></>}
                                           <rect x={mx2-tw/2} y={my2-9} width={tw} height={18} fill="#fff" rx={3} stroke={T.acc} strokeWidth={0.6}/>
                                           <text x={mx2} y={my2+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={T.acc} fontFamily="monospace">{el.label}</text>
                                         </g>
                                       );
                                     }
+                                    return null;
                                   })}
 
                                   {/* Pending line point + GUIDE */}
