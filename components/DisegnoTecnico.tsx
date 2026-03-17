@@ -606,18 +606,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (x.id !== elId) return x;
                                   if (x.type === "montante") {
                                     const newX = snap(orig.x + dx);
-                                    // Recalculate y1/y2 from polygon if present
                                     if (poly) {
-                                      const ys = segIntersectV(newX, poly);
-                                      if (ys) return { ...x, x: newX, y1: ys[0], y2: ys[1] };
+                                      // Find cell at new position and use its bounds
+                                      const newCell = cells.find(c2 => newX > c2.x && newX < c2.x + c2.w);
+                                      if (newCell) {
+                                        const ys = segIntersectV(newX, poly);
+                                        const my1n = ys ? Math.max(ys[0], newCell.y) : newCell.y;
+                                        const my2n = ys ? Math.min(ys[1], newCell.y + newCell.h) : newCell.y + newCell.h;
+                                        return { ...x, x: newX, y1: my1n, y2: my2n, cellY1: newCell.y, cellY2: newCell.y + newCell.h };
+                                      }
                                     }
                                     return { ...x, x: newX };
                                   }
                                   if (x.type === "traverso") {
                                     const newY = snap(orig.y + dy);
                                     if (poly) {
+                                      const newCell2 = cells.find(c2 => newY > c2.y && newY < c2.y + c2.h);
                                       const xs2 = segIntersectH(newY, poly);
-                                      if (xs2) return { ...x, y: newY, x1: xs2[0], x2: xs2[1] };
+                                      if (xs2 && newCell2) {
+                                        return { ...x, y: newY, x1: Math.max(xs2[0], newCell2.x), x2: Math.min(xs2[1], newCell2.x + newCell2.w) };
+                                      } else if (xs2) {
+                                        return { ...x, y: newY, x1: xs2[0], x2: xs2[1] };
+                                      }
                                     }
                                     return { ...x, y: newY };
                                   }
@@ -1372,10 +1382,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         my1 = el.y1 !== undefined ? el.y1 : frame.y;
                                         my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                       } else if (poly) {
-                                        // y1/y2 already from poly intersection at placement
+                                        // Always use stored y1/y2 from placement (clamped to cell)
                                         my1 = (el.y1 !== undefined ? el.y1 : fY) + TK_FRAME;
                                         my2 = (el.y2 !== undefined ? el.y2 : fY + fH) - TK_FRAME;
-                                        // Use cellY1/cellY2 for bspSplit check if available
                                       } else {
                                         // Forma aperta: interseca con i segmenti freeLine
                                         const fls2 = els.filter(e => e.type === "freeLine");
@@ -1418,7 +1427,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         tx1 = el.x1 !== undefined ? el.x1 : frame.x;
                                         tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
                                       } else if (poly) {
-                                        // x1/x2 already from poly intersection at placement
+                                        // Always use stored x1/x2 from placement (clamped to cell)
                                         tx1 = (el.x1 !== undefined ? el.x1 : fX) + TK_FRAME;
                                         tx2 = (el.x2 !== undefined ? el.x2 : fX + fW) - TK_FRAME;
                                       } else {
