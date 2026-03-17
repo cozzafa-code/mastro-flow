@@ -1353,11 +1353,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ MONTANTE — clipped to polygon ═══
                                     if (el.type === "montante") {
-                                      const my1 = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
-                                      const my2 = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      // Recalculate y1/y2 from polygon intersection for accuracy
+                                      let my1 = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
+                                      let my2 = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      if (!frame && poly) {
+                                        const ys = segIntersectV(el.x, poly);
+                                        if (ys) { my1 = ys[0]; my2 = ys[1]; }
+                                      }
+                                      // Extend to touch inner face of frame border
+                                      const extY1 = my1 - TK_FRAME / 2;
+                                      const extY2 = my2 + TK_FRAME / 2;
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
+                                          <rect x={el.x - TK_MONT / 2} y={extY1} width={TK_MONT} height={extY2 - extY1} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
                                           {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
                                         </g>
                                       );
@@ -1365,11 +1373,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ TRAVERSO — clipped to polygon ═══
                                     if (el.type === "traverso") {
-                                      const tx1 = el.x1 !== undefined ? el.x1 : (frame ? frame.x : fX);
-                                      const tx2 = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
+                                      let tx1 = el.x1 !== undefined ? el.x1 : (frame ? frame.x : fX);
+                                      let tx2 = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
+                                      if (!frame && poly) {
+                                        const xs = segIntersectH(el.y, poly);
+                                        if (xs) { tx1 = xs[0]; tx2 = xs[1]; }
+                                      }
+                                      const extX1 = tx1 - TK_FRAME / 2;
+                                      const extX2 = tx2 + TK_FRAME / 2;
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
-                                          <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
+                                          <rect x={extX1} y={el.y - TK_MONT / 2} width={extX2 - extX1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
                                           {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
                                         </g>
                                       );
