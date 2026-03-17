@@ -697,13 +697,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (cell) {
                                   const cx = snap(mx);
                                   const clampedX = Math.max(cell.x + 10, Math.min(cell.x + cell.w - 10, cx));
-                                  // If polygon exists, clip montante to polygon edges
-                                  if (poly) {
-                                    const ys = segIntersectV(clampedX, poly);
-                                    if (ys) setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: ys[0], y2: ys[1] }]);
-                                  } else {
-                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
-                                  }
+                                  // Always use cell bounds so bspSplit works correctly
+                                  setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
                                 } else if (poly) {
                                   // No cells yet but polygon exists — clip to polygon
                                   const cx = snap(mx);
@@ -719,12 +714,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (cell) {
                                   const cy = snap(my);
                                   const clampedY = Math.max(cell.y + 10, Math.min(cell.y + cell.h - 10, cy));
-                                  if (poly) {
-                                    const xs = segIntersectH(clampedY, poly);
-                                    if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: xs[0], x2: xs[1] }]);
-                                  } else {
-                                    setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
-                                  }
+                                  setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
                                 } else if (poly) {
                                   const cy = snap(my);
                                   const xs = segIntersectH(cy, poly);
@@ -1365,17 +1355,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         my1 = el.y1 !== undefined ? el.y1 : frame.y;
                                         my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                       } else if (poly) {
-                                        // Use stored y1/y2 (set at placement from cell bounds)
-                                        const rawY1 = el.y1 !== undefined ? el.y1 : fY;
-                                        const rawY2 = el.y2 !== undefined ? el.y2 : fY + fH;
-                                        // Find traversi that intersect this montante's x and are within its y range
-                                        const adjTravs = allTraversi.filter(t => {
-                                          const tx1r = t.x1 !== undefined ? t.x1 : fX;
-                                          const tx2r = t.x2 !== undefined ? t.x2 : fX + fW;
-                                          return tx1r <= el.x + 2 && tx2r >= el.x - 2 && t.y > rawY1 && t.y < rawY2;
-                                        }).sort((a, b) => a.y - b.y);
-                                        my1 = rawY1 + TK_FRAME;
-                                        my2 = rawY2 - TK_FRAME;
+                                        my1 = (el.y1 !== undefined ? el.y1 : fY) + TK_FRAME;
+                                        my2 = (el.y2 !== undefined ? el.y2 : fY + fH) - TK_FRAME;
                                       } else {
                                         // Forma aperta: interseca con i segmenti freeLine
                                         const fls2 = els.filter(e => e.type === "freeLine");
@@ -1418,10 +1399,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         tx1 = el.x1 !== undefined ? el.x1 : frame.x;
                                         tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
                                       } else if (poly) {
-                                        const rawX1 = el.x1 !== undefined ? el.x1 : fX;
-                                        const rawX2 = el.x2 !== undefined ? el.x2 : fX + fW;
-                                        tx1 = rawX1 + TK_FRAME;
-                                        tx2 = rawX2 - TK_FRAME;
+                                        tx1 = (el.x1 !== undefined ? el.x1 : fX) + TK_FRAME;
+                                        tx2 = (el.x2 !== undefined ? el.x2 : fX + fW) - TK_FRAME;
                                       } else {
                                         const fls2 = els.filter(e => e.type === "freeLine");
                                         const pts2b = (() => {
