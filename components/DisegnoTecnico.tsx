@@ -1362,10 +1362,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "montante") {
                                       let my1: number, my2: number;
                                       if (frame) {
-                                        my1 = frame.y; my2 = frame.y + frame.h;
+                                        my1 = el.y1 !== undefined ? el.y1 : frame.y;
+                                        my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                       } else if (poly) {
-                                        const ys = segIntersectV(el.x, poly);
-                                        my1 = ys ? ys[0] + TK_FRAME : fY; my2 = ys ? ys[1] - TK_FRAME : fY + fH;
+                                        // Use stored cell bounds + TK_FRAME visual offset
+                                        my1 = (el.y1 !== undefined ? el.y1 : fY) + TK_FRAME;
+                                        my2 = (el.y2 !== undefined ? el.y2 : fY + fH) - TK_FRAME;
                                       } else {
                                         // Forma aperta: interseca con i segmenti freeLine
                                         const fls2 = els.filter(e => e.type === "freeLine");
@@ -1408,8 +1410,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         tx1 = el.x1 !== undefined ? el.x1 : frame.x;
                                         tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
                                       } else if (poly) {
-                                        tx1 = el.x1 !== undefined ? el.x1 : fX;
-                                        tx2 = el.x2 !== undefined ? el.x2 : fX + fW;
+                                        tx1 = (el.x1 !== undefined ? el.x1 : fX) + TK_FRAME;
+                                        tx2 = (el.x2 !== undefined ? el.x2 : fX + fW) - TK_FRAME;
                                       } else {
                                         const fls2 = els.filter(e => e.type === "freeLine");
                                         const pts2b = (() => {
