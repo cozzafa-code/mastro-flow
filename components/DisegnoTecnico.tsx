@@ -1105,13 +1105,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const el2 = editingLine.el;
                                           const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
                                           const curLen = Math.hypot(dx2,dy2)||1;
-                                          const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                          // Scala il lato direttamente: ratio = newMM / currentMM
+                                          // currentMM è mmLen del lato (calcolato dalla bbox)
                                           const allFL2 = els.filter(e => e.type==="freeLine");
                                           const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                                           const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
                                           const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
-                                          const pxPerMm = isSegH2 ? (bbW3||1)/realW : (bbH3||1)/realH;
-                                          const newPxLen = newMM * pxPerMm;
+                                          const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                          const currentMM = isSegH2 ? Math.round(Math.abs(dx2)/(bbW3||1)*realW) : Math.round(Math.abs(dy2)/(bbH3||1)*realH);
+                                          if (currentMM === 0) { setEditingLine(null); return; }
+                                          const ratio = newMM / currentMM;
+                                          const newPxLen = curLen * ratio;
                                           const ux = dx2/curLen, uy = dy2/curLen;
                                           const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
                                           const obx = el2.x2, oby = el2.y2;
@@ -1140,29 +1144,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const el2 = editingLine.el;
                                         const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
                                         const curLen = Math.hypot(dx2,dy2)||1;
-                                        const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
                                         const allFL2 = els.filter(e => e.type==="freeLine");
                                         const allFLPts2 = allFL2.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                                         const bbW3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.x))-Math.min(...allFLPts2.map(p=>p.x)) : fW;
                                         const bbH3 = allFLPts2.length>0 ? Math.max(...allFLPts2.map(p=>p.y))-Math.min(...allFLPts2.map(p=>p.y)) : fH;
-                                        const pxPerMm = isSegH2 ? (bbW3||1)/realW : (bbH3||1)/realH;
-                                        const newPxLen = newMM * pxPerMm;
-                                        const ux = dx2/curLen, uy = dy2/curLen;
-                                        const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
-                                        const obx = el2.x2, oby = el2.y2;
-                                        const updEls = els.map(x => {
-                                          if (x.type==="freeLine"||x.type==="apLine") {
-                                            let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
-                                            if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
-                                            else {
-                                              if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
-                                              if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
+                                        const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                        const currentMM = isSegH2 ? Math.round(Math.abs(dx2)/(bbW3||1)*realW) : Math.round(Math.abs(dy2)/(bbH3||1)*realH);
+                                        if (currentMM > 0) {
+                                          const ratio = newMM / currentMM;
+                                          const newPxLen = curLen * ratio;
+                                          const ux = dx2/curLen, uy = dy2/curLen;
+                                          const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
+                                          const obx = el2.x2, oby = el2.y2;
+                                          const updEls = els.map(x => {
+                                            if (x.type==="freeLine"||x.type==="apLine") {
+                                              let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
+                                              if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
+                                              else {
+                                                if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
+                                                if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
+                                              }
+                                              return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
                                             }
-                                            return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
-                                          }
-                                          return x;
-                                        });
-                                        setDW(updEls);
+                                            return x;
+                                          });
+                                          setDW(updEls);
+                                        }
                                       }
                                       setEditingLine(null);
                                     }} style={{ padding:"4px 12px", background:T.acc, color:"#fff", borderRadius:4, fontSize:12, fontWeight:700, cursor:"pointer" }}>OK</div>
