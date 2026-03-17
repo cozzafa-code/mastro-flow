@@ -1225,6 +1225,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
                                     }
                                   }}
+                                  onTouchMove={(e2) => {
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
+                                    e2.preventDefault();
+                                    const svg = e2.currentTarget;
+                                    const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
+                                    let gx = snap(gmx), gy = snap(gmy);
+                                    const p = dw._pendingLine;
+                                    if (Math.abs(gx - p.x1) < 8 && Math.abs(gy - p.y1) > 8) gx = p.x1;
+                                    if (Math.abs(gy - p.y1) < 8 && Math.abs(gx - p.x1) > 8) gy = p.y1;
+                                    const deg = Math.round(Math.atan2(-(gy - p.y1), gx - p.x1) * 180 / Math.PI);
+                                    const len = Math.round(Math.hypot(gx - p.x1, gy - p.y1) / fW * realW);
+                                    onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                  }}
                                   onMouseLeave={() => { if (dw._guideX != null) onUpdate({ ...dw, _guideX: null, _guideY: null }); }}>
                                   <defs>
                                     <pattern id={`dg-${vanoId}`} width={GRID} height={GRID} patternUnits="userSpaceOnUse">
@@ -1513,6 +1526,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
 
                                     if (el.type === "freeLine") {
+                                      // When polygon is closed, poly block handles rendering — skip individual segments
+                                      if (poly) return null;
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const halfT = TK_FRAME;
