@@ -370,6 +370,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [viewTab, setViewTab] = React.useState("disegno");
   const [editingLine, setEditingLine] = React.useState<any>(null);
   const [editingLineVal, setEditingLineVal] = React.useState("");
+  const vanoDisegnoRef = React.useRef<any>(vanoDisegno);
+  React.useEffect(() => { vanoDisegnoRef.current = vanoDisegno; }, [vanoDisegno]);
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
                             const dw = vanoDisegno || { elements: [], selectedId: null, drawMode: null, history: [] };
@@ -1111,7 +1113,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const ux = dx2/curLen, uy = dy2/curLen;
                                           const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
                                           const obx = el2.x2, oby = el2.y2;
-                                          const freshEls = dw.elements || [];
+                                          const freshEls = (vanoDisegnoRef.current?.elements) || [];
                                           const updEls = freshEls.map(x => {
                                             if (x.type==="freeLine"||x.type==="apLine") {
                                               let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
@@ -1124,8 +1126,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             }
                                             return x;
                                           });
-                                          const hist = [...(dw.history||[]).slice(-20), JSON.stringify(freshEls)];
-                                          onUpdate({...dw, elements: updEls, history: hist});
+                                          const curDw = vanoDisegnoRef.current || {};
+                                          const hist = [...(curDw.history||[]).slice(-20), JSON.stringify(freshEls)];
+                                          onUpdate({...curDw, elements: updEls, history: hist});
                                         }
                                         setEditingLine(null);
                                       }}
@@ -1145,7 +1148,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
                                         const obx = el2.x2, oby = el2.y2;
                                         // Use fresh elements from dw to avoid stale closure
-                                        const freshEls = dw.elements || [];
+                                        const freshEls = (vanoDisegnoRef.current?.elements) || [];
                                         const updEls = freshEls.map(x => {
                                           if (x.type==="freeLine"||x.type==="apLine") {
                                             let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
@@ -1158,8 +1161,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           }
                                           return x;
                                         });
-                                        const hist = [...(dw.history||[]).slice(-20), JSON.stringify(freshEls)];
-                                        onUpdate({...dw, elements: updEls, history: hist});
+                                        const curDw = vanoDisegnoRef.current || {};
+                                        const hist = [...(curDw.history||[]).slice(-20), JSON.stringify(freshEls)];
+                                        onUpdate({...curDw, elements: updEls, history: hist});
                                       }
                                       setEditingLine(null);
                                     }} style={{ padding:"4px 12px", background:T.acc, color:"#fff", borderRadius:4, fontSize:12, fontWeight:700, cursor:"pointer" }}>OK</div>
@@ -1497,10 +1501,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const allFLcy = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.y,0)/allFLPts.length : midY;
                                       const toCx = allFLcx - midX, toCy = allFLcy - midY;
                                       const dist2 = Math.hypot(toCx, toCy) || 1;
-                                      // Clamp label position to stay within canvas
-                                      const lxRaw = midX - toCx/dist2 * 24, lyRaw = midY - toCy/dist2 * 24;
-                                      const lx = Math.max(20, Math.min(canvasW - 20, lxRaw));
-                                      const ly = Math.max(14, Math.min(canvasH - 14, lyRaw));
+                                      const lx = midX - toCx/dist2 * 20, ly = midY - toCy/dist2 * 20;
                                       const isPartOfPoly = poly && poly.length >= 3;
                                       const isEditing = editingLine?.elId === el.id;
                                       const tw2 = String(mmLen).length * 6 + 16;
@@ -1685,20 +1686,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {/* H/V snap indicator */}
                                         {gx === p.x1 && <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
                                         {gy === p.y1 && <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
-                                        {/* Angle + length label near cursor */}
-                                        <rect x={gx + 8} y={gy - 22} width={80} height={20} fill="#1A1A1C" rx={4} opacity={0.9} />
-                                        <text x={gx + 48} y={gy - 8} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">
+                                        {/* Angle + length label */}
+                                        <rect x={gx + 8} y={gy - 20} width={72} height={18} fill="#333" rx={4} opacity={0.85} />
+                                        <text x={gx + 44} y={gy - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="#fff" fontFamily="monospace">
                                           {dw._guideDeg != null ? `${dw._guideDeg}° ${dw._guideLen}mm` : ""}
                                         </text>
-                                        {/* Mid-line length label */}
-                                        {dw._guideLen != null && (() => {
-                                          const mx3 = (p.x1 + gx) / 2, my3 = (p.y1 + gy) / 2;
-                                          const lw3 = String(dw._guideLen).length * 7 + 16;
-                                          return <>
-                                            <rect x={mx3 - lw3/2} y={my3 - 9} width={lw3} height={18} fill={T.acc} rx={3} />
-                                            <text x={mx3} y={my3 + 4} textAnchor="middle" fontSize={11} fontWeight={800} fill="#fff" fontFamily="monospace">{dw._guideLen}</text>
-                                          </>;
-                                        })()}
                                       </>}
                                       <circle cx={p.x1} cy={p.y1} r={6} fill={clr} fillOpacity={0.4} />
                                       <circle cx={p.x1} cy={p.y1} r={10} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="3,2" />
