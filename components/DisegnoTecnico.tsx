@@ -1365,18 +1365,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         my1 = el.y1 !== undefined ? el.y1 : frame.y;
                                         my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                       } else if (poly) {
-                                        // Find actual cell this montante belongs to using bspSplit
-                                        const montCell = cells.find(c2 =>
-                                          el.x > c2.x && el.x < c2.x + c2.w &&
-                                          (el.y1 === undefined || (el.y1 >= c2.y - 2 && el.y2 <= c2.y + c2.h + 2))
-                                        );
-                                        if (montCell) {
-                                          my1 = montCell.y + TK_FRAME;
-                                          my2 = montCell.y + montCell.h - TK_FRAME;
-                                        } else {
-                                          my1 = (el.y1 !== undefined ? el.y1 : fY) + TK_FRAME;
-                                          my2 = (el.y2 !== undefined ? el.y2 : fY + fH) - TK_FRAME;
-                                        }
+                                        // Use stored y1/y2 (set at placement from cell bounds)
+                                        const rawY1 = el.y1 !== undefined ? el.y1 : fY;
+                                        const rawY2 = el.y2 !== undefined ? el.y2 : fY + fH;
+                                        // Find traversi that intersect this montante's x and are within its y range
+                                        const adjTravs = allTraversi.filter(t => {
+                                          const tx1r = t.x1 !== undefined ? t.x1 : fX;
+                                          const tx2r = t.x2 !== undefined ? t.x2 : fX + fW;
+                                          return tx1r <= el.x + 2 && tx2r >= el.x - 2 && t.y > rawY1 && t.y < rawY2;
+                                        }).sort((a, b) => a.y - b.y);
+                                        my1 = rawY1 + TK_FRAME;
+                                        my2 = rawY2 - TK_FRAME;
                                       } else {
                                         // Forma aperta: interseca con i segmenti freeLine
                                         const fls2 = els.filter(e => e.type === "freeLine");
@@ -1419,17 +1418,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         tx1 = el.x1 !== undefined ? el.x1 : frame.x;
                                         tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
                                       } else if (poly) {
-                                        const travCell = cells.find(c2 =>
-                                          el.y > c2.y && el.y < c2.y + c2.h &&
-                                          (el.x1 === undefined || (el.x1 >= c2.x - 2 && el.x2 <= c2.x + c2.w + 2))
-                                        );
-                                        if (travCell) {
-                                          tx1 = travCell.x + TK_FRAME;
-                                          tx2 = travCell.x + travCell.w - TK_FRAME;
-                                        } else {
-                                          tx1 = (el.x1 !== undefined ? el.x1 : fX) + TK_FRAME;
-                                          tx2 = (el.x2 !== undefined ? el.x2 : fX + fW) - TK_FRAME;
-                                        }
+                                        const rawX1 = el.x1 !== undefined ? el.x1 : fX;
+                                        const rawX2 = el.x2 !== undefined ? el.x2 : fX + fW;
+                                        tx1 = rawX1 + TK_FRAME;
+                                        tx2 = rawX2 - TK_FRAME;
                                       } else {
                                         const fls2 = els.filter(e => e.type === "freeLine");
                                         const pts2b = (() => {
