@@ -1857,53 +1857,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       my1 = el.y1 !== undefined ? el.y1 : frame.y;
                                       my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                     } else if (poly) {
-                                      // Usa SOLO i valori salvati al placement — già clampati alla cella corretta
-                                      // Il clipPath SVG gestisce il taglio al bordo del poligono
                                       my1 = el.y1 !== undefined ? el.y1 : fY;
                                       my2 = el.y2 !== undefined ? el.y2 : fY + fH;
                                     } else { my1 = fY; my2 = fY + fH; }
                                     return (
                                       <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                        <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                        <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#f8f8f6" stroke={hc || "#3A3A3C"} strokeWidth={1} />
                                         {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
                                       </g>
                                     );
                                   })}
 
-                                  {/* ══ TRAVERSI — sempre sopra i montanti ══ */}
+                                  {/* ══ TRAVERSI — sempre sopra i montanti, fill bianco copre incrocio ══ */}
                                   {els.filter(el => el.type === "traverso").map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? T.purple : undefined;
                                     let tx1: number, tx2: number;
-                                    const raccordaMontanti = (baseX1: number, baseX2: number, frameRef: any) => {
-                                      const mid = (baseX1 + baseX2) / 2;
-                                      let r1 = baseX1, r2 = baseX2;
-                                      allMontanti.forEach(m => {
-                                        const my1r = m.y1 !== undefined ? m.y1 : (frameRef ? frameRef.y : fY);
-                                        const my2r = m.y2 !== undefined ? m.y2 : (frameRef ? frameRef.y + frameRef.h : fY + fH);
-                                        if (el.y > my1r - 4 && el.y < my2r + 4) {
-                                          if (m.x < mid && m.x > baseX1 - 2) r1 = Math.max(r1, m.x + HM);
-                                          if (m.x > mid && m.x < baseX2 + 2) r2 = Math.min(r2, m.x - HM);
-                                        }
-                                      });
-                                      return { r1, r2 };
-                                    };
                                     if (frame) {
-                                      const baseX1 = el.x1 !== undefined ? el.x1 : frame.x;
-                                      const baseX2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
-                                      const { r1, r2 } = raccordaMontanti(baseX1, baseX2, frame);
-                                      tx1 = r1; tx2 = r2;
+                                      tx1 = el.x1 !== undefined ? el.x1 : frame.x;
+                                      tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
                                     } else if (poly) {
-                                      let baseX1 = el.x1 !== undefined ? el.x1 : fX;
-                                      let baseX2 = el.x2 !== undefined ? el.x2 : fX + fW;
-                                      // Non usare segIntersectH per clamp — il clipPath SVG taglia al bordo
-                                      // Raccorda solo ai montanti dentro la cella
-                                      const { r1, r2 } = raccordaMontanti(baseX1, baseX2, null);
-                                      tx1 = r1; tx2 = r2;
+                                      tx1 = el.x1 !== undefined ? el.x1 : fX;
+                                      tx2 = el.x2 !== undefined ? el.x2 : fX + fW;
                                     } else { tx1 = fX; tx2 = fX + fW; }
                                     return (
                                       <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
-                                        <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                        <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#f8f8f6" stroke={hc || "#3A3A3C"} strokeWidth={1} />
                                         {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
                                       </g>
                                     );
