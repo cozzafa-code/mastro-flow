@@ -1239,7 +1239,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }}
                                   onTouchMove={(e2) => {
                                     if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
-                                    e2.preventDefault();
+                                    // Don't call preventDefault on passive listener
                                     const svg = e2.currentTarget;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = snap(gmx), gy = snap(gmy);
@@ -1618,7 +1618,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           }}
                                           onTouchEnd={(e3) => {
                                             if (!(drawMode === "line" || drawMode === "apertura")) return;
-                                            e3.preventDefault(); e3.stopPropagation();
+                                            e3.stopPropagation();
                                             const svg = e3.currentTarget.closest("svg");
                                             const t = e3.changedTouches[0];
                                             const r3 = svg.getBoundingClientRect();
