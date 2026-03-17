@@ -412,7 +412,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const frame = frames[0] || null; // primary frame for compat
                             const allMontanti = els.filter(e => e.type === "montante");
                             const allTraversi = els.filter(e => e.type === "traverso");
-                            const TK_FRAME = 6, TK_MONT = 6, TK_ANTA = 4, TK_PORTA = 7;
+                            const TK_FRAME = 6, TK_MONT = 6, TK_ANTA = 5, TK_PORTA = 11;
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGON from freeLines ══
@@ -1504,12 +1504,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // ═══ ANTA — doppio rettangolo, clipped to polygon ═══
                                     if (el.type === "innerRect") {
                                       const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                      const clr = hc || (el.subType === "porta" ? "#444" : "#777");
+                                      const clr = hc || "#1A1A1C";
+                                      const swOuter = el.subType === "porta" ? 2 : 1.2;
+                                      const swInner = el.subType === "porta" ? 1.5 : 0.8;
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="none" stroke={clr} strokeWidth={1} />
-                                          <rect x={el.x + tk} y={el.y + tk} width={el.w - tk * 2} height={el.h - tk * 2} fill="none" stroke={clr} strokeWidth={0.6} />
-                                          {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700}>PORTA</text>}
+                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="none" stroke={clr} strokeWidth={swOuter} />
+                                          <rect x={el.x + tk} y={el.y + tk} width={el.w - tk * 2} height={el.h - tk * 2} fill="none" stroke={clr} strokeWidth={swInner} />
+                                          {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 14} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
                                     }
@@ -1542,9 +1544,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "polyAnta" && el.poly) {
                                       const pts = el.poly;
                                       const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                      // Outer polygon
+                                      const clr = hc || "#1A1A1C";
+                                      const swOuter = el.subType === "porta" ? 2 : 1.2;
+                                      const swInner = el.subType === "porta" ? 1.5 : 0.8;
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — shrink by tk toward centroid
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
                                       const innerPts = pts.map(p => {
@@ -1555,8 +1558,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const innerStr = innerPts.map(p => p.join(",")).join(" ");
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
-                                          <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
+                                          <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={clr} strokeWidth={swOuter} />
+                                          <polygon points={innerStr} fill="none" stroke={clr} strokeWidth={swInner} />
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
