@@ -1349,6 +1349,37 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
                                   })()}
 
+                                  {/* ══ FREELINE UNIFIED PATH (angoli perfetti con miter) ══ */}
+                                  {(() => {
+                                    const fls = els.filter(e => e.type === "freeLine");
+                                    if (fls.length === 0 || poly) return null;
+                                    // Costruisce catena ordinata di punti
+                                    const used2 = new Set<number>();
+                                    const chain: [number,number][] = [[fls[0].x1, fls[0].y1], [fls[0].x2, fls[0].y2]];
+                                    used2.add(0);
+                                    for (let it2 = 0; it2 < fls.length * 2; it2++) {
+                                      const last2 = chain[chain.length-1];
+                                      let found = false;
+                                      for (let li2 = 0; li2 < fls.length; li2++) {
+                                        if (used2.has(li2)) continue;
+                                        const l2 = fls[li2];
+                                        if (Math.hypot(l2.x1-last2[0], l2.y1-last2[1]) < 30) { chain.push([l2.x2,l2.y2]); used2.add(li2); found=true; break; }
+                                        if (Math.hypot(l2.x2-last2[0], l2.y2-last2[1]) < 30) { chain.push([l2.x1,l2.y1]); used2.add(li2); found=true; break; }
+                                      }
+                                      if (!found) break;
+                                    }
+                                    const d2 = chain.map((p,i) => `${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+                                    const tk = TK_FRAME;
+                                    return (
+                                      <g>
+                                        <path d={d2} fill="none" stroke="#f0efe8" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" />
+                                        <path d={d2} fill="none" stroke="#1A1A1C" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" />
+                                        <path d={d2} fill="none" stroke="#f0efe8" strokeWidth={tk*2} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" />
+                                        <path d={d2} fill="none" stroke="#1A1A1C" strokeWidth={0.7} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" opacity={0.4} />
+                                      </g>
+                                    );
+                                  })()}
+
                                   {/* ══ ELEMENTS ══ */}
                                   {els.map(el => {
                                     const sel = el.id === selId;
@@ -1526,16 +1557,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
 
                                     if (el.type === "freeLine") {
-                                      // Skip if poly closed (poly block handles it)
+                                      // Visual rendering handled by unified path block above
+                                      // Here: hit area + label + selection only
                                       if (poly) return null;
-                                      const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
-                                      const len = Math.hypot(dx2, dy2) || 1;
-                                      const halfT = TK_FRAME;
-                                      const nx = -dy2 / len * halfT, ny = dx2 / len * halfT;
                                       const allFL = els.filter(e => e.type === "freeLine");
                                       const allFLPts = allFL.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                                       const bbW2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.x)) - Math.min(...allFLPts.map(p=>p.x)) : fW;
                                       const bbH2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.y)) - Math.min(...allFLPts.map(p=>p.y)) : fH;
+                                      const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
                                       const mmLen = isSegH2 ? Math.round(Math.abs(dx2) / (bbW2||1) * realW) : Math.round(Math.abs(dy2) / (bbH2||1) * realH);
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
@@ -1543,14 +1572,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const allFLcy = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.y,0)/allFLPts.length : midY;
                                       const toCx = allFLcx - midX, toCy = allFLcy - midY;
                                       const dist2 = Math.hypot(toCx, toCy) || 1;
-                                      const lx = midX - toCx/dist2 * 20, ly = midY - toCy/dist2 * 20;
-                                      const isPartOfPoly = poly && poly.length >= 3;
+                                      const lxRaw = midX - toCx/dist2 * 24, lyRaw = midY - toCy/dist2 * 24;
+                                      const lx = Math.max(20, Math.min(canvasW - 20, lxRaw));
+                                      const ly = Math.max(14, Math.min(canvasH - 14, lyRaw));
                                       const isEditing = editingLine?.elId === el.id;
                                       const tw2 = String(mmLen).length * 6 + 16;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
-                                          {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={16} />
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
                                           {!drawMode && (
                                             <g onClick={(e3) => { e3.stopPropagation(); setEditingLine({ elId: el.id, el, mmLen }); setEditingLineVal(String(mmLen)); }} style={{ cursor: "pointer" }}>
