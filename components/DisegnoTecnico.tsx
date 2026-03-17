@@ -480,7 +480,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 cl.forEach(c => {
                                   const my1 = m.y1 !== undefined ? m.y1 : c.y;
                                   const my2 = m.y2 !== undefined ? m.y2 : c.y + c.h;
-                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + 2 && my2 >= c.y + c.h - 2) {
+                                  // Accept if montante covers at least 60% of cell height and is within cell x bounds
+                                  const coverH = Math.min(my2, c.y + c.h) - Math.max(my1, c.y);
+                                  const covers = coverH >= c.h * 0.6;
+                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && covers) {
                                     next.push({ x: c.x, y: c.y, w: m.x - HM - c.x, h: c.h, id: c.id + "L" + mi });
                                     next.push({ x: m.x + HM, y: c.y, w: c.x + c.w - m.x - HM, h: c.h, id: c.id + "R" + mi });
                                   } else { next.push(c); }
@@ -492,7 +495,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 cl.forEach(c => {
                                   const tx1 = t.x1 !== undefined ? t.x1 : c.x;
                                   const tx2 = t.x2 !== undefined ? t.x2 : c.x + c.w;
-                                  if (t.y > c.y + HM + 2 && t.y < c.y + c.h - HM - 2 && tx1 <= c.x + 2 && tx2 >= c.x + c.w - 2) {
+                                  const coverW = Math.min(tx2, c.x + c.w) - Math.max(tx1, c.x);
+                                  const covers = coverW >= c.w * 0.6;
+                                  if (t.y > c.y + HM + 2 && t.y < c.y + c.h - HM - 2 && covers) {
                                     next.push({ x: c.x, y: c.y, w: c.w, h: t.y - HM - c.y, id: c.id + "T" + ti });
                                     next.push({ x: c.x, y: t.y + HM, w: c.w, h: c.y + c.h - t.y - HM, id: c.id + "B" + ti });
                                   } else { next.push(c); }
