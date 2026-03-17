@@ -1360,7 +1360,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         my1 = frame.y; my2 = frame.y + frame.h;
                                       } else if (poly) {
                                         const ys = segIntersectV(el.x, poly);
-                                        my1 = ys ? ys[0] : fY; my2 = ys ? ys[1] : fY + fH;
+                                        my1 = ys ? ys[0] + TK_FRAME : fY; my2 = ys ? ys[1] - TK_FRAME : fY + fH;
                                       } else {
                                         // Forma aperta: interseca con i segmenti freeLine
                                         const fls2 = els.filter(e => e.type === "freeLine");
@@ -1388,16 +1388,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           else { const allY2=fls2.flatMap(l=>[l.y1,l.y2]); my1=Math.min(...allY2); my2=Math.max(...allY2); }
                                         } else { my1=fY; my2=fY+fH; }
                                       }
-                                      const extY1 = my1 - TK_FRAME / 2;
-                                      const extY2 = my2 + TK_FRAME / 2;
-                                      // Clip visually to actual freeLine extent
-                                      const clipId2 = `montClip-${el.id}-${vanoId}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <defs><clipPath id={clipId2}><rect x={el.x - TK_MONT * 3} y={extY1} width={TK_MONT * 6} height={extY2 - extY1} /></clipPath></defs>
-                                          <rect x={el.x - TK_MONT / 2} y={extY1} width={TK_MONT} height={extY2 - extY1}
-                                            fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1}
-                                            clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} />
+                                          <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
                                           {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
                                         </g>
                                       );
@@ -1410,7 +1403,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         tx1 = frame.x; tx2 = frame.x + frame.w;
                                       } else if (poly) {
                                         const xs = segIntersectH(el.y, poly);
-                                        tx1 = xs ? xs[0] : fX; tx2 = xs ? xs[1] : fX + fW;
+                                        tx1 = xs ? xs[0] + TK_FRAME : fX; tx2 = xs ? xs[1] - TK_FRAME : fX + fW;
                                       } else {
                                         const fls2 = els.filter(e => e.type === "freeLine");
                                         const pts2b = (() => {
@@ -1436,13 +1429,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           else { const allX2=fls2.flatMap(l=>[l.x1,l.x2]); tx1=Math.min(...allX2); tx2=Math.max(...allX2); }
                                         } else { tx1=fX; tx2=fX+fW; }
                                       }
-                                      const extX1 = tx1 - TK_FRAME / 2;
-                                      const extX2 = tx2 + TK_FRAME / 2;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
-                                          <rect x={extX1} y={el.y - TK_MONT / 2} width={extX2 - extX1} height={TK_MONT}
-                                            fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1}
-                                            clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} />
+                                          <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
                                           {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
                                         </g>
                                       );
