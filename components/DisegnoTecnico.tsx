@@ -1857,10 +1857,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       my1 = el.y1 !== undefined ? el.y1 : frame.y;
                                       my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
                                     } else if (poly) {
+                                      // Usa SOLO i valori salvati al placement — già clampati alla cella corretta
+                                      // Il clipPath SVG gestisce il taglio al bordo del poligono
                                       my1 = el.y1 !== undefined ? el.y1 : fY;
                                       my2 = el.y2 !== undefined ? el.y2 : fY + fH;
-                                      const ysClip = segIntersectV(el.x, poly);
-                                      if (ysClip) { my1 = Math.max(my1, ysClip[0]); my2 = Math.min(my2, ysClip[1]); }
                                     } else { my1 = fY; my2 = fY + fH; }
                                     return (
                                       <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
@@ -1896,8 +1896,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     } else if (poly) {
                                       let baseX1 = el.x1 !== undefined ? el.x1 : fX;
                                       let baseX2 = el.x2 !== undefined ? el.x2 : fX + fW;
-                                      const xsClip = segIntersectH(el.y, poly);
-                                      if (xsClip) { baseX1 = Math.max(baseX1, xsClip[0]); baseX2 = Math.min(baseX2, xsClip[1]); }
+                                      // Non usare segIntersectH per clamp — il clipPath SVG taglia al bordo
+                                      // Raccorda solo ai montanti dentro la cella
                                       const { r1, r2 } = raccordaMontanti(baseX1, baseX2, null);
                                       tx1 = r1; tx2 = r2;
                                     } else { tx1 = fX; tx2 = fX + fW; }
