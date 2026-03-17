@@ -715,21 +715,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (poly) {
                                     const ys = segIntersectV(clampedX, poly);
                                     if (ys) {
-                                      // Clamp to cell y bounds for concave shapes
-                                      const my1c = Math.max(ys[0], cell.y);
-                                      const my2c = Math.min(ys[1], cell.y + cell.h);
-                                      setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: my1c, y2: my2c, cellY1: cell.y, cellY2: cell.y + cell.h }]);
+                                      const my1c = Math.max(ys[0] + 4, cell.y);
+                                      const my2c = Math.min(ys[1] - 4, cell.y + cell.h);
+                                      setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: my1c, y2: my2c, cellY1: cell.y, cellY2: cell.y + cell.h }], { drawMode: null });
                                     }
                                   } else {
-                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
+                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }], { drawMode: null });
                                   }
                                 } else if (poly) {
-                                  // No cells yet but polygon exists — clip to polygon
                                   const cx = snap(mx);
                                   const ys = segIntersectV(cx, poly);
-                                  if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0], y2: ys[1] }]);
+                                  if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0] + 4, y2: ys[1] - 4 }], { drawMode: null });
                                 } else if (!frame) {
-                                  setDW([...els, { id: Date.now(), type: "montante", x: snap(mx), y1: fY, y2: fY + fH }]);
+                                  setDW([...els, { id: Date.now(), type: "montante", x: snap(mx), y1: fY, y2: fY + fH }], { drawMode: null });
                                 }
                                 return;
                               }
@@ -741,20 +739,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (poly) {
                                     const xs = segIntersectH(clampedY, poly);
                                     if (xs) {
-                                      // Clamp to cell x bounds to handle concave shapes (L, U, etc.)
-                                      const tx1c = Math.max(xs[0], cell.x);
-                                      const tx2c = Math.min(xs[1], cell.x + cell.w);
-                                      setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: tx1c, x2: tx2c }]);
+                                      const tx1c = Math.max(xs[0] + 4, cell.x);
+                                      const tx2c = Math.min(xs[1] - 4, cell.x + cell.w);
+                                      setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: tx1c, x2: tx2c }], { drawMode: null });
                                     }
                                   } else {
-                                    setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
+                                    setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }], { drawMode: null });
                                   }
                                 } else if (poly) {
                                   const cy = snap(my);
                                   const xs = segIntersectH(cy, poly);
-                                  if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: xs[0], x2: xs[1] }]);
+                                  if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: xs[0] + 4, x2: xs[1] - 4 }], { drawMode: null });
                                 } else if (!frame) {
-                                  setDW([...els, { id: Date.now(), type: "traverso", y: snap(my), x1: fX, x2: fX + fW }]);
+                                  setDW([...els, { id: Date.now(), type: "traverso", y: snap(my), x1: fX, x2: fX + fW }], { drawMode: null });
                                 }
                                 return;
                               }
@@ -1241,10 +1238,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onMouseMove={(e2) => {
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
                                     const svg = e2.currentTarget;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = snap(gmx), gy = snap(gmy);
+                                    // Crosshair for place-mont / place-trav
+                                    if (drawMode === "place-mont" || drawMode === "place-trav") {
+                                      if (dw._guideX !== gx || dw._guideY !== gy) onUpdate({ ...dw, _guideX: gx, _guideY: gy });
+                                      return;
+                                    }
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
                                     const p = dw._pendingLine;
                                     if (Math.abs(gx - p.x1) < 8 && Math.abs(gy - p.y1) > 8) gx = p.x1;
                                     if (Math.abs(gy - p.y1) < 8 && Math.abs(gx - p.x1) > 8) gy = p.y1;
@@ -1255,11 +1257,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchMove={(e2) => {
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
-                                    // Don't call preventDefault on passive listener
                                     const svg = e2.currentTarget;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = snap(gmx), gy = snap(gmy);
+                                    if (drawMode === "place-mont" || drawMode === "place-trav") {
+                                      if (dw._guideX !== gx || dw._guideY !== gy) onUpdate({ ...dw, _guideX: gx, _guideY: gy });
+                                      return;
+                                    }
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
                                     const p = dw._pendingLine;
                                     if (Math.abs(gx - p.x1) < 8 && Math.abs(gy - p.y1) > 8) gx = p.x1;
                                     if (Math.abs(gy - p.y1) < 8 && Math.abs(gx - p.x1) > 8) gy = p.y1;
@@ -1885,6 +1890,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </>}
                                       <circle cx={p.x1} cy={p.y1} r={6} fill={clr} fillOpacity={0.4} />
                                       <circle cx={p.x1} cy={p.y1} r={10} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="3,2" />
+                                    </>;
+                                  })()}
+
+                                  {/* Crosshair for place-mont / place-trav */}
+                                  {(drawMode === "place-mont" || drawMode === "place-trav") && dw._guideX != null && dw._guideY != null && (() => {
+                                    const gx = dw._guideX, gy = dw._guideY;
+                                    const clr = "#555";
+                                    return <>
+                                      <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke={clr} strokeWidth={0.7} strokeDasharray="5,4" opacity={0.5} />
+                                      <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke={clr} strokeWidth={0.7} strokeDasharray="5,4" opacity={0.5} />
+                                      <circle cx={gx} cy={gy} r={4} fill="none" stroke={clr} strokeWidth={1.2} />
                                     </>;
                                   })()}
 
