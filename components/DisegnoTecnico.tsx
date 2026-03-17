@@ -428,8 +428,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 for (let li = 0; li < lines.length; li++) {
                                   if (used.has(li)) continue;
                                   const l = lines[li];
-                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 15) { addP(l.x2, l.y2); used.add(li); break; }
-                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 15) { addP(l.x1, l.y1); used.add(li); break; }
+                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 30) { addP(l.x2, l.y2); used.add(li); break; }
+                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 30) { addP(l.x1, l.y1); used.add(li); break; }
                                 }
                               }
                               return pts.length >= 3 ? pts : null;
@@ -439,7 +439,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const poly = (() => {
                               if (!getPolyRaw || getPolyRaw.length < 3) return null;
                               const first = getPolyRaw[0], last = getPolyRaw[getPolyRaw.length - 1];
-                              const isClosed = Math.hypot(first[0]-last[0], first[1]-last[1]) < 15;
+                              const isClosed = Math.hypot(first[0]-last[0], first[1]-last[1]) < 30;
                               return isClosed ? getPolyRaw : null;
                             })();
 
@@ -1526,7 +1526,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
 
                                     if (el.type === "freeLine") {
-                                      // When polygon is closed, poly block handles rendering — skip individual segments
+                                      // Skip if poly closed (poly block handles it)
                                       if (poly) return null;
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
@@ -1719,9 +1719,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const p = dw._pendingLine;
                                     const gx = dw._guideX, gy = dw._guideY;
                                     return <>
-                                      {/* H/V guide lines from pending point */}
-                                      <line x1={0} y1={p.y1} x2={canvasW} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
-                                      <line x1={p.x1} y1={0} x2={p.x1} y2={canvasH} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      {/* Crosshair guide lines from pending point */}
+                                      <line x1={0} y1={p.y1} x2={canvasW} y2={p.y1} stroke={T.acc} strokeWidth={0.8} strokeDasharray="6,4" opacity={0.5} />
+                                      <line x1={p.x1} y1={0} x2={p.x1} y2={canvasH} stroke={T.acc} strokeWidth={0.8} strokeDasharray="6,4" opacity={0.5} />
+                                      {gx != null && gy != null && <>
+                                        <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke="#aaa" strokeWidth={0.5} strokeDasharray="3,3" opacity={0.35} />
+                                        <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke="#aaa" strokeWidth={0.5} strokeDasharray="3,3" opacity={0.35} />
+                                      </>}
                                       {/* Live guide line to mouse */}
                                       {gx != null && gy != null && <>
                                         <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={1} strokeDasharray="6,3" opacity={0.5} />
