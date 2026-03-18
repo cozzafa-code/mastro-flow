@@ -67,27 +67,27 @@ export default function ContabilitaPanel() {
     const prevMese = () => { const d = new Date(cY, cM - 2, 1); setContabMese(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`); };
     const nextMese = () => { const d = new Date(cY, cM, 1); setContabMese(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`); };
     
-    const fmt = (n: number) => "Ôé¼" + n.toLocaleString("it-IT", { minimumFractionDigits: 0 });
+    const fmt = (n: number) => "€" + n.toLocaleString("it-IT", { minimumFractionDigits: 0 });
     
     return (
     <div style={{ position: "fixed", inset: 0, zIndex: 10002, background: T.bg, overflow: "auto" }}>
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", background: T.card, borderBottom: "1px solid " + T.bdr, position: "sticky", top: 0, zIndex: 10 }}>
         <div onClick={() => setTab("home")} style={{ cursor: "pointer", color: T.acc, fontWeight: 700, fontSize: 14 }}>ÔåÉ Indietro</div>
-        <div style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: 800, color: T.text }}>­ƒÆContabilitá</div>
+        <div style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: 800, color: T.text }}> Contabilitá</div>
         <div style={{ width: 60 }} />
       </div>
       
       {/* TABS */}
       <div style={{ display: "flex", margin: "8px 16px", borderRadius: 8, border: "1px solid " + T.bdr, overflow: "hidden" }}>
-        {[{ id: "panoramica", l: "­ƒôè Panoramica" }, { id: "emesse", l: "­ƒôñ Emesse" }, { id: "ricevute", l: "­ƒôÑ Ricevute" }, { id: "calendario", l: "­ƒôà Calendario" }, { id: "sdi", l: "­ƒÅø SDI" }].map(t => (
+        {[{ id: "panoramica", l: "Panoramica" }, { id: "emesse", l: "Emesse" }, { id: "ricevute", l: "Ricevute" }, { id: "calendario", l: "Calendario" }, { id: "sdi", l: "SDI" }].map(t => (
           <div key={t.id} onClick={() => setContabTab(t.id)} style={{ flex: 1, padding: "8px 2px", textAlign: "center", fontSize: 9, fontWeight: 700, background: contabTab === t.id ? T.acc : T.card, color: contabTab === t.id ? "#fff" : T.sub, cursor: "pointer" }}>{t.l}</div>
         ))}
       </div>
       
       <div style={{ padding: "0 16px 100px" }}>
       
-      {/* ÔòÉÔòÉÔòÉ PANORAMICA ÔòÉÔòÉÔòÉ */}
+      {/*  PANORAMICA  */}
       {contabTab === "panoramica" && <>
         {/* KPI Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 12 }}>
@@ -121,7 +121,7 @@ export default function ContabilitaPanel() {
         
         {/* BAR CHART - Last 6 months */}
         <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 12 }}>­ƒôè Andamento 6 mesi</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 12 }}> Andamento 6 mesi</div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100 }}>
             {barData.map((b, i) => (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
@@ -141,7 +141,7 @@ export default function ContabilitaPanel() {
         
         {/* SCADENZE PROSSIME */}
         <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>ÅProssime scadenze</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}> Prossime scadenze</div>
           {[...allEmesse.filter(f => !f.pagata && f.scadenza).map(f => ({ ...f, dir: "incasso" as const })), 
             ...allRicevute.filter(f => !f.pagata && f.scadenza).map(f => ({ ...f, dir: "pagamento" as const }))]
             .sort((a, b) => (a.scadenza || "z").localeCompare(b.scadenza || "z")).slice(0, 6).map((f, i) => {
@@ -149,12 +149,12 @@ export default function ContabilitaPanel() {
               const days = Math.ceil((new Date(f.scadenza || "").getTime() - today.getTime()) / 86400000);
               return <div key={i} style={{ display: "flex", alignItems: "center", padding: "8px 0", borderBottom: i < 5 ? "1px solid " + T.bg : "none" }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: isLate ? T.redLt : f.dir === "incasso" ? T.grnLt : T.orangeLt, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
-                  {isLate ? "­ƒ" : f.dir === "incasso" ? "­ƒôñ" : "­ƒôÑ"}
+                  {isLate ? "⚠ " : f.dir === "incasso" ? "" : ""}
                 </div>
                 <div style={{ flex: 1, marginLeft: 10 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{typeof (f as any).fornitore === "object" ? ((f as any).fornitore?.nome || f.cliente) : ((f as any).fornitore || f.cliente)}</div>
                   <div style={{ fontSize: 9, color: isLate ? T.red : T.sub }}>
-                    {isLate ? `Scaduta da ${Math.abs(days)} gg` : days === 0 ? "Scade oggi!" : `Tra ${days} gg`} À {new Date(f.scadenza || "").toLocaleDateString("it-IT")}
+                    {isLate ? `Scaduta da ${Math.abs(days)} gg` : days === 0 ? "Scade oggi!" : `Tra ${days} gg`} · {new Date(f.scadenza || "").toLocaleDateString("it-IT")}
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -164,16 +164,16 @@ export default function ContabilitaPanel() {
               </div>;
             })}
           {allEmesse.filter(f => !f.pagata && f.scadenza).length + allRicevute.filter(f => !f.pagata && f.scadenza).length === 0 && (
-            <div style={{ textAlign: "center", padding: 16, color: T.sub, fontSize: 12 }}>Ô£à Nessuna scadenza in sospeso</div>
+            <div style={{ textAlign: "center", padding: 16, color: T.sub, fontSize: 12 }}>✓ Nessuna scadenza in sospeso</div>
           )}
         </div>
         
         {/* RIEPILOGO MESE */}
         <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>ÔùÇ</div>
+            <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>‹</div>
             <div style={{ fontSize: 13, fontWeight: 800, color: T.text, textTransform: "capitalize" as const }}>{meseLbl}</div>
-            <div onClick={nextMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>ÔûÂ</div>
+            <div onClick={nextMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>›</div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div style={{ padding: 10, borderRadius: 8, background: T.accLt, textAlign: "center" }}>
@@ -190,13 +190,13 @@ export default function ContabilitaPanel() {
         </div>
       </>}
       
-      {/* ÔòÉÔòÉÔòÉ EMESSE ÔòÉÔòÉÔòÉ */}
+      {/*  EMESSE  */}
       {contabTab === "emesse" && <>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Fatture emesse ({allEmesse.length})</div>
           <div style={{ display: "flex", gap: 4 }}>
-            <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 4, background: T.grnLt, color: T.grn, fontWeight: 700 }}>Ô£à {allEmesse.filter(f=>f.pagata).length}</span>
-            <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 4, background: T.redLt, color: T.red, fontWeight: 700 }}>Å{allEmesse.filter(f=>!f.pagata).length}</span>
+            <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 4, background: T.grnLt, color: T.grn, fontWeight: 700 }}>✓ {allEmesse.filter(f=>f.pagata).length}</span>
+            <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 4, background: T.redLt, color: T.red, fontWeight: 700 }}> {allEmesse.filter(f=>!f.pagata).length}</span>
           </div>
         </div>
         {allEmesse.sort((a, b) => b.numero - a.numero).map(f => (
@@ -204,10 +204,10 @@ export default function ContabilitaPanel() {
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>N. {f.numero}/{f.anno}</div>
-                <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} À {f.cmCode}</div>
+                <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} · {f.cmCode}</div>
                 <div style={{ display: "flex", gap: 4, marginTop: 3 }}>
                   <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: f.tipo === "saldo" ? T.grnLt : f.tipo === "acconto" ? T.orangeLt : T.accLt, color: f.tipo === "saldo" ? T.grn : f.tipo === "acconto" ? T.orange : T.acc, fontWeight: 700 }}>{f.tipo?.toUpperCase()}</span>
-                  {f.inviata && <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: "#1A9E7315", color: "#1A9E73", fontWeight: 700 }}>£INVIATA</span>}
+                  {f.inviata && <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: "#1A9E7315", color: "#1A9E73", fontWeight: 700 }}> INVIATA</span>}
                   <span style={{ fontSize: 8, color: T.sub }}>{f.dataISO}</span>
                   {f.scadenza && <span style={{ fontSize: 8, color: f.scadenza < today.toISOString().split("T")[0] && !f.pagata ? T.red : T.sub }}>Scade: {new Date(f.scadenza).toLocaleDateString("it-IT")}</span>}
                 </div>
@@ -216,27 +216,27 @@ export default function ContabilitaPanel() {
                 <div style={{ fontSize: 18, fontWeight: 900, color: f.pagata ? T.grn : T.red }}>{fmt(f.importo)}</div>
                 <span onClick={() => setFattureDB(prev => prev.map(ff => ff.id === f.id ? { ...ff, pagata: !ff.pagata, dataPagamento: !ff.pagata ? today.toISOString().split("T")[0] : null } : ff))} 
                   style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: f.pagata ? T.grnLt : T.redLt, color: f.pagata ? T.grn : T.red, fontWeight: 700, cursor: "pointer" }}>
-                  {f.pagata ? "£à Incassata" : "ÅDa incassare"}
+                  {f.pagata ? "Incassata" : "Da incassare"}
                 </span>
               </div>
             </div>
             <div style={{ display: "flex", gap: 6 }}>
-              <div onClick={() => { generaFatturaPDF(f); setFattureDB(prev => prev.map(ff => ff.id === f.id ? { ...ff, inviata: true } : ff)); }} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.accLt, color: T.acc, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>­ƒôä PDF</div>
-              <div onClick={() => generaXmlSDI(f)} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.purpleLt, color: T.purple, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>­ƒÅø XML SDI</div>
-              <div onClick={() => { const cm = cantieri.find(c => c.code === f.cmCode); if(cm) { setSelectedCM(cm); setShowContabilita(false); setTab("commesse"); }}} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.bg, color: T.sub, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer", border: "1px solid " + T.bdr }}>­ƒôü Commessa</div>
+              <div onClick={() => { generaFatturaPDF(f); setFattureDB(prev => prev.map(ff => ff.id === f.id ? { ...ff, inviata: true } : ff)); }} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.accLt, color: T.acc, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}> PDF</div>
+              <div onClick={() => generaXmlSDI(f)} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.purpleLt, color: T.purple, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}> XML SDI</div>
+              <div onClick={() => { const cm = cantieri.find(c => c.code === f.cmCode); if(cm) { setSelectedCM(cm); setShowContabilita(false); setTab("commesse"); }}} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.bg, color: T.sub, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer", border: "1px solid " + T.bdr }}> Commessa</div>
             </div>
           </div>
         ))}
       </>}
       
-      {/* ÔòÉÔòÉÔòÉ RICEVUTE ÔòÉÔòÉÔòÉ */}
+      {/*  RICEVUTE  */}
       {contabTab === "ricevute" && <>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Fatture fornitori ({allRicevute.length})</div>
           <div onClick={() => setShowFatturaPassiva(true)} style={{ padding: "6px 14px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>+ Nuova</div>
         </div>
         {allRicevute.length === 0 && <div style={{ textAlign: "center", padding: 32, color: T.sub }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>­ƒôÑ</div>
+          <div style={{ fontSize: 32, marginBottom: 8 }}></div>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>Nessuna fattura ricevuta</div>
           <div style={{ fontSize: 11 }}>Clicca "+ Nuova" per registrare una fattura fornitore</div>
         </div>}
@@ -244,32 +244,32 @@ export default function ContabilitaPanel() {
           <div key={f.id} style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 12, marginBottom: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{typeof f.fornitore === "object" ? (f.fornitore?.nome || "ÔÇö") : (f.fornitore || "ÔÇö")}</div>
-                <div style={{ fontSize: 10, color: T.sub }}>N. {f.numero} À {f.data || f.dataISO}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{typeof f.fornitore === "object" ? (f.fornitore?.nome || "—") : (f.fornitore || "—")}</div>
+                <div style={{ fontSize: 10, color: T.sub }}>N. {f.numero} · {f.data || f.dataISO}</div>
                 {f.descrizione && <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>{f.descrizione}</div>}
                 {f.scadenza && <div style={{ fontSize: 9, color: f.scadenza < today.toISOString().split("T")[0] && !f.pagata ? T.red : T.sub, marginTop: 2 }}>
-                  {f.scadenza < today.toISOString().split("T")[0] && !f.pagata ? "­ƒ" : ""}Scadenza: {new Date(f.scadenza).toLocaleDateString("it-IT")}
+                  {f.scadenza < today.toISOString().split("T")[0] && !f.pagata ? "⚠  " : ""}Scadenza: {new Date(f.scadenza).toLocaleDateString("it-IT")}
                 </div>}
               </div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: T.orange }}>{fmt(f.importo || 0)}</div>
                 <span onClick={() => setFatturePassive(prev => prev.map(ff => ff.id === f.id ? { ...ff, pagata: !ff.pagata } : ff))} 
                   style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: f.pagata ? T.grnLt : T.orangeLt, color: f.pagata ? T.grn : T.orange, fontWeight: 700, cursor: "pointer" }}>
-                  {f.pagata ? "£à Pagata" : "ÅDa pagare"}
+                  {f.pagata ? "Pagata" : "Da pagare"}
                 </span>
               </div>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-              {f.cmId && <div onClick={() => { const cm = cantieri.find(c => c.id === f.cmId); if(cm) { setSelectedCM(cm); setShowContabilita(false); setTab("commesse"); }}} style={{ flex: 1, padding: 6, borderRadius: 6, background: T.accLt, color: T.acc, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>­ƒôü Commessa</div>}
-              <div onClick={() => setFatturePassive(prev => prev.filter(ff => ff.id !== f.id))} style={{ padding: "6px 12px", borderRadius: 6, background: T.redLt, color: T.red, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>­ƒùæ</div>
+              {f.cmId && <div onClick={() => { const cm = cantieri.find(c => c.id === f.cmId); if(cm) { setSelectedCM(cm); setShowContabilita(false); setTab("commesse"); }}} style={{ flex: 1, padding: 6, borderRadius: 6, background: T.accLt, color: T.acc, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}> Commessa</div>}
+              <div onClick={() => setFatturePassive(prev => prev.filter(ff => ff.id !== f.id))} style={{ padding: "6px 12px", borderRadius: 6, background: T.redLt, color: T.red, fontSize: 10, fontWeight: 700, cursor: "pointer" }}></div>
             </div>
           </div>
         ))}
         {showFatturaPassiva && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 10003, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={e => { if(e.target === e.currentTarget) setShowFatturaPassiva(false); }}>
             <div style={{ background: T.card, borderRadius: 16, padding: 20, width: "90%", maxWidth: 420 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 14 }}>­ƒôÑ Registra fattura fornitore</div>
-              {[{k:"fornitore",l:"Fornitore",t:"text"},{k:"numero",l:"N. Fattura",t:"text"},{k:"data",l:"Data",t:"date"},{k:"importo",l:"Importo Ôé¼",t:"number"},{k:"descrizione",l:"Descrizione",t:"text"},{k:"scadenza",l:"Scadenza",t:"date"}].map(f => (
+              <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 14 }}> Registra fattura fornitore</div>
+              {[{k:"fornitore",l:"Fornitore",t:"text"},{k:"numero",l:"N. Fattura",t:"text"},{k:"data",l:"Data",t:"date"},{k:"importo",l:"Importo €",t:"number"},{k:"descrizione",l:"Descrizione",t:"text"},{k:"scadenza",l:"Scadenza",t:"date"}].map(f => (
                 <div key={f.k} style={{ marginBottom: 8 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 2 }}>{f.l}</div>
                   <input type={f.t} value={(newFattPassiva as any)[f.k]} onChange={e => setNewFattPassiva(p => ({ ...p, [f.k]: e.target.value }))}
@@ -279,20 +279,20 @@ export default function ContabilitaPanel() {
               <div style={{ marginBottom: 8 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 2 }}>Commessa (opzionale)</div>
                 <select value={newFattPassiva.cmId} onChange={e => setNewFattPassiva(p => ({ ...p, cmId: e.target.value }))} style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid " + T.bdr, background: T.bg, color: T.text, fontSize: 13, fontFamily: "inherit" }}>
-                  <option value="">ÔÇö Nessuna ÔÇö</option>
-                  {cantieri.map(c => <option key={c.id} value={c.id}>{c.code} À {c.cliente}</option>)}
+                  <option value="">— Nessuna —</option>
+                  {cantieri.map(c => <option key={c.id} value={c.id}>{c.code} · {c.cliente}</option>)}
                 </select>
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <button onClick={() => setShowFatturaPassiva(false)} style={{ flex: 1, padding: 12, borderRadius: 10, border: "1px solid " + T.bdr, background: T.bg, color: T.sub, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                <button onClick={creaFatturaPassiva} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>­ƒÆ¥ Registra</button>
+                <button onClick={creaFatturaPassiva} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>¥ Registra</button>
               </div>
             </div>
           </div>
         )}
       </>}
       
-      {/* ÔòÉÔòÉÔòÉ CALENDARIO COMPLETO ÔòÉÔòÉÔòÉ */}
+      {/*  CALENDARIO COMPLETO  */}
       {contabTab === "calendario" && (() => {
         // Gather ALL events for calendar: scadenze + montaggi + events + consegne
         const calMap: Record<number, Array<{tipo:string;ico:string;col:string;label:string;importo?:number;detail?:string}>> = {};
@@ -301,38 +301,38 @@ export default function ContabilitaPanel() {
         // Scadenze fatture
         allEmesse.filter(f => !f.pagata && f.scadenza && f.scadenza.startsWith(contabMese)).forEach(f => {
           const d = parseInt(f.scadenza.split("-")[2]);
-          addCal(d, { tipo: "incasso", ico: "­ƒôñ", col: T.grn, label: f.cliente, importo: f.importo, detail: "Da incassare" });
+          addCal(d, { tipo: "incasso", ico: "", col: T.grn, label: f.cliente, importo: f.importo, detail: "Da incassare" });
         });
         allRicevute.filter(f => !f.pagata && f.scadenza && f.scadenza.startsWith(contabMese)).forEach(f => {
           const d = parseInt(f.scadenza.split("-")[2]);
-          addCal(d, { tipo: "pagamento", ico: "­ƒôÑ", col: T.orange, label: typeof f.fornitore === "object" ? (f.fornitore?.nome || "") : (f.fornitore || ""), importo: f.importo || 0, detail: "Da pagare" });
+          addCal(d, { tipo: "pagamento", ico: "", col: T.orange, label: typeof f.fornitore === "object" ? (f.fornitore?.nome || "") : (f.fornitore || ""), importo: f.importo || 0, detail: "Da pagare" });
         });
         // Montaggi
         (montaggiDB || []).filter(m => m.data && m.data.startsWith(contabMese)).forEach(m => {
           const d = parseInt(m.data.split("-")[2]);
           const cm = cantieri.find(c => c.id === m.cmId);
           const sq = (squadreDB || []).find(s => s.id === m.squadraId);
-          addCal(d, { tipo: "montaggio", ico: "­ƒöº", col: "#007aff", label: cm?.cliente || "Montaggio", detail: sq?.nome || "" });
+          addCal(d, { tipo: "montaggio", ico: "º", col: "#007aff", label: cm?.cliente || "Montaggio", detail: sq?.nome || "" });
         });
         // Consegne previste ordini
         (ordiniFornDB || []).filter(o => o.consegna?.prevista && o.consegna.prevista.startsWith(contabMese) && o.stato !== "consegnato").forEach(o => {
           const d = parseInt(o.consegna.prevista.split("-")[2]);
-          addCal(d, { tipo: "consegna", ico: "­ƒÜÜ", col: "#af52de", label: o.fornitore?.nome || "Consegna", detail: o.cmCode || "" });
+          addCal(d, { tipo: "consegna", ico: "", col: "#af52de", label: o.fornitore?.nome || "Consegna", detail: o.cmCode || "" });
         });
         // Events/appuntamenti
         (events || []).filter(ev => ev.date && ev.date.startsWith(contabMese)).forEach(ev => {
           const d = parseInt(ev.date.split("-")[2]);
-          const tipoIco: Record<string,string> = { sopralluogo: "­ƒôì", posa: "­ƒöº", controllo: "­ƒöì", consegna: "­ƒÜÜ", misure: "­ƒôÅ", altro: "­ƒôî" };
+          const tipoIco: Record<string,string> = { sopralluogo: "", posa: "º", controllo: "", consegna: "", misure: "", altro: "" };
           const tipoCol: Record<string,string> = { sopralluogo: "#007aff", posa: "#34c759", controllo: "#ff9500", consegna: "#af52de", misure: "#5856d6", altro: "#86868b" };
-          addCal(d, { tipo: ev.tipo || "altro", ico: tipoIco[ev.tipo] || "­ƒôî", col: tipoCol[ev.tipo] || "#86868b", label: ev.persona || ev.text?.slice(0, 20) || "Evento", detail: ev.time || "" });
+          addCal(d, { tipo: ev.tipo || "altro", ico: tipoIco[ev.tipo] || "", col: tipoCol[ev.tipo] || "#86868b", label: ev.persona || ev.text?.slice(0, 20) || "Evento", detail: ev.time || "" });
         });
         
         return <>
         {/* Month nav */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: "10px 16px" }}>
-          <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 18, color: T.acc, fontWeight: 700 }}>ÔùÇ</div>
+          <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 18, color: T.acc, fontWeight: 700 }}>‹</div>
           <div style={{ fontSize: 15, fontWeight: 800, color: T.text, textTransform: "capitalize" as const }}>{meseLbl}</div>
-          <div onClick={nextMese} style={{ cursor: "pointer", fontSize: 18, color: T.acc, fontWeight: 700 }}>ÔûÂ</div>
+          <div onClick={nextMese} style={{ cursor: "pointer", fontSize: 18, color: T.acc, fontWeight: 700 }}>›</div>
         </div>
         
         {/* Calendar grid */}
@@ -378,7 +378,7 @@ export default function ContabilitaPanel() {
         </div>
         
         {/* LISTA GIORNO PER GIORNO */}
-        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 8 }}>­ƒôà Dettaglio {meseLbl}</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 8 }}> Dettaglio {meseLbl}</div>
         {Object.keys(calMap).sort((a, b) => Number(a) - Number(b)).map(dayStr => {
           const day = Number(dayStr);
           const items = calMap[day];
@@ -400,26 +400,26 @@ export default function ContabilitaPanel() {
           </div>;
         })}
         {Object.keys(calMap).length === 0 && <div style={{ textAlign: "center", padding: 32, color: T.sub }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>­ƒôà</div>
+          <div style={{ fontSize: 32, marginBottom: 8 }}></div>
           <div style={{ fontSize: 13, fontWeight: 700 }}>Nessun evento questo mese</div>
         </div>}
         </>;
       })()}
       
-      {/* ÔòÉÔòÉÔòÉ SDI ÔòÉÔòÉÔòÉ */}
+      {/*  SDI  */}
       {contabTab === "sdi" && <>
         <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 4 }}>­ƒÅø Fatturazione Elettronica</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 4 }}> Fatturazione Elettronica</div>
           <div style={{ fontSize: 11, color: T.sub, marginBottom: 4 }}>Genera XML FatturaPA 1.2 per il Sistema di Interscambio (SDI).</div>
-          <div style={{ fontSize: 9, color: T.sub }}>Formato: FPR12 À Regime: RF01 À I file possono essere caricati su AdE, Aruba, Fatture in Cloud.</div>
+          <div style={{ fontSize: 9, color: T.sub }}>Formato: FPR12 · Regime: RF01 · I file possono essere caricati su AdE, Aruba, Fatture in Cloud.</div>
         </div>
         {allEmesse.map(f => (
           <div key={f.id} style={{ display: "flex", alignItems: "center", padding: "10px 12px", background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, marginBottom: 6 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>N. {f.numero}/{f.anno} ÔÇö {f.cliente}</div>
-              <div style={{ fontSize: 9, color: T.sub }}>{f.tipo} À {f.dataISO} À {fmt(f.importo)}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>N. {f.numero}/{f.anno} — {f.cliente}</div>
+              <div style={{ fontSize: 9, color: T.sub }}>{f.tipo} · {f.dataISO} · {fmt(f.importo)}</div>
             </div>
-            <div onClick={() => generaXmlSDI(f)} style={{ padding: "8px 14px", borderRadius: 8, background: T.purpleLt, color: T.purple, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>­ƒôÑ XML</div>
+            <div onClick={() => generaXmlSDI(f)} style={{ padding: "8px 14px", borderRadius: 8, background: T.purpleLt, color: T.purple, fontSize: 11, fontWeight: 700, cursor: "pointer" }}> XML</div>
           </div>
         ))}
       </>}
