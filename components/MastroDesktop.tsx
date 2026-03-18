@@ -1,10 +1,9 @@
 "use client";
 // @ts-nocheck
-// MASTRO ERP — MastroDesktop v3
-// Layout desktop nativo: sidebar + content area multi-pannello
-// Tutti i moduli reali collegati al MastroContext
+// MASTRO ERP — MastroDesktop v4 — Control Room completa
+// Tutti i moduli da MASTRO_BRAIN v3.0
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, Ico, ICO, I } from "./mastro-constants";
 import HomePanel from "./HomePanel";
@@ -20,155 +19,152 @@ const TEAL = "#1A9E73";
 const DARK = "#1A1A1C";
 
 const NAV_GROUPS = [
-  {
-    label: "Lavoro",
-    items: [
-      { key: "home",        ico: "home",      label: "Dashboard" },
-      { key: "commesse",    ico: "folder",    label: "Commesse" },
-      { key: "agenda",      ico: "calendar",  label: "Agenda" },
-      { key: "montaggi",    ico: "wrench",    label: "Montaggi" },
-    ]
-  },
-  {
-    label: "Gestione",
-    items: [
-      { key: "clienti",     ico: "users",     label: "Clienti" },
-      { key: "messaggi",    ico: "inbox",     label: "Messaggi" },
-      { key: "contabilita", ico: "wallet",    label: "Contabilità" },
-    ]
-  },
-  {
-    label: "Moduli",
-    items: [
-      { key: "cnc",         ico: "cpu",       label: "CNC", badge: "Presto" },
-      { key: "enea",        ico: "shield",    label: "ENEA", badge: "Presto" },
-      { key: "leads",       ico: "zap",       label: "TROVA CLIENTI", badge: "Presto" },
-      { key: "rete",        ico: "globe",     label: "RETE Agenti", badge: "Presto" },
-    ]
-  },
-  {
-    label: "Sistema",
-    items: [
-      { key: "settings",    ico: "settings",  label: "Impostazioni" },
-    ]
-  },
+  { label: "Cantiere", items: [
+    { key: "home",        ico: "home",       label: "Dashboard" },
+    { key: "commesse",    ico: "folder",     label: "Commesse" },
+    { key: "agenda",      ico: "calendar",   label: "Agenda" },
+    { key: "montaggi",    ico: "wrench",     label: "Montaggi" },
+    { key: "misure",      ico: "ruler",      label: "MISURE", sub: "App tablet" },
+  ]},
+  { label: "Gestione", items: [
+    { key: "clienti",     ico: "users",      label: "Clienti" },
+    { key: "messaggi",    ico: "inbox",      label: "Messaggi" },
+    { key: "contabilita", ico: "wallet",     label: "Contabilità" },
+    { key: "fatture",     ico: "fileText",   label: "Fatture SDI", soon: true },
+    { key: "ordini",      ico: "package",    label: "Ordini", sub: "Trasformatore" },
+  ]},
+  { label: "Produzione", items: [
+    { key: "cnc",         ico: "cpu",        label: "CNC Emmegi", soon: true },
+    { key: "listini",     ico: "barChart",   label: "Listini", soon: true },
+    { key: "enea",        ico: "shield",     label: "ENEA / CAM 2026", soon: true },
+  ]},
+  { label: "Crescita", items: [
+    { key: "leads",       ico: "zap",        label: "TROVA CLIENTI", soon: true },
+    { key: "infissiora",  ico: "globe",      label: "InfissiOra Mercato", soon: true },
+    { key: "rete",        ico: "share2",     label: "RETE Agenti", soon: true },
+    { key: "cliente",     ico: "monitor",    label: "Portale CLIENTE B2C", soon: true },
+  ]},
+  { label: "Sistema", items: [
+    { key: "team",        ico: "shield",     label: "Team & Permessi" },
+    { key: "settings",    ico: "settings",   label: "Impostazioni" },
+  ]},
 ];
+
+const PLACEHOLDERS: Record<string, {icon: string, title: string, desc: string, tag: string, color: string}> = {
+  misure:     { icon: "ruler",    title: "MASTRO MISURE",     color: "#8B5CF6", tag: "App Tablet dedicata",    desc: "Rilievi dal cantiere con tablet. Vano per vano, misure luce netta, imbotte, davanzale. Sincronizzazione automatica con la commessa." },
+  fatture:    { icon: "fileText", title: "Fatture SDI",       color: "#E8A020", tag: "SDI · FatturaPA",        desc: "Fatturazione elettronica integrata via intermediario SDI. XML FatturaPA già generato. Integrazione con fattura-elettronica-api.it (M50 €10/mese)." },
+  ordini:     { icon: "package",  title: "Trasformatore Ordini", color: "#3B7FE0", tag: "Universale",         desc: "Converte ogni ordine fornitore nel formato nativo del produttore. Emmegi, Metra, Schüco, Reynaers — zero ridigitazione." },
+  cnc:        { icon: "cpu",      title: "MASTRO CNC",        color: "#DC4444", tag: "Emmegi CENTRO 2 · TCUT v1.7+", desc: "Genera file EWX/XML per macchine CNC Emmegi direttamente dalle commesse. Ottimizzazione barre, gestione codice a barre, zero errori manuali." },
+  listini:    { icon: "barChart", title: "MASTRO LISTINI",    color: "#E8A020", tag: "Catalogo fornitori",     desc: "Importa listini fornitore in Excel/PDF. Prezzi aggiornati automaticamente nei preventivi. Gap critico vs Opera/FPPRO — da colmare." },
+  enea:       { icon: "shield",   title: "MASTRO ENEA",       color: TEAL,      tag: "CAM 2026 · Ecobonus · U-value", desc: "Pratiche ENEA automatizzate. CAM 2026 (DM 24/11/2025 in vigore 1 Feb 2026), contenuto riciclato, UNI 11673-1, trasmittanza U-value per zona climatica A–F. Vantaggio UNICO — Opera/FPPRO non ce l'hanno." },
+  leads:      { icon: "zap",      title: "TROVA CLIENTI",     color: TEAL,      tag: "F3 post-lancio · Differenziatore unico", desc: "Scraping automatico da Habitissimo, Instapro, Subito.it, Immobiliare.it per zona. Lead B2C con sistema crediti. Nessun gestionale concorrente porta lavoro nuovo al serramentista. MASTRO lo fa." },
+  infissiora: { icon: "globe",    title: "InfissiOra · MASTRO MERCATO", color: "#3B7FE0", tag: "F4 · Marketplace inverso B2C", desc: "Privati si iscrivono e aspettano offerte dai serramentisti — non il contrario. Lead caldi per definizione. Network effect: più serramentisti = più clienti. Brand doppio: InfissiOra.it (B2C) + MASTRO MERCATO (dentro l'app)." },
+  rete:       { icon: "share2",   title: "MASTRO RETE",       color: "#8B5CF6", tag: "Agenti commerciali",    desc: "App dedicata per agenti di vendita. Ogni agente vede i suoi preventivi, i suoi clienti, le sue provvigioni. Deploy separato Vercel, Supabase condiviso, PIN login." },
+  cliente:    { icon: "monitor",  title: "MASTRO CLIENTE",    color: "#E8A020", tag: "Configuratore B2C · Sostituce Promotech €10K", desc: "Il cliente finale configura la finestra dal portale pubblico → il preventivo arriva direttamente nel gestionale. Modello B2C2B. Incluso nell'abbonamento — zero costi aggiuntivi." },
+  team:       { icon: "shield",   title: "Team & Permessi",   color: TEAL,      tag: "Multi-utente",          desc: "Gestisci operatori, ruoli e permessi. Marchio Posa Qualità. Ogni membro del team vede solo quello che gli serve." },
+};
 
 export default function MastroDesktop() {
   const ctx = useMastro();
-  const { T, cantieri, tasks, fattureDB, montaggiDB, ordiniFornDB,
-    aziendaInfo, msgs, setTab, tab, giorniFermaCM, sogliaDays,
-    setSelectedCM, setFilterFase } = ctx;
+  const { T, cantieri=[], tasks=[], fattureDB=[], msgs=[], aziendaInfo,
+    setTab, tab, giorniFermaCM, sogliaDays=7, setSelectedCM, setFilterFase, setSearchQ } = ctx;
 
   const [collapsed, setCollapsed] = useState(false);
-  const [searchQ, setSearchQ] = useState("");
-  const sw = collapsed ? 56 : 220;
+  const [localSearch, setLocalSearch] = useState("");
+  const sw = collapsed ? 52 : 224;
 
-  const activeNav = tab || "home";
-  const unreadMsgs = (msgs || []).filter(m => !m.letto).length;
-  const ferme = (cantieri || []).filter(c => giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura").length;
-  const taskOpen = (tasks || []).filter(t => !t.done).length;
-  const fattureScad = (fattureDB || []).filter(f => !f.pagata && f.scadenza < new Date().toISOString().split("T")[0]).length;
+  const activeNav = tab === "montaggi_cal" ? "montaggi" : (tab || "home");
+  const unread = msgs.filter(m => !m.letto).length;
+  const ferme = cantieri.filter(c => giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura").length;
+  const taskOpen = tasks.filter(t => !t.done).length;
+  const fatScad = fattureDB.filter(f => !f.pagata && f.scadenza < new Date().toISOString().split("T")[0]).length;
 
-  function navTo(key: string) {
-    const map: Record<string, string> = {
-      home: "home", commesse: "commesse", agenda: "agenda",
-      montaggi: "montaggi_cal", clienti: "clienti", messaggi: "messaggi",
-      contabilita: "contabilita", settings: "settings",
-    };
-    if (map[key]) setTab(map[key]);
-    else setTab(key);
-  }
+  const navTo = (key: string) => {
+    const map: Record<string,string> = { montaggi:"montaggi_cal", misure:"commesse", fatture:"contabilita", ordini:"commesse", cnc:"cnc", listini:"listini", enea:"enea", leads:"leads", infissiora:"infissiora", rete:"rete", cliente:"cliente", team:"settings" };
+    setTab(map[key] || key);
+  };
 
-  function getBadge(key: string) {
-    if (key === "messaggi" && unreadMsgs > 0) return unreadMsgs;
-    if (key === "commesse" && ferme > 0) return ferme;
-    if (key === "contabilita" && fattureScad > 0) return fattureScad;
+  const getBadge = (key: string) => {
+    if (key === "messaggi") return unread;
+    if (key === "commesse") return ferme;
+    if (key === "contabilita" || key === "fatture") return fatScad;
     return 0;
-  }
+  };
 
-  function renderPlaceholder(label: string, desc: string, icon: string) {
+  const placeholder = (key: string) => {
+    const p = PLACEHOLDERS[key];
+    if (!p) return null;
     return (
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", gap: 16 }}>
-        <div style={{ width: 72, height: 72, borderRadius: 20, background: TEAL + "15", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <I d={ICO[icon] || ICO.zap} s={32} c={TEAL} />
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"70vh", gap:16, padding:40, textAlign:"center" }}>
+        <div style={{ width:72, height:72, borderRadius:20, background:p.color+"18", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <I d={ICO[p.icon as keyof typeof ICO]} s={32} c={p.color} />
         </div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>{label}</div>
-        <div style={{ fontSize: 14, color: T.sub, textAlign: "center", maxWidth: 320, lineHeight: 1.6 }}>{desc}</div>
-        <div style={{ padding: "8px 18px", borderRadius: 100, background: TEAL + "15", fontSize: 12, fontWeight: 700, color: TEAL }}>In arrivo</div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ fontSize:22, fontWeight:900, color:T.text }}>{p.title}</div>
+          <div style={{ padding:"3px 10px", borderRadius:100, background:p.color+"15", fontSize:11, fontWeight:700, color:p.color }}>{p.tag}</div>
+        </div>
+        <div style={{ fontSize:15, color:T.sub, maxWidth:480, lineHeight:1.7 }}>{p.desc}</div>
+        <div style={{ padding:"10px 24px", borderRadius:10, background:p.color+"12", border:`1px solid ${p.color}30`, fontSize:13, fontWeight:700, color:p.color }}>In sviluppo — disponibile presto</div>
       </div>
     );
-  }
+  };
 
-  function renderContent() {
-    switch (activeNav) {
+  const renderContent = () => {
+    switch (tab) {
       case "home":        return <HomePanel />;
       case "commesse":    return <CommessePanel />;
       case "agenda":      return <AgendaPanel />;
-      case "montaggi_cal":
-      case "montaggi":    return <MontaggiCalendar />;
+      case "montaggi_cal":return <MontaggiCalendar />;
       case "clienti":     return <ClientiPanel />;
       case "messaggi":    return <MessaggiPanel />;
       case "contabilita": return <ContabilitaPanel />;
       case "settings":    return <SettingsPanel />;
-      case "cnc":         return renderPlaceholder("Modulo CNC", "Genera i file DXF per le tue macchine CNC direttamente dalle commesse. Importa taglie, ottimizza i pannelli, zero errori manuali.", "cpu");
-      case "enea":        return renderPlaceholder("Modulo ENEA", "Pratiche Ecobonus e detrazioni fiscali automatizzate. CAM 2026, U-value per zona climatica, report ENEA in un click.", "shield");
-      case "leads":       return renderPlaceholder("TROVA CLIENTI", "Intercetta richieste da Habitissimo, Instapro e Subito nella tua zona. Lead qualificati direttamente nelle commesse MASTRO.", "zap");
-      case "rete":        return renderPlaceholder("RETE Agenti", "Rete di agenti commerciali con app dedicata. Ogni agente vede i suoi preventivi, i suoi clienti, le sue provvigioni.", "globe");
-      default:            return <HomePanel />;
+      default:            return placeholder(tab) || placeholder(activeNav) || <HomePanel />;
     }
-  }
+  };
 
-  const currentLabel = NAV_GROUPS.flatMap(g => g.items).find(n => n.key === activeNav || (activeNav === "montaggi_cal" && n.key === "montaggi"))?.label || "MASTRO";
-
-  // KPI bar sopra il content
+  const currentItem = NAV_GROUPS.flatMap(g => g.items).find(n => n.key === activeNav);
   const KPI = [
-    { label: "Commesse attive", val: (cantieri||[]).filter(c => c.fase !== "chiusura").length, color: TEAL, icon: "folder" },
-    { label: "Commesse ferme", val: ferme, color: ferme > 0 ? "#DC4444" : TEAL, icon: "alertTriangle" },
-    { label: "Task aperti", val: taskOpen, color: taskOpen > 0 ? "#E8A020" : TEAL, icon: "checkSquare" },
-    { label: "Fatture scadute", val: fattureScad, color: fattureScad > 0 ? "#DC4444" : TEAL, icon: "wallet" },
-    { label: "Messaggi non letti", val: unreadMsgs, color: unreadMsgs > 0 ? "#3B7FE0" : TEAL, icon: "inbox" },
+    { l:"Commesse attive", v:cantieri.filter(c=>c.fase!=="chiusura").length, c:TEAL, k:"commesse" },
+    { l:"Commesse ferme",  v:ferme,    c:ferme>0?"#DC4444":TEAL, k:"commesse" },
+    { l:"Task aperti",     v:taskOpen, c:taskOpen>0?"#E8A020":TEAL, k:"" },
+    { l:"Fatture scadute", v:fatScad,  c:fatScad>0?"#DC4444":TEAL, k:"contabilita" },
+    { l:"Messaggi",        v:unread,   c:unread>0?"#3B7FE0":TEAL, k:"messaggi" },
   ];
 
   return (
-    <div style={{ display: "flex", height: "100vh", width: "100vw", background: T.bg, fontFamily: FF, color: T.text, overflow: "hidden" }}>
+    <div style={{ display:"flex", height:"100vh", width:"100vw", background:T.bg, fontFamily:FF, color:T.text, overflow:"hidden" }}>
 
-      {/* ── SIDEBAR ── */}
-      <div style={{ width: sw, flexShrink: 0, background: DARK, display: "flex", flexDirection: "column", transition: "width 0.2s ease", overflow: "hidden", zIndex: 10, borderRight: "1px solid rgba(255,255,255,0.06)" }}>
-
+      {/* SIDEBAR */}
+      <div style={{ width:sw, flexShrink:0, background:DARK, display:"flex", flexDirection:"column", transition:"width 0.18s ease", overflow:"hidden", zIndex:10, borderRight:"1px solid rgba(255,255,255,0.05)" }}>
         {/* Logo */}
-        <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 14px", gap: 10, borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: TEAL, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: "#fff", flexShrink: 0, letterSpacing: -0.5 }}>M</div>
-          {!collapsed && <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: 1.5, whiteSpace: "nowrap" }}>MASTRO</span>}
+        <div style={{ height:56, display:"flex", alignItems:"center", padding:"0 14px", gap:10, borderBottom:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
+          <div style={{ width:32, height:32, borderRadius:8, background:TEAL, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, fontWeight:900, color:"#fff", flexShrink:0 }}>M</div>
+          {!collapsed && <span style={{ fontSize:13, fontWeight:800, color:"#fff", letterSpacing:1.5, whiteSpace:"nowrap" }}>MASTRO</span>}
         </div>
-
-        {/* Nav groups */}
-        <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+        {/* Nav */}
+        <nav style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
           {NAV_GROUPS.map(group => (
             <div key={group.label}>
-              {!collapsed && (
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(255,255,255,0.25)", padding: "12px 16px 4px" }}>{group.label}</div>
-              )}
-              {group.items.map(({ key, ico, label, badge: modBadge }) => {
-                const active = activeNav === key || (activeNav === "montaggi_cal" && key === "montaggi");
-                const numBadge = getBadge(key);
-                const icoKey = ico as keyof typeof ICO;
+              {!collapsed && <div style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"rgba(255,255,255,0.2)", padding:"10px 14px 3px" }}>{group.label}</div>}
+              {group.items.map(({ key, ico, label, sub, soon }) => {
+                const active = activeNav === key;
+                const badge = getBadge(key);
                 return (
                   <div key={key} onClick={() => navTo(key)}
-                    style={{ display: "flex", alignItems: "center", gap: 10, padding: collapsed ? "9px 0 9px 17px" : "9px 12px 9px 14px", cursor: "pointer", position: "relative", background: active ? "rgba(255,255,255,0.08)" : "transparent", transition: "background 0.12s" }}
-                    onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
-                    onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-                    {active && <div style={{ position: "absolute", left: 0, top: "15%", bottom: "15%", width: 3, borderRadius: "0 2px 2px 0", background: TEAL }} />}
-                    <Ico d={ICO[icoKey]} s={17} c={active ? "#fff" : "rgba(255,255,255,0.4)"} />
+                    style={{ display:"flex", alignItems:"center", gap:9, padding:collapsed?"8px 0 8px 16px":"8px 12px 8px 14px", cursor:"pointer", position:"relative", background:active?"rgba(255,255,255,0.08)":"transparent", transition:"background 0.1s" }}
+                    onMouseEnter={e=>{if(!active)(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.04)";}}
+                    onMouseLeave={e=>{if(!active)(e.currentTarget as HTMLElement).style.background="transparent";}}>
+                    {active && <div style={{ position:"absolute", left:0, top:"15%", bottom:"15%", width:2, borderRadius:"0 2px 2px 0", background:TEAL }} />}
+                    <Ico d={ICO[ico as keyof typeof ICO]} s={16} c={active?"#fff":"rgba(255,255,255,0.38)"} />
                     {!collapsed && (
                       <>
-                        <span style={{ fontSize: 13, fontWeight: active ? 600 : 400, color: active ? "#fff" : "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", flex: 1 }}>{label}</span>
-                        {numBadge > 0 && (
-                          <span style={{ background: "#DC4444", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 10, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>{numBadge}</span>
-                        )}
-                        {modBadge && numBadge === 0 && (
-                          <span style={{ background: TEAL + "20", color: TEAL, fontSize: 9, fontWeight: 700, borderRadius: 6, padding: "2px 6px", whiteSpace: "nowrap" }}>{modBadge}</span>
-                        )}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:12, fontWeight:active?600:400, color:active?"#fff":"rgba(255,255,255,0.5)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{label}</div>
+                          {sub && <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", marginTop:1 }}>{sub}</div>}
+                        </div>
+                        {badge > 0 && <span style={{ background:"#DC4444", color:"#fff", fontSize:9, fontWeight:700, borderRadius:10, padding:"1px 5px", minWidth:16, textAlign:"center", flexShrink:0 }}>{badge}</span>}
+                        {soon && badge===0 && <span style={{ background:TEAL+"18", color:TEAL, fontSize:9, fontWeight:700, borderRadius:5, padding:"1px 5px", flexShrink:0 }}>Presto</span>}
                       </>
                     )}
                   </div>
@@ -177,84 +173,58 @@ export default function MastroDesktop() {
             </div>
           ))}
         </nav>
-
-        {/* User + collapse */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
+        {/* User */}
+        <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
           {!collapsed && (
-            <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: "50%", background: TEAL + "30", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: TEAL, flexShrink: 0 }}>
-                {(aziendaInfo?.nome || aziendaInfo?.ragione || "M")[0].toUpperCase()}
+            <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", gap:9 }}>
+              <div style={{ width:28, height:28, borderRadius:"50%", background:TEAL+"25", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:TEAL, flexShrink:0 }}>
+                {(aziendaInfo?.nome||aziendaInfo?.ragione||"M")[0].toUpperCase()}
               </div>
-              <div style={{ overflow: "hidden" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{aziendaInfo?.nome || aziendaInfo?.ragione || "La mia azienda"}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Piano START</div>
+              <div style={{ overflow:"hidden" }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#fff", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{aziendaInfo?.nome||aziendaInfo?.ragione||"La mia azienda"}</div>
+                <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)" }}>Piano START</div>
               </div>
             </div>
           )}
-          <div onClick={() => setCollapsed(c => !c)} style={{ height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 0.2s" }}>
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+          <div onClick={()=>setCollapsed(c=>!c)} style={{ height:36, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.25)", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform:collapsed?"rotate(0deg)":"rotate(180deg)", transition:"transform 0.18s" }}><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>
       </div>
 
-      {/* ── MAIN ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-
+      {/* MAIN */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
         {/* Topbar */}
-        <div style={{ height: 56, flexShrink: 0, background: "#fff", borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", padding: "0 20px", gap: 14 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, color: T.text, letterSpacing: -0.3 }}>{currentLabel}</span>
-
-          {/* Search */}
-          <div style={{ flex: 1, maxWidth: 380, display: "flex", alignItems: "center", background: T.bg, borderRadius: 8, padding: "7px 12px", gap: 8, border: `1px solid ${T.bdr}` }}>
+        <div style={{ height:56, flexShrink:0, background:"#fff", borderBottom:`1px solid ${T.bdr}`, display:"flex", alignItems:"center", padding:"0 20px", gap:14 }}>
+          <span style={{ fontSize:15, fontWeight:800, color:T.text, letterSpacing:-0.3, whiteSpace:"nowrap" }}>{currentItem?.label||"Dashboard"}</span>
+          {currentItem?.sub && <span style={{ fontSize:11, color:T.sub, background:T.bg, padding:"2px 8px", borderRadius:6, border:`1px solid ${T.bdr}` }}>{currentItem.sub}</span>}
+          <div style={{ flex:1, maxWidth:360, display:"flex", alignItems:"center", background:T.bg, borderRadius:8, padding:"7px 12px", gap:8, border:`1px solid ${T.bdr}` }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca commesse, clienti, codici..." value={searchQ} onChange={e => { setSearchQ(e.target.value); if (ctx.setSearchQ) ctx.setSearchQ(e.target.value); }} />
+            <input style={{ flex:1, border:"none", background:"transparent", fontSize:13, color:T.text, outline:"none", fontFamily:FF }} placeholder="Cerca commesse, clienti..." value={localSearch} onChange={e=>{ setLocalSearch(e.target.value); if(setSearchQ) setSearchQ(e.target.value); }} />
           </div>
-
-          {/* Alerts */}
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-            {ferme > 0 && (
-              <div onClick={() => { setFilterFase("tutte"); navTo("commesse"); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 8, background: "#DC444412", border: "1px solid #DC444430", cursor: "pointer" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#DC4444" }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#DC4444" }}>{ferme} ferme</span>
-              </div>
-            )}
-            {unreadMsgs > 0 && (
-              <div onClick={() => navTo("messaggi")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 8, background: "#3B7FE012", border: "1px solid #3B7FE030", cursor: "pointer" }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3B7FE0" }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#3B7FE0" }}>{unreadMsgs} msg</span>
-              </div>
-            )}
-            {/* Avatar */}
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: TEAL + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: TEAL, cursor: "pointer" }}>
-              {(aziendaInfo?.nome || "M")[0].toUpperCase()}
-            </div>
+          <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8 }}>
+            {ferme>0 && <div onClick={()=>navTo("commesse")} style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:7, background:"#DC444412", border:"1px solid #DC444428", cursor:"pointer" }}><div style={{ width:5, height:5, borderRadius:"50%", background:"#DC4444" }}/><span style={{ fontSize:11, fontWeight:700, color:"#DC4444" }}>{ferme} ferme</span></div>}
+            {unread>0 && <div onClick={()=>navTo("messaggi")} style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:7, background:"#3B7FE012", border:"1px solid #3B7FE028", cursor:"pointer" }}><div style={{ width:5, height:5, borderRadius:"50%", background:"#3B7FE0" }}/><span style={{ fontSize:11, fontWeight:700, color:"#3B7FE0" }}>{unread} msg</span></div>}
+            <div style={{ width:32, height:32, borderRadius:"50%", background:TEAL+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:TEAL, cursor:"pointer" }}>{(aziendaInfo?.nome||"M")[0].toUpperCase()}</div>
           </div>
         </div>
 
-        {/* KPI bar — solo su dashboard */}
-        {activeNav === "home" && (
-          <div style={{ display: "flex", gap: 0, background: "#fff", borderBottom: `1px solid ${T.bdr}`, flexShrink: 0 }}>
-            {KPI.map((k, i) => (
-              <div key={i} style={{ flex: 1, padding: "10px 20px", borderRight: i < KPI.length - 1 ? `1px solid ${T.bdr}` : "none", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
-                onClick={() => { if (k.icon === "folder" || k.icon === "alertTriangle") navTo("commesse"); else if (k.icon === "inbox") navTo("messaggi"); else if (k.icon === "wallet") navTo("contabilita"); }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: k.color + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <I d={ICO[k.icon as keyof typeof ICO]} s={16} c={k.color} />
+        {/* KPI bar — solo home */}
+        {(tab==="home"||tab===undefined) && (
+          <div style={{ display:"flex", background:"#fff", borderBottom:`1px solid ${T.bdr}`, flexShrink:0 }}>
+            {KPI.map((k,i)=>(
+              <div key={i} onClick={()=>k.k&&navTo(k.k)} style={{ flex:1, padding:"10px 20px", borderRight:i<KPI.length-1?`1px solid ${T.bdr}`:"none", display:"flex", alignItems:"center", gap:10, cursor:k.k?"pointer":"default" }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:k.c+"15", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <span style={{ fontSize:16, fontWeight:900, color:k.c, fontFamily:FM }}>{k.v}</span>
                 </div>
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: k.val > 0 && k.color !== TEAL ? k.color : T.text, fontFamily: FM, lineHeight: 1 }}>{k.val}</div>
-                  <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{k.label}</div>
-                </div>
+                <div style={{ fontSize:11, color:k.v>0&&k.c!==TEAL?k.c:T.sub, lineHeight:1.3 }}>{k.l}</div>
               </div>
             ))}
           </div>
         )}
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {renderContent()}
-        </div>
+        <div style={{ flex:1, overflowY:"auto" }}>{renderContent()}</div>
       </div>
     </div>
   );
