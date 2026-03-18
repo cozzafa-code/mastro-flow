@@ -61,10 +61,13 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
 
   // Avvia wake word quando il componente monta
   useEffect(() => {
-    const timer = setTimeout(() => startWakeWord(), 2000);
+    // Aspetta che il componente sia stabile prima di avviare il wake word
+    const timer = setTimeout(() => {
+      try { startWakeWord(); } catch {}
+    }, 3000);
     return () => {
       clearTimeout(timer);
-      stopWakeWord();
+      try { stopWakeWord(); } catch {}
     };
   }, []);
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
@@ -300,11 +303,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
         if (text.includes("mastro")) {
           rec.stop();
           wakeListeningRef.current = false;
-          // Attiva assistente
+          // Attiva assistente — apre pannello ma NON live mode automatico
+          // L'utente deve prima toccare "Attiva voce"
           setAiOpen(true);
-          setLiveMode(true);
-          liveModeRef.current = true;
-          setTimeout(() => startListening(), 600);
+          setLiveMode(false);
+          liveModeRef.current = false;
           // Feedback vocale breve
           const SR2 = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
           if (window.speechSynthesis) {
@@ -392,9 +395,9 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
             </div>
           </div>
           {!audioUnlocked && (
-            <div onClick={unlockAudio} style={{ background: "#0F766E", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", borderBottom: "1px solid #0a5940" }}>
+            <div onClick={() => { unlockAudio(); setTimeout(() => { setLiveMode(true); liveModeRef.current = true; startListening(); }, 300); }} style={{ background: "#0F766E", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", borderBottom: "1px solid #0a5940" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Tocca per attivare la voce</span>
+              <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Tocca per attivare la voce e iniziare</span>
             </div>
           )}
           {liveMode && (
