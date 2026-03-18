@@ -1,77 +1,61 @@
 {
   "name": "MASTRO ERP",
   "short_name": "MASTRO",
-  "description": "Sistema Operativo Serramentista — Gestione commesse, rilievi, preventivi",
+  "description": "Control Room per artigiani serramentisti",
   "start_url": "/dashboard",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#F2F1EC",
   "theme_color": "#1A1A1C",
-  "categories": ["business", "productivity"],
-  "lang": "it",
+  "orientation": "any",
   "icons": [
+    { "src": "/icons/icon-72.png",   "sizes": "72x72",   "type": "image/png" },
+    { "src": "/icons/icon-96.png",   "sizes": "96x96",   "type": "image/png" },
+    { "src": "/icons/icon-128.png",  "sizes": "128x128", "type": "image/png" },
+    { "src": "/icons/icon-144.png",  "sizes": "144x144", "type": "image/png" },
+    { "src": "/icons/icon-152.png",  "sizes": "152x152", "type": "image/png" },
+    { "src": "/icons/icon-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-384.png",  "sizes": "384x384", "type": "image/png" },
+    { "src": "/icons/icon-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
+      "src": "/screenshots/desktop-dashboard.png",
+      "sizes": "1280x800",
       "type": "image/png",
-      "purpose": "any maskable"
+      "form_factor": "wide",
+      "label": "Dashboard titolare MASTRO"
     },
     {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
+      "src": "/screenshots/mobile-commesse.png",
+      "sizes": "390x844",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "form_factor": "narrow",
+      "label": "Commesse su mobile"
     }
   ],
-  "screenshots": [],
   "shortcuts": [
     {
-      "name": "Nuova Commessa",
+      "name": "Nuova commessa",
       "short_name": "Commessa",
-      "url": "/dashboard?action=nuova-commessa",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "description": "Crea una nuova commessa",
+      "url": "/dashboard?tab=commesse&new=1",
+      "icons": [{ "src": "/icons/shortcut-commessa.png", "sizes": "96x96" }]
     },
     {
-      "name": "Agenda",
-      "short_name": "Agenda",
-      "url": "/dashboard?tab=agenda",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "name": "Montaggi oggi",
+      "short_name": "Montaggi",
+      "description": "Vedi i montaggi di oggi",
+      "url": "/dashboard?tab=montaggi",
+      "icons": [{ "src": "/icons/shortcut-montaggi.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Clienti",
+      "short_name": "Clienti",
+      "description": "Lista clienti e CRM",
+      "url": "/dashboard?tab=clienti",
+      "icons": [{ "src": "/icons/shortcut-clienti.png", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "it-IT"
 }

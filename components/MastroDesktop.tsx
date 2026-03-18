@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
-// MASTRO — MastroDesktop v11 — VERSIONE DEFINITIVA TOTALE
-// 19 moduli attivi — zero placeholder nei gruppi principali
+// MASTRO — MastroDesktop v12 — DEFINITIVO CON CNC
+// 20 moduli attivi — la Control Room completa
 
 import { useState } from "react";
 import { useMastro } from "./MastroContext";
@@ -23,6 +23,7 @@ import DesktopRete from "./DesktopRete";
 import DesktopMisure from "./DesktopMisure";
 import DesktopInfissiOra from "./DesktopInfissiOra";
 import DesktopPortaleB2C from "./DesktopPortaleB2C";
+import DesktopCNC from "./DesktopCNC";
 import AgendaPanel from "./AgendaPanel";
 import MessaggiPanel from "./MessaggiPanel";
 import SettingsPanel from "./SettingsPanel";
@@ -40,6 +41,7 @@ const NAV = [
   ]},
   { group:"Produzione", items:[
     { key:"produzione",   ico:"cpu",      label:"Produzione",   sub:"Barra → Finestra" },
+    { key:"cnc",          ico:"cpu",      label:"CNC",          sub:"Emmegi CENTRO 2" },
     { key:"montaggi",     ico:"wrench",   label:"Montaggi" },
     { key:"ordini",       ico:"package",  label:"Ordini fornitori" },
   ]},
@@ -77,7 +79,6 @@ export default function MastroDesktop() {
   const unread   = msgs.filter((m:any)=>!m.letto).length;
   const fatScad  = fattureDB.filter((f:any)=>!f.pagata&&f.scadenza&&f.scadenza<TODAY).length;
   const montOggi = montaggiDB.filter((m:any)=>m.data===TODAY).length;
-
   const badge=(k:string)=>({messaggi:unread,commesse:ferme,contabilita:fatScad,fatture:fatScad,montaggi:montOggi}[k]||0);
   const lbl=NAV.flatMap(g=>g.items).find(n=>n.key===active)?.label||"Dashboard";
 
@@ -89,6 +90,7 @@ export default function MastroDesktop() {
       case "misure":        return <DesktopMisure/>;
       case "agenda":        return <AgendaPanel/>;
       case "produzione":    return <DesktopProduzione/>;
+      case "cnc":           return <DesktopCNC/>;
       case "montaggi":      return <DesktopMontaggi/>;
       case "ordini":        return <DesktopOrdini/>;
       case "clienti":       return <DesktopClienti/>;
@@ -104,13 +106,12 @@ export default function MastroDesktop() {
       case "portale_b2c":   return <DesktopPortaleB2C/>;
       case "team":          return <DesktopTeam/>;
       case "settings":      return <SettingsPanel/>;
-      default:              return <div style={{padding:60,textAlign:"center" as any,color:T.sub}}>Modulo in sviluppo</div>;
+      default:              return <div style={{padding:60,textAlign:"center" as any,color:T.sub}}>In sviluppo</div>;
     }
   };
 
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",background:T.bg,fontFamily:FF,overflow:"hidden"}}>
-      {/* SIDEBAR */}
       <div style={{width:sw,flexShrink:0,background:DARK,display:"flex",flexDirection:"column" as any,transition:"width .18s ease",overflow:"hidden",borderRight:"1px solid rgba(255,255,255,0.05)"}}>
         <div style={{height:52,display:"flex",alignItems:"center",padding:"0 12px",gap:10,borderBottom:"1px solid rgba(255,255,255,0.07)",flexShrink:0}}>
           <div style={{width:28,height:28,borderRadius:7,background:TEAL,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:900,color:"#fff",flexShrink:0}}>M</div>
@@ -157,8 +158,6 @@ export default function MastroDesktop() {
           </div>
         </div>
       </div>
-
-      {/* MAIN */}
       <div style={{flex:1,display:"flex",flexDirection:"column" as any,overflow:"hidden",minWidth:0}}>
         <div style={{height:50,flexShrink:0,background:"#fff",borderBottom:`0.5px solid ${T.bdr}`,display:"flex",alignItems:"center",padding:"0 18px",gap:10}}>
           <span style={{fontSize:14,fontWeight:500,color:T.text,whiteSpace:"nowrap" as any}}>{lbl}</span>
