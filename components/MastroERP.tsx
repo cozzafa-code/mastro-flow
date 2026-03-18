@@ -1623,7 +1623,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         <div style={{ width:18, height:18, borderRadius:"50%", border:`2px solid ${done ? T.grn : T.bdr}`,
           background: done ? T.grn : "transparent", display:"flex", alignItems:"center", justifyContent:"center",
           flexShrink:0 }}>
-          {done && <span style={{fontSize:10,color:"white",fontWeight:800}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg></span>}
+          {done && <span style={{fontSize:10,color:"white",fontWeight:800}}></span>}
         </div>
         <span style={{fontSize:12, fontWeight:600, color: done ? T.grn : T.text}}>{label}</span>
       </div>
@@ -2074,19 +2074,19 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     const templates = {
       preventivo: {
         oggetto: `Preventivo ${c.code} — ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nle trasmetto il preventivo per la fornitura e posa in opera dei serramenti per l'immobile in ${c.indirizzo || "—"}.\n\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> Rif. commessa: ${c.code}\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Vani: ${vani.length}\n${c.sistema ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 20V8l6 4V8l6 4V8l6 4v12H2z"/><path d="M2 20h20"/></svg> Sistema: " + c.sistema + "\n" : ""}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> Importo: €${fmt(totale)} + IVA ${ivaP}% = €${fmt(totIva)}\n${c.praticaFiscale ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Agevolazione: " + c.praticaFiscale + "\n" : ""}\nIl preventivo include fornitura, posa in opera, smaltimento vecchi infissi e rilascio documentazione (DoP, CE, manuale).\n\nResto a disposizione per qualsiasi chiarimento.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nle trasmetto il preventivo per la fornitura e posa in opera dei serramenti per l'immobile in ${c.indirizzo || "—"}.\n\nRif. commessa: ${c.code}\nVani: ${vani.length}\n${c.sistema ? "Sistema: " + c.sistema + "\n" : ""}Importo: €${fmt(totale)} + IVA ${ivaP}% = €${fmt(totIva)}\n${c.praticaFiscale ? "Agevolazione: " + c.praticaFiscale + "\n" : ""}\nIl preventivo include fornitura, posa in opera, smaltimento vecchi infissi e rilascio documentazione (DoP, CE, manuale).\n\nResto a disposizione per qualsiasi chiarimento.${firma}`
       },
       conferma: {
         oggetto: `Conferma ordine ${c.code} — ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le confermiamo la ricezione dell'ordine per la commessa ${c.code}.\n\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Materiale ordinato al fornitore\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Tempi di consegna stimati: 4-6 settimane\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Cantiere: ${c.indirizzo || "—"}\n\nLa terremo aggiornata sullo stato di avanzamento della produzione.\n\nPer qualsiasi necessità non esiti a contattarci.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le confermiamo la ricezione dell'ordine per la commessa ${c.code}.\n\nMateriale ordinato al fornitore\nTempi di consegna stimati: 4-6 settimane\nCantiere: ${c.indirizzo || "—"}\n\nLa terremo aggiornata sullo stato di avanzamento della produzione.\n\nPer qualsiasi necessità non esiti a contattarci.${firma}`
       },
       montaggio: {
         oggetto: `Programmazione montaggio ${c.code} — ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nsiamo lieti di comunicarle che il materiale per la commessa ${c.code} è arrivato.\n\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> Montaggio previsto: [INSERIRE DATA]\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Indirizzo: ${c.indirizzo || "—"}\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Durata stimata: ${vani.length <= 3 ? "1 giorno" : vani.length <= 6 ? "2 giorni" : "3+ giorni"}\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 18a1 1 0 001 1h18a1 1 0 001-1v-2a1 1 0 00-1-1H3a1 1 0 00-1 1v2z"/><path d="M10 15V6a1 1 0 011-1h2a1 1 0 011 1v9"/><path d="M4 15v-3a8 8 0 0116 0v3"/></svg> Squadra: [NOME SQUADRA]\n\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Note per il giorno del montaggio:\n- Assicurarsi che i locali siano accessibili\n- Spostare eventuali mobili vicino alle finestre\n- È possibile che si verifichi polvere durante lo smontaggio\n\nLa preghiamo di confermare la data rispondendo a questa mail.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\nsiamo lieti di comunicarle che il materiale per la commessa ${c.code} è arrivato.\n\nMontaggio previsto: [INSERIRE DATA]\nIndirizzo: ${c.indirizzo || "—"}\nDurata stimata: ${vani.length <= 3 ? "1 giorno" : vani.length <= 6 ? "2 giorni" : "3+ giorni"}\nSquadra: [NOME SQUADRA]\n\nNote per il giorno del montaggio:\n- Assicurarsi che i locali siano accessibili\n- Spostare eventuali mobili vicino alle finestre\n- È possibile che si verifichi polvere durante lo smontaggio\n\nLa preghiamo di confermare la data rispondendo a questa mail.${firma}`
       },
       saldo: {
         oggetto: `Completamento lavori e saldo ${c.code} — ${azNome}`,
-        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le comunichiamo che i lavori relativi alla commessa ${c.code} sono stati completati con successo.\n\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Fornitura e posa completata\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Vani installati: ${vani.length}\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Cantiere: ${c.indirizzo || "—"}\n\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> Importo totale: €${fmt(totIva)} (IVA ${ivaP}% inclusa)\n${(() => { const inc = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s,f)=>s+(f.importo||0),0); return inc > 0 ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Già versato: €${fmt(inc)}\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Saldo dovuto: €${fmt(totIva - inc)}\n` : ""; })()}\n<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg> In allegato:\n- Fattura di saldo\n- Dichiarazione di prestazione (DoP)\n- Certificazione CE\n- Manuale d'uso e manutenzione\n\nModalità di pagamento: Bonifico bancario\nIBAN: ${az.iban || "[IBAN]"}\n\nLa ringraziamo per la fiducia.${firma}`
+        corpo: `Gentile ${c.cliente} ${c.cognome || ""},\n\ncon la presente le comunichiamo che i lavori relativi alla commessa ${c.code} sono stati completati con successo.\n\nFornitura e posa completata\nVani installati: ${vani.length}\nCantiere: ${c.indirizzo || "—"}\n\nImporto totale: €${fmt(totIva)} (IVA ${ivaP}% inclusa)\n${(() => { const inc = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s,f)=>s+(f.importo||0),0); return inc > 0 ? `Già versato: €${fmt(inc)}\nSaldo dovuto: €${fmt(totIva - inc)}\n` : ""; })()}\nIn allegato:\n- Fattura di saldo\n- Dichiarazione di prestazione (DoP)\n- Certificazione CE\n- Manuale d'uso e manutenzione\n\nModalità di pagamento: Bonifico bancario\nIBAN: ${az.iban || "[IBAN]"}\n\nLa ringraziamo per la fiducia.${firma}`
       },
       generico: {
         oggetto: `Commessa ${c.code} — ${azNome}`,
@@ -2688,7 +2688,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       setCantieri(cs => cs.map(cm => cm.id === cmId ? {
         ...cm, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0],
         firmaDocumento: allegato, allegati: [...(cm.allegati || []), allegato],
-        log: [{ chi: "Fabio", cosa: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> documento firmato caricato da inbox`, quando: "Adesso", color: "#1A9E73" }, ...(cm.log || [])]
+        log: [{ chi: "Fabio", cosa: `documento firmato caricato da inbox`, quando: "Adesso", color: "#1A9E73" }, ...(cm.log || [])]
       } : cm));
       if (selectedCM?.id === cmId) setSelectedCM(prev => ({ ...prev, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0] }));
     } else if (tipo === "ricevuta") {
@@ -2699,18 +2699,18 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       }
       setCantieri(cs => cs.map(cm => cm.id === cmId ? {
         ...cm, allegati: [...(cm.allegati || []), allegato],
-        log: [{ chi: "Fabio", cosa: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ricevuta pagamento caricata da inbox`, quando: "Adesso", color: "#0D7C6B" }, ...(cm.log || [])]
+        log: [{ chi: "Fabio", cosa: `ricevuta pagamento caricata da inbox`, quando: "Adesso", color: "#0D7C6B" }, ...(cm.log || [])]
       } : cm));
     } else if (tipo === "foto") {
       setCantieri(cs => cs.map(cm => cm.id === cmId ? {
         ...cm, allegati: [...(cm.allegati || []), allegato],
-        log: [{ chi: "Fabio", cosa: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> foto cantiere caricata da inbox`, quando: "Adesso", color: "#8B5CF6" }, ...(cm.log || [])]
+        log: [{ chi: "Fabio", cosa: `foto cantiere caricata da inbox`, quando: "Adesso", color: "#8B5CF6" }, ...(cm.log || [])]
       } : cm));
     } else {
       // Generic: just add as allegato
       setCantieri(cs => cs.map(cm => cm.id === cmId ? {
         ...cm, allegati: [...(cm.allegati || []), allegato],
-        log: [{ chi: "Fabio", cosa: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> documento "${res.file}" caricato da inbox`, quando: "Adesso", color: "#86868b" }, ...(cm.log || [])]
+        log: [{ chi: "Fabio", cosa: `documento "${res.file}" caricato da inbox`, quando: "Adesso", color: "#86868b" }, ...(cm.log || [])]
       } : cm));
     }
     
@@ -2943,7 +2943,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                       <input type="time" defaultValue={ev.time || ""} onChange={(e) => { setEvents(prev => prev.map(x => x.id === ev.id ? { ...x, time: e.target.value } : x)); setSelectedEvent({ ...ev, time: e.target.value }); }} style={{ fontSize: 13, color: T.sub, border: `1px solid ${T.bdr}`, borderRadius: 8, padding: "4px 8px", background: T.card, fontFamily: "inherit" }} />
                     </div>
                   </div>
-                  <div onClick={() => setSelectedEvent(null)} style={{ cursor: "pointer", fontSize: 22, color: T.sub, padding: "0 4px" }}>{"<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>"}</div>
+                  <div onClick={() => setSelectedEvent(null)} style={{ cursor: "pointer", fontSize: 22, color: T.sub, padding: "0 4px" }}>{""}</div>
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
                   {ev.persona && <span style={S.badge(T.purpleLt, T.purple)}><I d={ICO.user} /> {ev.persona}</span>}
@@ -2956,7 +2956,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 8 }}>
                   {ev.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr))} style={{ padding: "12px 4px", borderRadius: 10, background: T.blueLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.blue }}><I d={ICO.mapPin} s={12} c={T.blue} /> Mappa</div>}
                   <div onClick={() => { const tel = cmObj?.telefono || contatti.find(c => c.nome === ev.persona)?.telefono; if (tel) window.location.href="tel:" + tel; }} style={{ padding: "12px 4px", borderRadius: 10, background: T.grnLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.grn }}><Ico d={ICO.phone} s={14} c={T.grn} /> Chiama</div>
-                  <div onClick={() => { const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : (ev.persona || "Cliente"); const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" }); setMailBody(`Gentile ${cliente},\n\nLe confermo l'appuntamento:\n\n${dataFmt}${ev.time ? " alle " + ev.time : ""}\n${ev.addr || ""}\n\n${ev.text}\n\nCordiali saluti,\nFabio Cozza`); setShowMailModal({ ev, cm: cmObj }); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.accLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.acc }}>{"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>️"} Mail</div>
+                  <div onClick={() => { const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : (ev.persona || "Cliente"); const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" }); setMailBody(`Gentile ${cliente},\n\nLe confermo l'appuntamento:\n\n${dataFmt}${ev.time ? " alle " + ev.time : ""}\n${ev.addr || ""}\n\n${ev.text}\n\nCordiali saluti,\nFabio Cozza`); setShowMailModal({ ev, cm: cmObj }); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.accLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.acc }}>{"️"} Mail</div>
                   <div onClick={() => { deleteEvent(ev.id); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.redLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.red }}><Ico d={ICO.trash} s={14} c={T.red} /> Elimina</div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
@@ -2972,18 +2972,18 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {selectedTask && (() => {
           const t = tasks.find(x => x.id === selectedTask.id) || selectedTask;
           const prioColor = t.priority === "alta" ? "#FF3B30" : t.priority === "media" ? "#FF9500" : "#8E8E93";
-          const prioLabel = t.priority === "alta" ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Urgente" : t.priority === "media" ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Normale" : "● Bassa";
+          const prioLabel = t.priority === "alta" ? "Urgente" : t.priority === "media" ? "Normale" : "● Bassa";
           return (
             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setSelectedTask(null)}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)" }} />
               <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 9999, background: T.bg, borderRadius: 16, padding: 20, width: "90%", maxWidth: 420, boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 9, fontWeight: 800, color: prioColor, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: FM }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> TASK · {prioLabel}</div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: prioColor, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: FM }}>TASK · {prioLabel}</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: T.text, textDecoration: t.done ? "line-through" : "none", opacity: t.done ? 0.6 : 1 }}>{t.text}</div>
                     {t.date && <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}><I d={ICO.calendar} /> {new Date(t.date + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}{t.time ? " alle " + t.time : ""}</div>}
                   </div>
-                  <div onClick={() => setSelectedTask(null)} style={{ cursor: "pointer", fontSize: 22, color: T.sub, padding: "0 4px" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+                  <div onClick={() => setSelectedTask(null)} style={{ cursor: "pointer", fontSize: 22, color: T.sub, padding: "0 4px" }}></div>
                 </div>
                 {t.meta && <div style={{ fontSize: 13, color: T.sub, marginBottom: 12, padding: "8px 12px", background: T.bgSec, borderRadius: 8, border: `1px solid ${T.bdr}` }}><Ico d={ICO.fileText} s={12} c={T.sub} /> {t.meta}</div>}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
@@ -2993,7 +2993,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   {t.done && <span style={S.badge(T.grnLt, T.grn)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Completato</span>}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div onClick={() => { toggleTask(t.id); setSelectedTask({ ...t, done: !t.done }); }} style={{ padding: "14px", borderRadius: 12, background: t.done ? T.bg : T.grn, color: t.done ? T.sub : "#fff", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: `1px solid ${t.done ? T.bdr : T.grn}` }}>{t.done ? "↩ Riapri" : "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Completa"}</div>
+                  <div onClick={() => { toggleTask(t.id); setSelectedTask({ ...t, done: !t.done }); }} style={{ padding: "14px", borderRadius: 12, background: t.done ? T.bg : T.grn, color: t.done ? T.sub : "#fff", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: `1px solid ${t.done ? T.bdr : T.grn}` }}>{t.done ? "↩ Riapri" : "Completa"}</div>
                   <div onClick={() => { setTasks(ts => ts.filter(x => x.id !== t.id)); setSelectedTask(null); }} style={{ padding: "14px", borderRadius: 12, background: "#FF3B3010", color: "#FF3B30", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: "1px solid #FF3B3020" }}><><Ico d={ICO.trash} s={14} c="#FF3B30" /></> Elimina</div>
                 </div>
               </div>
@@ -3180,13 +3180,13 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Forma base</label>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {[
-                      { id: "rettangolare", label: "Rettangolare", svg: <svg viewBox="0 0 40 32" width={40} height={32}><rect x={2} y={2} width={36} height={28} fill="#ddeefa" stroke="#333" strokeWidth={1.5} rx={1}/></svg> },
-                      { id: "fuorisquadro", label: "Fuorisquadro", svg: <svg viewBox="0 0 40 36" width={40} height={36}><polygon points="2,34 2,6 38,2 38,34" fill="#ddeefa" stroke="#333" strokeWidth={1.5}/><line x1="2" y1="6" x2="38" y2="34" stroke="#c62828" strokeWidth={1} strokeDasharray="3,2"/><text x="4" y="20" fontSize="7" fill="#c62828" fontWeight="700">H1</text><text x="32" y="20" fontSize="7" fill="#1565c0" fontWeight="700">H2</text></svg> },
-                      { id: "arco", label: "Ad arco", svg: <svg viewBox="0 0 40 36" width={40} height={36}><path d="M2,36 L2,14 Q2,2 20,2 Q38,2 38,14 L38,36 Z" fill="#ddeefa" stroke="#333" strokeWidth={1.5}/></svg> },
-                      { id: "trapezio", label: "Trapezoidale", svg: <svg viewBox="0 0 40 32" width={40} height={32}><polygon points="8,2 32,2 38,30 2,30" fill="#ddeefa" stroke="#333" strokeWidth={1.5}/></svg> },
-                      { id: "triangolo", label: "Triangolare", svg: <svg viewBox="0 0 40 32" width={40} height={32}><polygon points="20,2 38,30 2,30" fill="#ddeefa" stroke="#333" strokeWidth={1.5}/></svg> },
-                      { id: "oblo", label: "Oblò", svg: <svg viewBox="0 0 40 40" width={40} height={40}><circle cx={20} cy={20} r={17} fill="#ddeefa" stroke="#333" strokeWidth={1.5}/></svg> },
-                      { id: "sagomato", label: "Sagomato", svg: <svg viewBox="0 0 40 32" width={40} height={32}><path d="M4,30 L4,10 Q4,2 12,2 L28,2 Q36,6 36,14 L36,24 Q30,30 20,30 Z" fill="#ddeefa" stroke="#333" strokeWidth={1.5}/></svg> },
+                      { id: "rettangolare", label: "Rettangolare", svg: },
+                      { id: "fuorisquadro", label: "Fuorisquadro", svg: },
+                      { id: "arco", label: "Ad arco", svg: },
+                      { id: "trapezio", label: "Trapezoidale", svg: },
+                      { id: "triangolo", label: "Triangolare", svg: },
+                      { id: "oblo", label: "Oblò", svg: },
+                      { id: "sagomato", label: "Sagomato", svg: },
                     ].map(f => (
                       <div key={f.id} onClick={() => setSettingsForm(fm => ({ ...fm, forma: f.id }))} style={{ padding: "6px 8px", borderRadius: 10, border: `2px solid ${settingsForm.forma === f.id ? T.acc : T.bdr}`, background: settingsForm.forma === f.id ? T.accLt : T.card, cursor: "pointer", textAlign: "center", minWidth: 56 }}>
                         <div>{f.svg}</div>
@@ -3217,8 +3217,8 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             { id: "altro", l: "Altro", ico: "clipboard", c: "#8E8E93" },
           ];
           const PRIO = [
-            { id: "alta", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Alta", c: "#FF3B30" },
-            { id: "media", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Media", c: "#FF9500" },
+            { id: "alta", l: "Alta", c: "#FF3B30" },
+            { id: "media", l: "Media", c: "#FF9500" },
             { id: "bassa", l: "● Bassa", c: "#8E8E93" },
           ];
           return (
@@ -3226,7 +3226,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               <div style={{ ...S.modalInner, maxHeight: "85vh", overflow: "auto" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#FF3B30" }}><I d={ICO.alertTriangle} /> Segnala problema</div>
-                  <div onClick={() => setShowProblemaModal(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+                  <div onClick={() => setShowProblemaModal(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}></div>
                 </div>
                 <div style={{ fontSize: 11, color: T.sub, marginBottom: 14, padding: "8px 12px", background: T.accLt, borderRadius: 8 }}><Ico d={ICO.folder} s={12} c={T.acc} /> {c.code} · {c.cliente} · Fase: <b>{c.fase}</b></div>
 
@@ -3280,8 +3280,8 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                     noteRisoluzione: "",
                   };
                   setProblemi(prev => [np, ...prev]);
-                  setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, log: [...(x.log || []), { chi: np.segnalatoDa, cosa: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Problema segnalato: ${np.titolo}`, quando: "Adesso", color: "#FF3B30" }] } : x));
-                  setSelectedCM(prev => ({ ...prev, log: [...(prev.log || []), { chi: np.segnalatoDa, cosa: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Problema segnalato: ${np.titolo}`, quando: "Adesso", color: "#FF3B30" }] }));
+                  setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, log: [...(x.log || []), { chi: np.segnalatoDa, cosa: `Problema segnalato: ${np.titolo}`, quando: "Adesso", color: "#FF3B30" }] } : x));
+                  setSelectedCM(prev => ({ ...prev, log: [...(prev.log || []), { chi: np.segnalatoDa, cosa: `Problema segnalato: ${np.titolo}`, quando: "Adesso", color: "#FF3B30" }] }));
                   setShowProblemaModal(false);
                 }} style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", background: "#FF3B30", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, marginTop: 16 }}>
                   <I d={ICO.alertTriangle} /> Crea segnalazione
@@ -3305,7 +3305,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               <div style={{ ...S.modalInner, maxWidth: 500, maxHeight: "90vh", overflow: "auto" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}><I d={ICO.alertTriangle} /> Problemi {cmFilter ? `· ${selectedCM.code}` : "— Tutti"}</div>
-                  <div onClick={() => setShowProblemiView(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+                  <div onClick={() => setShowProblemiView(false)} style={{ cursor: "pointer", fontSize: 20, color: T.sub }}></div>
                 </div>
 
                 {/* Contatori */}
@@ -3333,7 +3333,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 ) : list.map(p => {
                   const tp = TIPI_PROB_MAP[p.tipo] || TIPI_PROB_MAP.altro;
                   const st = STATO_MAP[p.stato] || STATO_MAP.aperto;
-                  const prio = p.priorita === "alta" ? { l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>", c: "#FF3B30" } : p.priorita === "media" ? { l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>", c: "#FF9500" } : { l: "●", c: "#8E8E93" };
+                  const prio = p.priorita === "alta" ? { l: "", c: "#FF3B30" } : p.priorita === "media" ? { l: "", c: "#FF9500" } : { l: "●", c: "#8E8E93" };
                   return (
                     <div key={p.id} style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 8, borderLeft: `3px solid ${st.c}` }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
@@ -3567,7 +3567,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   ].map(opt => (
                     <div key={opt.key} onClick={() => setSendOpts(o => ({ ...o, [opt.key]: !o[opt.key] }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: sendOpts[opt.key] ? T.accLt : T.card, border: `1px solid ${sendOpts[opt.key] ? T.acc : T.bdr}`, borderRadius: 10, marginBottom: 6, cursor: "pointer" }}>
                       <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${sendOpts[opt.key] ? T.acc : T.bdr}`, background: sendOpts[opt.key] ? T.acc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700 }}>
-                        {sendOpts[opt.key] && "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg>"}
+                        {sendOpts[opt.key] && ""}
                       </div>
                       <span style={{ fontSize: 16 }}>{opt.ico}</span>
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{opt.label}</span>
@@ -3621,7 +3621,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               <div style={{ marginBottom: 14 }}>
                 <label style={S.fieldLabel}>Priorità</label>
                 <div style={{ display: "flex", gap: 6 }}>
-                  {[{ id: "alta", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Alta", c: "#FF3B30" }, { id: "media", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Media", c: "#FF9500" }, { id: "bassa", l: "● Bassa", c: "#8E8E93" }].map(p => (
+                  {[{ id: "alta", l: "Alta", c: "#FF3B30" }, { id: "media", l: "Media", c: "#FF9500" }, { id: "bassa", l: "● Bassa", c: "#8E8E93" }].map(p => (
                     <div key={p.id} onClick={() => setNewEvent(ev => ({ ...ev, _taskPriority: p.id } as any))} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: `1px solid ${((newEvent as any)._taskPriority || "media") === p.id ? p.c : T.bdr}`, background: ((newEvent as any)._taskPriority || "media") === p.id ? p.c + "18" : "transparent", textAlign: "center", fontSize: 12, fontWeight: 600, color: ((newEvent as any)._taskPriority || "media") === p.id ? p.c : T.sub, cursor: "pointer" }}>
                       {p.l}
                     </div>
@@ -3746,10 +3746,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <label style={S.fieldLabel}>Invia via</label>
                 <div style={{ display: "flex", gap: 4 }}>
                   {[
-                    { id: "whatsapp", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> WhatsApp", c: "#25d366" },
-                    { id: "email", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg> Email", c: T.blue },
-                    { id: "sms", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> SMS", c: T.orange },
-                    { id: "telegram", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>️ Telegram", c: "#0088cc" },
+                    { id: "whatsapp", l: "WhatsApp", c: "#25d366" },
+                    { id: "email", l: "Email", c: T.blue },
+                    { id: "sms", l: "SMS", c: T.orange },
+                    { id: "telegram", l: "️ Telegram", c: "#0088cc" },
                   ].map(ch => (
                     <div key={ch.id} onClick={() => setComposeMsg(c => ({ ...c, canale: ch.id }))} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: `1.5px solid ${composeMsg.canale === ch.id ? ch.c : T.bdr}`, background: composeMsg.canale === ch.id ? ch.c + "15" : T.card, textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: composeMsg.canale === ch.id ? ch.c : T.sub }}>
                       {ch.l}
@@ -3843,7 +3843,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                       if (!isRecording) { startMediaRecording("vocale"); }
                       else { stopMediaRecording("vocale"); }
                     }} style={{ width: 70, height: 70, borderRadius: "50%", background: isRecording ? "linear-gradient(135deg, #DC4444, #cc0000)" : "linear-gradient(135deg, #DC4444, #ff6b6b)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", cursor: "pointer", boxShadow: isRecording ? "0 0 24px rgba(255,59,48,0.5)" : "0 4px 16px rgba(255,59,48,0.3)" }}>
-                      <span style={{ fontSize: 28, color: "#fff" }}>{isRecording ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="18" height="18" rx="2"/></svg>" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>"}</span>
+                      <span style={{ fontSize: 28, color: "#fff" }}>{isRecording ? "" : ""}</span>
                     </div>
                     <div style={{ fontSize: 12, color: isRecording ? T.red : T.sub, marginTop: 10, fontWeight: isRecording ? 700 : 400 }}>
                       {isRecording ? "Registrazione... tocca per fermare" : "Tocca per registrare"}
@@ -3910,7 +3910,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             <div style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(0,0,0,0.8)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 14, color: "#fff", fontWeight: 700 }}>
-                  {cameraMode === "foto" ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Scatta Foto" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 11v8a2 2 0 002 2h12a2 2 0 002-2v-8H4z"/><path d="M4 11l3.5-7H20l-3.5 7H4z"/></svg> Registra Video"}
+                  {cameraMode === "foto" ? "Scatta Foto" : "Registra Video"}
                 </span>
                 {pendingFotoCat && <span style={{ fontSize: 10, color: "#E8A020", fontWeight: 700, background: "rgba(255,149,0,0.2)", padding: "2px 8px", borderRadius: 4 }}>{pendingFotoCat}</span>}
               </div>
@@ -3918,7 +3918,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 {/* Switch mode */}
                 <div onClick={() => setCameraMode(cameraMode === "foto" ? "video" : "foto")}
                   style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(255,255,255,0.15)", fontSize: 10, color: "#fff", fontWeight: 600, cursor: "pointer" }}>
-                  {cameraMode === "foto" ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 11v8a2 2 0 002 2h12a2 2 0 002-2v-8H4z"/><path d="M4 11l3.5-7H20l-3.5 7H4z"/></svg> Video" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto"}
+                  {cameraMode === "foto" ? "Video" : "Foto"}
                 </div>
                 {/* Import from gallery */}
                 <div onClick={() => { fotoVanoRef.current?.click(); }}
@@ -4074,7 +4074,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}><I d={ICO.download} /> Documento in Arrivo</div>
-              <div onClick={() => { setShowInboxDoc(false); setInboxResult(null); }} style={{ width: 30, height: 30, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+              <div onClick={() => { setShowInboxDoc(false); setInboxResult(null); }} style={{ width: 30, height: 30, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}></div>
             </div>
 
             {/* Loading */}
@@ -4100,7 +4100,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               <div>
                 {/* File info + classification */}
                 <div style={{ ...S.card, padding: 12, marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ fontSize: 28 }}>{inboxResult.tipo?.includes("pdf") ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>"}</div>
+                  <div style={{ fontSize: 28 }}>{inboxResult.tipo?.includes("pdf") ? "" : ""}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{inboxResult.file}</div>
                     {inboxResult.fileUrl && <div onClick={() => window.open(inboxResult.fileUrl, "_blank")} style={{ fontSize: 10, color: "#0D7C6B", cursor: "pointer", marginTop: 2 }}><I d={ICO.link} /> Apri originale</div>}
@@ -4142,7 +4142,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 {/* === CONFERMA type: assign to ordine === */}
                 {inboxResult.docTipo === "conferma" && inboxResult.matchedOrdine && (
                   <div style={{ ...S.card, padding: 12, marginBottom: 12, background: "#1A9E7308", border: `2px solid #1A9E73` }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ORDINE TROVATO</div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", marginBottom: 6 }}>ORDINE TROVATO</div>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{inboxResult.matchedCommessa?.code} — {inboxResult.matchedCommessa?.cliente}</div>
                     <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedOrdine.fornitore?.nome || "—"} · €{(inboxResult.matchedOrdine.totaleIva || 0).toLocaleString("it-IT")}</div>
                     <button onClick={() => confermaInboxDoc(inboxResult.matchedOrdine.id)} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
@@ -4170,7 +4170,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   <div>
                     {inboxResult.matchedCommessa && (
                       <div style={{ ...S.card, padding: 12, marginBottom: 12, background: "#1A9E7308", border: `2px solid #1A9E73` }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> COMMESSA TROVATA</div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", marginBottom: 6 }}>COMMESSA TROVATA</div>
                         <div style={{ fontSize: 14, fontWeight: 700 }}>{inboxResult.matchedCommessa.code} — {inboxResult.matchedCommessa.cliente} {inboxResult.matchedCommessa.cognome || ""}</div>
                         <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedCommessa.indirizzo || "—"}</div>
                         <button onClick={() => assegnaDocUniversale(inboxResult.matchedCommessa.id, inboxResult.docTipo)} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
@@ -4199,10 +4199,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}>Classificazione sbagliata? Scegli il tipo:</div>
                   <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" as any }}>
                     {[
-                      { id: "firma", label: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>️ Firma", col: "#1A9E73" },
-                      { id: "conferma", label: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Conferma", col: "#af52de" },
-                      { id: "ricevuta", label: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 20V8l6 4V8l6 4V8l6 4v12H2z"/><path d="M2 20h20"/></svg> Ricevuta", col: "#E8A020" },
-                      { id: "foto", label: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto", col: "#8B5CF6" },
+                      { id: "firma", label: "️ Firma", col: "#1A9E73" },
+                      { id: "conferma", label: "Conferma", col: "#af52de" },
+                      { id: "ricevuta", label: "Ricevuta", col: "#E8A020" },
+                      { id: "foto", label: "Foto", col: "#8B5CF6" },
                     ].map(t => (
                       <span key={t.id} onClick={() => setInboxResult(prev => ({ ...prev, docTipo: t.id, confidence: 100 }))} style={{
                         padding: "6px 10px", borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: "pointer",
@@ -4231,7 +4231,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>{docViewer.title}</div>
                 <div style={{ fontSize: 11, color: T.sub }}>{docViewer.docs.length} document{docViewer.docs.length !== 1 ? "i" : "o"}</div>
               </div>
-              <span onClick={() => setDocViewer(null)} style={{ fontSize: 24, cursor: "pointer", color: T.sub, lineHeight: 1 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+              <span onClick={() => setDocViewer(null)} style={{ fontSize: 24, cursor: "pointer", color: T.sub, lineHeight: 1 }}></span>
             </div>
             {/* Document list */}
             <div style={{ padding: 12 }}>
