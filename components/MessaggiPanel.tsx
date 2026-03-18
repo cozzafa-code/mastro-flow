@@ -59,7 +59,7 @@ export default function MessaggiPanel() {
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
               <Ico d={ICO.search} s={14} c={T.sub} />
               <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
-              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
+              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>}
             </div>
           </div>
           <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
@@ -151,7 +151,7 @@ export default function MessaggiPanel() {
                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                       {gmailSelected.attachments.map((a, i) => (
                         <div key={i} style={{ padding: "4px 8px", borderRadius: 6, background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 10, color: T.text }}>
-                          {a.filename.endsWith(".pdf") ? "📄" : a.filename.match(/\.(jpg|png|jpeg)$/i) ? "🖼" : "📎"} {a.filename}
+                          {a.filename.endsWith(".pdf") ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>" : a.filename.match(/\.(jpg|png|jpeg)$/i) ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>"} {a.filename}
                           <span style={{ fontSize: 8, color: T.sub, marginLeft: 4 }}>{Math.round(a.size/1024)}KB</span>
                         </div>
                       ))}
@@ -200,7 +200,7 @@ export default function MessaggiPanel() {
                     setTab("agenda");
                     setGmailSelected(null);
                   }} style={{ padding: "8px 14px", borderRadius: 8, background: "#ff950015", color: "#ff9500", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                    ✅ Crea task
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Crea task
                   </div>
                   {/* Aggiungi a rubrica */}
                   <div onClick={() => {
@@ -210,7 +210,7 @@ export default function MessaggiPanel() {
                     if (exists) { alert("Già in rubrica: " + exists.nome); return; }
                     const parts = fromName.split(" ");
                     setContatti(prev => [...prev, { id: Date.now(), nome: parts[0] || fromName, cognome: parts.slice(1).join(" ") || "", email: fromEmail, telefono: "", tipo: "cliente", preferito: false }]);
-                    alert("✅ " + fromName + " aggiunto alla rubrica!");
+                    alert("<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> " + fromName + " aggiunto alla rubrica!");
                   }} style={{ padding: "8px 14px", borderRadius: 8, background: "#af52de15", color: "#af52de", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                     <I d={ICO.users} /> Rubrica
                   </div>
@@ -230,7 +230,7 @@ export default function MessaggiPanel() {
                     const to = gmailSelected.from?.match(/<(.+)>/)?.[1] || gmailSelected.from;
                     gmailSendReply(to, gmailSelected.subject, gmailReply, gmailSelected.threadId);
                   }} style={{ flex: 1, padding: 12, borderRadius: 10, border: "none", background: gmailReply.trim() ? "#007aff" : T.bdr, color: "#fff", fontSize: 13, fontWeight: 700, cursor: gmailReply.trim() ? "pointer" : "default", fontFamily: "inherit", opacity: gmailSending ? 0.6 : 1 }}>
-                    {gmailSending ? "Invio..." : "📧 Invia risposta"}
+                    {gmailSending ? "Invio..." : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg> Invia risposta"}
                   </button>
                 </div>
               </div>
@@ -244,7 +244,7 @@ export default function MessaggiPanel() {
                   <span style={{ fontSize: 14 }}><I d={ICO.search} /></span>
                   <input value={gmailSearch} onChange={e => setGmailSearch(e.target.value)} onKeyDown={e => { if (e.key === "Enter") gmailFetchMessages(gmailSearch); }}
                     placeholder="Cerca email..." style={{ flex: 1, border: "none", background: "transparent", fontSize: 12, color: T.text, outline: "none", fontFamily: FF }} />
-                  {gmailSearch && <div onClick={() => { setGmailSearch(""); gmailFetchMessages(); }} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
+                  {gmailSearch && <div onClick={() => { setGmailSearch(""); gmailFetchMessages(); }} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>}
                 </div>
                 <div onClick={() => gmailFetchMessages(gmailSearch)} style={{ padding: "8px 12px", borderRadius: 10, background: T.acc, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                   <I d={ICO.refreshCw} />
@@ -256,7 +256,7 @@ export default function MessaggiPanel() {
               </div>
 
               {gmailLoading && gmailMessages.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 40, color: T.sub }}>⏳ Caricamento email...</div>
+                <div style={{ textAlign: "center", padding: 40, color: T.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Caricamento email...</div>
               ) : gmailMessages.length === 0 ? (
                 <div style={{ textAlign: "center", padding: 40, color: T.sub }}>Nessuna email trovata</div>
               ) : (
@@ -283,7 +283,7 @@ export default function MessaggiPanel() {
                   })}
                   {gmailNextPage && (
                     <div onClick={() => gmailFetchMessages(gmailSearch, gmailNextPage)} style={{ textAlign: "center", padding: 12, color: T.acc, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                      {gmailLoading ? "⏳ Caricamento..." : "📥 Carica altre email"}
+                      {gmailLoading ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Caricamento..." : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Carica altre email"}
                     </div>
                   )}
                 </>
@@ -331,10 +331,10 @@ export default function MessaggiPanel() {
                           <I d={ICO.cpu} /> {m.ai.confidenza}% sicuro
                         </span>
                         {m.ai.cmSuggerita && <span style={{ ...S.badge(T.accLt, T.acc) }}>{m.ai.cmSuggerita}</span>}
-                        {m.archiviata && <span style={{ fontSize: 9, fontWeight: 700, color: T.grn }}>✓ Archiviata</span>}
+                        {m.archiviata && <span style={{ fontSize: 9, fontWeight: 700, color: T.grn }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Archiviata</span>}
                       </div>
                     </div>
-                    <span style={{ fontSize: 13, color: T.sub, transform: isSelected ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.2s", flexShrink: 0, marginTop: 2 }}>›</span>
+                    <span style={{ fontSize: 13, color: T.sub, transform: isSelected ? "rotate(90deg)" : "rotate(0)", transition: "transform 0.2s", flexShrink: 0, marginTop: 2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
                   </div>
 
                   {/* Dettaglio espanso */}
@@ -399,7 +399,7 @@ Grazie per il suo messaggio.
                       )}
                       {m.archiviata && (
                         <div style={{ padding: "8px 12px", background: T.grnLt, borderRadius: 8, textAlign: "center", fontSize: 12, fontWeight: 700, color: T.grn }}>
-                          ✓ Archiviata con successo
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Archiviata con successo
                         </div>
                       )}
                     </div>
@@ -416,7 +416,7 @@ Grazie per il suo messaggio.
             <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
               <Ico d={ICO.search} s={14} c={T.sub} />
               <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca nella rubrica..." value={rubricaSearch} onChange={e => setRubricaSearch(e.target.value)} />
-              {rubricaSearch && <div onClick={() => setRubricaSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
+              {rubricaSearch && <div onClick={() => setRubricaSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>}
             </div>
           </div>
           <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
@@ -424,8 +424,8 @@ Grazie per il suo messaggio.
               { id: "tutti", l: "Tutti", c: T.acc },
               { id: "preferiti", l: "⭐ Preferiti", c: "#ff9500" },
               { id: "team", l: "● Team", c: "#34c759" },
-              { id: "clienti", l: "🏠 Clienti", c: T.blue },
-              { id: "fornitori", l: "🏭 Fornitori", c: "#af52de" },
+              { id: "clienti", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 12L12 3l10 9"/><path d="M5 9.5V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5"/></svg> Clienti", c: T.blue },
+              { id: "fornitori", l: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 20V8l6 4V8l6 4V8l6 4v12H2z"/><path d="M2 20h20"/></svg> Fornitori", c: "#af52de" },
             ].map(f => (
               <div key={f.id} onClick={() => setRubricaFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${rubricaFilter === f.id ? f.c : T.bdr}`, background: rubricaFilter === f.id ? f.c + "15" : T.card, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: rubricaFilter === f.id ? f.c : T.sub }}>
                 {f.l}
@@ -461,7 +461,7 @@ Grazie per il suo messaggio.
                         <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "email", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: T.blueLt, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}><I d={ICO.mail} /></div>
                       )}
                       <div onClick={() => { setContatti(cs => cs.map(x => x.id === c.id ? { ...x, preferito: !x.preferito } : x)); }} style={{ width: 32, height: 32, borderRadius: "50%", background: c.preferito ? "#ff950018" : T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>
-                        {c.preferito ? "⭐" : "☆"}
+                        {c.preferito ? "⭐" : "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>"}
                       </div>
                     </div>
                   </div>
