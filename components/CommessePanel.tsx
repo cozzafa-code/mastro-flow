@@ -92,7 +92,7 @@ export default function CommessePanel() {
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, fontFamily: FM }}>{prog}%</div>
         </div>
-        <span style={{ color: T.sub + "50", fontSize: 16 }}>›</span>
+        <span style={{ color: T.sub + "50", fontSize: 16 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
       </div>
     );
   };
@@ -113,8 +113,8 @@ export default function CommessePanel() {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ display: "flex", background: T.bg, borderRadius: 8, padding: 2, border: `1px solid ${T.bdr}` }}>
-            <div onClick={() => setCmView("list")} style={{ padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, background: cmView === "list" ? T.card : "transparent", color: cmView === "list" ? T.text : T.sub, boxShadow: cmView === "list" ? "0 1px 2px rgba(0,0,0,0.06)" : "none" }}>☰</div>
-            <div onClick={() => setCmView("card")} style={{ padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, background: cmView === "card" ? T.card : "transparent", color: cmView === "card" ? T.text : T.sub, boxShadow: cmView === "card" ? "0 1px 2px rgba(0,0,0,0.06)" : "none" }}>▦</div>
+            <div onClick={() => setCmView("list")} style={{ padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, background: cmView === "list" ? T.card : "transparent", color: cmView === "list" ? T.text : T.sub, boxShadow: cmView === "list" ? "0 1px 2px rgba(0,0,0,0.06)" : "none" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div>
+            <div onClick={() => setCmView("card")} style={{ padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, background: cmView === "card" ? T.card : "transparent", color: cmView === "card" ? T.text : T.sub, boxShadow: cmView === "card" ? "0 1px 2px rgba(0,0,0,0.06)" : "none" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
           </div>
           <div onClick={() => setShowModal("commessa")} style={{ width: 36, height: 36, borderRadius: 10, background: T.text, color: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, fontWeight: 300 }}>+</div>
         </div>
@@ -123,9 +123,9 @@ export default function CommessePanel() {
       {/* Search */}
       <div style={{ padding: "0 20px 10px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
-          <span style={{ fontSize: 14, color: T.sub }}>🔍</span>
+          <span style={{ fontSize: 14, color: T.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
           <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca cliente, codice, indirizzo..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
-          {searchQ && <div onClick={() => setSearchQ("")} style={{ cursor: "pointer", fontSize: 13, color: T.sub, padding: 2 }}>✕</div>}
+          {searchQ && <div onClick={() => setSearchQ("")} style={{ cursor: "pointer", fontSize: 13, color: T.sub, padding: 2 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>}
         </div>
       </div>
 

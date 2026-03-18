@@ -15,10 +15,10 @@ import { supabase } from "@/lib/supabase";
 
 // ─── STATI MISURE ──────────────────────────────────────────
 const STATO_MISURE = [
-  { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: "✏️", desc: "Misure non ancora verificate" },
-  { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "👁", desc: "Verificate sul posto, non ancora confermate" },
-  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "✅", desc: "Misure definitive — preventivo sbloccato" },
-  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "⚠️", desc: "Rilevate discrepanze — ricontrollare" },
+  { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>️", desc: "Misure non ancora verificate" },
+  { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>", desc: "Verificate sul posto, non ancora confermate" },
+  { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>", desc: "Misure definitive — preventivo sbloccato" },
+  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️", desc: "Rilevate discrepanze — ricontrollare" },
 ];
 const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
 
@@ -89,9 +89,9 @@ export default function VanoDetailPanel() {
   } = useMastro();
 
   const STEPS = [
-    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "📐" },
-    { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: "⚙" },
-    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: "📋" },
+    { id: "misure", title: "MISURE", desc: "Larghezze, altezze e diagonali", color: "#507aff", icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg>" },
+    { id: "dettagli", title: "DETTAGLI", desc: "Spallette, davanzale, accessori, foto", color: "#af52de", icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>" },
+    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#1A9E73", icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>" },
   ];
   const [detailOpen, setDetailOpen] = useState<Record<string,boolean>>({});
   const [showDisegno, setShowDisegno] = useState(false);
@@ -101,7 +101,7 @@ export default function VanoDetailPanel() {
   const sectionRefs = useRef<Record<string,HTMLDivElement|null>>({});
   const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","finiture","controtelaio"];
   const flashAndAdvance = (secId: string) => {
-    console.log("⚡ FLASH:", secId);
+    console.log("<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> FLASH:", secId);
     setCompletedSecs(prev => new Set([...prev, secId]));
     setFlashSec(secId);
     setTimeout(() => {
@@ -135,7 +135,7 @@ export default function VanoDetailPanel() {
     closeNumpad();
   };
   const numpadTap = (k: string) => {
-    if (k === "⌫") { setNumpadVal(n => n.slice(0,-1)); return; }
+    if (k === "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>") { setNumpadVal(n => n.slice(0,-1)); return; }
     if (numpadVal.length >= 5) return;
     setNumpadVal(n => n + k);
   };
@@ -284,7 +284,7 @@ export default function VanoDetailPanel() {
     const mid = selectedVano.id;
     const time = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
     const parsedKeys = Object.keys(parsed);
-    const prefix = parsedKeys.length > 0 ? "🎤" : "🎤💬";
+    const prefix = parsedKeys.length > 0 ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>";
     const newNote = `${prefix} [${time}] ${text}`;
     const existing = selectedVano.note || "";
     const updatedNote = existing ? `${existing}\n${newNote}` : newNote;
@@ -456,7 +456,7 @@ export default function VanoDetailPanel() {
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 20px", borderRadius: 16, background: vrActive ? "linear-gradient(135deg, #DC4444, #ff6b6b)" : "linear-gradient(135deg, #D08008, #b86e00)", border: "none", cursor: "pointer", justifyContent: "center", boxShadow: vrActive ? "0 0 20px rgba(255,59,48,0.4)" : "0 2px 8px rgba(208,128,8,0.3)" }}>
-            <span style={{ fontSize: 22 }}>{vrActive ? "⏹" : "🎤️"}</span>
+            <span style={{ fontSize: 22 }}>{vrActive ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="18" height="18" rx="2"/></svg>" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>️"}</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>
               {vrActive ? "STOP" : "Avvia Dettatura"}
             </span>
@@ -502,7 +502,7 @@ export default function VanoDetailPanel() {
                     <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginTop: 2 }}>
                       {Object.entries(tr.parsed).map(([k, val]) => (
                         <span key={k} style={{ padding: "1px 5px", borderRadius: 4, background: T.grn + "18", fontSize: 8, fontWeight: 700, color: T.grn }}>
-                          ✓ {k}: {String(val)}
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> {k}: {String(val)}
                         </span>
                       ))}
                     </div>
@@ -531,11 +531,11 @@ export default function VanoDetailPanel() {
           const coloriRAL = ["RAL 9010","RAL 9016","RAL 9001","RAL 7016","RAL 7021","RAL 8014","RAL 8016","RAL 1013","Altro"];
 
           const sections = [
-            { id:"accesso", icon:"🏭", label:"Accesso / Difficoltà",
+            { id:"accesso", icon:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 20V8l6 4V8l6 4V8l6 4v12H2z"/><path d="M2 20h20"/></svg>", label:"Accesso / Difficoltà",
               badge: v.difficoltaSalita||null, filled: [v.difficoltaSalita, v.mezzoSalita].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:4}}>
-                  {[{id:"facile",l:"Facile",c:T.grn,e:"✅"},{id:"media",l:"Media",c:T.orange,e:"⚠️"},{id:"difficile",l:"Difficile",c:T.red,e:"⚠"}].map(d=>(
+                  {[{id:"facile",l:"Facile",c:T.grn,e:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>"},{id:"media",l:"Media",c:T.orange,e:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️"},{id:"difficile",l:"Difficile",c:T.red,e:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>"}].map(d=>(
                     <div key={d.id} onClick={()=>{updateV("difficoltaSalita",d.id);}}
                       style={{flex:1,padding:"7px 4px",borderRadius:8,border:`1.5px solid ${v.difficoltaSalita===d.id?d.c:T.bdr}`,background:v.difficoltaSalita===d.id?d.c+"15":T.card,textAlign:"center",cursor:"pointer"}}>
                       <div style={{fontSize:13}}>{d.e}</div>
@@ -575,7 +575,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"posizione", icon:"🏠", label:"Stanza / Piano",
+            { id:"posizione", icon:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 12L12 3l10 9"/><path d="M5 9.5V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5"/></svg>", label:"Stanza / Piano",
               badge: v.stanza?`${v.stanza}`:null, filled: [v.stanza].filter(Boolean).length, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
@@ -599,7 +599,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"sistema", icon:"⚙", label:"Sistema / Vetro",
+            { id:"sistema", icon:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>", label:"Sistema / Vetro",
               badge: v.sistema?v.sistema.split(" ").slice(0,2).join(" · "):null, filled: [v.sistema, v.vetro].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
@@ -630,7 +630,7 @@ export default function VanoDetailPanel() {
                   </div>
                 </div>
               </div>},
-            { id:"colori", icon:"🎨", label:"Colori profili",
+            { id:"colori", icon:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.24-.3-.39-.65-.39-1.04 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.17-4.36-8.92-10-8.92z"/></svg>", label:"Colori profili",
               badge: v.coloreInt||null, filled: [v.coloreInt, v.bicolore && v.coloreEst, v.coloreAcc].filter(Boolean).length, total: v.bicolore ? 3 : 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {!v.sistema && <div style={{padding:"14px",textAlign:"center",color:T.sub,fontSize:12,background:T.bg,borderRadius:10,border:"1px dashed "+T.bdr}}><I d={ICO.alertTriangle} />️ Scegli prima il sistema profili</div>}
@@ -639,7 +639,7 @@ export default function VanoDetailPanel() {
                   <div style={{fontSize:10,fontWeight:700,color:T.sub}}>COLORE {v.bicolore?"INTERNO":"PROFILI"}</div>
                   <div onClick={()=>updateV("bicolore",!v.bicolore)}
                     style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:v.bicolore?T.accLt:"transparent",border:"1px solid "+(v.bicolore?T.acc:T.bdr),color:v.bicolore?T.acc:T.sub,cursor:"pointer",fontWeight:600}}>
-                    Bicolore {v.bicolore?"✓":""}
+                    Bicolore {v.bicolore?"<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg>":""}
                   </div>
                 </div>
                 <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
@@ -675,7 +675,7 @@ export default function VanoDetailPanel() {
                 </>}
               </div>
             },
-            { id:"telaio", icon:"📐", label:"Telaio / Rifilato",
+            { id:"telaio", icon:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg>", label:"Telaio / Rifilato",
               badge: v.telaio?(v.telaio==="Z"?"Telaio Z":"Telaio L"):(v.rifilato?"Rifilato":null), filled: [v.telaio, v.rifilato, v.telaioAlaZ].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:6}}>
@@ -705,8 +705,8 @@ export default function VanoDetailPanel() {
                 </div>}
               </div>
             },
-            { id:"finiture", icon:"⚙", label:"Coprifilo / Lamiera",
-              badge: (v.coprifilo||v.lamiera)?"✓":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
+            { id:"finiture", icon:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>", label:"Coprifilo / Lamiera",
+              badge: (v.coprifilo||v.lamiera)?"<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg>":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase"}}>COPRIFILO</div>
@@ -869,7 +869,7 @@ export default function VanoDetailPanel() {
               {/* Chip riepilogo */}
               {configChips.length >= 2 && (
                 <div style={{display:"flex",alignItems:"center",gap:6,padding:"9px 12px",borderRadius:10,background:T.grn+"10",border:"1.5px solid "+T.grn+"30",marginBottom:8,flexWrap:"wrap"}}>
-                  <span style={{fontSize:12}}>✅</span>
+                  <span style={{fontSize:12}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
                   <span style={{fontSize:11,fontWeight:700,color:T.grn,fontFamily:FF}}>{configChips.join(" · ")}</span>
                 </div>
               )}
@@ -982,7 +982,7 @@ export default function VanoDetailPanel() {
             if (fotoMisure.length === 0) return <div style={{ marginBottom: 12 }} />;
             return (
               <div style={{ marginTop: 0, marginBottom: 12, borderRadius: "0 0 14px 14px", background: T.card, border: "1px solid " + T.bdr, borderTop: "none", padding: "8px 10px", overflow: "hidden" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 6 }}>📸 Foto misure salvate ({fotoMisure.length})</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto misure salvate ({fotoMisure.length})</div>
                 <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
                   {fotoMisure.map(([key, foto]) => (
                     <div key={key} style={{ flexShrink: 0, position: "relative" }}>
@@ -990,7 +990,7 @@ export default function VanoDetailPanel() {
                       <div style={{ position: "absolute", bottom: 2, left: 2, right: 2, padding: "2px 4px", borderRadius: "0 0 6px 6px", background: "rgba(0,0,0,0.6)", fontSize: 8, color: "#fff", fontWeight: 700, textAlign: "center" }}>
                         {(foto.annotations || []).length} segni
                       </div>
-                      <div onClick={(e) => { e.stopPropagation(); const newFoto = { ...(v.foto || {}) }; const fDel = newFoto[key]; if (fDel?.url) deleteFotoVano(fDel.url); delete newFoto[key]; setCantieri(cs => cs.map(c2 => c2.id === selectedCM?.id ? { ...c2, rilievi: c2.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: newFoto } : vn) } : r2) } : c2)); setSelectedVano(prev => ({ ...prev, foto: newFoto })); }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 9, background: "rgba(220,68,68,0.85)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, color: "#fff", fontWeight: 700 }}>✕</div>
+                      <div onClick={(e) => { e.stopPropagation(); const newFoto = { ...(v.foto || {}) }; const fDel = newFoto[key]; if (fDel?.url) deleteFotoVano(fDel.url); delete newFoto[key]; setCantieri(cs => cs.map(c2 => c2.id === selectedCM?.id ? { ...c2, rilievi: c2.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: newFoto } : vn) } : r2) } : c2)); setSelectedVano(prev => ({ ...prev, foto: newFoto })); }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: 9, background: "rgba(220,68,68,0.85)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 10, color: "#fff", fontWeight: 700 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
                     </div>
                   ))}
                 </div>
@@ -1200,7 +1200,7 @@ export default function VanoDetailPanel() {
               {bInput("Altezza DESTRA", "hDx")}
 
               {/* DIAGONALI */}
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#E8A020", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>✕ Diagonali</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#E8A020", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Diagonali</div>
               {bInput("Diagonale 1 ↗", "d1")}
               {bInput("Diagonale 2 ↘", "d2")}
               {fSq !== null && fSq > 3 && (
@@ -1211,7 +1211,7 @@ export default function VanoDetailPanel() {
               )}
               {fSq !== null && fSq <= 3 && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>✅ In squadra — differenza: {fSq}mm</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> In squadra — differenza: {fSq}mm</div>
                 </div>
               )}
             </>)}
@@ -1219,11 +1219,11 @@ export default function VanoDetailPanel() {
               {/* ═══ PDF TECNICO FORNITORE ═══ */}
               <div style={{ marginTop: 20, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: "#3B7FE0", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                  📐 PDF Tecnico Fornitore
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> PDF Tecnico Fornitore
                 </div>
                 {v.pdfFornitore ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "#3B7FE010", border: "1px solid #3B7FE030" }}>
-                    <span style={{ fontSize: 20 }}>📄</span>
+                    <span style={{ fontSize: 20 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{v.pdfFornitoreNome || "disegno_tecnico.pdf"}</div>
                       <div style={{ fontSize: 9, color: T.sub }}>{v.pdfFornitoreData || ""}</div>
@@ -1231,11 +1231,11 @@ export default function VanoDetailPanel() {
                     <div onClick={() => { const a = document.createElement("a"); a.href = v.pdfFornitore; a.download = v.pdfFornitoreNome || "disegno.pdf"; a.click(); }}
                       style={{ padding: "5px 12px", borderRadius: 7, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0", whiteSpace: "nowrap" as const }}>⬇ Apri</div>
                     <div onClick={() => { updateVanoField(v.id, "pdfFornitore", null); updateVanoField(v.id, "pdfFornitoreNome", null); updateVanoField(v.id, "pdfFornitoreData", null); }}
-                      style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", border: "1px solid #DC444430", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#DC4444" }}>✕</div>
+                      style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", border: "1px solid #DC444430", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#DC4444" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
                   </div>
                 ) : (
                   <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 10, background: T.card, border: `1.5px dashed #3B7FE040`, cursor: "pointer" }}>
-                    <span style={{ fontSize: 20 }}>📎</span>
+                    <span style={{ fontSize: 20 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></span>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0" }}>Allega PDF tecnico fornitore</div>
                       <div style={{ fontSize: 9, color: T.sub }}>Sezioni nodi, dettagli profilo dal fornitore</div>
@@ -1276,7 +1276,7 @@ export default function VanoDetailPanel() {
                     background: "linear-gradient(135deg, #2D7A6B 0%, #1A9E73 100%)",
                     border: "none", boxShadow: "0 2px 8px #2D7A6B30"
                   }}>
-                  <span style={{ fontSize: 18 }}>📐</span>
+                  <span style={{ fontSize: 18 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg></span>
                   <div style={{ textAlign: "left" as const }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Genera Tavola Tecnica</div>
                     <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)" }}>Vista frontale · Nodi · Specifiche · Trasmittanza Uw</div>
@@ -1311,7 +1311,7 @@ export default function VanoDetailPanel() {
                 <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#32ade6" }}><I d={ICO.edit} /> Disegno spallette</span>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => { const ctx = spCanvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, 380, 200); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗝‘ Pulisci</button>
+                    <button onClick={() => { const ctx = spCanvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, 380, 200); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>‘ Pulisci</button>
                     <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.grn, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
                   </div>
                 </div>
@@ -1341,7 +1341,7 @@ export default function VanoDetailPanel() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 16 }}>⬇</span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.davanzale ? "#EF4444" : T.text }}>Davanzale + Cassonetto</span>
-                  {(m.davProf||m.davSporg||m.soglia||v.cassonetto) && <span style={{ fontSize: 10, color: "#EF4444", fontWeight: 700, background: "#EF444415", padding: "2px 8px", borderRadius: 6 }}>{v.cassonetto ? "📦" : ""} {[m.davProf,m.davSporg,m.soglia].filter(x=>x>0).length}/3</span>}
+                  {(m.davProf||m.davSporg||m.soglia||v.cassonetto) && <span style={{ fontSize: 10, color: "#EF4444", fontWeight: 700, background: "#EF444415", padding: "2px 8px", borderRadius: 6 }}>{v.cassonetto ? "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>" : ""} {[m.davProf,m.davSporg,m.soglia].filter(x=>x>0).length}/3</span>}
                 </div>
                 <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.davanzale ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
@@ -1435,7 +1435,7 @@ export default function VanoDetailPanel() {
                 }
                 const a = v.accessori?.[acc] || { attivo: false };
                 const accColors = { tapparella: "#E8A020", persiana: "#0D7C6B", zanzariera: "#EF4444" };
-                const accIcons = { tapparella: "⊞", persiana: "🏠", zanzariera: "🦟" };
+                const accIcons = { tapparella: "⊞", persiana: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 12L12 3l10 9"/><path d="M5 9.5V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5"/></svg>", zanzariera: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>" };
                 const focusNextAcc = (ids, cur) => { const i = ids.indexOf(cur); if (i < ids.length - 1) { const el = document.getElementById(ids[i + 1]); if (el) { el.focus(); el.scrollIntoView({ behavior: "smooth", block: "center" }); } } };
                 const accInputIds = [`${acc}-L-${v.id}`, `${acc}-H-${v.id}`];
                 return (
@@ -1560,11 +1560,11 @@ export default function VanoDetailPanel() {
                         <div onClick={() => {
                           const newVoci = (v.vociLibere || []).filter((_, i) => i !== vi);
                           updateVanoField(v.id, "vociLibere", newVoci);
-                        }} style={{ fontSize: 10, color: T.red, cursor: "pointer", fontWeight: 600 }}>✕ Rimuovi</div>
+                        }} style={{ fontSize: 10, color: T.red, cursor: "pointer", fontWeight: 600 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Rimuovi</div>
                       </div>
                       {/* Tipo voce */}
                       <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-                        {[{id:"generico",label:"Generico",color:"#E8A020"},{id:"vetro",label:"🔲 Vetro",color:"#3B7FE0"},{id:"coprifilo",label:"📏 Coprifilo",color:"#8B5CF6"}].map(t => (
+                        {[{id:"generico",label:"Generico",color:"#E8A020"},{id:"vetro",label:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="18" height="18" rx="2"/></svg> Vetro",color:"#3B7FE0"},{id:"coprifilo",label:"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> Coprifilo",color:"#8B5CF6"}].map(t => (
                           <div key={t.id} onClick={() => {
                             const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], tipo: t.id };
                             updateVanoField(v.id, "vociLibere", newVoci);
@@ -1640,7 +1640,7 @@ export default function VanoDetailPanel() {
                             <div onClick={() => {
                               const newVoci = [...(v.vociLibere || [])]; newVoci[vi] = { ...newVoci[vi], foto: undefined };
                               updateVanoField(v.id, "vociLibere", newVoci);
-                            }} style={{ fontSize: 9, color: T.red, cursor: "pointer" }}>✕</div>
+                            }} style={{ fontSize: 9, color: T.red, cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
                           </div>
                         ) : (
                           <label style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", borderRadius: 6, background: "#E8A02012", color: "#E8A020", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>
@@ -1703,11 +1703,11 @@ export default function VanoDetailPanel() {
                     <div onClick={() => {
                       const newVoci = [...(v.vociLibere || []), { id: Date.now(), tipo: "vetro", descrizione: "Vetro", prezzo: 0, unita: "mq", qta: 1, larghezza: 0, altezza: 0 }];
                       updateVanoField(v.id, "vociLibere", newVoci);
-                    }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed #3B7FE0`, textAlign: "center", cursor: "pointer", color: "#3B7FE0", fontSize: 12, fontWeight: 600 }}>🔲 Vetro</div>
+                    }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed #3B7FE0`, textAlign: "center", cursor: "pointer", color: "#3B7FE0", fontSize: 12, fontWeight: 600 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="18" height="18" rx="2"/></svg> Vetro</div>
                     <div onClick={() => {
                       const newVoci = [...(v.vociLibere || []), { id: Date.now(), tipo: "coprifilo", descrizione: "Coprifilo/Lamiera", prezzo: 0, unita: "ml", qta: 1, lunghezza: 0 }];
                       updateVanoField(v.id, "vociLibere", newVoci);
-                    }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed #8B5CF6`, textAlign: "center", cursor: "pointer", color: "#8B5CF6", fontSize: 12, fontWeight: 600 }}>📏 Coprifilo</div>
+                    }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed #8B5CF6`, textAlign: "center", cursor: "pointer", color: "#8B5CF6", fontSize: 12, fontWeight: 600 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> Coprifilo</div>
                     <div onClick={() => {
                       setDetailOpen(d => ({ ...d, showLibreria: !d.showLibreria }));
                     }} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}><I d={ICO.package} /> Da libreria</div>
@@ -1789,7 +1789,7 @@ export default function VanoDetailPanel() {
                     {/* Gomma */}
                     <div onClick={() => setDrawTool(drawTool === "eraser" ? "pen" : "eraser")}
                       style={{ width: 32, height: 32, borderRadius: 8, background: drawTool === "eraser" ? "#DC4444" + "18" : T.bg, border: drawTool === "eraser" ? "2px solid #DC4444" : `1px solid ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "✕" : "🗑"}</span>
+                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>" : "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>"}</span>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
                       {[1, 2, 4, 6].map(s => (
@@ -1826,7 +1826,7 @@ export default function VanoDetailPanel() {
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.trash} /> Pulisci foglio</button>
                         <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#DC4444", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
-                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>✕ Chiudi</button>
+                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Chiudi</button>
                       </div>
                     </div>
                     <div style={{ flex: 1, overflow: "hidden" }}>{canvasEl}</div>
@@ -1918,7 +1918,7 @@ export default function VanoDetailPanel() {
                     return (
                     <div key={i} onClick={()=>{ openCamera("foto", cat.n); }}
                       style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${fotoCount>0 ? "#1A9E73" : cat.r ? cat.c + "40" : T.bdr}`, background: fotoCount>0 ? "#1A9E7315" : cat.r ? cat.c + "08" : "transparent", fontSize: 10, fontWeight: 600, color: fotoCount>0 ? "#1a9e40" : cat.r ? cat.c : T.sub, cursor: "pointer", display: "flex", alignItems: "center", gap: 3, position:"relative" }}>
-                      {fotoCount>0 ? <span style={{fontSize:8,background:"#1A9E73",color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900}}>{fotoCount}</span> : cat.r ? <span style={{ fontSize: 8 }}>✕</span> : null}
+                      {fotoCount>0 ? <span style={{fontSize:8,background:"#1A9E73",color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900}}>{fotoCount}</span> : cat.r ? <span style={{ fontSize: 8 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span> : null}
                       <span style={{ fontSize: 10 }}><I d={ICO.camera} /></span> {cat.n}
                     </div>
                     );
@@ -1948,7 +1948,7 @@ export default function VanoDetailPanel() {
                             const newFoto = { ...(v.foto||{}) }; delete newFoto[k];
                             setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, rilievi: c.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: newFoto } : vn) } : r2) } : c));
                             setSelectedVano(prev => ({ ...prev, foto: newFoto }));
-                          }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>✕</div>
+                          }} style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
                         </div>
                       ))}
                     </div>
@@ -1959,7 +1959,7 @@ export default function VanoDetailPanel() {
                           ? <video src={(v.foto||{})[viewingPhotoId as any]?.dataUrl} controls playsInline autoPlay style={{ width: "100%", maxHeight: 300 }} />
                           : <img src={(v.foto||{})[viewingPhotoId as any]?.url || (v.foto||{})[viewingPhotoId as any]?.dataUrl} style={{ width: "100%", maxHeight: 300, objectFit: "contain" }} alt="" />
                         }
-                        <div onClick={() => setViewingPhotoId(null)} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>✕</div>
+                        <div onClick={() => setViewingPhotoId(null)} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, fontWeight: 700 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
                       </div>
                     )}
                   </>
@@ -1968,7 +1968,7 @@ export default function VanoDetailPanel() {
 
               {/* Manodopera */}
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14, marginBottom: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#D08008", marginBottom: 10 }}>👷 MANODOPERA</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#D08008", marginBottom: 10 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 18a1 1 0 001 1h18a1 1 0 001-1v-2a1 1 0 00-1-1H3a1 1 0 00-1 1v2z"/><path d="M10 15V6a1 1 0 011-1h2a1 1 0 011 1v9"/><path d="M4 15v-3a8 8 0 0116 0v3"/></svg> MANODOPERA</div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 3 }}>Ore stimate</div>
@@ -2047,18 +2047,18 @@ export default function VanoDetailPanel() {
 
                   return <>
                     {/* Misure */}
-                    <Sec title="LARGHEZZE" color="#507aff" icon="📐" rows={[["Alto", m.lAlto], ["Centro", m.lCentro], ["Basso", m.lBasso]]} />
-                    <Sec title="ALTEZZE" color="#1A9E73" icon="📐" rows={[["Sinistra", m.hSx], ["Centro", m.hCentro], ["Destra", m.hDx]]} />
-                    <Sec title="DIAGONALI" color="#E8A020" icon="✕" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? "#DC4444" : undefined]]} />
+                    <Sec title="LARGHEZZE" color="#507aff" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg>" rows={[["Alto", m.lAlto], ["Centro", m.lCentro], ["Basso", m.lBasso]]} />
+                    <Sec title="ALTEZZE" color="#1A9E73" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg>" rows={[["Sinistra", m.hSx], ["Centro", m.hCentro], ["Destra", m.hDx]]} />
+                    <Sec title="DIAGONALI" color="#E8A020" icon="<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? "#DC4444" : undefined]]} />
 
                     {/* Sistema + Vetro */}
-                    <Sec title="SISTEMA / VETRO" color="#0D7C6B" icon="⚙" rows={[
+                    <Sec title="SISTEMA / VETRO" color="#0D7C6B" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>" rows={[
                       ["Sistema", v.sistema],
                       ["Vetro", v.vetro],
                     ]} />
 
                     {/* Colori */}
-                    <Sec title="COLORI PROFILI" color="#af52de" icon="🎨" rows={[
+                    <Sec title="COLORI PROFILI" color="#af52de" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.24-.3-.39-.65-.39-1.04 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.17-4.36-8.92-10-8.92z"/></svg>" rows={[
                       ["Colore Int.", v.coloreInt],
                       ...(v.bicolore ? [["Colore Est.", v.coloreEst]] : []),
                       ...(v.bicolore ? [["Bicolore", "Sì", T.acc]] : []),
@@ -2066,7 +2066,7 @@ export default function VanoDetailPanel() {
                     ]} />
 
                     {/* Telaio */}
-                    <Sec title="TELAIO / RIFILATO" color="#8e8e93" icon="📐" rows={[
+                    <Sec title="TELAIO / RIFILATO" color="#8e8e93" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg>" rows={[
                       ["Telaio", v.telaio === "Z" ? "Telaio a Z" : v.telaio === "L" ? "Telaio a L" : "—"],
                       ...(v.telaio === "Z" && v.telaioAlaZ ? [["Ala Z", `${v.telaioAlaZ}mm`]] : []),
                       ["Rifilato", v.rifilato ? "Sì" : "No"],
@@ -2074,13 +2074,13 @@ export default function VanoDetailPanel() {
                     ]} />
 
                     {/* Coprifilo / Lamiera */}
-                    <Sec title="COPRIFILO / LAMIERA" color="#b45309" icon="⚙" rows={[
+                    <Sec title="COPRIFILO / LAMIERA" color="#b45309" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>" rows={[
                       ["Coprifilo", v.coprifilo],
                       ["Lamiera", v.lamiera],
                     ]} />
 
                     {/* Controtelaio */}
-                    {ct.tipo && <Sec title={`CONTROTELAIO ${ct.tipo === "singolo" ? "SINGOLO" : ct.tipo === "doppio" ? "DOPPIO" : "CON CASSONETTO"}`} color="#2563eb" icon="🔲" rows={[
+                    {ct.tipo && <Sec title={`CONTROTELAIO ${ct.tipo === "singolo" ? "SINGOLO" : ct.tipo === "doppio" ? "DOPPIO" : "CON CASSONETTO"}`} color="#2563eb" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="18" height="18" rx="2"/></svg>" rows={[
                       ["Larghezza", ct.l ? `${ct.l}mm` : ""],
                       ["Altezza", ct.h ? `${ct.h}mm` : ""],
                       ...(ct.tipo === "singolo" && ct.prof ? [["Profondità", `${ct.prof}mm`]] : []),
@@ -2106,13 +2106,13 @@ export default function VanoDetailPanel() {
                           ...(acc.tapparella.colore ? [["  Colore", acc.tapparella.colore]] : []),
                         ] : []),
                         ...(acc.persiana?.attivo ? [
-                          ["🏠 Persiana", "Sì", T.grn],
+                          ["<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 12L12 3l10 9"/><path d="M5 9.5V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5"/></svg> Persiana", "Sì", T.grn],
                           ...(acc.persiana.tipo ? [["  Tipo", acc.persiana.tipo]] : []),
                           ...(acc.persiana.ante ? [["  N° ante", String(acc.persiana.ante)]] : []),
                           ...(acc.persiana.colore ? [["  Colore", acc.persiana.colore]] : []),
                         ] : []),
                         ...(acc.zanzariera?.attivo ? [
-                          ["🦟 Zanzariera", "Sì", T.grn],
+                          ["<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Zanzariera", "Sì", T.grn],
                           ...(acc.zanzariera.categoria ? [["  Tipologia", acc.zanzariera.categoria]] : []),
                           ...(acc.zanzariera.tipoMisura ? [["  Tipo misura", acc.zanzariera.tipoMisura]] : []),
                           ...(acc.zanzariera.colore ? [["  Colore", acc.zanzariera.colore]] : []),
@@ -2122,12 +2122,12 @@ export default function VanoDetailPanel() {
 
                     {/* Accessori da catalogo */}
                     {v.accessoriCatalogo && v.accessoriCatalogo.length > 0 && (
-                      <Sec title="ACCESSORI CATALOGO" color="#8B5CF6" icon="🏷" rows={v.accessoriCatalogo.map(a => [`${a.nome}`, `×${a.quantita} · €${((a.prezzoUnitario||0)*(a.quantita||1)).toFixed(0)}`])} />
+                      <Sec title="ACCESSORI CATALOGO" color="#8B5CF6" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>" rows={v.accessoriCatalogo.map(a => [`${a.nome}`, `×${a.quantita} · €${((a.prezzoUnitario||0)*(a.quantita||1)).toFixed(0)}`])} />
                     )}
                     {/* Voci libere */}
                     {v.vociLibere && v.vociLibere.length > 0 && (
-                      <Sec title="VOCI LIBERE" color="#E8A020" icon="📄" rows={v.vociLibere.map(vl => {
-                        const label = vl.tipo === "vetro" ? `🔲 ${vl.descrizione || "Vetro"}` : vl.tipo === "coprifilo" ? `📏 ${vl.descrizione || "Coprifilo"}` : `📦 ${vl.descrizione || "Voce"}`;
+                      <Sec title="VOCI LIBERE" color="#E8A020" icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>" rows={v.vociLibere.map(vl => {
+                        const label = vl.tipo === "vetro" ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="18" height="18" rx="2"/></svg> ${vl.descrizione || "Vetro"}` : vl.tipo === "coprifilo" ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> ${vl.descrizione || "Coprifilo"}` : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> ${vl.descrizione || "Voce"}`;
                         const val = vl.tipo === "vetro" && vl.larghezza && vl.altezza ? `${vl.larghezza}×${vl.altezza}mm · €${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}` : vl.tipo === "coprifilo" && vl.lunghezza ? `${(vl.lunghezza/1000).toFixed(2)}ml · €${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}` : `€${((vl.prezzo||0)*(vl.qta||1)).toFixed(0)}`;
                         return [label, val];
                       })} />
@@ -2143,7 +2143,7 @@ export default function VanoDetailPanel() {
 
                     {/* Accesso */}
                     {(v.difficoltaSalita || v.mezzoSalita) && (
-                      <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? "#DC4444" : "#E8A020"} icon="🏭" rows={[
+                      <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? "#DC4444" : "#E8A020"} icon="<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 20V8l6 4V8l6 4V8l6 4v12H2z"/><path d="M2 20h20"/></svg>" rows={[
                         ["Difficoltà", v.difficoltaSalita],
                         ["Mezzo salita", v.mezzoSalita],
                       ]} />
@@ -2190,7 +2190,7 @@ export default function VanoDetailPanel() {
               <button onClick={() => setVanoStep(s => s + 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: step.color, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>{vanoStep === 0 ? "Dettagli →" : "Riepilogo →"}</button>
             )}
             {vanoStep === 0 && (
-              <button onClick={() => setVanoStep(2)} style={{ padding: "14px 16px", borderRadius: 12, border: `1px solid ${T.grn}`, background: T.grn + "15", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FF, color: T.grn }}>✓ Fine</button>
+              <button onClick={() => setVanoStep(2)} style={{ padding: "14px 16px", borderRadius: 12, border: `1px solid ${T.grn}`, background: T.grn + "15", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FF, color: T.grn }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Fine</button>
             )}
             {vanoStep === 2 && (
               <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> SALVA TUTTO</button>
@@ -2232,20 +2232,20 @@ export default function VanoDetailPanel() {
               <div style={{ width: 36, height: 4, borderRadius: 2, background: "#ddd", margin: "0 auto 10px" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: T.text }}>⚡ Accesso rapido</span>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} · {v.stanza || "?"} · {v.sistema ? "✓ Sist." : "—"} · {v.coloreInt ? "✓ Col." : "—"} · {(m.lCentro && m.hCentro) ? m.lCentro+"×"+m.hCentro : "— Mis."}</div>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: T.text }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Accesso rapido</span>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 1 }}>{v.tipo || "?"} · {v.stanza || "?"} · {v.sistema ? "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Sist." : "—"} · {v.coloreInt ? "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Col." : "—"} · {(m.lCentro && m.hCentro) ? m.lCentro+"×"+m.hCentro : "— Mis."}</div>
                 </div>
-                <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "5px 12px", borderRadius: 8, background: T.bg, border: "1px solid " + T.bdr, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 700 }}>✕</div>
+                <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ padding: "5px 12px", borderRadius: 8, background: T.bg, border: "1px solid " + T.bdr, fontSize: 11, color: T.sub, cursor: "pointer", fontWeight: 700 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
               </div>
 
               {/* STEP INDICATORS */}
               {(() => {
                 const steps = [
                   { id: "tipo", label: "Tipo", done: !!v.tipo, icon: "⊞" },
-                  { id: "sistema", label: "Sistema", done: !!v.sistema, icon: "⚙" },
-                  { id: "vetro", label: "Vetro", done: !!v.vetro, icon: "▦" },
-                  { id: "colore", label: "Colore", done: !!v.coloreInt, icon: "🎨" },
-                  { id: "misure", label: "Misure", done: !!(m.lCentro && m.hCentro), icon: "📐" },
+                  { id: "sistema", label: "Sistema", done: !!v.sistema, icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>" },
+                  { id: "vetro", label: "Vetro", done: !!v.vetro, icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>" },
+                  { id: "colore", label: "Colore", done: !!v.coloreInt, icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.24-.3-.39-.65-.39-1.04 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.17-4.36-8.92-10-8.92z"/></svg>" },
+                  { id: "misure", label: "Misure", done: !!(m.lCentro && m.hCentro), icon: "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg>" },
                   { id: "pezzi", label: "Pezzi", done: true, icon: "#" },
                 ];
                 const firstIncomplete = steps.findIndex(s => !s.done);
@@ -2260,14 +2260,14 @@ export default function VanoDetailPanel() {
                           background: s.done ? "#1A9E7315" : i === activeStep ? T.acc + "15" : T.bg,
                           color: s.done ? "#1A9E73" : i === activeStep ? T.acc : T.sub,
                           border: "1px solid " + (s.done ? "#1A9E7330" : i === activeStep ? T.acc + "40" : T.bdr),
-                        }}>{s.done ? "✓" : s.icon} {s.label}</div>
+                        }}>{s.done ? "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg>" : s.icon} {s.label}</div>
                       ))}
                     </div>
 
                     {/* ACTIVE SECTION - show current + all done ones collapsed */}
                     {/* TIPOLOGIA */}
                     <div style={{ marginBottom: 8, padding: "6px 0", borderBottom: v.tipo ? "1px solid " + T.bdr : "none" }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 0 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}>⊞ TIPOLOGIA {v.tipo && <span style={{ color: "#1A9E73", marginLeft: 6 }}>✓ {v.tipo}</span>}</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 0 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}>⊞ TIPOLOGIA {v.tipo && <span style={{ color: "#1A9E73", marginLeft: 6 }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> {v.tipo}</span>}</div>
                       <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" }}>
                         {tipologieFiltrate.map(tp => (
                           <div key={tp.code} onClick={() => updateVanoField(v.id, "tipo", tp.code)} style={{
@@ -2287,14 +2287,14 @@ export default function VanoDetailPanel() {
                       <div style={{ marginBottom: 8, padding: "6px 0", borderBottom: (v.sistema && v.vetro) ? "1px solid " + T.bdr : "none", animation: "qpFadeIn 0.3s ease" }}>
                         <div style={{ display: "flex", gap: 8 }}>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 1 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}>⚙ Sistema {v.sistema && <span style={{ color: "#1A9E73" }}>✓</span>}</div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 1 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg> Sistema {v.sistema && <span style={{ color: "#1A9E73" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg></span>}</div>
                             <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.sistema && activeStep === 1 ? T.acc + "60" : undefined }} value={v.sistema || ""} onChange={e => updateVanoField(v.id, "sistema", e.target.value)}>
                               <option value="">— Sistema —</option>
                               {sistemiDB.map(s => <option key={s.id} value={s.marca + " " + s.sistema}>{s.marca} {s.sistema}</option>)}
                             </select>
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 2 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}>▦ Vetro {v.vetro && <span style={{ color: "#1A9E73" }}>✓</span>}</div>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 2 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Vetro {v.vetro && <span style={{ color: "#1A9E73" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg></span>}</div>
                             <select style={{ ...S.select, fontSize: 12, padding: "8px", borderColor: !v.vetro && activeStep === 2 ? T.acc + "60" : undefined }} value={v.vetro || ""} onChange={e => updateVanoField(v.id, "vetro", e.target.value)}>
                               <option value="">— Vetro —</option>
                               {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code}</option>)}
@@ -2308,9 +2308,9 @@ export default function VanoDetailPanel() {
                     {v.sistema && (
                       <div style={{ marginBottom: 8, padding: "6px 0", borderBottom: v.coloreInt ? "1px solid " + T.bdr : "none", animation: "qpFadeIn 0.3s ease" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                          <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 3 ? T.acc : T.sub, textTransform: "uppercase" }}>🎨 Colore {v.coloreInt && <span style={{ color: "#1A9E73" }}>✓</span>}</div>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 3 ? T.acc : T.sub, textTransform: "uppercase" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.04-.24-.3-.39-.65-.39-1.04 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.17-4.36-8.92-10-8.92z"/></svg> Colore {v.coloreInt && <span style={{ color: "#1A9E73" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg></span>}</div>
                           <div onClick={() => updateVanoField(v.id, "bicolore", !v.bicolore)} style={{ fontSize: 9, padding: "2px 8px", borderRadius: 4, background: v.bicolore ? T.accLt : T.bg, border: "1px solid " + (v.bicolore ? T.acc : T.bdr), color: v.bicolore ? T.acc : T.sub, cursor: "pointer", fontWeight: 600 }}>
-                            Bicolore {v.bicolore ? "✓" : ""}
+                            Bicolore {v.bicolore ? "<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg>" : ""}
                           </div>
                         </div>
                         {!v.bicolore ? (
@@ -2350,7 +2350,7 @@ export default function VanoDetailPanel() {
                     {/* MISURE - show when colore is set */}
                     {v.coloreInt && (
                       <div style={{ marginBottom: 8, padding: "6px 0", animation: "qpFadeIn 0.3s ease" }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 4 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}>📐 Misure (mm) {(m.lCentro > 0 && m.hCentro > 0) && <span style={{ color: "#1A9E73" }}>✓ {m.lCentro}×{m.hCentro}</span>}</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: activeStep === 4 ? T.acc : T.sub, textTransform: "uppercase", marginBottom: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> Misure (mm) {(m.lCentro > 0 && m.hCentro > 0) && <span style={{ color: "#1A9E73" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> {m.lCentro}×{m.hCentro}</span>}</div>
                         <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 8, color: "#507aff", marginBottom: 2, fontWeight: 700 }}>LARGHEZZA</div>
@@ -2401,7 +2401,7 @@ export default function VanoDetailPanel() {
                         marginTop: 8, padding: "12px", borderRadius: 10, textAlign: "center", cursor: "pointer",
                         background: "linear-gradient(135deg, #1A9E73, #28a745)", color: "#fff",
                         fontSize: 13, fontWeight: 800, boxShadow: "0 3px 12px rgba(26,158,115,0.3)",
-                      }}>✓ Vano configurato — Chiudi</div>
+                      }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Vano configurato — Chiudi</div>
                     )}
 
                     <style>{"@keyframes qpFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }"}</style>
@@ -2468,8 +2468,8 @@ export default function VanoDetailPanel() {
               }}>{k}</button>
             ))}
             <button onPointerDown={e=>{e.preventDefault();numpadTap("0");}} style={{minHeight:58,borderRadius:10,border:"1px solid #2a2a2a",background:"#1a1a1a",color:"#fff",fontSize:24,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>0</button>
-            <button onPointerDown={e=>{e.preventDefault();numpadTap("⌫");}} style={{minHeight:58,borderRadius:10,border:"1px solid #DC444440",background:"#DC444418",color:"#DC4444",fontSize:22,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>⌫</button>
-            <button onPointerDown={e=>{e.preventDefault();confirmNumpad();}} style={{minHeight:58,borderRadius:10,border:"none",background:"#1A9E73",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>OK ✓</button>
+            <button onPointerDown={e=>{e.preventDefault();numpadTap("<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>");}} style={{minHeight:58,borderRadius:10,border:"1px solid #DC444440",background:"#DC444418",color:"#DC4444",fontSize:22,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <button onPointerDown={e=>{e.preventDefault();confirmNumpad();}} style={{minHeight:58,borderRadius:10,border:"none",background:"#1A9E73",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>OK <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg></button>
           </div>
         </div>
       )}

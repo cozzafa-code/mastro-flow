@@ -164,13 +164,13 @@ export default function HomePanel() {
       {activePlan === "trial" && (
         <div onClick={() => { setSettingsTab("piano"); setTab("settings"); }} style={{ margin: "12px 20px 0", padding: "10px 14px", borderRadius: 10, background: T.acc + "08", border: "1px solid " + T.acc + "15", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span suppressHydrationWarning style={{ fontSize: 12, fontWeight: 600, color: T.acc }}>Trial gratuito · {trialDaysLeft} giorni rimasti</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: T.acc }}>Vedi piani ›</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: T.acc }}>Vedi piani <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
         </div>
       )}
       {activePlan === "free" && (
         <div onClick={() => { setSettingsTab("piano"); setTab("settings"); }} style={{ margin: "12px 20px 0", padding: "10px 14px", borderRadius: 10, background: T.red + "06", border: "1px solid " + T.red + "15", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.red }}>Trial scaduto</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: T.acc }}>Attiva ›</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: T.acc }}>Attiva <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
         </div>
       )}
 
@@ -185,7 +185,7 @@ export default function HomePanel() {
               <div style={{ fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.3 }}>{adesso.titolo}</div>
               <div style={{ fontSize: 12, color: T.sub, marginTop: 3 }}>{adesso.sotto}</div>
             </div>
-            <span style={{ fontSize: 14, color: T.sub }}>›</span>
+            <span style={{ fontSize: 14, color: T.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
         </div>
       ) : (
@@ -205,12 +205,12 @@ export default function HomePanel() {
             </div>
             <span style={{ fontSize: 14, fontWeight: 800, color: T.text, minWidth: 130 }}>{weekMonth} {weekYear}</span>
             <div onClick={() => { setWeekOffset(w => w + 1); const nw = getWeekForOffset(weekOffset + 1); if (!nw.some(d => d.offset === dayOffset)) setDayOffset(nw[3].offset); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: T.bg }}>
-              <span style={{fontSize:18,color:T.sub,fontWeight:700,lineHeight:1}}>›</span>
+              <span style={{fontSize:18,color:T.sub,fontWeight:700,lineHeight:1}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {isNotCurrentWeek && <div onClick={goToday} style={{ padding: "4px 12px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>Oggi</div>}
-            <span onClick={() => setTab("agenda")} style={{ fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Agenda ›</span>
+            <span onClick={() => setTab("agenda")} style={{ fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Agenda <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
         </div>
 
@@ -298,7 +298,7 @@ export default function HomePanel() {
       {/* Scorciatoie */}
       <div style={{ margin: "8px 20px 0", display: "flex", gap: 8 }}>
         <div onClick={() => setTab("contabilita")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.sub, textAlign: "center" }}>€ Contabilità</div>
-        <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#1A9E7308", border: "1px solid #1A9E7330", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1A9E73", textAlign: "center" }}>🗓 Cantieri</div>
+        <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#1A9E7308", border: "1px solid #1A9E7330", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1A9E73", textAlign: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> Cantieri</div>
       </div>
 
       {/* Quick links */}
