@@ -46,6 +46,42 @@ export default function HomePanel() {
     );
   }, []);
 
+  // ── Notifiche push commesse ferme ──
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    // Chiedi permesso la prima volta
+    const asked = localStorage.getItem("mastro:notif_asked");
+    if (!asked && Notification.permission === "default") {
+      Notification.requestPermission().then(p => {
+        localStorage.setItem("mastro:notif_asked", "1");
+      });
+    }
+    // Controlla commesse ferme ogni 30 minuti
+    const check = () => {
+      if (Notification.permission !== "granted") return;
+      const lastNotif = localStorage.getItem("mastro:last_notif");
+      const now = Date.now();
+      if (lastNotif && now - parseInt(lastNotif) < 30 * 60 * 1000) return; // max 1 ogni 30min
+      const fermeNow = cantieri.filter(c => c.fase !== "chiusura" && giorniFermaCM(c) >= (sogliaDays || 7));
+      if (fermeNow.length > 0) {
+        const c = fermeNow[0];
+        const n = new Notification("MASTRO — Commessa ferma", {
+          body: fermeNow.length === 1
+            ? `${c.cliente} (${c.code}) è ferma da ${giorniFermaCM(c)} giorni`
+            : `${fermeNow.length} commesse ferme. Prima: ${c.cliente} (${c.code})`,
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          tag: "mastro-ferme",
+        });
+        n.onclick = () => { window.focus(); n.close(); };
+        localStorage.setItem("mastro:last_notif", String(now));
+      }
+    };
+    check(); // esegui subito
+    const interval = setInterval(check, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [cantieri, sogliaDays]);
+
   const todayISO = today.toISOString().split("T")[0];
   const h = today.getHours();
   const saluto = h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera";
@@ -68,6 +104,12 @@ export default function HomePanel() {
     return null;
   };
   const adesso = getAdesso();
+  const [notifBanner, setNotifBanner] = React.useState(false);
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission === "default") setNotifBanner(true);
+    else setNotifBanner(false);
+  }, []);
 
   const pipelineFasi = (PIPELINE || []).filter(f => f.attiva);
   const faseCounts = {};
@@ -131,6 +173,17 @@ export default function HomePanel() {
 
   return (
     <div style={{ paddingBottom: 80 }}>
+      {/* Banner notifiche push */}
+      {notifBanner && (
+        <div onClick={() => { Notification.requestPermission().then(p => { if(p==="granted") setNotifBanner(false); }); }} style={{ background: "#1A1A1C", borderRadius: 12, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <span style={{ fontSize: 18 }}>🔔</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#D08008" }}>Attiva le notifiche</div>
+            <div style={{ fontSize: 11, color: "#888" }}>Ricevi avvisi quando una commessa è ferma</div>
+          </div>
+          <div onClick={e => { e.stopPropagation(); setNotifBanner(false); }} style={{ color: "#555", fontSize: 18, padding: "0 4px" }}>×</div>
+        </div>
+      )}
 
       {/* BRAND BAR */}
       <div style={{ padding: "14px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
