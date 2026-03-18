@@ -1,9 +1,9 @@
 "use client";
 // @ts-nocheck
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — RiepilogoPanel
+// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+// MASTRO ERP ÔÇö RiepilogoPanel
 // Estratto S8: ~569 righe (Riepilogo commessa)
-// ═══════════════════════════════════════════════════════════
+// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
 import React from "react";
 import { useMastro } from "./MastroContext";
 import { FM, ICO, Ico, TIPOLOGIE_RAPIDE } from "./mastro-constants";
@@ -27,111 +27,111 @@ export default function RiepilogoPanel() {
     // Info rilievo attivo
     const rilAttivo = c.rilievi?.find(r => r.vani?.length > 0);
 
-    const SEP = "━━━━━━━━━━━━━━━━━━━━━";
+    const SEP = "ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü";
     const waMsg = [
-      "📋 *RIEPILOGO COMMESSA "+c.code+"*",
-      "📅 "+today+" · Fase: *"+(PIPELINE.find(p=>p.id===c.fase)?.nome||c.fase).toUpperCase()+"*",
+      "­ƒôï *RIEPILOGO COMMESSA "+c.code+"*",
+      "­ƒôà "+today+" À Fase: *"+(PIPELINE.find(p=>p.id===c.fase)?.nome||c.fase).toUpperCase()+"*",
       SEP,
       "",
-      "👤 *CLIENTE*",
+      "­ƒæñ *CLIENTE*",
       c.cliente+" "+(c.cognome||""),
-      c.telefono?"📞 "+c.telefono:"",
-      c.email?"📧 "+c.email:"",
-      "📍 "+c.indirizzo,
-      [c.pianoEdificio?"🏢 "+c.pianoEdificio:"", c.mezzoSalita?"Salita: "+c.mezzoSalita:"", c.foroScale?"Foro scale: "+c.foroScale:"", c.difficoltaSalita?"Difficoltà: "+c.difficoltaSalita:""].filter(Boolean).join(" · "),
+      c.telefono?"­ƒô× "+c.telefono:"",
+      c.email?"­ƒôº "+c.email:"",
+      "­ƒôì "+c.indirizzo,
+      [c.pianoEdificio?"­ƒÅó "+c.pianoEdificio:"", c.mezzoSalita?"Salita: "+c.mezzoSalita:"", c.foroScale?"Foro scale: "+c.foroScale:"", c.difficoltaSalita?"Difficoltá: "+c.difficoltaSalita:""].filter(Boolean).join(" À "),
       "",
-      "⚙️ *CONFIGURAZIONE*",
+      "ÔÜÖ´©Å *CONFIGURAZIONE*",
       c.sistema?"Sistema: *"+c.sistema+"*":"",
       "Tipo: "+(c.tipo==="riparazione"?"Riparazione":"Nuova installazione"),
       "",
-      rilAttivo?"📐 *RILIEVO*":"",
-      rilAttivo?("Data: "+(rilAttivo.data||rilAttivo.dataRilievo||"—")+" · Rilevatore: "+(rilAttivo.rilevatore||"—")):"",
+      rilAttivo?"­ƒôÉ *RILIEVO*":"",
+      rilAttivo?("Data: "+(rilAttivo.data||rilAttivo.dataRilievo||"")+" À Rilevatore: "+(rilAttivo.rilevatore||"")):"",
       rilAttivo&&rilAttivo.note?"Note rilievo: "+rilAttivo.note:"",
       "",
-      "📊 *RIEPILOGO: "+vaniR.length+" vani · "+totPezzi+" pezzi totali*",
-      vaniFilled < vaniR.length ? "⚠️ "+(vaniR.length - vaniFilled)+" vani incompleti" : "✅ Tutti i vani completi",
-      fuoriSqN > 0 ? "⚠️ "+fuoriSqN+" vani fuorisquadra" : "",
+      "­ƒôè *RIEPILOGO: "+vaniR.length+" vani À "+totPezzi+" pezzi totali*",
+      vaniFilled < vaniR.length ? "ÔÜá´©Å "+(vaniR.length - vaniFilled)+" vani incompleti" : "Ô£à Tutti i vani completi",
+      fuoriSqN > 0 ? "ÔÜá´©Å "+fuoriSqN+" vani fuorisquadra" : "",
       SEP,
       "",
       ...vaniR.map((v,i)=>{
         const m=v.misure||{};
-        const tl=TIPOLOGIE_RAPIDE.find(tp=>tp.code===v.tipo)?.label||v.tipo||"—";
+        const tl=TIPOLOGIE_RAPIDE.find(tp=>tp.code===v.tipo)?.label||v.tipo||"ÔÇö";
         const diff=m.d1>0&&m.d2>0?Math.abs(m.d1-m.d2):null;
         const fuori=diff!==null&&(diff as number)>5;
         const ct = v.controtelaio || {};
         const lines=[
           SEP,
-          "*"+(i+1)+". "+v.nome.toUpperCase()+"*"+(v.pezzi>1?" × *"+v.pezzi+" PZ*":""),
-          tl+" · "+v.tipo+" · "+(v.stanza||"—")+" · "+(v.piano||"—")+" "+(fuori?"⚠️":"✅"),
+          "*"+(i+1)+". "+v.nome.toUpperCase()+"*"+(v.pezzi>1?" ù *"+v.pezzi+" PZ*":""),
+          tl+" À "+v.tipo+" À "+(v.stanza||"")+" À "+(v.piano||"")+" "+(fuori?"Üá´©Å":"£à"),
           SEP,
           "",
-          "📏 *MISURE VANO*",
-          "L: "+(m.lAlto||"—")+" / *"+(m.lCentro||"—")+"* / "+(m.lBasso||"—")+" mm",
-          "H: "+(m.hSx||"—")+" / *"+(m.hCentro||"—")+"* / "+(m.hDx||"—")+" mm",
+          "­ƒôÅ *MISURE VANO*",
+          "L: "+(m.lAlto||"ÔÇö")+" / *"+(m.lCentro||"ÔÇö")+"* / "+(m.lBasso||"ÔÇö")+" mm",
+          "H: "+(m.hSx||"ÔÇö")+" / *"+(m.hCentro||"ÔÇö")+"* / "+(m.hDx||"ÔÇö")+" mm",
           "",
-          (m.d1>0||m.d2>0)?"↗ *DIAGONALI*":"",
+          (m.d1>0||m.d2>0)?"Ôåù *DIAGONALI*":"",
           (m.d1>0&&m.d2>0)
-            ?(fuori?"⚠️ D1: "+m.d1+" / D2: "+m.d2+" — *FUORI SQUADRA Δ"+diff+"mm*":"D1: "+m.d1+" / D2: "+m.d2+" ✅ OK")
+            ?(fuori?"Üá´©Å D1: "+m.d1+" / D2: "+m.d2+"  *FUORI SQUADRA "+diff+"mm*":"D1: "+m.d1+" / D2: "+m.d2+" £à OK")
             :(m.d1>0?"D1: "+m.d1+" (D2 mancante)":""),
           "",
-          (m.spSx>0||m.spDx>0||m.spSopra>0||m.spSotto>0)?"⬛ *SPALLETTE*":"",
+          (m.spSx>0||m.spDx>0||m.spSopra>0||m.spSotto>0)?"Ô¼ø *SPALLETTE*":"",
           (m.spSx>0||m.spDx>0||m.spSopra>0||m.spSotto>0)?[
             m.spSx?"Sx: "+m.spSx:"",
             m.spDx?"Dx: "+m.spDx:"",
             m.spSopra?"Sopra: "+m.spSopra:"",
             m.spSotto?"Sotto: "+m.spSotto:"",
-          ].filter(Boolean).join(" · ")+" mm":"",
-          m.davanzale?"🪨 Davanzale: "+m.davanzale+" mm":"",
-          m.soglia?"🚪 Soglia: "+m.soglia+" mm":"",
+          ].filter(Boolean).join(" À ")+" mm":"",
+          m.davanzale?"­ƒ¬¿ Davanzale: "+m.davanzale+" mm":"",
+          m.soglia?"­ƒÜ¬ Soglia: "+m.soglia+" mm":"",
           "",
-          "🔧 *PRODOTTO*",
-          v.sistema?"Sistema: *"+v.sistema+"*":"⚠️ Sistema NON specificato",
+          "­ƒöº *PRODOTTO*",
+          v.sistema?"Sistema: *"+v.sistema+"*":"ÔÜá´©Å Sistema NON specificato",
           v.vetro?"Vetro: "+v.vetro:"",
-          v.coloreInt?"🎨 Colore: "+(v.bicolore?"INT: *"+v.coloreInt+"* / EST: *"+(v.coloreEst||"—")+"*":"*"+v.coloreInt+"*"):"⚠️ Colore NON specificato",
+          v.coloreInt?"­ƒÄ¿ Colore: "+(v.bicolore?"INT: *"+v.coloreInt+"* / EST: *"+(v.coloreEst||"ÔÇö")+"*":"*"+v.coloreInt+"*"):"ÔÜá´©Å Colore NON specificato",
           v.coloreAcc?"Colore accessori: "+v.coloreAcc:"",
           "",
-          (v.telaio||v.rifilato)?"📐 *TELAIO*":"",
-          v.telaio?"Tipo: "+v.telaio+(v.telaioAlaZ?" · Ala Z: "+v.telaioAlaZ+"mm":""):"",
+          (v.telaio||v.rifilato)?"­ƒôÉ *TELAIO*":"",
+          v.telaio?"Tipo: "+v.telaio+(v.telaioAlaZ?" À Ala Z: "+v.telaioAlaZ+"mm":""):"",
           v.rifilato?("Rifilatura: "+(v.rifilSx?"Sx:"+v.rifilSx:"")+(v.rifilDx?" Dx:"+v.rifilDx:"")+(v.rifilSopra?" Sop:"+v.rifilSopra:"")+(v.rifilSotto?" Sot:"+v.rifilSotto:"")+" mm"):"",
           "",
-          (v.coprifilo||v.lamiera)?"🔩 *FINITURA*":"",
+          (v.coprifilo||v.lamiera)?"­ƒö® *FINITURA*":"",
           v.coprifilo?"Coprifilo: "+v.coprifilo:"",
           v.lamiera?"Lamiera: "+v.lamiera:"",
           "",
-          ct.tipo?"🔲 *CONTROTELAIO*":"",
+          ct.tipo?"­ƒ*CONTROTELAIO*":"",
           ct.tipo?("Tipo: "+(ct.tipo==="singolo"?"Singolo":ct.tipo==="doppio"?"Doppio":"Con cassonetto")):"",
-          ct.tipo?(ct.l&&ct.h?"Dimensioni CT: "+ct.l+"×"+ct.h+" mm"+(ct.prof?" · Prof: "+ct.prof+" mm":""):""):"",
+          ct.tipo?(ct.l&&ct.h?"Dimensioni CT: "+ct.l+"ù"+ct.h+" mm"+(ct.prof?" À Prof: "+ct.prof+" mm":""):""):"",
           ct.tipo&&ct.offset?"Offset: "+ct.offset+" mm/lato":"",
-          ct.tipo&&ct.infissoL?"→ Infisso calcolato: "+ct.infissoL+"×"+ct.infissoH+" mm":"",
-          ct.tipo==="cassonetto"&&ct.casH?"Cassonetto: H "+ct.casH+"×P "+(ct.casP||"—")+" mm":"",
+          ct.tipo&&ct.infissoL?"åÆ Infisso calcolato: "+ct.infissoL+"ù"+ct.infissoH+" mm":"",
+          ct.tipo==="cassonetto"&&ct.casH?"Cassonetto: H "+ct.casH+"ùP "+(ct.casP||"")+" mm":"",
           ct.tipo==="cassonetto"&&ct.cielino?"Cielino: "+ct.cielino:"",
           "",
-          v.cassonetto?"📦 *CASSONETTO ESTERNO*":"",
-          v.cassonetto?((m.casL||"")+"×"+(m.casH||"")+"×"+(m.casP||"")+" mm"+(v.casTipo?" · "+v.casTipo:"")):"",
+          v.cassonetto?"­ƒôª *CASSONETTO ESTERNO*":"",
+          v.cassonetto?((m.casL||"")+"ù"+(m.casH||"")+"ù"+(m.casP||"")+" mm"+(v.casTipo?" À "+v.casTipo:"")):"",
           "",
-          "📎 *ACCESSORI*",
-          v.accessori?.tapparella?.attivo?("⬇ Tapparella: "+(v.accessori.tapparella.colore||"—")+" · "+(v.accessori.tapparella.l||"—")+"×"+(v.accessori.tapparella.h||"—")+" mm"+(v.accessori.tapparella.motorizzata?" · MOTORIZZATA":"")):"⬇ Tapparella: NO",
-          v.accessori?.persiana?.attivo?("🪟 Persiana: "+(v.accessori.persiana.colore||"—")+(v.accessori.persiana.tipo?" · "+v.accessori.persiana.tipo:"")):"🪟 Persiana: NO",
-          v.accessori?.zanzariera?.attivo?("🕸 Zanzariera: "+(v.accessori.zanzariera.l||"—")+"×"+(v.accessori.zanzariera.h||"—")+" mm"+(v.accessori.zanzariera.tipo?" · "+v.accessori.zanzariera.tipo:"")):"🕸 Zanzariera: NO",
+          "­ƒôÄ *ACCESSORI*",
+          v.accessori?.tapparella?.attivo?("¼ç Tapparella: "+(v.accessori.tapparella.colore||"")+" À "+(v.accessori.tapparella.l||"")+"ù"+(v.accessori.tapparella.h||"")+" mm"+(v.accessori.tapparella.motorizzata?" À MOTORIZZATA":"")):"¼ç Tapparella: NO",
+          v.accessori?.persiana?.attivo?("­ƒ¬ƒ Persiana: "+(v.accessori.persiana.colore||"")+(v.accessori.persiana.tipo?" À "+v.accessori.persiana.tipo:"")):"­ƒ¬ƒ Persiana: NO",
+          v.accessori?.zanzariera?.attivo?("­ƒ© Zanzariera: "+(v.accessori.zanzariera.l||"")+"ù"+(v.accessori.zanzariera.h||"")+" mm"+(v.accessori.zanzariera.tipo?" À "+v.accessori.zanzariera.tipo:"")):"­ƒ© Zanzariera: NO",
           "",
-          v.note?"📝 *NOTE VANO:* "+v.note:"",
-          fuori?"⚠️ *ATTENZIONE: FUORISQUADRA — Verificare con muratore prima dell'ordine*":"",
+          v.note?"­ƒôØ *NOTE VANO:* "+v.note:"",
+          fuori?"ÔÜá´©Å *ATTENZIONE: FUORISQUADRA ÔÇö Verificare con muratore prima dell'ordine*":"",
         ].filter(x=>x!==undefined&&x!==null&&x!=="");
         return lines.join("\n");
       }),
       SEP,
       "",
-      probAperti.length > 0 ? "🚨 *PROBLEMI APERTI ("+probAperti.length+")*" : "",
-      ...probAperti.map(p => "• "+p.titolo+" ("+(p.tipo||"")+" · "+(p.priorita==="alta"?"🔴 ALTA":p.priorita==="media"?"🟠 MEDIA":"⚪ BASSA")+")"+(p.descrizione?" — "+p.descrizione:"")),
+      probAperti.length > 0 ? "­ƒÜ¿ *PROBLEMI APERTI ("+probAperti.length+")*" : "",
+      ...probAperti.map(p => "ó "+p.titolo+" ("+(p.tipo||"")+" À "+(p.priorita==="alta"?"­ƒALTA":p.priorita==="media"?"­ƒƒá MEDIA":"Ü¬ BASSA")+")"+(p.descrizione?"  "+p.descrizione:"")),
       probAperti.length > 0 ? "" : "",
-      c.note?"📝 *NOTE GENERALI*\n"+c.note+"\n"+SEP:"",
-      c.tecnicoMisure?"👤 Tecnico: "+c.tecnicoMisure:"",
-      c.dataRilievo?"📅 Data rilievo: "+c.dataRilievo:"",
+      c.note?"­ƒôØ *NOTE GENERALI*\n"+c.note+"\n"+SEP:"",
+      c.tecnicoMisure?"­ƒæñ Tecnico: "+c.tecnicoMisure:"",
+      c.dataRilievo?"­ƒôà Data rilievo: "+c.dataRilievo:"",
       "",
       SEP,
-      "📊 Totale: *"+vaniR.length+"* vani · *"+totPezzi+"* pezzi"+(fuoriSqN>0?" · ⚠️ *"+fuoriSqN+"* fuorisquadra":""),
+      "­ƒôè Totale: *"+vaniR.length+"* vani À *"+totPezzi+"* pezzi"+(fuoriSqN>0?" À Üá´©Å *"+fuoriSqN+"* fuorisquadra":""),
       "",
-      "_Generato con MASTRO · "+today+"_",
+      "_Generato con MASTRO À "+today+"_",
     ].filter(Boolean).join("\n");
 
     const BLU="#2563eb", VRD="#059669", ROS="#dc2626", GRY="#94a3b8", AMB="#d97706", VIO="#7c3aed";
@@ -163,7 +163,7 @@ export default function RiepilogoPanel() {
         elems.push(<rect key="p" x={ax} y={ay} width={aw} height={ah} fill="none" stroke="#333" strokeWidth={1.2}/>);
         // triangolo: apice al centro del lato di apertura (opposto al cardine)
         if(hingeLeft) {
-          // cardine SX → apice centro-DX
+          // cardine SX ÔåÆ apice centro-DX
           elems.push(<line key="t1" x1={ax} y1={ay} x2={ax+aw} y2={ay+ah/2} stroke="#333" strokeWidth={1} strokeDasharray="8,4"/>);
           elems.push(<line key="t2" x1={ax} y1={ay+ah} x2={ax+aw} y2={ay+ah/2} stroke="#333" strokeWidth={1} strokeDasharray="8,4"/>);
           if(ob) {
@@ -173,7 +173,7 @@ export default function RiepilogoPanel() {
           }
           elems.push(<rect key="m" x={ax+aw-5} y={ay+ah/2-9} width={5} height={18} fill="white" stroke="#444" strokeWidth={0.8}/>);
         } else {
-          // cardine DX → apice centro-SX
+          // cardine DX ÔåÆ apice centro-SX
           elems.push(<line key="t1" x1={ax+aw} y1={ay} x2={ax} y2={ay+ah/2} stroke="#333" strokeWidth={1} strokeDasharray="8,4"/>);
           elems.push(<line key="t2" x1={ax+aw} y1={ay+ah} x2={ax} y2={ay+ah/2} stroke="#333" strokeWidth={1} strokeDasharray="8,4"/>);
           if(ob) {
@@ -352,7 +352,7 @@ export default function RiepilogoPanel() {
             // Label tipo
             <text key="tx" x={cx} y={btm-8} textAnchor="middle" fontSize={9} fill="#555" fontFamily={F} fontWeight="600">{t}</text>,
             // Differenza fuorisquadro
-            ...(hL !== hR ? [<text key="diff" x={cx} y={Math.min(topL,topR)-4} textAnchor="middle" fontSize={7} fill="#c62828" fontFamily={F} fontWeight="700">{"Δ "+Math.abs(hL-hR)+"mm"}</text>] : []),
+            ...(hL !== hR ? [<text key="diff" x={cx} y={Math.min(topL,topR)-4} textAnchor="middle" fontSize={7} fill="#c62828" fontFamily={F} fontWeight="700">{" "+Math.abs(hL-hR)+"mm"}</text>] : []),
           ];
         } else if (forma === "arco") {
           body = [
@@ -398,7 +398,7 @@ export default function RiepilogoPanel() {
         <svg viewBox={"-18 -2 "+(W+22)+" "+(H+4)} width="100%" style={{display:"block",background:"white",border:"1px solid #ddd",borderRadius:3}}>
           {/* cassonetto */}
           {v.cassonetto&&<rect x={0} y={-14} width={W} height={14} fill="#fffde7" stroke="#ca8a04" strokeWidth={0.8}/>}
-          {v.cassonetto&&<text x={cx} y={-4} textAnchor="middle" fontSize={6} fill="#92400e" fontFamily={F} fontWeight="700">{"CASS. "+(v.misure?.casL||"")+"×"+(v.misure?.casH||"")+"×"+(v.misure?.casP||"")}</text>}
+          {v.cassonetto&&<text x={cx} y={-4} textAnchor="middle" fontSize={6} fill="#92400e" fontFamily={F} fontWeight="700">{"CASS. "+(v.misure?.casL||"")+"ù"+(v.misure?.casH||"")+"ù"+(v.misure?.casP||"")}</text>}
           {/* telaio fisso */}
           <rect x={1} y={1} width={W-2} height={H-2} fill="white" stroke="#333" strokeWidth={BW}/>
           {/* soglia */}
@@ -407,9 +407,9 @@ export default function RiepilogoPanel() {
           {body}
           {/* quadratura: solo badge, no linee */}
           {fuori&&<rect x={cx-26} y={cy-9} width={52} height={18} rx={3} fill="#dc2626"/>}
-          {fuori&&<text x={cx} y={cy+4} textAnchor="middle" fontSize={9} fill="white" fontFamily={F} fontWeight="700">{"⚠ +"+diff+"mm"}</text>}
+          {fuori&&<text x={cx} y={cy+4} textAnchor="middle" fontSize={9} fill="white" fontFamily={F} fontWeight="700">{"ÔÜá +"+diff+"mm"}</text>}
           {!fuori&&diff!==null&&<rect x={cx-18} y={cy-7} width={36} height={14} rx={3} fill="#15803d"/>}
-          {!fuori&&diff!==null&&<text x={cx} y={cy+4} textAnchor="middle" fontSize={8} fill="white" fontFamily={F} fontWeight="700">{"✓ sq."}</text>}
+          {!fuori&&diff!==null&&<text x={cx} y={cy+4} textAnchor="middle" fontSize={8} fill="white" fontFamily={F} fontWeight="700">{"Ô£ô sq."}</text>}
           {/* quote */}
           {hasM&&<rect x={cx-30} y={-1} width={60} height={16} rx={2} fill="#1d4ed8"/>}
           {hasM&&<text x={cx} y={12} textAnchor="middle" fontSize={10} fill="white" fontFamily={F} fontWeight="700">{lc}</text>}
@@ -432,15 +432,15 @@ export default function RiepilogoPanel() {
           </div>
           <div style={{flex:1}}>
             <div style={{fontSize:15,fontWeight:800,color:"white"}}>Riepilogo Sopralluogo</div>
-            <div style={{fontSize:10,color:"#64748b"}}>{c.code} · {c.cliente} {c.cognome||""} · {today}</div>
+            <div style={{fontSize:10,color:"#64748b"}}>{c.code} À {c.cliente} {c.cognome||""} À {today}</div>
           </div>
-          <div style={{padding:"4px 8px",borderRadius:6,background:vaniFilled===vaniR.length?"#16a34a":"#d97706",fontSize:10,fontWeight:700,color:"white"}}>{vaniFilled}/{vaniR.length} ✓</div>
+          <div style={{padding:"4px 8px",borderRadius:6,background:vaniFilled===vaniR.length?"#16a34a":"#d97706",fontSize:10,fontWeight:700,color:"white"}}>{vaniFilled}/{vaniR.length} Ô£ô</div>
         </div>
 
         <div style={{padding:"10px 12px"}}>
           {/* Dati cantiere */}
           <div style={{background:"white",borderRadius:10,border:"1px solid #e2e8f0",padding:"12px 14px",marginBottom:10,boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
-            <div style={{fontSize:9,fontWeight:800,color:BLU,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>📍 Dati Cantiere</div>
+            <div style={{fontSize:9,fontWeight:800,color:BLU,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>­ƒôì Dati Cantiere</div>
             <div style={{display:"grid",gridTemplateColumns:"80px 1fr",gap:"3px 8px",fontSize:11.5}}>
               <span style={{color:GRY,fontWeight:600}}>Cliente</span><span style={{fontWeight:700}}>{c.cliente} {c.cognome||""}</span>
               <span style={{color:GRY,fontWeight:600}}>Indirizzo</span><span>{c.indirizzo}</span>
@@ -449,7 +449,7 @@ export default function RiepilogoPanel() {
               {c.mezzoSalita&&<><span style={{color:GRY,fontWeight:600}}>Salita</span><span>{c.mezzoSalita}</span></>}
               {c.sistema&&<><span style={{color:GRY,fontWeight:600}}>Sistema</span><span style={{fontWeight:700,color:BLU}}>{c.sistema}</span></>}
             </div>
-            {c.note&&<div style={{marginTop:8,padding:"5px 8px",background:"#fffbeb",borderRadius:6,fontSize:11,color:"#713f12",borderLeft:"3px solid "+AMB}}>📝 {c.note}</div>}
+            {c.note&&<div style={{marginTop:8,padding:"5px 8px",background:"#fffbeb",borderRadius:6,fontSize:11,color:"#713f12",borderLeft:"3px solid "+AMB}}>­ƒôØ {c.note}</div>}
           </div>
 
           {/* Vani */}
@@ -459,18 +459,18 @@ export default function RiepilogoPanel() {
             const diff=m.d1>0&&m.d2>0?Math.abs(m.d1-m.d2):null;
             const fuori=diff!==null&&(diff as number)>5;
             const misN=Object.values(m).filter(x=>(x as number)>0).length;
-            const tipLabel=TIPOLOGIE_RAPIDE.find(tp=>tp.code===v.tipo)?.label||v.tipo||"—";
+            const tipLabel=TIPOLOGIE_RAPIDE.find(tp=>tp.code===v.tipo)?.label||v.tipo||"ÔÇö";
             return (
               <div key={v.id} style={{background:"white",borderRadius:10,border:"1.5px solid "+(fuori?"#fca5a5":"#e2e8f0"),marginBottom:10,overflow:"hidden"}}>
                 {/* Header */}
                 <div style={{padding:"8px 12px",background:fuori?"#fef2f2":"#0f172a",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
                     <span style={{fontSize:13,fontWeight:800,color:fuori?"#991b1b":"white"}}>{vi+1}. {v.nome}</span>
-                    <span style={{fontSize:10,color:fuori?"#b91c1c":"#64748b",marginLeft:6}}>{tipLabel} · {v.stanza} · {v.piano}</span>
+                    <span style={{fontSize:10,color:fuori?"#b91c1c":"#64748b",marginLeft:6}}>{tipLabel} À {v.stanza} À {v.piano}</span>
                   </div>
                   <div style={{display:"flex",gap:3}}>
-                    {(v.pezzi||1)>1&&<span style={{padding:"2px 6px",borderRadius:3,background:"#7c3aed",color:"white",fontSize:8,fontWeight:800}}>×{v.pezzi} PZ</span>}
-                    {fuori&&<span style={{padding:"2px 6px",borderRadius:3,background:ROS,color:"white",fontSize:8,fontWeight:800}}>⚠ +{diff}mm</span>}
+                    {(v.pezzi||1)>1&&<span style={{padding:"2px 6px",borderRadius:3,background:"#7c3aed",color:"white",fontSize:8,fontWeight:800}}>ù{v.pezzi} PZ</span>}
+                    {fuori&&<span style={{padding:"2px 6px",borderRadius:3,background:ROS,color:"white",fontSize:8,fontWeight:800}}>ÔÜá +{diff}mm</span>}
                     <span style={{padding:"2px 6px",borderRadius:3,background:misN>=6?"#16a34a":"#d97706",color:"white",fontSize:8,fontWeight:700}}>{misN}mis</span>
                   </div>
                 </div>
@@ -485,8 +485,8 @@ export default function RiepilogoPanel() {
                   {/* Misure */}
                   <div style={{flex:1,padding:"10px 10px 8px 10px"}}>
                     <div style={{fontSize:7,fontWeight:700,color:GRY,textTransform:"uppercase",marginBottom:5}}>Misure (mm)</div>
-                    {[["LARGH",BLU,[["Alto",m.lAlto],["Centro●",m.lCentro],["Basso",m.lBasso]]],
-                      ["ALT",VRD,[["Sx",m.hSx],["Centro●",m.hCentro],["Dx",m.hDx]]]
+                    {[["LARGH",BLU,[["Alto",m.lAlto],["CentroÔùÅ",m.lCentro],["Basso",m.lBasso]]],
+                      ["ALT",VRD,[["Sx",m.hSx],["CentroÔùÅ",m.hCentro],["Dx",m.hDx]]]
                     ].map(([lbl,col,rows])=>(
                       <div key={lbl} style={{marginBottom:5}}>
                         <div style={{fontSize:7,fontWeight:800,color:col,marginBottom:2,display:"flex",alignItems:"center",gap:2}}>
@@ -496,17 +496,17 @@ export default function RiepilogoPanel() {
                         {rows.map(([l,val])=>(
                           <div key={l} style={{display:"flex",justifyContent:"space-between",fontSize:10.5,padding:"1.5px 0",borderBottom:"1px solid #f8fafc"}}>
                             <span style={{color:GRY,fontSize:9.5}}>{l}</span>
-                            <span style={{fontWeight:700,color:val?"#0f172a":"#e2e8f0",fontFamily:"'DM Mono',monospace"}}>{val||"—"}</span>
+                            <span style={{fontWeight:700,color:val?"#0f172a":"#e2e8f0",fontFamily:"'DM Mono',monospace"}}>{val||"ÔÇö"}</span>
                           </div>
                         ))}
                       </div>
                     ))}
                     {(m.d1>0||m.d2>0)&&<div style={{marginBottom:4}}>
-                      <div style={{fontSize:7,fontWeight:800,color:fuori?ROS:VIO,marginBottom:2}}>DIAG. {fuori?"⚠ +"+diff:"✓"}</div>
-                      {[["D1↗",m.d1],["D2↘",m.d2]].map(([l,val])=>(
+                      <div style={{fontSize:7,fontWeight:800,color:fuori?ROS:VIO,marginBottom:2}}>DIAG. {fuori?"ÔÜá +"+diff:"Ô£ô"}</div>
+                      {[["D1Ôåù",m.d1],["D2Ôåÿ",m.d2]].map(([l,val])=>(
                         <div key={l} style={{display:"flex",justifyContent:"space-between",fontSize:10.5,padding:"1px 0"}}>
                           <span style={{color:GRY,fontSize:9.5}}>{l}</span>
-                          <span style={{fontWeight:700,fontFamily:"'DM Mono',monospace"}}>{val||"—"}</span>
+                          <span style={{fontWeight:700,fontFamily:"'DM Mono',monospace"}}>{val||"ÔÇö"}</span>
                         </div>
                       ))}
                     </div>}
@@ -525,22 +525,22 @@ export default function RiepilogoPanel() {
                 {(v.sistema||v.vetro||v.telaio||v.accessori?.tapparella?.attivo||v.accessori?.zanzariera?.attivo||v.accessori?.persiana?.attivo||v.cassonetto||v.note||v.controtelaio?.tipo)&&(
                   <div style={{padding:"7px 12px",background:"#f8fafc",borderTop:"1px solid #f1f5f9"}}>
                     <div style={{display:"flex",flexWrap:"wrap",gap:3,marginBottom:3}}>
-                      {v.controtelaio?.tipo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#dbeafe",color:"#1e40af",fontSize:9.5,fontWeight:700}}>🔲 CT {v.controtelaio.tipo==="singolo"?"Sing.":v.controtelaio.tipo==="doppio"?"Doppio":"Cass."} {v.controtelaio.l||""}×{v.controtelaio.h||""}{v.controtelaio.prof?" P"+v.controtelaio.prof:""}</span>}
-                      {v.sistema&&<span style={{padding:"2px 7px",borderRadius:4,background:"#eff6ff",color:"#1d4ed8",fontSize:9.5,fontWeight:700}}>⚙ {v.sistema}</span>}
-                      {v.vetro&&<span style={{padding:"2px 7px",borderRadius:4,background:"#f0fdf4",color:"#15803d",fontSize:9.5,fontWeight:700}}>🔲 {v.vetro}</span>}
-                      {v.coloreInt&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fafafa",border:"1px solid #e2e8f0",color:"#374151",fontSize:9.5}}>🎨 {v.bicolore?"INT:"+v.coloreInt+"/EST:"+v.coloreEst:v.coloreInt}</span>}
-                      {v.telaio&&<span style={{padding:"2px 7px",borderRadius:4,background:"#f5f3ff",color:"#6d28d9",fontSize:9.5,fontWeight:700}}>📐 Tel.{v.telaio}{v.telaio==="Z"&&v.telaioAlaZ?" ("+v.telaioAlaZ+"mm)":""}</span>}
+                      {v.controtelaio?.tipo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#dbeafe",color:"#1e40af",fontSize:9.5,fontWeight:700}}>­ƒCT {v.controtelaio.tipo==="singolo"?"Sing.":v.controtelaio.tipo==="doppio"?"Doppio":"Cass."} {v.controtelaio.l||""}ù{v.controtelaio.h||""}{v.controtelaio.prof?" P"+v.controtelaio.prof:""}</span>}
+                      {v.sistema&&<span style={{padding:"2px 7px",borderRadius:4,background:"#eff6ff",color:"#1d4ed8",fontSize:9.5,fontWeight:700}}>ÔÜÖ {v.sistema}</span>}
+                      {v.vetro&&<span style={{padding:"2px 7px",borderRadius:4,background:"#f0fdf4",color:"#15803d",fontSize:9.5,fontWeight:700}}>­ƒ{v.vetro}</span>}
+                      {v.coloreInt&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fafafa",border:"1px solid #e2e8f0",color:"#374151",fontSize:9.5}}>­ƒÄ¿ {v.bicolore?"INT:"+v.coloreInt+"/EST:"+v.coloreEst:v.coloreInt}</span>}
+                      {v.telaio&&<span style={{padding:"2px 7px",borderRadius:4,background:"#f5f3ff",color:"#6d28d9",fontSize:9.5,fontWeight:700}}>­ƒôÉ Tel.{v.telaio}{v.telaio==="Z"&&v.telaioAlaZ?" ("+v.telaioAlaZ+"mm)":""}</span>}
                       {v.rifilato&&(v.rifilSx||v.rifilDx)&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fdf4ff",color:"#7e22ce",fontSize:9.5}}>Rif Sx:{v.rifilSx} Dx:{v.rifilDx} Sop:{v.rifilSopra}</span>}
-                      {v.coprifilo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fefce8",color:"#92400e",fontSize:9.5}}>🔩 {v.coprifilo}</span>}
-                      {v.lamiera&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fff7ed",color:"#9a3412",fontSize:9.5}}>📏 {v.lamiera}</span>}
+                      {v.coprifilo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fefce8",color:"#92400e",fontSize:9.5}}>­ƒö® {v.coprifilo}</span>}
+                      {v.lamiera&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fff7ed",color:"#9a3412",fontSize:9.5}}>­ƒôÅ {v.lamiera}</span>}
                     </div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
-                      {v.cassonetto&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fef3c7",color:"#b45309",fontSize:9.5,fontWeight:700}}>📦 {v.casTipo||"Cass."} {v.misure?.casL||""}×{v.misure?.casH||""}×{v.misure?.casP||""}</span>}
-                      {v.accessori?.tapparella?.attivo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fef3c7",color:"#b45309",fontSize:9.5,fontWeight:700}}>⬇ Tap. {v.accessori.tapparella.colore} {v.accessori.tapparella.l}×{v.accessori.tapparella.h}</span>}
-                      {v.accessori?.persiana?.attivo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#eff6ff",color:"#1e40af",fontSize:9.5,fontWeight:700}}>🪟 Pers. {v.accessori.persiana.colore}</span>}
-                      {v.accessori?.zanzariera?.attivo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fdf4ff",color:"#6b21a8",fontSize:9.5,fontWeight:700}}>🕸 Zan. {v.accessori.zanzariera.l}×{v.accessori.zanzariera.h}</span>}
+                      {v.cassonetto&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fef3c7",color:"#b45309",fontSize:9.5,fontWeight:700}}>­ƒôª {v.casTipo||"Cass."} {v.misure?.casL||""}ù{v.misure?.casH||""}ù{v.misure?.casP||""}</span>}
+                      {v.accessori?.tapparella?.attivo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fef3c7",color:"#b45309",fontSize:9.5,fontWeight:700}}>¼ç Tap. {v.accessori.tapparella.colore} {v.accessori.tapparella.l}ù{v.accessori.tapparella.h}</span>}
+                      {v.accessori?.persiana?.attivo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#eff6ff",color:"#1e40af",fontSize:9.5,fontWeight:700}}>­ƒ¬ƒ Pers. {v.accessori.persiana.colore}</span>}
+                      {v.accessori?.zanzariera?.attivo&&<span style={{padding:"2px 7px",borderRadius:4,background:"#fdf4ff",color:"#6b21a8",fontSize:9.5,fontWeight:700}}>­ƒ© Zan. {v.accessori.zanzariera.l}ù{v.accessori.zanzariera.h}</span>}
                     </div>
-                    {v.note&&<div style={{marginTop:5,fontSize:10.5,color:"#475569",fontStyle:"italic",padding:"3px 6px",background:"#fffbeb",borderRadius:4,borderLeft:"2px solid "+AMB}}>📝 {v.note}</div>}
+                    {v.note&&<div style={{marginTop:5,fontSize:10.5,color:"#475569",fontStyle:"italic",padding:"3px 6px",background:"#fffbeb",borderRadius:4,borderLeft:"2px solid "+AMB}}>­ƒôØ {v.note}</div>}
                   </div>
                 )}
               </div>
@@ -555,9 +555,9 @@ export default function RiepilogoPanel() {
             const totCosto = totOre * costoOra;
             return (
               <div style={{background:"#D0800815",borderRadius:10,padding:"12px 14px",marginBottom:12,border:"1px solid #D0800830"}}>
-                <div style={{fontSize:9,fontWeight:700,color:"#D08008",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>👷 Manodopera</div>
+                <div style={{fontSize:9,fontWeight:700,color:"#D08008",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>­ƒæÀ Manodopera</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  {[["Ore stimate",vaniR.reduce((s,v)=>s+(v.oreStimate||0),0).toFixed(1),"#D08008"],["Ore extra",vaniR.reduce((s,v)=>s+(v.oreExtra||0),0).toFixed(1),"#E8A020"],["Costo totale","€"+totCosto.toFixed(0),"#D08008"]].map(([l,val,col])=>(
+                  {[["Ore stimate",vaniR.reduce((s,v)=>s+(v.oreStimate||0),0).toFixed(1),"#D08008"],["Ore extra",vaniR.reduce((s,v)=>s+(v.oreExtra||0),0).toFixed(1),"#E8A020"],["Costo totale","Ôé¼"+totCosto.toFixed(0),"#D08008"]].map(([l,val,col])=>(
                     <div key={l} style={{textAlign:"center",padding:"8px 4px",background:"rgba(255,255,255,0.6)",borderRadius:8}}>
                       <div style={{fontSize:18,fontWeight:800,color:col,fontFamily:"'DM Mono',monospace"}}>{val}</div>
                       <div style={{fontSize:8,color:"#94a3b8",marginTop:2}}>{l}</div>
@@ -565,8 +565,8 @@ export default function RiepilogoPanel() {
                   ))}
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:10,color:"#D08008"}}>
-                  <span>Totale: {totOre.toFixed(1)}h × €{costoOra}/ora</span>
-                  <span style={{fontWeight:900}}>€ {totCosto.toFixed(2)}</span>
+                  <span>Totale: {totOre.toFixed(1)}h ù é¼{costoOra}/ora</span>
+                  <span style={{fontWeight:900}}>Ôé¼ {totCosto.toFixed(2)}</span>
                 </div>
               </div>
             );
@@ -576,7 +576,7 @@ export default function RiepilogoPanel() {
           <div style={{background:"#0f172a",borderRadius:10,padding:"12px 14px",marginBottom:12}}>
             <div style={{fontSize:9,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>Sommario</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-              {[["Vani",vaniR.length,"#60a5fa"],["Misure ✓",vaniFilled,"#4ade80"],["⚠ Fuori sq.",fuoriSqN,fuoriSqN>0?"#fbbf24":"#4ade80"]].map(([l,val,col])=>(
+              {[["Vani",vaniR.length,"#60a5fa"],["Misure Ô£ô",vaniFilled,"#4ade80"],["ÔÜá Fuori sq.",fuoriSqN,fuoriSqN>0?"#fbbf24":"#4ade80"]].map(([l,val,col])=>(
                 <div key={l} style={{textAlign:"center",padding:"8px 4px",background:"rgba(255,255,255,0.05)",borderRadius:8}}>
                   <div style={{fontSize:22,fontWeight:800,color:col,fontFamily:"'DM Mono',monospace"}}>{val}</div>
                   <div style={{fontSize:8,color:"#94a3b8",marginTop:2}}>{l}</div>
@@ -588,7 +588,7 @@ export default function RiepilogoPanel() {
 
           {/* Anteprima messaggio WA */}
           <div style={{background:"#dcf8c6",border:"1.5px solid #16a34a",borderRadius:10,padding:"10px 12px",marginBottom:10}}>
-            <div style={{fontSize:9,fontWeight:800,color:"#166534",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>📱 Anteprima messaggio</div>
+            <div style={{fontSize:9,fontWeight:800,color:"#166534",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>­ƒôAnteprima messaggio</div>
             <pre style={{fontFamily:"'DM Mono',monospace",fontSize:9.5,color:"#14532d",whiteSpace:"pre-wrap",lineHeight:1.65,margin:0,maxHeight:400,overflow:"auto"}}>{waMsg}</pre>
           </div>
 
@@ -597,13 +597,13 @@ export default function RiepilogoPanel() {
           <div style={{fontSize:9,fontWeight:700,color:GRY,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:7,textAlign:"center"}}>Invia riepilogo</div>
           <div style={{display:"flex",gap:8}}>
             <div onClick={()=>{navigator.clipboard?.writeText(waMsg.replace(/\*/g,""));}} 
-              style={{padding:"13px 14px",borderRadius:11,background:"#f1f5f9",color:"#475569",cursor:"pointer",fontWeight:800,fontSize:13}}>📋</div>
+              style={{padding:"13px 14px",borderRadius:11,background:"#f1f5f9",color:"#475569",cursor:"pointer",fontWeight:800,fontSize:13}}>­ƒôï</div>
             <div onClick={()=>window.open("https://wa.me/?text="+encodeURIComponent(waMsg))}
-              style={{flex:1,padding:"13px 8px",borderRadius:11,background:"#16a34a",color:"white",textAlign:"center",cursor:"pointer",fontWeight:800,fontSize:13}}>💬 WhatsApp</div>
-            <div onClick={()=>window.open("mailto:?subject="+encodeURIComponent("Riepilogo Commessa "+c.code+" — "+c.cliente)+"&body="+encodeURIComponent(waMsg.replace(/\*/g,"")))}
-              style={{flex:1,padding:"13px 8px",borderRadius:11,background:BLU,color:"white",textAlign:"center",cursor:"pointer",fontWeight:800,fontSize:13}}>📧 Email</div>
+              style={{flex:1,padding:"13px 8px",borderRadius:11,background:"#16a34a",color:"white",textAlign:"center",cursor:"pointer",fontWeight:800,fontSize:13}}>­ƒÆ¼ WhatsApp</div>
+            <div onClick={()=>window.open("mailto:?subject="+encodeURIComponent("Riepilogo Commessa "+c.code+" ÔÇö "+c.cliente)+"&body="+encodeURIComponent(waMsg.replace(/\*/g,"")))}
+              style={{flex:1,padding:"13px 8px",borderRadius:11,background:BLU,color:"white",textAlign:"center",cursor:"pointer",fontWeight:800,fontSize:13}}>­ƒôº Email</div>
             <div onClick={()=>window.print()}
-              style={{padding:"13px 14px",borderRadius:11,background:"#f1f5f9",color:"#475569",cursor:"pointer",fontWeight:800,fontSize:15}}>🖨</div>
+              style={{padding:"13px 14px",borderRadius:11,background:"#f1f5f9",color:"#475569",cursor:"pointer",fontWeight:800,fontSize:15}}>­ƒû¿</div>
           </div>
         </div>
       </div>
