@@ -210,7 +210,7 @@ export default function HomePanel() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {isNotCurrentWeek && <div onClick={goToday} style={{ padding: "4px 12px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>Oggi</div>}
-            <span onClick={() => setTab("agenda")} style={{ fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Agenda <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span onClick={() => setTab("agenda")} style={{ fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Agenda </span>
           </div>
         </div>
 
@@ -298,7 +298,7 @@ export default function HomePanel() {
       {/* Scorciatoie */}
       <div style={{ margin: "8px 20px 0", display: "flex", gap: 8 }}>
         <div onClick={() => setTab("contabilita")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.sub, textAlign: "center" }}>€ Contabilità</div>
-        <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#1A9E7308", border: "1px solid #1A9E7330", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1A9E73", textAlign: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> Cantieri</div>
+        <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#1A9E7308", border: "1px solid #1A9E7330", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1A9E73", textAlign: "center" }}>Cantieri</div>
       </div>
 
       {/* Quick links */}
