@@ -75,7 +75,7 @@ export const tipoToMinCat = (tipo: string): string => {
 /* == TEMI == */
 export const THEMES = {
   chiaro: {
-    name: "Chiaro", emoji: "☀️",
+    name: "Chiaro", emoji: "sun",
     bg: "#F2F1EC", bg2: "#EDECE7", card: "#ffffff", card2: "#f8f8fa",
     bdr: "#E5E4DF", bdrL: "#EDECE7", text: "#1A1A1C", sub: "#7A7A7A", sub2: "#AAAAAA",
     pri: "#0D7C6B",
@@ -91,7 +91,7 @@ export const THEMES = {
     r: 12, r2: 16
   },
   scuro: {
-    name: "Scuro", emoji: "🌙",
+    name: "Scuro", emoji: "moon",
     bg: "#000000", bg2: "#1c1c1e", card: "#1c1c1e", card2: "#2c2c2e",
     bdr: "#38383a", bdrL: "#48484a", text: "#f2f2f7", sub: "#8e8e93", sub2: "#636366",
     pri: "#14B8A0",
@@ -107,7 +107,7 @@ export const THEMES = {
     r: 12, r2: 16
   },
   oceano: {
-    name: "Oceano", emoji: "🌊",
+    name: "Oceano", emoji: "droplets",
     bg: "#0f1923", bg2: "#162231", card: "#1a2a3a", card2: "#1f3040",
     bdr: "#2a3f55", bdrL: "#345070", text: "#e8ecf0", sub: "#7a90a5", sub2: "#4a6070",
     pri: "#4DD4C0",
@@ -126,10 +126,10 @@ export const THEMES = {
 
 /* == PIANI ABBONAMENTO == */
 export const PLANS = {
-  trial: { nome: "Trial Gratuito", prezzo: 0, maxCommesse: 999, maxVani: 999, maxUtenti: 1, maxCataloghi: 1, sync: true, pdf: true, admin: false, api: false, durata: 14, badge: "🎁", desc: "14 giorni con tutte le funzioni PRO" },
-  free: { nome: "Free", prezzo: 0, maxCommesse: 5, maxVani: 15, maxUtenti: 1, maxCataloghi: 1, sync: false, pdf: false, admin: false, api: false, durata: null, badge: "🆓", desc: "Per provare MASTRO — 5 commesse, 1 utente" },
-  pro: { nome: "Pro", prezzo: 49, maxCommesse: 9999, maxVani: 9999, maxUtenti: 2, maxCataloghi: 5, sync: true, pdf: true, admin: false, api: false, durata: null, badge: "⭐", desc: "Serramentista / Artigiano — commesse illimitate" },
-  business: { nome: "Business", prezzo: 149, maxCommesse: 9999, maxVani: 9999, maxUtenti: 10, maxCataloghi: 99, sync: true, pdf: true, admin: true, api: true, durata: null, badge: "💎", desc: "Showroom / Multi-sede — team fino a 10 persone" },
+  trial: { nome: "Trial Gratuito", prezzo: 0, maxCommesse: 999, maxVani: 999, maxUtenti: 1, maxCataloghi: 1, sync: true, pdf: true, admin: false, api: false, durata: 14, badge: "gift", desc: "14 giorni con tutte le funzioni PRO" },
+  free: { nome: "Free", prezzo: 0, maxCommesse: 5, maxVani: 15, maxUtenti: 1, maxCataloghi: 1, sync: false, pdf: false, admin: false, api: false, durata: null, badge: "zap", desc: "Per provare MASTRO — 5 commesse, 1 utente" },
+  pro: { nome: "Pro", prezzo: 49, maxCommesse: 9999, maxVani: 9999, maxUtenti: 2, maxCataloghi: 5, sync: true, pdf: true, admin: false, api: false, durata: null, badge: "star", desc: "Serramentista / Artigiano — commesse illimitate" },
+  business: { nome: "Business", prezzo: 149, maxCommesse: 9999, maxVani: 9999, maxUtenti: 10, maxCataloghi: 99, sync: true, pdf: true, admin: true, api: true, durata: null, badge: "gem", desc: "Showroom / Multi-sede — team fino a 10 persone" },
 };
 
 /* == PIPELINE 7+1 FASI == */
@@ -494,106 +494,106 @@ export const VETRI_INIT = [
 
 export const TIPOLOGIE_RAPIDE = [
   // Finestre
-  { code: "F1A",    label: "Finestra 1 anta",           icon: "🪟", cat: "Finestre", settore: "serramenti" },
-  { code: "F2A",    label: "Finestra 2 ante",            icon: "🪟", cat: "Finestre", settore: "serramenti" },
-  { code: "F3A",    label: "Finestra 3 ante",            icon: "🪟", cat: "Finestre", settore: "serramenti" },
-  { code: "F4A",    label: "Finestra 4 ante",            icon: "🪟", cat: "Finestre", settore: "serramenti" },
-  { code: "F2AFISDX", label: "Finestra 2A + Fisso DX",  icon: "🪟", cat: "Finestre", settore: "serramenti" },
-  { code: "F2AFISSX", label: "Finestra 2A + Fisso SX",  icon: "🪟", cat: "Finestre", settore: "serramenti" },
-  { code: "FISDX",  label: "Fisso DX",                  icon: "▮",  cat: "Finestre", settore: "serramenti" },
-  { code: "FISSX",  label: "Fisso SX",                  icon: "▮",  cat: "Finestre", settore: "serramenti" },
-  { code: "VAS",    label: "Vasistas",                  icon: "⬇",  cat: "Finestre", settore: "serramenti" },
-  { code: "RIBALTA",label: "Ribalta",                   icon: "⬆",  cat: "Finestre", settore: "serramenti" },
+  { code: "F1A",    label: "Finestra 1 anta",           icon: "columns", cat: "Finestre", settore: "serramenti" },
+  { code: "F2A",    label: "Finestra 2 ante",            icon: "columns", cat: "Finestre", settore: "serramenti" },
+  { code: "F3A",    label: "Finestra 3 ante",            icon: "columns", cat: "Finestre", settore: "serramenti" },
+  { code: "F4A",    label: "Finestra 4 ante",            icon: "columns", cat: "Finestre", settore: "serramenti" },
+  { code: "F2AFISDX", label: "Finestra 2A + Fisso DX",  icon: "columns", cat: "Finestre", settore: "serramenti" },
+  { code: "F2AFISSX", label: "Finestra 2A + Fisso SX",  icon: "columns", cat: "Finestre", settore: "serramenti" },
+  { code: "FISDX",  label: "Fisso DX",                  icon: "square",  cat: "Finestre", settore: "serramenti" },
+  { code: "FISSX",  label: "Fisso SX",                  icon: "square",  cat: "Finestre", settore: "serramenti" },
+  { code: "VAS",    label: "Vasistas",                  icon: "chevronDown",  cat: "Finestre", settore: "serramenti" },
+  { code: "RIBALTA",label: "Ribalta",                   icon: "chevronUp",  cat: "Finestre", settore: "serramenti" },
   // Balconi / Portafinestre
-  { code: "PF1A",   label: "Balcone 1 anta",            icon: "🚪", cat: "Balconi", settore: "serramenti" },
-  { code: "PF2A",   label: "Balcone 2 ante",            icon: "🚪", cat: "Balconi", settore: "serramenti" },
-  { code: "PF3A",   label: "Balcone 3 ante",            icon: "🚪", cat: "Balconi", settore: "serramenti" },
-  { code: "PF4A",   label: "Balcone 4 ante",            icon: "🚪", cat: "Balconi", settore: "serramenti" },
-  { code: "PF2AFISDX", label: "Balcone 2A + Fisso DX", icon: "🚪", cat: "Balconi", settore: "serramenti" },
-  { code: "PF2AFISSX", label: "Balcone 2A + Fisso SX", icon: "🚪", cat: "Balconi", settore: "serramenti" },
+  { code: "PF1A",   label: "Balcone 1 anta",            icon: "door", cat: "Balconi", settore: "serramenti" },
+  { code: "PF2A",   label: "Balcone 2 ante",            icon: "door", cat: "Balconi", settore: "serramenti" },
+  { code: "PF3A",   label: "Balcone 3 ante",            icon: "door", cat: "Balconi", settore: "serramenti" },
+  { code: "PF4A",   label: "Balcone 4 ante",            icon: "door", cat: "Balconi", settore: "serramenti" },
+  { code: "PF2AFISDX", label: "Balcone 2A + Fisso DX", icon: "door", cat: "Balconi", settore: "serramenti" },
+  { code: "PF2AFISSX", label: "Balcone 2A + Fisso SX", icon: "door", cat: "Balconi", settore: "serramenti" },
   // Scorrevoli / Alzanti
-  { code: "SC2A",   label: "Scorrevole 2 ante",         icon: "↔️", cat: "Scorrevoli", settore: "serramenti" },
-  { code: "SC4A",   label: "Scorrevole 4 ante",         icon: "↔️", cat: "Scorrevoli", settore: "serramenti" },
-  { code: "SCRDX",  label: "Scorrevole DX",             icon: "▶",  cat: "Scorrevoli", settore: "serramenti" },
-  { code: "SCRSX",  label: "Scorrevole SX",             icon: "◀",  cat: "Scorrevoli", settore: "serramenti" },
-  { code: "ALZDX",  label: "Alzante DX",                icon: "⬆",  cat: "Scorrevoli", settore: "serramenti" },
-  { code: "ALZSX",  label: "Alzante SX",                icon: "⬆",  cat: "Scorrevoli", settore: "serramenti" },
+  { code: "SC2A",   label: "Scorrevole 2 ante",         icon: "arrowLeftRight", cat: "Scorrevoli", settore: "serramenti" },
+  { code: "SC4A",   label: "Scorrevole 4 ante",         icon: "arrowLeftRight", cat: "Scorrevoli", settore: "serramenti" },
+  { code: "SCRDX",  label: "Scorrevole DX",             icon: "chevronRight",  cat: "Scorrevoli", settore: "serramenti" },
+  { code: "SCRSX",  label: "Scorrevole SX",             icon: "chevronLeft",  cat: "Scorrevoli", settore: "serramenti" },
+  { code: "ALZDX",  label: "Alzante DX",                icon: "chevronUp",  cat: "Scorrevoli", settore: "serramenti" },
+  { code: "ALZSX",  label: "Alzante SX",                icon: "chevronUp",  cat: "Scorrevoli", settore: "serramenti" },
   // Persiane / Oscuramenti
-  { code: "PERS1A", label: "Persiana 1 anta",           icon: "🌂", cat: "Persiane", settore: "persiane" },
-  { code: "PERS2A", label: "Persiana 2 ante",           icon: "🌂", cat: "Persiane", settore: "persiane" },
-  { code: "PERS3A", label: "Persiana 3 ante",           icon: "🌂", cat: "Persiane", settore: "persiane" },
-  { code: "PERSOR", label: "Persiana orientabile",      icon: "🔄", cat: "Persiane", settore: "persiane" },
-  { code: "SCURO1", label: "Scuro 1 anta",              icon: "🚪", cat: "Persiane", settore: "persiane" },
-  { code: "SCURO2", label: "Scuro 2 ante",              icon: "🚪", cat: "Persiane", settore: "persiane" },
+  { code: "PERS1A", label: "Persiana 1 anta",           icon: "layers", cat: "Persiane", settore: "persiane" },
+  { code: "PERS2A", label: "Persiana 2 ante",           icon: "layers", cat: "Persiane", settore: "persiane" },
+  { code: "PERS3A", label: "Persiana 3 ante",           icon: "layers", cat: "Persiane", settore: "persiane" },
+  { code: "PERSOR", label: "Persiana orientabile",      icon: "refreshCw", cat: "Persiane", settore: "persiane" },
+  { code: "SCURO1", label: "Scuro 1 anta",              icon: "door", cat: "Persiane", settore: "persiane" },
+  { code: "SCURO2", label: "Scuro 2 ante",              icon: "door", cat: "Persiane", settore: "persiane" },
   // Tapparelle / Avvolgibili
-  { code: "TAPP",   label: "Tapparella",                icon: "⬇",  cat: "Tapparelle", settore: "tapparelle" },
-  { code: "TAPPAL", label: "Tapparella alluminio",      icon: "⬇",  cat: "Tapparelle", settore: "tapparelle" },
-  { code: "TAPPPVC",label: "Tapparella PVC",            icon: "⬇",  cat: "Tapparelle", settore: "tapparelle" },
-  { code: "TAPPBL", label: "Tapparella blindata",       icon: "🛡", cat: "Tapparelle", settore: "tapparelle" },
-  { code: "TAPPMOT",label: "Tapparella motorizzata",    icon: "⚡", cat: "Tapparelle", settore: "tapparelle" },
-  { code: "ORIENTA",label: "Avvolgibile orientabile",   icon: "🔄", cat: "Tapparelle", settore: "tapparelle" },
-  { code: "CASS",   label: "Cassonetto",                icon: "🧊", cat: "Tapparelle", settore: "tapparelle" },
+  { code: "TAPP",   label: "Tapparella",                icon: "chevronDown",  cat: "Tapparelle", settore: "tapparelle" },
+  { code: "TAPPAL", label: "Tapparella alluminio",      icon: "chevronDown",  cat: "Tapparelle", settore: "tapparelle" },
+  { code: "TAPPPVC",label: "Tapparella PVC",            icon: "chevronDown",  cat: "Tapparelle", settore: "tapparelle" },
+  { code: "TAPPBL", label: "Tapparella blindata",       icon: "shield", cat: "Tapparelle", settore: "tapparelle" },
+  { code: "TAPPMOT",label: "Tapparella motorizzata",    icon: "zap", cat: "Tapparelle", settore: "tapparelle" },
+  { code: "ORIENTA",label: "Avvolgibile orientabile",   icon: "refreshCw", cat: "Tapparelle", settore: "tapparelle" },
+  { code: "CASS",   label: "Cassonetto",                icon: "box", cat: "Tapparelle", settore: "tapparelle" },
   // Zanzariere
-  { code: "ZANZLAT",label: "Zanzariera laterale",       icon: "🕸", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZVER",label: "Zanzariera verticale",      icon: "🕸", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZPLI",label: "Zanzariera plissé",         icon: "🕸", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZBAT",label: "Zanzariera battente",       icon: "🕸", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZFIX",label: "Zanzariera fissa",          icon: "🕸", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZMAG",label: "Zanzariera magnetica",      icon: "🧲", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZ2A", label: "Zanzariera 2 ante plissé",  icon: "🕸", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZLAT",label: "Zanzariera laterale",       icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZVER",label: "Zanzariera verticale",      icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZPLI",label: "Zanzariera plissé",         icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZBAT",label: "Zanzariera battente",       icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZFIX",label: "Zanzariera fissa",          icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZMAG",label: "Zanzariera magnetica",      icon: "zap", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZ2A", label: "Zanzariera 2 ante plissé",  icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
   // Tende da sole
-  { code: "TDBR",   label: "Tenda a bracci",            icon: "☀️", cat: "Tende da sole", settore: "tende" },
-  { code: "TDCAD",  label: "Tenda a caduta",            icon: "☀️", cat: "Tende da sole", settore: "tende" },
-  { code: "TDCAP",  label: "Cappottina",                icon: "☀️", cat: "Tende da sole", settore: "tende" },
-  { code: "TDVER",  label: "Tenda verticale",           icon: "☀️", cat: "Tende da sole", settore: "tende" },
-  { code: "TDRUL",  label: "Tenda a rullo",             icon: "☀️", cat: "Tende da sole", settore: "tende" },
-  { code: "TDPERG", label: "Pergola bioclimatica",      icon: "🏗", cat: "Tende da sole", settore: "tende" },
-  { code: "TDZIP",  label: "Tenda ZIP / Screen",        icon: "☀️", cat: "Tende da sole", settore: "tende" },
-  { code: "TDVELA", label: "Vela ombreggiante",         icon: "⛵", cat: "Tende da sole", settore: "tende" },
-  { code: "VENEZIA",label: "Veneziana",                 icon: "▤",  cat: "Tende da sole", settore: "tende" },
+  { code: "TDBR",   label: "Tenda a bracci",            icon: "sun", cat: "Tende da sole", settore: "tende" },
+  { code: "TDCAD",  label: "Tenda a caduta",            icon: "sun", cat: "Tende da sole", settore: "tende" },
+  { code: "TDCAP",  label: "Cappottina",                icon: "sun", cat: "Tende da sole", settore: "tende" },
+  { code: "TDVER",  label: "Tenda verticale",           icon: "sun", cat: "Tende da sole", settore: "tende" },
+  { code: "TDRUL",  label: "Tenda a rullo",             icon: "sun", cat: "Tende da sole", settore: "tende" },
+  { code: "TDPERG", label: "Pergola bioclimatica",      icon: "building", cat: "Tende da sole", settore: "tende" },
+  { code: "TDZIP",  label: "Tenda ZIP / Screen",        icon: "sun", cat: "Tende da sole", settore: "tende" },
+  { code: "TDVELA", label: "Vela ombreggiante",         icon: "maximize", cat: "Tende da sole", settore: "tende" },
+  { code: "VENEZIA",label: "Veneziana",                 icon: "grid",  cat: "Tende da sole", settore: "tende" },
   // Box doccia
-  { code: "BXNIC",  label: "Box doccia nicchia",        icon: "🚿", cat: "Box doccia", settore: "boxdoccia" },
-  { code: "BXANG",  label: "Box doccia angolare",       icon: "🚿", cat: "Box doccia", settore: "boxdoccia" },
-  { code: "BXWALK", label: "Walk-in",                   icon: "🚿", cat: "Box doccia", settore: "boxdoccia" },
-  { code: "BXVAS",  label: "Parete vasca",              icon: "🛁", cat: "Box doccia", settore: "boxdoccia" },
-  { code: "BXSEM",  label: "Box semicircolare",         icon: "🚿", cat: "Box doccia", settore: "boxdoccia" },
-  { code: "BXPENT", label: "Box pentagonale",           icon: "🚿", cat: "Box doccia", settore: "boxdoccia" },
-  { code: "PIATTO", label: "Piatto doccia",             icon: "⬜", cat: "Box doccia", settore: "boxdoccia" },
+  { code: "BXNIC",  label: "Box doccia nicchia",        icon: "droplets", cat: "Box doccia", settore: "boxdoccia" },
+  { code: "BXANG",  label: "Box doccia angolare",       icon: "droplets", cat: "Box doccia", settore: "boxdoccia" },
+  { code: "BXWALK", label: "Walk-in",                   icon: "droplets", cat: "Box doccia", settore: "boxdoccia" },
+  { code: "BXVAS",  label: "Parete vasca",              icon: "layers", cat: "Box doccia", settore: "boxdoccia" },
+  { code: "BXSEM",  label: "Box semicircolare",         icon: "droplets", cat: "Box doccia", settore: "boxdoccia" },
+  { code: "BXPENT", label: "Box pentagonale",           icon: "droplets", cat: "Box doccia", settore: "boxdoccia" },
+  { code: "PIATTO", label: "Piatto doccia",             icon: "square", cat: "Box doccia", settore: "boxdoccia" },
   // Porte
-  { code: "PTINT1", label: "Porta interna battente",    icon: "🚪", cat: "Porte", settore: "porte" },
-  { code: "PTINT2", label: "Porta interna 2 ante",      icon: "🚪", cat: "Porte", settore: "porte" },
-  { code: "PTSCO",  label: "Porta scorrevole",          icon: "↔️", cat: "Porte", settore: "porte" },
-  { code: "PTSCC",  label: "Porta scorrevole a scomparsa", icon: "↔️", cat: "Porte", settore: "porte" },
-  { code: "PTFIL",  label: "Porta filomuro",            icon: "▯",  cat: "Porte", settore: "porte" },
-  { code: "PTSOF",  label: "Porta a soffietto",         icon: "🪗", cat: "Porte", settore: "porte" },
-  { code: "BLI",    label: "Porta blindata",            icon: "🛡", cat: "Porte", settore: "porte" },
-  { code: "PTSEZ",  label: "Portone sezionale",         icon: "🏠", cat: "Porte", settore: "porte" },
+  { code: "PTINT1", label: "Porta interna battente",    icon: "door", cat: "Porte", settore: "porte" },
+  { code: "PTINT2", label: "Porta interna 2 ante",      icon: "door", cat: "Porte", settore: "porte" },
+  { code: "PTSCO",  label: "Porta scorrevole",          icon: "arrowLeftRight", cat: "Porte", settore: "porte" },
+  { code: "PTSCC",  label: "Porta scorrevole a scomparsa", icon: "arrowLeftRight", cat: "Porte", settore: "porte" },
+  { code: "PTFIL",  label: "Porta filomuro",            icon: "square",  cat: "Porte", settore: "porte" },
+  { code: "PTSOF",  label: "Porta a soffietto",         icon: "layers", cat: "Porte", settore: "porte" },
+  { code: "BLI",    label: "Porta blindata",            icon: "shield", cat: "Porte", settore: "porte" },
+  { code: "PTSEZ",  label: "Portone sezionale",         icon: "home", cat: "Porte", settore: "porte" },
   // Altro
-  { code: "SOPR",   label: "Sopraluce",                 icon: "△",  cat: "Altro", settore: "serramenti" },
-  { code: "MONO",   label: "Monoblocco",                icon: "⬜",  cat: "Altro", settore: "serramenti" },
-  { code: "GRATA",  label: "Grata di sicurezza",        icon: "🔒", cat: "Altro", settore: "serramenti" },
-  { code: "CANCSING", label: "Cancello battente",        icon: "🏗️", cat: "Cancelli", settore: "cancelli" },
-  { code: "CANCDOPP", label: "Cancello doppio",          icon: "🏗️", cat: "Cancelli", settore: "cancelli" },
-  { code: "CANCSCOR", label: "Cancello scorrevole",      icon: "🏗️", cat: "Cancelli", settore: "cancelli" },
-  { code: "CANCPED",  label: "Pedonale",                 icon: "🚶", cat: "Cancelli", settore: "cancelli" },
-  { code: "CANCCP",   label: "Carraio + pedonale",       icon: "🏗️", cat: "Cancelli", settore: "cancelli" },
-  { code: "RECINZ",   label: "Recinzione pannelli",      icon: "🧱", cat: "Cancelli", settore: "cancelli" },
-  { code: "RINGH",    label: "Ringhiera",                icon: "🔩", cat: "Cancelli", settore: "cancelli" },
-  { code: "PARAP",    label: "Parapetto",                icon: "🔩", cat: "Cancelli", settore: "cancelli" },
-  { code: "VERANDA",label: "Veranda / Vetrata",         icon: "🏠", cat: "Altro", settore: "serramenti" },
+  { code: "SOPR",   label: "Sopraluce",                 icon: "triangle",  cat: "Altro", settore: "serramenti" },
+  { code: "MONO",   label: "Monoblocco",                icon: "square",  cat: "Altro", settore: "serramenti" },
+  { code: "GRATA",  label: "Grata di sicurezza",        icon: "lock", cat: "Altro", settore: "serramenti" },
+  { code: "CANCSING", label: "Cancello battente",        icon: "building", cat: "Cancelli", settore: "cancelli" },
+  { code: "CANCDOPP", label: "Cancello doppio",          icon: "building", cat: "Cancelli", settore: "cancelli" },
+  { code: "CANCSCOR", label: "Cancello scorrevole",      icon: "building", cat: "Cancelli", settore: "cancelli" },
+  { code: "CANCPED",  label: "Pedonale",                 icon: "user", cat: "Cancelli", settore: "cancelli" },
+  { code: "CANCCP",   label: "Carraio + pedonale",       icon: "building", cat: "Cancelli", settore: "cancelli" },
+  { code: "RECINZ",   label: "Recinzione pannelli",      icon: "grid", cat: "Cancelli", settore: "cancelli" },
+  { code: "RINGH",    label: "Ringhiera",                icon: "settings", cat: "Cancelli", settore: "cancelli" },
+  { code: "PARAP",    label: "Parapetto",                icon: "settings", cat: "Cancelli", settore: "cancelli" },
+  { code: "VERANDA",label: "Veranda / Vetrata",         icon: "home", cat: "Altro", settore: "serramenti" },
 ];
 
 // === SETTORI / CATEGORIE ATTIVABILI ===
 export const SETTORI = [
-  { id: "serramenti", label: "Finestre e Serramenti", icon: "🪟", desc: "Finestre, balconi, scorrevoli, alzanti, fissi" },
-  { id: "porte", label: "Porte", icon: "🚪", desc: "Porte interne, blindate, scorrevoli, sezionali" },
-  { id: "persiane", label: "Persiane e Scuri", icon: "🌂", desc: "Persiane in alluminio, legno, PVC, scuri" },
-  { id: "tapparelle", label: "Tapparelle e Avvolgibili", icon: "⬇", desc: "Tapparelle, cassonetti, motorizzazioni" },
-  { id: "zanzariere", label: "Zanzariere", icon: "🕸", desc: "Laterali, verticali, plissé, battenti, magnetiche" },
-  { id: "tende", label: "Tende da Sole", icon: "☀️", desc: "Bracci, caduta, cappottine, pergole, ZIP, veneziane" },
-  { id: "boxdoccia", label: "Box Doccia", icon: "🚿", desc: "Nicchia, angolari, walk-in, pareti vasca" },
-  { id: "cancelli", label: "Cancelli e Recinzioni", icon: "🏗️", desc: "Battenti, scorrevoli, recinzioni, ringhiere, automazioni" },
-  { id: "strutture", label: "Strutture", icon: "🏛️", desc: "Pergole, verande, pensiline, box alluminio, ferro" },
+  { id: "serramenti", label: "Finestre e Serramenti", icon: "columns", desc: "Finestre, balconi, scorrevoli, alzanti, fissi" },
+  { id: "porte", label: "Porte", icon: "door", desc: "Porte interne, blindate, scorrevoli, sezionali" },
+  { id: "persiane", label: "Persiane e Scuri", icon: "layers", desc: "Persiane in alluminio, legno, PVC, scuri" },
+  { id: "tapparelle", label: "Tapparelle e Avvolgibili", icon: "chevronDown", desc: "Tapparelle, cassonetti, motorizzazioni" },
+  { id: "zanzariere", label: "Zanzariere", icon: "grid", desc: "Laterali, verticali, plissé, battenti, magnetiche" },
+  { id: "tende", label: "Tende da Sole", icon: "sun", desc: "Bracci, caduta, cappottine, pergole, ZIP, veneziane" },
+  { id: "boxdoccia", label: "Box Doccia", icon: "droplets", desc: "Nicchia, angolari, walk-in, pareti vasca" },
+  { id: "cancelli", label: "Cancelli e Recinzioni", icon: "building", desc: "Battenti, scorrevoli, recinzioni, ringhiere, automazioni" },
+  { id: "strutture", label: "Strutture", icon: "building", desc: "Pergole, verande, pensiline, box alluminio, ferro" },
 ];
 
 export const SETTORI_DEFAULT = ["serramenti", "persiane", "tapparelle", "zanzariere"]; // serramentista classico
@@ -622,6 +622,13 @@ export const Ico = ({ d, s = 20, c = "#888", sw = 1.8 }) => (
 export const I = ({ d, s = 16, c = "currentColor", sw = 2 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",flexShrink:0}}>{d}</svg>
 );
+// Render icona da stringa-chiave — usage: <IcoKey name="columns" s={16} c="#64748B" />
+export const IcoKey = ({ name, s = 16, c = "currentColor", sw = 1.8 }: { name: string; s?: number; c?: string; sw?: number }) => {
+  const d = ICO[name as keyof typeof ICO];
+  if (!d) return null;
+  return <Ico d={d} s={s} c={c} sw={sw} />;
+};
+
 export const ICO = {
   // Navigation
   home: <><path d="M2 12L12 3l10 9"/><path d="M5 9.5V20a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V9.5"/></>,
@@ -722,6 +729,17 @@ export const ICO = {
   hardHat: <><path d="M2 18a1 1 0 001 1h18a1 1 0 001-1v-2a1 1 0 00-1-1H3a1 1 0 00-1 1v2z"/><path d="M10 15V6a1 1 0 011-1h2a1 1 0 011 1v9"/><path d="M4 15v-3a8 8 0 0116 0v3"/></>,
   clapperboard: <><path d="M4 11v8a2 2 0 002 2h12a2 2 0 002-2v-8H4z"/><path d="M4 11l3.5-7H20l-3.5 7H4z"/><line x1="8" y1="4" x2="12" y2="11"/><line x1="14" y1="4" x2="18" y2="11"/></>,
   barChart: <><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></>,
+  // Extra icons for tipologie/settori
+  droplets: <><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></>,
+  arrowLeftRight: <><path d="M8 3 3 8l5 5"/><path d="M3 8h18"/><path d="m16 3 5 5-5 5"/></>,
+  triangle: <><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></>,
+  chevronLeft: <><polyline points="15 18 9 12 15 6"/></>,
+  chevronRight: <><polyline points="9 18 15 12 9 6"/></>,
+  chevronUp: <><polyline points="18 15 12 9 6 15"/></>,
+  chevronDown: <><polyline points="6 9 12 15 18 9"/></>,
+  moon: <><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></>,
+  gift: <><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></>,
+
 };
 
 /* == MISURE PUNTI == */
