@@ -2914,7 +2914,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
         {tab === "messaggi" && !selectedMsg && <PanelErrorBoundary name="Messaggi">{renderMessaggi()}</PanelErrorBoundary>}
-        {tab === "assistente" && <PanelErrorBoundary name="Assistente"><AssistentePanel /></PanelErrorBoundary>}
+
         {tab === "agenda" && <PanelErrorBoundary name="Agenda">{renderAgenda()}</PanelErrorBoundary>}
         {tab === "contabilita" && <PanelErrorBoundary name="Contabilita">{renderContabilita()}</PanelErrorBoundary>}
         {tab === "montaggi_cal" && <PanelErrorBoundary name="MontaggiCal"><MontaggiCalendar /></PanelErrorBoundary>}
@@ -3522,7 +3522,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               { id: "commesse", ico: ICO.filter, label: "Commesse" },
               { id: "clienti", ico: ICO.users, label: "Clienti" },
               { id: "messaggi", ico: ICO.chat, label: "Messaggi" },
-              { id: "assistente", ico: ICO.sparkles, label: "AI" },
                             { id: "settings", ico: ICO.settings, label: "Impost." },
             ].map(t => (
               <div key={t.id} style={S.tabItem(tab === t.id)} onClick={() => { setTab(t.id); setSelectedCM(null); setSelectedVano(null); setSelectedMsg(null); }}>
