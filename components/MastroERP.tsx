@@ -676,12 +676,12 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       const data = await res.json();
       if (data.success) {
         setGmailReply("");
-        alert("<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Email inviata!");
+        alert("Email inviata!");
         gmailFetchMessages();
       } else {
-        alert("<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Errore: " + (data.error || "invio fallito"));
+        alert("Errore: " + (data.error || "invio fallito"));
       }
-    } catch { alert("<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Errore di rete"); }
+    } catch { alert("Errore di rete"); }
     setGmailSending(false);
   }, []);
 
@@ -1104,7 +1104,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       setIsRecording(true); setRecSeconds(0);
       recInterval.current = setInterval(() => setRecSeconds(s => s + 1), 1000);
     } catch (err) {
-      alert("<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️ Impossibile accedere al " + (tipo === "video" ? "camera/microfono" : "microfono") + ". Controlla i permessi del browser.\n\n" + (err as Error).message);
+      alert("️ Impossibile accedere al " + (tipo === "video" ? "camera/microfono" : "microfono") + ". Controlla i permessi del browser.\n\n" + (err as Error).message);
     }
   };
 
@@ -1161,7 +1161,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         if (cameraPreviewRef.current) { cameraPreviewRef.current.srcObject = stream; cameraPreviewRef.current.play().catch(() => {}); }
       }, 100);
     } catch (err) {
-      alert("<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️ Impossibile accedere alla fotocamera. Controlla i permessi.\n\n" + (err as Error).message);
+      alert("️ Impossibile accedere alla fotocamera. Controlla i permessi.\n\n" + (err as Error).message);
       setShowCameraModal(false);
     }
   };
