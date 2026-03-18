@@ -1,4 +1,5 @@
 "use client";
+import { useMastro } from "./MastroContext";
 import { useState, useEffect, useRef } from "react";
 export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCliente, onCommessa, onMessaggio, onLastCM, recentActions }) {
   const mastroCtx = (() => { try { return useMastro(); } catch { return null; } })();
@@ -29,6 +30,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
         fase: c.fase, euro: c.euro || 0,
         scadenza: c.scadenza, confermato: c.confermato,
         sistema: c.sistema, indirizzo: c.indirizzo,
+        telefono: c.telefono || "",
+        email: c.email || "",
+        note: c.note || "",
+        aggiornato: c.aggiornato || "",
+        giorniFermo: c.aggiornato ? Math.floor((Date.now() - new Date(c.aggiornato).getTime()) / 86400000) : 0,
       })),
       fattureAperte: fattureAperte.slice(0, 15),
       pipeline: pipelineDB,
@@ -169,7 +175,10 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const sendAI = async (text) => {
     const msg = (text || aiInput).trim();
     if (!msg || aiLoading) return;
-    const newMsgs = [...aiMessages, { role: "user", content: msg }];
+    // Carica memoria sessioni precedenti
+    const aiMemory = (() => { try { return JSON.parse(localStorage.getItem("mastro:ai_memory") || "[]").slice(-20); } catch { return []; } })();
+    const historyCtx = aiMemory.length > 0 && aiMessages.length === 0 ? aiMemory : [];
+    const newMsgs = [...historyCtx, ...aiMessages, { role: "user", content: msg }];
     setAiMessages(newMsgs); setAiInput(""); setAiLoading(true);
     try {
       const res = await fetch("/api/ai", {
@@ -186,6 +195,12 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
       // Gestisci azione se presente
       if (data.action) handleAction(data.action);
       setAiMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      // Salva memoria (ultimi 40 messaggi)
+      try {
+        const stored = JSON.parse(localStorage.getItem("mastro:ai_memory") || "[]");
+        const upd = [...stored, { role: "user", content: msg }, { role: "assistant", content: reply }].slice(-40);
+        localStorage.setItem("mastro:ai_memory", JSON.stringify(upd));
+      } catch {}
       // Audio ElevenLabs se disponibile, altrimenti Web Speech
       if (data.audio) {
         playAudio(data.audio);
@@ -198,9 +213,9 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   };
 
   // Esegui azione nel frontend
-  const handleAction = (action) => {
+  const handleAction = async (action) => {
     if (!mastroCtx) return;
-    const { setCantieri, setTasks, setEvents, cantieri } = mastroCtx;
+    const { setCantieri, setTasks, setEvents, cantieri, generaPreventivoPDF } = mastroCtx;
     const oggi = new Date().toISOString().split("T")[0];
     const ora = new Date().toTimeString().substring(0, 5);
 
@@ -214,6 +229,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
         aggiornato: new Date().toLocaleDateString("it-IT"), log: [],
       };
       setCantieri(prev => [newCM, ...prev]);
+      return { ok: true, msg: "Commessa creata: " + newCM.code };
+
     } else if (action.type === "crea_task") {
       const newTask = {
         id: Date.now(), text: action.params.testo, done: false,
@@ -222,6 +239,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
         meta: "", time: "",
       };
       setTasks(prev => [...prev, newTask]);
+      return { ok: true, msg: "Task creato" };
+
     } else if (action.type === "crea_evento") {
       const newEvent = {
         id: "ev_" + Date.now(), text: action.params.testo,
@@ -230,11 +249,71 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
         color: "#14B8A6",
       };
       setEvents(prev => [...prev, newEvent]);
+      return { ok: true, msg: "Evento creato" };
+
     } else if (action.type === "cambia_fase_commessa") {
       setCantieri(prev => prev.map(c =>
-        c.code === action.params.codice ? { ...c, fase: action.params.nuova_fase } : c
+        c.code === action.params.codice ? { ...c, fase: action.params.nuova_fase, aggiornato: oggi } : c
       ));
+      return { ok: true, msg: "Fase aggiornata" };
+
+    } else if (action.type === "invia_preventivo_whatsapp") {
+      // Trova la commessa
+      const cm = cantieri.find(c =>
+        c.code === action.params.codice ||
+        (c.cliente + " " + (c.cognome||"")).toLowerCase().includes((action.params.cliente||"").toLowerCase())
+      );
+      if (!cm) return { ok: false, msg: "Commessa non trovata" };
+      // Genera PDF
+      try {
+        if (mastroCtx.generaPreventivoPDF) await mastroCtx.generaPreventivoPDF(cm);
+      } catch {}
+      // Apri WhatsApp
+      const tel = (cm.telefono || "").replace(/\s/g, "");
+      const msg = encodeURIComponent(
+        `Gentile ${cm.cliente}, le inviamo il preventivo per i lavori richiesti.
+Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci.`
+      );
+      if (tel) {
+        window.open(`https://wa.me/${tel.startsWith("39") ? tel : "39" + tel}?text=${msg}`, "_blank");
+        return { ok: true, msg: `Preventivo aperto su WhatsApp per ${cm.cliente} (${tel})` };
+      } else {
+        return { ok: false, msg: `PDF generato ma nessun telefono per ${cm.cliente}` };
+      }
+
+    } else if (action.type === "genera_pdf_commessa") {
+      const cm = cantieri.find(c =>
+        c.code === action.params.codice ||
+        (c.cliente + " " + (c.cognome||"")).toLowerCase().includes((action.params.cliente||"").toLowerCase())
+      );
+      if (!cm) return { ok: false, msg: "Commessa non trovata" };
+      try {
+        if (mastroCtx.generaPreventivoPDF) await mastroCtx.generaPreventivoPDF(cm);
+        return { ok: true, msg: `PDF generato per ${cm.cliente} (${cm.code})` };
+      } catch(e) {
+        return { ok: false, msg: "Errore generazione PDF: " + e.message };
+      }
+
+    } else if (action.type === "commesse_ferme") {
+      const giorni = action.params.giorni || 7;
+      const ferme = cantieri.filter(c => {
+        const g = c.aggiornato ? Math.floor((Date.now() - new Date(c.aggiornato).getTime()) / 86400000) : 999;
+        return g >= giorni && !["consegnato","annullato"].includes(c.fase);
+      });
+      return { ok: true, data: ferme.map(c => ({ code: c.code, cliente: c.cliente, fase: c.fase, giorni: Math.floor((Date.now() - new Date(c.aggiornato||"2020").getTime()) / 86400000) })) };
+
+    } else if (action.type === "cerca_commessa") {
+      const q = (action.params.query || "").toLowerCase();
+      const found = cantieri.filter(c =>
+        c.code?.toLowerCase().includes(q) ||
+        c.cliente?.toLowerCase().includes(q) ||
+        c.cognome?.toLowerCase().includes(q) ||
+        c.indirizzo?.toLowerCase().includes(q)
+      ).slice(0, 5);
+      return { ok: true, data: found };
     }
+
+    return { ok: false, msg: "Azione non riconosciuta: " + action.type };
   };
 
   // Riproduci audio base64 ElevenLabs

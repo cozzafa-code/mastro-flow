@@ -2,210 +2,108 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "edge";
 
-// ── Funzioni che l'AI può eseguire ──────────────────────────
-const FUNCTIONS = [
-  {
-    name: "crea_commessa",
-    description: "Crea una nuova commessa per un cliente",
-    parameters: {
-      type: "object",
-      properties: {
-        cliente: { type: "string", description: "Nome del cliente" },
-        cognome: { type: "string", description: "Cognome del cliente" },
-        indirizzo: { type: "string", description: "Indirizzo del cantiere" },
-        telefono: { type: "string", description: "Numero di telefono" },
-        note: { type: "string", description: "Note sulla commessa" },
-      },
-      required: ["cliente"],
-    },
-  },
-  {
-    name: "crea_task",
-    description: "Crea un nuovo task o promemoria",
-    parameters: {
-      type: "object",
-      properties: {
-        testo: { type: "string", description: "Descrizione del task" },
-        data: { type: "string", description: "Data nel formato YYYY-MM-DD" },
-        priorita: { type: "string", enum: ["alta", "media", "bassa"], description: "Priorità del task" },
-        commessa: { type: "string", description: "Codice commessa collegata (es. S-0042)" },
-      },
-      required: ["testo"],
-    },
-  },
-  {
-    name: "crea_evento",
-    description: "Crea un appuntamento o evento in agenda",
-    parameters: {
-      type: "object",
-      properties: {
-        testo: { type: "string", description: "Descrizione dell'evento" },
-        data: { type: "string", description: "Data nel formato YYYY-MM-DD" },
-        ora: { type: "string", description: "Ora nel formato HH:MM" },
-        tipo: { type: "string", enum: ["sopralluogo", "misure", "preventivo", "posa", "collaudo", "telefonata", "riunione", "altro"], description: "Tipo di evento" },
-        commessa: { type: "string", description: "Codice commessa collegata" },
-      },
-      required: ["testo", "data"],
-    },
-  },
-  {
-    name: "cambia_fase_commessa",
-    description: "Cambia la fase/stato di una commessa nella pipeline",
-    parameters: {
-      type: "object",
-      properties: {
-        codice: { type: "string", description: "Codice commessa (es. S-0042)" },
-        nuova_fase: { type: "string", enum: ["sopralluogo", "preventivo", "conferma", "ordini", "produzione", "posa", "collaudo", "chiusura"], description: "Nuova fase" },
-      },
-      required: ["codice", "nuova_fase"],
-    },
-  },
-  {
-    name: "cerca_commessa",
-    description: "Cerca una commessa per cliente o codice e restituisce i dettagli",
-    parameters: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Nome cliente o codice commessa" },
-      },
-      required: ["query"],
-    },
-  },
-];
+const SYSTEM = `Sei MASTRO, l'assistente AI integrato nel gestionale MASTRO ERP per artigiani italiani (serramenti, tendaggi, fabbri, zanzariere, pergole).
 
-// ── TTS con ElevenLabs ──────────────────────────────────────
-async function textToSpeech(text: string): Promise<string | null> {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || "o4b57JYAECRMJyCEXyIE";
-  if (!apiKey) return null;
+Parli sempre in italiano, in modo diretto e professionale. Conosci tutti i dati dell'azienda in tempo reale (commesse, fatture, task, montaggi, ordini).
 
-  try {
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "xi-api-key": apiKey,
-      },
-      body: JSON.stringify({
-        text: text.substring(0, 500), // max 500 chars per risposta vocale
-        model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.2, use_speaker_boost: true },
-      }),
-    });
+Puoi eseguire queste azioni reali nel gestionale:
+- crea_commessa: crea una nuova commessa cliente
+- crea_task: aggiunge un task alla lista
+- crea_evento: aggiunge un evento in agenda
+- cambia_fase_commessa: sposta la commessa in una fase diversa (sopralluogo, preventivo, conferma, produzione, posa, consegnato)
+- invia_preventivo_whatsapp: genera PDF e apre WhatsApp con il preventivo per il cliente
+- genera_pdf_commessa: genera e scarica il PDF preventivo di una commessa
+- commesse_ferme: trova commesse non aggiornate da N giorni
+- cerca_commessa: cerca una commessa per codice, nome cliente o indirizzo
 
-    if (!res.ok) return null;
-    const audioBuffer = await res.arrayBuffer();
-    const base64 = Buffer.from(audioBuffer).toString("base64");
-    return `data:audio/mpeg;base64,${base64}`;
-  } catch {
-    return null;
-  }
-}
+Quando l'utente chiede di fare qualcosa di concreto, rispondi con JSON in questo formato esatto:
+{"action": {"type": "nome_azione", "params": {...}}, "reply": "Testo da dire all'utente"}
 
-// ── Handler principale ──────────────────────────────────────
+Quando risponde solo a domande informative, usa solo:
+{"reply": "Testo risposta"}
+
+Esempi:
+- "Mastro, manda il preventivo a Rossi via WhatsApp" → {"action": {"type": "invia_preventivo_whatsapp", "params": {"cliente": "Rossi"}}, "reply": "Apro WhatsApp con il preventivo per Rossi."}
+- "Genera il PDF della S-0042" → {"action": {"type": "genera_pdf_commessa", "params": {"codice": "S-0042"}}, "reply": "Genero il PDF della commessa S-0042."}
+- "Quali commesse sono ferme da una settimana?" → {"action": {"type": "commesse_ferme", "params": {"giorni": 7}}, "reply": "Cerco le commesse ferme da 7 giorni."}
+- "Crea una commessa per Mario Rossi di Lecce" → {"action": {"type": "crea_commessa", "params": {"cliente": "Mario", "cognome": "Rossi", "indirizzo": "Lecce"}}, "reply": "Commessa creata per Mario Rossi."}
+- "Quante commesse ho in preventivo?" → {"reply": "Hai X commesse in fase preventivo."}
+
+Rispondi SEMPRE e SOLO con JSON valido, nessun testo fuori dal JSON.`;
+
 export async function POST(req: NextRequest) {
-  try {
-    const { messages, context, tts = false } = await req.json();
+  const { messages, context, tts } = await req.json();
 
-    const oggi = new Date().toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const contextBlock = context
+    ? `\n\nDATI AZIENDA IN TEMPO REALE:\n${JSON.stringify(context, null, 2)}`
+    : "";
 
-    const systemPrompt = `Sei MASTRO AI, l'assistente intelligente integrato in MASTRO ERP per artigiani italiani.
-Oggi è ${oggi}.
+  const sysWithCtx = SYSTEM + contextBlock;
 
-## DATI AZIENDA IN TEMPO REALE:
-${JSON.stringify(context, null, 2)}
+  // ── OpenAI GPT-4o ──
+  const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      temperature: 0.3,
+      max_tokens: 600,
+      messages: [
+        { role: "system", content: sysWithCtx },
+        ...(messages || []).slice(-20),
+      ],
+    }),
+  });
 
-## COSA PUOI FARE:
-- Rispondere a domande sui dati (commesse, clienti, fatture, montaggi, task)
-- Analizzare performance e trend
-- **ESEGUIRE AZIONI** tramite function calling: crea commesse, task, eventi, cambia fasi
-- Cercare clienti e commesse specifiche
-
-## REGOLE:
-- Rispondi SEMPRE in italiano, tono professionale ma diretto
-- Usa i dati reali del contesto, non inventare
-- Per le azioni usa le funzioni disponibili — non dire "non posso farlo"
-- Risposte vocali: max 2-3 frasi, chiare e concise
-- Risposte testo: puoi essere più dettagliato
-- Se mancano dati per un'azione, chiedi solo quello che serve`;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
-        functions: FUNCTIONS,
-        function_call: "auto",
-        max_tokens: 800,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      return NextResponse.json({ error: err }, { status: response.status });
-    }
-
-    const data = await response.json();
-    const choice = data.choices?.[0];
-    const message = choice?.message;
-
-    // ── Function call richiesta ──
-    if (message?.function_call) {
-      const fnName = message.function_call.name;
-      let fnArgs = {};
-      try { fnArgs = JSON.parse(message.function_call.arguments); } catch {}
-
-      // Genera risposta testuale che conferma l'azione
-      const confirmMessages = [
-        ...messages,
-        message,
-        {
-          role: "function",
-          name: fnName,
-          content: JSON.stringify({ success: true, ...fnArgs }),
-        },
-      ];
-
-      const confirmRes = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          messages: [{ role: "system", content: systemPrompt }, ...confirmMessages],
-          max_tokens: 200,
-          temperature: 0.7,
-        }),
-      });
-
-      const confirmData = await confirmRes.json();
-      const reply = confirmData.choices?.[0]?.message?.content || "Fatto!";
-
-      // TTS per la conferma
-      let audioData = null;
-      if (tts) audioData = await textToSpeech(reply);
-
-      return NextResponse.json({
-        reply,
-        action: { type: fnName, params: fnArgs },
-        audio: audioData,
-      });
-    }
-
-    // ── Risposta testuale normale ──
-    const reply = message?.content || "Nessuna risposta";
-
-    // TTS se richiesto
-    let audioData = null;
-    if (tts) audioData = await textToSpeech(reply);
-
-    return NextResponse.json({ reply, audio: audioData });
-
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  if (!openaiRes.ok) {
+    const err = await openaiRes.text();
+    return NextResponse.json({ error: err }, { status: 500 });
   }
+
+  const openaiData = await openaiRes.json();
+  const raw = openaiData.choices?.[0]?.message?.content || '{"reply":"Errore risposta AI"}';
+
+  // Parse JSON risposta
+  let parsed: any = {};
+  try {
+    const clean = raw.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+    parsed = JSON.parse(clean);
+  } catch {
+    parsed = { reply: raw };
+  }
+
+  const reply = parsed.reply || "OK";
+  const action = parsed.action || null;
+
+  // ── ElevenLabs TTS ──
+  let audioBase64: string | null = null;
+  if (tts && reply && process.env.ELEVENLABS_API_KEY) {
+    try {
+      const voiceId = process.env.ELEVENLABS_VOICE_ID || "o4b57JYAECRMJyCEXyIE";
+      const ttsRes = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "xi-api-key": process.env.ELEVENLABS_API_KEY,
+          },
+          body: JSON.stringify({
+            text: reply.substring(0, 300),
+            model_id: "eleven_multilingual_v2",
+            voice_settings: { stability: 0.5, similarity_boost: 0.8 },
+          }),
+        }
+      );
+      if (ttsRes.ok) {
+        const buf = await ttsRes.arrayBuffer();
+        audioBase64 = "data:audio/mpeg;base64," + Buffer.from(buf).toString("base64");
+      }
+    } catch {}
+  }
+
+  return NextResponse.json({ reply, action, audio: audioBase64 });
 }
