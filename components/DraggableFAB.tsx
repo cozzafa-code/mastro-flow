@@ -46,12 +46,16 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const liveModeRef = useRef(false);
+  const isListeningRef = useRef(false);
+  const isSpeakingRef = useRef(false);
   const wrapRef = useRef(null);
   const posRef = useRef(300);
   const dragRef = useRef({ on: false, moved: false, startY: 0, startTop: 300 });
   const fabOpenRef = useRef(fabOpen);
   useEffect(() => { fabOpenRef.current = fabOpen; }, [fabOpen]);
   useEffect(() => { liveModeRef.current = liveMode; }, [liveMode]);
+  useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
   useEffect(() => {
     const sd = localStorage.getItem("mastro:fab_side");
@@ -136,8 +140,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     const voices = window.speechSynthesis.getVoices();
     const itVoice = voices.find(v => v.lang.startsWith("it"));
     if (itVoice) utt.voice = itVoice;
-    utt.onstart = () => setIsSpeaking(true);
-    utt.onend = () => { setIsSpeaking(false); if (liveModeRef.current) setTimeout(() => startListening(), 300); };
+    utt.onstart = () => { setIsSpeaking(true); isSpeakingRef.current = true; };
+    utt.onend = () => { setIsSpeaking(false); isSpeakingRef.current = false; if (liveModeRef.current) setTimeout(() => startListening(), 400); };
     window.speechSynthesis.speak(utt);
   };
   const stopSpeaking = () => { window.speechSynthesis?.cancel(); setIsSpeaking(false); };
@@ -158,12 +162,25 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   };
 
   const startListening = () => {
+    // Evita doppio avvio
+    if (isListeningRef.current || isSpeakingRef.current) return;
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
     const rec = new SR();
     rec.lang = "it-IT"; rec.interimResults = false; rec.continuous = false;
-    rec.onstart = () => setIsListening(true);
-    rec.onend = () => setIsListening(false);
+    rec.onstart = () => { setIsListening(true); isListeningRef.current = true; };
+    rec.onend = () => {
+      setIsListening(false);
+      // In live mode: riavvia ascolto solo se non stiamo parlando
+      // (se stiamo parlando, speak.onend lo riavvierà)
+      if (liveModeRef.current) {
+        setTimeout(() => {
+          if (liveModeRef.current && !window.speechSynthesis?.speaking) {
+            startListening();
+          }
+        }, 500);
+      }
+    };
     rec.onresult = (e) => { const t = e.results[0][0].transcript; setAiInput(t); sendAI(t); };
     rec.onerror = () => setIsListening(false);
     recognitionRef.current = rec; rec.start();
