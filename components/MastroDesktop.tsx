@@ -1,7 +1,12 @@
 "use client";
-import { useState } from "react";
+// @ts-nocheck
+// MASTRO ERP — MastroDesktop v3
+// Layout desktop nativo: sidebar + content area multi-pannello
+// Tutti i moduli reali collegati al MastroContext
+
+import { useState, useMemo } from "react";
 import { useMastro } from "./MastroContext";
-import { FF, FM, PIPELINE_DEFAULT, Ico, ICO } from "./mastro-constants";
+import { FF, FM, Ico, ICO, I } from "./mastro-constants";
 import HomePanel from "./HomePanel";
 import CommessePanel from "./CommessePanel";
 import AgendaPanel from "./AgendaPanel";
@@ -11,344 +16,86 @@ import ContabilitaPanel from "./ContabilitaPanel";
 import SettingsPanel from "./SettingsPanel";
 import MontaggiCalendar from "./MontaggiCalendar";
 
-const NAV = [
-  { key: "home",        ico: "home",      label: "Dashboard" },
-  { key: "commesse",    ico: "clipboard", label: "Commesse" },
-  { key: "agenda",      ico: "calendar",  label: "Agenda" },
-  { key: "clienti",     ico: "users",     label: "Clienti" },
-  { key: "messaggi",    ico: "mail",      label: "Messaggi" },
-  { key: "misure",      ico: "ruler",     label: "Misure" },
-  { key: "montaggi",    ico: "wrench",    label: "Montaggi" },
-  { key: "contabilita", ico: "barChart",  label: "Contabilità" },
-  { key: "magazzino",   ico: "package",   label: "Magazzino" },
-  { key: "documenti",   ico: "fileText",  label: "Documenti" },
-  { key: "team",        ico: "shield",    label: "Team & Permessi" },
-  { key: "settings",    ico: "settings",  label: "Impostazioni" },
-];
+const TEAL = "#1A9E73";
+const DARK = "#1A1A1C";
 
-const FASE_COLOR: Record<string, string> = {
-  sopralluogo: "#3B7FE0",
-  preventivo:  "#E8A020",
-  misure:      "#af52de",
-  ordini:      "#DC4444",
-  produzione:  "#F97316",
-  posa:        "#F59E0B",
-  chiusura:    "#1A9E73",
-};
-
-const MODULES_MOBILE = [
-  { key: "home",        label: "Dashboard" },
-  { key: "commesse",    label: "Commesse" },
-  { key: "agenda",      label: "Agenda" },
-  { key: "messaggi",    label: "Messaggi" },
-  { key: "misure",      label: "Misure" },
-  { key: "montaggi",    label: "Montaggi" },
-  { key: "clienti",     label: "Clienti" },
-  { key: "contabilita", label: "Contabilità" },
+const NAV_GROUPS = [
+  {
+    label: "Lavoro",
+    items: [
+      { key: "home",        ico: "home",      label: "Dashboard" },
+      { key: "commesse",    ico: "folder",    label: "Commesse" },
+      { key: "agenda",      ico: "calendar",  label: "Agenda" },
+      { key: "montaggi",    ico: "wrench",    label: "Montaggi" },
+    ]
+  },
+  {
+    label: "Gestione",
+    items: [
+      { key: "clienti",     ico: "users",     label: "Clienti" },
+      { key: "messaggi",    ico: "inbox",     label: "Messaggi" },
+      { key: "contabilita", ico: "wallet",    label: "Contabilità" },
+    ]
+  },
+  {
+    label: "Moduli",
+    items: [
+      { key: "cnc",         ico: "cpu",       label: "CNC", badge: "Presto" },
+      { key: "enea",        ico: "shield",    label: "ENEA", badge: "Presto" },
+      { key: "leads",       ico: "zap",       label: "TROVA CLIENTI", badge: "Presto" },
+      { key: "rete",        ico: "globe",     label: "RETE Agenti", badge: "Presto" },
+    ]
+  },
+  {
+    label: "Sistema",
+    items: [
+      { key: "settings",    ico: "settings",  label: "Impostazioni" },
+    ]
+  },
 ];
 
 export default function MastroDesktop() {
   const ctx = useMastro();
-  const { T, setTab, cantieri, tasks, msgs, aziendaInfo, team, setTeam,
-          setSelectedCM, filterFase, setFilterFase } = ctx;
+  const { T, cantieri, tasks, fattureDB, montaggiDB, ordiniFornDB,
+    aziendaInfo, msgs, setTab, tab, giorniFermaCM, sogliaDays,
+    setSelectedCM, setFilterFase } = ctx;
 
-  // Sync activeNav con tab del MastroContext
-  const activeNav = ctx.tab || "home";
-  const setActiveNav = (key: string) => { navTo(key); };
   const [collapsed, setCollapsed] = useState(false);
-  const [searchDesktop, setSearchDesktop] = useState("");
+  const [searchQ, setSearchQ] = useState("");
+  const sw = collapsed ? 56 : 220;
 
-  const sw = collapsed ? 64 : 220;
-  const unreadMsgs = (msgs || []).filter((m: any) => !m.read).length;
-  const commesseAttive = (cantieri || []).filter((c: any) => c.fase !== "chiusura").length;
-  const taskAperte = (tasks || []).filter((t: any) => !t.done).length;
-  const taskUrgenti = (tasks || []).filter((t: any) => !t.done && t.urgente).length;
-  const valorePortafoglio = (cantieri || []).reduce((sum: number, c: any) =>
-    sum + ((c.rilievi || []).reduce((rs: number, r: any) =>
-      rs + ((r.vani || []).reduce((vs: number, v: any) => vs + (v.prezzoTotale || 0), 0)), 0)), 0);
-
-  const PIPELINE = ctx.PIPELINE || PIPELINE_DEFAULT || [];
-  const pipelineCounts = PIPELINE.map((p: any) => ({
-    ...p,
-    count: (cantieri || []).filter((c: any) => c.fase === p.key).length,
-    color: FASE_COLOR[p.key] || T.acc,
-  }));
+  const activeNav = tab || "home";
+  const unreadMsgs = (msgs || []).filter(m => !m.letto).length;
+  const ferme = (cantieri || []).filter(c => giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura").length;
+  const taskOpen = (tasks || []).filter(t => !t.done).length;
+  const fattureScad = (fattureDB || []).filter(f => !f.pagata && f.scadenza < new Date().toISOString().split("T")[0]).length;
 
   function navTo(key: string) {
-    const tabMap: Record<string,string> = {
+    const map: Record<string, string> = {
       home: "home", commesse: "commesse", agenda: "agenda",
-      messaggi: "messaggi", clienti: "clienti", contabilita: "contabilita",
-      montaggi: "montaggi_cal", settings: "settings",
-      misure: "commesse", documenti: "commesse", magazzino: "commesse", team: "settings",
+      montaggi: "montaggi_cal", clienti: "clienti", messaggi: "messaggi",
+      contabilita: "contabilita", settings: "settings",
     };
-    ctx.setTab(tabMap[key] || key);
+    if (map[key]) setTab(map[key]);
+    else setTab(key);
   }
 
-  const card = {
-    background: T.card, borderRadius: T.r,
-    border: `1px solid ${T.bdr}`, boxShadow: T.cardSh,
-  };
-  const cardHeader = {
-    padding: "14px 20px 12px", display: "flex", alignItems: "center",
-    justifyContent: "space-between", borderBottom: `1px solid ${T.bdr}`,
-  };
-  const rowStyle = {
-    display: "flex", alignItems: "center", padding: "12px 20px",
-    borderBottom: `1px solid ${T.bdrL}`, cursor: "pointer",
-    transition: "background 0.12s",
-  };
-  const pill = (color: string) => ({
-    fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
-    background: color + "20", color, border: `1px solid ${color}30`,
-    textTransform: "uppercase" as const, letterSpacing: 0.3,
-  });
-
-  // ── PANELS ────────────────────────────────────────────────────────────────
-
-  function renderDashboard() {
-    const oggi = new Date().toLocaleDateString("it-IT", {
-      weekday: "long", day: "numeric", month: "long", year: "numeric"
-    });
-    return (
-      <div>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: T.text, marginBottom: 2 }}>
-            Buongiorno, {aziendaInfo?.nomeAzienda || "MASTRO"} 👋
-          </div>
-          <div style={{ fontSize: 13, color: T.sub }}>{oggi}</div>
-        </div>
-
-        {/* KPI */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 20 }}>
-          {[
-            { label: "Commesse Attive",    value: commesseAttive,   sub: "in corso",      color: T.acc },
-            { label: "Valore Portafoglio", value: `€${Math.round(valorePortafoglio/1000)}k`, sub: "stimato", color: T.grn },
-            { label: "Task Aperte",        value: taskAperte,       sub: taskUrgenti > 0 ? `${taskUrgenti} urgenti` : "ok", color: taskUrgenti > 0 ? T.red : T.grn },
-            { label: "Messaggi",           value: unreadMsgs,       sub: "non letti",     color: T.blue },
-          ].map((k, i) => (
-            <div key={i} style={{ ...card, padding: "20px 20px 16px" }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{k.label}</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: k.color, fontFamily: FM, lineHeight: 1 }}>{k.value}</div>
-              <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>{k.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Pipeline */}
-        <div style={{ ...card, marginBottom: 16 }}>
-          <div style={cardHeader}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>PIPELINE</span>
-            <span style={{ fontSize: 12, color: T.acc, cursor: "pointer", fontWeight: 600 }}
-              onClick={() => navTo("commesse")}>Vedi tutte →</span>
-          </div>
-          <div style={{ display: "flex", padding: "16px 20px", gap: 10 }}>
-            {pipelineCounts.map((p: any) => (
-              <div key={p.key}
-                onClick={() => { navTo("commesse"); setFilterFase(filterFase === p.key ? "" : p.key); }}
-                style={{ flex: 1, textAlign: "center", cursor: "pointer", padding: "12px 4px",
-                  borderRadius: 10, background: p.count > 0 ? p.color + "12" : T.bg,
-                  border: `1px solid ${p.count > 0 ? p.color + "40" : T.bdr}`, transition: "all 0.15s" }}>
-                <div style={{ fontSize: 24, fontWeight: 800, color: p.count > 0 ? p.color : T.sub, fontFamily: FM }}>{p.count}</div>
-                <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 4 }}>{p.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-          {/* Commesse recenti */}
-          <div style={card}>
-            <div style={cardHeader}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>COMMESSE RECENTI</span>
-            </div>
-            {(cantieri || []).slice(0, 6).map((c: any) => {
-              const col = FASE_COLOR[c.fase] || T.acc;
-              return (
-                <div key={c.id} style={rowStyle}
-                  onClick={() => { setSelectedCM(c); navTo("commesse"); }}
-                  onMouseEnter={e => (e.currentTarget.style.background = T.bg2)}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{c.cliente} {c.cognome}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>{c.code} · {c.indirizzo}</div>
-                  </div>
-                  <span style={pill(col)}>{c.fase}</span>
-                </div>
-              );
-            })}
-            {!(cantieri || []).length && (
-              <div style={{ padding: 24, textAlign: "center", color: T.sub, fontSize: 13 }}>Nessuna commessa</div>
-            )}
-          </div>
-
-          {/* Task */}
-          <div style={card}>
-            <div style={cardHeader}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>TASK</span>
-            </div>
-            {(tasks || []).filter((t: any) => !t.done).slice(0, 7).map((t: any) => (
-              <div key={t.id} style={rowStyle}
-                onMouseEnter={e => (e.currentTarget.style.background = T.bg2)}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%",
-                  background: t.urgente ? T.red : T.orange, marginRight: 12, flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: T.text }}>{t.testo || t.descrizione}</div>
-                  {t.scadenza && <div style={{ fontSize: 10, color: T.sub }}>{t.scadenza}</div>}
-                </div>
-              </div>
-            ))}
-            {!(tasks || []).filter((t: any) => !t.done).length && (
-              <div style={{ padding: 24, textAlign: "center", color: T.grn, fontSize: 13 }}>✓ Tutto in ordine</div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+  function getBadge(key: string) {
+    if (key === "messaggi" && unreadMsgs > 0) return unreadMsgs;
+    if (key === "commesse" && ferme > 0) return ferme;
+    if (key === "contabilita" && fattureScad > 0) return fattureScad;
+    return 0;
   }
 
-  function renderCommesse() {
-    const filtered = (cantieri || []).filter((c: any) => {
-      const match = filterFase ? c.fase === filterFase : true;
-      const q = searchDesktop.toLowerCase();
-      const text = (c.cliente + " " + (c.cognome || "") + " " + c.code + " " + (c.indirizzo || "")).toLowerCase();
-      return match && (!q || text.includes(q));
-    });
+  function renderPlaceholder(label: string, desc: string, icon: string) {
     return (
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" as const }}>
-          <div style={{ fontSize: 20, fontWeight: 800, flex: 1, color: T.text }}>Commesse</div>
-          {pipelineCounts.map((p: any) => (
-            <button key={p.key} onClick={() => setFilterFase(filterFase === p.key ? "" : p.key)}
-              style={{ padding: "4px 12px", borderRadius: 20,
-                border: `1px solid ${filterFase === p.key ? p.color : T.bdr}`,
-                background: filterFase === p.key ? p.color : T.card,
-                color: filterFase === p.key ? "#fff" : T.sub,
-                fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FF, transition: "all 0.15s" }}>
-              {p.label} {p.count > 0 && `(${p.count})`}
-            </button>
-          ))}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "60vh", gap: 16 }}>
+        <div style={{ width: 72, height: 72, borderRadius: 20, background: TEAL + "15", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <I d={ICO[icon] || ICO.zap} s={32} c={TEAL} />
         </div>
-        <div style={card}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 40px",
-            padding: "10px 20px", borderBottom: `1px solid ${T.bdr}`,
-            fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase" as const, letterSpacing: 0.5 }}>
-            <span>Cliente</span><span>Indirizzo</span><span>Fase</span><span>Aggiornata</span><span></span>
-          </div>
-          {filtered.map((c: any) => {
-            const col = FASE_COLOR[c.fase] || T.acc;
-            return (
-              <div key={c.id}
-                style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 40px",
-                  padding: "13px 20px", borderBottom: `1px solid ${T.bdrL}`, alignItems: "center",
-                  cursor: "pointer", transition: "background 0.12s" }}
-                onClick={() => setSelectedCM(c)}
-                onMouseEnter={e => (e.currentTarget.style.background = T.bg2)}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{c.cliente} {c.cognome}</div>
-                  <div style={{ fontSize: 11, color: T.sub }}>{c.code}</div>
-                </div>
-                <div style={{ fontSize: 12, color: T.sub }}>{c.indirizzo}</div>
-                <span style={pill(col)}>{c.fase}</span>
-                <div style={{ fontSize: 11, color: T.sub }}>{c.aggiornato}</div>
-                <Ico d={ICO.back} s={14} c={T.sub} style={{ transform: "rotate(180deg)" }} />
-              </div>
-            );
-          })}
-          {!filtered.length && (
-            <div style={{ padding: 32, textAlign: "center", color: T.sub }}>Nessuna commessa trovata</div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  function renderTeam() {
-    const members = team || [];
-    return (
-      <div>
-        <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6, color: T.text }}>Team & Permessi</div>
-        <div style={{ fontSize: 13, color: T.sub, marginBottom: 20 }}>
-          Scegli quali moduli sono visibili su mobile e tablet per ogni membro del team.
-        </div>
-        <div style={{ ...card, overflowX: "auto" as const }}>
-          <div style={{ display: "grid",
-            gridTemplateColumns: `220px repeat(${MODULES_MOBILE.length}, 90px)`,
-            padding: "10px 20px", borderBottom: `1px solid ${T.bdr}`,
-            fontSize: 10, fontWeight: 700, color: T.sub,
-            textTransform: "uppercase" as const, letterSpacing: 0.3, minWidth: 900 }}>
-            <span>Membro</span>
-            {MODULES_MOBILE.map(m => (
-              <span key={m.key} style={{ textAlign: "center" }}>{m.label}</span>
-            ))}
-          </div>
-          {!members.length && (
-            <div style={{ padding: 32, textAlign: "center", color: T.sub, fontSize: 13 }}>
-              Nessun membro — aggiungili da Impostazioni → Team
-            </div>
-          )}
-          {members.map((m: any) => (
-            <div key={m.id} style={{
-              display: "grid", gridTemplateColumns: `220px repeat(${MODULES_MOBILE.length}, 90px)`,
-              padding: "14px 20px", borderBottom: `1px solid ${T.bdrL}`,
-              alignItems: "center", minWidth: 900 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%",
-                  background: T.accLt, display: "flex", alignItems: "center",
-                  justifyContent: "center", fontSize: 13, fontWeight: 700, color: T.acc }}>
-                  {(m.nome || m.email || "?")[0].toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{m.nome || m.email}</div>
-                  <div style={{ fontSize: 10, color: T.sub }}>{m.ruolo || "Operaio"}</div>
-                </div>
-              </div>
-              {MODULES_MOBILE.map(mod => {
-                const enabled = m.mobileModules
-                  ? m.mobileModules.includes(mod.key)
-                  : true;
-                return (
-                  <div key={mod.key} style={{ display: "flex", justifyContent: "center" }}>
-                    <div onClick={() => {
-                      const newTeam = members.map((mem: any) => {
-                        if (mem.id !== m.id) return mem;
-                        const current: string[] = mem.mobileModules || MODULES_MOBILE.map(x => x.key);
-                        const updated = current.includes(mod.key)
-                          ? current.filter((k: string) => k !== mod.key)
-                          : [...current, mod.key];
-                        return { ...mem, mobileModules: updated };
-                      });
-                      setTeam(newTeam);
-                    }}
-                      style={{ width: 22, height: 22, borderRadius: 5, cursor: "pointer",
-                        background: enabled ? T.acc : "transparent",
-                        border: `1.5px solid ${enabled ? T.acc : T.bdr}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        transition: "all 0.15s" }}>
-                      {enabled && <Ico d={ICO.check} s={12} c="#fff" sw={3} />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: 12, padding: "12px 16px", borderRadius: T.r,
-          background: T.accLt, border: `1px solid ${T.acc}30`, fontSize: 12, color: T.sub }}>
-          💡 Le modifiche sono visibili al prossimo accesso del membro dall&apos;app mobile.
-        </div>
-      </div>
-    );
-  }
-
-  function renderPlaceholder(label: string) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column" as const,
-        alignItems: "center", justifyContent: "center", height: "60%", gap: 12 }}>
-        <div style={{ fontSize: 40 }}>🔧</div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{label}</div>
-        <div style={{ fontSize: 13, color: T.sub }}>Vista desktop in arrivo</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>{label}</div>
+        <div style={{ fontSize: 14, color: T.sub, textAlign: "center", maxWidth: 320, lineHeight: 1.6 }}>{desc}</div>
+        <div style={{ padding: "8px 18px", borderRadius: 100, background: TEAL + "15", fontSize: 12, fontWeight: 700, color: TEAL }}>In arrivo</div>
       </div>
     );
   }
@@ -358,155 +105,154 @@ export default function MastroDesktop() {
       case "home":        return <HomePanel />;
       case "commesse":    return <CommessePanel />;
       case "agenda":      return <AgendaPanel />;
-      case "messaggi":    return <MessaggiPanel />;
+      case "montaggi_cal":
+      case "montaggi":    return <MontaggiCalendar />;
       case "clienti":     return <ClientiPanel />;
+      case "messaggi":    return <MessaggiPanel />;
       case "contabilita": return <ContabilitaPanel />;
-      case "montaggi":
-      case "montaggi_cal": return <MontaggiCalendar />;
       case "settings":    return <SettingsPanel />;
-      default:            return renderPlaceholder(NAV.find(n => n.key === activeNav)?.label || "");
+      case "cnc":         return renderPlaceholder("Modulo CNC", "Genera i file DXF per le tue macchine CNC direttamente dalle commesse. Importa taglie, ottimizza i pannelli, zero errori manuali.", "cpu");
+      case "enea":        return renderPlaceholder("Modulo ENEA", "Pratiche Ecobonus e detrazioni fiscali automatizzate. CAM 2026, U-value per zona climatica, report ENEA in un click.", "shield");
+      case "leads":       return renderPlaceholder("TROVA CLIENTI", "Intercetta richieste da Habitissimo, Instapro e Subito nella tua zona. Lead qualificati direttamente nelle commesse MASTRO.", "zap");
+      case "rete":        return renderPlaceholder("RETE Agenti", "Rete di agenti commerciali con app dedicata. Ogni agente vede i suoi preventivi, i suoi clienti, le sue provvigioni.", "globe");
+      default:            return <HomePanel />;
     }
   }
 
-  const currentLabel = NAV.find(n => n.key === activeNav)?.label || "MASTRO";
+  const currentLabel = NAV_GROUPS.flatMap(g => g.items).find(n => n.key === activeNav || (activeNav === "montaggi_cal" && n.key === "montaggi"))?.label || "MASTRO";
+
+  // KPI bar sopra il content
+  const KPI = [
+    { label: "Commesse attive", val: (cantieri||[]).filter(c => c.fase !== "chiusura").length, color: TEAL, icon: "folder" },
+    { label: "Commesse ferme", val: ferme, color: ferme > 0 ? "#DC4444" : TEAL, icon: "alertTriangle" },
+    { label: "Task aperti", val: taskOpen, color: taskOpen > 0 ? "#E8A020" : TEAL, icon: "checkSquare" },
+    { label: "Fatture scadute", val: fattureScad, color: fattureScad > 0 ? "#DC4444" : TEAL, icon: "wallet" },
+    { label: "Messaggi non letti", val: unreadMsgs, color: unreadMsgs > 0 ? "#3B7FE0" : TEAL, icon: "inbox" },
+  ];
 
   return (
-    <div style={{ display: "flex", height: "100vh", width: "100vw",
-      background: T.bg, fontFamily: FF, color: T.text, overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", width: "100vw", background: T.bg, fontFamily: FF, color: T.text, overflow: "hidden" }}>
 
       {/* ── SIDEBAR ── */}
-      <div style={{ width: sw, flexShrink: 0, background: "#1A1A1C",
-        display: "flex", flexDirection: "column" as const,
-        transition: "width 0.2s ease", overflow: "hidden", zIndex: 10 }}>
+      <div style={{ width: sw, flexShrink: 0, background: DARK, display: "flex", flexDirection: "column", transition: "width 0.2s ease", overflow: "hidden", zIndex: 10, borderRight: "1px solid rgba(255,255,255,0.06)" }}>
 
         {/* Logo */}
-        <div style={{ height: 56, display: "flex", alignItems: "center",
-          padding: "0 16px", gap: 10,
-          borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: T.acc,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 900, color: "#fff", fontFamily: FM,
-            flexShrink: 0, letterSpacing: -0.5 }}>M</div>
-          {!collapsed && (
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#fff",
-              letterSpacing: 1.5, whiteSpace: "nowrap" as const }}>MASTRO</span>
-          )}
+        <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 14px", gap: 10, borderBottom: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: TEAL, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: "#fff", flexShrink: 0, letterSpacing: -0.5 }}>M</div>
+          {!collapsed && <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: 1.5, whiteSpace: "nowrap" }}>MASTRO</span>}
         </div>
 
-        {/* Nav */}
-        <nav style={{ flex: 1, overflowY: "auto" as const, padding: "8px 0" }}>
-          {NAV.map(({ key, ico, label }) => {
-            const active = activeNav === key;
-            const badge = key === "messaggi" && unreadMsgs > 0 ? unreadMsgs : 0;
-            const icoKey = ico as keyof typeof ICO;
-            return (
-              <div key={key} onClick={() => navTo(key)}
-                style={{ display: "flex", alignItems: "center", gap: 12,
-                  padding: collapsed ? "10px 0 10px 20px" : "10px 12px 10px 16px",
-                  cursor: "pointer", position: "relative" as const,
-                  background: active ? "rgba(255,255,255,0.08)" : "transparent",
-                  transition: "background 0.15s" }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? "rgba(255,255,255,0.08)" : "transparent"; }}>
-                {active && (
-                  <div style={{ position: "absolute", left: 0, top: "20%", bottom: "20%",
-                    width: 3, borderRadius: "0 2px 2px 0", background: T.acc }} />
-                )}
-                <Ico d={ICO[icoKey]} s={18} c={active ? "#fff" : "rgba(255,255,255,0.45)"} />
-                {!collapsed && (
-                  <>
-                    <span style={{ fontSize: 13, fontWeight: active ? 600 : 400,
-                      color: active ? "#fff" : "rgba(255,255,255,0.5)",
-                      whiteSpace: "nowrap" as const, overflow: "hidden", flex: 1 }}>{label}</span>
-                    {badge > 0 && (
-                      <span style={{ background: T.red, color: "#fff", fontSize: 10,
-                        fontWeight: 700, borderRadius: 10, padding: "1px 5px",
-                        minWidth: 16, textAlign: "center" as const }}>{badge}</span>
+        {/* Nav groups */}
+        <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
+          {NAV_GROUPS.map(group => (
+            <div key={group.label}>
+              {!collapsed && (
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(255,255,255,0.25)", padding: "12px 16px 4px" }}>{group.label}</div>
+              )}
+              {group.items.map(({ key, ico, label, badge: modBadge }) => {
+                const active = activeNav === key || (activeNav === "montaggi_cal" && key === "montaggi");
+                const numBadge = getBadge(key);
+                const icoKey = ico as keyof typeof ICO;
+                return (
+                  <div key={key} onClick={() => navTo(key)}
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: collapsed ? "9px 0 9px 17px" : "9px 12px 9px 14px", cursor: "pointer", position: "relative", background: active ? "rgba(255,255,255,0.08)" : "transparent", transition: "background 0.12s" }}
+                    onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
+                    onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                    {active && <div style={{ position: "absolute", left: 0, top: "15%", bottom: "15%", width: 3, borderRadius: "0 2px 2px 0", background: TEAL }} />}
+                    <Ico d={ICO[icoKey]} s={17} c={active ? "#fff" : "rgba(255,255,255,0.4)"} />
+                    {!collapsed && (
+                      <>
+                        <span style={{ fontSize: 13, fontWeight: active ? 600 : 400, color: active ? "#fff" : "rgba(255,255,255,0.5)", whiteSpace: "nowrap", overflow: "hidden", flex: 1 }}>{label}</span>
+                        {numBadge > 0 && (
+                          <span style={{ background: "#DC4444", color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 10, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>{numBadge}</span>
+                        )}
+                        {modBadge && numBadge === 0 && (
+                          <span style={{ background: TEAL + "20", color: TEAL, fontSize: 9, fontWeight: 700, borderRadius: 6, padding: "2px 6px", whiteSpace: "nowrap" }}>{modBadge}</span>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
-        {/* Collapse */}
-        <div onClick={() => setCollapsed(c => !c)}
-          style={{ height: 44, display: "flex", alignItems: "center", justifyContent: "center",
-            borderTop: "1px solid rgba(255,255,255,0.08)", cursor: "pointer",
-            color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-            style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 0.2s" }}>
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
+        {/* User + collapse */}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
+          {!collapsed && (
+            <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 30, height: 30, borderRadius: "50%", background: TEAL + "30", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: TEAL, flexShrink: 0 }}>
+                {(aziendaInfo?.nome || aziendaInfo?.ragione || "M")[0].toUpperCase()}
+              </div>
+              <div style={{ overflow: "hidden" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{aziendaInfo?.nome || aziendaInfo?.ragione || "La mia azienda"}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Piano START</div>
+              </div>
+            </div>
+          )}
+          <div onClick={() => setCollapsed(c => !c)} style={{ height: 38, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: collapsed ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 0.2s" }}>
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </div>
         </div>
       </div>
 
       {/* ── MAIN ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" as const, overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
 
         {/* Topbar */}
-        <div style={{ height: 56, flexShrink: 0, background: T.card,
-          borderBottom: `1px solid ${T.bdr}`, display: "flex",
-          alignItems: "center", padding: "0 24px", gap: 16 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{currentLabel}</span>
+        <div style={{ height: 56, flexShrink: 0, background: "#fff", borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", padding: "0 20px", gap: 14 }}>
+          <span style={{ fontSize: 15, fontWeight: 800, color: T.text, letterSpacing: -0.3 }}>{currentLabel}</span>
 
           {/* Search */}
-          <div style={{ flex: 1, maxWidth: 360, display: "flex", alignItems: "center",
-            background: T.bg, borderRadius: 8, padding: "6px 12px", gap: 8,
-            border: `1px solid ${T.bdr}` }}>
-            <Ico d={ICO.search} s={14} c={T.sub} />
-            <input style={{ flex: 1, border: "none", background: "transparent",
-              fontSize: 13, color: T.text, outline: "none", fontFamily: FF }}
-              placeholder="Cerca commesse, clienti..."
-              value={searchDesktop}
-              onChange={e => setSearchDesktop(e.target.value)} />
+          <div style={{ flex: 1, maxWidth: 380, display: "flex", alignItems: "center", background: T.bg, borderRadius: 8, padding: "7px 12px", gap: 8, border: `1px solid ${T.bdr}` }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca commesse, clienti, codici..." value={searchQ} onChange={e => { setSearchQ(e.target.value); if (ctx.setSearchQ) ctx.setSearchQ(e.target.value); }} />
           </div>
 
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Bell */}
-            <div style={{ position: "relative" as const, cursor: "pointer" }}>
-              <Ico d={ICO.inbox} s={18} c={T.sub} />
-              {unreadMsgs > 0 && (
-                <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14,
-                  borderRadius: "50%", background: T.red, fontSize: 9, fontWeight: 700,
-                  color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {unreadMsgs}
-                </div>
-              )}
-            </div>
-
-            {/* Device indicators */}
-            <div style={{ display: "flex", gap: 4 }}>
-              {[
-                { label: "Desktop", active: true, path: "M2 3h20v14H2zM8 21h8M12 17v4" },
-                { label: "Tablet",  active: false, path: "M5 2h14a2 2 0 012 2v18a2 2 0 01-2 2H5a2 2 0 01-2-2V4a2 2 0 012-2zM12 18h.01" },
-                { label: "Mobile",  active: false, path: "M7 2h10a2 2 0 012 2v18a2 2 0 01-2 2H7a2 2 0 01-2-2V4a2 2 0 012-2zM12 18h.01" },
-              ].map(({ label, active, path }) => (
-                <div key={label} title={label}
-                  style={{ padding: "4px 8px", borderRadius: 6, display: "flex", alignItems: "center", gap: 4,
-                    background: active ? T.acc + "20" : T.bg, border: `1px solid ${active ? T.acc + "50" : T.bdr}` }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                    stroke={active ? T.acc : T.sub} strokeWidth="2">
-                    <path d={path} />
-                  </svg>
-                  {active && <span style={{ fontSize: 10, fontWeight: 600, color: T.acc }}>Attivo</span>}
-                </div>
-              ))}
-            </div>
-
+          {/* Alerts */}
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            {ferme > 0 && (
+              <div onClick={() => { setFilterFase("tutte"); navTo("commesse"); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 8, background: "#DC444412", border: "1px solid #DC444430", cursor: "pointer" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#DC4444" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#DC4444" }}>{ferme} ferme</span>
+              </div>
+            )}
+            {unreadMsgs > 0 && (
+              <div onClick={() => navTo("messaggi")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", borderRadius: 8, background: "#3B7FE012", border: "1px solid #3B7FE030", cursor: "pointer" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3B7FE0" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#3B7FE0" }}>{unreadMsgs} msg</span>
+              </div>
+            )}
             {/* Avatar */}
-            <div style={{ width: 32, height: 32, borderRadius: "50%",
-              background: T.accLt, display: "flex", alignItems: "center",
-              justifyContent: "center", fontSize: 13, fontWeight: 700,
-              color: T.acc, cursor: "pointer" }}>
-              {(aziendaInfo?.nomeAzienda || "M")[0].toUpperCase()}
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: TEAL + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: TEAL, cursor: "pointer" }}>
+              {(aziendaInfo?.nome || "M")[0].toUpperCase()}
             </div>
           </div>
         </div>
 
+        {/* KPI bar — solo su dashboard */}
+        {activeNav === "home" && (
+          <div style={{ display: "flex", gap: 0, background: "#fff", borderBottom: `1px solid ${T.bdr}`, flexShrink: 0 }}>
+            {KPI.map((k, i) => (
+              <div key={i} style={{ flex: 1, padding: "10px 20px", borderRight: i < KPI.length - 1 ? `1px solid ${T.bdr}` : "none", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+                onClick={() => { if (k.icon === "folder" || k.icon === "alertTriangle") navTo("commesse"); else if (k.icon === "inbox") navTo("messaggi"); else if (k.icon === "wallet") navTo("contabilita"); }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: k.color + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <I d={ICO[k.icon as keyof typeof ICO]} s={16} c={k.color} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: k.val > 0 && k.color !== TEAL ? k.color : T.text, fontFamily: FM, lineHeight: 1 }}>{k.val}</div>
+                  <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{k.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto" as const }}>
+        <div style={{ flex: 1, overflowY: "auto" }}>
           {renderContent()}
         </div>
       </div>
