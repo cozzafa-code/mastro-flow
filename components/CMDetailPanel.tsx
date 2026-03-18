@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 // 
-// MASTRO ERP çÂ CMDetailPanel
+// MASTRO ERP · CMDetailPanel
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
 import React, { useState } from "react";
@@ -67,6 +67,7 @@ export default function CMDetailPanel() {
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [accontoImporto, setAccontoImporto] = useState<string>("");
     const [showOrdinePreview, setShowOrdinePreview] = useState(false);
+  const [noteOrdine, setNoteOrdine] = useState("");
     const [showCadDraw, setShowCadDraw] = useState(false);
     const [interventoOpen, setInterventoOpen] = useState(null);
     const [showFascicoloModal, setShowFascicoloModal] = useState(false);
@@ -78,7 +79,7 @@ export default function CMDetailPanel() {
 
     if (!selectedCM) return null;
 
-  // ÂçÂç CAD DRAW FULLSCREEN ÂçÂç
+  // Â·ç CAD DRAW FULLSCREEN Â·ç
   if (showCadDraw) {
     return (
       <MastroCAD
@@ -203,15 +204,15 @@ export default function CMDetailPanel() {
           <div style={{ background: T.topbar || "#1A1A1C", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 10 }}>
             <div onClick={() => setPrevWorkspace(false)} style={{ fontSize: 18, cursor: "pointer", color: "#fff" }}>Ñ</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.code} ¼ {c.cliente} {c.cognome || ""}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.code} · {c.cliente} {c.cognome || ""}</div>
               <div style={{ fontSize: 10, color: "#ffffff60" }}>{c.indirizzo || ""}</div>
             </div>
             {fattureDB.filter(f => f.cmId === c.id).length > 0 && (
               <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#1A9E7330" : "#D0800830", color: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#1A9E73" : "#D08008", flexShrink: 0 }}>
-                {fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "úá Pagata" : "¡ãÆñ Fattura"}
+                {fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "✓ Pagata" : "📋 Fattura"}
               </span>
             )}
-            <div style={{ background: T.acc, padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 900, color: "#fff", flexShrink: 0 }}>®{pwFmt(pwTotale)}</div>
+            <div style={{ background: T.acc, padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 900, color: "#fff", flexShrink: 0 }}>€{pwFmt(pwTotale)}</div>
           </div>
 
           {/* Tabs */}
@@ -231,9 +232,9 @@ export default function CMDetailPanel() {
               <div style={{ padding: 14, background: `${T.blue}10`, borderRadius: 12, marginBottom: 14, border: `1px solid ${T.blue}20` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: T.blue }}><I d={ICO.clipboard} /> Report Sopralluogo</div>
-                  <div style={{ fontSize: 10, color: T.sub, background: T.card, padding: "3px 8px", borderRadius: 6, fontWeight: 700 }}>R{pwRilievi.length} ¼ {pwRilievi[0]?.data || "çÂ"}</div>
+                  <div style={{ fontSize: 10, color: T.sub, background: T.card, padding: "3px 8px", borderRadius: 6, fontWeight: 700 }}>R{pwRilievi.length} · {pwRilievi[0]?.data || "·"}</div>
                 </div>
-                <div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{c.cliente} {c.cognome || ""} ¼ {c.indirizzo || ""}</div>
+                <div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{c.cliente} {c.cognome || ""} · {c.indirizzo || ""}</div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 14 }}>
@@ -241,7 +242,7 @@ export default function CMDetailPanel() {
                   { l: "Vani", v: pwVani.length, col: T.acc },
                   { l: "Pezzi", v: pwVani.reduce((s, v) => s + (v.pezzi || 1), 0), col: T.blue },
                   { l: "Foto", v: pwVani.reduce((s, v) => s + (Array.isArray(v.foto) ? v.foto.length : 0), 0), col: T.grn },
-                  { l: "í®à", v: pwVani.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length < 6).length, col: T.red },
+                  { l: "í€à", v: pwVani.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length < 6).length, col: T.red },
                 ].map((st, i) => (
                   <div key={i} style={{ background: T.card, borderRadius: 10, padding: "10px 6px", textAlign: "center", border: `1px solid ${T.bdr}` }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: st.col }}>{st.v}</div>
@@ -265,9 +266,9 @@ export default function CMDetailPanel() {
                           {v.versione > 1 && <span style={{ fontSize: 9, background: `${T.purple}15`, color: T.purple, padding: "2px 6px", borderRadius: 4, marginLeft: 6 }}>v{v.versione}</span>}
                           {v.parentId && <span style={{ fontSize: 9, background: `${T.orange}15`, color: T.orange, padding: "2px 6px", borderRadius: 4, marginLeft: 4 }}>MODIFICA</span>}
                         </div>
-                        <div style={{ fontSize: 10, color: T.sub }}>{v.tipo || "F2A"} ¼ {v.stanza || "çÂ"} ¼ {v.piano || "PT"} ¼ {v.pezzi || 1}pz</div>
+                        <div style={{ fontSize: 10, color: T.sub }}>{v.tipo || "F2A"} · {v.stanza || "·"} · {v.piano || "PT"} · {v.pezzi || 1}pz</div>
                       </div>
-                      <span style={{ fontSize: 10, background: misOk ? `${T.grn}15` : `${T.red}15`, color: misOk ? T.grn : T.red, padding: "3px 8px", borderRadius: 6, fontWeight: 700, height: "fit-content" }}>{misOk ? `úá ${nMis}` : `í®à ${nMis}/6`}</span>
+                      <span style={{ fontSize: 10, background: misOk ? `${T.grn}15` : `${T.red}15`, color: misOk ? T.grn : T.red, padding: "3px 8px", borderRadius: 6, fontWeight: 700, height: "fit-content" }}>{misOk ? `✓ ${nMis}` : `í€à ${nMis}/6`}</span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, marginBottom: 8 }}>
                       {[{ l: "Larg.", val: lv }, { l: "Alt.", val: hv }, { l: "mq", val: ((lv * hv) / 1000000).toFixed(2) }].map((m, mi) => (
@@ -278,14 +279,14 @@ export default function CMDetailPanel() {
                       ))}
                     </div>
                     <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.8 }}>
-                      <I d={ICO.building} /> {v.sistema || c.sistema || "çÂ"} ¼ <I d={ICO.palette} /> {v.colore || "Bianco"} ¼ <I d={ICO.grid} /> {v.vetro || "Standard"}
-                      {v.controtelaio && v.controtelaio !== "Nessuno" && ` ¼ ¡ãÆÂô ${v.controtelaio}`}
-                      {v.accessori?.tapparella?.attivo && ` ¼ Tapp. ${v.accessori.tapparella.tipo || ""}`}
-                      {v.accessori?.persiana?.attivo && ` ¼ Pers. ${v.accessori.persiana.tipo || ""}`}
-                      {v.accessori?.zanzariera?.attivo && ` ¼ Zanz. ${v.accessori.zanzariera.tipo || ""}`}
-                      {v.coprifilo && ` ¼ Coprifilo ${v.coprifilo}`}
-                      {v.soglia && ` ¼ Soglia ${v.soglia}`}
-                      {v.davanzale && ` ¼ Davanz. ${v.davanzale}`}
+                      <I d={ICO.building} /> {v.sistema || c.sistema || "·"} · <I d={ICO.palette} /> {v.colore || "Bianco"} · <I d={ICO.grid} /> {v.vetro || "Standard"}
+                      {v.controtelaio && v.controtelaio !== "Nessuno" && ` · ¡ãÆÂô ${v.controtelaio}`}
+                      {v.accessori?.tapparella?.attivo && ` · Tapp. ${v.accessori.tapparella.tipo || ""}`}
+                      {v.accessori?.persiana?.attivo && ` · Pers. ${v.accessori.persiana.tipo || ""}`}
+                      {v.accessori?.zanzariera?.attivo && ` · Zanz. ${v.accessori.zanzariera.tipo || ""}`}
+                      {v.coprifilo && ` · Coprifilo ${v.coprifilo}`}
+                      {v.soglia && ` · Soglia ${v.soglia}`}
+                      {v.davanzale && ` · Davanz. ${v.davanzale}`}
                     </div>
                     {v.note && <div style={{ fontSize: 11, color: T.orange, fontWeight: 600, marginTop: 4 }}><I d={ICO.mapPin} /> {v.note}</div>}
 
@@ -310,7 +311,7 @@ export default function CMDetailPanel() {
                       </div>
                     ) : (
                       <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "#D0800808", border: "1px dashed #D0800840", fontSize: 10, color: T.sub, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>¡ãÆ</span> PDF tecnico fornitore non caricato çÂ aprire il vano per aggiungerlo
+                        <span>¡ãÆ</span> PDF tecnico fornitore non caricato · aprire il vano per aggiungerlo
                       </div>
                     )}
 
@@ -346,9 +347,9 @@ export default function CMDetailPanel() {
                           {diffs.map((d, di) => (
                             <div key={di} style={{ fontSize: 10, display: "flex", gap: 4, marginBottom: 2 }}>
                               <span style={{ fontWeight: 700, color: T.sub, width: 70 }}>{d.l}:</span>
-                              <span style={{ color: T.red, textDecoration: "line-through" }}>{d.da || "çÂ"}</span>
+                              <span style={{ color: T.red, textDecoration: "line-through" }}>{d.da || "·"}</span>
                               <span style={{ color: T.sub }}>Ñå</span>
-                              <span style={{ color: T.grn, fontWeight: 700 }}>{d.a || "çÂ"}</span>
+                              <span style={{ color: T.grn, fontWeight: 700 }}>{d.a || "·"}</span>
                             </div>
                           ))}
                         </div>
@@ -377,10 +378,10 @@ export default function CMDetailPanel() {
             <div style={{ padding: "0 12px 20px" }}>
               <div style={{ background: T.topbar || "#1A1A1C", borderRadius: 12, padding: 16, marginBottom: 12, color: "#fff" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div><div style={{ fontSize: 10, color: "#ffffff60" }}>PREVENTIVO</div><div style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>®{pwFmt(pwTotale)}</div></div>
-                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: `${T.grn}30`, borderRadius: 8, padding: "6px 10px", textAlign: "right" as any }}><div style={{ fontSize: 9, color: "#ffffffa0" }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>-®{pwFmt(pwDetraibile)}</div></div>)}
+                  <div><div style={{ fontSize: 10, color: "#ffffff60" }}>PREVENTIVO</div><div style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>€{pwFmt(pwTotale)}</div></div>
+                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: `${T.grn}30`, borderRadius: 8, padding: "6px 10px", textAlign: "right" as any }}><div style={{ fontSize: 9, color: "#ffffffa0" }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>-€{pwFmt(pwDetraibile)}</div></div>)}
                 </div>
-                <div style={{ fontSize: 10, color: "#ffffff60", marginTop: 6 }}>{c.code} ¼ {c.cliente} ¼ {pwVani.length} vani ¼ {pwVani.reduce((s, v) => s + (v.pezzi || 1), 0)}pz</div>
+                <div style={{ fontSize: 10, color: "#ffffff60", marginTop: 6 }}>{c.code} · {c.cliente} · {pwVani.length} vani · {pwVani.reduce((s, v) => s + (v.pezzi || 1), 0)}pz</div>
               </div>
 
               <div style={{ fontSize: 11, fontWeight: 800, marginBottom: 6 }}>INFISSI</div>
@@ -393,33 +394,33 @@ export default function CMDetailPanel() {
                   <div key={v.id} style={{ padding: "8px 0", borderBottom: `1px solid ${T.bdr}` }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                       <span style={{ fontWeight: 700 }}>{v.nome || "Vano"}{v.parentId ? " <I d={ICO.refreshCw} />" : ""}</span>
-                      <span style={{ fontWeight: 800, color: T.acc }}>®{pwFmt(pv)}</span>
+                      <span style={{ fontWeight: 800, color: T.acc }}>€{pwFmt(pv)}</span>
                     </div>
-                    <div style={{ fontSize: 9, color: T.sub }}>{v.tipo} ¼ {lv}{hv} ¼ {v.pezzi || 1}pz ¼ {v.colore || "B."} ¼ {v.vetro || "Std"}{v.controtelaio && v.controtelaio !== "Nessuno" ? ` ¼ CT: ${v.controtelaio}` : ""}{ac.tapparella?.attivo ? ` ¼ Tapp. ${ac.tapparella.tipo || ""}` : ""}{ac.persiana?.attivo ? ` ¼ Pers. ${ac.persiana.tipo || ""}` : ""}{ac.zanzariera?.attivo ? ` ¼ Zanz. ${ac.zanzariera.tipo || ""}` : ""}{v.coprifilo ? ` ¼ CF: ${v.coprifilo}` : ""}{v.soglia ? ` ¼ Soglia: ${v.soglia}` : ""}</div>
+                    <div style={{ fontSize: 9, color: T.sub }}>{v.tipo} · {lv}{hv} · {v.pezzi || 1}pz · {v.colore || "B."} · {v.vetro || "Std"}{v.controtelaio && v.controtelaio !== "Nessuno" ? ` · CT: ${v.controtelaio}` : ""}{ac.tapparella?.attivo ? ` · Tapp. ${ac.tapparella.tipo || ""}` : ""}{ac.persiana?.attivo ? ` · Pers. ${ac.persiana.tipo || ""}` : ""}{ac.zanzariera?.attivo ? ` · Zanz. ${ac.zanzariera.tipo || ""}` : ""}{v.coprifilo ? ` · CF: ${v.coprifilo}` : ""}{v.soglia ? ` · Soglia: ${v.soglia}` : ""}</div>
                   </div>
                 );
               })}
 
               {pwVociLibere.length > 0 && (<><div style={{ fontSize: 11, fontWeight: 800, marginTop: 12, marginBottom: 6 }}>LAVORI</div>
-                {pwVociLibere.map((vl, i) => (<div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.bdr}`, fontSize: 11 }}><span>{vl.desc} <span style={{ color: T.sub, fontSize: 9 }}>{vl.qta || 1}</span></span><span style={{ fontWeight: 700 }}>®{pwFmt((vl.importo || 0) * (vl.qta || 1))}</span></div>))}</>)}
+                {pwVociLibere.map((vl, i) => (<div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.bdr}`, fontSize: 11 }}><span>{vl.desc} <span style={{ color: T.sub, fontSize: 9 }}>{vl.qta || 1}</span></span><span style={{ fontWeight: 700 }}>€{pwFmt((vl.importo || 0) * (vl.qta || 1))}</span></div>))}</>)}
 
               <div style={{ background: T.card, borderRadius: 12, padding: 14, marginTop: 14, border: `1px solid ${T.bdr}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.sub }}>Subtotale</span><span>®{pwFmt(pwSubtot)}</span></div>
-                {pwSconto > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.grn }}>Sconto {pwSconto}%</span><span style={{ color: T.grn, fontWeight: 700 }}>-®{pwFmt(pwScontoVal)}</span></div>}
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.sub }}>Imponibile</span><span style={{ fontWeight: 700 }}>®{pwFmt(pwImponibile)}</span></div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 6 }}><span style={{ color: T.sub }}>IVA {pwIvaDefault}%</span><span>®{pwFmt(pwIvaCalc)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.sub }}>Subtotale</span><span>€{pwFmt(pwSubtot)}</span></div>
+                {pwSconto > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.grn }}>Sconto {pwSconto}%</span><span style={{ color: T.grn, fontWeight: 700 }}>-€{pwFmt(pwScontoVal)}</span></div>}
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.sub }}>Imponibile</span><span style={{ fontWeight: 700 }}>€{pwFmt(pwImponibile)}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 6 }}><span style={{ color: T.sub }}>IVA {pwIvaDefault}%</span><span>€{pwFmt(pwIvaCalc)}</span></div>
                 <div style={{ display: "flex", justifyContent: "space-between", borderTop: `2px solid ${T.acc}`, paddingTop: 8 }}>
                   <span style={{ fontSize: 15, fontWeight: 900 }}>TOTALE</span>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: T.acc }}>®{pwFmt(pwTotale)}</span>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: T.acc }}>€{pwFmt(pwTotale)}</span>
                 </div>
                 {pwDetrObj && pwDetrObj.perc > 0 && (<>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: `${T.grn}10`, borderRadius: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: T.grn }}><I d={ICO.building} /> {pwDetrObj.l}</span>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: T.grn }}>-®{pwFmt(pwDetraibile)}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: T.grn }}>-€{pwFmt(pwDetraibile)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 700 }}>Costo effettivo</span>
-                    <span style={{ fontSize: 16, fontWeight: 900 }}>®{pwFmt(pwTotale - pwDetraibile)}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900 }}>€{pwFmt(pwTotale - pwDetraibile)}</span>
                   </div>
                 </>)}
               </div>
@@ -445,7 +446,7 @@ export default function CMDetailPanel() {
               }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "#25d366", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA Ñå</button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Scarica PDF e apre WhatsApp con link firma elettronica</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
-                <span onClick={() => { updCM("preventivoInviato", true); setCcDone("úá Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>úá Segna completato</span>
+                <span onClick={() => { updCM("preventivoInviato", true); setCcDone("✓ Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>✓ Segna completato</span>
               </div>
 
               {/*  FASCICOLO GEOMETRA  */}
@@ -462,11 +463,11 @@ export default function CMDetailPanel() {
                 >
                   <span style={{ fontSize: 16 }}>¡ãÆ</span> Fascicolo Geometra
                 </button>
-                <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico ¼ Link cliente ¼ Excel ENEA</div>
+                <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico · Link cliente · Excel ENEA</div>
               </div>
-              {/* Avanti dopo invio çÂ solo se non ancora confermato */}
+              {/* Avanti dopo invio · solo se non ancora confermato */}
               {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (
-                <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}><I d={ICO.edit} />®à AVANTI Ñå Conferma ordine</button>
+                <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}><I d={ICO.edit} />€à AVANTI Ñå Conferma ordine</button>
               )}
               {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#34c75918", border: "1px solid #34c75940", fontSize: 12, fontWeight: 700, color: "#34c759", textAlign: "center" }}>{ccDone}</div>}
             </div>
@@ -530,8 +531,8 @@ export default function CMDetailPanel() {
                     { icon: "¿", t: "Tipologie", d: "F2A, PF2A, Scorrevole, ecc." },
                     { icon: "", t: "Controtelai", d: "Standard, Monoblocco" },
                     { icon: "¡ãÆàí", t: "Accessori", d: "Tapparelle, persiane, zanzariere" },
-                    { icon: "¡ãÆ¬", t: "Complementi", d: "Coprifili, soglie, davanzali" },
-                    { icon: "®", t: "Prezzi competitor", d: "Per confronto (non importati)" },
+                    { icon: "📦", t: "Complementi", d: "Coprifili, soglie, davanzali" },
+                    { icon: "€", t: "Prezzi competitor", d: "Per confronto (non importati)" },
                   ].map((r, i) => (
                     <div key={i} style={{ display: "flex", gap: 6, marginBottom: 4 }}>
                       <span>{r.icon}</span>
@@ -550,7 +551,7 @@ export default function CMDetailPanel() {
 
           </div>
 
-          {/* FAB çÂ navigate sections çÂ GRANDE con menu espandibile */}
+          {/* FAB · navigate sections · GRANDE con menu espandibile */}
           {editingVanoId && prevTab === "preventivo" && (() => {
             const secs = [
               { id: "foto", ico: <I d={ICO.camera} />, label: "Foto" },
@@ -613,7 +614,7 @@ export default function CMDetailPanel() {
     const vaniA = vaniList;
     const tipoRil = r?.tipo || "rilievo";
     const tipoColRil = tipoRil === "definitiva" ? T.grn : tipoRil === "modifica" ? T.orange : T.blue;
-    const tipoIcoRil = tipoRil === "definitiva" ? "úá" : tipoRil === "modifica" ? "¡ãÆÂ" : "¡ãÆ";
+    const tipoIcoRil = tipoRil === "definitiva" ? "✓" : tipoRil === "modifica" ? "¡ãÆÂ" : "¡ãÆ";
     const tipoLblRil = tipoRil === "definitiva" ? "Misure Definitive" : tipoRil === "modifica" ? "Modifica" : "Rilievo Misure";
 
     // Calcolo avanzamento misure
@@ -661,7 +662,7 @@ export default function CMDetailPanel() {
           <div onClick={() => { setNvView(false); setNvStep(1); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
           <div style={{ flex: 1 }}>
             <div style={S.headerTitle}>Nuova visita</div>
-            <div style={S.headerSub}>{c.code} ¼ {c.cliente}</div>
+            <div style={S.headerSub}>{c.code} · {c.cliente}</div>
           </div>
           <div style={{ fontSize: 11, color: T.sub }}>Step {nvStep}/5</div>
         </div>
@@ -677,13 +678,13 @@ export default function CMDetailPanel() {
           ))}
         </div>
         <div style={{ padding: "16px" }}>
-          {/* STEP 1 çÂ Tipo visita */}
+          {/* STEP 1 · Tipo visita */}
           {nvStep === 1 && <>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}><I d={ICO.tag} /> Tipo di visita</div>
             <div style={{ fontSize: 11, color: T.sub, marginBottom: 16 }}>Seleziona il tipo di sopralluogo</div>
             {[
               { k: "rilievo",    ico: <I d={ICO.ruler} />, label: "Rilievo misure",     desc: "Prima visita o misure di vani mancanti" },
-              { k: "definitiva", ico: "úá", label: "Misure definitive",  desc: "Conferma finale di tutte le misure" },
+              { k: "definitiva", ico: "✓", label: "Misure definitive",  desc: "Conferma finale di tutte le misure" },
               { k: "modifica",   ico: <I d={ICO.wrench} />, label: "Modifica cantiere",  desc: "Variazione, problema o sopralluogo post-vendita" },
             ].map(t => (
               <div key={t.k} onClick={() => setNvTipo(t.k)}
@@ -711,7 +712,7 @@ export default function CMDetailPanel() {
             )}
             <button onClick={() => setNvStep(2)} style={{ ...S.btn, marginTop: 12, width: "100%" }}>Avanti Ñå</button>
           </>}
-          {/* STEP 2 çÂ Dati */}
+          {/* STEP 2 · Dati */}
           {nvStep === 2 && <>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}><I d={ICO.clipboard} /> Dati della visita</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -733,9 +734,9 @@ export default function CMDetailPanel() {
               <button onClick={() => setNvStep(3)} style={{ ...S.btn, flex: 2 }}>Avanti Ñå</button>
             </div>
           </>}
-          {/* STEP 2 çÂ Vani misurati */}
+          {/* STEP 2 · Vani misurati */}
           {nvStep === 3 && <>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>úá Vani misurati</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>✓ Vani misurati</div>
             <div style={{ fontSize: 11, color: T.sub, marginBottom: 14 }}>Seleziona i vani che hai misurato</div>
             {vaniA.length === 0
               ? <div style={{ textAlign: "center", padding: "20px", color: T.sub }}>Tutti gií misurati!</div>
@@ -748,7 +749,7 @@ export default function CMDetailPanel() {
                 }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{v.nome}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>~{v.mq}mÔö¼Ôûô</div>
+                    <div style={{ fontSize: 11, color: T.sub }}>~{v.mq}mÔö·Ôûô</div>
                   </div>
                   <div style={{ width: 24, height: 24, borderRadius: 6,
                     border: `2px solid ${nvVani.includes(v.id) ? T.grn : T.bdr}`,
@@ -765,7 +766,7 @@ export default function CMDetailPanel() {
               <button onClick={() => setNvStep(4)} style={{ ...S.btn, flex: 2 }}>Avanti Ñå</button>
             </div>
           </>}
-          {/* STEP 4 çÂ Vani bloccati */}
+          {/* STEP 4 · Vani bloccati */}
           {nvStep === 4 && <>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}><I d={ICO.alertTriangle} /> Vani non misurati</div>
             <div style={{ fontSize: 11, color: T.sub, marginBottom: 14 }}>Indica il motivo per ogni vano saltato</div>
@@ -809,16 +810,16 @@ export default function CMDetailPanel() {
               <button onClick={() => setNvStep(5)} style={{ ...S.btn, flex: 2 }}>Avanti Ñå</button>
             </div>
           </>}
-          {/* STEP 5 çÂ Riepilogo */}
+          {/* STEP 5 · Riepilogo */}
           {nvStep === 5 && <>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}><I d={ICO.clipboard} /> Riepilogo</div>
             <div style={{ ...S.card, padding: "12px 14px", marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: T.sub }}><I d={ICO.calendar} /> {nvData.data ? new Date(nvData.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) : "çÂ"} ¼ <I d={ICO.clock} /> {nvData.ora || "--:--"}</div>
+              <div style={{ fontSize: 11, color: T.sub }}><I d={ICO.calendar} /> {nvData.data ? new Date(nvData.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) : "·"} · <I d={ICO.clock} /> {nvData.ora || "--:--"}</div>
               <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}><I d={ICO.user} /> {nvData.rilevatore || "Non specificato"}</div>
             </div>
             {nvVani.length > 0 && (
               <div style={{ ...S.card, padding: "12px 14px", marginBottom: 10, border: `1px solid ${T.grn}40` }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: T.grn, marginBottom: 7 }}>úá Misurati</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.grn, marginBottom: 7 }}>✓ Misurati</div>
                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                   {nvVani.map(id => { const v = vaniA.find(x => x.id === id); return <span key={id} style={S.badge(T.grnLt, T.grn)}>{v?.nome}</span>; })}
                 </div>
@@ -829,7 +830,7 @@ export default function CMDetailPanel() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: T.red, marginBottom: 7 }}><I d={ICO.alertTriangle} /> Bloccati</div>
                 {Object.entries(nvBlocchi).map(([id, b]) => {
                   const v = vaniA.find(x => x.id === parseInt(id));
-                  return <div key={id} style={{ fontSize: 11, marginBottom: 4 }}><strong>{v?.nome}</strong>: {b.motivo || "çÂ"}{b.note && ` çÂ ${b.note}`}</div>;
+                  return <div key={id} style={{ fontSize: 11, marginBottom: 4 }}><strong>{v?.nome}</strong>: {b.motivo || "·"}{b.note && ` · ${b.note}`}</div>;
                 })}
               </div>
             )}
@@ -837,7 +838,7 @@ export default function CMDetailPanel() {
             <div style={{ ...S.card, padding: "10px 14px", marginBottom: 10, background: T.accLt, border: `1px solid ${T.acc}30` }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Tipo visita</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.acc }}>
-                {nvTipo === "rilievo" ? "¡ãÆ Rilievo misure" : nvTipo === "definitiva" ? "úá Misure definitive" : "¡ãÆÂ Modifica cantiere"}
+                {nvTipo === "rilievo" ? "¡ãÆ Rilievo misure" : nvTipo === "definitiva" ? "✓ Misure definitive" : "¡ãÆÂ Modifica cantiere"}
               </div>
               {nvTipo === "modifica" && nvMotivoModifica && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{nvMotivoModifica}</div>}
             </div>
@@ -859,9 +860,9 @@ export default function CMDetailPanel() {
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 14 }}>{tipoIcoRil}</span>
-              <div style={S.headerTitle}>{tipoLblRil} çÂ R{r?.n}</div>
+              <div style={S.headerTitle}>{tipoLblRil} · R{r?.n}</div>
             </div>
-            <div style={S.headerSub}>{c.code} ¼ {c.cliente} {c.cognome || ""} ¼ {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
+            <div style={S.headerSub}>{c.code} · {c.cliente} {c.cognome || ""} · {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
           </div>
           {vaniList.length > 0 && (
             <div style={{ textAlign: "right" }}>
@@ -891,7 +892,7 @@ export default function CMDetailPanel() {
               <div style={{ height: "100%", width: `${progVani}%`, background: progVani === 100 ? T.grn : tipoColRil, borderRadius: 3 }} />
             </div>
             {vaniDaFare.filter(v => !v.note?.startsWith("í")).length > 0 && <div style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Mancano misure: {vaniDaFare.filter(v => !v.note?.startsWith("í")).map(v => v.nome).join(", ")}</div>}
-            {tutteMis && <div style={{ fontSize: 11, color: T.grn, fontWeight: 600 }}>úá Tutte le misure raccolte</div>}
+            {tutteMis && <div style={{ fontSize: 11, color: T.grn, fontWeight: 600 }}>✓ Tutte le misure raccolte</div>}
           </div>
         )}
 
@@ -901,14 +902,14 @@ export default function CMDetailPanel() {
           {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>¡ãÆÑ Nuova</span>}
           {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
           {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
-          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>¡ãÆ¼ú {c.mezzoSalita}</span>}
+          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>¡ãÆ·ú {c.mezzoSalita}</span>}
           {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
           {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
           {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}><I d={ICO.phone} /> {c.telefono}</span>}
         </div>
         {c.note && <div style={{ padding: "0 16px", marginBottom: 6 }}><div style={{ padding: "8px 12px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 12, color: T.sub, lineHeight: 1.4 }}><I d={ICO.fileText} /> {c.note}</div></div>}
 
-        {/* Centro Comando inline çÂ replaces old phase panels */}
+        {/* Centro Comando inline · replaces old phase panels */}
         {(() => {
           const vaniCC = getVaniAttivi(c);
           const rilieviCC = c.rilievi || [];
@@ -938,11 +939,11 @@ export default function CMDetailPanel() {
           const stepsCC = [
             { id: "sopralluogo", icon: "¡ãÆ", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
             { id: "preventivo",  icon: "¡ãÆåæ", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
-            { id: "conferma",    icon: "ú¼®à",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
-            { id: "ordini",      icon: "¡ãÆ¬", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
+            { id: "conferma",    icon: "ú·€à",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
+            { id: "ordini",      icon: "📦", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
             { id: "produzione",  icon: "¡ãÆàí", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
             { id: "posa",        icon: "¡ãÆÂ", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
-            { id: "collaudo",    icon: "úá", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
+            { id: "collaudo",    icon: "✓", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
             { id: "chiusura",    icon: "¡ãÆåé", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
           ];
           const doneCC = stepsCC.filter(s => s.done).length;
@@ -980,7 +981,7 @@ export default function CMDetailPanel() {
                     <span style={{ fontSize: 10, fontWeight: 700, color: T.acc }}>{doneCC}/{stepsCC.length}</span>
                     {hasFattCC && (
                       <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: tuttoCC ? "#1A9E7320" : "#D0800820", color: tuttoCC ? "#1A9E73" : "#D08008", marginLeft: 4 }}>
-                        {tuttoCC ? "úá Pagata" : "¡ãÆñ Fatt."}
+                        {tuttoCC ? "✓ Pagata" : "📋 Fatt."}
                       </span>
                     )}
                   </div>
@@ -996,7 +997,7 @@ export default function CMDetailPanel() {
                         return (
                           <div key={si} style={{ fontSize: 10, color: T.text, display: "flex", gap: 6, padding: "2px 0" }}>
                             <span style={{ color: "#ff9500", fontWeight: 700 }}>àí {stepInfo?.l || skip.fase}</span>
-                            <span style={{ color: T.sub, flex: 1 }}>{skip.motivo || "çÂ"}</span>
+                            <span style={{ color: T.sub, flex: 1 }}>{skip.motivo || "·"}</span>
                           </div>
                         );
                       })}
@@ -1010,26 +1011,26 @@ export default function CMDetailPanel() {
                         <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Vai al cantiere e prendi le misure dei vani</div>
                       ) : (
                         <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>
-                          {rilieviCC.length} rilievo ¼ {vaniCC.length} vani {vaniCC.length > 0 ? "çÂ aggiungi misure a tutti i vani" : "çÂ aggiungi i vani"}
+                          {rilieviCC.length} rilievo · {vaniCC.length} vani {vaniCC.length > 0 ? "· aggiungi misure a tutti i vani" : "· aggiungi i vani"}
                         </div>
                       )}
                       {vaniCC.length === 0 ? (
                         <button onClick={() => { /* scroll to rilievo section */ }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.mapPin} /> AVVIA SOPRALLUOGO</button>
                       ) : (
-                        <div style={{ fontSize: 12, color: T.grn, fontWeight: 700, textAlign: "center" }}>úá {vaniCC.length} vani misurati çÂ Vai al preventivo</div>
+                        <div style={{ fontSize: 12, color: T.grn, fontWeight: 700, textAlign: "center" }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
                     </div>
                   )}
 
-                  {/*  PREVENTIVO (CUORE çÂ LINK A WORKSPACE)  */}
+                  {/*  PREVENTIVO (CUORE · LINK A WORKSPACE)  */}
                   {curCC.id === "preventivo" && (
                     <div>
-                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>{vaniCC.length} vani ¼ {vaniConPrezzoCC.length} con prezzo</div>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>{vaniCC.length} vani · {vaniConPrezzoCC.length} con prezzo</div>
                       
                       {/* Totale rapido */}
                       <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", background: `${T.acc}10`, borderRadius: 8, marginBottom: 10 }}>
                         <span style={{ fontSize: 12, fontWeight: 700 }}>Totale + IVA {ivaPercCC}%</span>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>®{fmtCC(totIvaCC)}</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{fmtCC(totIvaCC)}</span>
                       </div>
 
                       {/* BOTTONE PRINCIPALE */}
@@ -1039,7 +1040,7 @@ export default function CMDetailPanel() {
                         <span onClick={() => {
                           setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                           setSelectedCM(prev => ({ ...prev, preventivoInviato: true }));
-                          setCcDone("úá Completato"); setTimeout(() => setCcDone(null), 3000);
+                          setCcDone("✓ Completato"); setTimeout(() => setCcDone(null), 3000);
                         }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gií inviato? Segna come completato</span>
                       </div>
                     </div>
@@ -1048,11 +1049,11 @@ export default function CMDetailPanel() {
                   {/*  CONFERMA (firma + fattura acconto)  */}
                   {curCC.id === "conferma" && (
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: ®{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: €{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
                       {hasFattCC && !fattCC.every(f => f.pagata) && (
                         <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#D0800815", border: "1px solid #D0800830", display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 13 }}>¡ãÆñ</span>
-                          <span style={{ fontSize: 11, color: "#D08008", fontWeight: 600 }}>Fattura acconto emessa çÂ verifica pagamento in Contabilití</span>
+                          <span style={{ fontSize: 13 }}>📋</span>
+                          <span style={{ fontSize: 11, color: "#D08008", fontWeight: 600 }}>Fattura acconto emessa · verifica pagamento in Contabilití</span>
                         </div>
                       )}
                       {firmaStep === 0 ? (
@@ -1129,8 +1130,8 @@ export default function CMDetailPanel() {
                             setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0], firmaDocumento: all, allegati: [...(cm.allegati || []), all] } : cm));
                             setSelectedCM(prev => ({ ...prev, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0] }));
                             setFirmaStep(0); setFirmaFileUrl(null); setFirmaFileName("");
-                            setCcDone("úá Firma registrata!"); setTimeout(() => setCcDone(null), 3000);
-                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CONFERMA FIRMA Ñå</button>
+                            setCcDone("✓ Firma registrata!"); setTimeout(() => setCcDone(null), 3000);
+                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA FIRMA Ñå</button>
                         </div>
                       )}
                     </div>
@@ -1139,7 +1140,7 @@ export default function CMDetailPanel() {
                   {/*  ORDINI  */}
                   {curCC.id === "ordini" && (
                     <div>
-                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani ¼ {c.sistema || "çÂ"}</div>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani · {c.sistema || "·"}</div>
                       <div style={{ background: T.bg, borderRadius: 8, padding: 8, marginBottom: 8, maxHeight: 120, overflow: "auto" }}>
                         {vaniCC.map((v, vi) => (
                           <div key={vi} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: vi < vaniCC.length - 1 ? `1px solid ${T.bdr}` : "none" }}>
@@ -1158,15 +1159,15 @@ export default function CMDetailPanel() {
                               </div>
                             ))}
                           </div>
-                          <button onClick={() => { setAccontoImporto(String(Math.round(totIvaCC * fattPerc / 100))); setShowAccontoModal(true); }} style={{ width: "100%", padding: 11, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.euro} /> Crea fattura ®{fmtCC(Math.round(totIvaCC * fattPerc / 100))}</button>
+                          <button onClick={() => { setAccontoImporto(String(Math.round(totIvaCC * fattPerc / 100))); setShowAccontoModal(true); }} style={{ width: "100%", padding: 11, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.euro} /> Crea fattura €{fmtCC(Math.round(totIvaCC * fattPerc / 100))}</button>
 
-                          {/* ÂçÂç MODAL IMPORTO ACCONTO ÂçÂç */}
+                          {/* Â·ç MODAL IMPORTO ACCONTO Â·ç */}
                           {showAccontoModal && (
                             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
                               <div style={{ background: T.card, borderRadius: 16, padding: 24, width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
                                 <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>Fattura {fattPerc === 100 ? "unica" : "acconto"}</div>
-                                <div style={{ fontSize: 12, color: T.sub, marginBottom: 16 }}>Totale commessa IVA incl.: <strong>®{fmtCC(totIvaCC)}</strong></div>
-                                <div style={{ fontSize: 11, color: T.sub, marginBottom: 6, fontWeight: 600 }}>Importo da fatturare (®)</div>
+                                <div style={{ fontSize: 12, color: T.sub, marginBottom: 16 }}>Totale commessa IVA incl.: <strong>€{fmtCC(totIvaCC)}</strong></div>
+                                <div style={{ fontSize: 11, color: T.sub, marginBottom: 6, fontWeight: 600 }}>Importo da fatturare (€)</div>
                                 <input
                                   type="number"
                                   value={accontoImporto}
@@ -1177,7 +1178,7 @@ export default function CMDetailPanel() {
                                 <div style={{ fontSize: 10, color: T.sub, marginBottom: 16 }}>
                                   {[30,40,50,60,100].map(p => (
                                     <span key={p} onClick={() => setAccontoImporto(String(Math.round(totIvaCC * p / 100)))} style={{ marginRight: 6, cursor: "pointer", color: T.acc, fontWeight: 700, textDecoration: "underline" }}>
-                                      {p === 100 ? "Tutto" : p + "%"} (®{fmtCC(Math.round(totIvaCC * p / 100))})
+                                      {p === 100 ? "Tutto" : p + "%"} (€{fmtCC(Math.round(totIvaCC * p / 100))})
                                     </span>
                                   ))}
                                 </div>
@@ -1188,9 +1189,9 @@ export default function CMDetailPanel() {
                                     if (!imp || imp <= 0) return;
                                     creaFattura(c, fattPerc === 100 ? "unica" : "acconto", imp);
                                     setShowAccontoModal(false);
-                                    setCcDone("úá Fattura creata!");
+                                    setCcDone("✓ Fattura creata!");
                                     setTimeout(() => setCcDone(null), 3000);
-                                  }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CREA FATTURA ®{fmtCC(parseFloat(accontoImporto) || 0)}</button>
+                                  }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CREA FATTURA €{fmtCC(parseFloat(accontoImporto) || 0)}</button>
                                 </div>
                               </div>
                             </div>
@@ -1199,17 +1200,17 @@ export default function CMDetailPanel() {
                       )}
                       <button onClick={() => setShowOrdinePreview(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.package} /> CREA ORDINE FORNITORE Ñå</button>
 
-                      {/* ÂçÂç MODAL ANTEPRIMA ORDINE FORNITORE ÂçÂç */}
+                      {/* Â·ç MODAL ANTEPRIMA ORDINE FORNITORE Â·ç */}
                       {showOrdinePreview && (() => {
                         const prevVani = getVaniAttivi(c);
                         const prevRighe = prevVani.map(v => {
-                          const tipLabel = TIPOLOGIE_RAPIDE.find((t: any) => t.code === v.tipo)?.label || v.tipo || "çÂ";
+                          const tipLabel = TIPOLOGIE_RAPIDE.find((t: any) => t.code === v.tipo)?.label || v.tipo || "·";
                           const m = v.misure || {};
                           const lmm = m.lCentro || 0, hmm = m.hCentro || 0;
                           const prezzo = calcolaVanoPrezzo(v, c);
                           return {
-                            desc: `${tipLabel} çÂ ${v.stanza || ""} ${v.piano || ""}`.trim(),
-                            misure: lmm > 0 && hmm > 0 ? `${lmm}${hmm}` : "da definire",
+                            desc: `${tipLabel} · ${v.stanza || ""} ${v.piano || ""}`.trim(),
+                            misure: lmm > 0 && hmm > 0 ? `${lmm}x${hmm} mm` : "da definire",
                             qta: v.pezzi || 1,
                             prezzoUnit: Math.round(prezzo * 100) / 100,
                             totale: Math.round(prezzo * (v.pezzi || 1) * 100) / 100,
@@ -1217,7 +1218,7 @@ export default function CMDetailPanel() {
                           };
                         });
                         const prevTot = prevRighe.reduce((s, r) => s + r.totale, 0);
-                        const prevTotIva = Math.round(prevTot * 1.22 * 100) / 100;
+                        const ivaPercOrd = (c.ivaPerc || 22) / 100; const prevTotIva = Math.round(prevTot * (1 + ivaPercOrd) * 100) / 100;
                         const fmtOrd = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2 }) : "0,00";
                         return (
                           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0" }}>
@@ -1226,7 +1227,7 @@ export default function CMDetailPanel() {
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                                 <div>
                                   <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>Anteprima Ordine Fornitore</div>
-                                  <div style={{ fontSize: 11, color: T.sub }}>Commessa {c.code} ¼ {c.cliente}</div>
+                                  <div style={{ fontSize: 11, color: T.sub }}>Commessa {c.code} · {c.cliente}</div>
                                 </div>
                                 <div onClick={() => setShowOrdinePreview(false)} style={{ width: 32, height: 32, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.sub }}>ú</div>
                               </div>
@@ -1234,7 +1235,7 @@ export default function CMDetailPanel() {
                               {/* Info fornitore */}
                               <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 12 }}>
                                 <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, marginBottom: 4, textTransform: "uppercase" as any, letterSpacing: 0.5 }}>Fornitore</div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{c.sistema?.split(" ")[0] || "çÂ"}</div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{c.sistema?.split(" ")[0] || "·"}</div>
                                 <div style={{ fontSize: 11, color: T.sub }}>Sistema: {c.sistema || "non specificato"}</div>
                               </div>
 
@@ -1249,12 +1250,12 @@ export default function CMDetailPanel() {
                                       <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{r.desc || `Vano ${ri + 1}`}</div>
                                         <div style={{ fontSize: 10, color: T.sub }}>
-                                          {r.misure} ¼ Qta: {r.qta}{r.colore ? ` ¼ ${r.colore}` : ""}
+                                          {r.misure} · Qta: {r.qta}{r.colore ? ` · ${r.colore}` : ""}
                                         </div>
                                       </div>
                                       <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 8 }}>
-                                        <div style={{ fontSize: 12, fontWeight: 800, color: T.acc }}>®{fmtOrd(r.totale)}</div>
-                                        {r.qta > 1 && <div style={{ fontSize: 9, color: T.sub }}>®{fmtOrd(r.prezzoUnit)} cad.</div>}
+                                        <div style={{ fontSize: 12, fontWeight: 800, color: T.acc }}>€{fmtOrd(r.totale)}</div>
+                                        {r.qta > 1 && <div style={{ fontSize: 9, color: T.sub }}>€{fmtOrd(r.prezzoUnit)} cad.</div>}
                                       </div>
                                     </div>
                                   </div>
@@ -1265,33 +1266,38 @@ export default function CMDetailPanel() {
                               <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 16 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
                                   <span style={{ color: T.sub }}>Imponibile</span>
-                                  <span style={{ fontWeight: 700, color: T.text }}>®{fmtOrd(prevTot)}</span>
+                                  <span style={{ fontWeight: 700, color: T.text }}>€{fmtOrd(prevTot)}</span>
                                 </div>
                                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                                  <span style={{ color: T.sub }}>IVA 22%</span>
-                                  <span style={{ fontWeight: 700, color: T.text }}>®{fmtOrd(Math.round((prevTotIva - prevTot) * 100) / 100)}</span>
+                                  <span style={{ color: T.sub }}>IVA {c.ivaPerc || 22}%</span>
+                                  <span style={{ fontWeight: 700, color: T.text }}>€{fmtOrd(Math.round((prevTotIva - prevTot) * 100) / 100)}</span>
                                 </div>
                                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, borderTop: `1px solid ${T.bdr}`, paddingTop: 6, marginTop: 4 }}>
                                   <span style={{ fontWeight: 700, color: T.text }}>Totale IVA incl.</span>
-                                  <span style={{ fontWeight: 900, color: T.acc }}>®{fmtOrd(prevTotIva)}</span>
+                                  <span style={{ fontWeight: 900, color: T.acc }}>€{fmtOrd(prevTotIva)}</span>
                                 </div>
                               </div>
 
                               {/* Avviso se vani senza prezzo */}
                               {prevRighe.some(r => r.prezzoUnit === 0) && (
                                 <div style={{ background: "#E8A02015", border: "1px solid #E8A02040", borderRadius: 8, padding: "8px 10px", marginBottom: 12, fontSize: 11, color: "#E8A020", fontWeight: 600 }}>
-                                  í®à Alcuni vani non hanno prezzo çÂ verranno inclusi come ®0,00
+                                  í€à Alcuni vani non hanno prezzo · verranno inclusi come €0,00
                                 </div>
                               )}
 
+                              {/* Note ordine */}
+                              <div style={{ marginBottom: 12 }}>
+                                <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, marginBottom: 4, textTransform: "uppercase" as any }}>Note per il fornitore</div>
+                                <textarea value={noteOrdine} onChange={e => setNoteOrdine(e.target.value)} placeholder="Consegna urgente, RAL, riferimento..." rows={2} style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.bg, color: T.text, fontSize: 11, resize: "none" as any, boxSizing: "border-box" as any, fontFamily: "inherit" }} />
+                              </div>
                               {/* Bottoni */}
                               <div style={{ display: "flex", gap: 8 }}>
                                 <button onClick={() => setShowOrdinePreview(false)} style={{ flex: 1, padding: 13, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                                 <button onClick={() => {
-                                  creaOrdineFornitore(c, c.sistema?.split(" ")[0] || "");
+                                  creaOrdineFornitore(c, c.sistema?.split(" ")[0] || "", noteOrdine || ""); setNoteOrdine("");
                                   setSelectedCM((prev: any) => ({ ...prev }));
                                   setShowOrdinePreview(false);
-                                  setCcDone("úá Ordine creato!");
+                                  setCcDone("✓ Ordine creato!");
                                   setTimeout(() => setCcDone(null), 3000);
                                 }} style={{ flex: 2, padding: 13, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                   <I d={ICO.package} /> CONFERMA E CREA ORDINE
@@ -1313,7 +1319,7 @@ export default function CMDetailPanel() {
                             <div key={oi} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0" }}>
                               <span style={{ fontWeight: 600 }}>{typeof o.fornitore === "object" ? (o.fornitore?.nome || "Fornitore") : (o.fornitore || "Fornitore")}</span>
                               <span style={{ color: o.conferma?.ricevuta ? T.grn : T.orange, fontWeight: 700 }}>
-                                {o.conferma?.firmata ? "úá Confermato" : o.conferma?.ricevuta ? "¡ãÆñ Conferma ricevuta" : "¡ãÆ In attesa"}
+                                {o.conferma?.firmata ? "✓ Confermato" : o.conferma?.ricevuta ? "📋 Conferma ricevuta" : "¡ãÆ In attesa"}
                               </span>
                             </div>
                           ))}
@@ -1322,13 +1328,13 @@ export default function CMDetailPanel() {
                       {!ordConfCC ? (
                         <button onClick={() => apriInboxDocumento(c.id, "conferma")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#af52de", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.download} /> CARICA CONFERMA FORNITORE Ñå</button>
                       ) : ccConfirm !== "conferma_ok" ? (
-                        <button onClick={() => setCcConfirm("conferma_ok")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá APPROVA E AVVIA PRODUZIONE Ñå</button>
+                        <button onClick={() => setCcConfirm("conferma_ok")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ APPROVA E AVVIA PRODUZIONE Ñå</button>
                       ) : (
                         <div style={{ background: "#34c75912", borderRadius: 10, padding: 12, border: "1px solid #34c75930" }}>
                           <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759", marginBottom: 4 }}>Confermi avvio produzione?</div>
                           <div style={{ display: "flex", gap: 8 }}>
                             <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                            <button onClick={() => { setOrdiniFornDB(prev => prev.map(o => o.cmId === c.id ? { ...o, conferma: { ...o.conferma, firmata: true } } : o)); setCcConfirm(null); setCcDone("úá Produzione avviata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CONFERMO</button>
+                            <button onClick={() => { setOrdiniFornDB(prev => prev.map(o => o.cmId === c.id ? { ...o, conferma: { ...o.conferma, firmata: true } } : o)); setCcConfirm(null); setCcDone("✓ Produzione avviata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO</button>
                           </div>
                         </div>
                       )}
@@ -1340,14 +1346,14 @@ export default function CMDetailPanel() {
                     <div>
                       {!montFormOpen ? (
                         <div>
-                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani ¼ {c.indirizzo || "çÂ"}</div>
+                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani · {c.indirizzo || "·"}</div>
                           <button onClick={() => { setMontFormOpen(true); setMontGiorni(1); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: squadreDB[0]?.id || "", note: "" }); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.wrench} /> PIANIFICA MONTAGGIO Ñå</button>
                         </div>
                       ) : (
                         <div style={{ background: T.bg, borderRadius: 10, padding: 10, border: `1px solid ${T.bdr}` }}>
                           <input type="date" value={montFormData.data} onChange={e => { setMontFormData(p => ({ ...p, data: e.target.value })); setWorkWeekend(null); }} style={{ width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, marginBottom: 6 }} />
 
-                          {/* Mini calendario squadre çÂ 3 settimane + anteprima */}
+                          {/* Mini calendario squadre · 3 settimane + anteprima */}
                           {(() => {
                             const selDate = montFormData.data ? new Date(montFormData.data + 'T12:00:00') : new Date();
                             const todayISO = new Date().toISOString().split('T')[0];
@@ -1467,7 +1473,7 @@ export default function CMDetailPanel() {
                                     <div style={{ margin: '4px 8px 6px', padding: '8px 10px', borderRadius: 8, background: '#FF9F0A18', border: '1px solid #FF9F0A60' }}>
                                       <div style={{ fontSize: 11, fontWeight: 700, color: '#FF9F0A', marginBottom: 6 }}>¡ãÆ Il periodo include sabato/domenica. Lavori anche nel weekend?</div>
                                       <div style={{ display: 'flex', gap: 6 }}>
-                                        <button onClick={() => setWorkWeekend(true)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: 'none', background: '#FF9F0A', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>úá S, lavoro</button>
+                                        <button onClick={() => setWorkWeekend(true)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: 'none', background: '#FF9F0A', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✓ S, lavoro</button>
                                         <button onClick={() => setWorkWeekend(false)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: '1px solid #FF9F0A60', background: 'transparent', color: '#FF9F0A', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>No, solo feriali</button>
                                       </div>
                                     </div>
@@ -1482,7 +1488,7 @@ export default function CMDetailPanel() {
                             </select>
                             <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
                               <button onClick={() => setMontGiorni(Math.max(0.5, montGiorni - 0.5))} style={{ width: 32, height: 38, border: `1px solid ${T.bdr}`, borderRadius: "8px 0 0 8px", background: T.card, fontSize: 16, cursor: "pointer" }}>¬å</button>
-                              <div style={{ flex: 1, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderTop: `1px solid ${T.bdr}`, borderBottom: `1px solid ${T.bdr}`, fontSize: 14, fontWeight: 800 }}>{montGiorni === 0.5 ? "¼ó" : montGiorni}g</div>
+                              <div style={{ flex: 1, height: 38, display: "flex", alignItems: "center", justifyContent: "center", borderTop: `1px solid ${T.bdr}`, borderBottom: `1px solid ${T.bdr}`, fontSize: 14, fontWeight: 800 }}>{montGiorni === 0.5 ? "·ó" : montGiorni}g</div>
                               <button onClick={() => setMontGiorni(montGiorni + 0.5)} style={{ width: 32, height: 38, border: `1px solid ${T.bdr}`, borderRadius: "0 8px 8px 0", background: T.card, fontSize: 16, cursor: "pointer" }}>+</button>
                             </div>
                           </div>
@@ -1497,8 +1503,8 @@ export default function CMDetailPanel() {
                               setMontaggiDB(prev => [...prev, nuovoM]);
                               setEvents(prev => [...prev, { id: "ev_m_" + Date.now(), date: montFormData.data, time: montFormData.orario, text: `¡ãÆÂ Montaggio ${c.cliente} (${montGiorni}g)`, tipo: "montaggio", persona: c.cliente, cm: c.code, addr: c.indirizzo || "", done: false }]);
                               setMontFormOpen(false);
-                              setCcDone("úá Montaggio pianificato!"); setTimeout(() => setCcDone(null), 3000);
-                            }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CONFERMA</button>
+                              setCcDone("✓ Montaggio pianificato!"); setTimeout(() => setCcDone(null), 3000);
+                            }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA</button>
                           </div>
                         </div>
                       )}
@@ -1512,7 +1518,7 @@ export default function CMDetailPanel() {
                       <button onClick={() => {
                         setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, collaudoOk: true, dataCollaudo: new Date().toISOString().split("T")[0] } : cm));
                         setSelectedCM(prev => ({ ...prev, collaudoOk: true, dataCollaudo: new Date().toISOString().split("T")[0] }));
-                        setCcDone("úá Collaudo completato!"); setTimeout(() => setCcDone(null), 3000);
+                        setCcDone("✓ Collaudo completato!"); setTimeout(() => setCcDone(null), 3000);
                       }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#5856d6", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.search} /> SEGNA COLLAUDO OK Ñå</button>
                     </div>
                   )}
@@ -1525,34 +1531,34 @@ export default function CMDetailPanel() {
                     return (
                     <div>
                       <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>
-                        Incassato ®{fmtCC(incassatoCC)} su ®{fmtCC(totIvaCC)} {restoCC > 0 ? `¼ Resta ®${fmtCC(restoCC)}` : "¼ úá Tutto incassato"}
+                        Incassato €{fmtCC(incassatoCC)} su €{fmtCC(totIvaCC)} {restoCC > 0 ? `· Resta €${fmtCC(restoCC)}` : "· ✓ Tutto incassato"}
                       </div>
                       {!saldoFatCC && restoCC > 0 && (
                         ccConfirm !== "saldo" ? (
-                          <button onClick={() => setCcConfirm("saldo")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.euro} /> FATTURA SALDO ®{fmtCC(restoCC)} Ñå</button>
+                          <button onClick={() => setCcConfirm("saldo")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.euro} /> FATTURA SALDO €{fmtCC(restoCC)} Ñå</button>
                         ) : (
                           <div style={{ background: T.acc + "10", borderRadius: 10, padding: 12, border: `1px solid ${T.acc}30` }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: T.acc, marginBottom: 4 }}>Fattura saldo ®{fmtCC(restoCC)}</div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: T.acc, marginBottom: 4 }}>Fattura saldo €{fmtCC(restoCC)}</div>
                             <div style={{ display: "flex", gap: 8 }}>
                               <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                              <button onClick={() => { creaFattura(c, restoCC === totIvaCC ? "unica" : "saldo"); setCcConfirm(null); setCcDone("úá Fattura saldo creata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CREA FATTURA</button>
+                              <button onClick={() => { creaFattura(c, restoCC === totIvaCC ? "unica" : "saldo"); setCcConfirm(null); setCcDone("✓ Fattura saldo creata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CREA FATTURA</button>
                             </div>
                           </div>
                         )
                       )}
                       {saldoFatCC && !saldoPagatoCC && (
                         ccConfirm !== "pagata" ? (
-                          <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá SEGNA PAGATA ®{fmtCC(restoCC)} Ñå</button>
+                          <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ SEGNA PAGATA €{fmtCC(restoCC)} Ñå</button>
                         ) : (
                           <div style={{ background: "#34c75912", borderRadius: 10, padding: 12, border: "1px solid #34c75930" }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759", marginBottom: 4 }}>Conferma pagamento ®{fmtCC(restoCC)}</div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759", marginBottom: 4 }}>Conferma pagamento €{fmtCC(restoCC)}</div>
                             <div style={{ display: "flex", gap: 8 }}>
                               <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                               <button onClick={() => {
                                 setFattureDB(prev => prev.map(f => f.cmId === c.id && !f.pagata ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: "Bonifico" } : f));
                                 setFaseTo(c.id, "chiusura");
                                 setCcConfirm(null); setCcDone("ú Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000);
-                              }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CONFERMO INCASSO</button>
+                              }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO INCASSO</button>
                             </div>
                           </div>
                         )
@@ -1575,10 +1581,10 @@ export default function CMDetailPanel() {
                             setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: [...(cm.skipLog || []), { fase: curCC.id, motivo: skipNote, quando: new Date().toISOString() }] } : cm));
                             const nextStep = stepsCC[skipIdx + 1];
                             if (nextStep) setFaseTo(c.id, nextStep.id);
-                            setCcDone(`àí®à ${curCC.l} saltato`); setTimeout(() => setCcDone(null), 3000);
+                            setCcDone(`àí€à ${curCC.l} saltato`); setTimeout(() => setCcDone(null), 3000);
                           }
                         }
-                      }} style={{ fontSize: 10, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>àí®à Salta questo passaggio</span>
+                      }} style={{ fontSize: 10, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>àí€à Salta questo passaggio</span>
                     </div>
                   )}
                 </div>
@@ -1587,7 +1593,7 @@ export default function CMDetailPanel() {
               {totPrevCC > 0 && (
                 <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", padding: "8px 12px", background: T.card, borderRadius: 8, border: `1px solid ${T.bdr}` }}>
                   <span style={{ fontSize: 12, fontWeight: 700 }}>Totale IVA incl.</span>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>®{fmtCC(totIvaCC)}</span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{fmtCC(totIvaCC)}</span>
                 </div>
               )}
             </div>
@@ -1611,7 +1617,7 @@ export default function CMDetailPanel() {
         {/* == TAB: vani / visite / info == */}
         <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
           {[
-            {k:"sopralluoghi",l:`¡ãÆ¼ãÆ Vani (${vaniList.length})`},
+            {k:"sopralluoghi",l:`¡ãÆ·ãÆ Vani (${vaniList.length})`},
             {k:"visite",l:`¡ãÆ Visite (${(c.rilievi||[]).length})`},
             {k:"info",l:"ñú Info"},
           ].map(t => (
@@ -1633,8 +1639,8 @@ export default function CMDetailPanel() {
               border: `1px solid ${c.firmaCliente ? "#34c75930" : "#ff950030"}`,
             }}>
               {c.firmaCliente
-                ? "úá Misure definitive çÂ cliente ha firmato"
-                : `í Misure indicative çÂ ${(c.rilievi||[]).length} ${(c.rilievi||[]).length === 1 ? "visita" : "visite"} effettuate`}
+                ? "✓ Misure definitive · cliente ha firmato"
+                : `í Misure indicative · ${(c.rilievi||[]).length} ${(c.rilievi||[]).length === 1 ? "visita" : "visite"} effettuate`}
             </div>
 
             {/* Timeline visite */}
@@ -1668,14 +1674,14 @@ export default function CMDetailPanel() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
-                        {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" }) : "çÂ"}
+                        {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" }) : "·"}
                       </span>
                       {ril.ora && <span style={{ fontSize: 11, color: T.sub }}>ore {ril.ora}</span>}
                       {isLast && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: tipoCol, color: "#fff" }}>ATTUALE</span>}
                       {ril.tipo === "modifica" && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: "#ff9500", color: "#fff" }}>MODIFICA</span>}
                     </div>
                     <div style={{ fontSize: 11, color: T.sub }}>
-                      ¡ãÆª {ril.rilevatore || "çÂ"} ¼ ¡ãÆ¼ãÆ {nVani} vani ¼ {nMisurati === nVani && nVani > 0 ? "úá tutte le misure" : `${nMisurati}/${nVani} misurati`}
+                      ¡ãÆª {ril.rilevatore || "·"} · ¡ãÆ·ãÆ {nVani} vani · {nMisurati === nVani && nVani > 0 ? "✓ tutte le misure" : `${nMisurati}/${nVani} misurati`}
                     </div>
                     {ril.motivoModifica && <div style={{ fontSize: 11, color: "#ff9500", marginTop: 2 }}><I d={ICO.wrench} /> {ril.motivoModifica}</div>}
                     {ril.note && <div style={{ fontSize: 11, color: T.sub, marginTop: 2, fontStyle: "italic" }}>"{ril.note}"</div>}
@@ -1721,7 +1727,7 @@ export default function CMDetailPanel() {
               <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 10, background: "#5856d610", border: "1.5px solid #5856d630", display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 18 }}><I d={ICO.lock} /></span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#5856d6" }}>Rilievo storico R{r?.n} çÂ sola lettura</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#5856d6" }}>Rilievo storico R{r?.n} · sola lettura</div>
                   <div style={{ fontSize: 10, color: T.sub }}>Questo rilievo  archiviato. Solo l'ultimo rilievo (R{lastRilievo?.n})  modificabile.</div>
                 </div>
                 <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{ padding: "6px 12px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
@@ -1779,13 +1785,13 @@ export default function CMDetailPanel() {
                             color: haProblema ? T.red : T.sub,
                             border: `1px solid ${haProblema ? T.red+"40" : T.bdr}`
                           }}>
-                            R{rIdx + 1} ¼ {ril.data || ril.dataRilievo || "çÂ"}
+                            R{rIdx + 1} · {ril.data || ril.dataRilievo || "·"}
                             {haProblema && " <I d={ICO.alertTriangle} />"}
                           </span>
                         );
                       })()}
                     </div>
-                    <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} ¼ {v.stanza} ¼ {v.piano}</div>
+                    <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} · {v.stanza} · {v.piano}</div>
                     {bloccato && <div style={{ fontSize: 11, color: T.red, marginTop: 2 }}>{v.note?.replace("í BLOCCATO: ","")}</div>}
                   </div>
                   <div style={{ textAlign: "right", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
@@ -1798,7 +1804,7 @@ export default function CMDetailPanel() {
                     {bloccato
                       ? <span style={S.badge(T.redLt, T.red)}><I d={ICO.alertTriangle} /> Bloccato</span>
                       : completo
-                      ? <span style={S.badge(T.grnLt, T.grn)}>úá {nMisure} mis.</span>
+                      ? <span style={S.badge(T.grnLt, T.grn)}>✓ {nMisure} mis.</span>
                       : <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.alertTriangle} /> {nMisure} mis.</span>}
                   </div>
                   <span style={{ color: T.sub, fontSize: 14 }}>çæ</span>
@@ -1841,15 +1847,15 @@ export default function CMDetailPanel() {
                 <div key={v.id} style={{ ...S.card, marginBottom: 8 }}>
                   <div style={{ padding: "11px 14px", display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: mis ? T.grnLt : blk ? T.redLt : T.bdr, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                      {mis ? "úá" : blk ? "í" : "¡ãÆ"}
+                      {mis ? "✓" : blk ? "í" : "¡ãÆ"}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                         <div style={{ fontSize: 14, fontWeight: 700 }}>{v.nome}</div>
-                        <span style={{ fontSize: 10, color: T.sub }}>~{v.mq}mÔö¼Ôûô</span>
+                        <span style={{ fontSize: 10, color: T.sub }}>~{v.mq}mÔö·Ôûô</span>
                       </div>
-                      {mis && daV && <div style={{ fontSize: 11, color: T.sub }}>{daV.n}¼¼ visita ¼ {new Date(daV.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</div>}
-                      {!mis && blk && <div style={{ fontSize: 11, color: T.red }}>{blk.motivo}{blk.note && <span style={{ color: T.sub }}> çÂ {blk.note}</span>}</div>}
+                      {mis && daV && <div style={{ fontSize: 11, color: T.sub }}>{daV.n}·· visita · {new Date(daV.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</div>}
+                      {!mis && blk && <div style={{ fontSize: 11, color: T.red }}>{blk.motivo}{blk.note && <span style={{ color: T.sub }}> · {blk.note}</span>}</div>}
                       {!mis && !blk && <div style={{ fontSize: 11, color: T.sub }}>Non ancora visitato</div>}
                     </div>
                     {!mis && <span style={{ ...S.badge(T.redLt, T.red), flexShrink: 0, fontSize: 9 }}>DA FARE</span>}
@@ -1867,9 +1873,9 @@ export default function CMDetailPanel() {
             <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>Dettagli Rilievo</div>
             {[
               ["Tipo",       tipoLblRil],
-              ["Data",       r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long", year:"numeric" }) : "çÂ"],
-              ["Ora",        r?.ora || "çÂ"],
-              ["Rilevatore", r?.rilevatore || "çÂ"],
+              ["Data",       r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long", year:"numeric" }) : "·"],
+              ["Ora",        r?.ora || "·"],
+              ["Rilevatore", r?.rilevatore || "·"],
               ["N. vani",    `${vaniList.length} vani`],
               ["Avanzamento",`${progVani}% (${vaniMisurati.length}/${vaniList.length})`],
               ...(r?.motivoModifica ? [["Motivo", r.motivoModifica]] : []),
@@ -1885,9 +1891,9 @@ export default function CMDetailPanel() {
               ["Cliente",   `${c.cliente} ${c.cognome || ""}`],
               ["Codice",    c.code],
               ["Indirizzo", c.indirizzo],
-              ["Telefono",  c.telefono || "çÂ"],
-              ["Sistema",   c.sistema || "çÂ"],
-              ...(c.euro ? [["Importo", `®${c.euro.toLocaleString("it-IT")}`]] : []),
+              ["Telefono",  c.telefono || "·"],
+              ["Sistema",   c.sistema || "·"],
+              ...(c.euro ? [["Importo", `€${c.euro.toLocaleString("it-IT")}`]] : []),
               ["Rilievi",   `${(c.rilievi||[]).length} totali`],
             ].map(([k, v]) => (
               <div key={k} style={{ ...S.card, padding: "11px 14px", marginBottom: 6, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
@@ -1938,15 +1944,15 @@ export default function CMDetailPanel() {
               {(c.allegati || []).map(a => (
                 <div key={a.id} style={{ borderBottom: `1px solid ${T.bg}` }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px" }}>
-                    <span style={{ fontSize: 16 }}>{a.tipo === "nota" ? "¡ãÆñ" : a.tipo === "vocale" ? "¡ãÆä" : a.tipo === "video" ? "¡ãÆä" : a.tipo === "foto" ? "¡ãÆ" : "¡ãÆä"}</span>
+                    <span style={{ fontSize: 16 }}>{a.tipo === "nota" ? "📋" : a.tipo === "vocale" ? "¡ãÆä" : a.tipo === "video" ? "¡ãÆä" : a.tipo === "foto" ? "¡ãÆ" : "¡ãÆä"}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{a.nome}</div>
-                      <div style={{ fontSize: 10, color: T.sub }}>{a.data ? new Date(a.data+'T12:00:00').toLocaleDateString('it-IT') : a.data}{a.durata ? ` ¼ ${a.durata}` : ""}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>{a.data ? new Date(a.data+'T12:00:00').toLocaleDateString('it-IT') : a.data}{a.durata ? ` · ${a.durata}` : ""}</div>
                     </div>
                     {/* Audio: play inline */}
                     {a.tipo === "vocale" && (
                       <div onClick={() => playAllegato(a.id)} style={{ padding: "3px 8px", borderRadius: 6, background: playingId === a.id ? T.redLt : T.accLt, fontSize: 10, fontWeight: 600, color: playingId === a.id ? T.red : T.acc, cursor: "pointer" }}>
-                        {playingId === a.id ? "à® Stop" : "é Play"}
+                        {playingId === a.id ? "à€ Stop" : "é Play"}
                       </div>
                     )}
                     {/* Video: open/close inline player */}
@@ -2039,7 +2045,7 @@ export default function CMDetailPanel() {
 
         {/* Elimina */}
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          {c.fase === "chiusura" && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>úá Commessa chiusa</div>}
+          {c.fase === "chiusura" && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>✓ Commessa chiusa</div>}
           <span onClick={() => deleteCommessa(c.id)} style={{ fontSize: 11, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>Elimina commessa</span>
         </div>
 
@@ -2064,7 +2070,7 @@ export default function CMDetailPanel() {
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #2D7A6B, #1A9E73)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginRight: 10 }}>¡ãÆ</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>Fascicolo Geometra</div>
-                  <div style={{ fontSize: 11, color: T.sub }}>{(getVaniAttivi(c) || []).length} vani ¼ {c.code || c.id}</div>
+                  <div style={{ fontSize: 11, color: T.sub }}>{(getVaniAttivi(c) || []).length} vani · {c.code || c.id}</div>
                 </div>
                 <div onClick={() => setShowFascicoloModal(false)} style={{ fontSize: 20, color: T.sub, cursor: "pointer", padding: "0 4px" }}>ú</div>
               </div>
@@ -2072,7 +2078,7 @@ export default function CMDetailPanel() {
               {/* Stato generazione */}
               {fascicoloStep === "generato" && fascicoloLink && (
                 <div style={{ background: "#E8F5E9", borderRadius: 12, padding: "12px 14px", marginBottom: 14, border: "1px solid #A5D6A7" }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#2E7D32", marginBottom: 6 }}>úá Fascicolo generato!</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#2E7D32", marginBottom: 6 }}>✓ Fascicolo generato!</div>
                   <div style={{ fontSize: 11, color: "#388E3C", wordBreak: "break-all" as const, marginBottom: 8 }}>{fascicoloLink}</div>
                   <div style={{ display: "flex", gap: 6 }}>
                     <button onClick={() => {
@@ -2138,7 +2144,7 @@ export default function CMDetailPanel() {
                   }}
                   style={{ width: "100%", padding: 14, borderRadius: 12, border: `1.5px solid ${T.teal}`, background: `${T.teal}10`, color: T.teal, fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
-                  ¡ãÆñ Scarica PDF Fascicolo
+                  📋 Scarica PDF Fascicolo
                 </button>
 
                 {/* Scarica Excel ENEA */}
@@ -2166,7 +2172,7 @@ export default function CMDetailPanel() {
                       <div key={fs.token} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: T.card, borderRadius: 10, marginBottom: 6, border: `1px solid ${T.bdr}`, opacity: scaduto ? 0.5 : 1 }}>
                         <span style={{ fontSize: 12 }}>{scaduto ? "¡ãÆÂå" : "¡ãÆÂ"}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, color: T.sub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{new Date(fs.created_at).toLocaleDateString("it-IT")} ¼ {fs.view_count || 0} visualizzazioni</div>
+                          <div style={{ fontSize: 11, color: T.sub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{new Date(fs.created_at).toLocaleDateString("it-IT")} · {fs.view_count || 0} visualizzazioni</div>
                           <div style={{ fontSize: 10, color: scaduto ? T.red : T.green }}>{scaduto ? "Scaduto" : `Valido fino al ${new Date(fs.expires_at).toLocaleDateString("it-IT")}`}</div>
                         </div>
                         {!scaduto && (
