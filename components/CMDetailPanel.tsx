@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 // 
-// MASTRO ERP öçÂ CMDetailPanel
+// MASTRO ERP çÂ CMDetailPanel
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
 import React, { useState } from "react";
@@ -63,7 +63,7 @@ export default function CMDetailPanel() {
   } = useMastro();
 
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
-    const [workWeekend, setWorkWeekend] = useState<boolean | null>(null); // null=non chiesto, true=sÔö , false=no
+    const [workWeekend, setWorkWeekend] = useState<boolean | null>(null); // null=non chiesto, true=s, false=no
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [accontoImporto, setAccontoImporto] = useState<string>("");
     const [showOrdinePreview, setShowOrdinePreview] = useState(false);
@@ -78,7 +78,7 @@ export default function CMDetailPanel() {
 
     if (!selectedCM) return null;
 
-  // öÂçöÂç CAD DRAW FULLSCREEN öÂçöÂç
+  // ÂçÂç CAD DRAW FULLSCREEN ÂçÂç
   if (showCadDraw) {
     return (
       <MastroCAD
@@ -112,18 +112,18 @@ export default function CMDetailPanel() {
     const c = selectedCM;
     const r = selectedRilievo; // rilievo corrente
     const fase = PIPELINE.find(p => p.id === c.fase);
-    // READ-ONLY: solo l'ultimo rilievo   modificabile 
+    //  READ-ONLY: solo l'ultimo rilievo  modificabile 
     const lastRilievo = (c.rilievi || []).length > 0 ? c.rilievi[c.rilievi.length - 1] : null;
     const isLastRilievo = !r || !lastRilievo || r.id === lastRilievo.id;
     const isStorico = r && !isLastRilievo;
 
-    // PREVENTIVO WORKSPACE CONSTANTS 
+    //  PREVENTIVO WORKSPACE CONSTANTS 
     const CONTROT_OPT = ["Nessuno", "Standard", "Monoblocco", "Monoblocco coibentato", "Monoblocco Termico"];
     const CASS_OPT = ["", "Standard", "Coibentato", "Monoblocco", "Monoblocco Termico"];
     const COPRIFILO_OPT = ["", "PVC 40mm", "PVC 60mm", "PVC 70mm", "Alluminio 40mm", "Alluminio 60mm", "Alluminio 70mm", "Alluminio 90mm"];
     const SOGLIA_OPT = ["", "Standard", "Ribassata", "A filo pavimento", "Alluminio", "Marmo"];
     const DAVANZALE_OPT = ["", "Alluminio 150mm", "Alluminio 200mm", "Alluminio 250mm", "Alluminio 300mm", "Alluminio 350mm", "Marmo", "Pietra"];
-    const ZANZ_TIPO = ["Laterale", "Verticale", "Pliss£«", "A rullo"];
+    const ZANZ_TIPO = ["Laterale", "Verticale", "Pliss«", "A rullo"];
     const PERS_TIPO = ["Alluminio", "PVC", "Legno", "Blindata"];
     const TAPP_TIPO = ["PVC", "Alluminio coibentato", "Alluminio", "Acciaio"];
     const DETRAZIONI_OPT = [
@@ -134,7 +134,7 @@ export default function CMDetailPanel() {
     ];
     const TIPI_VANO = ["F1A","F2A","F3A","PF1A","PF2A","PF3A","VAS","FISSO","SC2A","SC3A","PORTA","SCOR","BOX"];
 
-    // PREVENTIVO WORKSPACE VIEW 
+    //  PREVENTIVO WORKSPACE VIEW 
     if (prevWorkspace) {
       const pwVani = getVaniAttivi(c);
       const pwRilievi = c.rilievi || [];
@@ -225,7 +225,7 @@ export default function CMDetailPanel() {
 
           <div style={{ paddingTop: 12 }}>
 
-          {/* TAB SOPRALLUOGO (REPORT + DIFF) */}
+          {/*  TAB SOPRALLUOGO (REPORT + DIFF)  */}
           {prevTab === "sopralluogo" && (
             <div style={{ padding: "0 12px 20px" }}>
               <div style={{ padding: 14, background: `${T.blue}10`, borderRadius: 12, marginBottom: 14, border: `1px solid ${T.blue}20` }}>
@@ -241,7 +241,7 @@ export default function CMDetailPanel() {
                   { l: "Vani", v: pwVani.length, col: T.acc },
                   { l: "Pezzi", v: pwVani.reduce((s, v) => s + (v.pezzi || 1), 0), col: T.blue },
                   { l: "Foto", v: pwVani.reduce((s, v) => s + (Array.isArray(v.foto) ? v.foto.length : 0), 0), col: T.grn },
-                  { l: "£í®à", v: pwVani.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length < 6).length, col: T.red },
+                  { l: "í®à", v: pwVani.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length < 6).length, col: T.red },
                 ].map((st, i) => (
                   <div key={i} style={{ background: T.card, borderRadius: 10, padding: "10px 6px", textAlign: "center", border: `1px solid ${T.bdr}` }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: st.col }}>{st.v}</div>
@@ -267,7 +267,7 @@ export default function CMDetailPanel() {
                         </div>
                         <div style={{ fontSize: 10, color: T.sub }}>{v.tipo || "F2A"} ¼ {v.stanza || "çÂ"} ¼ {v.piano || "PT"} ¼ {v.pezzi || 1}pz</div>
                       </div>
-                      <span style={{ fontSize: 10, background: misOk ? `${T.grn}15` : `${T.red}15`, color: misOk ? T.grn : T.red, padding: "3px 8px", borderRadius: 6, fontWeight: 700, height: "fit-content" }}>{misOk ? `úá ${nMis}` : `£í®à ${nMis}/6`}</span>
+                      <span style={{ fontSize: 10, background: misOk ? `${T.grn}15` : `${T.red}15`, color: misOk ? T.grn : T.red, padding: "3px 8px", borderRadius: 6, fontWeight: 700, height: "fit-content" }}>{misOk ? `úá ${nMis}` : `í®à ${nMis}/6`}</span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, marginBottom: 8 }}>
                       {[{ l: "Larg.", val: lv }, { l: "Alt.", val: hv }, { l: "mq", val: ((lv * hv) / 1000000).toFixed(2) }].map((m, mi) => (
@@ -279,7 +279,7 @@ export default function CMDetailPanel() {
                     </div>
                     <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.8 }}>
                       <I d={ICO.building} /> {v.sistema || c.sistema || "çÂ"} ¼ <I d={ICO.palette} /> {v.colore || "Bianco"} ¼ <I d={ICO.grid} /> {v.vetro || "Standard"}
-                      {v.controtelaio && v.controtelaio !== "Nessuno" && ` ¼ ¡ãÆÂûô ${v.controtelaio}`}
+                      {v.controtelaio && v.controtelaio !== "Nessuno" && ` ¼ ¡ãÆÂô ${v.controtelaio}`}
                       {v.accessori?.tapparella?.attivo && ` ¼ Tapp. ${v.accessori.tapparella.tipo || ""}`}
                       {v.accessori?.persiana?.attivo && ` ¼ Pers. ${v.accessori.persiana.tipo || ""}`}
                       {v.accessori?.zanzariera?.attivo && ` ¼ Zanz. ${v.accessori.zanzariera.tipo || ""}`}
@@ -325,7 +325,7 @@ export default function CMDetailPanel() {
                       </div>
                     )}
 
-                    {/* Diff: se c'£una modifica, mostra differenze */}
+                    {/* Diff: se c' una modifica, mostra differenze */}
                     {v.parentId && (() => {
                       const orig = pwVani.find(vx => vx.id === v.parentId);
                       if (!orig) return null;
@@ -365,14 +365,14 @@ export default function CMDetailPanel() {
             </div>
           )}
 
-          {/* TAB PREVENTIVO (EDITOR) */}
+          {/*  TAB PREVENTIVO (EDITOR)  */}
           {prevTab === "preventivo" && (
             <div style={{ padding: "0 12px 20px" }}>
               <PreventivoConfiguratoreTab />
             </div>
           )}
 
-          {/* TAB RIEPILOGO */}
+          {/*  TAB RIEPILOGO  */}
           {prevTab === "riepilogo" && (
             <div style={{ padding: "0 12px 20px" }}>
               <div style={{ background: T.topbar || "#1A1A1C", borderRadius: 12, padding: 16, marginBottom: 12, color: "#fff" }}>
@@ -395,13 +395,13 @@ export default function CMDetailPanel() {
                       <span style={{ fontWeight: 700 }}>{v.nome || "Vano"}{v.parentId ? " <I d={ICO.refreshCw} />" : ""}</span>
                       <span style={{ fontWeight: 800, color: T.acc }}>®{pwFmt(pv)}</span>
                     </div>
-                    <div style={{ fontSize: 9, color: T.sub }}>{v.tipo} ¼ {lv}£{hv} ¼ {v.pezzi || 1}pz ¼ {v.colore || "B."} ¼ {v.vetro || "Std"}{v.controtelaio && v.controtelaio !== "Nessuno" ? ` ¼ CT: ${v.controtelaio}` : ""}{ac.tapparella?.attivo ? ` ¼ Tapp. ${ac.tapparella.tipo || ""}` : ""}{ac.persiana?.attivo ? ` ¼ Pers. ${ac.persiana.tipo || ""}` : ""}{ac.zanzariera?.attivo ? ` ¼ Zanz. ${ac.zanzariera.tipo || ""}` : ""}{v.coprifilo ? ` ¼ CF: ${v.coprifilo}` : ""}{v.soglia ? ` ¼ Soglia: ${v.soglia}` : ""}</div>
+                    <div style={{ fontSize: 9, color: T.sub }}>{v.tipo} ¼ {lv}{hv} ¼ {v.pezzi || 1}pz ¼ {v.colore || "B."} ¼ {v.vetro || "Std"}{v.controtelaio && v.controtelaio !== "Nessuno" ? ` ¼ CT: ${v.controtelaio}` : ""}{ac.tapparella?.attivo ? ` ¼ Tapp. ${ac.tapparella.tipo || ""}` : ""}{ac.persiana?.attivo ? ` ¼ Pers. ${ac.persiana.tipo || ""}` : ""}{ac.zanzariera?.attivo ? ` ¼ Zanz. ${ac.zanzariera.tipo || ""}` : ""}{v.coprifilo ? ` ¼ CF: ${v.coprifilo}` : ""}{v.soglia ? ` ¼ Soglia: ${v.soglia}` : ""}</div>
                   </div>
                 );
               })}
 
               {pwVociLibere.length > 0 && (<><div style={{ fontSize: 11, fontWeight: 800, marginTop: 12, marginBottom: 6 }}>LAVORI</div>
-                {pwVociLibere.map((vl, i) => (<div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.bdr}`, fontSize: 11 }}><span>{vl.desc} <span style={{ color: T.sub, fontSize: 9 }}>£{vl.qta || 1}</span></span><span style={{ fontWeight: 700 }}>®{pwFmt((vl.importo || 0) * (vl.qta || 1))}</span></div>))}</>)}
+                {pwVociLibere.map((vl, i) => (<div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${T.bdr}`, fontSize: 11 }}><span>{vl.desc} <span style={{ color: T.sub, fontSize: 9 }}>{vl.qta || 1}</span></span><span style={{ fontWeight: 700 }}>®{pwFmt((vl.importo || 0) * (vl.qta || 1))}</span></div>))}</>)}
 
               <div style={{ background: T.card, borderRadius: 12, padding: 14, marginTop: 14, border: `1px solid ${T.bdr}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}><span style={{ color: T.sub }}>Subtotale</span><span>®{pwFmt(pwSubtot)}</span></div>
@@ -441,14 +441,14 @@ export default function CMDetailPanel() {
                 updCM("preventivoInviato", true);
                 updCM("dataPreventivoInvio", new Date().toISOString().split("T")[0]);
                 if (url) updCM("linkPreventivo", url);
-                setCcDone("¡ãÆPDF scaricato + link firma inviato!"); setTimeout(() => setCcDone(null), 3000);
+                setCcDone("¡ãÆ PDF scaricato + link firma inviato!"); setTimeout(() => setCcDone(null), 3000);
               }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "#25d366", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA Ñå</button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Scarica PDF e apre WhatsApp con link firma elettronica</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
                 <span onClick={() => { updCM("preventivoInviato", true); setCcDone("úá Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>úá Segna completato</span>
               </div>
 
-              {/* FASCICOLO GEOMETRA */}
+              {/*  FASCICOLO GEOMETRA  */}
               <div style={{ marginTop: 16, borderTop: `1px solid ${T.bdr}`, paddingTop: 14 }}>
                 <button
                   onClick={async () => {
@@ -472,7 +472,7 @@ export default function CMDetailPanel() {
             </div>
           )}
 
-          {/* TAB IMPORTA (da competitor / documento) */}
+          {/*  TAB IMPORTA (da competitor / documento)  */}
           {prevTab === "cad" && (
             <div style={{ padding: 16 }}>
               <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: 20, textAlign: "center" }}>
@@ -490,7 +490,7 @@ export default function CMDetailPanel() {
                 {c.cadData && (
                   <div style={{ marginTop: 12, padding: "10px 14px", background: "#1A9E7312", borderRadius: 10, border: "1px solid #1A9E7330" }}>
                     <div style={{ fontSize: 11, color: "#1A9E73", fontWeight: 700 }}>
-                      ú{c.cadData.oggetti?.length || 0} elementi disegnati
+                      ú {c.cadData.oggetti?.length || 0} elementi disegnati
                     </div>
                   </div>
                 )}
@@ -502,7 +502,7 @@ export default function CMDetailPanel() {
             <div style={{ padding: "0 12px 20px" }}>
               <div style={{ padding: 16, background: `${T.blue}08`, borderRadius: 12, marginBottom: 12, border: `1px solid ${T.blue}20` }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: T.blue, marginBottom: 4 }}><I d={ICO.download} /> Importa preventivo competitor</div>
-                <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.6 }}>Scansiona o carica il preventivo di un competitor. MASTRO rilever£í automaticamente misure, colori, tipologie, coprifili e creer£í un preventivo da rivedere.</div>
+                <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.6 }}>Scansiona o carica il preventivo di un competitor. MASTRO rileverí automaticamente misure, colori, tipologie, coprifili e creerí un preventivo da rivedere.</div>
               </div>
 
               {/* Upload options */}
@@ -525,10 +525,10 @@ export default function CMDetailPanel() {
                 <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.8 }}>
                   <div style={{ marginBottom: 6 }}>Dal documento competitor, MASTRO estrae:</div>
                   {[
-                    { icon: "¡ãÆ", t: "Misure", d: "Larghezza £altezza per ogni vano" },
+                    { icon: "¡ãÆ", t: "Misure", d: "Larghezza  altezza per ogni vano" },
                     { icon: "¡ãÆä", t: "Colori", d: "Bianco, Antracite, Rovere, ecc." },
-                    { icon: "¿ù", t: "Tipologie", d: "F2A, PF2A, Scorrevole, ecc." },
-                    { icon: "ù", t: "Controtelai", d: "Standard, Monoblocco" },
+                    { icon: "¿", t: "Tipologie", d: "F2A, PF2A, Scorrevole, ecc." },
+                    { icon: "", t: "Controtelai", d: "Standard, Monoblocco" },
                     { icon: "¡ãÆàí", t: "Accessori", d: "Tapparelle, persiane, zanzariere" },
                     { icon: "¡ãÆ¬", t: "Complementi", d: "Coprifili, soglie, davanzali" },
                     { icon: "®", t: "Prezzi competitor", d: "Per confronto (non importati)" },
@@ -607,7 +607,7 @@ export default function CMDetailPanel() {
 
     // Vani del rilievo corrente
     const vaniList = r?.vani || [];
-    // CompatibilitÔö í wizard vecchio
+    // Compatibilití wizard vecchio
     const viste = []; // non piÔö£Ôòú usato con nuova arch
     const vaniM: number[] = [];
     const vaniA = vaniList;
@@ -618,7 +618,7 @@ export default function CMDetailPanel() {
 
     // Calcolo avanzamento misure
     const vaniMisurati = vaniList.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length >= 6);
-    const vaniBloccati = vaniList.filter(v => v.note?.startsWith("£í BLOCCATO"));
+    const vaniBloccati = vaniList.filter(v => v.note?.startsWith("í BLOCCATO"));
     const vaniDaFare   = vaniList.filter(v => vaniMisurati.every(m => m.id !== v.id));
     const progVani = vaniList.length > 0 ? Math.round(vaniMisurati.length / vaniList.length * 100) : 0;
     const tutteMis = vaniMisurati.length === vaniList.length && vaniList.length > 0;
@@ -700,7 +700,7 @@ export default function CMDetailPanel() {
                   border: `2px solid ${nvTipo === t.k ? T.acc : T.bdr}`,
                   background: nvTipo === t.k ? T.acc : "transparent",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", fontSize: 12 }}>{nvTipo === t.k ? "✓" : ""}</div>
+                  color: "#fff", fontSize: 12 }}>{nvTipo === t.k ? "ú" : ""}</div>
               </div>
             ))}
             {nvTipo === "modifica" && (
@@ -729,7 +729,7 @@ export default function CMDetailPanel() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-              <button onClick={() => setNvStep(1)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>ÑIndietro</button>
+              <button onClick={() => setNvStep(1)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>Ñ Indietro</button>
               <button onClick={() => setNvStep(3)} style={{ ...S.btn, flex: 2 }}>Avanti Ñå</button>
             </div>
           </>}
@@ -738,7 +738,7 @@ export default function CMDetailPanel() {
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>úá Vani misurati</div>
             <div style={{ fontSize: 11, color: T.sub, marginBottom: 14 }}>Seleziona i vani che hai misurato</div>
             {vaniA.length === 0
-              ? <div style={{ textAlign: "center", padding: "20px", color: T.sub }}>Tutti gi£í misurati!</div>
+              ? <div style={{ textAlign: "center", padding: "20px", color: T.sub }}>Tutti gií misurati!</div>
               : vaniA.map(v => (
                 <div key={v.id} onClick={() => togV(v.id)} style={{
                   ...S.card, padding: "12px 14px", marginBottom: 8, cursor: "pointer",
@@ -755,13 +755,13 @@ export default function CMDetailPanel() {
                     background: nvVani.includes(v.id) ? T.grn : "transparent",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     color: "#fff", fontSize: 14 }}>
-                    {nvVani.includes(v.id) ? "✓" : ""}
+                    {nvVani.includes(v.id) ? "ú" : ""}
                   </div>
                 </div>
               ))
             }
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setNvStep(2)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>ÑIndietro</button>
+              <button onClick={() => setNvStep(2)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>Ñ Indietro</button>
               <button onClick={() => setNvStep(4)} style={{ ...S.btn, flex: 2 }}>Avanti Ñå</button>
             </div>
           </>}
@@ -779,7 +779,7 @@ export default function CMDetailPanel() {
                       <div style={{ fontSize: 11, color: T.sub }}>{hB ? "Indica motivo" : "Tocca per segnare bloccato"}</div>
                     </div>
                     <div style={{ width: 24, height: 24, borderRadius: 6, border: `2px solid ${hB ? T.red : T.bdr}`, background: hB ? T.red : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14 }}>
-                      {hB ? "✓" : ""}
+                      {hB ? "ú" : ""}
                     </div>
                   </div>
                   {hB && (
@@ -805,7 +805,7 @@ export default function CMDetailPanel() {
               <textarea style={{ ...S.input, minHeight: 70, resize: "vertical" }} placeholder="Osservazioni sull'intera visita..." value={nvNote} onChange={e => setNvNote(e.target.value)} />
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setNvStep(3)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>ÑIndietro</button>
+              <button onClick={() => setNvStep(3)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>Ñ Indietro</button>
               <button onClick={() => setNvStep(5)} style={{ ...S.btn, flex: 2 }}>Avanti Ñå</button>
             </div>
           </>}
@@ -837,13 +837,13 @@ export default function CMDetailPanel() {
             <div style={{ ...S.card, padding: "10px 14px", marginBottom: 10, background: T.accLt, border: `1px solid ${T.acc}30` }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Tipo visita</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.acc }}>
-                {nvTipo === "rilievo" ? "¡ãÆRilievo misure" : nvTipo === "definitiva" ? "úá Misure definitive" : "¡ãÆÂModifica cantiere"}
+                {nvTipo === "rilievo" ? "¡ãÆ Rilievo misure" : nvTipo === "definitiva" ? "úá Misure definitive" : "¡ãÆÂ Modifica cantiere"}
               </div>
               {nvTipo === "modifica" && nvMotivoModifica && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{nvMotivoModifica}</div>}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setNvStep(4)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>ÑModifica</button>
-              <button onClick={salvaVisita} style={{ ...S.btn, flex: 2, background: T.grn }}>úSalva visita</button>
+              <button onClick={() => setNvStep(4)} style={{ ...S.btnCancel, flex: 1, border: `1px solid ${T.bdr}` }}>Ñ Modifica</button>
+              <button onClick={salvaVisita} style={{ ...S.btn, flex: 2, background: T.grn }}>ú Salva visita</button>
             </div>
           </>}
         </div>
@@ -890,7 +890,7 @@ export default function CMDetailPanel() {
             <div style={{ height: 5, background: T.bdr, borderRadius: 3, overflow: "hidden", marginBottom: 4 }}>
               <div style={{ height: "100%", width: `${progVani}%`, background: progVani === 100 ? T.grn : tipoColRil, borderRadius: 3 }} />
             </div>
-            {vaniDaFare.filter(v => !v.note?.startsWith("£í")).length > 0 && <div style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Mancano misure: {vaniDaFare.filter(v => !v.note?.startsWith("£í")).map(v => v.nome).join(", ")}</div>}
+            {vaniDaFare.filter(v => !v.note?.startsWith("í")).length > 0 && <div style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Mancano misure: {vaniDaFare.filter(v => !v.note?.startsWith("í")).map(v => v.nome).join(", ")}</div>}
             {tutteMis && <div style={{ fontSize: 11, color: T.grn, fontWeight: 600 }}>úá Tutte le misure raccolte</div>}
           </div>
         )}
@@ -898,7 +898,7 @@ export default function CMDetailPanel() {
         {/* Info badges */}
         <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.wrench} /> Riparazione</span>}
-          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>¡ãÆÑNuova</span>}
+          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>¡ãÆÑ Nuova</span>}
           {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
           {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
           {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>¡ãÆ¼ú {c.mezzoSalita}</span>}
@@ -936,14 +936,14 @@ export default function CMDetailPanel() {
 
           const skipped = (id) => (c.skipLog || []).some(s => s.fase === id);
           const stepsCC = [
-            { id: "sopralluogo", icon: "search", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
-            { id: "preventivo",  icon: "clipboard", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
-            { id: "conferma",    icon: "signatureEdit",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
-            { id: "ordini",      icon: "package", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
-            { id: "produzione",  icon: "factory", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
-            { id: "posa",        icon: "hammer", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
-            { id: "collaudo",    icon: "shieldCheck", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
-            { id: "chiusura",    icon: "checkCircle", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
+            { id: "sopralluogo", icon: "¡ãÆ", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
+            { id: "preventivo",  icon: "¡ãÆåæ", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
+            { id: "conferma",    icon: "ú¼®à",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
+            { id: "ordini",      icon: "¡ãÆ¬", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
+            { id: "produzione",  icon: "¡ãÆàí", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
+            { id: "posa",        icon: "¡ãÆÂ", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
+            { id: "collaudo",    icon: "úá", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
+            { id: "chiusura",    icon: "¡ãÆåé", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
           ];
           const doneCC = stepsCC.filter(s => s.done).length;
           const curIdxCC = stepsCC.findIndex(s => !s.done);
@@ -961,7 +961,7 @@ export default function CMDetailPanel() {
                         width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
                         background: s.skipped ? "#ff9500" : s.done ? "#34c759" : i === curIdxCC ? T.acc : T.bg,
                         color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
-                      }}>{s.skipped ? <span style={{fontSize:10}}>–</span> : s.done ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> : <Ico d={(ICO as any)[s.icon] || ICO.search} s={12} c="currentColor" />}</div>
+                      }}>{s.skipped ? "àí" : s.done ? "ú" : s.icon}</div>
                       <div style={{ fontSize: 7, color: i === curIdxCC ? T.acc : s.done ? "#34c759" : T.sub, fontWeight: i === curIdxCC ? 800 : 500, whiteSpace: "nowrap", maxWidth: 32, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>{s.l}</div>
                     </div>
                     {i < stepsCC.length - 1 && <div style={{ width: 6, height: 2, background: s.done ? "#34c759" : T.bdr, marginBottom: 12 }} />}
@@ -1003,7 +1003,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/* SOPRALLUOGO */}
+                  {/*  SOPRALLUOGO  */}
                   {curCC.id === "sopralluogo" && (
                     <div>
                       {rilieviCC.length === 0 ? (
@@ -1021,7 +1021,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/* PREVENTIVO (CUORE çÂ LINK A WORKSPACE) */}
+                  {/*  PREVENTIVO (CUORE çÂ LINK A WORKSPACE)  */}
                   {curCC.id === "preventivo" && (
                     <div>
                       <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>{vaniCC.length} vani ¼ {vaniConPrezzoCC.length} con prezzo</div>
@@ -1040,19 +1040,19 @@ export default function CMDetailPanel() {
                           setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                           setSelectedCM(prev => ({ ...prev, preventivoInviato: true }));
                           setCcDone("úá Completato"); setTimeout(() => setCcDone(null), 3000);
-                        }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gi£í inviato? Segna come completato</span>
+                        }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gií inviato? Segna come completato</span>
                       </div>
                     </div>
                   )}
 
-                  {/* CONFERMA (firma + fattura acconto) */}
+                  {/*  CONFERMA (firma + fattura acconto)  */}
                   {curCC.id === "conferma" && (
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: ®{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
                       {hasFattCC && !fattCC.every(f => f.pagata) && (
                         <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#D0800815", border: "1px solid #D0800830", display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{ fontSize: 13 }}>¡ãÆñ</span>
-                          <span style={{ fontSize: 11, color: "#D08008", fontWeight: 600 }}>Fattura acconto emessa çÂ verifica pagamento in Contabilit£í</span>
+                          <span style={{ fontSize: 11, color: "#D08008", fontWeight: 600 }}>Fattura acconto emessa çÂ verifica pagamento in Contabilití</span>
                         </div>
                       )}
                       {firmaStep === 0 ? (
@@ -1065,11 +1065,54 @@ export default function CMDetailPanel() {
                           <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
                           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                             <span onClick={() => generaPreventivoPDF(c)} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}><I d={ICO.fileText} /> Solo PDF</span>
-                            <span onClick={() => setFirmaStep(1)} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gi£í inviato? Carica firma</span>
+                            <span onClick={() => setFirmaStep(1)} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gií inviato? Carica firma</span>
                           </div>
                         </div>
                       ) : !firmaFileUrl ? (
                         <div>
+                          {/* Bottone link firma digitale */}
+                          <div style={{ marginBottom: 12 }}>
+                            <button onClick={async () => {
+                              try {
+                                const res = await fetch("/api/firma", { method: "POST", headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "genera", data: { cmId: c.id, cmCode: c.code, cliente: `${c.cliente} ${c.cognome||""}`.trim(), importo: totIvaCC, descrizione: `Preventivo ${c.code} - ${vaniCC.length} vani` } }) });
+                                const d = await res.json();
+                                if (d.url) {
+                                  setFirmaToken(d.token);
+                                  const fullUrl = window.location.origin + d.url;
+                                  await navigator.clipboard.writeText(fullUrl).catch(() => {});
+                                  setFirmaLinkCopiato(true);
+                                  setTimeout(() => setFirmaLinkCopiato(false), 4000);
+                                  // Polling per verificare se cliente ha firmato
+                                  const poll = setInterval(async () => {
+                                    const r2 = await fetch("/api/firma", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "check", token: d.token }) });
+                                    const d2 = await r2.json();
+                                    if (d2.firmato) {
+                                      clearInterval(poll);
+                                      setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, firmaCliente: true, dataFirma: d2.firmaDataOra } : cm));
+                                      setSelectedCM(prev => ({ ...prev, firmaCliente: true }));
+                                      setCcDone("Firma ricevuta!");
+                                      setTimeout(() => setCcDone(null), 3000);
+                                    }
+                                  }, 5000);
+                                  setTimeout(() => clearInterval(poll), 10 * 60 * 1000); // max 10 min
+                                }
+                              } catch { setCcDone("Errore generazione link"); }
+                            }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>
+                              Invia link firma al cliente
+                            </button>
+                            {firmaLinkCopiato && (
+                              <div style={{ background: "#F0FDF9", borderRadius: 8, padding: "8px 12px", fontSize: 11, color: T.grn, fontWeight: 600, textAlign: "center" }}>
+                                Link copiato! Incollalo su WhatsApp al cliente
+                              </div>
+                            )}
+                            {firmaToken && !firmaLinkCopiato && (
+                              <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>
+                                In attesa della firma del cliente...
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 8 }}>oppure</div>
                           <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>Carica il documento firmato dal cliente</div>
                           <button onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "application/pdf,image/*"; inp.onchange = (ev: any) => { const f = ev.target.files?.[0]; if (!f) return; setFirmaFileName(f.name); const r = new FileReader(); r.onload = (e) => setFirmaFileUrl(e.target?.result as string); r.readAsDataURL(f); }; inp.click(); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: `2px dashed ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.download} /> CARICA FIRMATO</button>
                         </div>
@@ -1093,7 +1136,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/* ORDINI */}
+                  {/*  ORDINI  */}
                   {curCC.id === "ordini" && (
                     <div>
                       <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani ¼ {c.sistema || "çÂ"}</div>
@@ -1101,7 +1144,7 @@ export default function CMDetailPanel() {
                         {vaniCC.map((v, vi) => (
                           <div key={vi} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0", borderBottom: vi < vaniCC.length - 1 ? `1px solid ${T.bdr}` : "none" }}>
                             <span style={{ color: T.text, fontWeight: 600 }}>{v.nome || v.tipo || `Vano ${vi + 1}`}</span>
-                            <span style={{ color: T.acc, fontWeight: 700 }}>{(v.larghezza || v.l || 0)}£{(v.altezza || v.h || 0)}</span>
+                            <span style={{ color: T.acc, fontWeight: 700 }}>{(v.larghezza || v.l || 0)}{(v.altezza || v.h || 0)}</span>
                           </div>
                         ))}
                       </div>
@@ -1166,7 +1209,7 @@ export default function CMDetailPanel() {
                           const prezzo = calcolaVanoPrezzo(v, c);
                           return {
                             desc: `${tipLabel} çÂ ${v.stanza || ""} ${v.piano || ""}`.trim(),
-                            misure: lmm > 0 && hmm > 0 ? `${lmm}£${hmm}` : "da definire",
+                            misure: lmm > 0 && hmm > 0 ? `${lmm}${hmm}` : "da definire",
                             qta: v.pezzi || 1,
                             prezzoUnit: Math.round(prezzo * 100) / 100,
                             totale: Math.round(prezzo * (v.pezzi || 1) * 100) / 100,
@@ -1237,7 +1280,7 @@ export default function CMDetailPanel() {
                               {/* Avviso se vani senza prezzo */}
                               {prevRighe.some(r => r.prezzoUnit === 0) && (
                                 <div style={{ background: "#E8A02015", border: "1px solid #E8A02040", borderRadius: 8, padding: "8px 10px", marginBottom: 12, fontSize: 11, color: "#E8A020", fontWeight: 600 }}>
-                                  £í®à Alcuni vani non hanno prezzo çÂ verranno inclusi come ®0,00
+                                  í®à Alcuni vani non hanno prezzo çÂ verranno inclusi come ®0,00
                                 </div>
                               )}
 
@@ -1261,7 +1304,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/* PRODUZIONE */}
+                  {/*  PRODUZIONE  */}
                   {curCC.id === "produzione" && (
                     <div>
                       {ordCC.length > 0 && (
@@ -1270,7 +1313,7 @@ export default function CMDetailPanel() {
                             <div key={oi} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "3px 0" }}>
                               <span style={{ fontWeight: 600 }}>{typeof o.fornitore === "object" ? (o.fornitore?.nome || "Fornitore") : (o.fornitore || "Fornitore")}</span>
                               <span style={{ color: o.conferma?.ricevuta ? T.grn : T.orange, fontWeight: 700 }}>
-                                {o.conferma?.firmata ? "úá Confermato" : o.conferma?.ricevuta ? "¡ãÆñ Conferma ricevuta" : "¡ãÆIn attesa"}
+                                {o.conferma?.firmata ? "úá Confermato" : o.conferma?.ricevuta ? "¡ãÆñ Conferma ricevuta" : "¡ãÆ In attesa"}
                               </span>
                             </div>
                           ))}
@@ -1292,7 +1335,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/* POSA */}
+                  {/*  POSA  */}
                   {curCC.id === "posa" && (
                     <div>
                       {!montFormOpen ? (
@@ -1333,7 +1376,7 @@ export default function CMDetailPanel() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px 0' }}>
                                   <span onClick={() => { const p = new Date(baseDay); p.setDate(p.getDate() - 7); setMontFormData(prev => ({ ...prev, data: fmtD(p) })); }} style={{ cursor: 'pointer', fontSize: 14, fontWeight: 700, color: T.acc, padding: '4px 8px' }}>{"çú"}</span>
                                   <span style={{ fontSize: 9, fontWeight: 800, color: T.sub, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                    Disponibilit£í squadre
+                                    Disponibilití squadre
                                   </span>
                                   <span onClick={() => { const n = new Date(baseDay); n.setDate(n.getDate() + 21); setMontFormData(prev => ({ ...prev, data: fmtD(n) })); }} style={{ cursor: 'pointer', fontSize: 14, fontWeight: 700, color: T.acc, padding: '4px 8px' }}>{"çæ"}</span>
                                 </div>
@@ -1399,7 +1442,7 @@ export default function CMDetailPanel() {
                                 })}
                                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center', padding: '3px 8px 5px', fontSize: 8, color: T.sub }}>
                                   {previewDays.size > 0 && <span><span style={{ color: T.acc, fontWeight: 800 }}>{"à"}</span> Nuovo montaggio ({montGiorni}g)</span>}
-                                  {previewDays.size > 0 && Array.from(previewDays).some(pd => (montaggiDB || []).some(m => m.data === pd && (m.squadraId === selSquadId))) && <span style={{ color: '#ff3b30', fontWeight: 700 }}>{"£í"} Sovrapposizione!</span>}
+                                  {previewDays.size > 0 && Array.from(previewDays).some(pd => (montaggiDB || []).some(m => m.data === pd && (m.squadraId === selSquadId))) && <span style={{ color: '#ff3b30', fontWeight: 700 }}>{"í"} Sovrapposizione!</span>}
                                   <span style={{ marginLeft: 'auto', cursor: 'pointer', color: T.acc, fontWeight: 700, fontSize: 9 }} onClick={() => setMontFormData(prev => ({ ...prev, data: todayISO }))}>Oggi</span>
                                 </div>
                                 {/* Banner weekend */}
@@ -1415,16 +1458,16 @@ export default function CMDetailPanel() {
                                     if (dow === 0 || dow === 6) { hasWeekendInRange = true; break; }
                                     added++;
                                   }
-                                  // Oppure se la data di partenza Ôö  sab/dom
+                                  // Oppure se la data di partenza  sab/dom
                                   const startDow = pStart.getDay();
                                   if (startDow === 6 || startDow === 0) hasWeekendInRange = true;
                                   if (!hasWeekendInRange) { if (workWeekend !== null) setWorkWeekend(null); return null; }
-                                  if (workWeekend !== null) return null; // giÔö í risposto
+                                  if (workWeekend !== null) return null; // gií risposto
                                   return (
                                     <div style={{ margin: '4px 8px 6px', padding: '8px 10px', borderRadius: 8, background: '#FF9F0A18', border: '1px solid #FF9F0A60' }}>
-                                      <div style={{ fontSize: 11, fontWeight: 700, color: '#FF9F0A', marginBottom: 6 }}>¡ãÆIl periodo include sabato/domenica. Lavori anche nel weekend?</div>
+                                      <div style={{ fontSize: 11, fontWeight: 700, color: '#FF9F0A', marginBottom: 6 }}>¡ãÆ Il periodo include sabato/domenica. Lavori anche nel weekend?</div>
                                       <div style={{ display: 'flex', gap: 6 }}>
-                                        <button onClick={() => setWorkWeekend(true)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: 'none', background: '#FF9F0A', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>úá S£, lavoro</button>
+                                        <button onClick={() => setWorkWeekend(true)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: 'none', background: '#FF9F0A', color: '#fff', fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>úá S, lavoro</button>
                                         <button onClick={() => setWorkWeekend(false)} style={{ flex: 1, padding: '6px 0', borderRadius: 6, border: '1px solid #FF9F0A60', background: 'transparent', color: '#FF9F0A', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>No, solo feriali</button>
                                       </div>
                                     </div>
@@ -1452,7 +1495,7 @@ export default function CMDetailPanel() {
                               if (!montFormData.data) { alert("Scegli una data"); return; }
                               const nuovoM = { id: "m_" + Date.now(), cmId: c.id, cmCode: c.code, cliente: c.cliente, indirizzo: c.indirizzo || "", vani: vaniCC.length, data: montFormData.data, orario: montFormData.orario, durata: montGiorni + "g", giorni: montGiorni, squadraId: montFormData.squadraId, stato: "programmato", note: montFormData.note };
                               setMontaggiDB(prev => [...prev, nuovoM]);
-                              setEvents(prev => [...prev, { id: "ev_m_" + Date.now(), date: montFormData.data, time: montFormData.orario, text: `¡ãÆÂMontaggio ${c.cliente} (${montGiorni}g)`, tipo: "montaggio", persona: c.cliente, cm: c.code, addr: c.indirizzo || "", done: false }]);
+                              setEvents(prev => [...prev, { id: "ev_m_" + Date.now(), date: montFormData.data, time: montFormData.orario, text: `¡ãÆÂ Montaggio ${c.cliente} (${montGiorni}g)`, tipo: "montaggio", persona: c.cliente, cm: c.code, addr: c.indirizzo || "", done: false }]);
                               setMontFormOpen(false);
                               setCcDone("úá Montaggio pianificato!"); setTimeout(() => setCcDone(null), 3000);
                             }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CONFERMA</button>
@@ -1462,7 +1505,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/* COLLAUDO */}
+                  {/*  COLLAUDO  */}
                   {curCC.id === "collaudo" && (
                     <div>
                       <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Verifica il montaggio, scatta foto finale e fai firmare il collaudo</div>
@@ -1474,7 +1517,7 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/* CHIUSURA */}
+                  {/*  CHIUSURA  */}
                   {curCC.id === "chiusura" && (() => {
                     const saldoFatCC = fattCC.find(f => f.tipo === "saldo" || f.tipo === "unica");
                     const saldoPagatoCC = saldoFatCC?.pagata;
@@ -1508,20 +1551,20 @@ export default function CMDetailPanel() {
                               <button onClick={() => {
                                 setFattureDB(prev => prev.map(f => f.cmId === c.id && !f.pagata ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: "Bonifico" } : f));
                                 setFaseTo(c.id, "chiusura");
-                                setCcConfirm(null); setCcDone("úCommessa chiusa!"); setTimeout(() => setCcDone(null), 3000);
+                                setCcConfirm(null); setCcDone("ú Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000);
                               }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úá CONFERMO INCASSO</button>
                             </div>
                           </div>
                         )
                       )}
                       {!saldoFatCC && restoCC <= 0 && (
-                        <button onClick={() => { setFaseTo(c.id, "chiusura"); setCcDone("úCommessa chiusa!"); setTimeout(() => setCcDone(null), 3000); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>úCHIUDI COMMESSA Ñå</button>
+                        <button onClick={() => { setFaseTo(c.id, "chiusura"); setCcDone("ú Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>ú CHIUDI COMMESSA Ñå</button>
                       )}
                     </div>
                     );
                   })()}
 
-                  {/* PULSANTE SALTA */}
+                  {/*  PULSANTE SALTA  */}
                   {curCC && !curCC.done && curCC.id !== "chiusura" && (
                     <div style={{ textAlign: "center", marginTop: 8 }}>
                       <span onClick={() => {
@@ -1569,7 +1612,7 @@ export default function CMDetailPanel() {
         <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
           {[
             {k:"sopralluoghi",l:`¡ãÆ¼ãÆ Vani (${vaniList.length})`},
-            {k:"visite",l:`¡ãÆVisite (${(c.rilievi||[]).length})`},
+            {k:"visite",l:`¡ãÆ Visite (${(c.rilievi||[]).length})`},
             {k:"info",l:"ñú Info"},
           ].map(t => (
             <div key={t.k} onClick={() => setCmSubTab(t.k)} style={{
@@ -1591,7 +1634,7 @@ export default function CMDetailPanel() {
             }}>
               {c.firmaCliente
                 ? "úá Misure definitive çÂ cliente ha firmato"
-                : `£í Misure indicative çÂ ${(c.rilievi||[]).length} ${(c.rilievi||[]).length === 1 ? "visita" : "visite"} effettuate`}
+                : `í Misure indicative çÂ ${(c.rilievi||[]).length} ${(c.rilievi||[]).length === 1 ? "visita" : "visite"} effettuate`}
             </div>
 
             {/* Timeline visite */}
@@ -1632,7 +1675,7 @@ export default function CMDetailPanel() {
                       {ril.tipo === "modifica" && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: "#ff9500", color: "#fff" }}>MODIFICA</span>}
                     </div>
                     <div style={{ fontSize: 11, color: T.sub }}>
-                      ¡ãÆª{ril.rilevatore || "çÂ"} ¼ ¡ãÆ¼ãÆ {nVani} vani ¼ {nMisurati === nVani && nVani > 0 ? "úá tutte le misure" : `${nMisurati}/${nVani} misurati`}
+                      ¡ãÆª {ril.rilevatore || "çÂ"} ¼ ¡ãÆ¼ãÆ {nVani} vani ¼ {nMisurati === nVani && nVani > 0 ? "úá tutte le misure" : `${nMisurati}/${nVani} misurati`}
                     </div>
                     {ril.motivoModifica && <div style={{ fontSize: 11, color: "#ff9500", marginTop: 2 }}><I d={ICO.wrench} /> {ril.motivoModifica}</div>}
                     {ril.note && <div style={{ fontSize: 11, color: T.sub, marginTop: 2, fontStyle: "italic" }}>"{ril.note}"</div>}
@@ -1673,13 +1716,13 @@ export default function CMDetailPanel() {
                 </div>
               </div>
             )}
-            {/* BANNER STORICO */}
+            {/*  BANNER STORICO  */}
             {isStorico && (
               <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 10, background: "#5856d610", border: "1.5px solid #5856d630", display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 18 }}><I d={ICO.lock} /></span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#5856d6" }}>Rilievo storico R{r?.n} çÂ sola lettura</div>
-                  <div style={{ fontSize: 10, color: T.sub }}>Questo rilievo £archiviato. Solo l'ultimo rilievo (R{lastRilievo?.n}) £modificabile.</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>Questo rilievo  archiviato. Solo l'ultimo rilievo (R{lastRilievo?.n})  modificabile.</div>
                 </div>
                 <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{ padding: "6px 12px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
                   Vai a R{lastRilievo?.n} Ñå
@@ -1711,7 +1754,7 @@ export default function CMDetailPanel() {
             ) : vaniList.map(v => {
               const nMisure = Object.values(v.misure||{}).filter(x=>(x as number)>0).length;
               const completo = nMisure >= 6;
-              const bloccato = v.note?.startsWith("£í BLOCCATO");
+              const bloccato = v.note?.startsWith("í BLOCCATO");
               const colore = bloccato ? T.red : completo ? T.grn : T.orange;
               return (
                 <div key={v.id} onClick={() => { setSelectedVano(v); setVanoStep(0); }}
@@ -1726,7 +1769,7 @@ export default function CMDetailPanel() {
                         const rIdx = c.rilievi?.findIndex(r => r.vani?.some(vv => vv.id === v.id));
                         if (rIdx == null || rIdx < 0) return null;
                         const ril = c.rilievi[rIdx];
-                        const questoBloccato = v.note?.startsWith("£í BLOCCATO");
+                        const questoBloccato = v.note?.startsWith("í BLOCCATO");
                         const questoIncompleto = !questoBloccato && Object.values(v.misure||{}).filter(x=>(x as number)>0).length > 0 && Object.values(v.misure||{}).filter(x=>(x as number)>0).length < 6;
                         const haProblema = questoBloccato || questoIncompleto;
                         return (
@@ -1743,7 +1786,7 @@ export default function CMDetailPanel() {
                       })()}
                     </div>
                     <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} ¼ {v.stanza} ¼ {v.piano}</div>
-                    {bloccato && <div style={{ fontSize: 11, color: T.red, marginTop: 2 }}>{v.note?.replace("£í BLOCCATO: ","")}</div>}
+                    {bloccato && <div style={{ fontSize: 11, color: T.red, marginTop: 2 }}>{v.note?.replace("í BLOCCATO: ","")}</div>}
                   </div>
                   <div style={{ textAlign: "right", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
                     {/* Badge pezzi */}
@@ -1798,7 +1841,7 @@ export default function CMDetailPanel() {
                 <div key={v.id} style={{ ...S.card, marginBottom: 8 }}>
                   <div style={{ padding: "11px 14px", display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: mis ? T.grnLt : blk ? T.redLt : T.bdr, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                      {mis ? "úá" : blk ? "£í" : "¡ãÆ"}
+                      {mis ? "úá" : blk ? "í" : "¡ãÆ"}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
@@ -1909,7 +1952,7 @@ export default function CMDetailPanel() {
                     {/* Video: open/close inline player */}
                     {a.tipo === "video" && a.dataUrl && (
                       <div onClick={() => setViewingVideoId(viewingVideoId === a.id ? null : a.id)} style={{ padding: "3px 8px", borderRadius: 6, background: viewingVideoId === a.id ? T.blueLt : T.accLt, fontSize: 10, fontWeight: 600, color: viewingVideoId === a.id ? T.blue : T.acc, cursor: "pointer" }}>
-                        {viewingVideoId === a.id ? "úChiudi" : "é Guarda"}
+                        {viewingVideoId === a.id ? "ú Chiudi" : "é Guarda"}
                       </div>
                     )}
                     {a.tipo === "video" && a.dataUrl && (
@@ -1918,12 +1961,12 @@ export default function CMDetailPanel() {
                     {/* Photo: toggle inline preview */}
                     {a.tipo === "foto" && a.dataUrl && (
                       <div onClick={() => setViewingPhotoId(viewingPhotoId === a.id ? null : a.id)} style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer" }}>
-                        {viewingPhotoId === a.id ? "úChiudi" : "¡ãÆªVedi"}
+                        {viewingPhotoId === a.id ? "ú Chiudi" : "¡ãÆª Vedi"}
                       </div>
                     )}
                     {a.tipo === "foto" && a.dataUrl && <img src={a.dataUrl} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} alt="" />}
                     {a.tipo === "file" && a.dataUrl && <a href={a.dataUrl} download={a.nome} style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer", textDecoration: "none" }}><I d={ICO.folder} /> Apri</a>}
-                    {a.tipo === "firma" && a.dataUrl && <span onClick={() => { const w = window.open(""); w?.document.write(`<iframe src="${a.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`); }} style={{ padding: "3px 8px", borderRadius: 6, background: "#34c75912", fontSize: 10, fontWeight: 600, color: "#34c759", cursor: "pointer" }}>¡ãÆªApri</span>}
+                    {a.tipo === "firma" && a.dataUrl && <span onClick={() => { const w = window.open(""); w?.document.write(`<iframe src="${a.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`); }} style={{ padding: "3px 8px", borderRadius: 6, background: "#34c75912", fontSize: 10, fontWeight: 600, color: "#34c759", cursor: "pointer" }}>¡ãÆª Apri</span>}
                     {a.tipo === "firma" && a.dataUrl && <a href={a.dataUrl} download={a.nome} style={{ padding: "3px 8px", borderRadius: 6, background: T.bg, fontSize: 10, fontWeight: 600, color: T.sub, cursor: "pointer", textDecoration: "none" }}>º</a>}
                     {/* Delete */}
                     <div onClick={() => { setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: (x.allegati || []).filter(al => al.id !== a.id) } : x)); setSelectedCM(p => ({ ...p, allegati: (p.allegati || []).filter(al => al.id !== a.id) })); }} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={12} c={T.sub} /></div>
@@ -1953,7 +1996,7 @@ export default function CMDetailPanel() {
           )}
         </div>
 
-        {/* SEZIONE INTERVENTI */}
+        {/*  SEZIONE INTERVENTI  */}
         {montaggiDB.filter(m => String(m.cmId) === String(c.id)).length > 0 && (
           <>
             <div style={{ ...S.section, marginTop: 8 }}>
@@ -2000,7 +2043,7 @@ export default function CMDetailPanel() {
           <span onClick={() => deleteCommessa(c.id)} style={{ fontSize: 11, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>Elimina commessa</span>
         </div>
 
-        {/* INTERVENTO FLOW PANEL (fixed overlay) */}
+        {/*  INTERVENTO FLOW PANEL (fixed overlay)  */}
         {interventoOpen && (
           <InterventoFlowPanel
             montaggio={interventoOpen}
@@ -2012,7 +2055,7 @@ export default function CMDetailPanel() {
           />
         )}
 
-        {/* MODAL FASCICOLO GEOMETRA */}
+        {/*  MODAL FASCICOLO GEOMETRA  */}
         {showFascicoloModal && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
             <div style={{ background: T.bg, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 580, maxHeight: "88vh", overflowY: "auto", padding: "20px 16px 32px" }}>
@@ -2037,18 +2080,18 @@ export default function CMDetailPanel() {
                       setFascicoloLinkCopied(true);
                       setTimeout(() => setFascicoloLinkCopied(false), 2000);
                     }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#2E7D32", border: "none", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-                      {fascicoloLinkCopied ? "úCopiato!" : "¡ãÆ» Copia link"}
+                      {fascicoloLinkCopied ? "ú Copiato!" : "¡ãÆ» Copia link"}
                     </button>
                     <button onClick={() => {
                       const text = encodeURIComponent(`Gentile cliente, ecco il fascicolo tecnico della sua commessa: ${fascicoloLink}`);
                       window.open(`https://wa.me/?text=${text}`, "_blank");
                     }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#25d366", border: "none", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-                      ¡ãÆûÆ WhatsApp
+                      ¡ãÆÆ WhatsApp
                     </button>
                     {c.email && (
                       <button onClick={() => {
-                        const sub = encodeURIComponent(`Fascicolo Tecnico ç${c.code || "Commessa"}`);
-                        const body = encodeURIComponent(`Gentile ${[c.cliente, c.cognome].filter(Boolean).join(" ") || "cliente"},\n\nLe invio il fascicolo tecnico della sua commessa:\n${fascicoloLink}\n\nIl link £valido per 30 giorni.\n\nCordiali saluti,\n${aziendaInfo?.ragione || ""}`);
+                        const sub = encodeURIComponent(`Fascicolo Tecnico ç ${c.code || "Commessa"}`);
+                        const body = encodeURIComponent(`Gentile ${[c.cliente, c.cognome].filter(Boolean).join(" ") || "cliente"},\n\nLe invio il fascicolo tecnico della sua commessa:\n${fascicoloLink}\n\nIl link  valido per 30 giorni.\n\nCordiali saluti,\n${aziendaInfo?.ragione || ""}`);
                         window.open(`mailto:${c.email}?subject=${sub}&body=${body}`, "_blank");
                       }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.blue, border: "none", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                         ú½ Email
@@ -2083,7 +2126,7 @@ export default function CMDetailPanel() {
                   disabled={fascicoloLoading}
                   style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #2D7A6B, #1A9E73)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: fascicoloLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: fascicoloLoading ? 0.7 : 1 }}
                 >
-                  {fascicoloLoading ? "àé Generazione..." : "¡ãÆÂGenera link condivisibile (30gg)"}
+                  {fascicoloLoading ? "àé Generazione..." : "¡ãÆÂ Genera link condivisibile (30gg)"}
                 </button>
 
                 {/* Scarica PDF */}
