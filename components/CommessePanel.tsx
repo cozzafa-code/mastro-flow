@@ -8,6 +8,7 @@ import React from "react";
 import { useMastro } from "./MastroContext";
 import { AFASE, FM, FF, ICO, Ico } from "./mastro-constants";
 import RilieviListPanel from "./RilieviListPanel";
+import CommessaCard, { CommessaCardProps } from "./CommessaCard";
 import CMDetailPanel from "./CMDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import RiepilogoPanel from "./RiepilogoPanel";
@@ -24,52 +25,35 @@ export default function CommessePanel() {
 
   // ═══ CARD VIEW ═══
   const renderCard = (c: any, inGrid: boolean) => {
-    const fase = PIPELINE.find(p => p.id === c.fase);
-    const progress = ((faseIndex(c.fase) + 1) / PIPELINE.length) * 100;
     const TODAY_ISO = new Date().toISOString().split("T")[0];
     const isScad = c.scadenza && c.scadenza < TODAY_ISO;
     const isFerma = (giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura") || isScad;
-    const vaniA = getVaniAttivi(c);
-    const vaniOk = vaniA.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length >= 6).length;
+
+    // Mappa fase → stato CommessaCard
+    const statoMap: Record<string, CommessaCardProps['stato']> = {
+      chiusura:    'completata',
+      annullata:   'annullata',
+      sopralluogo: 'in_attesa',
+    };
+    const stato = isFerma ? 'annullata' : (statoMap[c.fase] ?? 'in_lavorazione');
+
+    const scadenzaFmt = c.scadenza
+      ? new Date(c.scadenza + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })
+      : "—";
 
     return (
-      <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
-        style={{
-          background: T.card, borderRadius: 12, cursor: "pointer",
-          border: `1px solid ${isFerma ? T.red + "30" : T.bdr}`,
-          margin: inGrid ? 0 : "0 20px 10px",
-          overflow: "hidden",
-        }}>
-        <div style={{ padding: "14px 16px" }}>
-          {/* Top: code + fase */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: T.sub, fontFamily: FM }}>{c.code}</span>
-                {isFerma && <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.red, display: "inline-block" }} />}
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginTop: 4, lineHeight: 1.3 }}>{c.cliente}{c.cognome ? ` ${c.cognome}` : ""}</div>
-              {c.indirizzo && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{c.indirizzo}</div>}
-            </div>
-            <span style={{
-              fontSize: 10, fontWeight: 600, padding: "4px 10px", borderRadius: 6, flexShrink: 0,
-              background: (fase?.color || T.acc) + "10", color: fase?.color || T.acc,
-            }}>{fase?.nome}</span>
-          </div>
-
-          {/* Meta row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
-            {vaniA.length > 0 && <span style={{ fontSize: 11, color: vaniOk === vaniA.length ? T.grn : T.sub, fontWeight: 500 }}>{vaniOk}/{vaniA.length} vani</span>}
-            {c.euro && <span style={{ fontSize: 12, color: T.text, fontWeight: 700, fontFamily: FM }}>€{parseFloat(c.euro).toLocaleString("it-IT")}</span>}
-            {c.confermato && <span style={{ fontSize: 10, fontWeight: 600, color: T.grn }}>✓ Confermato</span>}
-            {c.scadenza && <span style={{ fontSize: 11, color: isScad ? T.red : T.sub }}>{new Date(c.scadenza + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" })}</span>}
-          </div>
-
-          {/* Progress */}
-          <div style={{ height: 3, background: T.bdr, borderRadius: 2, marginTop: 12 }}>
-            <div style={{ height: "100%", borderRadius: 2, background: isFerma ? T.red : fase?.color || T.acc, width: `${progress}%`, opacity: 0.6, transition: "width 0.3s" }} />
-          </div>
-        </div>
+      <div key={c.id} style={{ margin: inGrid ? 0 : "0 20px 10px" }}>
+        <CommessaCard
+          id={c.id}
+          numero={c.code || ""}
+          cliente={`${c.cliente || ""}${c.cognome ? " " + c.cognome : ""}`}
+          descrizione={c.indirizzo || ""}
+          stato={stato}
+          importo={c.euro ? parseFloat(c.euro) : 0}
+          cantiere={c.indirizzo || "—"}
+          scadenza={scadenzaFmt}
+          onApri={() => { setSelectedCM(c); setTab("commesse"); }}
+        />
       </div>
     );
   };
