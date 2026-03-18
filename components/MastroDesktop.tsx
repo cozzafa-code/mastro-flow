@@ -2,6 +2,14 @@
 import { useState } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, PIPELINE_DEFAULT, Ico, ICO } from "./mastro-constants";
+import HomePanel from "./HomePanel";
+import CommessePanel from "./CommessePanel";
+import AgendaPanel from "./AgendaPanel";
+import MessaggiPanel from "./MessaggiPanel";
+import ClientiPanel from "./ClientiPanel";
+import ContabilitaPanel from "./ContabilitaPanel";
+import SettingsPanel from "./SettingsPanel";
+import MontaggiCalendar from "./MontaggiCalendar";
 
 const NAV = [
   { key: "home",        ico: "home",      label: "Dashboard" },
@@ -44,7 +52,9 @@ export default function MastroDesktop() {
   const { T, setTab, cantieri, tasks, msgs, aziendaInfo, team, setTeam,
           setSelectedCM, filterFase, setFilterFase } = ctx;
 
-  const [activeNav, setActiveNav] = useState("home");
+  // Sync activeNav con tab del MastroContext
+  const activeNav = ctx.tab || "home";
+  const setActiveNav = (key: string) => { navTo(key); };
   const [collapsed, setCollapsed] = useState(false);
   const [searchDesktop, setSearchDesktop] = useState("");
 
@@ -65,13 +75,13 @@ export default function MastroDesktop() {
   }));
 
   function navTo(key: string) {
-    setActiveNav(key);
-    const tabMap: Record<string, string> = {
+    const tabMap: Record<string,string> = {
       home: "home", commesse: "commesse", agenda: "agenda",
-      clienti: "clienti", messaggi: "messaggi", settings: "settings",
-      contabilita: "contabilita", montaggi: "montaggi_cal",
+      messaggi: "messaggi", clienti: "clienti", contabilita: "contabilita",
+      montaggi: "montaggi_cal", settings: "settings",
+      misure: "commesse", documenti: "commesse", magazzino: "commesse", team: "settings",
     };
-    if (tabMap[key]) setTab(tabMap[key]);
+    ctx.setTab(tabMap[key] || key);
   }
 
   const card = {
@@ -345,10 +355,16 @@ export default function MastroDesktop() {
 
   function renderContent() {
     switch (activeNav) {
-      case "home":     return renderDashboard();
-      case "commesse": return renderCommesse();
-      case "team":     return renderTeam();
-      default:         return renderPlaceholder(NAV.find(n => n.key === activeNav)?.label || "");
+      case "home":        return <HomePanel />;
+      case "commesse":    return <CommessePanel />;
+      case "agenda":      return <AgendaPanel />;
+      case "messaggi":    return <MessaggiPanel />;
+      case "clienti":     return <ClientiPanel />;
+      case "contabilita": return <ContabilitaPanel />;
+      case "montaggi":
+      case "montaggi_cal": return <MontaggiCalendar />;
+      case "settings":    return <SettingsPanel />;
+      default:            return renderPlaceholder(NAV.find(n => n.key === activeNav)?.label || "");
     }
   }
 
@@ -490,7 +506,7 @@ export default function MastroDesktop() {
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto" as const, padding: 24 }}>
+        <div style={{ flex: 1, overflowY: "auto" as const }}>
           {renderContent()}
         </div>
       </div>
