@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
-// MASTRO — MastroDesktop v10 — DEFINITIVO
-// 17 moduli attivi, sidebar collassabile, badge live, routing completo
+// MASTRO — MastroDesktop v11 — VERSIONE DEFINITIVA TOTALE
+// 19 moduli attivi — zero placeholder nei gruppi principali
 
 import { useState } from "react";
 import { useMastro } from "./MastroContext";
@@ -21,6 +21,8 @@ import DesktopTeam from "./DesktopTeam";
 import DesktopLeads from "./DesktopLeads";
 import DesktopRete from "./DesktopRete";
 import DesktopMisure from "./DesktopMisure";
+import DesktopInfissiOra from "./DesktopInfissiOra";
+import DesktopPortaleB2C from "./DesktopPortaleB2C";
 import AgendaPanel from "./AgendaPanel";
 import MessaggiPanel from "./MessaggiPanel";
 import SettingsPanel from "./SettingsPanel";
@@ -55,19 +57,14 @@ const NAV = [
   { group:"Crescita", items:[
     { key:"leads",        ico:"zap",      label:"Trova Clienti" },
     { key:"rete",         ico:"share2",   label:"RETE Agenti" },
-    { key:"infissiora",   ico:"globe",    label:"InfissiOra",    soon:true },
-    { key:"cliente_b2c",  ico:"monitor",  label:"Portale B2C",   soon:true },
+    { key:"infissiora",   ico:"globe",    label:"InfissiOra" },
+    { key:"portale_b2c",  ico:"monitor",  label:"Portale Cliente" },
   ]},
   { group:"Sistema", items:[
     { key:"team",         ico:"users",    label:"Team" },
     { key:"settings",     ico:"settings", label:"Impostazioni" },
   ]},
 ];
-
-const SOON_INFO:Record<string,[string,string,string]> = {
-  infissiora:  ["InfissiOra","Marketplace inverso B2C. Brand pubblico InfissiOra.it.","#3B7FE0"],
-  cliente_b2c: ["Portale Cliente B2C","Il cliente vede stato lavoro, doc, pagamenti, chat.","#F97316"],
-};
 
 export default function MastroDesktop() {
   const { T, cantieri=[], msgs=[], fattureDB=[], montaggiDB=[], aziendaInfo, setTab, tab, giorniFermaCM, sogliaDays=7 } = useMastro();
@@ -76,28 +73,13 @@ export default function MastroDesktop() {
   const active = tab||"home";
   const TODAY = new Date().toISOString().split("T")[0];
 
-  const ferme   = cantieri.filter(c=>giorniFermaCM(c)>=sogliaDays&&c.fase!=="chiusura").length;
-  const unread  = msgs.filter((m:any)=>!m.letto).length;
-  const fatScad = fattureDB.filter((f:any)=>!f.pagata&&f.scadenza&&f.scadenza<TODAY).length;
-  const montOggi= montaggiDB.filter((m:any)=>m.data===TODAY).length;
+  const ferme    = cantieri.filter(c=>giorniFermaCM(c)>=sogliaDays&&c.fase!=="chiusura").length;
+  const unread   = msgs.filter((m:any)=>!m.letto).length;
+  const fatScad  = fattureDB.filter((f:any)=>!f.pagata&&f.scadenza&&f.scadenza<TODAY).length;
+  const montOggi = montaggiDB.filter((m:any)=>m.data===TODAY).length;
 
   const badge=(k:string)=>({messaggi:unread,commesse:ferme,contabilita:fatScad,fatture:fatScad,montaggi:montOggi}[k]||0);
-  const label= NAV.flatMap(g=>g.items).find(n=>n.key===active)?.label||"Dashboard";
-
-  const SoonView=({k}:{k:string})=>{
-    const p=SOON_INFO[k];
-    if(!p) return <div style={{padding:60,textAlign:"center" as any,color:T.sub}}>In sviluppo</div>;
-    return (
-      <div style={{display:"flex",flexDirection:"column" as any,alignItems:"center",justifyContent:"center",height:"70vh",gap:14,padding:40,textAlign:"center" as any}}>
-        <div style={{width:72,height:72,borderRadius:20,background:p[2]+"15",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={p[2]} strokeWidth="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-        </div>
-        <div style={{fontSize:22,fontWeight:500,color:T.text}}>{p[0]}</div>
-        <div style={{fontSize:14,color:T.sub,maxWidth:440,lineHeight:1.7}}>{p[1]}</div>
-        <div style={{padding:"8px 20px",borderRadius:8,background:p[2]+"10",border:`1px solid ${p[2]}25`,fontSize:12,fontWeight:500,color:p[2]}}>In sviluppo — Lancio 2026</div>
-      </div>
-    );
-  };
+  const lbl=NAV.flatMap(g=>g.items).find(n=>n.key===active)?.label||"Dashboard";
 
   const content=()=>{
     switch(active){
@@ -118,9 +100,11 @@ export default function MastroDesktop() {
       case "enea":          return <DesktopENEA/>;
       case "leads":         return <DesktopLeads/>;
       case "rete":          return <DesktopRete/>;
+      case "infissiora":    return <DesktopInfissiOra/>;
+      case "portale_b2c":   return <DesktopPortaleB2C/>;
       case "team":          return <DesktopTeam/>;
       case "settings":      return <SettingsPanel/>;
-      default:              return <SoonView k={active}/>;
+      default:              return <div style={{padding:60,textAlign:"center" as any,color:T.sub}}>Modulo in sviluppo</div>;
     }
   };
 
@@ -136,7 +120,7 @@ export default function MastroDesktop() {
           {NAV.map(({group,items})=>(
             <div key={group}>
               {!collapsed&&<div style={{fontSize:8,fontWeight:800,letterSpacing:2,textTransform:"uppercase" as any,color:"rgba(255,255,255,0.16)",padding:"10px 14px 2px"}}>{group}</div>}
-              {items.map(({key,ico,label:lbl,sub,soon})=>{
+              {items.map(({key,ico,label:itemLabel,sub})=>{
                 const on=active===key; const b=badge(key);
                 return (
                   <div key={key} onClick={()=>setTab(key)}
@@ -147,13 +131,12 @@ export default function MastroDesktop() {
                     <Ico d={ICO[ico as keyof typeof ICO]} s={14} c={on?"#fff":"rgba(255,255,255,0.32)"}/>
                     {!collapsed&&<>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:12,fontWeight:on?500:400,color:on?"#fff":"rgba(255,255,255,0.45)",whiteSpace:"nowrap" as any,overflow:"hidden",textOverflow:"ellipsis"}}>{lbl}</div>
+                        <div style={{fontSize:12,fontWeight:on?500:400,color:on?"#fff":"rgba(255,255,255,0.45)",whiteSpace:"nowrap" as any,overflow:"hidden",textOverflow:"ellipsis"}}>{itemLabel}</div>
                         {sub&&<div style={{fontSize:8,color:"rgba(255,255,255,0.18)"}}>{sub}</div>}
                       </div>
                       {b>0&&<div style={{minWidth:16,height:16,borderRadius:8,background:RED,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                         <span style={{fontSize:9,fontWeight:700,color:"#fff",lineHeight:1}}>{b}</span>
                       </div>}
-                      {soon&&b===0&&<span style={{background:TEAL+"14",color:TEAL,fontSize:8,fontWeight:700,borderRadius:4,padding:"1px 5px",flexShrink:0,letterSpacing:0.5}}>PRESTO</span>}
                     </>}
                   </div>
                 );
@@ -178,7 +161,7 @@ export default function MastroDesktop() {
       {/* MAIN */}
       <div style={{flex:1,display:"flex",flexDirection:"column" as any,overflow:"hidden",minWidth:0}}>
         <div style={{height:50,flexShrink:0,background:"#fff",borderBottom:`0.5px solid ${T.bdr}`,display:"flex",alignItems:"center",padding:"0 18px",gap:10}}>
-          <span style={{fontSize:14,fontWeight:500,color:T.text,whiteSpace:"nowrap" as any}}>{label}</span>
+          <span style={{fontSize:14,fontWeight:500,color:T.text,whiteSpace:"nowrap" as any}}>{lbl}</span>
           <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:7}}>
             {ferme>0&&<div onClick={()=>setTab("commesse")} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:RED+"0E",border:`1px solid ${RED}20`,cursor:"pointer"}}><div style={{width:4,height:4,borderRadius:"50%",background:RED}}/><span style={{fontSize:11,fontWeight:500,color:RED}}>{ferme} ferme</span></div>}
             {montOggi>0&&<div onClick={()=>setTab("montaggi")} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 9px",borderRadius:6,background:PURPLE+"0E",border:`1px solid ${PURPLE}20`,cursor:"pointer"}}><div style={{width:4,height:4,borderRadius:"50%",background:PURPLE}}/><span style={{fontSize:11,fontWeight:500,color:PURPLE}}>{montOggi} oggi</span></div>}
