@@ -3380,7 +3380,49 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         })()}
 
         {/* Tab Bar */}
-        
+        {!isDesktop && (() => {
+          const TABS = [
+            { id: "home",      ico: ICO.home,      label: "Home" },
+            { id: "agenda",    ico: ICO.calendar,  label: "Agenda" },
+            { id: "commesse",  ico: ICO.folder,    label: "Commesse" },
+            { id: "messaggi",  ico: ICO.inbox,     label: "Messaggi" },
+            { id: "settings",  ico: ICO.settings,  label: "Altro" },
+          ];
+          return (
+            <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+              background: T.card + "f0", borderTop: `1px solid ${T.bdr}`,
+              display: "flex", alignItems: "center",
+              backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" as any,
+              paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+              {TABS.map(t => {
+                const active = tab === t.id;
+                const badge = t.id === "messaggi" && (msgs||[]).filter((m:any) => !m.letto).length > 0
+                  ? (msgs||[]).filter((m:any) => !m.letto).length : 0;
+                return (
+                  <div key={t.id} onClick={() => { setTab(t.id); if (t.id !== "commesse") setSelectedCM(null); }}
+                    style={{ flex: 1, display: "flex", flexDirection: "column" as any, alignItems: "center",
+                      justifyContent: "center", padding: "8px 0 6px", cursor: "pointer", position: "relative" as any }}>
+                    {active && <div style={{ position: "absolute", top: 0, left: "20%", right: "20%",
+                      height: 2, borderRadius: "0 0 2px 2px", background: T.acc }} />}
+                    <div style={{ position: "relative" as any }}>
+                      <I d={t.ico} s={22} c={active ? T.acc : T.sub} />
+                      {badge > 0 && (
+                        <div style={{ position: "absolute", top: -4, right: -6, width: 16, height: 16,
+                          borderRadius: "50%", background: T.red, color: "#fff",
+                          fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {badge > 9 ? "9+" : badge}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 10, fontWeight: active ? 700 : 500,
+                      color: active ? T.acc : T.sub, marginTop: 3 }}>{t.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
       {/* === TUTORIAL INTERATTIVO === */}
             {/* ═══ ONBOARDING 5 STEP ═══ */}
       {tutoStep >= 1 && tutoStep <= 5 && (() => {
