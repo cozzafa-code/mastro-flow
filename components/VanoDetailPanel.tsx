@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — VanoDetailPanel
@@ -393,25 +393,33 @@ export default function VanoDetailPanel() {
       );
     };
 
-    // Inline input renderer (no sub-component = no focus loss)
+    // Inline input renderer — input nativo HTML (no numpad custom)
     const bInput = (label, field) => (
       <div key={field} style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>{label}</div>
-        <div
-          onClick={() => openNumpad(field)}
-          style={{
-            width: "100%", padding: "14px 16px", fontSize: 22, fontWeight: 700,
-            fontFamily: FM, textAlign: "center" as const,
-            border: `2px solid ${numpadField===field ? "#D08008" : m[field] > 0 ? step.color : T.bdr}`,
-            borderRadius: 12,
-            background: numpadField===field ? "#D0800812" : m[field] > 0 ? step.color + "08" : T.card,
-            color: m[field] > 0 ? T.text : T.sub,
-            cursor: "pointer", userSelect: "none" as const,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          }}
-        >
-          {numpadField===field ? (numpadVal || "—") : (m[field] > 0 ? m[field] : "Tocca per inserire")}
-          {m[field] > 0 && numpadField!==field && <span style={{fontSize:13,color:T.sub}}>mm</span>}
+        <div style={{ position: "relative" }}>
+          <input
+            type="number"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={m[field] > 0 ? m[field] : ""}
+            placeholder="Tocca per inserire"
+            onChange={e => {
+              const val = parseInt(e.target.value) || 0;
+              updateMisura(v.id, field, val);
+            }}
+            style={{
+              width: "100%", padding: "14px 16px", fontSize: 22, fontWeight: 700,
+              fontFamily: FM, textAlign: "center" as const,
+              border: `2px solid ${m[field] > 0 ? step.color : T.bdr}`,
+              borderRadius: 12,
+              background: m[field] > 0 ? step.color + "08" : T.card,
+              color: m[field] > 0 ? T.text : T.sub,
+              outline: "none", boxSizing: "border-box" as const,
+              WebkitAppearance: "none" as const,
+            }}
+          />
+          {m[field] > 0 && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: T.sub, pointerEvents: "none" }}>mm</span>}
         </div>
       </div>
     );
@@ -2424,56 +2432,7 @@ export default function VanoDetailPanel() {
 
         </div>
       
-      {/* ══ NUMPAD OVERLAY ══ */}
-      {numpadField && (
-        <div style={{
-          position:"fixed",bottom:0,left:0,right:0,zIndex:800,
-          background:"#0a0c10ee",borderTop:"2px solid #D08008",
-          borderRadius:"16px 16px 0 0",backdropFilter:"blur(8px)",
-          padding:"14px 16px 32px",
-        }}>
-          {/* Label e display */}
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontSize:12,fontWeight:700,color:"#D08008",textTransform:"uppercase" as const,letterSpacing:0.6}}>
-              {numpadField}
-            </div>
-            <button onClick={closeNumpad} style={{background:"none",border:"none",color:"#888",fontSize:20,cursor:"pointer"}}>×</button>
-          </div>
-          <div style={{
-            fontSize:36,fontWeight:800,fontFamily:"monospace",
-            textAlign:"right" as const,color:"#fff",
-            padding:"10px 14px",background:"#131318",
-            borderRadius:10,border:"1px solid #333",marginBottom:10,
-          }}>
-            {numpadVal || "—"} <span style={{fontSize:16,color:"#888"}}>mm</span>
-          </div>
-          {/* Tasti rapidi */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:5,marginBottom:8}}>
-            {["600","800","1000","1200","1400","1500","2000","2200"].map(v2=>(
-              <button key={v2} onPointerDown={e=>{e.preventDefault();setNumpadVal(v2);}} style={{
-                padding:"10px 4px",borderRadius:8,
-                border:"1px solid #D0800840",background:"#D0800812",
-                color:"#D08008",fontSize:13,fontWeight:700,
-                cursor:"pointer",fontFamily:"inherit",
-              }}>{v2}</button>
-            ))}
-          </div>
-          {/* Numpad */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
-            {["7","8","9","4","5","6","1","2","3"].map(k=>(
-              <button key={k} onPointerDown={e=>{e.preventDefault();numpadTap(k);}} style={{
-                minHeight:58,borderRadius:10,border:"1px solid #2a2a2a",
-                background:"#1a1a1a",color:"#fff",
-                fontSize:24,fontWeight:700,cursor:"pointer",fontFamily:"inherit",
-              }}>{k}</button>
-            ))}
-            <button onPointerDown={e=>{e.preventDefault();numpadTap("0");}} style={{minHeight:58,borderRadius:10,border:"1px solid #2a2a2a",background:"#1a1a1a",color:"#fff",fontSize:24,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>0</button>
-            <button onPointerDown={e=>{e.preventDefault();numpadTap("");}} style={{minHeight:58,borderRadius:10,border:"1px solid #DC444440",background:"#DC444418",color:"#DC4444",fontSize:22,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}></button>
-            <button onPointerDown={e=>{e.preventDefault();confirmNumpad();}} style={{minHeight:58,borderRadius:10,border:"none",background:"#1A9E73",color:"#fff",fontSize:16,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>OK </button>
-          </div>
-        </div>
-      )}
-
+      
       {showFotoMisure && (
         <FotoMisure
           T={T}
