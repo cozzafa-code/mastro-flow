@@ -1688,7 +1688,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           <div onClick={()=>togglePanel("sopralluogo")} style={{...headerStyle,cursor:"pointer",borderBottom:open_sopr?`1px solid ${fase?.color}25`:"none",userSelect:"none"}}>
             <span style={{display:"inline-flex"}}><Ico d={ICO.search} s={16} c={T.blue} /></span>
             <span style={{fontSize:13,fontWeight:700,color:T.text,flex:1}}>Sopralluogo</span>
-            <span style={{fontSize:11,fontWeight:700,color:tuttiCompletati?T.grn:T.orange,marginRight:4}}>{vaniCompletati}/{vaniAttivi2.length} vani <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg></span>
+            <span style={{fontSize:11,fontWeight:700,color:tuttiCompletati?T.grn:T.orange,marginRight:4}}>{vaniCompletati}/{vaniAttivi2.length} vani </span>
             {ndone>0 && <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6}}/>}
             <span style={{fontSize:13,color:T.sub,transform:open_sopr?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s"}}>▾</span>
           </div>
@@ -1701,7 +1701,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             <Field label="Note sopralluogo" field="noteSopralluogo" placeholder="Annotazioni rapide..."/>
             {tuttiCompletati && (
               <div style={{marginTop:8,padding:"10px 12px",borderRadius:8,background:T.grn+"15",border:`1px solid ${T.grn}30`,fontSize:12,color:T.grn,fontWeight:600,textAlign:"center"}}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Pronto per il preventivo
+                 Pronto per il preventivo
               </div>
             )}
           </div>}
@@ -1900,7 +1900,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       return (
         <div style={panelStyle}>
           <div style={headerStyle}>
-            <span style={{fontSize:16}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+            <span style={{fontSize:16}}></span>
             <span style={{fontSize:13,fontWeight:700,color:T.text}}>Chiusura Commessa</span>
           </div>
           <div style={{padding:"12px 14px"}}>
@@ -2990,7 +2990,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   <span style={S.badge(prioColor + "18", prioColor)}>{prioLabel}</span>
                   {t.cm && <span onClick={() => { const cm = cantieri.find(c => c.code === t.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); setSelectedTask(null); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}><Ico d={ICO.folder} s={12} c={T.acc} /> {t.cm}</span>}
                   {t.persona && <span style={S.badge(T.purpleLt, T.purple)}><I d={ICO.user} /> {t.persona}</span>}
-                  {t.done && <span style={S.badge(T.grnLt, T.grn)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Completato</span>}
+                  {t.done && <span style={S.badge(T.grnLt, T.grn)}> Completato</span>}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div onClick={() => { toggleTask(t.id); setSelectedTask({ ...t, done: !t.done }); }} style={{ padding: "14px", borderRadius: 12, background: t.done ? T.bg : T.grn, color: t.done ? T.sub : "#fff", textAlign: "center", cursor: "pointer", fontSize: 14, fontWeight: 800, border: `1px solid ${t.done ? T.bdr : T.grn}` }}>{t.done ? "↩ Riapri" : "Completa"}</div>
@@ -3326,7 +3326,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
                 {list.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "28px 16px" }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}></div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Nessun problema segnalato</div>
                     <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Ottimo lavoro!</div>
                   </div>
@@ -3358,7 +3358,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                         )}
                         {p.stato === "in_corso" && (
                           <button onClick={() => setProblemi(prev => prev.map(x => x.id === p.id ? { ...x, stato: "risolto", dataRisoluzione: new Date().toISOString() } : x))} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `1px solid #1A9E73`, background: "#1A9E7310", color: "#1A9E73", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Risolvi
+                             Risolvi
                           </button>
                         )}
                         {p.stato === "risolto" && (
@@ -3550,7 +3550,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             <div style={S.modalInner}>
               {sendConfirm === "sent" ? (
                 <div style={{ textAlign: "center", padding: "30px 0" }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                  <div style={{ fontSize: 48, marginBottom: 12 }}></div>
                   <div style={{ fontSize: 17, fontWeight: 700, color: T.grn }}>Commessa inviata!</div>
                   <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Email inviata con tutti i dati selezionati</div>
                 </div>
@@ -3733,7 +3733,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Avanzato a {faseNotif.fase}</div>
               <div style={{ fontSize: 11, color: T.sub }}>Email inviata a <strong>{faseNotif.addetto}</strong></div>
             </div>
-            <div style={{ fontSize: 18 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+            <div style={{ fontSize: 18 }}></div>
           </div>
         )}
 
@@ -3927,7 +3927,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 </div>
                 <div onClick={closeCamera}
                   style={{ padding: "4px 10px", borderRadius: 6, background: "rgba(255,59,48,0.3)", fontSize: 10, color: "#ff6b6b", fontWeight: 700, cursor: "pointer" }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Chiudi
+                   Chiudi
                 </div>
               </div>
             </div>
@@ -4009,7 +4009,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               {aiPhotoStep === 2 && (
                 <>
                   <div style={{ textAlign: "center", marginBottom: 16 }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}></div>
                     <div style={{ fontSize: 15, fontWeight: 800, color: T.grn }}>Analisi completata!</div>
                     <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Misure suggerite per "{selectedVano?.nome}" (verifica con metro)</div>
                   </div>
@@ -4035,7 +4035,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                     }
                     setShowAIPhoto(false);
                   }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #af52de, #0D7C6B)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, marginBottom: 8 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Applica misure suggerite
+                     Applica misure suggerite
                   </button>
                   <button onClick={() => setShowAIPhoto(false)} style={{ width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FF, color: T.sub }}>Solo anteprima, non applicare</button>
                 </>
@@ -4146,7 +4146,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{inboxResult.matchedCommessa?.code} — {inboxResult.matchedCommessa?.cliente}</div>
                     <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedOrdine.fornitore?.nome || "—"} · €{(inboxResult.matchedOrdine.totaleIva || 0).toLocaleString("it-IT")}</div>
                     <button onClick={() => confermaInboxDoc(inboxResult.matchedOrdine.id)} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ASSEGNA A QUESTO ORDINE
+                       ASSEGNA A QUESTO ORDINE
                     </button>
                   </div>
                 )}
@@ -4174,7 +4174,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                         <div style={{ fontSize: 14, fontWeight: 700 }}>{inboxResult.matchedCommessa.code} — {inboxResult.matchedCommessa.cliente} {inboxResult.matchedCommessa.cognome || ""}</div>
                         <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{inboxResult.matchedCommessa.indirizzo || "—"}</div>
                         <button onClick={() => assegnaDocUniversale(inboxResult.matchedCommessa.id, inboxResult.docTipo)} style={{ width: "100%", marginTop: 10, padding: 14, borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ASSEGNA QUI
+                           ASSEGNA QUI
                         </button>
                       </div>
                     )}
