@@ -5,56 +5,40 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
 
   const buildContext = () => {
     if (!mastroCtx) return {};
-    const {
-      cantieri = [], fattureDB = [], fatturePassive = [], tasks = [],
-      montaggiDB = [], ordiniFornDB = [], pipelineDB = [], events = [],
-      contatti = [], msgs = [], aziendaDB,
-    } = mastroCtx;
+    const { cantieri = [], fattureDB = [], tasks = [], montaggiDB = [], ordiniFornDB = [], pipelineDB = [] } = mastroCtx;
     const oggi = new Date().toISOString().split("T")[0];
     const faseCount = {};
     cantieri.forEach(c => { faseCount[c.fase] = (faseCount[c.fase] || 0) + 1; });
     const fattureAperte = fattureDB.filter(f => !f.pagata);
-    const fattureScadute = fattureAperte.filter(f => f.scadenza && f.scadenza < oggi);
-    const taskAperti = tasks.filter(t => !t.done);
-    const eventiProssimi = events.filter(e => e.date >= oggi).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 20);
-    const montaggiProssimi = montaggiDB.filter(m => m.data >= oggi && m.stato !== "completato").sort((a,b) => a.data.localeCompare(b.data));
     return {
       oggi,
-      azienda: aziendaDB ? { nome: aziendaDB.nome || aziendaDB.ragione, telefono: aziendaDB.telefono } : null,
       riepilogo: {
         totaleCommesse: cantieri.length,
         commessePerFase: faseCount,
         fatturateTotale: fattureDB.reduce((s, f) => s + (f.importo || 0), 0),
         fatturateIncassate: fattureDB.filter(f => f.pagata).reduce((s, f) => s + (f.importo || 0), 0),
         fattureAperte: fattureAperte.length,
-        fattureScadute: fattureScadute.length,
-        costiTotali: fatturePassive.reduce((s, f) => s + (f.importo || 0), 0),
-        taskAperti: taskAperti.length,
-        taskScaduti: taskAperti.filter(t => t.date && t.date < oggi).length,
-        montaggiProssimi: montaggiProssimi.length,
+        fattureScadute: fattureAperte.filter(f => f.scadenza && f.scadenza < oggi).length,
+        taskAperti: tasks.filter(t => !t.done).length,
+        montaggiProssimi: montaggiDB.filter(m => m.data >= oggi && m.stato !== "completato").length,
         ordiniAttivi: ordiniFornDB.filter(o => o.stato !== "consegnato").length,
-        messaggiNonLetti: msgs.filter(m => !m.read).length,
       },
       commesse: cantieri.map(c => ({
-        code: c.code, cliente: (c.cliente||"")+" "+(c.cognome||""),
-        fase: c.fase, euro: c.euro||0, scadenza: c.scadenza,
-        confermato: c.confermato, sistema: c.sistema,
-        indirizzo: c.indirizzo, telefono: c.telefono, note: c.note,
-        vani: (c.rilievi||[]).reduce((acc,r) => acc+(r.vani||[]).length, 0),
+        code: c.code,
+        cliente: `${c.cliente || ""} ${c.cognome || ""}`.trim(),
+        fase: c.fase, euro: c.euro || 0,
+        scadenza: c.scadenza, confermato: c.confermato,
+        sistema: c.sistema, indirizzo: c.indirizzo,
       })),
-      tasks: taskAperti.map(t => ({ id: t.id, testo: t.text, priorita: t.priority, data: t.date, commessa: t.cm })),
-      eventi: eventiProssimi.map(e => ({ testo: e.text, data: e.date, ora: e.time, tipo: e.tipo, commessa: e.cm })),
-      fatture: fattureDB.slice(0, 30).map(f => ({ numero: f.numero, cliente: f.cliente, importo: f.importo, tipo: f.tipo, pagata: f.pagata, scadenza: f.scadenza, commessa: f.cmCode })),
-      fattureScadute: fattureScadute.map(f => ({ numero: f.numero, cliente: f.cliente, importo: f.importo, scadenza: f.scadenza })),
-      montaggi: montaggiProssimi.map(m => ({ data: m.data, orario: m.orario, cliente: m.cliente, vani: m.vani, stato: m.stato, commessa: m.cmCode })),
-      ordini: ordiniFornDB.filter(o => o.stato !== "consegnato").map(o => ({ fornitore: o.fornitore?.nome, totale: o.totaleIva, stato: o.stato, consegnaPrevista: o.consegna?.prevista, commessa: o.cmCode })),
+      fattureAperte: fattureAperte.slice(0, 15),
       pipeline: pipelineDB,
     };
   };
   const [side, setSide] = useState("right");
   const [topPx, setTopPx] = useState(300);
   const [aiOpen, setAiOpen] = useState(false);
-  const [wakeActive, setWakeActive] = useState(false); // wake word listener attivo
+  const [wakeActive, setWakeActive] = useState(false);
+  const [audioUnlocked, setAudioUnlocked] = useState(false); // wake word listener attivo
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -171,7 +155,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     if (itVoice) utt.voice = itVoice;
     utt.onstart = () => { setIsSpeaking(true); isSpeakingRef.current = true; };
     utt.onend = () => { setIsSpeaking(false); isSpeakingRef.current = false; if (liveModeRef.current) setTimeout(() => startListening(), 400); };
-    // feedback vocale rimosso (browser policy)
+    window.speechSynthesis.speak(utt);
   };
   const stopSpeaking = () => {
     window.speechSynthesis?.cancel();
@@ -253,6 +237,8 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   // Riproduci audio base64 ElevenLabs
   const audioRef = (window as any).__mastroAudio;
   const playAudio = (audioDataUrl: string) => {
+    // Se audio non sbloccato, skip silenziosamente
+    if (!audioUnlocked) { if (liveModeRef.current) setTimeout(() => startListening(), 400); return; }
     setIsSpeaking(true); isSpeakingRef.current = true;
     const audio = new Audio(audioDataUrl);
     (window as any).__mastroAudio = audio;
@@ -261,7 +247,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
       if (liveModeRef.current) setTimeout(() => startListening(), 400);
     };
     audio.onerror = () => { setIsSpeaking(false); isSpeakingRef.current = false; speak(""); };
-    audio.play().catch(() => { setIsSpeaking(false); isSpeakingRef.current = false; if (liveModeRef.current) setTimeout(() => startListening(), 400); });
+    audio.play().catch(() => { setIsSpeaking(false); isSpeakingRef.current = false; });
   };
 
   const startListening = () => {
@@ -324,7 +310,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
           if (window.speechSynthesis) {
             const utt = new SpeechSynthesisUtterance("Dimmi");
             utt.lang = "it-IT"; utt.rate = 1.2; utt.volume = 0.8;
-            // feedback vocale rimosso (browser policy)
+            window.speechSynthesis.speak(utt);
           }
           break;
         }
@@ -405,6 +391,12 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </div>
           </div>
+          {!audioUnlocked && (
+            <div onClick={unlockAudio} style={{ background: "#0F766E", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", borderBottom: "1px solid #0a5940" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Tocca per attivare la voce</span>
+            </div>
+          )}
           {liveMode && (
             <div style={{ background: isListening ? "#DC444415" : "#F1F5F9", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #E2E8F0" }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: isListening ? "#DC4444" : isSpeaking ? acc : "#E2E8F0", display: "flex", alignItems: "center", justifyContent: "center" }}>
