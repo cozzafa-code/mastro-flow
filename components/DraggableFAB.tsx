@@ -5,32 +5,49 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
 
   const buildContext = () => {
     if (!mastroCtx) return {};
-    const { cantieri = [], fattureDB = [], tasks = [], montaggiDB = [], ordiniFornDB = [], pipelineDB = [] } = mastroCtx;
+    const {
+      cantieri = [], fattureDB = [], fatturePassive = [], tasks = [],
+      montaggiDB = [], ordiniFornDB = [], pipelineDB = [], events = [],
+      contatti = [], msgs = [], aziendaDB,
+    } = mastroCtx;
     const oggi = new Date().toISOString().split("T")[0];
     const faseCount = {};
     cantieri.forEach(c => { faseCount[c.fase] = (faseCount[c.fase] || 0) + 1; });
     const fattureAperte = fattureDB.filter(f => !f.pagata);
+    const fattureScadute = fattureAperte.filter(f => f.scadenza && f.scadenza < oggi);
+    const taskAperti = tasks.filter(t => !t.done);
+    const eventiProssimi = events.filter(e => e.date >= oggi).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 20);
+    const montaggiProssimi = montaggiDB.filter(m => m.data >= oggi && m.stato !== "completato").sort((a,b) => a.data.localeCompare(b.data));
     return {
       oggi,
+      azienda: aziendaDB ? { nome: aziendaDB.nome || aziendaDB.ragione, telefono: aziendaDB.telefono } : null,
       riepilogo: {
         totaleCommesse: cantieri.length,
         commessePerFase: faseCount,
         fatturateTotale: fattureDB.reduce((s, f) => s + (f.importo || 0), 0),
         fatturateIncassate: fattureDB.filter(f => f.pagata).reduce((s, f) => s + (f.importo || 0), 0),
         fattureAperte: fattureAperte.length,
-        fattureScadute: fattureAperte.filter(f => f.scadenza && f.scadenza < oggi).length,
-        taskAperti: tasks.filter(t => !t.done).length,
-        montaggiProssimi: montaggiDB.filter(m => m.data >= oggi && m.stato !== "completato").length,
+        fattureScadute: fattureScadute.length,
+        costiTotali: fatturePassive.reduce((s, f) => s + (f.importo || 0), 0),
+        taskAperti: taskAperti.length,
+        taskScaduti: taskAperti.filter(t => t.date && t.date < oggi).length,
+        montaggiProssimi: montaggiProssimi.length,
         ordiniAttivi: ordiniFornDB.filter(o => o.stato !== "consegnato").length,
+        messaggiNonLetti: msgs.filter(m => !m.read).length,
       },
       commesse: cantieri.map(c => ({
-        code: c.code,
-        cliente: `${c.cliente || ""} ${c.cognome || ""}`.trim(),
-        fase: c.fase, euro: c.euro || 0,
-        scadenza: c.scadenza, confermato: c.confermato,
-        sistema: c.sistema, indirizzo: c.indirizzo,
+        code: c.code, cliente: (c.cliente||"")+" "+(c.cognome||""),
+        fase: c.fase, euro: c.euro||0, scadenza: c.scadenza,
+        confermato: c.confermato, sistema: c.sistema,
+        indirizzo: c.indirizzo, telefono: c.telefono, note: c.note,
+        vani: (c.rilievi||[]).reduce((acc,r) => acc+(r.vani||[]).length, 0),
       })),
-      fattureAperte: fattureAperte.slice(0, 15),
+      tasks: taskAperti.map(t => ({ id: t.id, testo: t.text, priorita: t.priority, data: t.date, commessa: t.cm })),
+      eventi: eventiProssimi.map(e => ({ testo: e.text, data: e.date, ora: e.time, tipo: e.tipo, commessa: e.cm })),
+      fatture: fattureDB.slice(0, 30).map(f => ({ numero: f.numero, cliente: f.cliente, importo: f.importo, tipo: f.tipo, pagata: f.pagata, scadenza: f.scadenza, commessa: f.cmCode })),
+      fattureScadute: fattureScadute.map(f => ({ numero: f.numero, cliente: f.cliente, importo: f.importo, scadenza: f.scadenza })),
+      montaggi: montaggiProssimi.map(m => ({ data: m.data, orario: m.orario, cliente: m.cliente, vani: m.vani, stato: m.stato, commessa: m.cmCode })),
+      ordini: ordiniFornDB.filter(o => o.stato !== "consegnato").map(o => ({ fornitore: o.fornitore?.nome, totale: o.totaleIva, stato: o.stato, consegnaPrevista: o.consegna?.prevista, commessa: o.cmCode })),
       pipeline: pipelineDB,
     };
   };
@@ -143,7 +160,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const SND_Icon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
   const icons = { AI: AI_Icon, CAL, USR, FLD, MSG, BCK };
 
-  // ── AI functions ──
+  // ÔöÇÔöÇ AI functions ÔöÇÔöÇ
   const speak = (text) => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -154,7 +171,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     if (itVoice) utt.voice = itVoice;
     utt.onstart = () => { setIsSpeaking(true); isSpeakingRef.current = true; };
     utt.onend = () => { setIsSpeaking(false); isSpeakingRef.current = false; if (liveModeRef.current) setTimeout(() => startListening(), 400); };
-    window.speechSynthesis.speak(utt);
+    // feedback vocale rimosso (browser policy)
   };
   const stopSpeaking = () => {
     window.speechSynthesis?.cancel();
@@ -244,7 +261,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
       if (liveModeRef.current) setTimeout(() => startListening(), 400);
     };
     audio.onerror = () => { setIsSpeaking(false); isSpeakingRef.current = false; speak(""); };
-    audio.play().catch(() => { setIsSpeaking(false); isSpeakingRef.current = false; });
+    audio.play().catch(() => { setIsSpeaking(false); isSpeakingRef.current = false; if (liveModeRef.current) setTimeout(() => startListening(), 400); });
   };
 
   const startListening = () => {
@@ -258,7 +275,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     rec.onend = () => {
       setIsListening(false);
       // In live mode: riavvia ascolto solo se non stiamo parlando
-      // (se stiamo parlando, speak.onend lo riavvierà)
+      // (se stiamo parlando, speak.onend lo riavvier├á)
       if (liveModeRef.current) {
         setTimeout(() => {
           if (liveModeRef.current && !window.speechSynthesis?.speaking) {
@@ -277,7 +294,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     else { setLiveMode(true); setTimeout(() => startListening(), 200); }
   };
 
-  // ── Wake word "Mastro" ──
+  // ÔöÇÔöÇ Wake word "Mastro" ÔöÇÔöÇ
   const startWakeWord = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR || wakeListeningRef.current) return;
@@ -307,7 +324,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
           if (window.speechSynthesis) {
             const utt = new SpeechSynthesisUtterance("Dimmi");
             utt.lang = "it-IT"; utt.rate = 1.2; utt.volume = 0.8;
-            window.speechSynthesis.speak(utt);
+            // feedback vocale rimosso (browser policy)
           }
           break;
         }
@@ -372,14 +389,14 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
         </div>
       </div>
 
-      {/* ── PANNELLO AI ── */}
+      {/* ÔöÇÔöÇ PANNELLO AI ÔöÇÔöÇ */}
       {aiOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", flexDirection: "column", background: "#F8FAFC" }}>
           <div style={{ padding: "16px 20px 12px", borderBottom: "1px solid #E2E8F0", background: "#fff", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: acc, display: "flex", alignItems: "center", justifyContent: "center" }}><AI_Sm s={18} /></div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A" }}>MASTRO AI</div>
-              <div style={{ fontSize: 11, color: "#64748B" }}>{liveMode ? (isListening ? "In ascolto..." : isSpeaking ? "Sto parlando..." : "Live — parla ora") : "Assistente intelligente"}</div>
+              <div style={{ fontSize: 11, color: "#64748B" }}>{liveMode ? (isListening ? "In ascolto..." : isSpeaking ? "Sto parlando..." : "Live ÔÇö parla ora") : "Assistente intelligente"}</div>
             </div>
             <button onClick={toggleLiveMode} style={{ padding: "6px 12px", borderRadius: 20, border: `2px solid ${liveMode ? "#DC4444" : acc}`, background: liveMode ? "#DC4444" : "transparent", color: liveMode ? "#fff" : acc, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
               {liveMode ? "Stop" : "Live"}
