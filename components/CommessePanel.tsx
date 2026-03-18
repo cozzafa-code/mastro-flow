@@ -1,168 +1,246 @@
 "use client";
 // @ts-nocheck
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — CommessePanel v3 — Linear/Notion minimal
-// Removed pipeline bar (noise), cleaner cards, more air
-// ═══════════════════════════════════════════════════════════
-import React from "react";
+// MASTRO ERP — CommessePanel v4 — Design moderno
+import React, { useState } from "react";
 import { useMastro } from "./MastroContext";
-import { AFASE, FM, FF, ICO, Ico } from "./mastro-constants";
+import { FF, FM, ICO, I } from "./mastro-constants";
 import RilieviListPanel from "./RilieviListPanel";
-import CommessaCard, { CommessaCardProps } from "./CommessaCard";
 import CMDetailPanel from "./CMDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import RiepilogoPanel from "./RiepilogoPanel";
 
 export default function CommessePanel() {
   const {
-    T, S, isDesktop, isTablet, fs, PIPELINE,
+    T, isDesktop, isTablet, PIPELINE,
     cantieri, filtered, selectedCM, setSelectedCM, selectedRilievo, selectedVano,
     showRiepilogo, cmView, setCmView, filterFase, setFilterFase,
     searchQ, setSearchQ, setShowModal, setTab,
-    faseIndex, getVaniAttivi, giorniFermaCM, sogliaDays,
-    apriInboxDocumento,
+    getVaniAttivi, giorniFermaCM, sogliaDays,
   } = useMastro();
 
-  // ═══ CARD VIEW ═══
-  const renderCard = (c: any, inGrid: boolean) => {
-    const TODAY_ISO = new Date().toISOString().split("T")[0];
-    const isScad = c.scadenza && c.scadenza < TODAY_ISO;
-    const isFerma = (giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura") || isScad;
+  const TODAY = new Date().toISOString().split("T")[0];
+  const fmtEuro = (n: number) => n > 0 ? "€" + n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) : "";
+  const fmtData = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "";
+  const initials = (c: any) => ((c.cliente || "?").charAt(0) + (c.cognome || "").charAt(0)).toUpperCase();
 
-    // Mappa fase → stato CommessaCard
-    const statoMap: Record<string, CommessaCardProps['stato']> = {
-      chiusura:    'completata',
-      annullata:   'annullata',
-      sopralluogo: 'in_attesa',
-    };
-    const stato = isFerma ? 'annullata' : (statoMap[c.fase] ?? 'in_lavorazione');
-
-    const scadenzaFmt = c.scadenza
-      ? new Date(c.scadenza + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" })
-      : "—";
-
-    return (
-      <div key={c.id} style={{ margin: inGrid ? 0 : "0 20px 10px" }}>
-        <CommessaCard
-          id={c.id}
-          numero={c.code || ""}
-          cliente={`${c.cliente || ""}${c.cognome ? " " + c.cognome : ""}`}
-          descrizione={c.indirizzo || ""}
-          stato={stato}
-          importo={c.euro ? parseFloat(c.euro) : 0}
-          cantiere={c.indirizzo || "—"}
-          scadenza={scadenzaFmt}
-          onApri={() => { setSelectedCM(c); setTab("commesse"); }}
-        />
-      </div>
-    );
+  const getFaseInfo = (c: any) => PIPELINE.find(p => p.id === c.fase) || { nome: c.fase, color: T.acc };
+  const getProgress = (c: any) => {
+    const idx = PIPELINE.findIndex(p => p.id === c.fase);
+    return idx >= 0 ? Math.round((idx + 1) / PIPELINE.length * 100) : 0;
   };
+  const isFerma = (c: any) => giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura";
+  const isScaduta = (c: any) => c.scadenza && c.scadenza < TODAY;
 
-  // ═══ LIST VIEW ═══
-  const renderRow = (c: any) => {
-    const fase = PIPELINE.find(p => p.id === c.fase);
-    const TODAY_ISO = new Date().toISOString().split("T")[0];
-    const isScad = c.scadenza && c.scadenza < TODAY_ISO;
-    const isFerma = giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura";
+  // ── CARD VIEW ──
+  const renderCard = (c: any) => {
+    const fase = getFaseInfo(c);
+    const prog = getProgress(c);
+    const ferma = isFerma(c);
+    const scad = isScaduta(c);
     const vaniA = getVaniAttivi(c);
-    const vaniOk = vaniA.filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length >= 6).length;
-    const faseIdx = PIPELINE.findIndex(x => x.id === c.fase);
-    const prog = faseIdx >= 0 ? Math.round((faseIdx + 1) / PIPELINE.length * 100) : 0;
+    const vaniOk = vaniA.filter(v => Object.values(v.misure || {}).filter((x: any) => x > 0).length >= 6).length;
+    const alert = ferma || scad;
+    const euroVal = c.euro ? parseFloat(c.euro) : 0;
 
     return (
       <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
         style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "13px 16px", cursor: "pointer",
-          borderBottom: `1px solid ${T.bdr}`,
+          background: T.card, borderRadius: 16, padding: "16px 16px 14px",
+          border: `1.5px solid ${alert ? T.red + "40" : T.bdr}`,
+          cursor: "pointer", position: "relative", overflow: "hidden",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+          transition: "box-shadow 0.15s",
         }}>
-        <div style={{ width: 3, height: 32, borderRadius: 2, background: isFerma ? T.red : fase?.color || T.acc, flexShrink: 0 }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{c.cliente}</span>
-            <span style={{ fontSize: 10, color: T.sub, fontFamily: FM }}>{c.code}</span>
-            {isFerma && <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.red, flexShrink: 0 }} />}
+
+        {/* Striscia fase in alto */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: alert ? T.red : fase.color || T.acc, borderRadius: "16px 16px 0 0" }} />
+
+        {/* Header: avatar + codice + alert */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+            background: alert ? T.red + "18" : (fase.color || T.acc) + "18",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 800, color: alert ? T.red : fase.color || T.acc,
+          }}>{initials(c)}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: T.text, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {c.cliente}{c.cognome ? " " + c.cognome : ""}
+            </div>
+            <div style={{ fontSize: 11, color: T.sub, fontFamily: FM, marginTop: 2 }}>{c.code}</div>
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 3, alignItems: "center" }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: fase?.color || T.acc }}>{fase?.nome}</span>
-            {vaniA.length > 0 && <span style={{ fontSize: 10, color: T.sub }}>{vaniOk}/{vaniA.length} vani</span>}
-            {c.euro && <span style={{ fontSize: 11, fontWeight: 700, color: T.text, fontFamily: FM }}>€{parseFloat(c.euro).toLocaleString("it-IT")}</span>}
+          {alert && (
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.red, flexShrink: 0, marginTop: 4 }} />
+          )}
+        </div>
+
+        {/* Indirizzo */}
+        {c.indirizzo && (
+          <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {c.indirizzo}
           </div>
+        )}
+
+        {/* Progress bar */}
+        <div style={{ height: 4, background: T.bg, borderRadius: 2, marginBottom: 10, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: prog + "%", background: alert ? T.red : fase.color || T.acc, borderRadius: 2, transition: "width 0.3s" }} />
         </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, fontFamily: FM }}>{prog}%</div>
+
+        {/* Footer: fase + vani + euro */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ padding: "3px 8px", borderRadius: 6, background: (alert ? T.red : fase.color || T.acc) + "15", fontSize: 10, fontWeight: 700, color: alert ? T.red : fase.color || T.acc }}>
+              {ferma ? `Ferma ${giorniFermaCM(c)}gg` : scad ? "Scaduta" : fase.nome}
+            </div>
+            {vaniA.length > 0 && (
+              <div style={{ fontSize: 10, color: T.sub }}>{vaniOk}/{vaniA.length} vani</div>
+            )}
+          </div>
+          {euroVal > 0 && (
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{fmtEuro(euroVal)}</div>
+          )}
         </div>
-        <span style={{ color: T.sub + "50", fontSize: 16 }}></span>
       </div>
     );
   };
 
-  // ═══ ROUTING ═══
+  // ── LIST VIEW ──
+  const renderRow = (c: any) => {
+    const fase = getFaseInfo(c);
+    const prog = getProgress(c);
+    const ferma = isFerma(c);
+    const scad = isScaduta(c);
+    const alert = ferma || scad;
+    const euroVal = c.euro ? parseFloat(c.euro) : 0;
+    const vaniA = getVaniAttivi(c);
+
+    return (
+      <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
+        style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer", borderBottom: `1px solid ${T.bdr}`, position: "relative" }}>
+
+        {/* Avatar */}
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+          background: alert ? T.red + "18" : (fase.color || T.acc) + "18",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 12, fontWeight: 800, color: alert ? T.red : fase.color || T.acc,
+        }}>{initials(c)}</div>
+
+        {/* Main */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 180 }}>
+              {c.cliente}{c.cognome ? " " + c.cognome : ""}
+            </span>
+            <span style={{ fontSize: 10, color: T.sub, fontFamily: FM, flexShrink: 0 }}>{c.code}</span>
+            {alert && <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.red, flexShrink: 0 }} />}
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: alert ? T.red : fase.color || T.acc }}>
+              {ferma ? `Ferma ${giorniFermaCM(c)}gg` : scad ? "Scaduta" : fase.nome}
+            </span>
+            {vaniA.length > 0 && <span style={{ fontSize: 10, color: T.sub }}>{vaniA.length} vani</span>}
+            {c.scadenza && !scad && <span style={{ fontSize: 10, color: T.sub }}>{fmtData(c.scadenza)}</span>}
+          </div>
+          {/* Mini progress */}
+          <div style={{ height: 2, background: T.bg, borderRadius: 1, marginTop: 5, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: prog + "%", background: alert ? T.red : fase.color || T.acc, borderRadius: 1 }} />
+          </div>
+        </div>
+
+        {/* Right */}
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          {euroVal > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{fmtEuro(euroVal)}</div>}
+          <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{prog}%</div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── ROUTING ──
   if (showRiepilogo && selectedCM) return <RiepilogoPanel />;
   if (selectedVano) return <VanoSectorRouter />;
   if (selectedRilievo) return <CMDetailPanel />;
   if (selectedCM) return <RilieviListPanel />;
 
+  const fermeCount = cantieri.filter(c => isFerma(c)).length;
+
   return (
     <div style={{ paddingBottom: 80 }}>
+
       {/* Header */}
       <div style={{ padding: "20px 20px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: "-0.03em" }}>Commesse</div>
-          <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>{cantieri.length} totali · {filtered.length} visibili</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: "-0.03em" }}>Commesse</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 3 }}>
+            <span style={{ fontSize: 12, color: T.sub }}>{cantieri.length} totali</span>
+            {fermeCount > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.red, background: T.red + "12", padding: "2px 7px", borderRadius: 6 }}>
+                {fermeCount} ferme
+              </span>
+            )}
+          </div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <div style={{ display: "flex", background: T.bg, borderRadius: 8, padding: 2, border: `1px solid ${T.bdr}` }}>
-            <div onClick={() => setCmView("list")} style={{ padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, background: cmView === "list" ? T.card : "transparent", color: cmView === "list" ? T.text : T.sub, boxShadow: cmView === "list" ? "0 1px 2px rgba(0,0,0,0.06)" : "none" }}></div>
-            <div onClick={() => setCmView("card")} style={{ padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, background: cmView === "card" ? T.card : "transparent", color: cmView === "card" ? T.text : T.sub, boxShadow: cmView === "card" ? "0 1px 2px rgba(0,0,0,0.06)" : "none" }}></div>
+          {/* Toggle view */}
+          <div style={{ display: "flex", background: T.bg, borderRadius: 10, padding: 3, border: `1px solid ${T.bdr}`, gap: 2 }}>
+            <div onClick={() => setCmView("list")} style={{ width: 32, height: 32, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: cmView === "list" ? T.card : "transparent", boxShadow: cmView === "list" ? "0 1px 3px rgba(0,0,0,0.08)" : "none" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={cmView === "list" ? T.text : T.sub} strokeWidth="2" strokeLinecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </div>
+            <div onClick={() => setCmView("card")} style={{ width: 32, height: 32, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: cmView === "card" ? T.card : "transparent", boxShadow: cmView === "card" ? "0 1px 3px rgba(0,0,0,0.08)" : "none" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={cmView === "card" ? T.text : T.sub} strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </div>
           </div>
-          <div onClick={() => setShowModal("commessa")} style={{ width: 36, height: 36, borderRadius: 10, background: T.text, color: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, fontWeight: 300 }}>+</div>
+          {/* Nuova commessa */}
+          <div onClick={() => setShowModal("commessa")} style={{ width: 36, height: 36, borderRadius: 10, background: T.acc, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 22, fontWeight: 300, lineHeight: 1 }}>+</div>
         </div>
       </div>
 
       {/* Search */}
       <div style={{ padding: "0 20px 10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
-          <span style={{ fontSize: 14, color: T.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-          <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca cliente, codice, indirizzo..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
-          {searchQ && <div onClick={() => setSearchQ("")} style={{ cursor: "pointer", fontSize: 13, color: T.sub, padding: 2 }}></div>}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}` }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca cliente, codice, indirizzo..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
+          {searchQ && <div onClick={() => setSearchQ("")} style={{ cursor: "pointer", fontSize: 16, color: T.sub, lineHeight: 1 }}>×</div>}
         </div>
       </div>
 
-      {/* Chips */}
-      <div style={{ display: "flex", gap: 6, padding: "0 20px 12px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-        <div onClick={() => setFilterFase("tutte")} style={{
-          padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0,
-          background: filterFase === "tutte" ? T.text : "transparent", color: filterFase === "tutte" ? "#fff" : T.sub,
-          border: `1px solid ${filterFase === "tutte" ? T.text : T.bdr}`,
-        }}>Tutte {cantieri.length}</div>
-        {PIPELINE.filter(p => p.attiva).map(p => {
-          const n = cantieri.filter(c => c.fase === p.id).length;
-          if (n === 0) return null;
+      {/* Chips fase */}
+      <div style={{ display: "flex", gap: 6, padding: "0 20px 14px", overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
+        {[{ id: "tutte", nome: "Tutte", color: T.text, count: cantieri.length },
+          ...PIPELINE.filter(p => p.attiva).map(p => ({ ...p, count: cantieri.filter(c => c.fase === p.id).length })).filter(p => p.count > 0)
+        ].map(p => {
           const sel = filterFase === p.id;
           return (
-            <div key={p.id} onClick={() => setFilterFase(sel ? "tutte" : p.id)} style={{
-              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0,
-              background: sel ? (p.color || T.acc) + "12" : "transparent", color: sel ? p.color || T.acc : T.sub,
-              border: `1px solid ${sel ? (p.color || T.acc) + "30" : T.bdr}`,
-            }}>{p.nome} · {n}</div>
+            <div key={p.id} onClick={() => setFilterFase(sel && p.id !== "tutte" ? "tutte" : p.id)} style={{
+              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" as any,
+              background: sel ? (p.color || T.text) + (p.id === "tutte" ? "" : "15") : "transparent",
+              color: sel ? (p.id === "tutte" ? "#fff" : p.color || T.acc) : T.sub,
+              border: `1.5px solid ${sel ? (p.color || T.text) + (p.id === "tutte" ? "" : "40") : T.bdr}`,
+            }}>{p.nome} {p.count}</div>
           );
         })}
       </div>
 
       {/* Content */}
       {filtered.length === 0 ? (
-        <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Nessuna commessa</div>
-          <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Modifica i filtri o crea una nuova commessa</div>
+        <div style={{ padding: "60px 20px", textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Nessuna commessa</div>
+          <div style={{ fontSize: 13, color: T.sub, marginTop: 4 }}>Modifica i filtri o crea una nuova commessa</div>
+          <div onClick={() => setShowModal("commessa")} style={{ marginTop: 16, display: "inline-block", padding: "10px 20px", borderRadius: 10, background: T.acc, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>+ Nuova commessa</div>
         </div>
       ) : cmView === "list" ? (
-        <div style={{ margin: "0 20px", borderRadius: 12, border: `1px solid ${T.bdr}`, overflow: "hidden", background: T.card }}>
+        <div style={{ margin: "0 20px", borderRadius: 14, border: `1px solid ${T.bdr}`, overflow: "hidden", background: T.card }}>
           {filtered.map(c => renderRow(c))}
         </div>
       ) : (
-        <div style={isDesktop ? { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: "0 20px" } : isTablet ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "0 20px" } : { padding: "0 0px" }}>
-          {filtered.map(c => renderCard(c, isTablet || isDesktop))}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr 1fr",
+          gap: 10, padding: "0 20px"
+        }}>
+          {filtered.map(c => renderCard(c))}
         </div>
       )}
     </div>
