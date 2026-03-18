@@ -144,7 +144,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     utt.onend = () => { setIsSpeaking(false); isSpeakingRef.current = false; if (liveModeRef.current) setTimeout(() => startListening(), 400); };
     window.speechSynthesis.speak(utt);
   };
-  const stopSpeaking = () => { window.speechSynthesis?.cancel(); setIsSpeaking(false); };
+  const stopSpeaking = () => {
+    window.speechSynthesis?.cancel();
+    if ((window as any).__mastroAudio) { (window as any).__mastroAudio.pause(); (window as any).__mastroAudio = null; }
+    setIsSpeaking(false); isSpeakingRef.current = false;
+  };
 
   const sendAI = async (text) => {
     const msg = (text || aiInput).trim();
@@ -152,13 +156,83 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     const newMsgs = [...aiMessages, { role: "user", content: msg }];
     setAiMessages(newMsgs); setAiInput(""); setAiLoading(true);
     try {
-      const res = await fetch("/api/ai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: newMsgs, context: buildContext() }) });
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMsgs, context: buildContext(), tts: true }),
+      });
       const data = await res.json();
-      const reply = data.reply || "Errore: " + (data.error || "?");
+      if (data.error) {
+        setAiMessages(prev => [...prev, { role: "assistant", content: "Errore: " + data.error }]);
+        return;
+      }
+      const reply = data.reply || "...";
+      // Gestisci azione se presente
+      if (data.action) handleAction(data.action);
       setAiMessages(prev => [...prev, { role: "assistant", content: reply }]);
-      speak(reply);
-    } catch (e) { setAiMessages(prev => [...prev, { role: "assistant", content: "Errore connessione" }]); }
-    finally { setAiLoading(false); }
+      // Audio ElevenLabs se disponibile, altrimenti Web Speech
+      if (data.audio) {
+        playAudio(data.audio);
+      } else {
+        speak(reply);
+      }
+    } catch (e) {
+      setAiMessages(prev => [...prev, { role: "assistant", content: "Errore connessione" }]);
+    } finally { setAiLoading(false); }
+  };
+
+  // Esegui azione nel frontend
+  const handleAction = (action) => {
+    if (!mastroCtx) return;
+    const { setCantieri, setTasks, setEvents, cantieri } = mastroCtx;
+    const oggi = new Date().toISOString().split("T")[0];
+    const ora = new Date().toTimeString().substring(0, 5);
+
+    if (action.type === "crea_commessa") {
+      const newCM = {
+        id: Date.now(), code: "S-" + String(Date.now()).slice(-4).padStart(4, "0"),
+        cliente: action.params.cliente || "", cognome: action.params.cognome || "",
+        indirizzo: action.params.indirizzo || "", telefono: action.params.telefono || "",
+        note: action.params.note || "", fase: "sopralluogo",
+        rilievi: [], allegati: [], creato: new Date().toLocaleDateString("it-IT"),
+        aggiornato: new Date().toLocaleDateString("it-IT"), log: [],
+      };
+      setCantieri(prev => [newCM, ...prev]);
+    } else if (action.type === "crea_task") {
+      const newTask = {
+        id: Date.now(), text: action.params.testo, done: false,
+        priority: action.params.priorita || "media",
+        date: action.params.data || oggi, cm: action.params.commessa || "",
+        meta: "", time: "",
+      };
+      setTasks(prev => [...prev, newTask]);
+    } else if (action.type === "crea_evento") {
+      const newEvent = {
+        id: "ev_" + Date.now(), text: action.params.testo,
+        date: action.params.data || oggi, time: action.params.ora || ora,
+        tipo: action.params.tipo || "altro", cm: action.params.commessa || "",
+        color: "#14B8A6",
+      };
+      setEvents(prev => [...prev, newEvent]);
+    } else if (action.type === "cambia_fase_commessa") {
+      setCantieri(prev => prev.map(c =>
+        c.code === action.params.codice ? { ...c, fase: action.params.nuova_fase } : c
+      ));
+    }
+  };
+
+  // Riproduci audio base64 ElevenLabs
+  const audioRef = (window as any).__mastroAudio;
+  const playAudio = (audioDataUrl: string) => {
+    setIsSpeaking(true); isSpeakingRef.current = true;
+    const audio = new Audio(audioDataUrl);
+    (window as any).__mastroAudio = audio;
+    audio.onended = () => {
+      setIsSpeaking(false); isSpeakingRef.current = false;
+      if (liveModeRef.current) setTimeout(() => startListening(), 400);
+    };
+    audio.onerror = () => { setIsSpeaking(false); isSpeakingRef.current = false; speak(""); };
+    audio.play().catch(() => { setIsSpeaking(false); isSpeakingRef.current = false; });
   };
 
   const startListening = () => {
