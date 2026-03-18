@@ -37,6 +37,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const [side, setSide] = useState("right");
   const [topPx, setTopPx] = useState(300);
   const [aiOpen, setAiOpen] = useState(false);
+  const [wakeActive, setWakeActive] = useState(false); // wake word listener attivo
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -48,12 +49,23 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   const liveModeRef = useRef(false);
   const isListeningRef = useRef(false);
   const isSpeakingRef = useRef(false);
+  const wakeListeningRef = useRef(false);
+  const wakeRecRef = useRef(null);
   const wrapRef = useRef(null);
   const posRef = useRef(300);
   const dragRef = useRef({ on: false, moved: false, startY: 0, startTop: 300 });
   const fabOpenRef = useRef(fabOpen);
   useEffect(() => { fabOpenRef.current = fabOpen; }, [fabOpen]);
   useEffect(() => { liveModeRef.current = liveMode; }, [liveMode]);
+
+  // Avvia wake word quando il componente monta
+  useEffect(() => {
+    const timer = setTimeout(() => startWakeWord(), 2000);
+    return () => {
+      clearTimeout(timer);
+      stopWakeWord();
+    };
+  }, []);
   useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
   useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
@@ -265,6 +277,53 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
     else { setLiveMode(true); setTimeout(() => startListening(), 200); }
   };
 
+  // ── Wake word "Mastro" ──
+  const startWakeWord = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR || wakeListeningRef.current) return;
+    const rec = new SR();
+    rec.lang = "it-IT";
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onstart = () => { wakeListeningRef.current = true; setWakeActive(true); };
+    rec.onend = () => {
+      wakeListeningRef.current = false;
+      // Riavvia sempre se non siamo in live mode
+      if (!liveModeRef.current) setTimeout(() => startWakeWord(), 1000);
+    };
+    rec.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const text = e.results[i][0].transcript.toLowerCase();
+        if (text.includes("mastro")) {
+          rec.stop();
+          wakeListeningRef.current = false;
+          // Attiva assistente
+          setAiOpen(true);
+          setLiveMode(true);
+          liveModeRef.current = true;
+          setTimeout(() => startListening(), 600);
+          // Feedback vocale breve
+          const SR2 = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+          if (window.speechSynthesis) {
+            const utt = new SpeechSynthesisUtterance("Dimmi");
+            utt.lang = "it-IT"; utt.rate = 1.2; utt.volume = 0.8;
+            window.speechSynthesis.speak(utt);
+          }
+          break;
+        }
+      }
+    };
+    rec.onerror = () => { wakeListeningRef.current = false; setTimeout(() => startWakeWord(), 2000); };
+    wakeRecRef.current = rec;
+    rec.start();
+  };
+
+  const stopWakeWord = () => {
+    (wakeRecRef.current as any)?.stop();
+    wakeListeningRef.current = false;
+    setWakeActive(false);
+  };
+
   return (
     <>
       {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}}
@@ -306,6 +365,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
               boxShadow: isRight ? "-4px 0 20px " + acc + "60" : "4px 0 20px " + acc + "60" }}>
             <div style={{ width: fabOpen ? 30 : 18, height: fabOpen ? 30 : 18, borderRadius: fabOpen ? 8 : 5, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.25s ease", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
               <span style={{ fontSize: fabOpen ? 17 : 11, fontWeight: 900, color: acc, lineHeight: 1, transition: "font-size 0.25s" }}>M</span>
+              {wakeActive && !fabOpen && <div style={{ position: "absolute", top: 2, right: 2, width: 6, height: 6, borderRadius: "50%", background: "#1A9E73", boxShadow: "0 0 4px #1A9E73" }} />}
             </div>
             <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: 7, fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: 2 }}>MASTRO</span>
           </div>
