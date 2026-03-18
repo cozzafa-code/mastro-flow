@@ -76,19 +76,19 @@ export const tipoToMinCat = (tipo: string): string => {
 export const THEMES = {
   chiaro: {
     name: "Chiaro", emoji: "sun",
-    bg: "#F2F1EC", bg2: "#EDECE7", card: "#ffffff", card2: "#f8f8fa",
-    bdr: "#E5E4DF", bdrL: "#EDECE7", text: "#1A1A1C", sub: "#7A7A7A", sub2: "#AAAAAA",
-    pri: "#0D7C6B",
-    acc: "#0D7C6B", accD: "#0a6b5c", accLt: "rgba(13,124,107,0.08)", accBg: "linear-gradient(135deg,#0D7C6B,#0a6b5c)",
+    bg: "#F8FAFC", bg2: "#F1F5F9", card: "#FFFFFF", card2: "#F8FAFC",
+    bdr: "#E2E8F0", bdrL: "#F1F5F9", text: "#0F172A", sub: "#64748B", sub2: "#94A3B8",
+    pri: "#14B8A6",
+    acc: "#14B8A6", accD: "#0F766E", accLt: "rgba(20,184,166,0.08)", accBg: "linear-gradient(135deg,#14B8A6,#0F766E)",
     grn: "#1A9E73", grnLt: "rgba(26,158,115,0.08)",
     red: "#DC4444", redLt: "rgba(220,68,68,0.08)",
     orange: "#E8A020", orangeLt: "rgba(232,160,32,0.08)",
     blue: "#3B7FE0", blueLt: "rgba(59,127,224,0.08)",
     purple: "#af52de", purpleLt: "rgba(175,82,222,0.08)",
     cyan: "#32ade6", cyanLt: "rgba(50,173,230,0.08)",
-    cardSh: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
-    cardShH: "0 4px 12px rgba(0,0,0,0.08)",
-    r: 12, r2: 16
+    cardSh: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)",
+    cardShH: "0 4px 20px rgba(0,0,0,0.10)",
+    r: 16, r2: 8
   },
   scuro: {
     name: "Scuro", emoji: "moon",
