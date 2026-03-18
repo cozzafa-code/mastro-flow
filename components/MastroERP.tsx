@@ -41,6 +41,7 @@ import ModalPanel from "./ModalPanel";
 import RiepilogoPanel from "./RiepilogoPanel";
 import AgendaPanel from "./AgendaPanel";
 import MessaggiPanel from "./MessaggiPanel";
+import AssistentePanel from "./AssistentePanel";
 import ContabilitaPanel from "./ContabilitaPanel";
 import ClientiPanel from "./ClientiPanel";
 import CommessePanel from "./CommessePanel";
@@ -178,22 +179,22 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   // Fatturazione
   const [fattureDB, setFattureDB] = useState<any[]>(FATTURE_INIT);
 
-  // ═══ FATTURE PASSIVE (ricevute da fornitori) ═══
+  //  FATTURE PASSIVE (ricevute da fornitori) 
   const [fatturePassive, setFatturePassive] = useState<any[]>(() => {
     try { const v = localStorage.getItem("mastro:fatturePassive"); return v ? JSON.parse(v) : []; } catch(e) { return []; }
   });
   const [showFatturaPassiva, setShowFatturaPassiva] = useState(false);
   const [newFattPassiva, setNewFattPassiva] = useState({ fornitore: "", numero: "", data: "", importo: 0, iva: 22, descrizione: "", cmId: "", pagata: false, scadenza: "" });
 
-  // ═══ CONTABILITÀ ═══
+  //  CONTABILITÀ 
   const [showContabilita, setShowContabilita] = useState(false);
   const [contabTab, setContabTab] = useState("panoramica");
   const [contabMese, setContabMese] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; });
 
-  // ═══ CRONOLOGIA ═══
+  //  CRONOLOGIA 
   const [showCronologia, setShowCronologia] = useState(false);
 
-  // ═══ KIT ACCESSORI ═══
+  //  KIT ACCESSORI 
   const [kitAccessori, setKitAccessori] = useState(() => {
     try { const v = localStorage.getItem("mastro:kit"); return v ? JSON.parse(v) : [
       { id: 1, nome: "Kit Standard", items: ["Maniglia", "Cerniere x2", "Guarnizione"], prezzo: 45 },
@@ -202,7 +203,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     ]; } catch(e) { return []; }
   });
 
-  // ═══ FORNITORI PRO ═══
+  //  FORNITORI PRO 
   const [fornitori, setFornitori] = useState(() => {
     try { const v = localStorage.getItem("mastro:fornitori"); if (v) { const p = JSON.parse(v); if (Array.isArray(p) && p.length > 0) return p; } } catch(e) {}
     return [
@@ -215,12 +216,12 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [showFornitoreForm, setShowFornitoreForm] = useState(false);
   const [fornitoreEdit, setFornitoreEdit] = useState<any>(null);
 
-  // ═══ TEMI CUSTOM ═══
+  //  TEMI CUSTOM 
   const [customThemes, setCustomThemes] = useState(() => {
     try { const v = localStorage.getItem("mastro:customThemes"); return v ? JSON.parse(v) : []; } catch(e) { return []; }
   });
 
-  // ═══ VOCE AI ═══
+  //  VOCE AI 
   const [voiceActive, setVoiceActive] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState("");
   const recognitionRef = useRef<any>(null);
@@ -1336,7 +1337,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   };
 
 
-  // ═══ CONVERTI EVENTO ═══
+  //  CONVERTI EVENTO 
   const convertEvent = (evId, newTipo) => {
     setEvents(prev => prev.map(e => e.id === evId ? { ...e, tipo: newTipo, color: tipoEvColor(newTipo) } : e));
   };
@@ -1344,7 +1345,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     setEvents(prev => prev.map(e => e.id === evId ? { ...e, cm: cmId } : e));
   };
 
-  // ═══ FATTURE PASSIVE ═══
+  //  FATTURE PASSIVE 
   const creaFatturaPassiva = () => {
     const v = validateFatturaPassiva(newFattPassiva);
     if (!v.valid) { toast(v.errors[0], "error"); return; }
@@ -1354,7 +1355,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     setShowFatturaPassiva(false);
   };
 
-  // ═══ VOCE AI ═══
+  //  VOCE AI 
   const startVoice = () => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) { alert("Browser non supporta riconoscimento vocale"); return; }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -1971,7 +1972,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
   /* == SETTINGS TAB == */
 
-  // ═══ CONTABILITÀ PRO ═══
+  //  CONTABILITÀ PRO 
   const renderContabilita = () => <ContabilitaPanel />;
 
 
@@ -2738,7 +2739,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
   // === CTX — condivide tutto con i componenti estratti ===
-  // ═══ IS STORICO — rilievo vecchio = sola lettura ═══
+  //  IS STORICO — rilievo vecchio = sola lettura 
   const lastRilievoGlobal = selectedCM?.rilievi?.length > 0 ? selectedCM.rilievi[selectedCM.rilievi.length - 1] : null;
   const isStorico = selectedRilievo && lastRilievoGlobal && selectedRilievo.id !== lastRilievoGlobal.id;
 
@@ -2885,7 +2886,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
   /* ======= MAIN RENDER ======= */
 
-  // ─── DESKTOP SHELL ───────────────────────────────────────────
+  //  DESKTOP SHELL 
   if (isDesktop) {
     return (
       <MastroContext.Provider value={ctx}>
@@ -2913,6 +2914,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
         {tab === "messaggi" && !selectedMsg && <PanelErrorBoundary name="Messaggi">{renderMessaggi()}</PanelErrorBoundary>}
+        {tab === "assistente" && <PanelErrorBoundary name="Assistente"><AssistentePanel /></PanelErrorBoundary>}
         {tab === "agenda" && <PanelErrorBoundary name="Agenda">{renderAgenda()}</PanelErrorBoundary>}
         {tab === "contabilita" && <PanelErrorBoundary name="Contabilita">{renderContabilita()}</PanelErrorBoundary>}
         {tab === "montaggi_cal" && <PanelErrorBoundary name="MontaggiCal"><MontaggiCalendar /></PanelErrorBoundary>}
@@ -3023,7 +3025,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 </div>
               )}
             </div>
-            {/* ── AZIONI MESSAGGIO ── */}
+            {/*  AZIONI MESSAGGIO  */}
             <div style={{ padding: "6px 16px", background: T.bg, borderBottom: "1px solid " + T.bdr, display: "flex", gap: 6, overflowX: "auto" }}>
               <div onClick={() => {
                 const fromName = selectedMsg.from || "";
@@ -3520,6 +3522,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
               { id: "commesse", ico: ICO.filter, label: "Commesse" },
               { id: "clienti", ico: ICO.users, label: "Clienti" },
               { id: "messaggi", ico: ICO.chat, label: "Messaggi" },
+              { id: "assistente", ico: ICO.sparkles, label: "AI" },
                             { id: "settings", ico: ICO.settings, label: "Impost." },
             ].map(t => (
               <div key={t.id} style={S.tabItem(tab === t.id)} onClick={() => { setTab(t.id); setSelectedCM(null); setSelectedVano(null); setSelectedMsg(null); }}>
@@ -4274,7 +4277,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             </div>
             {/* All attachments */}
             
-                {/* ═══ CRONOLOGIA ═══ */}
+                {/*  CRONOLOGIA  */}
                 <div style={{ marginTop: 12 }}>
                   <div onClick={() => setShowCronologia(!showCronologia)} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "8px 0" }}>
                     <span style={{ fontSize: 11 }}><I d={ICO.scroll} /></span>
@@ -4315,7 +4318,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
 
-// ─── ERROR BOUNDARY WRAPPER ──────────────────────────────
+//  ERROR BOUNDARY WRAPPER 
 export default function MastroMisure() {
   return (
     <MastroErrorBoundary>
