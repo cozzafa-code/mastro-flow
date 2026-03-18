@@ -3180,13 +3180,13 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Forma base</label>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {[
-                      { id: "rettangolare", label: "Rettangolare", svg: },
-                      { id: "fuorisquadro", label: "Fuorisquadro", svg: },
-                      { id: "arco", label: "Ad arco", svg: },
-                      { id: "trapezio", label: "Trapezoidale", svg: },
-                      { id: "triangolo", label: "Triangolare", svg: },
-                      { id: "oblo", label: "Oblò", svg: },
-                      { id: "sagomato", label: "Sagomato", svg: },
+                      { id: "rettangolare", label: "Rettangolare", svg: null },
+                      { id: "fuorisquadro", label: "Fuorisquadro", svg: null },
+                      { id: "arco", label: "Ad arco", svg: null },
+                      { id: "trapezio", label: "Trapezoidale", svg: null },
+                      { id: "triangolo", label: "Triangolare", svg: null },
+                      { id: "oblo", label: "Oblò", svg: null },
+                      { id: "sagomato", label: "Sagomato", svg: null },
                     ].map(f => (
                       <div key={f.id} onClick={() => setSettingsForm(fm => ({ ...fm, forma: f.id }))} style={{ padding: "6px 8px", borderRadius: 10, border: `2px solid ${settingsForm.forma === f.id ? T.acc : T.bdr}`, background: settingsForm.forma === f.id ? T.accLt : T.card, cursor: "pointer", textAlign: "center", minWidth: 56 }}>
                         <div>{f.svg}</div>
