@@ -295,7 +295,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     try { if (!localStorage.getItem("mastro:onboarded")) setTutoStep(1); } catch(e){}
   }, []);
   const closeTuto = () => { setTutoStep(0); try { localStorage.setItem("mastro:onboarded", "1"); } catch(e){} };
-  const nextTuto = () => { if (tutoStep >= 7) closeTuto(); else setTutoStep(tutoStep + 1); };
+  const nextTuto = () => { if (tutoStep >= 5) closeTuto(); else setTutoStep(tutoStep + 1); };
 
   const [aziendaInfo, setAziendaInfo] = useState({
     ragione: aziendaInit?.ragione || "Walter Cozza Serramenti SRL",
@@ -3382,162 +3382,204 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {/* Tab Bar */}
         
       {/* === TUTORIAL INTERATTIVO === */}
-      {tutoStep >= 1 && tutoStep <= 7 && (
-        <div style={{ position:"fixed", inset:0, zIndex:99999, background: tutoStep === 1 ? "rgba(0,0,0,0.7)" : "rgba(0,0,0,0.5)", display:"flex", alignItems: tutoStep === 1 ? "center" : "flex-end", justifyContent:"center", padding:16, fontFamily:T.font }} onClick={nextTuto}>
-          <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius: tutoStep === 1 ? 24 : 20, width:"100%", maxWidth: tutoStep === 1 ? 380 : 340, padding: tutoStep === 1 ? "32px 28px" : "20px 22px", boxShadow:"0 20px 60px rgba(0,0,0,0.3)", marginBottom: tutoStep === 1 ? 0 : 80, ...(tutoStep >= 2 && tutoStep <= 6 ? { position:"fixed", bottom: 70, left:"50%", transform:"translateX(-50%)" } : {}) }}>
+            {/* ═══ ONBOARDING 5 STEP ═══ */}
+      {tutoStep >= 1 && tutoStep <= 5 && (() => {
+        const ACC = "#D08008";
+        const DARK = "#1A1A1C";
+        const [obNome, setObNome] = React.useState(aziendaInfo?.nome || "");
+        const [obRagione, setObRagione] = React.useState(aziendaInfo?.ragione || "");
+        const [obPiva, setObPiva] = React.useState(aziendaInfo?.piva || "");
+        const [obTel, setObTel] = React.useState(aziendaInfo?.telefono || "");
+        const [obEmail, setObEmail] = React.useState(aziendaInfo?.email || "");
+        const [obIndirizzo, setObIndirizzo] = React.useState(aziendaInfo?.indirizzo || "");
+        const [obSettori, setObSettori] = React.useState<string[]>(settoriAttivi || ["serramenti"]);
+        const [obPrezzoMq, setObPrezzoMq] = React.useState(aziendaInfo?.prezzoMqDefault || "350");
+        const [obPosa, setObPosa] = React.useState(aziendaInfo?.prezzoPosaVano || "80");
 
-            {/* STEP 1: WELCOME */}
-            {tutoStep === 1 && (<div style={{ textAlign:"center" }}>
-              <div style={{ width:64, height:64, borderRadius:16, background:T.acc, display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, fontWeight:900, color:"#fff", fontFamily:FM, letterSpacing:"-0.04em", margin:"0 auto 16px" }}>M</div>
-              <div style={{ fontSize:22, fontWeight:900, color:"#1A1A1C", marginBottom:6 }}>Benvenuto in MASTRO</div>
-              <div style={{ fontSize:13, color:"#6B6B6B", lineHeight:1.6, marginBottom:24 }}>Il gestionale pensato per chi fa serramenti sul campo. Ti faccio vedere come funziona in 30 secondi.</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:10, textAlign:"left", marginBottom:24 }}>
-                {[
-                  {e:"home",t:"Home",d:"Riepilogo della giornata: appuntamenti, allerte, calendario"},
-                  {e:"calendar",t:"Agenda",d:"Tutti i tuoi impegni in vista giorno, settimana o mese"},
-                  {e:"folder",t:"Commesse",d:"Il cuore: ogni lavoro dalla richiesta alla posa"},
-                  {e:"inbox",t:"Messaggi",d:"Tutte le comunicazioni in un posto"},
-                  {e:"settings",t:"Impostazioni",d:"Listini, colori, team e dati azienda"},
-                ].map((s,i) => (
-                  <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                    <div style={{ width:28, textAlign:"center", flexShrink:0 }}><I d={ICO[s.e]} s={18} c={T.acc} /></div>
-                    <div><div style={{ fontSize:13, fontWeight:700, color:"#1A1A1C" }}>{s.t}</div><div style={{ fontSize:11, color:"#8E8E93" }}>{s.d}</div></div>
+        const SETTORI_OPT = [
+          { id: "serramenti", label: "Serramenti" },
+          { id: "tendaggi", label: "Tendaggi" },
+          { id: "fabbro", label: "Fabbro" },
+          { id: "zanzariere", label: "Zanzariere" },
+          { id: "pergole", label: "Pergole" },
+        ];
+
+        const toggleSettore = (id: string) => {
+          setObSettori(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
+        };
+
+        const saveAndNext = () => {
+          if (tutoStep === 2) {
+            if (!obNome.trim()) return;
+            setAziendaInfo(prev => ({ ...prev, nome: obNome, ragione: obRagione || obNome, piva: obPiva, telefono: obTel, email: obEmail, indirizzo: obIndirizzo }));
+          }
+          if (tutoStep === 3) {
+            setSettoriAttivi(obSettori.length > 0 ? obSettori : ["serramenti"]);
+            try { localStorage.setItem("mastro:settori", JSON.stringify(obSettori)); } catch {}
+          }
+          if (tutoStep === 4) {
+            setAziendaInfo(prev => ({ ...prev, prezzoMqDefault: obPrezzoMq, prezzoPosaVano: obPosa, includePosaInPreventivo: parseFloat(obPosa) > 0 }));
+          }
+          if (tutoStep >= 5) { closeTuto(); return; }
+          setTutoStep(tutoStep + 1);
+        };
+
+        const inp = (val: string, set: (v: string) => void, ph: string, type = "text") => (
+          <input value={val} onChange={e => set(e.target.value)} placeholder={ph} type={type}
+            style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 15, outline: "none", boxSizing: "border-box" as any, fontFamily: "inherit", marginBottom: 10, background: "#fff" }} />
+        );
+
+        const dots = Array.from({ length: 5 }, (_, i) => (
+          <div key={i} style={{ width: i + 1 === tutoStep ? 20 : 8, height: 8, borderRadius: 4, background: i + 1 <= tutoStep ? ACC : "#E2E8F0", transition: "all 0.2s" }} />
+        ));
+
+        return (
+          <div style={{ position: "fixed", inset: 0, zIndex: 99999, background: "#F2F1EC", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+            {/* Header */}
+            <div style={{ background: DARK, padding: "16px 20px", display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: ACC, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: DARK, fontSize: 16 }}>M</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>MASTRO</div>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>{dots}</div>
+            </div>
+
+            <div style={{ flex: 1, padding: "24px 20px", maxWidth: 480, margin: "0 auto", width: "100%", boxSizing: "border-box" as any }}>
+
+              {/* STEP 1 — BENVENUTO */}
+              {tutoStep === 1 && (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 60, marginBottom: 16 }}>👋</div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: DARK, marginBottom: 10 }}>Benvenuto in MASTRO</div>
+                  <div style={{ fontSize: 15, color: "#555", lineHeight: 1.7, marginBottom: 32 }}>
+                    Il gestionale pensato per artigiani italiani.<br />
+                    Serramenti, tendaggi, fabbri, zanzariere, pergole.<br /><br />
+                    Configuriamo il tuo account in <b>2 minuti</b>.
                   </div>
-                ))}
-              </div>
-              <div onClick={nextTuto} style={{ padding:"14px 32px", fontSize:15, fontWeight:800, color:"#fff", background:T.acc, borderRadius:14, cursor:"pointer", display:"inline-block" }}>Inizia il tour →</div>
-              <div onClick={closeTuto} style={{ fontSize:11, color:"#8E8E93", marginTop:12, cursor:"pointer" }}>Salta, conosco già</div>
-            </div>)}
-
-            {/* STEP 2: HOME TAB */}
-            {tutoStep === 2 && (<div>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"center" }}><I d={ICO.home} s={22} c={T.acc} /></div>
-                <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Home</div>
-                <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>1/6</div>
-              </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Appena apri MASTRO vedi la <b>dashboard</b>: gli appuntamenti di oggi in alto, le <b>allerte</b> sulle commesse ferme, e il <b>calendario</b> del mese. Tocca qualsiasi elemento per aprirlo.</div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={closeTuto} style={{ fontSize:11, color:"#8E8E93", cursor:"pointer" }}>Chiudi tour</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
-              </div>
-              <div style={{ position:"absolute", bottom:-8, left:24, width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
-            </div>)}
-
-            {/* STEP 3: AGENDA */}
-            {tutoStep === 3 && (<div>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"center" }}><I d={ICO.calendar} s={22} c={T.acc} /></div>
-                <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Agenda</div>
-                <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>2/6</div>
-              </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Qui vedi <b>tutti gli impegni</b>: sopralluoghi, pose, consegne. Puoi vedere il <b>giorno singolo</b>, la <b>settimana</b> o il <b>mese</b>. Tocca il + per aggiungere un appuntamento. Ogni evento può essere collegato a una commessa.</div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
-              </div>
-              <div style={{ position:"absolute", bottom:-8, left:"38%", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
-            </div>)}
-
-            {/* STEP 4: COMMESSE */}
-            {tutoStep === 4 && (<div>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"center" }}><I d={ICO.folder} s={22} c={T.acc} /></div>
-                <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Commesse</div>
-                <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>3/6</div>
-              </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:8 }}>Ogni commessa è un <b>lavoro completo</b> con il suo ciclo di vita:</div>
-              <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:10 }}>
-                {["Sopralluogo","Preventivo","Conferma","Misure","Ordini","Produzione","Posa","Chiusura"].map((f,i) => (
-                  <div key={i} style={{ fontSize:9, fontWeight:700, padding:"3px 7px", borderRadius:6, background:i===0?"#0D7C6B15":i<4?"#E8A02015":"#1A9E7315", color:i===0?"#0D7C6B":i<4?"#E8A020":"#1A9E73" }}>{f}</div>
-                ))}
-              </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Dentro ogni commessa gestisci <b>vani</b> (finestre, porte), <b>misure</b>, <b>rilievi</b> e generi il <b>preventivo PDF</b>. Tocca + per creare la tua prima commessa!</div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
-              </div>
-              <div style={{ position:"absolute", bottom:-8, left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
-            </div>)}
-
-            {/* STEP 5: MESSAGGI */}
-            {tutoStep === 5 && (<div>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"center" }}><I d={ICO.inbox} s={22} c={T.acc} /></div>
-                <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Messaggi</div>
-                <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>4/6</div>
-              </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Tutte le comunicazioni: <b>WhatsApp, email, SMS, Telegram</b>. L’AI Inbox analizza le email in arrivo e suggerisce azioni automatiche: creare commesse, collegare messaggi, avanzare fasi.</div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
-              </div>
-              <div style={{ position:"absolute", bottom:-8, right:"35%", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
-            </div>)}
-
-            {/* STEP 6: IMPOSTAZIONI */}
-            {tutoStep === 6 && (<div>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ display:"flex",alignItems:"center",justifyContent:"center" }}><I d={ICO.settings} s={22} c={T.acc} /></div>
-                <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Impostazioni</div>
-                <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>5/6</div>
-              </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Configura la tua azienda: <b>ragione sociale, logo, listini prezzi, sistemi</b> (Schüco, Rehau, Finstral...), <b>colori RAL</b>, vetri, coprifili, lamiere. Tutto quello che ti serve per fare preventivi precisi.</div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
-              </div>
-              <div style={{ position:"absolute", bottom:-8, right:24, width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
-            </div>)}
-
-            {/* STEP 7: FINAL */}
-            {tutoStep === 7 && (<div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:40, marginBottom:12 }}><I d={ICO.rocket} /></div>
-              <div style={{ fontSize:18, fontWeight:900, color:"#1A1A1C", marginBottom:6 }}>Tutto pronto!</div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.7, marginBottom:8 }}>Ecco come iniziare:</div>
-              <div style={{ textAlign:"left", marginBottom:20 }}>
-                {[
-                  {n:"1",t:"Vai in Impostazioni",d:"Inserisci ragione sociale, P.IVA, telefono"},
-                  {n:"2",t:"Crea la prima commessa",d:"Tocca Commesse → + e inserisci cliente e indirizzo"},
-                  {n:"3",t:"Aggiungi i vani",d:"Dentro la commessa, aggiungi finestre e portefinestre"},
-                  {n:"4",t:"Fai il sopralluogo",d:"Inserisci le misure vano per vano dal cantiere"},
-                ].map((s,i) => (
-                  <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:10 }}>
-                    <div style={{ width:22, height:22, borderRadius:6, background:T.acc, color:"#fff", fontSize:11, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{s.n}</div>
-                    <div><div style={{ fontSize:12, fontWeight:700, color:"#1A1A1C" }}>{s.t}</div><div style={{ fontSize:11, color:"#8E8E93" }}>{s.d}</div></div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", marginBottom: 32, background: "#fff", borderRadius: 16, padding: 20 }}>
+                    {[
+                      { icon: "📋", t: "Commesse", d: "Ogni lavoro dalla richiesta alla posa" },
+                      { icon: "📐", t: "Misure dal cantiere", d: "Rilievi vano per vano con il telefono" },
+                      { icon: "📄", t: "Preventivi PDF", d: "Professionale, con logo e firma digitale" },
+                      { icon: "🤖", t: "Assistente AI", d: "Di' Mastro e gestisci tutto a voce" },
+                    ].map((s, i) => (
+                      <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <div style={{ fontSize: 22, width: 36, textAlign: "center" }}>{s.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: DARK }}>{s.t}</div>
+                          <div style={{ fontSize: 12, color: "#777" }}>{s.d}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div onClick={closeTuto} style={{ padding:"14px 32px", fontSize:15, fontWeight:800, color:"#fff", background:T.acc, borderRadius:14, cursor:"pointer", display:"inline-block" }}>Inizia a lavorare! <I d={ICO.zap} /></div>
-            </div>)}
-          </div>
-        </div>
-      )}
-      {!selectedVano && (
-          
-      <div style={S.tabBar}>
-            {[
-              { id: "home", ico: ICO.home, label: "Home" },
-              { id: "agenda", ico: ICO.calendar, label: "Agenda" },
-              { id: "commesse", ico: ICO.filter, label: "Commesse" },
-              { id: "clienti", ico: ICO.users, label: "Clienti" },
-              { id: "messaggi", ico: ICO.chat, label: "Messaggi" },
-                            { id: "settings", ico: ICO.settings, label: "Impost." },
-            ].map(t => (
-              <div key={t.id} style={S.tabItem(tab === t.id)} onClick={() => { setTab(t.id); setSelectedCM(null); setSelectedVano(null); setSelectedMsg(null); }}>
-                <div style={{ position: "relative", display: "inline-block" }}>
-                  <Ico d={t.ico} s={22} c={tab === t.id ? T.acc : T.sub} />
-                  {t.id === "messaggi" && msgs.filter(m => !m.read).length > 0 && (
-                    <div style={{ position: "absolute", top: -4, right: -8, width: 16, height: 16, borderRadius: "50%", background: T.red, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      {msgs.filter(m => !m.read).length}
-                    </div>
-                  )}
+                  <button onClick={saveAndNext} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: ACC, color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                    Inizia la configurazione →
+                  </button>
+                  <div onClick={closeTuto} style={{ marginTop: 14, fontSize: 12, color: "#999", cursor: "pointer" }}>Salta — configura dopo dalle Impostazioni</div>
                 </div>
-                <div style={S.tabLabel(tab === t.id)}>{t.label}</div>
-              </div>
-            ))}
+              )}
+
+              {/* STEP 2 — DATI AZIENDA */}
+              {tutoStep === 2 && (
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: DARK, marginBottom: 6 }}>La tua azienda</div>
+                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Questi dati appaiono nei preventivi e nelle fatture.</div>
+                  {inp(obNome, setObNome, "Nome commerciale (es. Rossi Serramenti) *")}
+                  {inp(obRagione, setObRagione, "Ragione sociale (es. Rossi Serramenti SRL)")}
+                  {inp(obPiva, setObPiva, "P.IVA (es. IT01234567890)")}
+                  {inp(obTel, setObTel, "Telefono (es. 0832 123456)", "tel")}
+                  {inp(obEmail, setObEmail, "Email (es. info@rossiserramenti.it)", "email")}
+                  {inp(obIndirizzo, setObIndirizzo, "Indirizzo (es. Via Roma 1, Lecce)")}
+                  <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                    <button onClick={() => setTutoStep(1)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>← Indietro</button>
+                    <button onClick={saveAndNext} disabled={!obNome.trim()} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: obNome.trim() ? ACC : "#ccc", color: "#fff", fontSize: 15, fontWeight: 800, cursor: obNome.trim() ? "pointer" : "default", fontFamily: "inherit" }}>Continua →</button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3 — SETTORI */}
+              {tutoStep === 3 && (
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: DARK, marginBottom: 6 }}>In che settore lavori?</div>
+                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Seleziona uno o più settori. Puoi cambiare in qualsiasi momento.</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+                    {SETTORI_OPT.map(s => {
+                      const sel = obSettori.includes(s.id);
+                      return (
+                        <div key={s.id} onClick={() => toggleSettore(s.id)}
+                          style={{ padding: "14px 18px", borderRadius: 14, border: `2px solid ${sel ? ACC : "#E2E8F0"}`, background: sel ? "#FFF8EC" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${sel ? ACC : "#E2E8F0"}`, background: sel ? ACC : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            {sel && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </div>
+                          <div style={{ fontSize: 15, fontWeight: sel ? 700 : 500, color: sel ? DARK : "#555" }}>{s.label}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={() => setTutoStep(2)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>← Indietro</button>
+                    <button onClick={saveAndNext} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: ACC, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Continua →</button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 4 — PREZZI BASE */}
+              {tutoStep === 4 && (
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: DARK, marginBottom: 6 }}>Prezzi base</div>
+                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Usati per calcolare automaticamente i preventivi. Puoi modificarli per ogni commessa.</div>
+                  <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: DARK, marginBottom: 6 }}>Prezzo vendita infissi (€/mq)</div>
+                    <div style={{ fontSize: 11, color: "#888", marginBottom: 10 }}>Prezzo medio di vendita al cliente per mq di infisso installato</div>
+                    <input value={obPrezzoMq} onChange={e => setObPrezzoMq(e.target.value)} type="number" placeholder="es. 350"
+                      style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 18, fontWeight: 700, outline: "none", boxSizing: "border-box" as any, fontFamily: "inherit" }} />
+                  </div>
+                  <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 24 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: DARK, marginBottom: 6 }}>Prezzo posa per vano (€/vano)</div>
+                    <div style={{ fontSize: 11, color: "#888", marginBottom: 10 }}>Inserito automaticamente nel preventivo. Metti 0 se non addebiti la posa separatamente.</div>
+                    <input value={obPosa} onChange={e => setObPosa(e.target.value)} type="number" placeholder="es. 80"
+                      style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 18, fontWeight: 700, outline: "none", boxSizing: "border-box" as any, fontFamily: "inherit" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={() => setTutoStep(3)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>← Indietro</button>
+                    <button onClick={saveAndNext} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: ACC, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Continua →</button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 5 — TUTTO PRONTO */}
+              {tutoStep === 5 && (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 64, marginBottom: 16 }}>🚀</div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: DARK, marginBottom: 10 }}>Tutto pronto!</div>
+                  <div style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 32 }}>
+                    Il tuo MASTRO è configurato.<br />
+                    Ecco come iniziare subito:
+                  </div>
+                  <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 28, textAlign: "left" }}>
+                    {[
+                      { n: "1", t: "Crea la prima commessa", d: "Vai in Commesse → tocca + → inserisci cliente" },
+                      { n: "2", t: "Aggiungi i vani", d: "Dentro la commessa, aggiungi finestre e porte" },
+                      { n: "3", t: "Misura dal cantiere", d: "Apri la commessa sul telefono e misura vano per vano" },
+                      { n: "4", t: "Invia il preventivo", d: "Dì Mastro, manda il preventivo a [cliente] e il gioco è fatto" },
+                    ].map((s, i) => (
+                      <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
+                        <div style={{ width: 26, height: 26, borderRadius: 8, background: ACC, color: "#fff", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{s.n}</div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: DARK }}>{s.t}</div>
+                          <div style={{ fontSize: 12, color: "#777" }}>{s.d}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={saveAndNext} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: ACC, color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                    Entra in MASTRO →
+                  </button>
+                </div>
+              )}
+
+            </div>
           </div>
-        )}
+        );
+      })()}
 
         {/* Modals */}
         {<PanelErrorBoundary name="Modal">{renderModal()}</PanelErrorBoundary>}
