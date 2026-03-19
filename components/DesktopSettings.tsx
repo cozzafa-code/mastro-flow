@@ -18,6 +18,7 @@ const NAV=[
   ]},
   { group:"Archivi", items:[
     {id:"profili",    label:"Profili",       icon:"M4 6h16M4 10h16M4 14h16M4 18h16"},
+    {id:"nodi",       label:"Nodi",          icon:"M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"},
     {id:"vetri",      label:"Vetri",         icon:"M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"},
     {id:"accessori",  label:"Accessori",     icon:"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z"},
     {id:"colori",     label:"Colori RAL",    icon:"M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"},
@@ -123,7 +124,7 @@ function parseLWPolylines(dxfText:string):{pts:{x:number,y:number}[],closed:bool
 
 // ── Viewer sezione DXF reale con LWPOLYLINE ──────────────────
 function DXFViewer({polylines,dxfText,width=460,height=380}:any){
-  const [view,setView]=React.useState("nodo");
+  const [view,setView]=useState("nodo");
   const pols:any[]=polylines&&polylines.length>0?polylines:dxfText?parseLWPolylines(dxfText):[];
 
   if(pols.length===0)return(
@@ -511,6 +512,247 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
   );
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// ARCHIVIO NODI — Motore composizione profili per CNC
+// ═══════════════════════════════════════════════════════════════
+function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
+  const [selected,setSelected]=useState<string|null>(null);
+  const [search,setSearch]=useState("");
+  const nodi:any[]=nodiDB||[];
+  const profili:any[]=sistemiDB||[];
+  const filtered=nodi.filter((n:any)=>!search||[n.nome,n.tipo].some((v:string)=>v?.toLowerCase().includes(search.toLowerCase())));
+
+  const newNodo=()=>{
+    const n={id:"N-"+Date.now(),nome:"Nuovo nodo",tipo:"anta_telaio",
+      profiloA_id:"",profiloB_id:"",
+      angolo:45,kerf:3.5,offset:0,note_cnc:"",
+      dxfText:"",polylines:[]};
+    setNodiDB?.((p:any[])=>[...(p||[]),n]);
+    setSelected(n.id);
+  };
+  const upd=(id:string,k:string,v:any)=>setNodiDB?.((p:any[])=>p.map((x:any)=>x.id===id?{...x,[k]:v}:x));
+  const del=(id:string)=>{if(!confirm("Eliminare?"))return;setNodiDB?.((p:any[])=>p.filter((x:any)=>x.id!==id));setSelected(null);};
+
+  const sel=nodi.find((n:any)=>n.id===selected);
+  const pA=profili.find((p:any)=>p.id===sel?.profiloA_id);
+  const pB=profili.find((p:any)=>p.id===sel?.profiloB_id);
+
+  const TIPI=[
+    {k:"anta_telaio",l:"Anta + Telaio",desc:"Nodo laterale standard"},
+    {k:"traverso",l:"Traverso",desc:"Nodo orizzontale"},
+    {k:"pfosten",l:"Pfosten (montante)",desc:"Nodo verticale centrale"},
+    {k:"angolo_45",l:"Angolo 45°",desc:"Giunzione ad angolo"},
+    {k:"stulp",l:"Stulpo",desc:"Anta doppia senza montante"},
+    {k:"soglia",l:"Soglia",desc:"Nodo inferiore"},
+  ];
+
+  return(
+    <div style={{display:"flex",height:"100%",gap:0}}>
+
+      {/* LISTA SINISTRA */}
+      <div style={{width:260,flexShrink:0,borderRight:"1px solid #E5E3DC",display:"flex",flexDirection:"column",background:"#fff",height:"100%"}}>
+        <div style={{padding:"14px 14px 10px",borderBottom:"1px solid #E5E3DC",background:"#1A1A1C"}}>
+          <div style={{fontSize:13,fontWeight:800,color:"#fff",marginBottom:8}}>Archivio Nodi</div>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            {[{n:nodi.length,l:"Nodi",c:AMB},{n:nodi.filter((n:any)=>n.profiloA_id&&n.profiloB_id).length,l:"Completi",c:TEAL},{n:nodi.filter((n:any)=>!n.profiloA_id||!n.profiloB_id).length,l:"Da compl.",c:RED}].map((k,i)=>(
+              <div key={i} style={{textAlign:"center",flex:1}}>
+                <div style={{fontSize:18,fontWeight:800,color:k.c,lineHeight:"1"}}>{k.n}</div>
+                <div style={{fontSize:9,color:"#9CA3AF"}}>{k.l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6,padding:"7px 10px",background:"#2A2A2E",borderRadius:7}}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca nodo..." style={{border:"none",background:"transparent",fontSize:12,color:"#fff",outline:"none",width:"100%"}}/>
+          </div>
+        </div>
+
+        {/* Import DXF nodo */}
+        <div style={{padding:"10px 12px",borderBottom:"1px solid #F2F1EC",background:"#FFFBF5"}}>
+          <div style={{position:"relative"}}>
+            <input type="file" accept=".dxf" style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",zIndex:2}}
+              onChange={e=>{
+                const file=e.target.files?.[0];if(!file)return;
+                const r=new FileReader();
+                r.onload=ev=>{
+                  const text=ev.target?.result as string;
+                  const polylines=parseLWPolylines(text);
+                  // Separa automaticamente i profili per quadrante
+                  const polsA=polylines.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.x))<=2);
+                  const polsB=polylines.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.y))<=2&&Math.min(...p.pts.map((c:any)=>c.y))<-10);
+                  const n={id:"N-"+Date.now(),nome:file.name.replace(/\.dxf$/i,""),tipo:"anta_telaio",
+                    profiloA_id:"",profiloB_id:"",angolo:45,kerf:3.5,offset:0,note_cnc:"",
+                    dxfText:text,polylines,polsA,polsB};
+                  setNodiDB?.((prev:any[])=>[...(prev||[]),n]);
+                  setSelected(n.id);
+                };
+                r.readAsText(file);e.target.value="";
+              }}/>
+            <div style={{border:`1.5px dashed ${AMB}`,borderRadius:7,padding:"9px",textAlign:"center",background:"#FFFBF5",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={AMB} strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/></svg>
+              <div style={{fontSize:11,fontWeight:700,color:"#92400E"}}>Importa DXF nodo</div>
+            </div>
+          </div>
+          <div onClick={newNodo} style={{marginTop:6,border:`1.5px dashed ${TEAL}`,borderRadius:7,padding:"8px",textAlign:"center",background:"#ECFDF5",cursor:"pointer",fontSize:11,fontWeight:700,color:"#065F46"}}>+ Crea nodo manuale</div>
+        </div>
+
+        {/* Lista nodi */}
+        <div style={{flex:1,overflowY:"auto"}}>
+          {filtered.length===0&&<div style={{padding:"24px",textAlign:"center",color:"#86868b",fontSize:12}}>Nessun nodo</div>}
+          {filtered.map((n:any)=>{
+            const isOn=selected===n.id;
+            const ok=n.profiloA_id&&n.profiloB_id;
+            const pA2=profili.find((p:any)=>p.id===n.profiloA_id);
+            const pB2=profili.find((p:any)=>p.id===n.profiloB_id);
+            return(
+              <div key={n.id} onClick={()=>setSelected(n.id)}
+                style={{padding:"10px 14px",borderBottom:"1px solid #F2F1EC",cursor:"pointer",
+                  background:isOn?AMB+"08":"#fff",borderLeft:`3px solid ${isOn?AMB:"transparent"}`}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                  <div style={{width:7,height:7,borderRadius:"50%",background:ok?TEAL:RED,flexShrink:0}}/>
+                  <span style={{fontSize:12,fontWeight:700,color:isOn?AMB:DARK}}>{n.nome}</span>
+                </div>
+                <div style={{fontSize:10,color:"#86868b",marginBottom:3}}>
+                  {TIPI.find((t:any)=>t.k===n.tipo)?.l||n.tipo} · {n.angolo}° · kerf {n.kerf}mm
+                </div>
+                <div style={{display:"flex",gap:4}}>
+                  {pA2?<span style={{fontSize:9,padding:"1px 5px",borderRadius:3,background:"#DBEAFE",color:"#1E40AF",fontWeight:600}}>{pA2.codice||pA2.sistema}</span>:<span style={{fontSize:9,color:RED}}>A mancante</span>}
+                  <span style={{fontSize:9,color:"#ccc"}}>+</span>
+                  {pB2?<span style={{fontSize:9,padding:"1px 5px",borderRadius:3,background:"#D1FAE5",color:"#065F46",fontWeight:600}}>{pB2.codice||pB2.sistema}</span>:<span style={{fontSize:9,color:RED}}>B mancante</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* DETTAGLIO DESTRA */}
+      <div style={{flex:1,overflowY:"auto",background:"#F2F1EC"}}>
+        {!sel?(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",flexDirection:"column",gap:12,color:"#86868b"}}>
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#ddd" strokeWidth="1"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+            <div style={{fontSize:13}}>Seleziona un nodo o importa un DXF</div>
+          </div>
+        ):(
+          <div style={{padding:"20px 24px"}}>
+            {/* Header */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+              <div>
+                <div style={{fontSize:18,fontWeight:800,color:DARK}}>{sel.nome}</div>
+                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{TIPI.find((t:any)=>t.k===sel.tipo)?.l} · {sel.angolo}° · kerf {sel.kerf}mm</div>
+              </div>
+              <div onClick={()=>del(sel.id)} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>Elimina</div>
+            </div>
+
+            {/* VIEWER NODO */}
+            <div style={{marginBottom:16}}>
+              <DXFViewer polylines={sel.polylines} dxfText={sel.dxfText} width={700} height={420}/>
+            </div>
+
+            {/* Dati nodo */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+
+              {/* Info base */}
+              <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC"}}>
+                <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Configurazione nodo</div>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  <div><LBL>Nome nodo</LBL><INP placeholder="es. Anta+Telaio 70+77mm" value={sel.nome||""} onChange={(e:any)=>upd(sel.id,"nome",e.target.value)}/></div>
+                  <div><LBL>Tipo nodo</LBL>
+                    <SEL value={sel.tipo||"anta_telaio"} onChange={(e:any)=>upd(sel.id,"tipo",e.target.value)}>
+                      {TIPI.map((t:any)=><option key={t.k} value={t.k}>{t.l} — {t.desc}</option>)}
+                    </SEL>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parametri CNC */}
+              <div style={{background:"#F0FDF4",borderRadius:12,padding:"16px",border:`2px solid ${TEAL}`}}>
+                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Parametri taglio CNC ★</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  <div>
+                    <LBL>Angolo taglio (°)</LBL>
+                    <SEL value={String(sel.angolo||45)} onChange={(e:any)=>upd(sel.id,"angolo",parseFloat(e.target.value))}>
+                      <option value="45">45° — Giunzione ad angolo</option>
+                      <option value="90">90° — Taglio dritto</option>
+                      <option value="22.5">22.5° — Angolo speciale</option>
+                      <option value="0">0° — Parallelo</option>
+                    </SEL>
+                  </div>
+                  <div>
+                    <LBL>Kerf lama (mm)</LBL>
+                    <INP type="number" step="0.1" placeholder="3.5" value={sel.kerf||""} onChange={(e:any)=>upd(sel.id,"kerf",parseFloat(e.target.value)||0)} style={{border:`2px solid ${TEAL}`,fontWeight:700}}/>
+                  </div>
+                  <div>
+                    <LBL>Offset accoppiamento (mm)</LBL>
+                    <INP type="number" step="0.1" placeholder="0" value={sel.offset||""} onChange={(e:any)=>upd(sel.id,"offset",parseFloat(e.target.value)||0)}/>
+                  </div>
+                  <div>
+                    <LBL>Tolleranza gioco (mm)</LBL>
+                    <INP type="number" step="0.1" placeholder="0.2" value={sel.tolleranza||""} onChange={(e:any)=>upd(sel.id,"tolleranza",parseFloat(e.target.value)||0)}/>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Selezione profili */}
+            <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC",marginBottom:12}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Profili del nodo</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:12,alignItems:"center"}}>
+                {/* Profilo A */}
+                <div style={{border:`2px solid #DBEAFE`,borderRadius:10,padding:"12px"}}>
+                  <div style={{fontSize:10,fontWeight:800,color:"#1E40AF",textTransform:"uppercase",marginBottom:8}}>Profilo A — Telaio (Rahmen)</div>
+                  <SEL value={sel.profiloA_id||""} onChange={(e:any)=>upd(sel.id,"profiloA_id",e.target.value)}>
+                    <option value="">— Seleziona profilo —</option>
+                    {profili.filter((p:any)=>p.tipo==="Rahmen"||!p.tipo).map((p:any)=>(
+                      <option key={p.id} value={p.id}>{p.codice||p.sistema} — {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
+                    ))}
+                  </SEL>
+                  {pA&&<div style={{marginTop:8,padding:"6px 10px",background:"#EFF6FF",borderRadius:7,fontSize:11,color:"#1E40AF"}}>
+                    {pA.bautiefe}mm · {pA.grMl?pA.grMl+"kg/ml":""} · {pA.camere||"?"}cam
+                  </div>}
+                </div>
+                {/* Simbolo + */}
+                <div style={{fontSize:24,color:"#ccc",textAlign:"center",fontWeight:300}}>+</div>
+                {/* Profilo B */}
+                <div style={{border:`2px solid #D1FAE5`,borderRadius:10,padding:"12px"}}>
+                  <div style={{fontSize:10,fontWeight:800,color:"#065F46",textTransform:"uppercase",marginBottom:8}}>Profilo B — Anta (Flügel)</div>
+                  <SEL value={sel.profiloB_id||""} onChange={(e:any)=>upd(sel.id,"profiloB_id",e.target.value)}>
+                    <option value="">— Seleziona profilo —</option>
+                    {profili.filter((p:any)=>p.tipo==="Flügel"||!p.tipo).map((p:any)=>(
+                      <option key={p.id} value={p.id}>{p.codice||p.sistema} — {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
+                    ))}
+                  </SEL>
+                  {pB&&<div style={{marginTop:8,padding:"6px 10px",background:"#ECFDF5",borderRadius:7,fontSize:11,color:"#065F46"}}>
+                    {pB.bautiefe}mm · {pB.grMl?pB.grMl+"kg/ml":""} · {pB.camere||"?"}cam
+                  </div>}
+                </div>
+              </div>
+              {/* Riepilogo nodo */}
+              {pA&&pB&&(
+                <div style={{marginTop:12,padding:"10px 14px",background:"#F9F8F5",borderRadius:8,border:"1px solid #E5E3DC",display:"flex",gap:20,fontSize:12,color:DARK}}>
+                  <div><span style={{color:"#86868b"}}>Bautiefe totale: </span><strong>{(parseFloat(pA.bautiefe)||0)+(parseFloat(pB.bautiefe)||0)}mm</strong></div>
+                  <div><span style={{color:"#86868b"}}>Perdita kerf: </span><strong style={{color:AMB}}>{sel.kerf||0}mm</strong></div>
+                  <div><span style={{color:"#86868b"}}>Taglio effettivo: </span><strong style={{color:TEAL}}>{((parseFloat(pA.bautiefe)||0)+(parseFloat(pB.bautiefe)||0)-(parseFloat(sel.kerf)||0)).toFixed(1)}mm</strong></div>
+                </div>
+              )}
+            </div>
+
+            {/* Note CNC */}
+            <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC"}}>
+              <LBL>Note per la macchina CNC</LBL>
+              <textarea value={sel.note_cnc||""} onChange={(e:any)=>upd(sel.id,"note_cnc",e.target.value)}
+                placeholder="Istruzioni speciali per la macchina, sequenza lavorazioni, note operatore..."
+                style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E5E3DC",fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:80,resize:"vertical"}}/>
+            </div>
+
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // ARCHIVIO VETRI
 // ═══════════════════════════════════════════════════════════════
@@ -833,6 +1075,7 @@ export default function DesktopSettings(){
     switch(active){
 
       case "profili": return <ArchivioProfili sistemiDB={sistemiDB} setSistemiDB={setSistemiDB} coloriDB={coloriDB}/>;
+      case "nodi":    return <ArchivioNodi nodiDB={ctx.nodiDB||[]} setNodiDB={ctx.setNodiDB||((fn:any)=>{})} sistemiDB={sistemiDB}/>;
       case "vetri":   return <ArchivioVetri vetriDB={vetriDB} setVetriDB={setVetriDB}/>;
       case "colori":  return <ArchivioColori coloriDB={coloriDB} setColoriDB={setColoriDB}/>;
 
