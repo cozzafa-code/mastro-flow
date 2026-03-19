@@ -1083,7 +1083,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ TAB BAR ═══ */}
                                 <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
-                                  {[{ id: "disegno", l: "✏️ Disegno", c: T.purple }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }].map(tab => (
+                                  {[{ id: "disegno", l: "✏️ Disegno", c: T.purple }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }, { id: "cnc", l: "⚙️ CNC", c: "#1A9E73" }].map(tab => (
                                     <div key={tab.id} onClick={() => setViewTab(tab.id)}
                                       style={{ flex: 1, padding: "7px 0", textAlign: "center", fontSize: 11, fontWeight: viewTab === tab.id ? 800 : 500, color: viewTab === tab.id ? tab.c : T.sub, borderBottom: viewTab === tab.id ? `2.5px solid ${tab.c}` : "2.5px solid transparent", cursor: "pointer", transition: "all 0.15s" }}>
                                       {tab.l}
@@ -1093,6 +1093,218 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ TAB: FORMA ═══ */}
                                 {viewTab === "forma" && <FormaEditor T={T} realW={realW} realH={realH} />}
+
+                                {/* ═══ TAB: CNC ═══ */}
+                                {viewTab === "cnc" && (() => {
+                                  // ── Calcola lista tagli dal disegno ──
+                                  const TEAL = "#1A9E73";
+                                  const RED = "#DC4444";
+                                  const AMB = "#D08008";
+                                  const BLU = "#3B7FE0";
+
+                                  // Sistema selezionato
+                                  const sis = (sistemiDB||[]).find((s:any)=>s.id===sistemaSel);
+                                  const bautiefe = parseFloat(sis?.bautiefe||sis?.spessore||70);
+                                  const kerf = 3.5; // mm perdita da lama
+                                  const barraLen = 6000; // mm barra standard
+
+                                  // Scala canvas → mm reali
+                                  const sc2mm = (v:number, axis:"w"|"h") =>
+                                    axis==="w" ? v/fW*realW : v/fH*realH;
+
+                                  // Estrai pezzi da tagliare
+                                  const pezzi:any[] = [];
+
+                                  // Telai (rect)
+                                  frames.forEach((fr:any,i:number)=>{
+                                    const W = Math.round(sc2mm(fr.w,"w"));
+                                    const H = Math.round(sc2mm(fr.h,"h"));
+                                    pezzi.push({id:`T${i}A`,tipo:"Telaio",desc:`Telaio SX/DX`,profilo:sis?.codice||"—",L:H,angolo:90,qty:2,col:"#3B7FE0"});
+                                    pezzi.push({id:`T${i}B`,tipo:"Telaio",desc:`Telaio SUP/INF`,profilo:sis?.codice||"—",L:W,angolo:45,qty:2,col:"#3B7FE0"});
+                                  });
+
+                                  // Montanti
+                                  allMontanti.forEach((m:any,i:number)=>{
+                                    const y1=m.y1||m.y||0, y2=m.y2||(m.y+(m.h||fH))||fH;
+                                    const L=Math.round(sc2mm(y2-y1,"h"));
+                                    pezzi.push({id:`M${i}`,tipo:"Montante",desc:`Montante centrale`,profilo:sis?.codice||"—",L,angolo:90,qty:1,col:"#8B5CF6"});
+                                  });
+
+                                  // Traversi
+                                  allTraversi.forEach((t:any,i:number)=>{
+                                    const x1=t.x1||t.x||0, x2=t.x2||(t.x+(t.w||fW))||fW;
+                                    const L=Math.round(sc2mm(x2-x1,"w"));
+                                    pezzi.push({id:`V${i}`,tipo:"Traverso",desc:`Traverso`,profilo:sis?.codice||"—",L,angolo:45,qty:1,col:"#F97316"});
+                                  });
+
+                                  // Ante (innerRect)
+                                  els.filter((e:any)=>e.type==="innerRect"||e.type==="polyAnta").forEach((a:any,i:number)=>{
+                                    const W=Math.round(sc2mm(a.w||80,"w"));
+                                    const H=Math.round(sc2mm(a.h||100,"h"));
+                                    const isSub = a.subType==="porta";
+                                    pezzi.push({id:`A${i}a`,tipo:isSub?"Porta":"Anta",desc:`${isSub?"Porta":"Anta"} SX/DX`,profilo:"Flügel",L:H,angolo:90,qty:2,col:"#1A9E73"});
+                                    pezzi.push({id:`A${i}b`,tipo:isSub?"Porta":"Anta",desc:`${isSub?"Porta":"Anta"} SUP/INF`,profilo:"Flügel",L:W,angolo:45,qty:2,col:"#1A9E73"});
+                                  });
+
+                                  // Applica kerf a ogni pezzo (angolo 45° perde 2×kerf, 90° perde 0)
+                                  const pezziTaglio = pezzi.map(p=>({
+                                    ...p,
+                                    Lnetto: p.L - (p.angolo===45 ? kerf*2 : 0)
+                                  }));
+
+                                  // Ottimizzazione barre (greedy)
+                                  const ottimizza = () => {
+                                    const lunghezze = [...pezziTaglio].flatMap(p=>Array(p.qty).fill({...p})).sort((a,b)=>b.Lnetto-a.Lnetto);
+                                    const barre:any[] = [];
+                                    lunghezze.forEach(pz=>{
+                                      let placed=false;
+                                      for(const b of barre){
+                                        const usato=b.pezzi.reduce((s:number,x:any)=>s+x.Lnetto+kerf,0);
+                                        if(usato+pz.Lnetto+kerf<=barraLen){
+                                          b.pezzi.push(pz);b.usato=usato+pz.Lnetto+kerf;placed=true;break;
+                                        }
+                                      }
+                                      if(!placed)barre.push({id:barre.length+1,pezzi:[pz],usato:pz.Lnetto+kerf});
+                                    });
+                                    return barre;
+                                  };
+                                  const barre = ottimizza();
+                                  const totBarre = barre.length;
+                                  const totSfrido = barre.reduce((s:number,b:any)=>s+(barraLen-b.usato),0);
+                                  const efficienza = Math.round((1-totSfrido/(totBarre*barraLen))*100);
+
+                                  // Export EWX (formato Emmegi CENTRO 2)
+                                  const exportEWX = () => {
+                                    const now = new Date().toISOString().slice(0,10);
+                                    let ewx = `<?xml version="1.0" encoding="UTF-8"?>
+<EWX Version="1.0" Date="${now}">
+`;
+                                    ewx += `  <Program Name="${vanoNome||'FINESTRA'}" System="${sis?.codice||'PROFILO'}" Kerf="${kerf}">
+`;
+                                    pezziTaglio.forEach(p=>{
+                                      for(let q=0;q<p.qty;q++){
+                                        ewx += `    <Bar Code="${p.id}_${q+1}" Profile="${p.profilo}" Length="${p.Lnetto}" Angle1="${p.angolo}" Angle2="${p.angolo}" Type="${p.tipo}"/>
+`;
+                                      }
+                                    });
+                                    ewx += `  </Program>
+</EWX>`;
+                                    const blob=new Blob([ewx],{type:"application/xml"});
+                                    const url=URL.createObjectURL(blob);
+                                    const a=document.createElement("a");a.href=url;a.download=`${vanoNome||'finestra'}_cnc.ewx`;a.click();
+                                    URL.revokeObjectURL(url);
+                                  };
+
+                                  // Export CSV
+                                  const exportCSV = () => {
+                                    let csv="Tipo;Descrizione;Profilo;Lunghezza netta (mm);Angolo;Quantità\n";
+                                    pezziTaglio.forEach(p=>{csv+=`${p.tipo};${p.desc};${p.profilo};${p.Lnetto};${p.angolo}°;${p.qty}\n`;});
+                                    const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+                                    const url=URL.createObjectURL(blob);
+                                    const a=document.createElement("a");a.href=url;a.download=`${vanoNome||'finestra'}_tagli.csv`;a.click();
+                                    URL.revokeObjectURL(url);
+                                  };
+
+                                  return (
+                                    <div style={{padding:"16px 20px",fontFamily:"Inter,sans-serif"}}>
+                                      {/* Header */}
+                                      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+                                        <div style={{flex:1}}>
+                                          <div style={{fontSize:16,fontWeight:800,color:"#1A1A1C"}}>Lista tagli CNC</div>
+                                          <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{vanoNome} · {realW}×{realH}mm · {sis?.codice||"Nessun sistema"}</div>
+                                        </div>
+                                        <div style={{display:"flex",gap:8}}>
+                                          <div onClick={exportCSV} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${TEAL}`,color:TEAL,fontSize:12,fontWeight:700,cursor:"pointer"}}>CSV</div>
+                                          <div onClick={exportEWX} style={{padding:"8px 14px",borderRadius:8,background:TEAL,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Export EWX</div>
+                                        </div>
+                                      </div>
+
+                                      {/* Sistema selector se non selezionato */}
+                                      {!sis&&(sistemiDB||[]).length>0&&(
+                                        <div style={{padding:"12px 16px",background:"#FEF3C7",borderRadius:10,marginBottom:16,border:"1px solid #D08008",fontSize:12,color:"#92400E"}}>
+                                          ⚠️ Seleziona un sistema profilo dalla barra in alto per calcolare i tagli con le dimensioni reali
+                                        </div>
+                                      )}
+
+                                      {/* Stats barre */}
+                                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
+                                        {[
+                                          {n:pezziTaglio.reduce((s:number,p:any)=>s+p.qty,0),l:"Pezzi totali",c:AMB},
+                                          {n:totBarre,l:`Barre ${(barraLen/1000).toFixed(1)}m`,c:BLU},
+                                          {n:efficienza+"%",l:"Efficienza",c:TEAL},
+                                          {n:Math.round(totSfrido)+"mm",l:"Sfrido totale",c:totSfrido>500?RED:TEAL},
+                                        ].map((s,i)=>(
+                                          <div key={i} style={{background:"#F9F8F5",border:"1px solid #E5E3DC",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
+                                            <div style={{fontSize:20,fontWeight:800,color:s.c}}>{s.n}</div>
+                                            <div style={{fontSize:10,color:"#86868b",marginTop:1}}>{s.l}</div>
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      {/* Parametri */}
+                                      <div style={{display:"flex",gap:12,marginBottom:16,padding:"10px 14px",background:"#F9F8F5",borderRadius:8,border:"1px solid #E5E3DC",fontSize:11,alignItems:"center",flexWrap:"wrap",gap:16}}>
+                                        <div><span style={{color:"#86868b"}}>Bautiefe: </span><strong>{bautiefe}mm</strong></div>
+                                        <div><span style={{color:"#86868b"}}>Kerf lama: </span><strong style={{color:AMB}}>{kerf}mm</strong></div>
+                                        <div><span style={{color:"#86868b"}}>Barra std: </span><strong>{barraLen/1000}m</strong></div>
+                                        <div><span style={{color:"#86868b"}}>Scala canvas: </span><strong style={{fontSize:10,fontFamily:"JetBrains Mono,monospace"}}>{realW}×{realH}mm</strong></div>
+                                      </div>
+
+                                      {/* Tabella pezzi */}
+                                      <div style={{background:"#fff",border:"1px solid #E5E3DC",borderRadius:10,overflow:"hidden",marginBottom:16}}>
+                                        <div style={{padding:"10px 14px",background:"#F9F8F5",borderBottom:"1px solid #E5E3DC",display:"grid",gridTemplateColumns:"80px 1fr 90px 90px 70px 50px",gap:8,fontSize:10,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:"0.04em"}}>
+                                          <span>Tipo</span><span>Descrizione</span><span>Profilo</span><span>L netta (mm)</span><span>Angolo</span><span>Qt.</span>
+                                        </div>
+                                        {pezziTaglio.map((p:any)=>(
+                                          <div key={p.id} style={{display:"grid",gridTemplateColumns:"80px 1fr 90px 90px 70px 50px",gap:8,alignItems:"center",padding:"9px 14px",borderBottom:"1px solid #F2F1EC",fontSize:13}}>
+                                            <span style={{padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700,background:p.col+"15",color:p.col,textAlign:"center"}}>{p.tipo}</span>
+                                            <span style={{color:"#1A1A1C"}}>{p.desc}</span>
+                                            <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,color:"#86868b"}}>{p.profilo}</span>
+                                            <span style={{fontFamily:"JetBrains Mono,monospace",fontWeight:700,color:"#1A1A1C"}}>{p.Lnetto}</span>
+                                            <span style={{fontSize:11,color:"#86868b"}}>{p.angolo}°</span>
+                                            <span style={{fontWeight:700,color:"#1A1A1C"}}>{p.qty}×</span>
+                                          </div>
+                                        ))}
+                                        {pezziTaglio.length===0&&<div style={{padding:"24px",textAlign:"center",color:"#86868b",fontSize:12}}>Nessun elemento nel disegno — disegna telaio, montanti e ante nel tab Disegno</div>}
+                                      </div>
+
+                                      {/* Ottimizzazione barre */}
+                                      {barre.length>0&&(
+                                        <div>
+                                          <div style={{fontSize:12,fontWeight:700,color:"#1A1A1C",marginBottom:10}}>Ottimizzazione barre ({barraLen/1000}m)</div>
+                                          {barre.map((b:any)=>{
+                                            const eff=Math.round(b.usato/barraLen*100);
+                                            return(
+                                              <div key={b.id} style={{marginBottom:8,border:"1px solid #E5E3DC",borderRadius:8,overflow:"hidden"}}>
+                                                <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"#F9F8F5",borderBottom:"1px solid #E5E3DC"}}>
+                                                  <span style={{fontSize:11,fontWeight:700,color:"#1A1A1C"}}>Barra #{b.id}</span>
+                                                  <span style={{fontSize:10,color:"#86868b"}}>{b.pezzi.length} pezzi</span>
+                                                  <div style={{flex:1,height:6,background:"#E5E3DC",borderRadius:3,overflow:"hidden"}}>
+                                                    <div style={{width:eff+"%",height:"100%",background:eff>85?TEAL:eff>60?AMB:RED,borderRadius:3,transition:"width .3s"}}/>
+                                                  </div>
+                                                  <span style={{fontSize:11,fontWeight:700,color:eff>85?TEAL:eff>60?AMB:RED}}>{eff}%</span>
+                                                  <span style={{fontSize:10,color:"#86868b"}}>sfrido {barraLen-Math.round(b.usato)}mm</span>
+                                                </div>
+                                                {/* Visualizzazione grafica barra */}
+                                                <div style={{padding:"8px 12px",display:"flex",gap:2,alignItems:"center"}}>
+                                                  {b.pezzi.map((pz:any,pi:number)=>{
+                                                    const pct=pz.Lnetto/barraLen*100;
+                                                    return(
+                                                      <div key={pi} title={`${pz.desc} ${pz.Lnetto}mm`}
+                                                        style={{height:20,width:pct+"%",minWidth:2,background:pz.col,borderRadius:2,position:"relative",overflow:"hidden"}}>
+                                                        {pct>8&&<span style={{position:"absolute",left:4,top:3,fontSize:8,color:"#fff",whiteSpace:"nowrap",fontWeight:700}}>{pz.Lnetto}</span>}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                  <div style={{flex:1,height:20,background:"#F2F1EC",borderRadius:2,minWidth:2}}/>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
 
                                 {/* ═══ TAB: 3D ═══ */}
                                 {viewTab === "3d" && <View3D T={T} realW={realW} realH={realH} vanoDisegno={vanoDisegno} onUpdate={onUpdate} />}
