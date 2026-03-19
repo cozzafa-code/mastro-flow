@@ -133,7 +133,7 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
 }
 
 export default function DesktopCommesse(){
-  const {T,PIPELINE=[],cantieri=[],filtered=[],selectedCM,setSelectedCM,
+  const {T,PIPELINE=[],cantieri=[],setCantieri,filtered=[],selectedCM,setSelectedCM,
     filterFase,setFilterFase,searchQ,setSearchQ,setShowModal,
     getVaniAttivi,giorniFermaCM,sogliaDays=7,calcolaVanoPrezzo,
     fattureDB=[],ordiniFornDB=[],montaggiDB=[],msgs=[],tasks=[]}=useMastro();
@@ -246,9 +246,7 @@ export default function DesktopCommesse(){
             sogliaDays={sogliaDays}
             onSelect={(c:any)=>{setSelectedCM(c);setViewMode("lista");setDetTab("rilievi");}}
             onMoveFase={(cmId:string,newFase:string)=>{
-              // Aggiorna fase commessa nel context
-              const updated=cantieri.map((c:any)=>c.id===cmId?{...c,fase:newFase}:c);
-              // setCantieri(updated); // decommentare quando setCantieri è disponibile nel context
+              setCantieri?.((prev:any[])=>prev.map((c:any)=>c.id===cmId?{...c,fase:newFase}:c));
             }}
           />
         </div>
