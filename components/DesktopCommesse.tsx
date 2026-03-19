@@ -595,28 +595,120 @@ export default function DesktopCommesse(){
           </div>
 
           {/* COL 3 — RIEPILOGO */}
-          <div style={{width:290,flexShrink:0,background:"#F8F7F2",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            <div style={{padding:"12px 16px",background:"#fff",borderBottom:`1px solid #E5E3DC`,flexShrink:0}}>
-              <div style={{fontSize:10,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.8}}>Riepilogo aziendale</div>
+          <div style={{width:300,flexShrink:0,background:"#F8F7F2",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            <div style={{padding:"12px 16px",background:"#fff",borderBottom:`1px solid #E5E3DC`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontSize:10,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.8}}>{cm?"Commessa":"Riepilogo aziendale"}</div>
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"14px 16px"}}>
 
-              {/* Commessa selezionata info */}
+              {/* SCHEDA COMMESSA RICCA */}
               {cm&&(
-                <div style={{background:"#fff",borderRadius:10,border:`1px solid #E5E3DC`,padding:"12px 14px",marginBottom:14}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:10}}>Questa commessa</div>
-                  {[
-                    {l:"Fase",v:getFase(cm).nome||cm.fase,c:getFase(cm).color||TEAL},
-                    {l:"Stato",v:isFerma(cm)?`Ferma ${giorniFermaCM(cm)}gg`:"Attiva",c:isFerma(cm)?RED:TEAL},
-                    {l:"Consegna",v:cm.dataConsegna?new Date(cm.dataConsegna+"T12:00:00").toLocaleDateString("it-IT",{day:"numeric",month:"long"}):cm.dataConsegna?`${daysTo(cm.dataConsegna)}gg`:"—",c:cm.dataConsegna&&daysTo(cm.dataConsegna)<=7?RED:DARK},
-                    {l:"Vani",v:`${vaniCm.length} vani · ${vaniCm.reduce((s:number,v:any)=>s+(v.pezzi||1),0)} pz`,c:DARK},
-                    {l:"Rilievi",v:`${rilievi.length} rilievi`,c:DARK},
-                  ].map((k,i)=>(
-                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:i<4?`1px solid #F2F1EC`:"none"}}>
-                      <span style={{fontSize:12,color:"#86868b"}}>{k.l}</span>
-                      <span style={{fontSize:12,fontWeight:700,color:k.c}}>{k.v}</span>
+                <div style={{marginBottom:14}}>
+
+                  {/* Cliente — nome + contatti */}
+                  <div style={{background:"#fff",borderRadius:10,border:`1px solid #E5E3DC`,overflow:"hidden",marginBottom:10}}>
+                    <div style={{padding:"12px 14px",borderBottom:`1px solid #F2F1EC`}}>
+                      <div style={{fontSize:14,fontWeight:800,color:DARK,marginBottom:2}}>{cm.cliente} {cm.cognome||""}</div>
+                      {cm.telefono&&(
+                        <a href={`tel:${cm.telefono}`} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:TEAL,fontWeight:600,textDecoration:"none",marginBottom:4}}>
+                          <Svg path="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" c={TEAL} s={13}/>
+                          {cm.telefono}
+                        </a>
+                      )}
+                      {cm.indirizzo&&(
+                        <a href={`https://maps.google.com/?q=${encodeURIComponent(cm.indirizzo)}`} target="_blank" rel="noreferrer"
+                          style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:BLU,fontWeight:500,textDecoration:"none"}}>
+                          <Svg path="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" c={BLU} s={12}/>
+                          {cm.indirizzo}
+                        </a>
+                      )}
                     </div>
-                  ))}
+                    {/* Bottone entra nel cliente */}
+                    <div onClick={()=>setTab("clienti")} style={{padding:"9px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",background:"#F8F7F2"}}
+                      onMouseEnter={e=>((e.currentTarget as any).style.background=TEAL+"10")}
+                      onMouseLeave={e=>((e.currentTarget as any).style.background="#F8F7F2")}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <Svg path="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" c={TEAL} s={13}/>
+                        <span style={{fontSize:12,fontWeight:700,color:TEAL}}>Scheda cliente completa</span>
+                      </div>
+                      <Svg path="M9 18l6-6-6-6" c={TEAL} s={12}/>
+                    </div>
+                  </div>
+
+                  {/* Stato commessa — PERCHÉ è ferma */}
+                  <div style={{background:"#fff",borderRadius:10,border:`1px solid ${isFerma(cm)?RED+"30":"#E5E3DC"}`,padding:"12px 14px",marginBottom:10}}>
+                    <div style={{fontSize:10,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Stato commessa</div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                      <span style={{fontSize:12,color:"#86868b"}}>Fase</span>
+                      <span style={{fontSize:12,fontWeight:700,color:getFase(cm).color||TEAL}}>{getFase(cm).nome||cm.fase}</span>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                      <span style={{fontSize:12,color:"#86868b"}}>Stato</span>
+                      <span style={{fontSize:12,fontWeight:700,color:isFerma(cm)?RED:TEAL}}>{isFerma(cm)?`Ferma ${giorniFermaCM(cm)}gg`:"Attiva"}</span>
+                    </div>
+                    {/* PERCHÉ è ferma — ultimo evento log */}
+                    {isFerma(cm)&&cm.log&&cm.log.length>0&&(
+                      <div style={{marginTop:6,padding:"8px 10px",borderRadius:8,background:RED+"06",border:`1px solid ${RED}20`}}>
+                        <div style={{fontSize:10,fontWeight:700,color:RED,marginBottom:3}}>Ultimo aggiornamento</div>
+                        <div style={{fontSize:11,color:DARK}}><b>{cm.log[cm.log.length-1]?.chi}</b> {cm.log[cm.log.length-1]?.cosa}</div>
+                        <div style={{fontSize:10,color:"#86868b",marginTop:2}}>{cm.log[cm.log.length-1]?.quando}</div>
+                      </div>
+                    )}
+                    {isFerma(cm)&&(!cm.log||cm.log.length===0)&&(
+                      <div style={{marginTop:6,padding:"8px 10px",borderRadius:8,background:RED+"06",border:`1px solid ${RED}20`}}>
+                        <div style={{fontSize:11,color:RED,fontWeight:600}}>Nessuna attività da {giorniFermaCM(cm)} giorni</div>
+                      </div>
+                    )}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,paddingTop:8,borderTop:`1px solid #F2F1EC`}}>
+                      <span style={{fontSize:12,color:"#86868b"}}>Consegna</span>
+                      <span style={{fontSize:12,fontWeight:700,color:cm.dataConsegna&&daysTo(cm.dataConsegna)<=7?RED:DARK}}>{cm.dataConsegna?new Date(cm.dataConsegna+"T12:00:00").toLocaleDateString("it-IT",{day:"numeric",month:"long"}):"—"}</span>
+                    </div>
+                  </div>
+
+                  {/* Attività recenti — chi ha fatto cosa */}
+                  <div style={{background:"#fff",borderRadius:10,border:`1px solid #E5E3DC`,overflow:"hidden",marginBottom:10}}>
+                    <div style={{padding:"10px 14px",borderBottom:`1px solid #F2F1EC`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <div style={{fontSize:10,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7}}>Attività recenti</div>
+                      <div onClick={()=>setDetTab("timeline")} style={{fontSize:11,color:TEAL,cursor:"pointer",fontWeight:600}}>Tutto →</div>
+                    </div>
+                    {(!cm.log||cm.log.length===0)
+                      ?<div style={{padding:"12px 14px",fontSize:12,color:"#86868b"}}>Nessuna attività</div>
+                      :cm.log.slice(-4).reverse().map((l:any,i:number)=>(
+                        <div key={i} style={{padding:"9px 14px",borderBottom:i<3?`1px solid #F2F1EC`:"none",display:"flex",gap:10,alignItems:"flex-start"}}>
+                          <div style={{width:6,height:6,borderRadius:"50%",background:l.color||TEAL,flexShrink:0,marginTop:5}}/>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12,color:DARK,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}><b style={{fontWeight:700}}>{l.chi}</b> {l.cosa}</div>
+                            <div style={{fontSize:10,color:"#86868b",marginTop:1}}>{l.quando}</div>
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+
+                  {/* Numeri commessa */}
+                  <div style={{background:"#fff",borderRadius:10,border:`1px solid #E5E3DC`,padding:"12px 14px",marginBottom:10}}>
+                    <div style={{fontSize:10,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Numeri</div>
+                    {[
+                      {l:"Vani",v:`${vaniCm.length} · ${vaniCm.reduce((s:number,v:any)=>s+(v.pezzi||1),0)} pz`,c:DARK},
+                      {l:"Rilievi",v:rilievi.length,c:DARK},
+                      {l:"Ordini",v:ordiniCm.length,c:ordiniCm.length>0?AMB:DARK},
+                      {l:"Fatture",v:fattureCm.length,c:fattureCm.length>0?TEAL:DARK},
+                      {l:"Messaggi",v:msgsCm.length,c:msgsCm.filter((m:any)=>!m.letto).length>0?BLU:DARK},
+                      {l:"Task aperte",v:tasksCm.filter((t:any)=>t.stato!=="completata").length,c:tasksCm.filter((t:any)=>t.stato!=="completata").length>0?AMB:DARK},
+                    ].map((k,i)=>(
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:i<5?`1px solid #F2F1EC`:"none"}}>
+                        <span style={{fontSize:12,color:"#86868b"}}>{k.l}</span>
+                        <span style={{fontSize:12,fontWeight:700,color:k.c}}>{k.v}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Azione rapida — invia messaggio */}
+                  <div onClick={()=>setDetTab("messaggi")} style={{padding:"10px 14px",borderRadius:10,background:BLU,display:"flex",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",marginBottom:10}}>
+                    <Svg path="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" c="#fff" s={14}/>
+                    <span style={{fontSize:12,fontWeight:700,color:"#fff"}}>Invia messaggio</span>
+                  </div>
+
                 </div>
               )}
 
