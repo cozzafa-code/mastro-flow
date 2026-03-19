@@ -363,13 +363,131 @@ function FormaEditor({ T, realW, realH }: any) {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// SEZIONE PROFILO — Viewer DXF nodo in overlay sul canvas
+// ═══════════════════════════════════════════════════════════════
+
+function parseLWPolylinesForCanvas(dxfText: string): {pts:{x:number,y:number}[], closed:boolean}[] {
+  if (!dxfText) return [];
+  const lines = dxfText.split('\n');
+  const result: {pts:{x:number,y:number}[], closed:boolean}[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (lines[i].trim() === '0' && lines[i+1]?.trim() === 'LWPOLYLINE') {
+      const pts: {x:number,y:number}[] = []; let closed = false;
+      let j = i+2;
+      while (j < lines.length-1) {
+        const code = lines[j].trim(), val = lines[j+1]?.trim() || '';
+        if (code === '0') break;
+        if (code === '70') closed = (parseInt(val) & 1) === 1;
+        if (code === '10') {
+          const x = parseFloat(val);
+          if (lines[j+2]?.trim() === '20') { const y = parseFloat(lines[j+3]?.trim() || '0'); pts.push({x, y}); j += 2; }
+        }
+        j += 2;
+      }
+      if (pts.length >= 2) result.push({pts, closed});
+      i = j;
+    } else { i++; }
+  }
+  return result;
+}
+
+function SezioneProfilo({ sistema, width = 220, height = 180 }: any) {
+  const [view, setView] = React.useState<"nodo"|"rahmen"|"flugel">("nodo");
+  if (!sistema?.dxfText && !sistema?.polylines) return (
+    <div style={{ width, height, background: "#1A1A1C", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div style={{ fontSize: 9, color: "#444", textAlign: "center" }}>Nessun profilo DXF<br/>Assegna sistema al vano</div>
+    </div>
+  );
+
+  const allPols: {pts:{x:number,y:number}[], closed:boolean}[] = sistema.polylines?.length
+    ? sistema.polylines
+    : parseLWPolylinesForCanvas(sistema.dxfText || "");
+
+  // Filtra per vista
+  let pols = allPols;
+  if (view === "rahmen") pols = allPols.filter(p => Math.max(...p.pts.map(c => c.x)) <= 2);
+  else if (view === "flugel") pols = allPols.filter(p => Math.max(...p.pts.map(c => c.y)) <= 2 && Math.min(...p.pts.map(c => c.y)) < -10);
+  if (pols.length === 0) pols = allPols;
+
+  const allPts = pols.flatMap(p => p.pts);
+  if (allPts.length === 0) return null;
+  const xs = allPts.map(c => c.x), ys = allPts.map(c => c.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rX = maxX - minX || 1, rY = maxY - minY || 1;
+  const TOOLBAR = 24, PAD = 8;
+  const svgH = height - TOOLBAR;
+  const scale = Math.min((width - PAD*2) / rX, (svgH - PAD*2) / rY);
+  const offX = PAD + ((width - PAD*2) - rX*scale) / 2;
+  const offY = PAD + ((svgH - PAD*2) - rY*scale) / 2;
+  const tx = (x: number) => offX + (x - minX) * scale;
+  const ty = (y: number) => svgH - PAD - (y - minY) * scale; // flip Y
+
+  const fills = ['#D0840814','#1A9E7312','#3B7FE010','#8B5CF610','#F9731610'];
+  const strokes = ['#D08008','#1A9E73','#3B7FE0','#8B5CF6','#F97316'];
+
+  // Quote step automatico
+  const step = Math.ceil(Math.max(rX, rY) / 5 / 5) * 5 || 5;
+  const qX: number[] = [], qY: number[] = [];
+  for (let v = Math.ceil(minX/step)*step; v <= maxX+0.1; v += step) qX.push(v);
+  for (let v = Math.ceil(minY/step)*step; v <= maxY+0.1; v += step) qY.push(v);
+
+  return (
+    <div style={{ background: "#1A1A1C", borderRadius: 8, overflow: "hidden", border: "1px solid #2A2A2E" }}>
+      {/* Toolbar micro */}
+      <div style={{ height: TOOLBAR, display: "flex", alignItems: "center", padding: "0 8px", gap: 3, borderBottom: "1px solid #2A2A2E" }}>
+        {([["nodo","Nodo"],["rahmen","Tel."],["flugel","Anta"]] as any[]).map(([k,l]) => (
+          <div key={k} onClick={() => setView(k)}
+            style={{ padding: "2px 7px", fontSize: 9, fontWeight: 600, cursor: "pointer", borderRadius: 4,
+              background: view === k ? "#D08008" : "transparent",
+              color: view === k ? "#fff" : "#555" }}>
+            {l}
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 8, color: "#333", fontFamily: "JetBrains Mono,monospace" }}>
+          {Math.round(rX)}×{Math.round(rY)}mm
+        </div>
+      </div>
+      {/* SVG profilo */}
+      <svg width={width} height={svgH} style={{ display: "block" }}>
+        <rect width={width} height={svgH} fill="#1A1A1C"/>
+        {/* Grid sottile */}
+        {qX.map((v,i) => <line key={"gx"+i} x1={tx(v)} y1={0} x2={tx(v)} y2={svgH} stroke="#222" strokeWidth="0.5"/>)}
+        {qY.map((v,i) => <line key={"gy"+i} x1={0} y1={ty(v)} x2={width} y2={ty(v)} stroke="#222" strokeWidth="0.5"/>)}
+        {/* Assi 0 */}
+        {minX <= 0 && maxX >= 0 && <line x1={tx(0)} y1={0} x2={tx(0)} y2={svgH} stroke="#ffffff10" strokeWidth="0.7" strokeDasharray="3,3"/>}
+        {minY <= 0 && maxY >= 0 && <line x1={0} y1={ty(0)} x2={width} y2={ty(0)} stroke="#ffffff10" strokeWidth="0.7" strokeDasharray="3,3"/>}
+        {/* Polilinee profilo */}
+        {pols.map((p, pi) => {
+          const pStr = p.pts.map(c => `${tx(c.x).toFixed(1)},${ty(c.y).toFixed(1)}`).join(' ');
+          return <polygon key={pi} points={pStr} fill={fills[pi % fills.length]} stroke={strokes[pi % strokes.length]} strokeWidth="0.8" strokeLinejoin="round"/>;
+        })}
+        {/* Quote X */}
+        {qX.filter((_,i) => i % 2 === 0).map((v,i) => (
+          <text key={"qx"+i} x={tx(v)} y={svgH-2} fontSize="7" fill="#3B7FE0" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+        ))}
+        {/* Quote Y */}
+        {qY.filter((_,i) => i % 2 === 0).map((v,i) => (
+          <text key={"qy"+i} x={4} y={ty(v)+3} fontSize="7" fill="#3B7FE0" textAnchor="start" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════
-export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
+export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, sistemiDB, sistemaSceltoId }) {
   const [viewTab, setViewTab] = React.useState("disegno");
   const [editingLine, setEditingLine] = React.useState<any>(null);
   const [editingLineVal, setEditingLineVal] = React.useState("");
+  const [sistemaSel, setSistemaSel] = React.useState<string>(sistemaSceltoId || "");
+  const [showSezione, setShowSezione] = React.useState(false);
+  const sistemaAttivo = (sistemiDB || []).find((s: any) => s.id === sistemaSel);
   const vanoDisegnoRef = React.useRef<any>(vanoDisegno);
   React.useEffect(() => { vanoDisegnoRef.current = vanoDisegno; }, [vanoDisegno]);
   const realW = propRealW || 1200;
@@ -981,6 +1099,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ TAB: DISEGNO (originale) ═══ */}
                                 {viewTab === "disegno" && <>
+
+                                {/* ── Selector sistema profilo + toggle sezione DXF ── */}
+                                {(sistemiDB || []).length > 0 && (
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "#1A1A1C", borderBottom: `1px solid ${T.bdr}` }}>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D08008" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <select value={sistemaSel} onChange={(e: any) => setSistemaSel(e.target.value)}
+                                      style={{ flex: 1, background: "#2A2A2E", border: "1px solid #3A3A3E", borderRadius: 5, fontSize: 11, color: "#fff", padding: "3px 6px", fontFamily: "Inter,sans-serif", outline: "none" }}>
+                                      <option value="">— Sistema profilo (opzionale) —</option>
+                                      {(sistemiDB || []).map((s: any) => (
+                                        <option key={s.id} value={s.id}>{s.codice || s.sistema} — {s.nome}{s.bautiefe ? ` (${s.bautiefe}mm)` : ""}</option>
+                                      ))}
+                                    </select>
+                                    {sistemaSel && (
+                                      <div onClick={() => setShowSezione(!showSezione)}
+                                        style={{ padding: "3px 10px", borderRadius: 5, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any,
+                                          background: showSezione ? "#D08008" : "#2A2A2E",
+                                          color: showSezione ? "#fff" : "#666",
+                                          border: `1px solid ${showSezione ? "#D08008" : "#3A3A3E"}` }}>
+                                        {showSezione ? "◉ Sezione" : "○ Sezione"}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
                                 {/* Mode indicators */}
                                 <div style={{ padding: "4px 8px 0", display: "flex", gap: 4, flexWrap: "wrap" }}>
                                   {drawMode === "line" && <span style={{ fontSize: 9, background: "#333", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>╱ STRUTTURA</span>}
@@ -1210,6 +1352,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   </div>
                                 )}
 
+                                {/* Pannello sezione profilo DXF */}
+                                {showSezione && sistemaAttivo && (
+                                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 20, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.4))" }}>
+                                    <SezioneProfilo sistema={sistemaAttivo} width={220} height={180}/>
+                                  </div>
+                                )}
                                 {/* SVG Canvas — zoomable with wheel + pannable */}
                                 <div style={{ overflow: "auto", position: "relative", maxHeight: "70vh", border: `1px solid ${T.bdr}` }}>
                                 <svg width={canvasW * Math.max(1, zoom)} height={canvasH * Math.max(1, zoom)}
