@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
         if (!ultimo) return false
         const vani = ultimo.vani || []
         return vani.some((v: any) =>
-          Object.values(v.misure || {}).filter((x: any) => (x as number) > 0).length >= 2
+          ((v.misure?.lCentro || v.larghezza || v.l || 0) > 0)
         )
       })
     }
