@@ -98,57 +98,115 @@ function Modal({title,onClose,children}:any){
 // ARCHIVIO PROFILI v3 — master-detail + DXF viewer SVG
 // ═══════════════════════════════════════════════════════════════
 
-// ── Viewer sezione trasversale DXF ───────────────────────────
-function DXFViewer({coords,width=320,height=260}:any){
-  if(!coords||coords.length<3) return (
+// ── Parser LWPOLYLINE da testo DXF ───────────────────────────
+function parseLWPolylines(dxfText:string):{pts:{x:number,y:number}[],closed:boolean}[]{
+  const lines=dxfText.split('\n');
+  const result:{pts:{x:number,y:number}[],closed:boolean}[]=[];
+  let i=0;
+  while(i<lines.length){
+    if(lines[i].trim()==='0'&&lines[i+1]?.trim()==='LWPOLYLINE'){
+      const pts:{x:number,y:number}[]=[];let closed=false;
+      let j=i+2;
+      while(j<lines.length-1){
+        const code=lines[j].trim(),val=lines[j+1]?.trim()||'';
+        if(code==='0')break;
+        if(code==='70')closed=(parseInt(val)&1)===1;
+        if(code==='10'){const x=parseFloat(val);if(lines[j+2]?.trim()==='20'){const y=parseFloat(lines[j+3]?.trim()||'0');pts.push({x,y});j+=2;}}
+        j+=2;
+      }
+      if(pts.length>=2)result.push({pts,closed});
+      i=j;
+    }else{i++;}
+  }
+  return result;
+}
+
+// ── Viewer sezione DXF reale con LWPOLYLINE ──────────────────
+function DXFViewer({polylines,dxfText,width=460,height=380}:any){
+  const [view,setView]=React.useState("nodo");
+  const pols:any[]=polylines&&polylines.length>0?polylines:dxfText?parseLWPolylines(dxfText):[];
+
+  if(pols.length===0)return(
     <div style={{width,height,background:"#1A1A1C",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <div style={{fontSize:11,color:"#555",textAlign:"center"}}>Nessuna geometria<br/>Importa DXF per visualizzare</div>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div style={{fontSize:11,color:"#444",textAlign:"center"}}>Importa DXF per visualizzare il profilo</div>
     </div>
   );
-  // Normalizza coordinate nel viewport
-  const xs=coords.map((c:any)=>c.x), ys=coords.map((c:any)=>c.y);
+
+  // Filtra per vista
+  let target=pols;
+  if(view==="rahmen")target=pols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.x))<=2);
+  else if(view==="flugel")target=pols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.y))<=2&&Math.min(...p.pts.map((c:any)=>c.y))<-10);
+  else if(view==="front")target=pols.filter((p:any)=>Math.min(...p.pts.map((c:any)=>c.x))>=-2&&Math.min(...p.pts.map((c:any)=>c.y))>=-2);
+  if(target.length===0)target=pols;
+
+  const allPts=target.flatMap((p:any)=>p.pts);
+  const xs=allPts.map((c:any)=>c.x),ys=allPts.map((c:any)=>c.y);
   const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
-  const rangeX=maxX-minX||1, rangeY=maxY-minY||1;
-  const pad=20;
-  const vw=width-pad*2, vh=height-pad*2;
-  const sx=(x:number)=>pad+(x-minX)/rangeX*vw;
-  const sy=(y:number)=>pad+(maxY-y)/rangeY*vh; // flip Y
-  const pts=coords.map((c:any)=>`${sx(c.x).toFixed(1)},${sy(c.y).toFixed(1)}`).join(" ");
-  // Quote: linee orizzontali e verticali principali
-  const uniqX=[...new Set(xs.map((x:number)=>Math.round(x)))].sort((a,b)=>a-b).slice(0,6);
-  const uniqY=[...new Set(ys.map((y:number)=>Math.round(y)))].sort((a,b)=>a-b).slice(0,6);
-  return (
-    <svg width={width} height={height} style={{background:"#1A1A1C",borderRadius:10,display:"block"}}>
-      <defs>
-        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#2A2A2E" strokeWidth="0.5"/>
-        </pattern>
-      </defs>
-      <rect width={width} height={height} fill="url(#grid)"/>
-      {/* Sezione profilo */}
-      <polygon points={pts} fill="#D0842010" stroke="#D08008" strokeWidth="1.5" strokeLinejoin="round"/>
-      {/* Quote orizzontali (H) */}
-      {uniqY.slice(0,3).map((y:number,i:number)=>(
-        <g key={"qy"+i}>
-          <line x1={pad-8} y1={sy(y)} x2={pad-2} y2={sy(y)} stroke="#3B7FE040" strokeWidth="1"/>
-          <text x={pad-10} y={sy(y)+4} fontSize="8" fill="#3B7FE0" textAnchor="end" fontFamily="JetBrains Mono,monospace">{Math.round(y)}</text>
-        </g>
-      ))}
-      {/* Quote verticali (W) */}
-      {uniqX.slice(0,4).map((x:number,i:number)=>(
-        <g key={"qx"+i}>
-          <line x1={sx(x)} y1={height-pad+2} x2={sx(x)} y2={height-pad+8} stroke="#3B7FE040" strokeWidth="1"/>
-          <text x={sx(x)} y={height-4} fontSize="8" fill="#3B7FE0" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(x)}</text>
-        </g>
-      ))}
-      {/* Punti vertici principali */}
-      {coords.slice(0,40).map((c:any,i:number)=>(
-        <circle key={i} cx={sx(c.x)} cy={sy(c.y)} r="1.5" fill="#D08008" opacity="0.6"/>
-      ))}
-      {/* Label */}
-      <text x={width-6} y={14} fontSize="9" fill="#444" textAnchor="end" fontFamily="JetBrains Mono,monospace">{coords.length} pt</text>
-    </svg>
+  const rX=maxX-minX||1,rY=maxY-minY||1;
+  const PAD=12,QPAD=28,TOOLBAR=32;
+  const svgH=height-TOOLBAR;
+  const vW=width-PAD*2-QPAD,vH=svgH-PAD*2-QPAD;
+  const scale=Math.min(vW/rX,vH/rY);
+  const offX=PAD+QPAD+(vW-rX*scale)/2;
+  const offY=PAD+(vH-rY*scale)/2;
+  const tx=(x:number)=>offX+(x-minX)*scale;
+  const ty=(y:number)=>svgH-PAD-QPAD-(y-minY)*scale;
+
+  const step=Math.ceil(rX/7/5)*5||5;
+  const qX:number[]=[],qY:number[]=[];
+  for(let v=Math.ceil(minX/step)*step;v<=maxX+0.1;v+=step)qX.push(v);
+  for(let v=Math.ceil(minY/step)*step;v<=maxY+0.1;v+=step)qY.push(v);
+
+  const fills=['#D0840814','#1A9E7312','#3B7FE012','#8B5CF610','#F9731610','#06B6D410','#EC489910'];
+  const strokes=['#D08008','#1A9E73','#3B7FE0','#8B5CF6','#F97316','#06B6D4','#EC4899'];
+
+  return(
+    <div style={{background:"#1A1A1C",borderRadius:10,overflow:"hidden"}}>
+      {/* Toolbar */}
+      <div style={{height:TOOLBAR,display:"flex",alignItems:"center",padding:"0 12px",gap:4,borderBottom:"1px solid #2A2A2E"}}>
+        {[{k:"nodo",l:"Nodo"},{k:"rahmen",l:"Telaio"},{k:"flugel",l:"Anta"},{k:"front",l:"Frontale"}].map(({k,l})=>(
+          <div key={k} onClick={()=>setView(k)}
+            style={{padding:"3px 10px",fontSize:10,fontWeight:600,cursor:"pointer",borderRadius:5,
+              background:view===k?"#D08008":"transparent",color:view===k?"#fff":"#666",transition:"all .15s"}}>
+            {l}
+          </div>
+        ))}
+        <div style={{flex:1}}/>
+        <div style={{fontSize:9,color:"#333",fontFamily:"JetBrains Mono,monospace"}}>
+          {Math.round(rX)}×{Math.round(rY)}mm · {pols.length} pol.
+        </div>
+      </div>
+      {/* SVG viewer */}
+      <svg width={width} height={svgH} style={{display:"block"}}>
+        <rect width={width} height={svgH} fill="#1A1A1C"/>
+        {/* Grid */}
+        {qX.map((v,i)=><line key={"gx"+i} x1={tx(v)} y1={PAD} x2={tx(v)} y2={svgH-PAD-QPAD} stroke="#252528" strokeWidth="0.5"/>)}
+        {qY.map((v,i)=><line key={"gy"+i} x1={PAD+QPAD} y1={ty(v)} x2={width-PAD} y2={ty(v)} stroke="#252528" strokeWidth="0.5"/>)}
+        {/* Assi 0 */}
+        {minX<=0&&maxX>=0&&<line x1={tx(0)} y1={PAD} x2={tx(0)} y2={svgH-PAD-QPAD} stroke="#ffffff15" strokeWidth="0.8" strokeDasharray="4,3"/>}
+        {minY<=0&&maxY>=0&&<line x1={PAD+QPAD} y1={ty(0)} x2={width-PAD} y2={ty(0)} stroke="#ffffff15" strokeWidth="0.8" strokeDasharray="4,3"/>}
+        {/* Profilo */}
+        {target.map((p:any,pi:number)=>{
+          const pStr=p.pts.map((c:any)=>`${tx(c.x).toFixed(1)},${ty(c.y).toFixed(1)}`).join(' ');
+          return<polygon key={pi} points={pStr} fill={fills[pi%fills.length]} stroke={strokes[pi%strokes.length]} strokeWidth="0.9" strokeLinejoin="round"/>;
+        })}
+        {/* Quote X */}
+        {qX.map((v,i)=>(
+          <g key={"qx"+i}>
+            <line x1={tx(v)} y1={svgH-PAD-QPAD} x2={tx(v)} y2={svgH-PAD-QPAD+3} stroke="#3B7FE050" strokeWidth="0.7"/>
+            <text x={tx(v)} y={svgH-PAD-QPAD+12} fontSize="8" fill="#3B7FE0" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+          </g>
+        ))}
+        {/* Quote Y */}
+        {qY.map((v,i)=>(
+          <g key={"qy"+i}>
+            <line x1={PAD+QPAD-3} y1={ty(v)} x2={PAD+QPAD} y2={ty(v)} stroke="#3B7FE050" strokeWidth="0.7"/>
+            <text x={PAD+QPAD-5} y={ty(v)+3} fontSize="8" fill="#3B7FE0" textAnchor="end" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
   );
 }
 
@@ -176,7 +234,9 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
     const n=codice.toLowerCase();
     const tipo=n.includes("x2")||n.includes("x3")?"Flügel":n.includes("x4")||n.includes("x5")?"Pfosten":n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9")?"Stulp":"Rahmen";
     const fornitore=text.includes("OHNE_DICHTUNGEN")||text.includes("aluplast")||text.includes("mmerling")?"Kömmerling / aluplast":"Generico";
-    return {id:"P-"+Date.now()+"_"+Math.random(),codice,marca:fornitore.split(" ")[0],sistema:codice,nome:tipo+" "+bautiefe+"mm",materiale:"PVC",tipo,bautiefe,grMl:"",qtaCassa:"",camere:0,uw:"",uf:"",rw:"",spessore:String(bautiefe),classe:"",certificazioni:"",notetech:"",sovRAL:0,sovLegno:0,euroMl:0,tipologie:"",sottosistemi:"",ferramenta:[...fermSet],quote,coords,attivo:true};
+    // Estrai LWPOLYLINE complete per il viewer
+    const polylines=parseLWPolylines(text);
+    return {id:"P-"+Date.now()+"_"+Math.random(),codice,marca:fornitore.split(" ")[0],sistema:codice,nome:tipo+" "+bautiefe+"mm",materiale:"PVC",tipo,bautiefe,grMl:"",qtaCassa:"",camere:0,uw:"",uf:"",rw:"",spessore:String(bautiefe),classe:"",certificazioni:"",notetech:"",sovRAL:0,sovLegno:0,euroMl:0,tipologie:"",sottosistemi:"",ferramenta:[...fermSet],quote,coords,polylines,dxfText:text,attivo:true};
   };
 
   const openNew=()=>{
@@ -315,7 +375,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
               {/* Viewer sezione */}
               <div>
                 <div style={{fontSize:10,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Sezione trasversale DXF</div>
-                <DXFViewer coords={form.coords} width={320} height={260}/>
+                <DXFViewer dxfText={form.dxfText} polylines={form.polylines} width={460} height={380}/>
                 {form.imgBase64&&<img src={form.imgBase64} alt="profilo" style={{maxHeight:80,border:"1px solid #E5E3DC",borderRadius:8,display:"block",marginTop:8}}/>}
                 {form.coords?.length>0&&(
                   <div style={{marginTop:8,padding:"6px 10px",background:"#1A1A1C",borderRadius:6}}>
