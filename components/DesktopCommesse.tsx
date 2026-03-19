@@ -59,6 +59,9 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
   const [dragging,setDragging]=useState<{id:string,fase:string}|null>(null);
   const [overCol,setOverCol]=useState<string|null>(null);
   const [overCard,setOverCard]=useState<string|null>(null);
+  const [overPos,setOverPos]=useState<"before"|"after">("after");
+  // Ordine locale per colonna — permette reorder intra-colonna
+  const [colOrder,setColOrder]=useState<Record<string,string[]>>({});
   const fmtE=(n:number)=>n>0?"€"+Math.round(n).toLocaleString("it-IT"):"—";
   const daysTo=(d:string)=>Math.floor((new Date(d).getTime()-Date.now())/86400000);
   const K={TEAL:"#1A9E73",DARK:"#1A1A1C",RED:"#DC4444",BLU:"#3B7FE0",AMB:"#D08008"};
@@ -66,16 +69,44 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
   const handleDrop=(colFase:string)=>{
     if(!dragging)return;
     if(dragging.fase!==colFase){
+      // Cambio colonna
       onMoveFase(dragging.id,colFase);
+      // Inserisci nell'ordine della colonna target
+      if(overCard){
+        setColOrder(prev=>{
+          const prevOrder=prev[colFase]||cantieri.filter((c:any)=>c.fase===colFase).map((c:any)=>c.id);
+          const idx=prevOrder.indexOf(overCard);
+          const newOrder=[...prevOrder.filter((id:string)=>id!==dragging.id)];
+          const insertAt=overPos==="before"?Math.max(0,idx):idx+1;
+          newOrder.splice(insertAt,0,dragging.id);
+          return {...prev,[colFase]:newOrder};
+        });
+      }
+    } else {
+      // Stesso colonna — reorder
+      if(overCard&&overCard!==dragging.id){
+        setColOrder(prev=>{
+          const items=prev[colFase]||cantieri.filter((c:any)=>c.fase===colFase).map((c:any)=>c.id);
+          const newOrder=[...items.filter((id:string)=>id!==dragging.id)];
+          const idx=newOrder.indexOf(overCard);
+          const insertAt=overPos==="before"?Math.max(0,idx):idx+1;
+          newOrder.splice(insertAt,0,dragging.id);
+          return {...prev,[colFase]:newOrder};
+        });
+      }
     }
-    setDragging(null);setOverCol(null);setOverCard(null);
+    setDragging(null);setOverCol(null);setOverCard(null);setOverPos("after");
   };
 
   return (
     <div style={{display:"flex",gap:compact?8:14,minWidth:"max-content",minHeight:"100%",alignItems:"flex-start",padding:compact?"12px 16px":"16px 20px"}}>
       {pipeline.filter((p:any)=>p.attiva).map((p:any)=>{
         const col=p.color||K.TEAL;
-        const items=cantieri.filter((c:any)=>c.fase===p.id);
+        const rawItems=cantieri.filter((c:any)=>c.fase===p.id);
+        const order=colOrder[p.id];
+        const items=order
+          ?[...order.filter((id:string)=>rawItems.some((c:any)=>c.id===id)).map((id:string)=>rawItems.find((c:any)=>c.id===id)),...rawItems.filter((c:any)=>!order.includes(c.id))].filter(Boolean)
+          :rawItems;
         const isOver=overCol===p.id;
         const colW=compact?172:222;
         return (
@@ -98,7 +129,7 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
               const gg=giorniFermaCM(c);
               const initials=((c.cliente||"?")[0]+(c.cognome||"")[0]).toUpperCase();
               const isDragging=dragging?.id===c.id;
-              const isDropTarget=overCard===c.id&&dragging&&dragging.id!==c.id;
+              const isDropTarget=overCard===c.id&&dragging&&dragging.id!==c.id&&overCol===p.id;
               return (
                 <div key={c.id}
                   draggable
@@ -120,11 +151,13 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
                     borderRadius:12,
                     background:isDragging?"#F2F1EC":"#fff",
                     border:`1.5px solid ${isDropTarget?col:ferma?K.RED+"50":"#E5E3DC"}`,
+                    borderTop:isDropTarget&&overPos==="before"?`3px solid ${col}`:undefined,
+                    borderBottom:isDropTarget&&overPos==="after"?`3px solid ${col}`:undefined,
                     cursor:"grab",
-                    transition:"transform .15s, box-shadow .15s, opacity .15s, border-color .15s",
-                    opacity:isDragging?0.3:1,
-                    transform:isDropTarget?"translateY(-3px) scale(1.01)":"translateY(0) scale(1)",
-                    boxShadow:isDragging?"none":isDropTarget?`0 6px 20px ${col}30`:ferma?`0 0 0 1.5px ${K.RED}25`:"0 1px 4px rgba(0,0,0,.05)",
+                    transition:"transform .1s, box-shadow .1s, opacity .15s",
+                    opacity:isDragging?0.25:1,
+                    transform:isDropTarget?"scale(1.01)":"scale(1)",
+                    boxShadow:isDragging?"none":isDropTarget?`0 4px 16px ${col}25`:ferma?`0 0 0 1.5px ${K.RED}25`:"0 1px 4px rgba(0,0,0,.05)",
                     overflow:"hidden",
                   }}>
                   {/* Striscia colore fase */}
