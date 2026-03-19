@@ -26,6 +26,7 @@ import DesktopPortaleB2C from "./DesktopPortaleB2C";
 import DesktopCNC from "./DesktopCNC";
 import DesktopListini from "./DesktopListini";
 import AgendaPanel from "./AgendaPanel";
+import DesktopSettings from "./DesktopSettings";
 import MessaggiPanel from "./MessaggiPanel";
 import SettingsPanel from "./SettingsPanel";
 import ConfiguratoreCommessa from "./ConfiguratoreCommessa";
