@@ -1,480 +1,2363 @@
 "use client";
 // @ts-nocheck
-// ═══════════════════════════════════════════════════════════════
-// MASTRO — DisegnoTecnico v4
-// Rendering identico a Opera Company v3.9
-// Sfondo nero · profili etichettati · tratteggio anta · quote gialle
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
+// Usato da: CMDetailPanel (preventivo) + VanoDetailPanel (rilievo)
+// ═══════════════════════════════════════════════════════════
+import React, { useState, useRef, useCallback, useEffect } from "react";
 
-import React, { useState, useCallback, useId } from "react";
+// ═══════════════════════════════════════════════════════════
+// 3D ISOMETRIC VIEW — 6 Faces + Per-face drawing + Render
+// ═══════════════════════════════════════════════════════════
+const FM3 = "'SF Mono','JetBrains Mono',monospace";
+const FF3 = "'SF Pro Display',-apple-system,sans-serif";
 
-const C = {
-  bg: "#000000", profilo: "#FFFFFF", quota: "#CCCC00",
-  tratt: "#FFFFFF", maniglia: "#CCCCCC",
-  vetroFill: "#003344", vetroTratt: "#005566",
-  labelVetro: "#0099BB", label: "#FFFFFF",
-  toolBg: "#0F0F1A", toolBdr: "#222222", toolTxt: "#AAAAAA",
-  panelBg: "#0D0D18",
-};
-
-export type TipApertura =
-  | "fisso" | "1anta_ar" | "2ante_ar" | "1anta_ab" | "2ante_ab"
-  | "balcone_1ar" | "balcone_2ar" | "wasistas"
-  | "scorrevole_2" | "ribalta_scorre";
-
-const TIPOLOGIE = [
-  { id: "fisso",         label: "Fisso",          nAnte: 0 },
-  { id: "1anta_ar",      label: "1A A-R",         nAnte: 1 },
-  { id: "2ante_ar",      label: "2A A-R",         nAnte: 2 },
-  { id: "1anta_ab",      label: "1A A-B",         nAnte: 1 },
-  { id: "2ante_ab",      label: "2A A-B",         nAnte: 2 },
-  { id: "balcone_1ar",   label: "Balc. 1A",       nAnte: 1 },
-  { id: "balcone_2ar",   label: "Balc. 2A",       nAnte: 2 },
-  { id: "wasistas",      label: "Wasistas",       nAnte: 1 },
-  { id: "scorrevole_2",  label: "Scorr. 2A",      nAnte: 2 },
-  { id: "ribalta_scorre","label":"Rib+Sc.",        nAnte: 2 },
+const EL3D = [
+  { id: "telaio", icon: "□", label: "Telaio", color: "#3A3A3C" },
+  { id: "montante", icon: "│", label: "Mont.", color: "#3A3A3C" },
+  { id: "traverso", icon: "─", label: "Trav.", color: "#3A3A3C" },
+  { id: "anta", icon: "▨", label: "Anta", color: "#3B7FE0" },
+  { id: "porta", icon: "▮", label: "Porta", color: "#D08008" },
+  { id: "scorrevole", icon: "▤", label: "Scorr.", color: "#0D9488" },
+  { id: "persiana", icon: "▦", label: "Pers.", color: "#8B5CF6" },
+  { id: "vetro", icon: "◇", label: "Vetro", color: "#3B7FE0" },
+  { id: "oblo", icon: "○", label: "Oblo", color: "#3B7FE0" },
+  { id: "pannello", icon: "▣", label: "Pann.", color: "#8E8E93" },
+  { id: "linea", icon: "╱", label: "Linea", color: "#DC4444" },
+  { id: "testo", icon: "Aa", label: "Testo", color: "#1A1A1C" },
 ];
+const FA3: any = {
+  front: { label: "Prospetto", icon: "🪟", s: "F" },
+  back: { label: "Esterno", icon: "↩", s: "E" },
+  left: { label: "Spall.SX", icon: "◀", s: "SX" },
+  right: { label: "Spall.DX", icon: "▶", s: "DX" },
+  top: { label: "Architrave", icon: "⬆", s: "A" },
+  bottom: { label: "Davanzale", icon: "⬇", s: "D" },
+};
+const FK3 = ["front", "back", "left", "right", "top", "bottom"];
 
-interface Props {
-  vanoId?: string; vanoNome?: string; vanoDisegno?: any;
-  realW: number; realH: number;
-  onUpdate?: (d: any) => void; onUpdateField?: (f: string, v: any) => void;
-  onClose?: () => void; T?: any; sistemiDB?: any[];
+function getFields3D(fk: string) {
+  const n = { k: "note", l: "Note", type: "text" };
+  if (fk === "front") return [{ k: "luce_l", l: "Luce L", u: "mm" }, { k: "luce_h", l: "Luce H", u: "mm" }, { k: "fuori_squadra", l: "Fuori squadra", u: "mm" }, { k: "tipo_apertura", l: "Tipo apertura", type: "text" }, n];
+  if (fk === "back") return [{ k: "tipo_muro", l: "Tipo muro", type: "text" }, { k: "finitura", l: "Finitura est.", type: "text" }, { k: "spessore_intonaco", l: "Spess. intonaco", u: "mm" }, n];
+  if (fk === "top") return [{ k: "arch_h", l: "Altezza", u: "mm" }, { k: "arch_tipo", l: "Tipo", type: "text" }, { k: "cassH", l: "Cassonetto H", u: "mm" }, { k: "cassP", l: "Cassonetto P", u: "mm" }, n];
+  if (fk === "bottom") return [{ k: "dav_prof", l: "Profondita", u: "mm" }, { k: "dav_sporg", l: "Sporgenza", u: "mm" }, { k: "dav_mat", l: "Materiale", type: "text" }, n];
+  return [{ k: "sp_larg", l: "Larghezza", u: "mm" }, { k: "sp_prof", l: "Profondita", u: "mm" }, { k: "sp_tipo", l: "Tipo muro", type: "text" }, { k: "fuori_piombo", l: "Fuori piombo", u: "mm" }, n];
 }
 
-// ── Tratteggio diagonale vetro stile Opera ─────────────────────
-function VetroHatch({ x, y, w, h, clipId }: any) {
-  const step = 10;
-  const lines = [];
-  for (let i = -Math.ceil(h / step); i <= Math.ceil(w / step) + 2; i++) {
-    lines.push(
-      <line key={i}
-        x1={i * step} y1={h}
-        x2={i * step + h} y2={0}
-        stroke={C.vetroTratt} strokeWidth={0.7} opacity={0.45}
-      />
-    );
-  }
-  return (
-    <g>
-      <defs>
-        <clipPath id={clipId}>
-          <rect x={0} y={0} width={w} height={h} />
-        </clipPath>
-      </defs>
-      <g transform={`translate(${x},${y})`} clipPath={`url(#${clipId})`}>
-        <rect x={0} y={0} width={w} height={h} fill={C.vetroFill} />
-        {lines}
-      </g>
-    </g>
-  );
+function renderEl3D(el: any, sc: number, ox: number, oy: number) {
+  const x = ox + el.x * sc, y = oy + el.y * sc, w = el.w * sc, h = el.h * sc;
+  const et = EL3D.find(t => t.id === el.type); const c = et?.color || "#666"; const s = el._sel;
+  const sb = s ? <rect x={x - 2} y={y - 2} width={w + 4} height={h + 4} fill="none" stroke="#3B7FE0" strokeWidth={1} strokeDasharray="3,2" /> : null;
+  if (el.type === "telaio") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill="none" stroke={c} strokeWidth={s ? 2.5 : 1.5} rx={1} />{sb}</g>;
+  if (el.type === "montante") return <g key={el.id}><rect x={x} y={y} width={Math.max(w, 3)} height={h} fill={c} opacity={0.7} />{sb}</g>;
+  if (el.type === "traverso") return <g key={el.id}><rect x={x} y={y} width={w} height={Math.max(h, 3)} fill={c} opacity={0.7} />{sb}</g>;
+  if (el.type === "anta") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill={c + "15"} stroke={c} strokeWidth={1.2} rx={1} /><line x1={x} y1={y} x2={x + w} y2={y + h / 2} stroke={c + "40"} strokeWidth={0.5} /><line x1={x} y1={y + h} x2={x + w} y2={y + h / 2} stroke={c + "40"} strokeWidth={0.5} />{sb}</g>;
+  if (el.type === "porta") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill={c + "12"} stroke={c} strokeWidth={1.5} rx={1} /><line x1={x + w * .15} y1={y + h * .35} x2={x + w * .15} y2={y + h * .65} stroke={c} strokeWidth={2} />{sb}</g>;
+  if (el.type === "scorrevole") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill="#D6EEFF50" stroke={c} strokeWidth={1} strokeDasharray="4,2" rx={1} /><text x={x + w / 2} y={y + h / 2 + 3} textAnchor="middle" fontSize={6} fill={c} fontFamily={FM3}>SCORR.</text>{sb}</g>;
+  if (el.type === "persiana") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill={c + "10"} stroke={c} strokeWidth={1} />{Array.from({ length: Math.max(2, Math.floor(h / 5)) }).map((_, i, a) => <line key={i} x1={x + 2} y1={y + (i / a.length) * h + h / a.length / 2} x2={x + w - 2} y2={y + (i / a.length) * h + h / a.length / 2} stroke={c + "50"} strokeWidth={0.5} />)}{sb}</g>;
+  if (el.type === "vetro") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill="#D6EEFF" stroke={c} strokeWidth={0.8} rx={1} /><line x1={x} y1={y} x2={x + w} y2={y + h} stroke={c + "20"} strokeWidth={0.3} />{sb}</g>;
+  if (el.type === "oblo") return <g key={el.id}><ellipse cx={x + w / 2} cy={y + h / 2} rx={w / 2} ry={h / 2} fill="#D6EEFF" stroke={c} strokeWidth={1} />{sb}</g>;
+  if (el.type === "pannello") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill="#E8E4DF" stroke={c} strokeWidth={0.8} />{sb}</g>;
+  if (el.type === "linea") return <g key={el.id}><line x1={x} y1={y} x2={x + w} y2={y + h} stroke={c} strokeWidth={1.5} /></g>;
+  if (el.type === "testo") return <g key={el.id}><text x={x} y={y + 12} fontSize={10} fill="#1A1A1C" fontFamily={FM3} fontWeight={600}>{el.text || "Testo"}</text>{sb}</g>;
+  return <rect key={el.id} x={x} y={y} width={w} height={h} fill="#ccc" stroke="#999" strokeWidth={0.5} />;
 }
 
-// ── SVG Opera rendering ────────────────────────────────────────
-function SvgOpera({
-  tipo, L, H, nMontanti, nTraversi, showQuote,
-  codTel, codAnt, codVet, bautiefe = 70, w, h,
-}: any) {
-  const uid = `sv${L}${H}${tipo}`;
+function Iso3D({ T, realW, realH, profMuro, faceData, activeFace, onSelectFace }: any) {
+  const mx = Math.max(realW, realH, profMuro), bs = 110 / mx, W = realW * bs, H = realH * bs, D = profMuro * bs;
+  const c30 = Math.cos(Math.PI / 6), s30 = 0.5;
+  const iX = (x: number, y: number, z: number) => (x - z) * c30, iY = (x: number, y: number, z: number) => (x + z) * s30 - y;
+  const cx = 170, cy = 165;
+  const co = { fbl: { x: 0, y: 0, z: 0 }, fbr: { x: W, y: 0, z: 0 }, ftl: { x: 0, y: H, z: 0 }, ftr: { x: W, y: H, z: 0 }, bbl: { x: 0, y: 0, z: D }, bbr: { x: W, y: 0, z: D }, btl: { x: 0, y: H, z: D }, btr: { x: W, y: H, z: D } };
+  const p = (v: any) => `${cx + iX(v.x, v.y, v.z)},${cy + iY(v.x, v.y, v.z)}`;
+  const fp: any = { front: { pts: `${p(co.fbl)} ${p(co.fbr)} ${p(co.ftr)} ${p(co.ftl)}`, fill: "#B8D4E8" }, right: { pts: `${p(co.fbr)} ${p(co.bbr)} ${p(co.btr)} ${p(co.ftr)}`, fill: "#9AB8CC" }, top: { pts: `${p(co.ftl)} ${p(co.ftr)} ${p(co.btr)} ${p(co.btl)}`, fill: "#D4CFC4" }, left: { pts: `${p(co.fbl)} ${p(co.bbl)} ${p(co.btl)} ${p(co.ftl)}`, fill: "#C8C4B8" }, bottom: { pts: `${p(co.fbl)} ${p(co.fbr)} ${p(co.bbr)} ${p(co.bbl)}`, fill: "#E8D8B0" }, back: { pts: `${p(co.bbl)} ${p(co.bbr)} ${p(co.btr)} ${p(co.btl)}`, fill: "#A8C4D8" } };
+  const G = T.grn || "#1A9E73";
+  const lps: any = { front: { x: W / 2, y: H / 2, z: 0 }, right: { x: W, y: H / 2, z: D / 2 }, top: { x: W / 2, y: H, z: D / 2 }, left: { x: 0, y: H / 2, z: D / 2 }, bottom: { x: W / 2, y: 0, z: D / 2 }, back: { x: W / 2, y: H / 2, z: D } };
+  return (<svg width={340} height={280} style={{ background: "#fff", borderRadius: 6, border: `1px solid ${T.bdr}`, maxWidth: "100%" }}>
+    {[0, 1, 2, 3, 4].map(i => <line key={`z${i}`} x1={cx + iX(0, 0, (i / 4) * D)} y1={cy + iY(0, 0, (i / 4) * D)} x2={cx + iX(W, 0, (i / 4) * D)} y2={cy + iY(W, 0, (i / 4) * D)} stroke="#E8E8E8" strokeWidth={0.5} />)}
+    {[0, 1, 2, 3, 4].map(i => <line key={`x${i}`} x1={cx + iX((i / 4) * W, 0, 0)} y1={cy + iY((i / 4) * W, 0, 0)} x2={cx + iX((i / 4) * W, 0, D)} y2={cy + iY((i / 4) * W, 0, D)} stroke="#E8E8E8" strokeWidth={0.5} />)}
+    {["back", "bottom", "left", "right", "front", "top"].map(fk => { const f = fp[fk], sel = activeFace === fk, els = faceData[fk]?.elements || [], has = els.length > 0; const lp = lps[fk], lx = cx + iX(lp.x, lp.y, lp.z), ly = cy + iY(lp.x, lp.y, lp.z);
+      return (<g key={fk} onClick={() => onSelectFace(fk)} style={{ cursor: "pointer" }}><polygon points={f.pts} fill={sel ? T.purple + "40" : has ? G + "15" : f.fill} stroke={sel ? T.purple : has ? G : "#666"} strokeWidth={sel ? 2.5 : 1} strokeLinejoin="round" /><text x={lx} y={ly - 3} textAnchor="middle" fontSize={sel ? 10 : 7} fontWeight={sel ? 800 : 600} fontFamily={FM3} fill={sel ? T.purple : has ? G : "#555"}>{FA3[fk].label}</text>{has && <text x={lx} y={ly + 8} textAnchor="middle" fontSize={7} fontFamily={FM3} fill={G}>{els.length} el.</text>}</g>); })}
+    <text x={(cx + iX(0, 0, 0) + cx + iX(W, 0, 0)) / 2} y={(cy + iY(0, 0, 0) + cy + iY(W, 0, 0)) / 2 + 22} textAnchor="middle" fontSize={9} fontWeight={700} fontFamily={FM3} fill={T.acc}>L {realW}</text>
+    <text x={cx + iX(0, H / 2, 0) - 22} y={cy + iY(0, H / 2, 0) + 3} textAnchor="middle" fontSize={9} fontWeight={700} fontFamily={FM3} fill={T.acc}>H {realH}</text>
+    <text x={170} y={270} textAnchor="middle" fontSize={8} fill={T.sub} fontFamily={FF3}>Tap su una faccia per disegnare</text>
+  </svg>);
+}
 
-  // Layout
-  const QH = 32; const QL = 48; const PAD = 18;
-  const fw = w - PAD * 2 - QL;
-  const fh = h - PAD * 2 - QH - 20;
-  const ox = PAD + QL; const oy = PAD + QH;
+function FaceCanvas3D({ T, faceKey, realW, realH, elements, onUpdateElements, activeTool }: any) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [ds, setDs] = useState<any>(null); const [dc, setDc] = useState<any>(null); const [selId, setSelId] = useState<string | null>(null);
+  const face = FA3[faceKey]; const sc = Math.min(0.16, 280 / Math.max(realW, realH));
+  const W = realW * sc, H = realH * sc, pad = 35, svgW = W + pad * 2 + 20, svgH = H + pad * 2 + 20;
+  const gpt = (e: any) => { const r = svgRef.current?.getBoundingClientRect(); const ct = e.touches ? e.touches[0] : e; return r ? { x: (ct.clientX - r.left - pad) / sc, y: (ct.clientY - r.top - pad) / sc } : { x: 0, y: 0 }; };
+  const hDown = (e: any) => { if (!activeTool || activeTool === "select") { const pt = gpt(e); const hit = [...(elements || [])].reverse().find((el: any) => pt.x >= el.x && pt.x <= el.x + el.w && pt.y >= el.y && pt.y <= el.y + el.h); setSelId(hit?.id || null); return; } setDs(gpt(e)); setDc(gpt(e)); };
+  const hMove = (e: any) => { if (ds) { const ct = e.touches ? e.touches[0] : e; setDc(gpt(e)); } };
+  const hUp = () => { if (!ds || !dc || !activeTool) { setDs(null); setDc(null); return; } const x = Math.min(ds.x, dc.x), y = Math.min(ds.y, dc.y), w = Math.abs(dc.x - ds.x), h = Math.abs(dc.y - ds.y); if (w < 10 && h < 10) { setDs(null); setDc(null); return; } onUpdateElements([...(elements || []), { id: `el_${Date.now()}`, type: activeTool, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), face: faceKey }]); setDs(null); setDc(null); };
+  const els = (elements || []).map((el: any) => ({ ...el, _sel: el.id === selId }));
+  return (<div>
+    <div style={{ display: "flex", alignItems: "center", padding: "6px 10px", gap: 6, background: `${T.purple}06`, borderBottom: `1px solid ${T.bdr}` }}>
+      <span style={{ fontSize: 12 }}>{face.icon}</span><span style={{ fontSize: 11, fontWeight: 800, color: T.purple, flex: 1 }}>{face.label}</span><span style={{ fontSize: 8, color: T.sub, fontFamily: FM3 }}>{realW}x{realH}mm</span>
+      {elements?.length > 0 && <span style={{ padding: "1px 6px", borderRadius: 4, background: `${T.grn || "#1A9E73"}18`, fontSize: 8, fontWeight: 800, color: T.grn || "#1A9E73" }}>{elements.length} el.</span>}
+      {selId && <span onClick={() => { onUpdateElements((elements || []).filter((el: any) => el.id !== selId)); setSelId(null); }} style={{ padding: "2px 6px", borderRadius: 4, background: `${T.red || "#DC4444"}15`, fontSize: 8, fontWeight: 700, color: T.red || "#DC4444", cursor: "pointer" }}>🗑 Elimina</span>}
+    </div>
+    <div style={{ display: "flex", justifyContent: "center", padding: 6, background: "#FAFAF7" }}>
+      <svg ref={svgRef} width={svgW} height={svgH} onPointerDown={hDown} onPointerMove={hMove} onPointerUp={hUp} style={{ background: "#fff", borderRadius: 6, border: `1px solid ${T.bdr}`, cursor: activeTool && activeTool !== "select" ? "crosshair" : "default", touchAction: "none", maxWidth: "100%" }}>
+        {Array.from({ length: Math.ceil(W / 20) + 1 }).map((_, i) => <line key={`v${i}`} x1={pad + i * 20} y1={pad} x2={pad + i * 20} y2={pad + H} stroke="#F0F0F0" strokeWidth={0.5} />)}
+        {Array.from({ length: Math.ceil(H / 20) + 1 }).map((_, i) => <line key={`h${i}`} x1={pad} y1={pad + i * 20} x2={pad + W} y2={pad + i * 20} stroke="#F0F0F0" strokeWidth={0.5} />)}
+        <rect x={pad} y={pad} width={W} height={H} fill="#F8F7F4" stroke="#3A3A3C" strokeWidth={1.5} rx={1} />
+        {els.map((el: any) => renderEl3D(el, sc, pad, pad))}
+        {ds && dc && activeTool && (() => { const x = Math.min(ds.x, dc.x) * sc + pad, y = Math.min(ds.y, dc.y) * sc + pad, w = Math.abs(dc.x - ds.x) * sc, h = Math.abs(dc.y - ds.y) * sc; const et = EL3D.find(t => t.id === activeTool); return <rect x={x} y={y} width={w} height={h} fill={(et?.color || "#666") + "15"} stroke={et?.color || "#666"} strokeWidth={1} strokeDasharray="4,2" />; })()}
+      </svg>
+    </div>
+  </div>);
+}
 
-  const sc = Math.min(fw / L, fh / H);
-  const SW = L * sc; const SH = H * sc;
-  const cx = ox + (fw - SW) / 2; const cy = oy + (fh - SH) / 2;
+function RenderPreview3D({ T, realW, realH, faceData }: any) {
+  const sc = Math.min(0.15, 280 / Math.max(realW, realH)), W = realW * sc, H = realH * sc, pad = 30; const els = faceData["front"]?.elements || [];
+  return (<div style={{ padding: 8 }}>
+    <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>RENDERING PROSPETTO</div>
+    <svg width={W + pad * 2} height={H + pad * 2 + 10} style={{ background: "#fff", borderRadius: 8, border: `1px solid ${T.bdr}`, boxShadow: "0 2px 12px rgba(0,0,0,0.08)", maxWidth: "100%" }}>
+      <defs><linearGradient id="sky3d" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#87CEEB" /><stop offset="100%" stopColor="#E0F0FF" /></linearGradient></defs>
+      <rect x={0} y={0} width={W + pad * 2} height={pad + 5} fill="url(#sky3d)" rx={8} />
+      <rect x={pad} y={pad} width={W} height={H} fill="#F5F0E8" stroke="#8B7D6B" strokeWidth={2} rx={2} />
+      {els.map((el: any) => { const x = pad + el.x * sc, y = pad + el.y * sc, w = el.w * sc, h = el.h * sc;
+        if (el.type === "vetro" || el.type === "anta") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill="#A8D8EA" stroke="#5B8FA8" strokeWidth={1.5} rx={2} /></g>;
+        if (el.type === "porta") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill="#C4A882" stroke="#8B7D6B" strokeWidth={2} rx={2} /><circle cx={x + w * .15} cy={y + h * .5} r={2} fill="#8B7D6B" /></g>;
+        if (el.type === "scorrevole") return <g key={el.id}><rect x={x} y={y} width={w} height={h} fill="#B0D8EA90" stroke="#5B8FA8" strokeWidth={1} rx={1} /><line x1={x + w / 2} y1={y} x2={x + w / 2} y2={y + h} stroke="#5B8FA860" strokeWidth={1} /></g>;
+        if (el.type === "telaio") return <rect key={el.id} x={x} y={y} width={w} height={h} fill="none" stroke="#5B5B5B" strokeWidth={2} rx={1} />;
+        return <rect key={el.id} x={x} y={y} width={w} height={h} fill="#DDD" stroke="#AAA" strokeWidth={0.5} />; })}
+      <rect x={0} y={pad + H - 2} width={W + pad * 2} height={pad + 12} fill="#D4C8B0" />
+    </svg>
+    {els.length === 0 && <div style={{ textAlign: "center", padding: 12, fontSize: 10, color: T.sub }}>Disegna elementi sul Prospetto per il rendering</div>}
+  </div>);
+}
 
-  // Spessore profilo in px — dalla bautiefe reale del sistema
-  const spT = Math.max(7, bautiefe * sc);  // telaio
-  const spA = Math.max(6, (bautiefe - 5) * sc);  // anta (leggermente meno)
+function FDataPanel3D({ T, faceKey, faceData, setFaceData, onClose }: any) {
+  const face = FA3[faceKey], data = faceData[faceKey]?.fields || {}, fields = getFields3D(faceKey);
+  const setF = (k: string, v: any) => setFaceData((prev: any) => ({ ...prev, [faceKey]: { ...(prev[faceKey] || {}), fields: { ...(prev[faceKey]?.fields || {}), [k]: v } } }));
+  return (<div style={{ borderTop: `1.5px solid ${T.purple}40`, background: T.card || "#fff", padding: "8px 12px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}><span style={{ fontSize: 12 }}>{face.icon}</span><span style={{ fontSize: 11, fontWeight: 800, color: T.purple }}>{face.label} - Dati</span><span style={{ flex: 1 }} /><span onClick={onClose} style={{ fontSize: 11, cursor: "pointer", color: T.sub }}>✕</span></div>
+    {fields.map((f: any) => (<div key={f.k} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+      <span style={{ fontSize: 9, fontWeight: 700, color: T.sub, minWidth: 72 }}>{f.l}</span>
+      {f.type === "text" ? <input value={data[f.k] || ""} placeholder="..." onChange={(e: any) => setF(f.k, e.target.value)} style={{ flex: 1, padding: "4px 8px", border: `1px solid ${T.bdr}`, borderRadius: 5, fontSize: 10, fontFamily: FF3, color: T.text }} />
+        : <div style={{ display: "flex", alignItems: "center", gap: 2 }}><input type="number" value={data[f.k] || ""} placeholder="—" onChange={(e: any) => setF(f.k, parseInt(e.target.value) || 0)} style={{ width: 56, padding: "4px", border: `1px solid ${T.bdr}`, borderRadius: 5, fontSize: 10, fontWeight: 700, fontFamily: FM3, textAlign: "center", color: T.text }} />{f.u && <span style={{ fontSize: 8, color: T.sub }}>{f.u}</span>}</div>}
+    </div>))}
+  </div>);
+}
 
-  const t = TIPOLOGIE.find(x => x.id === tipo);
-  const nAnte = t?.nAnte ?? 1;
-  const isAR  = tipo.includes("ar");
-  const isAB  = tipo.includes("ab");
-  const isWas = tipo === "wasistas";
-  const isFis = tipo === "fisso";
-  const isSc  = tipo === "scorrevole_2";
+function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
+  const [mode3d, setMode3d] = useState("3d");
+  const [activeFace, setActiveFace] = useState<string | null>(null);
+  const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [faceData, setFaceData] = useState<any>(vanoDisegno?.faceData || {});
+  const [showFields, setShowFields] = useState(false);
 
-  // Montanti (pixel da sx telaio)
-  const monPx: number[] = nAnte === 2 && nMontanti === 0
-    ? [SW / 2]
-    : Array.from({ length: nMontanti }, (_, i) => SW * (i + 1) / (nMontanti + 1));
+  useEffect(() => { const t = setTimeout(() => { const all: any[] = []; FK3.forEach(fk => { (faceData[fk]?.elements || []).forEach((el: any) => all.push({ ...el, face: fk })); }); onUpdate({ ...(vanoDisegno || {}), faceData, elements: (vanoDisegno?.elements || []) }); }, 500); return () => clearTimeout(t); }, [faceData]);
 
-  // Traversi
-  const travPx = Array.from({ length: nTraversi }, (_, i) => SH * (i + 1) / (nTraversi + 1));
+  const pm = vanoDisegno?.profMuro || 350;
+  const totalEls = FK3.reduce((s, fk) => s + (faceData[fk]?.elements?.length || 0), 0);
+  const updateFaceEls = (fk: string, els: any[]) => setFaceData((prev: any) => ({ ...prev, [fk]: { ...(prev[fk] || {}), elements: els } }));
+  const openFace = (fk: string) => { setActiveFace(fk); setMode3d("face"); setActiveTool(null); };
+  const G = T.grn || "#1A9E73";
 
-  // Colonne ante
-  const cols: number[] = monPx.length > 0
-    ? (() => { const r: number[] = []; let p = 0; for (const m of monPx) { r.push(m - p); p = m; } r.push(SW - p); return r; })()
-    : nAnte > 0 ? [SW] : [SW];
+  return (<div>
+    {/* Sub-tabs */}
+    <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, background: `${T.acc}06` }}>
+      {[{ id: "3d", l: "🧊 Isometrica" }, { id: "face", l: `🪟 ${activeFace ? FA3[activeFace].label : "Faccia"}` }, { id: "render", l: "🖼 Render" }].map(m => (
+        <div key={m.id} onClick={() => setMode3d(m.id)} style={{ flex: 1, padding: "6px 0", textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: mode3d === m.id ? 800 : 500, color: mode3d === m.id ? T.acc : T.sub, borderBottom: `2px solid ${mode3d === m.id ? T.acc : "transparent"}` }}>{m.l}</div>
+      ))}
+    </div>
+    {/* 3D Iso */}
+    {mode3d === "3d" && <div style={{ display: "flex", justifyContent: "center", padding: "8px 4px" }}><Iso3D T={T} realW={realW} realH={realH} profMuro={pm} faceData={faceData} activeFace={activeFace} onSelectFace={openFace} /></div>}
+    {/* Face Canvas */}
+    {mode3d === "face" && activeFace && (<>
+      <div style={{ padding: "6px 8px", display: "flex", gap: 3, flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}`, background: T.bg || "#F2F1EC" }}>
+        {EL3D.map(et => (<div key={et.id} onClick={() => setActiveTool(activeTool === et.id ? null : et.id)} style={{ padding: "4px 7px", borderRadius: 5, border: `1.5px solid ${activeTool === et.id ? et.color : T.bdr}`, background: activeTool === et.id ? et.color + "12" : T.card || "#fff", fontSize: 9, fontWeight: activeTool === et.id ? 800 : 600, color: activeTool === et.id ? et.color : T.text, cursor: "pointer", display: "flex", alignItems: "center", gap: 2 }}><span style={{ fontSize: 10 }}>{et.icon}</span> {et.label}</div>))}
+      </div>
+      <FaceCanvas3D T={T} faceKey={activeFace} realW={realW} realH={realH} elements={faceData[activeFace]?.elements || []} onUpdateElements={(els: any[]) => updateFaceEls(activeFace!, els)} activeTool={activeTool} />
+      <div onClick={() => setShowFields(!showFields)} style={{ padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 9, fontWeight: 700, color: T.purple }}>Dati {FA3[activeFace].label}</span>
+        <span style={{ fontSize: 8, color: T.sub, transform: showFields ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
+      </div>
+      {showFields && <FDataPanel3D T={T} faceKey={activeFace} faceData={faceData} setFaceData={setFaceData} onClose={() => setShowFields(false)} />}
+    </>)}
+    {/* Render */}
+    {mode3d === "render" && <RenderPreview3D T={T} realW={realW} realH={realH} faceData={faceData} />}
+    {/* Face chips */}
+    <div style={{ padding: "6px 10px", borderTop: `1px solid ${T.bdr}`, display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
+      {FK3.map(k => { const els = faceData[k]?.elements || []; const active = activeFace === k && mode3d === "face"; return (
+        <div key={k} onClick={() => openFace(k)} style={{ padding: "3px 7px", borderRadius: 5, border: `1.5px solid ${active ? T.purple : els.length > 0 ? G : T.bdr}`, background: active ? T.purple + "12" : els.length > 0 ? G + "08" : T.card || "#fff", cursor: "pointer", fontSize: 8, fontWeight: 700, color: active ? T.purple : els.length > 0 ? G : T.sub, display: "flex", alignItems: "center", gap: 2 }}>
+          {FA3[k].icon} {FA3[k].s}{els.length > 0 && <span style={{ fontSize: 7, opacity: 0.7 }}>({els.length})</span>}
+        </div>); })}
+    </div>
+  </div>);
+}
 
-  const renderAnta = (ai: number, ax: number, ay: number, aw: number, ah: number) => {
-    const isSx = ai === 0;
-    const vx = ax + spA; const vy = ay + spA;
-    const vw = aw - spA * 2; const vh = ah - spA * 2;
-    if (vw <= 0 || vh <= 0) return null;
+// ═══════════════════════════════════════════════════════════
+// FORMA EDITOR — Polygon-based shape builder
+// ═══════════════════════════════════════════════════════════
+const FM2 = "'SF Mono','JetBrains Mono',monospace";
+const distPt = (a: any, b: any) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+const segLenPt = (a: any, b: any) => Math.round(distPt(a, b));
+function nearSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+  if (len2 === 0) return { t: 0, dist: distPt({ x: px, y: py }, { x: ax, y: ay }), x: ax, y: ay };
+  let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + t * dx, cy = ay + t * dy;
+  return { t, dist: distPt({ x: px, y: py }, { x: cx, y: cy }), x: cx, y: cy };
+}
+const makeRectPts = (w = 1200, h = 1400) => [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }];
 
-    const clipId = `${uid}-v${ai}`;
-    const pivX = nAnte >= 2 ? (isSx ? ax + aw : ax) : ax; // punto cardine
+function FormaEditor({ T, realW, realH }: any) {
+  const [pts, setPts] = useState(makeRectPts(realW, realH));
+  const [sel, setSel] = useState<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [fMode, setFMode] = useState("move");
+  const [dividers, setDividers] = useState<any[]>([]);
+  const [cellTypes, setCellTypes] = useState<any>({});
+  const [selCell, setSelCell] = useState<string | null>(null);
+  const [inputW, setInputW] = useState(realW || 1200);
+  const [inputH, setInputH] = useState(realH || 1400);
+  const svgRef = useRef<SVGSVGElement>(null);
 
-    return (
-      <g key={ai}>
-        {/* Vetro */}
-        <VetroHatch x={vx} y={vy} w={vw} h={vh} clipId={clipId} />
+  const minX = Math.min(...pts.map((p: any) => p.x)), maxX = Math.max(...pts.map((p: any) => p.x));
+  const minY = Math.min(...pts.map((p: any) => p.y)), maxY = Math.max(...pts.map((p: any) => p.y));
+  const bW = maxX - minX || 1, bH = maxY - minY || 1;
+  const pad = 50, maxSvg = 320;
+  const sc = Math.min((maxSvg - pad * 2) / bW, (maxSvg - pad * 2) / bH, 0.18);
+  const svgW = bW * sc + pad * 2 + 30, svgH = bH * sc + pad * 2 + 30;
+  const ox = pad + 15 - minX * sc, oy = pad + 10 - minY * sc;
+  const toSvg = (p: any) => ({ x: ox + p.x * sc, y: oy + p.y * sc });
+  const toMm = (sx: number, sy: number) => ({ x: Math.round((sx - ox) / sc), y: Math.round((sy - oy) / sc) });
+  const pathD = pts.map((p: any, i: number) => { const s = toSvg(p); return `${i === 0 ? "M" : "L"}${s.x},${s.y}`; }).join(" ") + " Z";
 
-        {/* Label vetro */}
-        <text x={vx + vw / 2} y={vy + vh - 8}
-          textAnchor="middle" fontSize={Math.max(7, Math.min(11, vw / 10))}
-          fill={C.labelVetro} fontFamily="monospace">{codVet}</text>
+  const getPos = (e: any) => { const svg = svgRef.current; if (!svg) return { x: 0, y: 0 }; const r = svg.getBoundingClientRect(); const ct = e.touches ? e.touches[0] : e; return { x: ct.clientX - r.left, y: ct.clientY - r.top }; };
 
-        {/* Profili anta etichettati */}
-        {[
-          { rx: ax,            ry: ay, rw: spA,  rh: ah,  rot: true,  lx: ax + spA / 2,       ly: ay + ah / 2 },
-          { rx: ax + aw - spA, ry: ay, rw: spA,  rh: ah,  rot: true,  lx: ax + aw - spA / 2,  ly: ay + ah / 2 },
-          { rx: ax,            ry: ay, rw: aw,   rh: spA, rot: false, lx: ax + aw / 2,         ly: ay + spA / 2 },
-          { rx: ax, ry: ay + ah - spA, rw: aw,   rh: spA, rot: false, lx: ax + aw / 2,         ly: ay + ah - spA / 2 },
-        ].map((p, pi) => (
-          <g key={pi}>
-            <rect x={p.rx} y={p.ry} width={p.rw} height={p.rh}
-              fill="#111" stroke={C.profilo} strokeWidth={0.8} />
-            <text x={p.lx} y={p.ly + 3} textAnchor="middle"
-              fontSize={Math.max(5, Math.min(8, spA * 0.55))}
-              fill={C.label} fontFamily="monospace"
-              transform={p.rot ? `rotate(-90,${p.lx},${p.ly})` : undefined}>
-              {codAnt}
-            </text>
-          </g>
-        ))}
-
-        {/* Bordo anta */}
-        <rect x={ax} y={ay} width={aw} height={ah}
-          fill="none" stroke={C.profilo} strokeWidth={1.2}
-          strokeDasharray={isSc ? "6,3" : "none"} />
-
-        {/* Linee tratteggio apertura stile Opera */}
-        {isAR && !isSc && !isWas && (
-          <g stroke={C.tratt} strokeWidth={0.65} strokeDasharray="4,2.5" opacity={0.85}>
-            {/* Triangolo laterale */}
-            <line x1={pivX} y1={ay} x2={isSx ? ax : ax + aw} y2={ay + ah / 2} />
-            <line x1={pivX} y1={ay + ah} x2={isSx ? ax : ax + aw} y2={ay + ah / 2} />
-            <line x1={isSx ? ax : ax + aw} y1={ay} x2={isSx ? ax : ax + aw} y2={ay + ah} />
-            {/* Arco ribalta in basso */}
-            <path d={`M ${ax} ${ay + ah} Q ${ax + aw / 2} ${ay + ah + Math.min(aw * 0.32, 60)} ${ax + aw} ${ay + ah}`}
-              fill="none" />
-            <line x1={ax} y1={ay + ah} x2={ax + aw / 2} y2={ay + ah + Math.min(aw * 0.32, 60)} />
-            <line x1={ax + aw} y1={ay + ah} x2={ax + aw / 2} y2={ay + ah + Math.min(aw * 0.32, 60)} />
-          </g>
-        )}
-
-        {isAB && !isSc && (
-          <g stroke={C.tratt} strokeWidth={0.65} strokeDasharray="4,2.5" opacity={0.85}>
-            <path d={`M ${pivX} ${ay} Q ${pivX + (isSx ? -aw * 0.38 : aw * 0.38)} ${ay + ah / 2} ${pivX} ${ay + ah}`}
-              fill="none" />
-            <line x1={pivX} y1={ay} x2={pivX + (isSx ? -aw * 0.38 : aw * 0.38)} y2={ay + ah / 2} />
-            <line x1={pivX} y1={ay + ah} x2={pivX + (isSx ? -aw * 0.38 : aw * 0.38)} y2={ay + ah / 2} />
-          </g>
-        )}
-
-        {isWas && (
-          <g stroke={C.tratt} strokeWidth={0.65} strokeDasharray="4,2.5" opacity={0.85}>
-            <path d={`M ${ax} ${ay} Q ${ax + aw / 2} ${ay - Math.min(aw * 0.3, 50)} ${ax + aw} ${ay}`} fill="none" />
-            <line x1={ax} y1={ay} x2={ax + aw / 2} y2={ay - Math.min(aw * 0.3, 50)} />
-            <line x1={ax + aw} y1={ay} x2={ax + aw / 2} y2={ay - Math.min(aw * 0.3, 50)} />
-            {/* Linea cerniera bassa */}
-            <line x1={ax + spA} y1={ay + ah - spA / 2} x2={ax + aw - spA} y2={ay + ah - spA / 2}
-              stroke={C.profilo} strokeWidth={1} strokeDasharray="none" />
-          </g>
-        )}
-
-        {isSc && (
-          <g>
-            <line x1={ax + (isSx ? aw * 0.75 : aw * 0.25)} y1={ay + ah / 2}
-                  x2={ax + (isSx ? aw * 0.15 : aw * 0.85)} y2={ay + ah / 2}
-              stroke={C.quota} strokeWidth={1.5} markerEnd="url(#scArr)" />
-          </g>
-        )}
-
-        {/* Maniglia */}
-        {(isAR || isAB) && !isFis && !isSc && !isWas && (() => {
-          const mX = nAnte >= 2
-            ? (isSx ? ax + aw - spA * 2.2 : ax + spA * 1.2)
-            : ax + aw - spA * 2.2;
-          const mY = ay + ah / 2;
-          return (
-            <g key="man">
-              <rect x={mX} y={mY - 12} width={7} height={24} rx={3}
-                fill={C.maniglia} stroke="#777" strokeWidth={0.5} />
-              <rect x={mX + 7} y={mY - 5} width={16} height={10} rx={3}
-                fill={C.maniglia} stroke="#777" strokeWidth={0.5} />
-              {/* Linea leader */}
-              <line x1={mX + 20} y1={mY} x2={mX + 36} y2={mY - 16}
-                stroke={C.quota} strokeWidth={0.6} />
-              <text x={mX + 38} y={mY - 18}
-                fontSize={8} fill={C.quota} fontFamily="monospace">
-                {Math.round((isSx ? (L / 2) - 35 : (L / 2) - 35))}
-              </text>
-            </g>
-          );
-        })()}
-      </g>
-    );
+  const onDown = (e: any) => {
+    e.preventDefault(); const pos = getPos(e);
+    if (fMode === "add") {
+      let bestD = Infinity, bestIdx = -1, bestPt: any = null;
+      for (let i = 0; i < pts.length; i++) {
+        const a = toSvg(pts[i]), b = toSvg(pts[(i + 1) % pts.length]);
+        const n = nearSegment(pos.x, pos.y, a.x, a.y, b.x, b.y);
+        if (n.dist < bestD && n.dist < 30) { bestD = n.dist; bestIdx = i + 1; bestPt = toMm(n.x, n.y); }
+      }
+      if (bestPt && bestIdx >= 0) { const np = [...pts]; np.splice(bestIdx, 0, bestPt); setPts(np); setSel(bestIdx); }
+      return;
+    }
+    if (fMode === "del") {
+      for (let i = 0; i < pts.length; i++) { const s = toSvg(pts[i]); if (distPt(pos, s) < 20 && pts.length > 3) { setPts(pts.filter((_: any, j: number) => j !== i)); setSel(null); return; } }
+      return;
+    }
+    for (let i = 0; i < pts.length; i++) { const s = toSvg(pts[i]); if (distPt(pos, s) < 24) { setDragIdx(i); setSel(i); return; } }
+    setSel(null);
   };
 
-  // Ante positions
-  let anteRects: any[] = [];
-  if (nAnte === 0) {
-    anteRects = [{ ax: cx, ay: cy, aw: SW, ah: SH }];
-  } else {
-    let x = cx;
-    anteRects = cols.map(cw => { const r = { ax: x, ay: cy, aw: cw, ah: SH }; x += cw; return r; });
-  }
+  const onMove = useCallback((e: any) => {
+    if (dragIdx === null) return; e.preventDefault();
+    const pos = getPos(e); const mm = toMm(pos.x, pos.y);
+    mm.x = Math.round(mm.x / 10) * 10; mm.y = Math.round(mm.y / 10) * 10;
+    setPts((prev: any) => prev.map((p: any, i: number) => i === dragIdx ? mm : p));
+  }, [dragIdx, ox, oy, sc]);
+  const onUp = useCallback(() => setDragIdx(null), []);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMove); window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false }); window.addEventListener("touchend", onUp);
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); window.removeEventListener("touchmove", onMove); window.removeEventListener("touchend", onUp); };
+  }, [onMove, onUp]);
+
+  const applyDims = () => { const sX = inputW / bW, sY = inputH / bH; setPts(pts.map((p: any) => ({ x: Math.round((p.x - minX) * sX + minX), y: Math.round((p.y - minY) * sY + minY) }))); };
+  useEffect(() => { setInputW(bW); setInputH(bH); }, [bW, bH]);
+
+  const resetF = (w?: number, h?: number) => { setPts(makeRectPts(w || inputW, h || inputH)); setDividers([]); setCellTypes({}); setSel(null); setSelCell(null); };
+  const presets = [
+    { n: "Rettangolo", fn: () => resetF(1200, 1400) }, { n: "Portafinestra", fn: () => resetF(900, 2200) },
+    { n: "Quadrato", fn: () => resetF(1000, 1000) },
+    { n: "Forma L", fn: () => { setPts([{x:0,y:0},{x:1200,y:0},{x:1200,y:800},{x:600,y:800},{x:600,y:1400},{x:0,y:1400}]); setDividers([]); setCellTypes({}); }},
+    { n: "Trapezio", fn: () => { setPts([{x:200,y:0},{x:1000,y:0},{x:1200,y:1400},{x:0,y:1400}]); setDividers([]); setCellTypes({}); }},
+    { n: "Pentagono", fn: () => { setPts([{x:600,y:0},{x:1200,y:500},{x:1000,y:1400},{x:200,y:1400},{x:0,y:500}]); setDividers([]); setCellTypes({}); }},
+  ];
+  const AP2 = [{ id:"fisso",l:"Fisso",ic:"▣" },{ id:"anta_dx",l:"Anta DX",ic:"◨" },{ id:"anta_sx",l:"Anta SX",ic:"◧" },{ id:"vasistas",l:"Vasistas",ic:"▽" },{ id:"ar_dx",l:"A+R DX",ic:"⊞" },{ id:"ar_sx",l:"A+R SX",ic:"⊞" }];
+
+  const addDiv = (axis: string) => { const total = axis === "v" ? bW : bH; setDividers((d: any) => [...d, { axis, pos: Math.round(total / 2), id: Date.now() }]); };
+  const vDivs = dividers.filter((d: any) => d.axis === "v").map((d: any) => d.pos + minX).sort((a: number, b: number) => a - b);
+  const hDivs = dividers.filter((d: any) => d.axis === "h").map((d: any) => d.pos + minY).sort((a: number, b: number) => a - b);
+  const colEdges = [minX, ...vDivs, maxX], rowEdges = [minY, ...hDivs, maxY];
+  const fCells: any[] = [];
+  for (let r = 0; r < rowEdges.length - 1; r++) for (let c = 0; c < colEdges.length - 1; c++) fCells.push({ key: `${r}-${c}`, x: colEdges[c], y: rowEdges[r], w: colEdges[c + 1] - colEdges[c], h: rowEdges[r + 1] - rowEdges[r] });
+
+  const bs2 = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.purple : T.bdr}`, background: active ? `${T.purple}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? T.purple : T.text });
 
   return (
-    <svg width={w} height={h} style={{ display: "block", background: C.bg }}>
-      <defs>
-        <marker id="scArr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <polygon points="0,0 6,3 0,6" fill={C.quota} />
-        </marker>
-      </defs>
-
-      {/* Quote totali gialle */}
-      {showQuote && (
-        <g>
-          {/* Larghezza */}
-          <line x1={cx} y1={cy - 18} x2={cx + SW} y2={cy - 18} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx} y1={cy - 24} x2={cx} y2={cy - 12} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx + SW} y1={cy - 24} x2={cx + SW} y2={cy - 12} stroke={C.quota} strokeWidth={0.8} />
-          <text x={cx + SW / 2} y={cy - 5} textAnchor="middle"
-            fontSize={13} fill={C.quota} fontFamily="monospace" fontWeight="bold">{L}</text>
-          {/* Altezza */}
-          <line x1={cx - 18} y1={cy} x2={cx - 18} y2={cy + SH} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx - 24} y1={cy} x2={cx - 12} y2={cy} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx - 24} y1={cy + SH} x2={cx - 12} y2={cy + SH} stroke={C.quota} strokeWidth={0.8} />
-          <text x={cx - 5} y={cy + SH / 2} textAnchor="middle"
-            fontSize={13} fill={C.quota} fontFamily="monospace" fontWeight="bold"
-            transform={`rotate(-90,${cx - 5},${cy + SH / 2})`}>{H}</text>
-        </g>
-      )}
-
-      {/* Sfondo telaio */}
-      <rect x={cx} y={cy} width={SW} height={SH} fill="#0A0A0A" />
-
-      {/* Profili telaio esterno etichettati */}
-      {[
-        { rx: cx,          ry: cy,          rw: spT, rh: SH, rot: true,  lx: cx + spT / 2,      ly: cy + SH / 2 },
-        { rx: cx + SW - spT, ry: cy,        rw: spT, rh: SH, rot: true,  lx: cx + SW - spT / 2, ly: cy + SH / 2 },
-        { rx: cx,          ry: cy,          rw: SW,  rh: spT, rot: false, lx: cx + SW / 2,        ly: cy + spT / 2 },
-        { rx: cx,          ry: cy + SH - spT, rw: SW, rh: spT, rot: false, lx: cx + SW / 2,       ly: cy + SH - spT / 2 },
-      ].map((p, pi) => (
-        <g key={pi}>
-          <rect x={p.rx} y={p.ry} width={p.rw} height={p.rh}
-            fill="#141414" stroke={C.profilo} strokeWidth={1} />
-          <text x={p.lx} y={p.ly + 3} textAnchor="middle"
-            fontSize={Math.max(6, Math.min(9, spT * 0.6))}
-            fill={C.label} fontFamily="monospace"
-            transform={p.rot ? `rotate(-90,${p.lx},${p.ly})` : undefined}>
-            {codTel}
-          </text>
-        </g>
-      ))}
-
-      {/* Montanti */}
-      {monPx.map((mx2, mi) => (
-        <g key={mi}>
-          <rect x={cx + mx2 - spT / 2} y={cy} width={spT} height={SH}
-            fill="#141414" stroke={C.profilo} strokeWidth={1} />
-          <text x={cx + mx2} y={cy + SH / 2} textAnchor="middle"
-            fontSize={Math.max(6, spT * 0.5)} fill={C.label} fontFamily="monospace"
-            transform={`rotate(-90,${cx + mx2},${cy + SH / 2})`}>{codTel}</text>
-        </g>
-      ))}
-
-      {/* Traversi */}
-      {travPx.map((ty, ti) => (
-        <g key={ti}>
-          <rect x={cx} y={cy + ty - spT / 2} width={SW} height={spT}
-            fill="#141414" stroke={C.profilo} strokeWidth={1} />
-          <text x={cx + SW / 2} y={cy + ty + 3} textAnchor="middle"
-            fontSize={Math.max(6, spT * 0.5)} fill={C.label} fontFamily="monospace">{codTel}</text>
-        </g>
-      ))}
-
-      {/* Ante */}
-      {nAnte === 0
-        ? (() => {
-            const vx = cx + spT; const vy = cy + spT;
-            const vw = SW - spT * 2; const vh = SH - spT * 2;
-            return (
-              <g>
-                <VetroHatch x={vx} y={vy} w={vw} h={vh} clipId={`${uid}-fisso`} />
-                <text x={vx + vw / 2} y={vy + vh - 10} textAnchor="middle"
-                  fontSize={Math.max(8, vw / 10)} fill={C.labelVetro} fontFamily="monospace">{codVet}</text>
-              </g>
-            );
-          })()
-        : anteRects.map((r, i) => renderAnta(i, r.ax, r.ay, r.aw, r.ah))
-      }
-
-      {/* Bordo telaio sopra tutto */}
-      <rect x={cx} y={cy} width={SW} height={SH}
-        fill="none" stroke={C.profilo} strokeWidth={1.5} />
-
-      {/* Label Vista Interna */}
-      <text x={w - 10} y={h - 8} textAnchor="end"
-        fontSize={11} fill={C.quota} fontFamily="monospace">Vista Interna</text>
-    </svg>
-  );
-}
-
-// ── TBtn ───────────────────────────────────────────────────────
-const TBtn = ({ active, onClick, label }: any) => (
-  <div onClick={onClick} style={{
-    padding: "3px 8px", borderRadius: 3, fontSize: 10, cursor: "pointer",
-    fontFamily: "monospace", userSelect: "none",
-    background: active ? "#223355" : "transparent",
-    color: active ? "#88AAFF" : "#777",
-    border: `1px solid ${active ? "#3355AA" : "#2A2A2A"}`,
-  }}>{label}</div>
-);
-
-// ── Main ───────────────────────────────────────────────────────
-export default function DisegnoTecnico({
-  vanoNome = "Vano", vanoDisegno, realW, realH,
-  onUpdate, onUpdateField, onClose, T, sistemiDB = [],
-}: Props) {
-  const [tipo, setTipo] = useState<TipApertura>(vanoDisegno?.tipologia || "2ante_ar");
-  const [nMontanti, setNMontanti] = useState(vanoDisegno?.nMontanti || 0);
-  const [nTraversi, setNTraversi] = useState(vanoDisegno?.nTraversi || 0);
-  const [showQuote, setShowQuote] = useState(true);
-  const [sistema, setSistema] = useState(vanoDisegno?.sistema || "IDEAL_5000");
-
-  const L = parseInt(String(realW)) || 1200;
-  const H = parseInt(String(realH)) || 2100;
-
-  // Leggi bautiefe reale dal sistemiDB (aggiunto in mastro-constants)
-  const sistemaRec = sistemiDB.find((s: any) =>
-    s.sistema === sistema || s.nome === sistema ||
-    (s.marca + " " + s.sistema) === sistema
-  );
-  const bautiefe: number = sistemaRec?.bautiefe || 70;
-
-  // Codici profilo dal sistema
-  const codTel = sistema.includes("5000") ? "14XX07+R" : sistema.includes("4000") ? "140X07+R" : sistema.includes("CT70") ? "040x02" : "14XX07+R";
-  const codAnt  = sistema.includes("5000") ? "14XX22+R" : sistema.includes("4000") ? "140X22+R" : sistema.includes("CT70") ? "040x22" : "14XX22+R";
-  const codVet  = "V4T-16ARGON-4TSG";
-
-  const save = useCallback((patch: any = {}) => {
-    onUpdate?.({ ...vanoDisegno, tipologia: tipo, nMontanti, nTraversi, sistema, ...patch });
-  }, [vanoDisegno, tipo, nMontanti, nTraversi, sistema, onUpdate]);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#050508", fontFamily: "monospace" }}>
-
-      {/* Toolbar */}
-      <div style={{ background: C.toolBg, borderBottom: `1px solid ${C.toolBdr}`, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6, flexShrink: 0, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 11, color: C.quota, fontWeight: "bold", marginRight: 4 }}>{vanoNome}</span>
-        <span style={{ fontSize: 10, color: "#5588CC" }}>{L}×{H}</span>
-        <div style={{ width: 1, height: 16, background: "#2A2A2A" }} />
-
-        {/* Tipologie */}
-        {TIPOLOGIE.map(t => (
-          <TBtn key={t.id} active={tipo === t.id}
-            onClick={() => { setTipo(t.id as TipApertura); save({ tipologia: t.id }); }}
-            label={t.label} />
-        ))}
-
-        <div style={{ width: 1, height: 16, background: "#2A2A2A" }} />
-
-        {/* Montanti */}
-        <span style={{ fontSize: 9, color: "#444" }}>Mont.</span>
-        {[0, 1, 2, 3].map(n => (
-          <TBtn key={n} active={nMontanti === n}
-            onClick={() => { setNMontanti(n); save({ nMontanti: n }); }}
-            label={String(n)} />
-        ))}
-
-        <span style={{ fontSize: 9, color: "#444" }}>Trav.</span>
-        {[0, 1, 2].map(n => (
-          <TBtn key={n} active={nTraversi === n}
-            onClick={() => { setNTraversi(n); save({ nTraversi: n }); }}
-            label={String(n)} />
-        ))}
-
-        <div style={{ width: 1, height: 16, background: "#2A2A2A" }} />
-        <TBtn active={showQuote} onClick={() => setShowQuote(q => !q)} label="Quote" />
-
-        {/* Sistema */}
-        {sistemiDB.length > 0 && (
-          <select value={sistema} onChange={e => { setSistema(e.target.value); save({ sistema: e.target.value }); }}
-            style={{ padding: "2px 6px", background: "#111", border: "1px solid #2A2A2A", borderRadius: 3, color: "#88AAFF", fontSize: 10, fontFamily: "monospace" }}>
-            {sistemiDB.map((s: any) => <option key={s.id || s.nome} value={s.nome || s.id}>{s.nome}</option>)}
-          </select>
-        )}
-
-        {onClose && (
-          <div onClick={onClose}
-            style={{ marginLeft: "auto", padding: "3px 9px", borderRadius: 3, background: "#220000", border: "1px solid #440000", color: "#FF4444", fontSize: 10, cursor: "pointer" }}>
-            ✕
-          </div>
-        )}
+    <div>
+      {/* Presets */}
+      <div style={{ display: "flex", gap: 3, padding: "5px 8px", overflowX: "auto" }}>
+        {presets.map(p => <div key={p.n} onClick={p.fn} style={bs2()}>{p.n}</div>)}
       </div>
-
-      {/* Canvas + pannello */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-
-        {/* SVG Canvas */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "auto", padding: 12, background: "#050508" }}>
-          <SvgOpera
-            tipo={tipo} L={L} H={H}
-            nMontanti={nMontanti} nTraversi={nTraversi}
-            showQuote={showQuote}
-            codTel={codTel} codAnt={codAnt} codVet={codVet}
-            bautiefe={bautiefe}
-            w={Math.max(420, Math.min(780, L / 2.8 + 140))}
-            h={Math.max(360, Math.min(680, H / 3.8 + 140))}
-          />
+      {/* Mode toolbar */}
+      <div style={{ display: "flex", gap: 3, padding: "3px 8px", borderBottom: `1px solid ${T.bdr}` }}>
+        {[{ id:"move",l:"✋ Sposta",c:T.blue||"#3B7FE0" },{ id:"add",l:"＋ Punto",c:T.grn||"#1A9E73" },{ id:"del",l:"✕ Elimina",c:T.red||"#DC4444" }].map(m => (
+          <div key={m.id} onClick={() => setFMode(m.id)} style={{ flex: 1, padding: "6px 0", borderRadius: 6, textAlign: "center", background: fMode === m.id ? m.c + "15" : T.card, border: `1.5px solid ${fMode === m.id ? m.c : T.bdr}`, fontSize: 10, fontWeight: 700, color: fMode === m.id ? m.c : T.sub, cursor: "pointer" }}>{m.l}</div>
+        ))}
+      </div>
+      {/* SVG */}
+      <div style={{ display: "flex", justifyContent: "center", padding: 6, overflow: "auto", maxHeight: "55vh" }}>
+        <svg ref={svgRef} width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} style={{ background: "#fff", touchAction: "none", maxWidth: "100%" }} onMouseDown={onDown} onTouchStart={onDown}>
+          <defs><pattern id="fgrid" width={100*sc} height={100*sc} patternUnits="userSpaceOnUse"><path d={`M ${100*sc} 0 L 0 0 0 ${100*sc}`} fill="none" stroke="#E8E8E5" strokeWidth={0.5}/></pattern></defs>
+          <rect width={svgW} height={svgH} fill="url(#fgrid)"/>
+          <path d={pathD} fill="#DCEEFF" stroke="#5A5A5C" strokeWidth={2.5} strokeLinejoin="round"/>
+          {/* Inner frame line */}
+          {(() => { const center = { x: pts.reduce((s: number, p: any) => s + p.x, 0) / pts.length, y: pts.reduce((s: number, p: any) => s + p.y, 0) / pts.length }; const inner = pts.map((p: any) => { const dx = center.x - p.x, dy = center.y - p.y, d = Math.sqrt(dx*dx+dy*dy)||1; return toSvg({ x: p.x+(dx/d)*65, y: p.y+(dy/d)*65 }); }); const iD = inner.map((p: any,i: number) => `${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z"; return <path d={iD} fill="none" stroke="#5A5A5C" strokeWidth={0.8} strokeDasharray="3,2"/>; })()}
+          {/* Dividers */}
+          {dividers.map((d: any) => d.axis === "v" ? <g key={d.id}><line x1={ox+(d.pos+minX)*sc} y1={oy+minY*sc} x2={ox+(d.pos+minX)*sc} y2={oy+maxY*sc} stroke={T.purple||"#8B5CF6"} strokeWidth={2}/><text x={ox+(d.pos+minX)*sc} y={oy+maxY*sc+14} textAnchor="middle" fontSize={8} fontWeight={700} fontFamily={FM2} fill={T.purple||"#8B5CF6"}>{d.pos}</text></g> : <g key={d.id}><line x1={ox+minX*sc} y1={oy+(d.pos+minY)*sc} x2={ox+maxX*sc} y2={oy+(d.pos+minY)*sc} stroke="#0D9488" strokeWidth={2}/><text x={ox+maxX*sc+8} y={oy+(d.pos+minY)*sc+3} fontSize={8} fontWeight={700} fontFamily={FM2} fill="#0D9488">{d.pos}</text></g>)}
+          {/* Cell labels */}
+          {fCells.map((cell: any) => { const cx2=ox+(cell.x+cell.w/2)*sc, cy2=oy+(cell.y+cell.h/2)*sc, isSel=selCell===cell.key, type=cellTypes[cell.key]||"fisso", ap=AP2.find((a: any)=>a.id===type); return <g key={cell.key} onClick={(e: any)=>{e.stopPropagation();setSelCell(cell.key);setSel(null)}} style={{cursor:"pointer"}}>{isSel&&<rect x={ox+cell.x*sc+2} y={oy+cell.y*sc+2} width={cell.w*sc-4} height={cell.h*sc-4} fill={(T.blue||"#3B7FE0")+"10"} stroke={T.blue||"#3B7FE0"} strokeWidth={1.5} strokeDasharray="4,3" rx={3}/>}<text x={cx2} y={cy2-4} textAnchor="middle" fontSize={14} fill={isSel?T.blue||"#3B7FE0":"#8E8E9380"}>{ap?.ic||"▣"}</text><text x={cx2} y={cy2+10} textAnchor="middle" fontSize={7} fontWeight={700} fontFamily={FM2} fill={isSel?T.blue||"#3B7FE0":"#8E8E93"}>{Math.round(cell.w)}×{Math.round(cell.h)}</text></g>; })}
+          {/* Edge lengths */}
+          {pts.map((p: any, i: number) => { const next=pts[(i+1)%pts.length], a=toSvg(p), b=toSvg(next), mx2=(a.x+b.x)/2, my2=(a.y+b.y)/2, len=segLenPt(p,next), dx=b.x-a.x, dy=b.y-a.y, angle=Math.atan2(dy,dx)*180/Math.PI, nx=-(b.y-a.y), ny=b.x-a.x, nd=Math.sqrt(nx*nx+ny*ny)||1, tx=mx2+(nx/nd)*14, ty=my2+(ny/nd)*14; return <g key={`q${i}`}><text x={tx} y={ty+3} textAnchor="middle" fontSize={9} fontWeight={700} fontFamily={FM2} fill={T.acc} transform={`rotate(${Math.abs(angle)>90?angle+180:angle},${tx},${ty+3})`}>{len}</text></g>; })}
+          {/* Vertices */}
+          {pts.map((p: any, i: number) => { const s=toSvg(p), isSel=sel===i; return <g key={`v${i}`}><circle cx={s.x} cy={s.y} r={isSel?10:7} fill={isSel?T.blue||"#3B7FE0":"#5A5A5C"} stroke="#fff" strokeWidth={2} style={{cursor:fMode==="del"?"not-allowed":"grab"}}/>{isSel&&<text x={s.x} y={s.y-14} textAnchor="middle" fontSize={8} fontWeight={700} fontFamily={FM2} fill={T.blue||"#3B7FE0"}>{p.x},{p.y}</text>}</g>; })}
+        </svg>
+      </div>
+      {/* Dims bar */}
+      <div style={{ display: "flex", gap: 4, padding: "5px 8px", borderTop: `1px solid ${T.bdr}`, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: T.acc }}>L</span>
+        <input type="number" value={inputW} onChange={(e: any)=>setInputW(parseInt(e.target.value)||0)} onBlur={applyDims} style={{ width: 52, padding: "4px 2px", border: `1.5px solid ${T.bdr}`, borderRadius: 5, fontSize: 11, fontWeight: 700, fontFamily: FM2, textAlign: "center" }}/>
+        <span style={{ fontSize: 11, color: T.sub }}>×</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: T.acc }}>H</span>
+        <input type="number" value={inputH} onChange={(e: any)=>setInputH(parseInt(e.target.value)||0)} onBlur={applyDims} style={{ width: 52, padding: "4px 2px", border: `1.5px solid ${T.bdr}`, borderRadius: 5, fontSize: 11, fontWeight: 700, fontFamily: FM2, textAlign: "center" }}/>
+        <span style={{ fontSize: 9, color: T.sub, fontFamily: FM2 }}>mm</span>
+        {sel !== null && <div style={{ marginLeft: "auto", display: "flex", gap: 3, alignItems: "center" }}>
+          <span style={{ fontSize: 8, fontWeight: 700, color: T.blue||"#3B7FE0" }}>P{sel+1}</span>
+          <input type="number" value={pts[sel]?.x||0} onChange={(e: any)=>setPts(pts.map((p: any,i: number)=>i===sel?{...p,x:parseInt(e.target.value)||0}:p))} style={{ width: 42, padding: "2px", border: `1px solid ${(T.blue||"#3B7FE0")}40`, borderRadius: 4, fontSize: 9, fontWeight: 700, fontFamily: FM2, textAlign: "center", color: T.blue||"#3B7FE0" }}/>
+          <input type="number" value={pts[sel]?.y||0} onChange={(e: any)=>setPts(pts.map((p: any,i: number)=>i===sel?{...p,y:parseInt(e.target.value)||0}:p))} style={{ width: 42, padding: "2px", border: `1px solid ${(T.blue||"#3B7FE0")}40`, borderRadius: 4, fontSize: 9, fontWeight: 700, fontFamily: FM2, textAlign: "center", color: T.blue||"#3B7FE0" }}/>
+        </div>}
+      </div>
+      {/* Dividers bar */}
+      <div style={{ display: "flex", gap: 3, padding: "4px 8px", borderTop: `1px solid ${T.bdr}`, alignItems: "center", flexWrap: "wrap" }}>
+        <div onClick={()=>addDiv("v")} style={{ padding: "4px 8px", borderRadius: 5, background: (T.purple||"#8B5CF6")+"12", border: `1px solid ${(T.purple||"#8B5CF6")}30`, cursor: "pointer" }}><span style={{ fontSize: 9, fontWeight: 700, color: T.purple||"#8B5CF6" }}>+│ Mont.</span></div>
+        <div onClick={()=>addDiv("h")} style={{ padding: "4px 8px", borderRadius: 5, background: "#0D948812", border: "1px solid #0D948830", cursor: "pointer" }}><span style={{ fontSize: 9, fontWeight: 700, color: "#0D9488" }}>+─ Trav.</span></div>
+        {dividers.map((d: any)=><div key={d.id} style={{ display: "flex", alignItems: "center", gap: 2, padding: "2px 5px", borderRadius: 4, background: (d.axis==="v"?T.purple||"#8B5CF6":"#0D9488")+"10" }}>
+          <input type="number" value={d.pos} onChange={(e: any)=>setDividers(dividers.map((x: any)=>x.id===d.id?{...x,pos:parseInt(e.target.value)||0}:x))} style={{ width: 36, padding: "1px", border: "none", borderRadius: 3, fontSize: 9, fontWeight: 700, fontFamily: FM2, textAlign: "center", background: "transparent", color: d.axis==="v"?T.purple||"#8B5CF6":"#0D9488" }}/>
+          <span onClick={()=>setDividers(dividers.filter((x: any)=>x.id!==d.id))} style={{ fontSize: 9, color: T.red||"#DC4444", cursor: "pointer", fontWeight: 700 }}>×</span>
+        </div>)}
+      </div>
+      {/* Cell type selector */}
+      {selCell !== null && <div style={{ padding: "6px 8px", borderTop: `1.5px solid ${(T.blue||"#3B7FE0")}30` }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: T.blue||"#3B7FE0", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          <span>CELLA</span>
+          {(()=>{ const c=fCells.find((x: any)=>x.key===selCell); return c?<span style={{ fontSize: 9, color: T.sub, fontFamily: FM2 }}>{Math.round(c.w)}×{Math.round(c.h)} mm</span>:null; })()}
+          <span onClick={()=>setSelCell(null)} style={{ marginLeft: "auto", fontSize: 14, color: T.sub, cursor: "pointer" }}>×</span>
         </div>
-
-        {/* Info panel */}
-        <div style={{ width: 180, flexShrink: 0, background: C.panelBg, borderLeft: `1px solid ${C.toolBdr}`, padding: 10, overflowY: "auto" }}>
-          <div style={{ fontSize: 9, color: "#333", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Dati tecnici</div>
-          {[
-            ["Serie", sistema],
-            ["Tipo", TIPOLOGIE.find(t => t.id === tipo)?.label || tipo],
-            ["L", `${L} mm`],
-            ["H", `${H} mm`],
-            ["Area", `${((L / 1000) * (H / 1000)).toFixed(3)} m²`],
-            ["Perim.", `${(2 * (L + H) / 1000).toFixed(2)} m`],
-            ["Ante", String(TIPOLOGIE.find(t => t.id === tipo)?.nAnte ?? "—")],
-            ["Mont.+", String(nMontanti)],
-            ["Trav.+", String(nTraversi)],
-          ].map(([l, v], i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid #111", fontSize: 9 }}>
-              <span style={{ color: "#444" }}>{l}</span>
-              <span style={{ color: C.quota, fontWeight: "bold" }}>{v}</span>
-            </div>
-          ))}
-
-          <div style={{ marginTop: 10, fontSize: 9, color: "#333", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Profili</div>
-          {[["Telaio", codTel], ["Anta", codAnt], ["Vetro", codVet]].map(([l, v], i) => (
-            <div key={i} style={{ padding: "3px 0", borderBottom: "1px solid #111" }}>
-              <div style={{ fontSize: 8, color: "#333" }}>{l}</div>
-              <div style={{ fontSize: 9, color: "#5588CC", fontWeight: "bold" }}>{v}</div>
-            </div>
-          ))}
-
-          {(onUpdate || onUpdateField) && (
-            <button onClick={() => save()}
-              style={{ width: "100%", marginTop: 12, padding: "6px", borderRadius: 3, background: "#112233", color: "#5588CC", border: "1px solid #223344", fontSize: 10, cursor: "pointer", fontFamily: "monospace" }}>
-              Salva
-            </button>
-          )}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 3 }}>
+          {AP2.map((a: any) => { const isSel2=(cellTypes[selCell]||"fisso")===a.id; return <div key={a.id} onClick={()=>setCellTypes({...cellTypes,[selCell as string]:a.id})} style={{ padding: "6px 3px", borderRadius: 6, border: `1.5px solid ${isSel2?T.blue||"#3B7FE0":T.bdr}`, background: isSel2?(T.blue||"#3B7FE0")+"12":T.card, textAlign: "center", cursor: "pointer" }}><div style={{ fontSize: 14 }}>{a.ic}</div><div style={{ fontSize: 7, fontWeight: isSel2?800:500, color: isSel2?T.blue||"#3B7FE0":T.sub }}>{a.l}</div></div>; })}
         </div>
+      </div>}
+      {/* Footer */}
+      <div style={{ padding: "4px 8px", fontSize: 9, color: T.sub, textAlign: "center", borderTop: `1px solid ${T.bdr}` }}>
+        {fMode === "move" ? "Trascina un vertice" : fMode === "add" ? "Tocca un lato per aggiungere punto" : "Tocca un punto per eliminarlo"} · {fCells.length} celle · {pts.length} punti
       </div>
     </div>
   );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEZIONE PROFILO — Viewer DXF nodo in overlay sul canvas
+// ═══════════════════════════════════════════════════════════════
+
+function parseLWPolylinesForCanvas(dxfText: string): {pts:{x:number,y:number}[], closed:boolean}[] {
+  if (!dxfText) return [];
+  const lines = dxfText.split('\n');
+  const result: {pts:{x:number,y:number}[], closed:boolean}[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (lines[i].trim() === '0' && lines[i+1]?.trim() === 'LWPOLYLINE') {
+      const pts: {x:number,y:number}[] = []; let closed = false;
+      let j = i+2;
+      while (j < lines.length-1) {
+        const code = lines[j].trim(), val = lines[j+1]?.trim() || '';
+        if (code === '0') break;
+        if (code === '70') closed = (parseInt(val) & 1) === 1;
+        if (code === '10') {
+          const x = parseFloat(val);
+          if (lines[j+2]?.trim() === '20') { const y = parseFloat(lines[j+3]?.trim() || '0'); pts.push({x, y}); j += 2; }
+        }
+        j += 2;
+      }
+      if (pts.length >= 2) result.push({pts, closed});
+      i = j;
+    } else { i++; }
+  }
+  return result;
+}
+
+function SezioneProfilo({ sistema, width = 220, height = 180 }: any) {
+  const [view, setView] = React.useState<"nodo"|"rahmen"|"flugel">("nodo");
+  if (!sistema?.dxfText && !sistema?.polylines) return (
+    <div style={{ width, height, background: "#1A1A1C", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <div style={{ fontSize: 9, color: "#444", textAlign: "center" }}>Nessun profilo DXF<br/>Assegna sistema al vano</div>
+    </div>
+  );
+
+  const allPols: {pts:{x:number,y:number}[], closed:boolean}[] = sistema.polylines?.length
+    ? sistema.polylines
+    : parseLWPolylinesForCanvas(sistema.dxfText || "");
+
+  // Filtra per vista
+  let pols = allPols;
+  if (view === "rahmen") pols = allPols.filter(p => Math.max(...p.pts.map(c => c.x)) <= 2);
+  else if (view === "flugel") pols = allPols.filter(p => Math.max(...p.pts.map(c => c.y)) <= 2 && Math.min(...p.pts.map(c => c.y)) < -10);
+  if (pols.length === 0) pols = allPols;
+
+  const allPts = pols.flatMap(p => p.pts);
+  if (allPts.length === 0) return null;
+  const xs = allPts.map(c => c.x), ys = allPts.map(c => c.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rX = maxX - minX || 1, rY = maxY - minY || 1;
+  const TOOLBAR = 24, PAD = 8;
+  const svgH = height - TOOLBAR;
+  const scale = Math.min((width - PAD*2) / rX, (svgH - PAD*2) / rY);
+  const offX = PAD + ((width - PAD*2) - rX*scale) / 2;
+  const offY = PAD + ((svgH - PAD*2) - rY*scale) / 2;
+  const tx = (x: number) => offX + (x - minX) * scale;
+  const ty = (y: number) => svgH - PAD - (y - minY) * scale; // flip Y
+
+  const fills = ['#D0840814','#1A9E7312','#3B7FE010','#8B5CF610','#F9731610'];
+  const strokes = ['#D08008','#1A9E73','#3B7FE0','#8B5CF6','#F97316'];
+
+  // Quote step automatico
+  const step = Math.ceil(Math.max(rX, rY) / 5 / 5) * 5 || 5;
+  const qX: number[] = [], qY: number[] = [];
+  for (let v = Math.ceil(minX/step)*step; v <= maxX+0.1; v += step) qX.push(v);
+  for (let v = Math.ceil(minY/step)*step; v <= maxY+0.1; v += step) qY.push(v);
+
+  return (
+    <div style={{ background: "#1A1A1C", borderRadius: 8, overflow: "hidden", border: "1px solid #2A2A2E" }}>
+      {/* Toolbar micro */}
+      <div style={{ height: TOOLBAR, display: "flex", alignItems: "center", padding: "0 8px", gap: 3, borderBottom: "1px solid #2A2A2E" }}>
+        {([["nodo","Nodo"],["rahmen","Tel."],["flugel","Anta"]] as any[]).map(([k,l]) => (
+          <div key={k} onClick={() => setView(k)}
+            style={{ padding: "2px 7px", fontSize: 9, fontWeight: 600, cursor: "pointer", borderRadius: 4,
+              background: view === k ? "#D08008" : "transparent",
+              color: view === k ? "#fff" : "#555" }}>
+            {l}
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <div style={{ fontSize: 8, color: "#333", fontFamily: "JetBrains Mono,monospace" }}>
+          {Math.round(rX)}×{Math.round(rY)}mm
+        </div>
+      </div>
+      {/* SVG profilo */}
+      <svg width={width} height={svgH} style={{ display: "block" }}>
+        <rect width={width} height={svgH} fill="#1A1A1C"/>
+        {/* Grid sottile */}
+        {qX.map((v,i) => <line key={"gx"+i} x1={tx(v)} y1={0} x2={tx(v)} y2={svgH} stroke="#222" strokeWidth="0.5"/>)}
+        {qY.map((v,i) => <line key={"gy"+i} x1={0} y1={ty(v)} x2={width} y2={ty(v)} stroke="#222" strokeWidth="0.5"/>)}
+        {/* Assi 0 */}
+        {minX <= 0 && maxX >= 0 && <line x1={tx(0)} y1={0} x2={tx(0)} y2={svgH} stroke="#ffffff10" strokeWidth="0.7" strokeDasharray="3,3"/>}
+        {minY <= 0 && maxY >= 0 && <line x1={0} y1={ty(0)} x2={width} y2={ty(0)} stroke="#ffffff10" strokeWidth="0.7" strokeDasharray="3,3"/>}
+        {/* Polilinee profilo */}
+        {pols.map((p, pi) => {
+          const pStr = p.pts.map(c => `${tx(c.x).toFixed(1)},${ty(c.y).toFixed(1)}`).join(' ');
+          return <polygon key={pi} points={pStr} fill={fills[pi % fills.length]} stroke={strokes[pi % strokes.length]} strokeWidth="0.8" strokeLinejoin="round"/>;
+        })}
+        {/* Quote X */}
+        {qX.filter((_,i) => i % 2 === 0).map((v,i) => (
+          <text key={"qx"+i} x={tx(v)} y={svgH-2} fontSize="7" fill="#3B7FE0" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+        ))}
+        {/* Quote Y */}
+        {qY.filter((_,i) => i % 2 === 0).map((v,i) => (
+          <text key={"qy"+i} x={4} y={ty(v)+3} fontSize="7" fill="#3B7FE0" textAnchor="start" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════
+export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T, sistemiDB, sistemaSceltoId }) {
+  const [viewTab, setViewTab] = React.useState("disegno");
+  const [editingLine, setEditingLine] = React.useState<any>(null);
+  const [editingLineVal, setEditingLineVal] = React.useState("");
+  const [sistemaSel, setSistemaSel] = React.useState<string>(sistemaSceltoId || "");
+  const [showSezione, setShowSezione] = React.useState(false);
+  const sistemaAttivo = (sistemiDB || []).find((s: any) => s.id === sistemaSel);
+  const vanoDisegnoRef = React.useRef<any>(vanoDisegno);
+  React.useEffect(() => { vanoDisegnoRef.current = vanoDisegno; }, [vanoDisegno]);
+  const realW = propRealW || 1200;
+  const realH = propRealH || 1000;
+                            const dw = vanoDisegno || { elements: [], selectedId: null, drawMode: null, history: [] };
+                            const els = dw.elements || [];
+                            const selId = dw.selectedId || null;
+                            const drawMode = dw.drawMode || null; // "line"|"apertura"|"place-anta"|"place-vetro"|"place-ap"
+                            const placeApType = dw._placeApType || "SX";
+                            const zoom = dw._zoom || 1;
+                            const panX = dw._panX || 0, panY = dw._panY || 0;
+                            const canvasW = Math.min(window.innerWidth - 32, 500);
+                            const GRID = 10;
+                            const SNAP_R = 28;
+
+                            const aspect = realW / realH;
+                            const PAD = 24, PAD_DIM = 28;
+                            const maxW = canvasW - PAD * 2 - PAD_DIM;
+                            // Compute content bounds (considering multiple frames and freeLines)
+                            let contentW = maxW, contentH = maxW / aspect;
+                            // No height cap — use full space
+                            if (contentH > maxW * 1.5) { contentH = maxW * 1.5; contentW = contentH * aspect; }
+                            let fW = contentW, fH = contentH;
+                            // For multi-frame: compute bounding box of all frames
+                            const allFrames = els.filter(e => e.type === "rect");
+                            if (allFrames.length > 1) {
+                              const bx1 = Math.min(...allFrames.map(f => f.x));
+                              const by1 = Math.min(...allFrames.map(f => f.y));
+                              const bx2 = Math.max(...allFrames.map(f => f.x + f.w));
+                              const by2 = Math.max(...allFrames.map(f => f.y + f.h));
+                              fW = bx2 - bx1 + PAD; fH = by2 - by1 + PAD;
+                            }
+                            const baseCanvasH = Math.max(280, fH + PAD * 2 + PAD_DIM);
+                            const canvasH = baseCanvasH;
+                            const fX = PAD, fY = PAD;
+                            const snap = (v2) => Math.round(v2 / GRID) * GRID;
+
+                            // ══ CELL DETECTION ══
+                            const frames = els.filter(e => e.type === "rect");
+                            const frame = frames[0] || null; // primary frame for compat
+                            const allMontanti = els.filter(e => e.type === "montante");
+                            const allTraversi = els.filter(e => e.type === "traverso");
+                            const TK_FRAME = 6, TK_MONT = 6, TK_ANTA = 5, TK_PORTA = 11;
+                            const HM = TK_MONT / 2;
+
+                            // ══ POLYGON from freeLines ══
+                            const getPolygon = () => {
+                              const lines = els.filter(e => e.type === "freeLine");
+                              if (lines.length < 3) return null;
+                              const pts = [];
+                              const used = new Set();
+                              const addP = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
+                              addP(lines[0].x1, lines[0].y1); addP(lines[0].x2, lines[0].y2); used.add(0);
+                              for (let it = 0; it < lines.length; it++) {
+                                const last = pts[pts.length - 1];
+                                for (let li = 0; li < lines.length; li++) {
+                                  if (used.has(li)) continue;
+                                  const l = lines[li];
+                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 30) { addP(l.x2, l.y2); used.add(li); break; }
+                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 30) { addP(l.x1, l.y1); used.add(li); break; }
+                                }
+                              }
+                              return pts.length >= 3 ? pts : null;
+                            };
+                            const getPolyRaw = !frame ? getPolygon() : null;
+                            // Show polygon only if explicitly closed (first point ≈ last point)
+                            const poly = (() => {
+                              if (!getPolyRaw || getPolyRaw.length < 3) return null;
+                              const first = getPolyRaw[0], last = getPolyRaw[getPolyRaw.length - 1];
+                              const isClosed = Math.hypot(first[0]-last[0], first[1]-last[1]) < 30;
+                              return isClosed ? getPolyRaw : null;
+                            })();
+
+                            // ══ Line-segment intersection helpers ══
+                            const segIntersectV = (x, pts2) => {
+                              // Find Y values where vertical line x=X intersects polygon edges
+                              const ys = [];
+                              for (let i = 0; i < pts2.length; i++) {
+                                const a = pts2[i], b = pts2[(i + 1) % pts2.length];
+                                const minX = Math.min(a[0], b[0]), maxX = Math.max(a[0], b[0]);
+                                if (x >= minX - 1 && x <= maxX + 1 && Math.abs(b[0] - a[0]) > 0.5) {
+                                  const t = (x - a[0]) / (b[0] - a[0]);
+                                  if (t >= -0.01 && t <= 1.01) ys.push(a[1] + t * (b[1] - a[1]));
+                                }
+                              }
+                              ys.sort((a2, b2) => a2 - b2);
+                              return ys.length >= 2 ? [ys[0], ys[ys.length - 1]] : null;
+                            };
+                            const segIntersectH = (y, pts2) => {
+                              const xs = [];
+                              for (let i = 0; i < pts2.length; i++) {
+                                const a = pts2[i], b = pts2[(i + 1) % pts2.length];
+                                const minY = Math.min(a[1], b[1]), maxY = Math.max(a[1], b[1]);
+                                if (y >= minY - 1 && y <= maxY + 1 && Math.abs(b[1] - a[1]) > 0.5) {
+                                  const t = (y - a[1]) / (b[1] - a[1]);
+                                  if (t >= -0.01 && t <= 1.01) xs.push(a[0] + t * (b[0] - a[0]));
+                                }
+                              }
+                              xs.sort((a2, b2) => a2 - b2);
+                              return xs.length >= 2 ? [xs[0], xs[xs.length - 1]] : null;
+                            };
+
+                            // ══ BSP Cell Splitting ══
+                            const bspSplit = (startCells) => {
+                              let cl = startCells;
+                              allMontanti.forEach((m, mi) => {
+                                const next = [];
+                                cl.forEach(c => {
+                                  // Use cellY1/Y2 if available (more reliable for poly shapes)
+                                  const my1 = m.cellY1 !== undefined ? m.cellY1 : (m.y1 !== undefined ? m.y1 : c.y);
+                                  const my2 = m.cellY2 !== undefined ? m.cellY2 : (m.y2 !== undefined ? m.y2 : c.y + c.h);
+                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + 2 && my2 >= c.y + c.h - 2) {
+                                    next.push({ x: c.x, y: c.y, w: m.x - HM - c.x, h: c.h, id: c.id + "L" + mi });
+                                    next.push({ x: m.x + HM, y: c.y, w: c.x + c.w - m.x - HM, h: c.h, id: c.id + "R" + mi });
+                                  } else { next.push(c); }
+                                });
+                                cl = next;
+                              });
+                              allTraversi.forEach((t, ti) => {
+                                const next = [];
+                                cl.forEach(c => {
+                                  const tx1 = t.x1 !== undefined ? t.x1 : c.x;
+                                  const tx2 = t.x2 !== undefined ? t.x2 : c.x + c.w;
+                                  const coverW = Math.min(tx2, c.x + c.w) - Math.max(tx1, c.x);
+                                  const covers = coverW >= c.w * 0.6;
+                                  if (t.y > c.y + HM + 2 && t.y < c.y + c.h - HM - 2 && covers) {
+                                    next.push({ x: c.x, y: c.y, w: c.w, h: t.y - HM - c.y, id: c.id + "T" + ti });
+                                    next.push({ x: c.x, y: t.y + HM, w: c.w, h: c.y + c.h - t.y - HM, id: c.id + "B" + ti });
+                                  } else { next.push(c); }
+                                });
+                                cl = next;
+                              });
+                              return cl;
+                            };
+                            const getCells = () => {
+                              // Multi-frame support (zoppi): each frame gets its own cells
+                              if (frames.length > 0) {
+                                let allCells = [];
+                                frames.forEach((fr, fi) => {
+                                  const iX = fr.x + TK_FRAME, iY = fr.y + TK_FRAME;
+                                  const iW = fr.w - TK_FRAME * 2, iH = fr.h - TK_FRAME * 2;
+                                  if (iW < 4 || iH < 4) return;
+                                  const startCells = [{ x: iX, y: iY, w: iW, h: iH, id: `F${fi}` }];
+                                  allCells = allCells.concat(bspSplit(startCells));
+                                });
+                                return allCells;
+                              }
+                              // Polygon cells
+                              if (poly) {
+                                const allX2 = poly.map(p => p[0]), allY2 = poly.map(p => p[1]);
+                                const pL = Math.min(...allX2) + 2, pR = Math.max(...allX2) - 2;
+                                const pT = Math.min(...allY2) + 2, pB = Math.max(...allY2) - 2;
+                                return bspSplit([{ x: pL, y: pT, w: pR - pL, h: pB - pT, id: "P0" }]);
+                              }
+                              return [];
+                            };
+                            const cells = getCells();
+
+                            const findCellAt = (mx, my) => {
+                              return cells.find(c2 => mx >= c2.x && mx <= c2.x + c2.w && my >= c2.y && my <= c2.y + c2.h);
+                            };
+
+                            // ══ Snap points ══
+                            const getSnapPoints = () => {
+                              const pts = [];
+                              frames.forEach(fr => {
+                                const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
+                                pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
+                                pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
+                              });
+                              cells.forEach(c2 => {
+                                pts.push({x:c2.x,y:c2.y},{x:c2.x+c2.w,y:c2.y},{x:c2.x,y:c2.y+c2.h},{x:c2.x+c2.w,y:c2.y+c2.h});
+                                pts.push({x:c2.x+c2.w/2,y:c2.y},{x:c2.x+c2.w/2,y:c2.y+c2.h});
+                                pts.push({x:c2.x,y:c2.y+c2.h/2},{x:c2.x+c2.w,y:c2.y+c2.h/2});
+                              });
+                              els.filter(e => e.type === "freeLine" || e.type === "apLine").forEach(l => {
+                                pts.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2});
+                              });
+                              return pts;
+                            };
+                            const findSnap = (mx, my) => {
+                              const pts = getSnapPoints();
+                              let best = null, bestD = SNAP_R;
+                              pts.forEach(p => { const d = Math.hypot(p.x - mx, p.y - my); if (d < bestD) { bestD = d; best = p; } });
+                              return best;
+                            };
+
+                            // ══ State helpers ══
+                            const pushHistory = () => {
+                              const hist = dw.history || [];
+                              return [...hist.slice(-20), JSON.stringify(els)];
+                            };
+                            const setDW = (newEls, extra = {}) => {
+                              const hist = pushHistory();
+                              onUpdate({ ...dw, elements: newEls, history: hist, ...extra });
+                            };
+                            const setMode = (extra) => onUpdate({ ...dw, ...extra });
+
+                            const undo = () => {
+                              const hist = dw.history || [];
+                              if (hist.length === 0) return;
+                              const prev = JSON.parse(hist[hist.length - 1]);
+                              onUpdate({ ...dw, elements: prev, history: hist.slice(0, -1), selectedId: null });
+                            };
+
+                            const getSvgXY = (e2, svg) => {
+                              const r2 = svg.getBoundingClientRect();
+                              const clientX = e2.touches ? e2.touches[0].clientX : e2.clientX;
+                              const clientY = e2.touches ? e2.touches[0].clientY : e2.clientY;
+                              // Convert screen coords to viewBox coords
+                              const px = clientX - r2.left;
+                              const py = clientY - r2.top;
+                              const vbW = canvasW / zoom, vbH = canvasH / zoom;
+                              return { mx: panX + px / r2.width * vbW, my: panY + py / r2.height * vbH };
+                            };
+
+                            // ── Drag ──
+                            const onDrag = (e2, elId) => {
+                              if (drawMode) return;
+                              e2.stopPropagation(); e2.preventDefault();
+                              const svg = e2.currentTarget.closest("svg");
+                              if (!svg) return;
+                              const el = els.find(x => x.id === elId);
+                              if (!el) return;
+                              setMode({ selectedId: elId });
+                              const { mx: sx, my: sy } = getSvgXY(e2, svg);
+                              const orig = { ...el };
+                              let latestEls = els;
+                              const onM = (ev) => {
+                                ev.preventDefault();
+                                const { mx, my } = getSvgXY(ev, svg);
+                                const dx = snap(mx - sx), dy = snap(my - sy);
+                                const upd = els.map(x => {
+                                  if (x.id !== elId) return x;
+                                  if (x.type === "montante") {
+                                    const newX = snap(orig.x + dx);
+                                    // Find which cell the new X falls in
+                                    const newCell = cells.find(c2 => newX > c2.x && newX < c2.x + c2.w);
+                                    if (poly) {
+                                      if (newCell) {
+                                        const ys = segIntersectV(newX, poly);
+                                        const my1n = ys ? Math.max(ys[0], newCell.y) : newCell.y;
+                                        const my2n = ys ? Math.min(ys[1], newCell.y + newCell.h) : newCell.y + newCell.h;
+                                        return { ...x, x: newX, y1: my1n, y2: my2n, cellY1: newCell.y, cellY2: newCell.y + newCell.h };
+                                      }
+                                    } else if (frame && newCell) {
+                                      // Frame mode: update y1/y2 from new cell bounds
+                                      return { ...x, x: newX, y1: newCell.y, y2: newCell.y + newCell.h };
+                                    }
+                                    return { ...x, x: newX };
+                                  }
+                                  if (x.type === "traverso") {
+                                    const newY = snap(orig.y + dy);
+                                    // Find which cell the new Y falls in
+                                    const newCell2 = cells.find(c2 => newY > c2.y && newY < c2.y + c2.h);
+                                    if (poly) {
+                                      const xs2 = segIntersectH(newY, poly);
+                                      if (xs2 && newCell2) {
+                                        return { ...x, y: newY, x1: Math.max(xs2[0], newCell2.x), x2: Math.min(xs2[1], newCell2.x + newCell2.w) };
+                                      } else if (xs2) {
+                                        return { ...x, y: newY, x1: xs2[0], x2: xs2[1] };
+                                      }
+                                    } else if (frame && newCell2) {
+                                      // Frame mode: update x1/x2 from new cell bounds
+                                      return { ...x, y: newY, x1: newCell2.x, x2: newCell2.x + newCell2.w };
+                                    }
+                                    return { ...x, y: newY };
+                                  }
+                                  if (x.type === "circle") return { ...x, cx: orig.cx + dx, cy: orig.cy + dy };
+                                  if (x.x1 !== undefined) return { ...x, x1: orig.x1 + dx, y1: orig.y1 + dy, x2: orig.x2 + dx, y2: orig.y2 + dy };
+                                  if (x.x !== undefined) return { ...x, x: orig.x + dx, y: orig.y + dy };
+                                  return x;
+                                });
+                                latestEls = upd;
+                                // Live dim for montante/traverso
+                                let dragDim = null;
+                                if (el.type === "montante") {
+                                  const newX = snap(orig.x + dx);
+                                  if (frame) {
+                                    const innerW = frame.w - TK_FRAME * 2;
+                                    const posRatio = innerW > 0 ? (newX - frame.x - TK_FRAME) / innerW : 0.5;
+                                    const leftMM = Math.round(Math.max(0, Math.min(realW, posRatio * realW)));
+                                    const rightMM = realW - leftMM;
+                                    const my1 = el.y1 !== undefined ? el.y1 : frame.y;
+                                    const my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
+                                    dragDim = { type: "v", x: newX, y1: my1, y2: my2, leftMM, rightMM };
+                                  } else if (poly) {
+                                    const pxs = poly.map(p => p[0]);
+                                    const pL = Math.min(...pxs), pR = Math.max(...pxs);
+                                    const posRatio = pR > pL ? (newX - pL) / (pR - pL) : 0.5;
+                                    const leftMM = Math.round(Math.max(0, Math.min(realW, posRatio * realW)));
+                                    const rightMM = realW - leftMM;
+                                    const ys = segIntersectV(newX, poly);
+                                    const my1 = ys ? ys[0] : Math.min(...poly.map(p => p[1]));
+                                    const my2 = ys ? ys[1] : Math.max(...poly.map(p => p[1]));
+                                    dragDim = { type: "v", x: newX, y1: my1, y2: my2, leftMM, rightMM };
+                                  }
+                                }
+                                if (el.type === "traverso") {
+                                  const newY = snap(orig.y + dy);
+                                  if (frame) {
+                                    const innerH = frame.h - TK_FRAME * 2;
+                                    const posRatio = innerH > 0 ? (newY - frame.y - TK_FRAME) / innerH : 0.5;
+                                    const topMM = Math.round(Math.max(0, Math.min(realH, posRatio * realH)));
+                                    const botMM = realH - topMM;
+                                    const tx1 = el.x1 !== undefined ? el.x1 : frame.x;
+                                    const tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
+                                    dragDim = { type: "h", y: newY, x1: tx1, x2: tx2, topMM, botMM };
+                                  } else if (poly) {
+                                    const pys = poly.map(p => p[1]);
+                                    const pT = Math.min(...pys), pB = Math.max(...pys);
+                                    const posRatio = pB > pT ? (newY - pT) / (pB - pT) : 0.5;
+                                    const topMM = Math.round(Math.max(0, Math.min(realH, posRatio * realH)));
+                                    const botMM = realH - topMM;
+                                    const xs2 = segIntersectH(newY, poly);
+                                    const tx1 = xs2 ? xs2[0] : Math.min(...poly.map(p => p[0]));
+                                    const tx2 = xs2 ? xs2[1] : Math.max(...poly.map(p => p[0]));
+                                    dragDim = { type: "h", y: newY, x1: tx1, x2: tx2, topMM, botMM };
+                                  }
+                                }
+                                onUpdate({ ...dw, elements: upd, selectedId: elId, _dragDim: dragDim });
+                              };
+                              const onU = () => {
+                                document.removeEventListener("mousemove", onM); document.removeEventListener("mouseup", onU);
+                                document.removeEventListener("touchmove", onM); document.removeEventListener("touchend", onU);
+                                onUpdate({ ...dw, elements: latestEls, selectedId: elId, _dragDim: null });
+                              };
+                              document.addEventListener("mousemove", onM); document.addEventListener("mouseup", onU);
+                              document.addEventListener("touchmove", onM, { passive: false }); document.addEventListener("touchend", onU);
+                            };
+
+                            // ── SVG Click ──
+                            const onSvgClick = (e2) => {
+                              const svg = e2.currentTarget;
+                              const { mx, my } = getSvgXY(e2, svg);
+
+                              // Place montante/traverso — click on cell OR polygon
+                              if (drawMode === "place-mont") {
+                                const cell = findCellAt(mx, my);
+                                if (cell) {
+                                  const cx = snap(mx);
+                                  const clampedX = Math.max(cell.x + 10, Math.min(cell.x + cell.w - 10, cx));
+                                  if (poly) {
+                                    const ys = segIntersectV(clampedX, poly);
+                                    if (ys) {
+                                      const my1c = Math.max(ys[0] + 4, cell.y);
+                                      const my2c = Math.min(ys[1] - 4, cell.y + cell.h);
+                                      setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: my1c, y2: my2c, cellY1: cell.y, cellY2: cell.y + cell.h }]);
+                                    }
+                                  } else {
+                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
+                                  }
+                                } else if (poly) {
+                                  const cx = snap(mx);
+                                  const ys = segIntersectV(cx, poly);
+                                  if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0] + 4, y2: ys[1] - 4 }]);
+                                } else if (!frame) {
+                                  setDW([...els, { id: Date.now(), type: "montante", x: snap(mx), y1: fY, y2: fY + fH }]);
+                                }
+                                return;
+                              }
+                              if (drawMode === "place-trav") {
+                                const cell = findCellAt(mx, my);
+                                if (cell) {
+                                  const cy = snap(my);
+                                  const clampedY = Math.max(cell.y + 10, Math.min(cell.y + cell.h - 10, cy));
+                                  if (poly) {
+                                    const xs = segIntersectH(clampedY, poly);
+                                    if (xs) {
+                                      const tx1c = Math.max(xs[0] + 4, cell.x);
+                                      const tx2c = Math.min(xs[1] - 4, cell.x + cell.w);
+                                      setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: tx1c, x2: tx2c }]);
+                                    }
+                                  } else {
+                                    setDW([...els, { id: Date.now(), type: "traverso", y: clampedY, x1: cell.x, x2: cell.x + cell.w }]);
+                                  }
+                                } else if (poly) {
+                                  const cy = snap(my);
+                                  const xs = segIntersectH(cy, poly);
+                                  if (xs) setDW([...els, { id: Date.now(), type: "traverso", y: cy, x1: xs[0] + 4, x2: xs[1] - 4 }]);
+                                } else if (!frame) {
+                                  setDW([...els, { id: Date.now(), type: "traverso", y: snap(my), x1: fX, x2: fX + fW }]);
+                                }
+                                return;
+                              }
+
+                              // Place modes — click on cell OR polygon fallback for complex shapes
+                              if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
+                                let cell = findCellAt(mx, my);
+                                if (!cell && cells.length === 0) {
+                                  // Extract polygon from freeLines
+                                  const lines = els.filter(e => e.type === "freeLine");
+                                  if (lines.length >= 3) {
+                                    // Build ordered point chain from connected lines
+                                    const pts = [];
+                                    const used = new Set();
+                                    const addPt = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
+                                    // Start with first line
+                                    addPt(lines[0].x1, lines[0].y1);
+                                    addPt(lines[0].x2, lines[0].y2);
+                                    used.add(0);
+                                    for (let iter = 0; iter < lines.length; iter++) {
+                                      const last = pts[pts.length - 1];
+                                      for (let li = 0; li < lines.length; li++) {
+                                        if (used.has(li)) continue;
+                                        const l = lines[li];
+                                        const d1 = Math.hypot(l.x1 - last[0], l.y1 - last[1]);
+                                        const d2 = Math.hypot(l.x2 - last[0], l.y2 - last[1]);
+                                        if (d1 < 15) { addPt(l.x2, l.y2); used.add(li); break; }
+                                        if (d2 < 15) { addPt(l.x1, l.y1); used.add(li); break; }
+                                      }
+                                    }
+                                    if (pts.length >= 3) {
+                                      cell = { id: "poly", poly: pts };
+                                    }
+                                  }
+                                  // Fallback to bbox if polygon extraction failed
+                                  if (!cell) {
+                                    const allLines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
+                                    if (allLines.length > 0) {
+                                      const allX = allLines.flatMap(l => [l.x1, l.x2]);
+                                      const allY = allLines.flatMap(l => [l.y1, l.y2]);
+                                      cell = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX) - Math.min(...allX), h: Math.max(...allY) - Math.min(...allY), id: "bbox" };
+                                    }
+                                  }
+                                }
+                                if (!cell) return;
+                                
+                                // Polygon shape handling
+                                if (cell.poly) {
+                                  if (drawMode === "place-anta" || drawMode === "place-porta") {
+                                    const newEls = els.filter(e => e.type !== "polyAnta");
+                                    newEls.push({ id: Date.now(), type: "polyAnta", poly: cell.poly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    setDW(newEls);
+                                  } else if (drawMode === "place-vetro") {
+                                    const newEls = els.filter(e => e.type !== "polyGlass");
+                                    newEls.push({ id: Date.now(), type: "polyGlass", poly: cell.poly });
+                                    setDW(newEls);
+                                  } else if (drawMode === "place-persiana") {
+                                    const newEls = els.filter(e => e.type !== "polyPersiana");
+                                    newEls.push({ id: Date.now(), type: "polyPersiana", poly: cell.poly });
+                                    setDW(newEls);
+                                  }
+                                  return;
+                                }
+                                
+                                // Match elements to cell by position overlap (BSP IDs change dynamically)
+                                const inCell = (el2) => el2.x !== undefined && el2.w !== undefined &&
+                                  el2.x >= cell.x - 2 && el2.y >= cell.y - 2 &&
+                                  el2.x + el2.w <= cell.x + cell.w + 2 && el2.y + el2.h <= cell.y + cell.h + 2;
+                                
+                                // Regular cell handling
+                                if (drawMode === "place-anta") {
+                                  const existingAnta = els.find(e => (e.type === "innerRect" || e.type === "persiana") && inCell(e));
+                                  if (existingAnta) {
+                                    const midX = snap(cell.x + cell.w / 2);
+                                    const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana" || e.type === "glass") && inCell(e)));
+                                    newEls.push({ id: Date.now(), type: "montante", x: midX, y1: cell.y - HM, y2: cell.y + cell.h + HM });
+                                    setDW(newEls);
+                                  } else {
+                                    const newEls = [...els];
+                                    newEls.push({ id: Date.now(), type: "innerRect", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
+                                    setDW(newEls);
+                                  }
+                                } else if (drawMode === "place-porta") {
+                                  const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana") && inCell(e)));
+                                  newEls.push({ id: Date.now(), type: "innerRect", subType: "porta", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
+                                  setDW(newEls);
+                                } else if (drawMode === "place-persiana") {
+                                  const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana") && inCell(e)));
+                                  newEls.push({ id: Date.now(), type: "persiana", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
+                                  setDW(newEls);
+                                } else if (drawMode === "place-vetro") {
+                                  const anta = els.find(e => (e.type === "innerRect") && inCell(e));
+                                  const tk = anta ? (anta.subType === "porta" ? TK_PORTA : TK_ANTA) : 1;
+                                  const base = anta || { x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2 };
+                                  const newEls = els.filter(e => !(e.type === "glass" && inCell(e)));
+                                  newEls.push({ id: Date.now(), type: "glass", x: base.x + tk, y: base.y + tk, w: base.w - tk * 2, h: base.h - tk * 2, cellId: cell.id });
+                                  setDW(newEls);
+                                }
+                                return;
+                              }
+
+                              if (drawMode === "place-ap") {
+                                let cell = findCellAt(mx, my);
+                                if (!cell && cells.length === 0) {
+                                  const lines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
+                                  if (lines.length > 0) {
+                                    const allX = lines.flatMap(l => [l.x1, l.x2]);
+                                    const allY = lines.flatMap(l => [l.y1, l.y2]);
+                                    cell = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX) - Math.min(...allX), h: Math.max(...allY) - Math.min(...allY), id: "bbox" };
+                                  }
+                                }
+                                if (!cell) return;
+                                const t = Date.now();
+                                // Remove old aperture elements in this cell by position
+                                const inC = (el2) => el2.x !== undefined ? (el2.x >= cell.x - 3 && el2.x <= cell.x + cell.w + 3 && el2.y >= cell.y - 3 && el2.y <= cell.y + cell.h + 3) :
+                                  (el2.x1 !== undefined && el2.x1 >= cell.x - 3 && el2.x1 <= cell.x + cell.w + 3 && el2.y1 >= cell.y - 3 && el2.y1 <= cell.y + cell.h + 3);
+                                const newEls = els.filter(e => !((e.type === "apLine" || e.type === "apLabel") && inC(e)));
+                                const P = 6;
+                                const L = cell.x + P, R = cell.x + cell.w - P;
+                                const T2 = cell.y + P, B = cell.y + cell.h - P;
+                                const MX = cell.x + cell.w / 2, MY = cell.y + cell.h / 2;
+                                const ap = placeApType;
+                                if (ap === "SX") {
+                                  // Cardine sinistro: triangolo simmetrico, cardine a SX
+                                  newEls.push({ id: t, type: "apLine", x1: L, y1: B, x2: R, y2: B, cellId: cell.id, dash: true });
+                                  newEls.push({ id: t + 1, type: "apLine", x1: L, y1: B, x2: MX, y2: T2, cellId: cell.id });
+                                  newEls.push({ id: t + 2, type: "apLabel", x: MX - cell.w * 0.2, y: MY + 5, label: "← SX", cellId: cell.id });
+                                } else if (ap === "DX") {
+                                  // Cardine destro: triangolo simmetrico, cardine a DX
+                                  newEls.push({ id: t, type: "apLine", x1: L, y1: B, x2: R, y2: B, cellId: cell.id, dash: true });
+                                  newEls.push({ id: t + 1, type: "apLine", x1: R, y1: B, x2: MX, y2: T2, cellId: cell.id });
+                                  newEls.push({ id: t + 2, type: "apLabel", x: MX + cell.w * 0.2, y: MY + 5, label: "DX →", cellId: cell.id });
+                                } else if (ap === "RIB") {
+                                  // Ribalta: triangolo simmetrico dal basso-centro verso alto
+                                  newEls.push({ id: t, type: "apLine", x1: L, y1: T2, x2: R, y2: T2, cellId: cell.id, dash: true });
+                                  newEls.push({ id: t + 1, type: "apLine", x1: MX, y1: B, x2: L, y2: T2, cellId: cell.id });
+                                  newEls.push({ id: t + 2, type: "apLine", x1: MX, y1: B, x2: R, y2: T2, cellId: cell.id });
+                                  newEls.push({ id: t + 3, type: "apLabel", x: MX, y: MY + 5, label: "↕ RIB", cellId: cell.id });
+                                } else if (ap === "OB") {
+                                  // Anta-ribalta: SX simmetrico (solido) + RIB (tratteggiato)
+                                  newEls.push({ id: t, type: "apLine", x1: L, y1: B, x2: MX, y2: T2, cellId: cell.id });
+                                  newEls.push({ id: t + 1, type: "apLine", x1: MX, y1: B, x2: L, y2: T2, cellId: cell.id, dash: true });
+                                  newEls.push({ id: t + 2, type: "apLine", x1: MX, y1: B, x2: R, y2: T2, cellId: cell.id, dash: true });
+                                  newEls.push({ id: t + 3, type: "apLabel", x: MX, y: MY, label: "↙↕ OB", cellId: cell.id });
+                                } else if (ap === "ALZ") {
+                                  newEls.push({ id: t, type: "apLine", x1: L, y1: MY, x2: R, y2: MY, cellId: cell.id });
+                                  newEls.push({ id: t + 1, type: "apLine", x1: R - 12, y1: MY - 8, x2: R, y2: MY, cellId: cell.id });
+                                  newEls.push({ id: t + 2, type: "apLine", x1: R - 12, y1: MY + 8, x2: R, y2: MY, cellId: cell.id });
+                                  newEls.push({ id: t + 3, type: "apLabel", x: MX, y: MY - 14, label: "→ ALZ", cellId: cell.id });
+                                } else if (ap === "SCO") {
+                                  newEls.push({ id: t, type: "apLine", x1: L, y1: MY, x2: R, y2: MY, cellId: cell.id });
+                                  newEls.push({ id: t + 1, type: "apLine", x1: L + 10, y1: MY - 8, x2: L, y2: MY, cellId: cell.id });
+                                  newEls.push({ id: t + 2, type: "apLine", x1: R - 10, y1: MY - 8, x2: R, y2: MY, cellId: cell.id });
+                                  newEls.push({ id: t + 3, type: "apLabel", x: MX, y: MY - 14, label: "↔ SCO", cellId: cell.id });
+                                } else if (ap === "FISSO") {
+                                  newEls.push({ id: t, type: "apLine", x1: L, y1: T2, x2: R, y2: B, cellId: cell.id });
+                                  newEls.push({ id: t + 1, type: "apLine", x1: R, y1: T2, x2: L, y2: B, cellId: cell.id });
+                                  newEls.push({ id: t + 2, type: "apLabel", x: MX, y: MY, label: "FISSO", cellId: cell.id });
+                                }
+                                setDW(newEls);
+                                return;
+                              }
+
+                              // Line / apertura draw modes
+                              if (drawMode === "line" || drawMode === "apertura") {
+                                const sp = findSnap(mx, my);
+                                let px = sp ? sp.x : snap(mx);
+                                let py = sp ? sp.y : snap(my);
+                                const pending = dw._pendingLine;
+                                if (pending) {
+                                  // Snap to H/V if within 8px
+                                  const adx = Math.abs(px - pending.x1), ady = Math.abs(py - pending.y1);
+                                  if (adx < 8 && ady > 8) px = pending.x1; // vertical snap
+                                  if (ady < 8 && adx > 8) py = pending.y1; // horizontal snap
+                                }
+                                if (!pending) {
+                                  setMode({ _pendingLine: { x1: px, y1: py } });
+                                } else {
+                                  if (px === pending.x1 && py === pending.y1) return;
+                                  const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
+                                  // Snap endpoint to any existing freeLine endpoint within snap radius
+                                  const allFLPts3 = els.filter(e => e.type==="freeLine"||e.type==="apLine").flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                  let snapPx = px, snapPy = py;
+                                  for (const pt of allFLPts3) {
+                                    if (Math.hypot(pt.x-px, pt.y-py) < SNAP_R) { snapPx=pt.x; snapPy=pt.y; break; }
+                                  }
+                                  setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: snapPx, y2: snapPy }], { _pendingLine: { x1: snapPx, y1: snapPy } });
+                                }
+                                return;
+                              }
+
+                              // Default — deselect
+                              setMode({ selectedId: null });
+                            };
+
+                            // ══ Styles ══
+                            const bs = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.purple : T.bdr}`, background: active ? `${T.purple}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? T.purple : T.text });
+                            const bAp = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
+                            const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
+
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" ? "crosshair" : drawMode ? "pointer" : "default";
+
+                            return (
+                              <div style={{ marginTop: 8, background: T.card, borderRadius: 12, border: `1.5px solid ${T.purple}`, overflow: "hidden" }}>
+                                {/* Header */}
+                                <div style={{ padding: "8px 12px", background: `${T.purple}10`, display: "flex", alignItems: "center", gap: 8 }}>
+                                  <span style={{ fontSize: 14 }}>✏️</span>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: T.purple, flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
+                                  <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
+                                </div>
+
+                                {/* ═══ TAB BAR ═══ */}
+                                <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
+                                  {[{ id: "disegno", l: "✏️ Disegno", c: T.purple }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }, { id: "cnc", l: "⚙️ CNC", c: "#1A9E73" }].map(tab => (
+                                    <div key={tab.id} onClick={() => setViewTab(tab.id)}
+                                      style={{ flex: 1, padding: "7px 0", textAlign: "center", fontSize: 11, fontWeight: viewTab === tab.id ? 800 : 500, color: viewTab === tab.id ? tab.c : T.sub, borderBottom: viewTab === tab.id ? `2.5px solid ${tab.c}` : "2.5px solid transparent", cursor: "pointer", transition: "all 0.15s" }}>
+                                      {tab.l}
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* ═══ TAB: FORMA ═══ */}
+                                {viewTab === "forma" && <FormaEditor T={T} realW={realW} realH={realH} />}
+
+                                {/* ═══ TAB: CNC ═══ */}
+                                {viewTab === "cnc" && (() => {
+                                  // ── Calcola lista tagli dal disegno ──
+                                  const TEAL = "#1A9E73";
+                                  const RED = "#DC4444";
+                                  const AMB = "#D08008";
+                                  const BLU = "#3B7FE0";
+
+                                  // Sistema selezionato
+                                  const sis = (sistemiDB||[]).find((s:any)=>s.id===sistemaSel);
+                                  const bautiefe = parseFloat(sis?.bautiefe||sis?.spessore||70);
+                                  const kerf = 3.5; // mm perdita da lama
+                                  const barraLen = 6000; // mm barra standard
+
+                                  // Scala canvas → mm reali
+                                  const sc2mm = (v:number, axis:"w"|"h") =>
+                                    axis==="w" ? v/fW*realW : v/fH*realH;
+
+                                  // Estrai pezzi da tagliare
+                                  const pezzi:any[] = [];
+
+                                  // Telai (rect)
+                                  frames.forEach((fr:any,i:number)=>{
+                                    const W = Math.round(sc2mm(fr.w,"w"));
+                                    const H = Math.round(sc2mm(fr.h,"h"));
+                                    pezzi.push({id:`T${i}A`,tipo:"Telaio",desc:`Telaio SX/DX`,profilo:sis?.codice||"—",L:H,angolo:90,qty:2,col:"#3B7FE0"});
+                                    pezzi.push({id:`T${i}B`,tipo:"Telaio",desc:`Telaio SUP/INF`,profilo:sis?.codice||"—",L:W,angolo:45,qty:2,col:"#3B7FE0"});
+                                  });
+
+                                  // Montanti
+                                  allMontanti.forEach((m:any,i:number)=>{
+                                    const y1=m.y1||m.y||0, y2=m.y2||(m.y+(m.h||fH))||fH;
+                                    const L=Math.round(sc2mm(y2-y1,"h"));
+                                    pezzi.push({id:`M${i}`,tipo:"Montante",desc:`Montante centrale`,profilo:sis?.codice||"—",L,angolo:90,qty:1,col:"#8B5CF6"});
+                                  });
+
+                                  // Traversi
+                                  allTraversi.forEach((t:any,i:number)=>{
+                                    const x1=t.x1||t.x||0, x2=t.x2||(t.x+(t.w||fW))||fW;
+                                    const L=Math.round(sc2mm(x2-x1,"w"));
+                                    pezzi.push({id:`V${i}`,tipo:"Traverso",desc:`Traverso`,profilo:sis?.codice||"—",L,angolo:45,qty:1,col:"#F97316"});
+                                  });
+
+                                  // Ante (innerRect)
+                                  els.filter((e:any)=>e.type==="innerRect"||e.type==="polyAnta").forEach((a:any,i:number)=>{
+                                    const W=Math.round(sc2mm(a.w||80,"w"));
+                                    const H=Math.round(sc2mm(a.h||100,"h"));
+                                    const isSub = a.subType==="porta";
+                                    pezzi.push({id:`A${i}a`,tipo:isSub?"Porta":"Anta",desc:`${isSub?"Porta":"Anta"} SX/DX`,profilo:"Flügel",L:H,angolo:90,qty:2,col:"#1A9E73"});
+                                    pezzi.push({id:`A${i}b`,tipo:isSub?"Porta":"Anta",desc:`${isSub?"Porta":"Anta"} SUP/INF`,profilo:"Flügel",L:W,angolo:45,qty:2,col:"#1A9E73"});
+                                  });
+
+                                  // Applica kerf a ogni pezzo (angolo 45° perde 2×kerf, 90° perde 0)
+                                  const pezziTaglio = pezzi.map(p=>({
+                                    ...p,
+                                    Lnetto: p.L - (p.angolo===45 ? kerf*2 : 0)
+                                  }));
+
+                                  // Ottimizzazione barre (greedy)
+                                  const ottimizza = () => {
+                                    const lunghezze = [...pezziTaglio].flatMap(p=>Array(p.qty).fill({...p})).sort((a,b)=>b.Lnetto-a.Lnetto);
+                                    const barre:any[] = [];
+                                    lunghezze.forEach(pz=>{
+                                      let placed=false;
+                                      for(const b of barre){
+                                        const usato=b.pezzi.reduce((s:number,x:any)=>s+x.Lnetto+kerf,0);
+                                        if(usato+pz.Lnetto+kerf<=barraLen){
+                                          b.pezzi.push(pz);b.usato=usato+pz.Lnetto+kerf;placed=true;break;
+                                        }
+                                      }
+                                      if(!placed)barre.push({id:barre.length+1,pezzi:[pz],usato:pz.Lnetto+kerf});
+                                    });
+                                    return barre;
+                                  };
+                                  const barre = ottimizza();
+                                  const totBarre = barre.length;
+                                  const totSfrido = barre.reduce((s:number,b:any)=>s+(barraLen-b.usato),0);
+                                  const efficienza = Math.round((1-totSfrido/(totBarre*barraLen))*100);
+
+                                  // Export EWX (formato Emmegi CENTRO 2)
+                                  const exportEWX = () => {
+                                    const now = new Date().toISOString().slice(0,10);
+                                    let ewx = `<?xml version="1.0" encoding="UTF-8"?>
+<EWX Version="1.0" Date="${now}">
+`;
+                                    ewx += `  <Program Name="${vanoNome||'FINESTRA'}" System="${sis?.codice||'PROFILO'}" Kerf="${kerf}">
+`;
+                                    pezziTaglio.forEach(p=>{
+                                      for(let q=0;q<p.qty;q++){
+                                        ewx += `    <Bar Code="${p.id}_${q+1}" Profile="${p.profilo}" Length="${p.Lnetto}" Angle1="${p.angolo}" Angle2="${p.angolo}" Type="${p.tipo}"/>
+`;
+                                      }
+                                    });
+                                    ewx += `  </Program>
+</EWX>`;
+                                    const blob=new Blob([ewx],{type:"application/xml"});
+                                    const url=URL.createObjectURL(blob);
+                                    const a=document.createElement("a");a.href=url;a.download=`${vanoNome||'finestra'}_cnc.ewx`;a.click();
+                                    URL.revokeObjectURL(url);
+                                  };
+
+                                  // Export CSV
+                                  const exportCSV = () => {
+                                    let csv="Tipo;Descrizione;Profilo;Lunghezza netta (mm);Angolo;Quantità\n";
+                                    pezziTaglio.forEach(p=>{csv+=`${p.tipo};${p.desc};${p.profilo};${p.Lnetto};${p.angolo}°;${p.qty}\n`;});
+                                    const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+                                    const url=URL.createObjectURL(blob);
+                                    const a=document.createElement("a");a.href=url;a.download=`${vanoNome||'finestra'}_tagli.csv`;a.click();
+                                    URL.revokeObjectURL(url);
+                                  };
+
+                                  return (
+                                    <div style={{padding:"16px 20px",fontFamily:"Inter,sans-serif"}}>
+                                      {/* Header */}
+                                      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+                                        <div style={{flex:1}}>
+                                          <div style={{fontSize:16,fontWeight:800,color:"#1A1A1C"}}>Lista tagli CNC</div>
+                                          <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{vanoNome} · {realW}×{realH}mm · {sis?.codice||"Nessun sistema"}</div>
+                                        </div>
+                                        <div style={{display:"flex",gap:8}}>
+                                          <div onClick={exportCSV} style={{padding:"8px 14px",borderRadius:8,border:`1px solid ${TEAL}`,color:TEAL,fontSize:12,fontWeight:700,cursor:"pointer"}}>CSV</div>
+                                          <div onClick={exportEWX} style={{padding:"8px 14px",borderRadius:8,background:TEAL,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}}>Export EWX</div>
+                                        </div>
+                                      </div>
+
+                                      {/* Sistema selector se non selezionato */}
+                                      {!sis&&(sistemiDB||[]).length>0&&(
+                                        <div style={{padding:"12px 16px",background:"#FEF3C7",borderRadius:10,marginBottom:16,border:"1px solid #D08008",fontSize:12,color:"#92400E"}}>
+                                          ⚠️ Seleziona un sistema profilo dalla barra in alto per calcolare i tagli con le dimensioni reali
+                                        </div>
+                                      )}
+
+                                      {/* Stats barre */}
+                                      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>
+                                        {[
+                                          {n:pezziTaglio.reduce((s:number,p:any)=>s+p.qty,0),l:"Pezzi totali",c:AMB},
+                                          {n:totBarre,l:`Barre ${(barraLen/1000).toFixed(1)}m`,c:BLU},
+                                          {n:efficienza+"%",l:"Efficienza",c:TEAL},
+                                          {n:Math.round(totSfrido)+"mm",l:"Sfrido totale",c:totSfrido>500?RED:TEAL},
+                                        ].map((s,i)=>(
+                                          <div key={i} style={{background:"#F9F8F5",border:"1px solid #E5E3DC",borderRadius:8,padding:"10px 12px",textAlign:"center"}}>
+                                            <div style={{fontSize:20,fontWeight:800,color:s.c}}>{s.n}</div>
+                                            <div style={{fontSize:10,color:"#86868b",marginTop:1}}>{s.l}</div>
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      {/* Parametri */}
+                                      <div style={{display:"flex",gap:12,marginBottom:16,padding:"10px 14px",background:"#F9F8F5",borderRadius:8,border:"1px solid #E5E3DC",fontSize:11,alignItems:"center",flexWrap:"wrap",gap:16}}>
+                                        <div><span style={{color:"#86868b"}}>Bautiefe: </span><strong>{bautiefe}mm</strong></div>
+                                        <div><span style={{color:"#86868b"}}>Kerf lama: </span><strong style={{color:AMB}}>{kerf}mm</strong></div>
+                                        <div><span style={{color:"#86868b"}}>Barra std: </span><strong>{barraLen/1000}m</strong></div>
+                                        <div><span style={{color:"#86868b"}}>Scala canvas: </span><strong style={{fontSize:10,fontFamily:"JetBrains Mono,monospace"}}>{realW}×{realH}mm</strong></div>
+                                      </div>
+
+                                      {/* Tabella pezzi */}
+                                      <div style={{background:"#fff",border:"1px solid #E5E3DC",borderRadius:10,overflow:"hidden",marginBottom:16}}>
+                                        <div style={{padding:"10px 14px",background:"#F9F8F5",borderBottom:"1px solid #E5E3DC",display:"grid",gridTemplateColumns:"80px 1fr 90px 90px 70px 50px",gap:8,fontSize:10,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:"0.04em"}}>
+                                          <span>Tipo</span><span>Descrizione</span><span>Profilo</span><span>L netta (mm)</span><span>Angolo</span><span>Qt.</span>
+                                        </div>
+                                        {pezziTaglio.map((p:any)=>(
+                                          <div key={p.id} style={{display:"grid",gridTemplateColumns:"80px 1fr 90px 90px 70px 50px",gap:8,alignItems:"center",padding:"9px 14px",borderBottom:"1px solid #F2F1EC",fontSize:13}}>
+                                            <span style={{padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700,background:p.col+"15",color:p.col,textAlign:"center"}}>{p.tipo}</span>
+                                            <span style={{color:"#1A1A1C"}}>{p.desc}</span>
+                                            <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,color:"#86868b"}}>{p.profilo}</span>
+                                            <span style={{fontFamily:"JetBrains Mono,monospace",fontWeight:700,color:"#1A1A1C"}}>{p.Lnetto}</span>
+                                            <span style={{fontSize:11,color:"#86868b"}}>{p.angolo}°</span>
+                                            <span style={{fontWeight:700,color:"#1A1A1C"}}>{p.qty}×</span>
+                                          </div>
+                                        ))}
+                                        {pezziTaglio.length===0&&<div style={{padding:"24px",textAlign:"center",color:"#86868b",fontSize:12}}>Nessun elemento nel disegno — disegna telaio, montanti e ante nel tab Disegno</div>}
+                                      </div>
+
+                                      {/* Ottimizzazione barre */}
+                                      {barre.length>0&&(
+                                        <div>
+                                          <div style={{fontSize:12,fontWeight:700,color:"#1A1A1C",marginBottom:10}}>Ottimizzazione barre ({barraLen/1000}m)</div>
+                                          {barre.map((b:any)=>{
+                                            const eff=Math.round(b.usato/barraLen*100);
+                                            return(
+                                              <div key={b.id} style={{marginBottom:8,border:"1px solid #E5E3DC",borderRadius:8,overflow:"hidden"}}>
+                                                <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"#F9F8F5",borderBottom:"1px solid #E5E3DC"}}>
+                                                  <span style={{fontSize:11,fontWeight:700,color:"#1A1A1C"}}>Barra #{b.id}</span>
+                                                  <span style={{fontSize:10,color:"#86868b"}}>{b.pezzi.length} pezzi</span>
+                                                  <div style={{flex:1,height:6,background:"#E5E3DC",borderRadius:3,overflow:"hidden"}}>
+                                                    <div style={{width:eff+"%",height:"100%",background:eff>85?TEAL:eff>60?AMB:RED,borderRadius:3,transition:"width .3s"}}/>
+                                                  </div>
+                                                  <span style={{fontSize:11,fontWeight:700,color:eff>85?TEAL:eff>60?AMB:RED}}>{eff}%</span>
+                                                  <span style={{fontSize:10,color:"#86868b"}}>sfrido {barraLen-Math.round(b.usato)}mm</span>
+                                                </div>
+                                                {/* Visualizzazione grafica barra */}
+                                                <div style={{padding:"8px 12px",display:"flex",gap:2,alignItems:"center"}}>
+                                                  {b.pezzi.map((pz:any,pi:number)=>{
+                                                    const pct=pz.Lnetto/barraLen*100;
+                                                    return(
+                                                      <div key={pi} title={`${pz.desc} ${pz.Lnetto}mm`}
+                                                        style={{height:20,width:pct+"%",minWidth:2,background:pz.col,borderRadius:2,position:"relative",overflow:"hidden"}}>
+                                                        {pct>8&&<span style={{position:"absolute",left:4,top:3,fontSize:8,color:"#fff",whiteSpace:"nowrap",fontWeight:700}}>{pz.Lnetto}</span>}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                  <div style={{flex:1,height:20,background:"#F2F1EC",borderRadius:2,minWidth:2}}/>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* ═══ TAB: 3D ═══ */}
+                                {viewTab === "3d" && <View3D T={T} realW={realW} realH={realH} vanoDisegno={vanoDisegno} onUpdate={onUpdate} />}
+
+                                {/* ═══ TAB: DISEGNO (originale) ═══ */}
+                                {viewTab === "disegno" && <>
+
+                                {/* ── Selector sistema profilo + toggle sezione DXF ── */}
+                                {(sistemiDB || []).length > 0 && (
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "#1A1A1C", borderBottom: `1px solid ${T.bdr}` }}>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D08008" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <select value={sistemaSel} onChange={(e: any) => setSistemaSel(e.target.value)}
+                                      style={{ flex: 1, background: "#2A2A2E", border: "1px solid #3A3A3E", borderRadius: 5, fontSize: 11, color: "#fff", padding: "3px 6px", fontFamily: "Inter,sans-serif", outline: "none" }}>
+                                      <option value="">— Sistema profilo (opzionale) —</option>
+                                      {(sistemiDB || []).map((s: any) => (
+                                        <option key={s.id} value={s.id}>{s.codice || s.sistema} — {s.nome}{s.bautiefe ? ` (${s.bautiefe}mm)` : ""}</option>
+                                      ))}
+                                    </select>
+                                    {sistemaSel && (
+                                      <div onClick={() => setShowSezione(!showSezione)}
+                                        style={{ padding: "3px 10px", borderRadius: 5, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any,
+                                          background: showSezione ? "#D08008" : "#2A2A2E",
+                                          color: showSezione ? "#fff" : "#666",
+                                          border: `1px solid ${showSezione ? "#D08008" : "#3A3A3E"}` }}>
+                                        {showSezione ? "◉ Sezione" : "○ Sezione"}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Mode indicators */}
+                                <div style={{ padding: "4px 8px 0", display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                  {drawMode === "line" && <span style={{ fontSize: 9, background: "#333", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>╱ STRUTTURA</span>}
+                                  {drawMode === "apertura" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>↗ APERTURA</span>}
+                                  {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") && <span style={{ fontSize: 9, background: T.grn, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 CLICK su cella</span>}
+                                  {(drawMode === "place-mont" || drawMode === "place-trav") && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {drawMode === "place-mont" ? "MONTANTE" : "TRAVERSO"} — click cella</span>}
+                                  {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
+                                </div>
+
+                                {/* Row 1: Struttura */}
+                                <div style={{ display: "flex", gap: 3, padding: "5px 8px", overflowX: "auto" }}>
+                                  <div onClick={() => {
+                                    if (frames.length === 0) {
+                                      // First telaio: fill canvas
+                                      setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
+                                    } else {
+                                      // Additional telaio (zoppo): add offset
+                                      const lastF = frames[frames.length - 1];
+                                      const nw = lastF.w * 0.6, nh = lastF.h * 0.5;
+                                      const nx = lastF.x + lastF.w - TK_FRAME;
+                                      const ny = lastF.y + lastF.h - nh;
+                                      setDW([...els, { id: Date.now(), type: "rect", x: snap(nx), y: snap(ny), w: snap(nw), h: snap(nh) }]);
+                                    }
+                                  }} style={bs()}>▭ Telaio</div>
+
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null })} style={bs(drawMode === "place-mont")}>┃ Mont.</div>
+
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null })} style={bs(drawMode === "place-trav")}>━ Trav.</div>
+
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}>🪟 Anta</div>
+
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}>🚪 Porta</div>
+
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}>▤ Pers.</div>
+
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-vetro" ? null : "place-vetro", _pendingLine: null })} style={bs(drawMode === "place-vetro")}>💎 Vetro</div>
+
+                                  <div onClick={() => {
+                                    const cx = frame ? frame.x + frame.w / 2 : fX + fW / 2;
+                                    const cy = frame ? frame.y + frame.h / 2 : fY + fH / 2;
+                                    setDW([...els, { id: Date.now(), type: "circle", cx, cy, r: Math.min(fW, fH) / 4 }]);
+                                  }} style={bs()}>⭕ Oblò</div>
+
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" ? null : "line", _pendingLine: null })} style={bs(drawMode === "line")}>╱ Linea</div>
+
+                                  <div onClick={() => {
+                                    const txt = prompt("Testo etichetta:");
+                                    if (!txt) return;
+                                    const cx2 = frame ? frame.x + frame.w / 2 : fX + fW / 2;
+                                    const cy2 = frame ? frame.y + frame.h / 2 : fY + fH / 2;
+                                    setDW([...els, { id: Date.now(), type: "label", x: cx2, y: cy2, text: txt, fontSize: 11 }]);
+                                  }} style={bs()}>Aa Testo</div>
+
+                                  <div onClick={() => {
+                                    // Preserve existing dim labels (user may have edited them)
+                                    const oldDims = els.filter(e => e.type === "dim");
+                                    const findOldLabel = (x1, y1, x2, y2, fallback, marker?) => {
+                                      // First try marker-based match (survives rescale)
+                                      if (marker) {
+                                        const byMarker = oldDims.find(d => d.isTotalDim === marker);
+                                        if (byMarker) return byMarker.label;
+                                      }
+                                      // Fallback: coordinate match
+                                      const match = oldDims.find(d => Math.abs(d.x1 - x1) < 8 && Math.abs(d.y1 - y1) < 8 && Math.abs(d.x2 - x2) < 8 && Math.abs(d.y2 - y2) < 8);
+                                      return match ? match.label : fallback;
+                                    };
+                                    // Remove ALL dims (they get fully regenerated below, deduplicating any legacy orphans)
+                                    const nEls = els.filter(e => e.type !== "dim");
+                                    if (frame) {
+                                      const wLabel = findOldLabel(frame.x, frame.y + frame.h + 14, frame.x + frame.w, frame.y + frame.h + 14, String(realW), "W");
+                                      const hLabel = findOldLabel(frame.x + frame.w + 14, frame.y, frame.x + frame.w + 14, frame.y + frame.h, String(realH), "H");
+                                      nEls.push(
+                                        { id: Date.now() + 300, type: "dim", isTotalDim: "W", x1: frame.x, y1: frame.y + frame.h + 14, x2: frame.x + frame.w, y2: frame.y + frame.h + 14, label: wLabel },
+                                        { id: Date.now() + 301, type: "dim", isTotalDim: "H", x1: frame.x + frame.w + 14, y1: frame.y, x2: frame.x + frame.w + 14, y2: frame.y + frame.h, label: hLabel }
+                                      );
+                                      // Use frame.w/frame.h as px reference, and dim labels as mm reference
+                                      const totalWmm = parseInt(wLabel) || realW;
+                                      const totalHmm = parseInt(hLabel) || realH;
+                                      const iT = frame.y + TK_FRAME, iL = frame.x + TK_FRAME;
+                                      const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a, b) => a.x - b.x);
+                                      if (topCells.length > 1) topCells.forEach((c2, i) => {
+                                        const def = String(Math.round(c2.w / frame.w * totalWmm));
+                                        nEls.push({ id: Date.now() + 310 + i, type: "dim", x1: c2.x, y1: frame.y - 10, x2: c2.x + c2.w, y2: frame.y - 10, label: findOldLabel(c2.x, frame.y - 10, c2.x + c2.w, frame.y - 10, def) });
+                                      });
+                                      const leftCells = cells.filter(c2 => Math.abs(c2.x - iL) < 4).sort((a, b) => a.y - b.y);
+                                      if (leftCells.length > 1) leftCells.forEach((c2, i) => {
+                                        const def = String(Math.round(c2.h / frame.h * totalHmm));
+                                        nEls.push({ id: Date.now() + 330 + i, type: "dim", x1: frame.x - 14, y1: c2.y, x2: frame.x - 14, y2: c2.y + c2.h, label: findOldLabel(frame.x - 14, c2.y, frame.x - 14, c2.y + c2.h, def) });
+                                      });
+                                    } else if (poly) {
+                                      const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+                                      const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
+                                      // Bounding box total dims
+                                      nEls.push(
+                                        { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: String(realW) },
+                                        { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: String(realH) }
+                                      );
+                                      // Per-segment dimensions (each freeLine side)
+                                      const freeLines = els.filter(e => e.type === "freeLine");
+                                      const totalPx = Math.hypot(bR - bL, bB - bT);
+                                      freeLines.forEach((fl, fi) => {
+                                        const dx2 = fl.x2 - fl.x1, dy2 = fl.y2 - fl.y1;
+                                        const segPx = Math.hypot(dx2, dy2);
+                                        // Convert px to mm using diagonal ratio
+                                        const diagMM = Math.hypot(realW, realH);
+                                        const segMM = Math.round(segPx / totalPx * diagMM);
+                                        // Offset dim line outward from polygon center
+                                        const cx = (bL + bR) / 2, cy = (bT + bB) / 2;
+                                        const mx = (fl.x1 + fl.x2) / 2, my = (fl.y1 + fl.y2) / 2;
+                                        const toCx = cx - mx, toCy = cy - my;
+                                        const dist = Math.hypot(toCx, toCy) || 1;
+                                        const offX = -toCx / dist * 16, offY = -toCy / dist * 16;
+                                        nEls.push({ id: Date.now() + 350 + fi, type: "dim", x1: fl.x1 + offX, y1: fl.y1 + offY, x2: fl.x2 + offX, y2: fl.y2 + offY, label: String(segMM) });
+                                      });
+                                      // Per-cell dims
+                                      if (cells.length > 1) {
+                                        const topCells = cells.filter(c2 => Math.abs(c2.y - bT) < 6).sort((a, b) => a.x - b.x);
+                                        if (topCells.length > 1) topCells.forEach((c2, i) => nEls.push({ id: Date.now() + 370 + i, type: "dim", x1: c2.x, y1: bT - 10, x2: c2.x + c2.w, y2: bT - 10, label: String(Math.round(c2.w / (bR - bL) * realW)) }));
+                                        const leftCells = cells.filter(c2 => Math.abs(c2.x - bL) < 6).sort((a, b) => a.y - b.y);
+                                        if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 390 + i, type: "dim", x1: bL - 14, y1: c2.y, x2: bL - 14, y2: c2.y + c2.h, label: String(Math.round(c2.h / (bB - bT) * realH)) }));
+                                      }
+                                    }
+                                    setDW(nEls);
+                                  }} style={{...bs(), display: frames.length > 0 ? undefined : "none"}}>↔ Misure</div>
+                                </div>
+
+                                {/* Row 2: Aperture (blu) */}
+                                <div style={{ display: "flex", gap: 3, padding: "2px 8px 5px", overflowX: "auto" }}>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}>↗ Disegna</div>
+                                  <span style={{ fontSize: 9, color: T.sub, alignSelf: "center" }}>|</span>
+                                  {[
+                                    { id: "SX", l: "← SX" }, { id: "DX", l: "DX →" }, { id: "RIB", l: "↕ Rib." },
+                                    { id: "OB", l: "↙↕ OB" }, { id: "ALZ", l: "→ Alz." }, { id: "SCO", l: "↔ Sco." }, { id: "FISSO", l: "✕ Fisso" },
+                                  ].map(ap => (
+                                    <div key={ap.id} onClick={() => setMode({ drawMode: "place-ap", _placeApType: ap.id, _pendingLine: null })} style={bAp(drawMode === "place-ap" && placeApType === ap.id)}>{ap.l}</div>
+                                  ))}
+                                </div>
+
+                                {/* Row 3: Azioni */}
+                                <div style={{ display: "flex", gap: 3, padding: "0 8px 6px", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={undo} style={bDel(T.acc)}>↩ Annulla</div>
+                                  {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>🗑 Elimina sel.</div>}
+                                  <div style={{ flex: 1 }} />
+                                  <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
+                                  <div style={{ flex: 1 }} />
+                                  <div onClick={() => setMode({ _zoom: Math.max(0.5, (zoom || 1) - 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>−</div>
+                                  <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, minWidth: 32, textAlign: "center" }}>{Math.round(zoom * 100)}%</div>
+                                  <div onClick={() => setMode({ _zoom: Math.min(4, (zoom || 1) + 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>+</div>
+                                  <div onClick={() => setMode({ _zoom: 1, _panX: 0, _panY: 0 })} style={{ ...bs(), fontSize: 9 }}>Fit</div>
+                                </div>
+
+                                {/* Edit bar freeLine */}
+                                {editingLine && (
+                                  <div style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px", background:`${T.acc}10`, borderBottom:`1.5px solid ${T.acc}` }}>
+                                    <span style={{ fontSize:11, fontWeight:700, color:T.acc }}>Misura lato (mm)</span>
+                                    <input autoFocus type="number" value={editingLineVal}
+                                      onChange={e => setEditingLineVal(e.target.value)}
+                                      onKeyDown={e => {
+                                        if (e.key === "Escape") { setEditingLine(null); return; }
+                                        if (e.key !== "Enter") return;
+                                        const newMM = parseInt(editingLineVal);
+                                        if (!isNaN(newMM) && newMM > 0 && editingLine?.el) {
+                                          const el2 = editingLine.el;
+                                          const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
+                                          const curLen = Math.hypot(dx2,dy2)||1;
+                                          const currentMM = editingLine.mmLen || 1;
+                                          const ratio = newMM / currentMM;
+                                          const newPxLen = curLen * ratio;
+                                          const ux = dx2/curLen, uy = dy2/curLen;
+                                          const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
+                                          const obx = el2.x2, oby = el2.y2;
+                                          const freshEls = (vanoDisegnoRef.current?.elements) || [];
+                                          const updEls = freshEls.map(x => {
+                                            if (x.type==="freeLine"||x.type==="apLine") {
+                                              let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
+                                              if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
+                                              else {
+                                                if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
+                                                if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
+                                              }
+                                              return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                            }
+                                            return x;
+                                          });
+                                          const curDw = vanoDisegnoRef.current || {};
+                                          const hist = [...(curDw.history||[]).slice(-20), JSON.stringify(freshEls)];
+                                          onUpdate({...curDw, elements: updEls, history: hist});
+                                        }
+                                        setEditingLine(null);
+                                      }}
+                                      style={{ width:80, fontSize:14, fontWeight:700, border:`1.5px solid ${T.acc}`, borderRadius:4, padding:"3px 6px", outline:"none" }}
+                                    />
+                                    <span style={{ fontSize:11, color:T.sub }}>mm</span>
+                                    <div onClick={() => {
+                                      const newMM = parseInt(editingLineVal);
+                                      if (!isNaN(newMM) && newMM > 0 && editingLine?.el) {
+                                        const el2 = editingLine.el;
+                                        const dx2 = el2.x2-el2.x1, dy2 = el2.y2-el2.y1;
+                                        const curLen = Math.hypot(dx2,dy2)||1;
+                                        const currentMM = editingLine.mmLen || 1;
+                                        const ratio = newMM / currentMM;
+                                        const newPxLen = curLen * ratio;
+                                        const ux = dx2/curLen, uy = dy2/curLen;
+                                        const newBx = snap(el2.x1+ux*newPxLen), newBy = snap(el2.y1+uy*newPxLen);
+                                        const obx = el2.x2, oby = el2.y2;
+                                        // Use fresh elements from dw to avoid stale closure
+                                        const freshEls = (vanoDisegnoRef.current?.elements) || [];
+                                        const updEls = freshEls.map(x => {
+                                          if (x.type==="freeLine"||x.type==="apLine") {
+                                            let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2,changed=false;
+                                            if (x.id===el2.id){nx2=newBx;ny2=newBy;changed=true;}
+                                            else {
+                                              if(Math.abs(x.x1-obx)<3&&Math.abs(x.y1-oby)<3){nx1=newBx;ny1=newBy;changed=true;}
+                                              if(Math.abs(x.x2-obx)<3&&Math.abs(x.y2-oby)<3){nx2=newBx;ny2=newBy;changed=true;}
+                                            }
+                                            return changed?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
+                                          }
+                                          return x;
+                                        });
+                                        const curDw = vanoDisegnoRef.current || {};
+                                        const hist = [...(curDw.history||[]).slice(-20), JSON.stringify(freshEls)];
+                                        onUpdate({...curDw, elements: updEls, history: hist});
+                                      }
+                                      setEditingLine(null);
+                                    }} style={{ padding:"4px 12px", background:T.acc, color:"#fff", borderRadius:4, fontSize:12, fontWeight:700, cursor:"pointer" }}>OK</div>
+                                    <div onClick={() => setEditingLine(null)} style={{ padding:"4px 8px", color:T.sub, cursor:"pointer", fontSize:16 }}>×</div>
+                                  </div>
+                                )}
+
+                                {/* Pannello sezione profilo DXF */}
+                                {showSezione && sistemaAttivo && (
+                                  <div style={{ position: "absolute", top: 8, right: 8, zIndex: 20, filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.4))" }}>
+                                    <SezioneProfilo sistema={sistemaAttivo} width={220} height={180}/>
+                                  </div>
+                                )}
+                                {/* SVG Canvas — zoomable with wheel + pannable */}
+                                <div style={{ overflow: "auto", position: "relative", maxHeight: "70vh", border: `1px solid ${T.bdr}` }}>
+                                <svg width={canvasW * Math.max(1, zoom)} height={canvasH * Math.max(1, zoom)}
+                                  viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
+                                  style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default") }}
+                                  onClick={onSvgClick}
+                                  onWheel={(e2) => {
+                                    e2.preventDefault();
+                                    const newZoom = Math.max(0.5, Math.min(4, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
+                                    setMode({ _zoom: newZoom });
+                                  }}
+                                  onMouseDown={(e2) => {
+                                    // Pan with middle mouse or shift+left
+                                    if (e2.button === 1 || (e2.shiftKey && e2.button === 0)) {
+                                      e2.preventDefault();
+                                      const sx = e2.clientX, sy = e2.clientY;
+                                      const sp = panX, spp = panY;
+                                      const onPM = (ev) => {
+                                        const ndx = (ev.clientX - sx) / zoom;
+                                        const ndy = (ev.clientY - sy) / zoom;
+                                        onUpdate({ ...dw, _panX: sp - ndx, _panY: spp - ndy });
+                                      };
+                                      const onPU = () => { document.removeEventListener("mousemove", onPM); document.removeEventListener("mouseup", onPU); };
+                                      document.addEventListener("mousemove", onPM);
+                                      document.addEventListener("mouseup", onPU);
+                                    }
+                                  }}
+                                  onMouseMove={(e2) => {
+                                    const svg = e2.currentTarget;
+                                    const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
+                                    let gx = snap(gmx), gy = snap(gmy);
+                                    // Crosshair for place-mont / place-trav
+                                    if (drawMode === "place-mont" || drawMode === "place-trav") {
+                                      if (dw._guideX !== gx || dw._guideY !== gy) onUpdate({ ...dw, _guideX: gx, _guideY: gy });
+                                      return;
+                                    }
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
+                                    const p = dw._pendingLine;
+                                    if (Math.abs(gx - p.x1) < 8 && Math.abs(gy - p.y1) > 8) gx = p.x1;
+                                    if (Math.abs(gy - p.y1) < 8 && Math.abs(gx - p.x1) > 8) gy = p.y1;
+                                    const deg = Math.round(Math.atan2(-(gy - p.y1), gx - p.x1) * 180 / Math.PI);
+                                    const len = Math.round(Math.hypot(gx - p.x1, gy - p.y1) / fW * realW);
+                                    if (dw._guideX !== gx || dw._guideY !== gy) {
+                                      onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                    }
+                                  }}
+                                  onTouchMove={(e2) => {
+                                    const svg = e2.currentTarget;
+                                    const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
+                                    let gx = snap(gmx), gy = snap(gmy);
+                                    if (drawMode === "place-mont" || drawMode === "place-trav") {
+                                      if (dw._guideX !== gx || dw._guideY !== gy) onUpdate({ ...dw, _guideX: gx, _guideY: gy });
+                                      return;
+                                    }
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
+                                    const p = dw._pendingLine;
+                                    if (Math.abs(gx - p.x1) < 8 && Math.abs(gy - p.y1) > 8) gx = p.x1;
+                                    if (Math.abs(gy - p.y1) < 8 && Math.abs(gx - p.x1) > 8) gy = p.y1;
+                                    const deg = Math.round(Math.atan2(-(gy - p.y1), gx - p.x1) * 180 / Math.PI);
+                                    const len = Math.round(Math.hypot(gx - p.x1, gy - p.y1) / fW * realW);
+                                    onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                  }}
+                                  onMouseLeave={() => { if (dw._guideX != null) onUpdate({ ...dw, _guideX: null, _guideY: null }); }}>
+                                  <defs>
+                                    <pattern id={`dg-${vanoId}`} width={GRID} height={GRID} patternUnits="userSpaceOnUse">
+                                      <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="#f0f0f0" strokeWidth="0.5" />
+                                    </pattern>
+                                    {poly && <clipPath id={`polyClip-${vanoId}`}><polygon points={poly.map(p => p.join(",")).join(" ")} /></clipPath>}
+                                  </defs>
+                                  <rect width={canvasW} height={canvasH} fill={`url(#dg-${vanoId})`} />
+
+                                  {/* Cell highlights in place mode — clipped to polygon if present */}
+                                  {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-ap" || drawMode === "place-mont" || drawMode === "place-trav" || drawMode === "place-porta" || drawMode === "place-persiana") && cells.length > 0 && (
+                                    <g clipPath={poly ? `url(#polyClip-${vanoId})` : undefined}>
+                                      {cells.map(c2 => (
+                                        <rect key={`cell-${c2.id}`} x={c2.x + 1} y={c2.y + 1} width={c2.w - 2} height={c2.h - 2}
+                                          fill={drawMode === "place-ap" ? T.blue : drawMode === "place-mont" || drawMode === "place-trav" ? "#555" : T.grn} fillOpacity={0.06}
+                                          stroke={drawMode === "place-ap" ? T.blue : drawMode === "place-mont" || drawMode === "place-trav" ? "#555" : T.grn} strokeWidth={1} strokeDasharray="4,3" rx={2} />
+                                      ))}
+                                    </g>
+                                  )}
+                                  {/* Polygon shape highlight when no cells but freeLines exist */}
+                                  {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-ap" || drawMode === "place-porta" || drawMode === "place-persiana") && cells.length === 0 && (() => {
+                                    const lines = els.filter(e => e.type === "freeLine");
+                                    if (lines.length < 2) return null;
+                                    // Build point chain from connected lines
+                                    const pts = [];
+                                    const used = new Set();
+                                    const addPt = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
+                                    addPt(lines[0].x1, lines[0].y1); addPt(lines[0].x2, lines[0].y2); used.add(0);
+                                    for (let iter = 0; iter < lines.length; iter++) {
+                                      const last = pts[pts.length - 1];
+                                      for (let li = 0; li < lines.length; li++) {
+                                        if (used.has(li)) continue;
+                                        const l = lines[li];
+                                        if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 15) { addPt(l.x2, l.y2); used.add(li); break; }
+                                        if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 15) { addPt(l.x1, l.y1); used.add(li); break; }
+                                      }
+                                    }
+                                    const clr = drawMode === "place-ap" ? T.blue : T.grn;
+                                    if (pts.length >= 3) {
+                                      return <polygon points={pts.map(p => p.join(",")).join(" ")} fill={clr} fillOpacity={0.08} stroke={clr} strokeWidth={1.5} strokeDasharray="6,4" />;
+                                    }
+                                    // Fallback to bbox
+                                    const allX = lines.flatMap(l => [l.x1, l.x2]), allY = lines.flatMap(l => [l.y1, l.y2]);
+                                    return <rect x={Math.min(...allX)+1} y={Math.min(...allY)+1} width={Math.max(...allX)-Math.min(...allX)-2} height={Math.max(...allY)-Math.min(...allY)-2}
+                                      fill={clr} fillOpacity={0.08} stroke={clr} strokeWidth={1.5} strokeDasharray="6,4" rx={2} />;
+                                  })()}
+
+                                  {/* Snap points in draw mode */}
+                                  {(drawMode === "line" || drawMode === "apertura") && getSnapPoints().map((p, pi) => (
+                                    <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
+                                  ))}
+
+                                  {/* ══ CLOSED POLYGON PROFILE (proper mitered corners) ══ */}
+                                  {poly && poly.length >= 3 && (() => {
+                                    // Usa stesso approccio path SVG del blocco aperto — angoli perfetti
+                                    const pts3 = [...poly, poly[0]]; // chiudi il path
+                                    const d3 = pts3.map((p,i) => `${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ") + " Z";
+                                    const tk = TK_FRAME;
+                                    return (
+                                      <g>
+                                        <path d={d3} fill="none" stroke="#f0efe8" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} />
+                                        <path d={d3} fill="none" stroke="#1A1A1C" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} />
+                                        <path d={d3} fill="none" stroke="#f0efe8" strokeWidth={tk*2} strokeLinejoin="miter" strokeMiterlimit={10} />
+                                        <path d={d3} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit={10} opacity={0.4} />
+                                        {poly.map((p, pi) => <circle key={`pc${pi}`} cx={p[0]} cy={p[1]} r={3.5} fill="#333" />)}
+                                      </g>
+                                    );
+                                  })()}
+
+                                  {/* ══ FREELINE UNIFIED PATH (angoli perfetti con miter) ══ */}
+                                  {(() => {
+                                    const fls = els.filter(e => e.type === "freeLine");
+                                    if (fls.length === 0 || poly) return null;
+                                    // Costruisce catena ordinata di punti
+                                    const used2 = new Set<number>();
+                                    const chain: [number,number][] = [[fls[0].x1, fls[0].y1], [fls[0].x2, fls[0].y2]];
+                                    used2.add(0);
+                                    for (let it2 = 0; it2 < fls.length * 2; it2++) {
+                                      const last2 = chain[chain.length-1];
+                                      let found = false;
+                                      for (let li2 = 0; li2 < fls.length; li2++) {
+                                        if (used2.has(li2)) continue;
+                                        const l2 = fls[li2];
+                                        if (Math.hypot(l2.x1-last2[0], l2.y1-last2[1]) < 30) { chain.push([l2.x2,l2.y2]); used2.add(li2); found=true; break; }
+                                        if (Math.hypot(l2.x2-last2[0], l2.y2-last2[1]) < 30) { chain.push([l2.x1,l2.y1]); used2.add(li2); found=true; break; }
+                                      }
+                                      if (!found) break;
+                                    }
+                                    const d2 = chain.map((p,i) => `${i===0?"M":"L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+                                    const tk = TK_FRAME;
+                                    return (
+                                      <g>
+                                        <path d={d2} fill="none" stroke="#f0efe8" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" />
+                                        <path d={d2} fill="none" stroke="#1A1A1C" strokeWidth={tk*2+2} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" />
+                                        <path d={d2} fill="none" stroke="#f0efe8" strokeWidth={tk*2} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" />
+                                        <path d={d2} fill="none" stroke="#1A1A1C" strokeWidth={0.7} strokeLinejoin="miter" strokeMiterlimit={10} strokeLinecap="square" opacity={0.4} />
+                                      </g>
+                                    );
+                                  })()}
+
+                                  {/* ══ ELEMENTS (non-strutturali) ══ */}
+                                  {els.filter(el => el.type !== "montante" && el.type !== "traverso").map(el => {
+                                    const sel = el.id === selId;
+                                    const hc = sel ? T.purple : undefined;
+                                    const dp = !drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id), style: { cursor: "move" } } : {};
+
+                                    // ═══ TELAIO — doppio rettangolo con spessore ═══
+                                    if (el.type === "rect") return (
+                                      <g key={el.id} {...dp}>
+                                        <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f8f8f6" stroke={hc || "#1A1A1C"} strokeWidth={1.5} rx={1} />
+                                        <rect x={el.x + TK_FRAME} y={el.y + TK_FRAME} width={el.w - TK_FRAME * 2} height={el.h - TK_FRAME * 2} fill="none" stroke={hc || "#1A1A1C"} strokeWidth={1} rx={0.5} />
+                                        {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={T.purple} />)}
+                                      </g>
+                                    );
+
+                                    // ═══ MONTANTE — clipped to polygon ═══
+                                    if (el.type === "montante") {
+                                      let my1: number, my2: number;
+                                      if (frame) {
+                                        my1 = el.y1 !== undefined ? el.y1 : frame.y;
+                                        my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
+                                      } else if (poly) {
+                                        // Use stored y1/y2 from placement — already clamped to cell, no extra offset
+                                        my1 = el.y1 !== undefined ? el.y1 : fY;
+                                        my2 = el.y2 !== undefined ? el.y2 : fY + fH;
+                                      } else {
+                                        // Forma aperta: interseca con i segmenti freeLine
+                                        const fls2 = els.filter(e => e.type === "freeLine");
+                                        const pts2 = (() => {
+                                          if (fls2.length === 0) return null;
+                                          // Build ordered chain
+                                          const used3 = new Set<number>();
+                                          const ch: [number,number][] = [[fls2[0].x1,fls2[0].y1],[fls2[0].x2,fls2[0].y2]];
+                                          used3.add(0);
+                                          for (let it3=0;it3<fls2.length*2;it3++){
+                                            const last3=ch[ch.length-1];let found3=false;
+                                            for(let li3=0;li3<fls2.length;li3++){
+                                              if(used3.has(li3))continue;
+                                              const l3=fls2[li3];
+                                              if(Math.hypot(l3.x1-last3[0],l3.y1-last3[1])<30){ch.push([l3.x2,l3.y2]);used3.add(li3);found3=true;break;}
+                                              if(Math.hypot(l3.x2-last3[0],l3.y2-last3[1])<30){ch.push([l3.x1,l3.y1]);used3.add(li3);found3=true;break;}
+                                            }
+                                            if(!found3)break;
+                                          }
+                                          return ch;
+                                        })();
+                                        if (pts2 && pts2.length >= 2) {
+                                          const ys2 = segIntersectV(el.x, pts2);
+                                          if (ys2) { my1 = ys2[0]; my2 = ys2[1]; }
+                                          else { const allY2=fls2.flatMap(l=>[l.y1,l.y2]); my1=Math.min(...allY2); my2=Math.max(...allY2); }
+                                        } else { my1=fY; my2=fY+fH; }
+                                      }
+                                      // Clamp montante to actual poly boundary
+                                      if (poly) {
+                                        const ysClip = segIntersectV(el.x, poly);
+                                        if (ysClip) { my1 = Math.max(my1, ysClip[0]); my2 = Math.min(my2, ysClip[1]); }
+                                      }
+                                      return (
+                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
+                                          <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                          {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ TRAVERSO — clipped to polygon ═══
+                                    if (el.type === "traverso") {
+                                      let tx1: number, tx2: number;
+                                      // Helper: raccorda traverso ai montanti che coprono la sua y
+                                      // Usa x1/x2 originali come riferimento (non aggiornati in loop)
+                                      const raccordaMontanti = (baseX1: number, baseX2: number, frameRef: any) => {
+                                        const mid = (baseX1 + baseX2) / 2;
+                                        let r1 = baseX1, r2 = baseX2;
+                                        allMontanti.forEach(m => {
+                                          const my1r = m.y1 !== undefined ? m.y1 : (frameRef ? frameRef.y : fY);
+                                          const my2r = m.y2 !== undefined ? m.y2 : (frameRef ? frameRef.y + frameRef.h : fY + fH);
+                                          if (el.y > my1r - 4 && el.y < my2r + 4) {
+                                            if (m.x < mid && m.x > baseX1 - 2) r1 = Math.max(r1, m.x + HM);
+                                            if (m.x > mid && m.x < baseX2 + 2) r2 = Math.min(r2, m.x - HM);
+                                          }
+                                        });
+                                        return { r1, r2 };
+                                      };
+                                      if (frame) {
+                                        const baseX1 = el.x1 !== undefined ? el.x1 : frame.x;
+                                        const baseX2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
+                                        const { r1, r2 } = raccordaMontanti(baseX1, baseX2, frame);
+                                        tx1 = r1; tx2 = r2;
+                                      } else if (poly) {
+                                        let baseX1 = el.x1 !== undefined ? el.x1 : fX;
+                                        let baseX2 = el.x2 !== undefined ? el.x2 : fX + fW;
+                                        // Clamp to actual poly boundary at this Y
+                                        const xsClip = segIntersectH(el.y, poly);
+                                        if (xsClip) { baseX1 = Math.max(baseX1, xsClip[0]); baseX2 = Math.min(baseX2, xsClip[1]); }
+                                        const { r1, r2 } = raccordaMontanti(baseX1, baseX2, null);
+                                        tx1 = r1; tx2 = r2;
+                                      } else {
+                                        const fls2 = els.filter(e => e.type === "freeLine");
+                                        const pts2b = (() => {
+                                          if (fls2.length === 0) return null;
+                                          const used3b = new Set<number>();
+                                          const ch2: [number,number][] = [[fls2[0].x1,fls2[0].y1],[fls2[0].x2,fls2[0].y2]];
+                                          used3b.add(0);
+                                          for(let it3b=0;it3b<fls2.length*2;it3b++){
+                                            const last3b=ch2[ch2.length-1];let found3b=false;
+                                            for(let li3b=0;li3b<fls2.length;li3b++){
+                                              if(used3b.has(li3b))continue;
+                                              const l3b=fls2[li3b];
+                                              if(Math.hypot(l3b.x1-last3b[0],l3b.y1-last3b[1])<30){ch2.push([l3b.x2,l3b.y2]);used3b.add(li3b);found3b=true;break;}
+                                              if(Math.hypot(l3b.x2-last3b[0],l3b.y2-last3b[1])<30){ch2.push([l3b.x1,l3b.y1]);used3b.add(li3b);found3b=true;break;}
+                                            }
+                                            if(!found3b)break;
+                                          }
+                                          return ch2;
+                                        })();
+                                        if (pts2b && pts2b.length >= 2) {
+                                          const xs2b = segIntersectH(el.y, pts2b);
+                                          if (xs2b) { tx1 = xs2b[0]; tx2 = xs2b[1]; }
+                                          else { const allX2=fls2.flatMap(l=>[l.x1,l.x2]); tx1=Math.min(...allX2); tx2=Math.max(...allX2); }
+                                        } else { tx1=fX; tx2=fX+fW; }
+                                      }
+                                      return (
+                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
+                                          <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                          {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ ANTA — doppio rettangolo, clipped to polygon ═══
+                                    if (el.type === "innerRect") {
+                                      const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                      const clr = hc || "#1A1A1C";
+                                      const swOuter = el.subType === "porta" ? 2 : 1.2;
+                                      const swInner = el.subType === "porta" ? 1.5 : 0.8;
+                                      const isPorta = el.subType === "porta";
+                                      return (
+                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          {/* Outer rect */}
+                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="none" stroke={clr} strokeWidth={swOuter} />
+                                          {/* Fill spessore profilo — grigio tra outer e inner */}
+                                          {isPorta && <rect x={el.x + 1} y={el.y + 1} width={el.w - 2} height={el.h - 2} fill="#d0cec8" stroke="none" />}
+                                          {/* Inner rect con fill bianco per svuotare il centro */}
+                                          <rect x={el.x + tk} y={el.y + tk} width={el.w - tk * 2} height={el.h - tk * 2} fill={isPorta ? "#f8f8f6" : "none"} stroke={clr} strokeWidth={swInner} />
+                                          {isPorta && <text x={el.x + el.w / 2} y={el.y + 14} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700}>PORTA</text>}
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ PERSIANA — clipped to polygon ═══
+                                    if (el.type === "persiana") {
+                                      const slats = [];
+                                      const gap = 8;
+                                      const pk = 3;
+                                      for (let sy = el.y + pk + gap; sy < el.y + el.h - pk; sy += gap) slats.push(sy);
+                                      return (
+                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f5f0e8" stroke={hc || "#8a7a60"} strokeWidth={1} />
+                                          <rect x={el.x + pk} y={el.y + pk} width={el.w - pk * 2} height={el.h - pk * 2} fill="none" stroke={hc || "#8a7a60"} strokeWidth={0.5} />
+                                          {slats.map((sy2, si) => <line key={si} x1={el.x + pk + 1} y1={sy2} x2={el.x + el.w - pk - 1} y2={sy2} stroke={hc || "#a09080"} strokeWidth={0.8} />)}
+                                          <text x={el.x + el.w / 2} y={el.y + 10} textAnchor="middle" fontSize={6} fill="#8a7a60" fontWeight={700}>PERSIANA</text>
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ VETRO — clipped to polygon ═══
+                                    if (el.type === "glass") return (
+                                      <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
+                                        <line x1={el.x} y1={el.y} x2={el.x + Math.min(el.w, el.h) * 0.3} y2={el.y + Math.min(el.w, el.h) * 0.3} stroke="#b0d4f0" strokeWidth={0.5} />
+                                      </g>
+                                    );
+
+                                    // ═══ POLYGON ANTA — follows actual shape ═══
+                                    if (el.type === "polyAnta" && el.poly) {
+                                      const pts = el.poly;
+                                      const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                      const clr = hc || "#1A1A1C";
+                                      const swOuter = el.subType === "porta" ? 2 : 1.2;
+                                      const swInner = el.subType === "porta" ? 1.5 : 0.8;
+                                      const isPorta = el.subType === "porta";
+                                      const outerPts = pts.map(p => p.join(",")).join(" ");
+                                      const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+                                      const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+                                      const innerPts = pts.map(p => {
+                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
+                                        const dist = Math.hypot(dx2, dy2) || 1;
+                                        return [(p[0] + dx2 / dist * tk), (p[1] + dy2 / dist * tk)];
+                                      });
+                                      const innerStr = innerPts.map(p => p.join(",")).join(" ");
+                                      return (
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          <polygon points={outerPts} fill={isPorta ? "#d0cec8" : "#f8f8f6"} fillOpacity={isPorta ? 1 : 0.3} stroke={clr} strokeWidth={swOuter} />
+                                          <polygon points={innerStr} fill="#f8f8f6" stroke={clr} strokeWidth={swInner} />
+                                          {isPorta && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ POLYGON VETRO — glass following shape ═══
+                                    if (el.type === "polyGlass" && el.poly) {
+                                      const pts = el.poly;
+                                      const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+                                      const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+                                      const shrink = TK_ANTA + 2;
+                                      const glassPts = pts.map(p => {
+                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
+                                        const dist = Math.hypot(dx2, dy2) || 1;
+                                        return [(p[0] + dx2 / dist * shrink), (p[1] + dy2 / dist * shrink)];
+                                      });
+                                      return (
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          <polygon points={glassPts.map(p => p.join(",")).join(" ")} fill="#d8ecf8" fillOpacity={0.25} stroke={hc || "#8bb8e8"} strokeWidth={0.5} />
+                                          <line x1={glassPts[0][0]} y1={glassPts[0][1]} x2={cx2} y2={cy2} stroke="#b0d4f0" strokeWidth={0.4} />
+                                        </g>
+                                      );
+                                    }
+
+                                    // ═══ POLYGON PERSIANA — slats following shape ═══
+                                    if (el.type === "polyPersiana" && el.poly) {
+                                      const pts = el.poly;
+                                      const outerPts = pts.map(p => p.join(",")).join(" ");
+                                      const allY2 = pts.map(p => p[1]);
+                                      const minY2 = Math.min(...allY2), maxY2 = Math.max(...allY2);
+                                      const allX2 = pts.map(p => p[0]);
+                                      const minX2 = Math.min(...allX2), maxX2 = Math.max(...allX2);
+                                      const clipId = `pers-${el.id}`;
+                                      const slats = [];
+                                      for (let sy = minY2 + 10; sy < maxY2 - 4; sy += 8) slats.push(sy);
+                                      return (
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          <defs><clipPath id={clipId}><polygon points={outerPts} /></clipPath></defs>
+                                          <polygon points={outerPts} fill="#f5f0e8" stroke={hc || "#8a7a60"} strokeWidth={1} />
+                                          <g clipPath={`url(#${clipId})`}>
+                                            {slats.map((sy, si) => <line key={si} x1={minX2 + 4} y1={sy} x2={maxX2 - 4} y2={sy} stroke="#a09080" strokeWidth={0.8} />)}
+                                          </g>
+                                        </g>
+                                      );
+                                    }
+
+                                    if (el.type === "circle") return (
+                                      <g key={el.id} {...dp}>
+                                        <circle cx={el.cx} cy={el.cy} r={el.r} fill="#e8f4fc" fillOpacity={0.2} stroke={hc || "#4a90d9"} strokeWidth={sel ? 2.5 : 1.5} />
+                                        {sel && [[el.cx,el.cy-el.r],[el.cx+el.r,el.cy],[el.cx,el.cy+el.r],[el.cx-el.r,el.cy]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={T.purple} />)}
+                                      </g>
+                                    );
+
+                                    // ═══ TEXT LABEL — draggable, editable on double-click ═══
+                                    if (el.type === "label") return (
+                                      <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}
+                                        {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}
+                                        onDoubleClick={() => {
+                                          const newTxt = prompt("Modifica testo:", el.text);
+                                          if (newTxt !== null) setDW(els.map(x => x.id === el.id ? { ...x, text: newTxt } : x));
+                                        }}
+                                        style={{ cursor: drawMode ? undefined : "move" }}>
+                                        {sel && <rect x={el.x - 4} y={el.y - (el.fontSize || 11) - 2} width={Math.max(40, (el.text || "").length * 6)} height={(el.fontSize || 11) + 8} fill={`${T.purple}10`} stroke={T.purple} strokeWidth={1} strokeDasharray="3,2" rx={3} />}
+                                        <text x={el.x} y={el.y} fontSize={el.fontSize || 11} fontWeight={700} fill={hc || "#333"} fontFamily="Inter, sans-serif">{el.text}</text>
+                                      </g>
+                                    );
+
+                                    if (el.type === "freeLine") {
+                                      // Visual rendering handled by unified path block above
+                                      // Here: hit area + label + selection only
+                                      // Even when poly closed: show labels for editing
+                                      const allFL = els.filter(e => e.type === "freeLine");
+                                      const allFLPts = allFL.flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                      const bbW2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.x)) - Math.min(...allFLPts.map(p=>p.x)) : fW;
+                                      const bbH2 = allFLPts.length > 0 ? Math.max(...allFLPts.map(p=>p.y)) - Math.min(...allFLPts.map(p=>p.y)) : fH;
+                                      const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
+                                      const isSegH2 = Math.abs(dy2) <= Math.abs(dx2);
+                                      const mmLen = isSegH2 ? Math.round(Math.abs(dx2) / (bbW2||1) * realW) : Math.round(Math.abs(dy2) / (bbH2||1) * realH);
+                                      const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
+                                      const allFLcx = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.x,0)/allFLPts.length : midX;
+                                      const allFLcy = allFLPts.length>0 ? allFLPts.reduce((s,p)=>s+p.y,0)/allFLPts.length : midY;
+                                      const toCx = allFLcx - midX, toCy = allFLcy - midY;
+                                      const dist2 = Math.hypot(toCx, toCy) || 1;
+                                      const lxRaw = midX - toCx/dist2 * 24, lyRaw = midY - toCy/dist2 * 24;
+                                      const lx = Math.max(20, Math.min(canvasW - 20, lxRaw));
+                                      const ly = Math.max(14, Math.min(canvasH - 14, lyRaw));
+                                      const isEditing = editingLine?.elId === el.id;
+                                      const tw2 = String(mmLen).length * 6 + 16;
+                                      return (
+                                        <g key={el.id} onClick={(e3) => {
+                                            e3.stopPropagation();
+                                            if (drawMode === "line" || drawMode === "apertura") {
+                                              const { mx: cx3, my: cy3 } = getSvgXY(e3, e3.currentTarget.closest("svg"));
+                                              const d1 = Math.hypot(el.x1-cx3, el.y1-cy3), d2 = Math.hypot(el.x2-cx3, el.y2-cy3);
+                                              const snapX = d1 < d2 ? el.x1 : el.x2, snapY = d1 < d2 ? el.y1 : el.y2;
+                                              if (!dw._pendingLine) {
+                                                setMode({ _pendingLine: { x1: snapX, y1: snapY } });
+                                              } else {
+                                                const pending = dw._pendingLine;
+                                                const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
+                                                setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: snapX, y2: snapY }], { _pendingLine: { x1: snapX, y1: snapY } });
+                                              }
+                                            } else if (!drawMode) {
+                                              setMode({ selectedId: el.id });
+                                            }
+                                          }}
+                                          onTouchEnd={(e3) => {
+                                            if (!(drawMode === "line" || drawMode === "apertura")) return;
+                                            e3.stopPropagation();
+                                            const svg = e3.currentTarget.closest("svg");
+                                            const t = e3.changedTouches[0];
+                                            const r3 = svg.getBoundingClientRect();
+                                            const vbW = canvasW/zoom, vbH = canvasH/zoom;
+                                            const cx3 = panX + (t.clientX-r3.left)/r3.width*vbW;
+                                            const cy3 = panY + (t.clientY-r3.top)/r3.height*vbH;
+                                            const d1 = Math.hypot(el.x1-cx3, el.y1-cy3), d2 = Math.hypot(el.x2-cx3, el.y2-cy3);
+                                            const snapX = d1 < d2 ? el.x1 : el.x2, snapY = d1 < d2 ? el.y1 : el.y2;
+                                            const curDw = vanoDisegnoRef.current || dw;
+                                            if (!curDw._pendingLine) {
+                                              setMode({ _pendingLine: { x1: snapX, y1: snapY } });
+                                            } else {
+                                              const pending = curDw._pendingLine;
+                                              const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
+                                              const freshEls = curDw.elements || [];
+                                              setDW([...freshEls, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: snapX, y2: snapY }], { _pendingLine: { x1: snapX, y1: snapY } });
+                                            }
+                                          }}
+                                          {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={16} />
+                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
+                                          {!drawMode && (
+                                            <g onClick={(e3) => { e3.stopPropagation(); setEditingLine({ elId: el.id, el, mmLen }); setEditingLineVal(String(mmLen)); }} style={{ cursor: "pointer" }}>
+                                              <rect x={lx-tw2/2} y={ly-9} width={tw2} height={18} fill={isEditing ? T.acc : "#fff"} rx={3} stroke={T.acc} strokeWidth={isEditing?1.5:0.8} />
+                                              <text x={lx} y={ly+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={isEditing?"#fff":T.acc} fontFamily="monospace">{mmLen}</text>
+                                            </g>
+                                          )}
+                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={T.purple} /><circle cx={el.x2} cy={el.y2} r={5} fill={T.purple} /></>}
+                                        </g>
+                                      );
+                                    }
+
+                                    if (el.type === "apLine") return (
+                                      <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={hc || T.blue} strokeWidth={sel ? 3 : 2} strokeDasharray={el.dash ? "6,4" : "none"} />
+                                        <circle cx={el.x1} cy={el.y1} r={sel ? 5 : 3} fill={hc || T.blue} />
+                                        <circle cx={el.x2} cy={el.y2} r={sel ? 5 : 3} fill={hc || T.blue} />
+                                      </g>
+                                    );
+
+                                    if (el.type === "apLabel") {
+                                      const tw = String(el.label).length * 7 + 14;
+                                      return (
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                          <rect x={el.x - tw / 2} y={el.y - 8} width={tw} height={16} fill={hc || T.blue} rx={3} fillOpacity={0.85} />
+                                          <text x={el.x} y={el.y + 4} textAnchor="middle" fontSize={9} fontWeight={800} fill="#fff">{el.label}</text>
+                                        </g>
+                                      );
+                                    }
+
+                                    if (el.type === "dim") {
+                                      const isH = Math.abs(el.y1 - el.y2) < 2;
+                                      const mx2 = (el.x1 + el.x2) / 2, my2 = (el.y1 + el.y2) / 2;
+                                      const tw = String(el.label).length * 6.5 + 16;
+                                      return (
+                                        <g key={el.id} onClick={(e3) => {
+                                          e3.stopPropagation();
+                                          const nv = prompt("Misura (mm):", el.label);
+                                          if (nv === null || !nv.trim()) return;
+                                          const newVal = parseInt(nv.trim());
+                                          const oldVal = parseInt(el.label);
+                                          let upd = els.map(x => x.id === el.id ? { ...x, label: nv.trim() } : x);
+                                          
+                                          // Rescale structure when dim value changes
+                                          if (!isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal) {
+                                            const scaleRatio = newVal / oldVal;
+                                            if (frame) {
+                                              // Is this a column width? (horizontal dim above or below frame)
+                                              const isColDim = isH && el.y1 < frame.y + frame.h / 2;
+                                              // Is this a row height? (vertical dim left of frame)
+                                              const isRowDim = !isH && el.x1 < frame.x + frame.w / 2;
+                                              // Is this total width/height? Use marker first, then coordinate fallback
+                                              const isTotalW = el.isTotalDim === "W" || (isH && Math.abs(el.x2 - el.x1 - frame.w) < 8);
+                                              const isTotalH = el.isTotalDim === "H" || (!isH && Math.abs(el.y2 - el.y1 - frame.h) < 8);
+
+                                              if (isTotalW) {
+                                                // Rescale entire frame width + all internal elements proportionally
+                                                const oldPxW = frame.w;
+                                                const newPxW = snap(oldPxW * scaleRatio);
+                                                const fx = frame.x;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "rect") return { ...x, w: newPxW };
+                                                  if (x.type === "montante") return { ...x, x: snap(fx + (x.x - fx) * scaleRatio) };
+                                                  if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
+                                                    return { ...x, x: snap(fx + (x.x - fx) * scaleRatio), w: snap(x.w * scaleRatio) };
+                                                  if (x.type === "dim" && x.id !== el.id) {
+                                                    // H total dim: reposition to new frame right edge
+                                                    if (x.isTotalDim === "H") return { ...x, x1: fx + newPxW + 14, x2: fx + newPxW + 14 };
+                                                    // Sub-dims: scale proportionally
+                                                    return { ...x, x1: snap(fx + (x.x1 - fx) * scaleRatio), x2: snap(fx + (x.x2 - fx) * scaleRatio) };
+                                                  }
+                                                  return x;
+                                                });
+                                                // Update W dim span
+                                                upd = upd.map(x => x.id === el.id ? { ...x, x2: fx + newPxW } : x);
+                                                onUpdateField && onUpdateField("larghezza", newVal);
+                                              } else if (isTotalH) {
+                                                // Rescale entire frame height + all internal elements proportionally
+                                                const oldPxH = frame.h;
+                                                const newPxH = snap(oldPxH * scaleRatio);
+                                                const fy = frame.y;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "rect") return { ...x, h: newPxH };
+                                                  if (x.type === "traverso") return { ...x, y: snap(fy + (x.y - fy) * scaleRatio) };
+                                                  if (x.type === "innerRect" || x.type === "glass" || x.type === "persiana")
+                                                    return { ...x, y: snap(fy + (x.y - fy) * scaleRatio), h: snap(x.h * scaleRatio) };
+                                                  if (x.type === "dim" && x.id !== el.id) {
+                                                    // W total dim: reposition to new frame bottom
+                                                    if (x.isTotalDim === "W") return { ...x, y1: fy + newPxH + 14, y2: fy + newPxH + 14 };
+                                                    // H dim span update + sub-dims
+                                                    return { ...x, y1: snap(fy + (x.y1 - fy) * scaleRatio), y2: snap(fy + (x.y2 - fy) * scaleRatio) };
+                                                  }
+                                                  return x;
+                                                });
+                                                // Update H dim span
+                                                upd = upd.map(x => x.id === el.id ? { ...x, y2: fy + newPxH } : x);
+                                                onUpdateField && onUpdateField("altezza", newVal);
+                                              } else if (isColDim) {
+                                                const oldPixelW = el.x2 - el.x1;
+                                                const diff = oldPixelW * scaleRatio - oldPixelW;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "montante" && x.x >= el.x2 - 3) return { ...x, x: snap(x.x + diff) };
+                                                  if (x.type === "dim" && x.id !== el.id && x.x1 >= el.x2 - 3) return { ...x, x1: x.x1 + diff, x2: x.x2 + diff };
+                                                  if ((x.type === "innerRect" || x.type === "glass") && x.x >= el.x2 - 5) return { ...x, x: x.x + diff };
+                                                  return x;
+                                                });
+                                                upd = upd.map(x => x.type === "rect" ? { ...x, w: x.w + diff } : x);
+                                              } else if (isRowDim) {
+                                                const oldPixelH = el.y2 - el.y1;
+                                                const diff = oldPixelH * scaleRatio - oldPixelH;
+                                                upd = upd.map(x => {
+                                                  if (x.type === "traverso" && x.y >= el.y2 - 3) return { ...x, y: snap(x.y + diff) };
+                                                  if (x.type === "dim" && x.id !== el.id && x.y1 >= el.y2 - 3) return { ...x, y1: x.y1 + diff, y2: x.y2 + diff };
+                                                  if ((x.type === "innerRect" || x.type === "glass") && x.y >= el.y2 - 5) return { ...x, y: x.y + diff };
+                                                  return x;
+                                                });
+                                                upd = upd.map(x => x.type === "rect" ? { ...x, h: x.h + diff } : x);
+                                              }
+                                            } else {
+                                              // No frame: poly/freeLine case — rescale all elements from bounding box origin
+                                              const allPts = els.filter(e => e.type === "freeLine" || e.type === "apLine").flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                              if (allPts.length > 0) {
+                                                const ox2 = Math.min(...allPts.map(p => p.x));
+                                                const oy2 = Math.min(...allPts.map(p => p.y));
+                                                const bbW = Math.max(...allPts.map(p => p.x)) - ox2;
+                                                const bbH = Math.max(...allPts.map(p => p.y)) - oy2;
+                                                // Is this a total W or H dim?
+                                                const isTotalW2 = isH && Math.abs(el.x2 - el.x1 - bbW) < 8;
+                                                const isTotalH2 = !isH && Math.abs(el.y2 - el.y1 - bbH) < 8;
+                                                if (isTotalW2) {
+                                                  upd = upd.map(x => {
+                                                    if (x.type === "freeLine" || x.type === "apLine") return { ...x, x1: snap(ox2 + (x.x1 - ox2) * scaleRatio), x2: snap(ox2 + (x.x2 - ox2) * scaleRatio) };
+                                                    if (x.type === "montante") return { ...x, x: snap(ox2 + (x.x - ox2) * scaleRatio) };
+                                                    if (x.type === "dim" && x.id !== el.id) return { ...x, x1: snap(ox2 + (x.x1 - ox2) * scaleRatio), x2: snap(ox2 + (x.x2 - ox2) * scaleRatio) };
+                                                    return x;
+                                                  });
+                                                  onUpdateField && onUpdateField("larghezza", newVal);
+                                                } else if (isTotalH2) {
+                                                  upd = upd.map(x => {
+                                                    if (x.type === "freeLine" || x.type === "apLine") return { ...x, y1: snap(oy2 + (x.y1 - oy2) * scaleRatio), y2: snap(oy2 + (x.y2 - oy2) * scaleRatio) };
+                                                    if (x.type === "traverso") return { ...x, y: snap(oy2 + (x.y - oy2) * scaleRatio) };
+                                                    if (x.type === "dim" && x.id !== el.id) return { ...x, y1: snap(oy2 + (x.y1 - oy2) * scaleRatio), y2: snap(oy2 + (x.y2 - oy2) * scaleRatio) };
+                                                    return x;
+                                                  });
+                                                  onUpdateField && onUpdateField("altezza", newVal);
+                                                }
+                                              }
+                                            }
+                                          }
+                                          setDW(upd);
+                                        }} style={{ cursor: "pointer" }}>
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.acc} strokeWidth={0.8} />
+                                          {isH ? <><line x1={el.x1} y1={el.y1-5} x2={el.x1} y2={el.y1+5} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2} y1={el.y2-5} x2={el.x2} y2={el.y2+5} stroke={T.acc} strokeWidth={0.8}/></>
+                                            : <><line x1={el.x1-5} y1={el.y1} x2={el.x1+5} y2={el.y1} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2-5} y1={el.y2} x2={el.x2+5} y2={el.y2} stroke={T.acc} strokeWidth={0.8}/></>}
+                                          <rect x={mx2-tw/2} y={my2-9} width={tw} height={18} fill="#fff" rx={3} stroke={T.acc} strokeWidth={0.6}/>
+                                          <text x={mx2} y={my2+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={T.acc} fontFamily="monospace">{el.label}</text>
+                                        </g>
+                                      );
+                                    }
+                                    return null;
+                                  })}
+
+                                  {/* ══ MONTANTI — sempre sotto i traversi ══ */}
+                                  {els.filter(el => el.type === "montante").map(el => {
+                                    const sel = el.id === selId;
+                                    const hc = sel ? T.purple : undefined;
+                                    let my1: number, my2: number;
+                                    if (frame) {
+                                      my1 = el.y1 !== undefined ? el.y1 : frame.y;
+                                      my2 = el.y2 !== undefined ? el.y2 : frame.y + frame.h;
+                                    } else if (poly) {
+                                      my1 = el.y1 !== undefined ? el.y1 : fY;
+                                      my2 = el.y2 !== undefined ? el.y2 : fY + fH;
+                                    } else { my1 = fY; my2 = fY + fH; }
+                                    return (
+                                      <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
+                                        <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                        {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
+                                      </g>
+                                    );
+                                  })}
+
+                                  {/* ══ TRAVERSI — sopra i montanti, fill grigio + rect bianco agli incroci ══ */}
+                                  {els.filter(el => el.type === "traverso").map(el => {
+                                    const sel = el.id === selId;
+                                    const hc = sel ? T.purple : undefined;
+                                    let tx1: number, tx2: number;
+                                    if (frame) {
+                                      tx1 = el.x1 !== undefined ? el.x1 : frame.x;
+                                      tx2 = el.x2 !== undefined ? el.x2 : frame.x + frame.w;
+                                    } else if (poly) {
+                                      tx1 = el.x1 !== undefined ? el.x1 : fX;
+                                      tx2 = el.x2 !== undefined ? el.x2 : fX + fW;
+                                    } else { tx1 = fX; tx2 = fX + fW; }
+                                    // Rect bianchi agli incroci col montante per coprire lo stroke interno
+                                    const incroci = allMontanti.filter(m => {
+                                      const my1r = m.y1 !== undefined ? m.y1 : fY;
+                                      const my2r = m.y2 !== undefined ? m.y2 : fY + fH;
+                                      return m.x > tx1 && m.x < tx2 && el.y > my1r - 4 && el.y < my2r + 4;
+                                    });
+                                    return (
+                                      <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
+                                        <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#3A3A3C"} strokeWidth={1} />
+                                        {/* Copri le linee verticali del montante all'incrocio */}
+                                        {incroci.map(m => (
+                                          <rect key={`inc-${m.id}`} x={m.x - TK_MONT / 2} y={el.y - TK_MONT / 2 + 1} width={TK_MONT} height={TK_MONT - 2} fill="#e8e8e4" stroke="none" />
+                                        ))}
+                                        {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
+                                      </g>
+                                    );
+                                  })}
+
+                                  {/* Pending line point + GUIDE */}
+                                  {dw._pendingLine && (() => {
+                                    const clr = drawMode === "apertura" ? T.blue : "#333";
+                                    const p = dw._pendingLine;
+                                    const gx = dw._guideX, gy = dw._guideY;
+                                    return <>
+                                      {/* Crosshair guide lines from pending point */}
+                                      <line x1={0} y1={p.y1} x2={canvasW} y2={p.y1} stroke={T.acc} strokeWidth={0.8} strokeDasharray="6,4" opacity={0.5} />
+                                      <line x1={p.x1} y1={0} x2={p.x1} y2={canvasH} stroke={T.acc} strokeWidth={0.8} strokeDasharray="6,4" opacity={0.5} />
+                                      {gx != null && gy != null && <>
+                                        <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke="#aaa" strokeWidth={0.5} strokeDasharray="3,3" opacity={0.35} />
+                                        <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke="#aaa" strokeWidth={0.5} strokeDasharray="3,3" opacity={0.35} />
+                                      </>}
+                                      {/* Live guide line to mouse */}
+                                      {gx != null && gy != null && <>
+                                        <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={1} strokeDasharray="6,3" opacity={0.5} />
+                                        {/* H/V snap indicator */}
+                                        {gx === p.x1 && <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
+                                        {gy === p.y1 && <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
+                                        {/* Angle label near cursor */}
+                                        <rect x={gx + 8} y={gy - 22} width={80} height={20} fill="#1A1A1C" rx={4} opacity={0.9} />
+                                        <text x={gx + 48} y={gy - 8} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">
+                                          {dw._guideDeg != null ? `${dw._guideDeg}°` : ""}
+                                        </text>
+                                        {/* BIG mm label at mid-line */}
+                                        {dw._guideLen != null && (() => {
+                                          const mx3 = (p.x1 + gx) / 2, my3 = (p.y1 + gy) / 2;
+                                          const lw3 = String(dw._guideLen).length * 9 + 22;
+                                          return <>
+                                            <rect x={mx3-lw3/2} y={my3-12} width={lw3} height={24} fill={T.acc} rx={4} />
+                                            <text x={mx3} y={my3+6} textAnchor="middle" fontSize={14} fontWeight={800} fill="#fff" fontFamily="monospace">{dw._guideLen}</text>
+                                          </>;
+                                        })()}
+                                      </>}
+                                      <circle cx={p.x1} cy={p.y1} r={6} fill={clr} fillOpacity={0.4} />
+                                      <circle cx={p.x1} cy={p.y1} r={10} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="3,2" />
+                                    </>;
+                                  })()}
+
+                                  {/* Crosshair for place-mont / place-trav */}
+                                  {(drawMode === "place-mont" || drawMode === "place-trav") && dw._guideX != null && dw._guideY != null && (() => {
+                                    const gx = dw._guideX, gy = dw._guideY;
+                                    const clr = "#555";
+                                    return <>
+                                      <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke={clr} strokeWidth={0.7} strokeDasharray="5,4" opacity={0.5} />
+                                      <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke={clr} strokeWidth={0.7} strokeDasharray="5,4" opacity={0.5} />
+                                      <circle cx={gx} cy={gy} r={4} fill="none" stroke={clr} strokeWidth={1.2} />
+                                    </>;
+                                  })()}
+
+                                  {/* Live drag dimension */}
+                                  {dw._dragDim && (() => {
+                                    const dd = dw._dragDim;
+                                    const midY = (dd.y1 + dd.y2) / 2;
+                                    if (dd.type === "v") {
+                                      // Vertical montante — show ← left mm | right mm →
+                                      return <>
+                                        <rect x={dd.x - 62} y={midY - 8} width={56} height={16} fill={T.acc} rx={3} />
+                                        <text x={dd.x - 34} y={midY + 4} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">← {dd.leftMM}</text>
+                                        <rect x={dd.x + 6} y={midY - 8} width={56} height={16} fill={T.acc} rx={3} />
+                                        <text x={dd.x + 34} y={midY + 4} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">{dd.rightMM} →</text>
+                                      </>;
+                                    }
+                                    if (dd.type === "h") {
+                                      const midX = (dd.x1 + dd.x2) / 2;
+                                      return <>
+                                        <rect x={midX - 28} y={dd.y - 22} width={56} height={16} fill={T.acc} rx={3} />
+                                        <text x={midX} y={dd.y - 10} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">↑ {dd.topMM}</text>
+                                        <rect x={midX - 28} y={dd.y + 6} width={56} height={16} fill={T.acc} rx={3} />
+                                        <text x={midX} y={dd.y + 18} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">{dd.botMM} ↓</text>
+                                      </>;
+                                    }
+                                    return null;
+                                  })()}
+                                </svg>
+                                </div>
+
+                                {/* Footer */}
+                                <div style={{ padding: "4px 10px 5px", fontSize: 9, textAlign: "center", color: (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") ? T.grn : (drawMode === "apertura" || drawMode === "place-ap") ? T.blue : (drawMode === "line" || drawMode === "place-mont" || drawMode === "place-trav") ? "#555" : T.sub, fontWeight: drawMode ? 700 : 400 }}>
+                                  {drawMode === "line" ? "⚫ Click per tracciare struttura · Le linee si concatenano"
+                                    : drawMode === "apertura" ? "🔵 Click libero per disegnare apertura in blu"
+                                    : drawMode === "place-mont" ? "⬛ Click su una CELLA per aggiungere il montante verticale"
+                                    : drawMode === "place-trav" ? "⬛ Click su una CELLA per aggiungere il traverso orizzontale"
+                                    : drawMode === "place-anta" ? "🟢 Click sulla CELLA per inserire l'anta"
+                                    : drawMode === "place-porta" ? "🟢 Click sulla CELLA per inserire anta porta (profilo spesso)"
+                                    : drawMode === "place-persiana" ? "🟢 Click sulla CELLA per inserire persiana con stecche"
+                                    : drawMode === "place-vetro" ? "🟢 Click sulla CELLA per inserire il vetro (dentro l'anta)"
+                                    : drawMode === "place-ap" ? `🔵 Click sulla CELLA per apertura ${placeApType}`
+                                    : `${els.length} el. · ${cells.length} celle · Click per selezionare`}
+                                </div>
+                                </>}
+                              </div>
+                            );
 }
