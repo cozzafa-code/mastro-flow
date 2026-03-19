@@ -55,7 +55,7 @@ function VanoPreview({v}:{v:any}){
 }
 
 // ── Kanban drag & drop ───────────────────────────────────────
-function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,sogliaDays}:any){
+function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,sogliaDays,compact=false}:any){
   const [dragId,setDragId]=useState<string|null>(null);
   const [overCol,setOverCol]=useState<string|null>(null);
   const fmtE=(n:number)=>n>0?"€"+Math.round(n).toLocaleString("it-IT"):"—";
@@ -63,7 +63,7 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
   const TEAL="#1A9E73",DARK="#1A1A1C",RED="#DC4444",BLU="#3B7FE0",AMB="#D08008",PUR="#8B5CF6";
 
   return (
-    <div style={{display:"flex",gap:12,minWidth:"max-content",height:"100%",alignItems:"flex-start",padding:"16px 18px",overflowX:"auto"}}>
+    <div style={{display:"flex",gap:compact?8:12,minWidth:"max-content",minHeight:"100%",alignItems:"flex-start",padding:compact?"12px 16px":"16px 18px"}}>
       {pipeline.filter((p:any)=>p.attiva).map((p:any)=>{
         const items=cantieri.filter((c:any)=>c.fase===p.id);
         const col=p.color||TEAL;
@@ -73,7 +73,7 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
             onDragOver={e=>{e.preventDefault();setOverCol(p.id);}}
             onDragLeave={()=>setOverCol(null)}
             onDrop={e=>{e.preventDefault();if(dragId&&dragId!==p.id){onMoveFase(dragId,p.id);}setDragId(null);setOverCol(null);}}
-            style={{minWidth:210,maxWidth:240,display:"flex",flexDirection:"column",gap:8,transition:"background .15s",background:isOver?col+"08":"transparent",borderRadius:12,padding:isOver?"8px":"0",border:isOver?`1.5px dashed ${col}`:"1.5px solid transparent"}}>
+            style={{minWidth:compact?160:210,maxWidth:compact?180:240,width:compact?170:220,display:"flex",flexDirection:"column",gap:compact?4:8,transition:"background .15s",background:isOver?col+"08":"transparent",borderRadius:12,padding:isOver?"8px":"0",border:isOver?`1.5px dashed ${col}`:"1.5px solid transparent"}}>
             {/* Header colonna */}
             <div style={{padding:"8px 12px",borderRadius:9,background:col+"15",border:`1px solid ${col}30`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
               <span style={{fontSize:12,fontWeight:700,color:col}}>{p.nome||p.id}</span>
@@ -92,7 +92,7 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
                   onDragStart={()=>setDragId(c.id)}
                   onDragEnd={()=>{setDragId(null);setOverCol(null);}}
                   onClick={()=>onSelect(c)}
-                  style={{padding:"12px",borderRadius:10,background:"#fff",border:`1px solid ${ferma?RED+"40":"#E5E3DC"}`,cursor:"grab",transition:"box-shadow .15s, opacity .15s",opacity:dragId===c.id?0.4:1,boxShadow:ferma?"0 0 0 1.5px "+RED+"30":"none"}}
+                  style={{padding:compact?"8px":"12px",borderRadius:10,background:"#fff",border:`1px solid ${ferma?RED+"40":"#E5E3DC"}`,cursor:"grab",transition:"box-shadow .15s, opacity .15s",opacity:dragId===c.id?0.4:1,boxShadow:ferma?"0 0 0 1.5px "+RED+"30":"none"}}
                   onMouseEnter={e=>((e.currentTarget as any).style.boxShadow=ferma?"0 2px 12px "+RED+"20":"0 2px 12px rgba(0,0,0,0.08)")}
                   onMouseLeave={e=>((e.currentTarget as any).style.boxShadow=ferma?"0 0 0 1.5px "+RED+"30":"none")}>
                   {/* Header card */}
@@ -112,7 +112,7 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
                     {c.sistema&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:"#F2F1EC",color:"#86868b",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",maxWidth:90,whiteSpace:"nowrap"}}>{c.sistema}</span>}
                   </div>
                   {/* Indirizzo */}
-                  {c.indirizzo&&<div style={{fontSize:10,color:"#86868b",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.indirizzo}</div>}
+                  {c.indirizzo&&!compact&&<div style={{fontSize:10,color:"#86868b",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.indirizzo}</div>}
                   {/* Footer */}
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
                     {ferma?<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:RED+"15",color:RED,fontWeight:700}}>Ferma {gg}gg</span>:<span style={{fontSize:10,color:"#86868b"}}>{c.fase}</span>}
@@ -143,6 +143,7 @@ export default function DesktopCommesse(){
   const [viewMode,setViewMode]=useState<"lista"|"kanban">("lista");
   const [listaW,setListaW]=useState(268);
   const [filters,setFilters]=useState({ferme:false});
+  const [kanbanCompact,setKanbanCompact]=useState(false);
   const dragging=useRef(false);
   const startX=useRef(0);
   const startW=useRef(268);
@@ -238,17 +239,28 @@ export default function DesktopCommesse(){
 
       {/* KANBAN VIEW */}
       {viewMode==="kanban"&&(
-        <div style={{flex:1,overflow:"hidden"}}>
-          <KanbanBoard
-            pipeline={PIPELINE}
-            cantieri={filteredAdv}
-            giorniFermaCM={giorniFermaCM}
-            sogliaDays={sogliaDays}
-            onSelect={(c:any)=>{setSelectedCM(c);setViewMode("lista");setDetTab("rilievi");}}
-            onMoveFase={(cmId:string,newFase:string)=>{
-              setCantieri?.((prev:any[])=>prev.map((c:any)=>c.id===cmId?{...c,fase:newFase}:c));
-            }}
-          />
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {/* Toolbar kanban */}
+          <div style={{padding:"8px 18px",background:"#fff",borderBottom:`1px solid #E5E3DC`,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+            <span style={{fontSize:11,color:"#86868b"}}>{filteredAdv.length} commesse</span>
+            <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+              <div onClick={()=>setKanbanCompact(false)} style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:!kanbanCompact?DARK:"transparent",color:!kanbanCompact?"#fff":"#86868b",border:`1px solid ${!kanbanCompact?DARK:"#E5E3DC"}`}}>Normale</div>
+              <div onClick={()=>setKanbanCompact(true)} style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:kanbanCompact?DARK:"transparent",color:kanbanCompact?"#fff":"#86868b",border:`1px solid ${kanbanCompact?DARK:"#E5E3DC"}`}}>Compatta</div>
+            </div>
+          </div>
+          <div style={{flex:1,overflow:"auto"}}>
+            <KanbanBoard
+              pipeline={PIPELINE}
+              cantieri={filteredAdv}
+              giorniFermaCM={giorniFermaCM}
+              sogliaDays={sogliaDays}
+              compact={kanbanCompact}
+              onSelect={(c:any)=>{setSelectedCM(c);setViewMode("lista");setDetTab("rilievi");}}
+              onMoveFase={(cmId:string,newFase:string)=>{
+                setCantieri?.((prev:any[])=>prev.map((c:any)=>c.id===cmId?{...c,fase:newFase}:c));
+              }}
+            />
+          </div>
         </div>
       )}
 
