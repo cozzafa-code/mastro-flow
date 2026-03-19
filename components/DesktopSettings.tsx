@@ -315,9 +315,9 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
         ))}
         <div style={{width:1,height:18,background:"#2A2A2E",margin:"0 4px"}}/>
         {([
-          {k:"select",l:"↖",title:"Seleziona",c:"#9CA3AF"},
-          {k:"move",l:"✥",title:"Sposta punto",c:"#3B7FE0"},
-          {k:"quota",l:"↔",title:"Quota distanza",c:"#D08008"},
+          {k:"select",l:"",title:"Seleziona",c:"#9CA3AF"},
+          {k:"move",l:"",title:"Sposta punto",c:"#3B7FE0"},
+          {k:"quota",l:"",title:"Quota distanza",c:"#D08008"},
         ] as any[]).map(({k,l,title,c})=>(
           <div key={k} onClick={()=>{setTool(k);setQuotaPt1(null);}}
             title={title}
@@ -331,7 +331,7 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
         ))}
         <div style={{width:1,height:18,background:"#2A2A2E",margin:"0 4px"}}/>
         <div style={{display:"flex",alignItems:"center",gap:3}}>
-          <span style={{fontSize:9,color:"#555"}}>↻</span>
+          <span style={{fontSize:9,color:"#555"}}></span>
           <input type="number" value={rotation} onChange={(e:any)=>setRotation(parseFloat(e.target.value)||0)}
             style={{width:40,background:"#2A2A2E",border:"1px solid #3A3A3E",borderRadius:4,color:"#fff",fontSize:9,padding:"2px 4px",textAlign:"center"}}/>
           <span style={{fontSize:9,color:"#555"}}>deg</span>
@@ -346,10 +346,10 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
         <div onClick={()=>setFullscreen(!fullscreen)}
           style={{padding:"3px 8px",fontSize:10,cursor:"pointer",borderRadius:5,color:fullscreen?"#D08008":"#555",
             border:`1px solid ${fullscreen?"#D08008":"#333"}`,background:fullscreen?"#D0800820":"transparent"}}>
-          {fullscreen?"⊠ Esci":"⊞ Ingrandisci"}
+          {fullscreen?" Esci":" Ingrandisci"}
         </div>
         <div style={{fontSize:8,color:"#333",fontFamily:"JetBrains Mono,monospace",marginLeft:8}}>
-          {Math.round(rX)}x{Math.round(rY)}mm · {zoom.toFixed(1)}x
+          {Math.round(rX)}x{Math.round(rY)}mm  {zoom.toFixed(1)}x
         </div>
       </div>
 
@@ -455,10 +455,10 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
       {/* STATUS BAR */}
       <div style={{height:STATUSBAR,display:"flex",alignItems:"center",padding:"0 14px",gap:16,borderTop:"1px solid #1E1E20",background:"#0F0F11",flexShrink:0}}>
         {tool==="quota"&&<span style={{fontSize:10,color:"#D08008",fontWeight:600}}>
-          {quotaPt1?"▶ Click 2deg punto (snap automatico ai vertici)":"▶ Click 1deg punto per iniziare quota"}
+          {quotaPt1?" Click 2deg punto (snap automatico ai vertici)":" Click 1deg punto per iniziare quota"}
         </span>}
         {tool==="move"&&<span style={{fontSize:10,color:"#3B7FE0"}}>
-          {selPt?"↔ Trascina per spostare il punto":"Click su un vertice per selezionarlo"}
+          {selPt?" Trascina per spostare il punto":"Click su un vertice per selezionarlo"}
         </span>}
         {tool==="select"&&selPt&&target[selPt.pi]?.pts[selPt.vi]&&(()=>{
           const c=target[selPt.pi].pts[selPt.vi];
@@ -470,9 +470,9 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
           {mousePos.x.toFixed(1)}, {mousePos.y.toFixed(1)}
         </span>}
         {quotes.length>0&&<span style={{fontSize:10,color:"#D08008"}}>
-          {quotes.map(q=>q.mm+"mm").join(" · ")}
+          {quotes.map(q=>q.mm+"mm").join("  ")}
         </span>}
-        <span style={{marginLeft:"auto",fontSize:9,color:"#333"}}>scroll=zoom · shift+drag=pan</span>
+        <span style={{marginLeft:"auto",fontSize:9,color:"#333"}}>scroll=zoom  shift+drag=pan</span>
       </div>
     </div>
   );
@@ -544,7 +544,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
   return (
     <div style={{display:"flex",height:"100%",gap:0}}>
 
-      {/* ── LISTA SINISTRA ─────────────────────────────────────── */}
+      {/* -- LISTA SINISTRA --------------------------------------- */}
       <div style={{width:280,flexShrink:0,borderRight:"1px solid #E5E3DC",display:"flex",flexDirection:"column",background:"#fff",height:"100%"}}>
         {/* Header lista */}
         <div style={{padding:"14px 14px 10px",borderBottom:"1px solid #E5E3DC",background:"#1A1A1C"}}>
@@ -564,7 +564,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
           </div>
         </div>
 
-        {/* Import DXF — uno alla volta */}
+        {/* Import DXF - uno alla volta */}
         <div style={{padding:"10px 12px",borderBottom:"1px solid #F2F1EC",background:"#FFFBF5"}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
             {/* DXF */}
@@ -634,7 +634,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                 onMouseEnter={e=>!isOn&&((e.currentTarget as any).style.background="#F8F7F2")}
                 onMouseLeave={e=>!isOn&&((e.currentTarget as any).style.background="#fff")}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                  <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,fontWeight:700,color:isOn?AMB:DARK}}>{s.codice||s.sistema||"—"}</span>
+                  <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,fontWeight:700,color:isOn?AMB:DARK}}>{s.codice||s.sistema||""}</span>
                   <span style={{fontSize:10,padding:"1px 6px",borderRadius:3,fontWeight:700,background:tbg,color:tfg}}>{s.tipo||"?"}</span>
                 </div>
                 <div style={{fontSize:11,color:"#86868b",marginBottom:2}}>{s.nome||s.marca}</div>
@@ -649,7 +649,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
         </div>
       </div>
 
-      {/* ── DETTAGLIO DESTRA ───────────────────────────────────── */}
+      {/* -- DETTAGLIO DESTRA ------------------------------------- */}
       <div style={{flex:1,overflowY:"auto",background:"#F2F1EC"}}>
         {!form?(
           <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",flexDirection:"column",gap:12,color:"#86868b"}}>
@@ -662,14 +662,14 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
               <div>
                 <div style={{fontSize:18,fontWeight:800,color:DARK}}>{form.codice||form.nome||"Nuovo profilo"}</div>
-                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{form.marca} · {form.sistema} · {form.tipo}</div>
+                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{form.marca}  {form.sistema}  {form.tipo}</div>
               </div>
               <div style={{display:"flex",gap:8}}>
                 <div onClick={()=>del(form.id)} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>Elimina</div>
               </div>
             </div>
 
-            {/* ── VIEWER DXF + DATI PRODUZIONE ── */}
+            {/* -- VIEWER DXF + DATI PRODUZIONE -- */}
             <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:16,marginBottom:16}}>
               {/* Viewer sezione */}
               <div>
@@ -697,14 +697,14 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
               </div>
               {/* Dati produzione PVC */}
               <div style={{background:"#F0FDF4",borderRadius:12,padding:"16px",border:`2px solid ${TEAL}`}}>
-                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dati produzione PVC ★</div>
+                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dati produzione PVC </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div>
-                    <LBL>Peso kg / metro lineare ★</LBL>
+                    <LBL>Peso kg / metro lineare </LBL>
                     <INP type="number" placeholder="es. 1.350" value={form.grMl||""} onChange={(e:any)=>updateForm("grMl",e.target.value)} style={{border:`2px solid ${TEAL}`,fontWeight:700,fontSize:14}}/>
                   </div>
                   <div>
-                    <LBL>Quantità per cassa ★</LBL>
+                    <LBL>Quantit per cassa </LBL>
                     <INP placeholder="es. 50ml / 6m / 10pz" value={form.qtaCassa||""} onChange={(e:any)=>updateForm("qtaCassa",e.target.value)} style={{border:`2px solid ${BLU}`,fontWeight:700}}/>
                   </div>
                   <div>
@@ -720,16 +720,16 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                     <INP placeholder="70" value={form.spessore||""} onChange={(e:any)=>updateForm("spessore",e.target.value)}/>
                   </div>
                   <div>
-                    <LBL>€ / ml base</LBL>
+                    <LBL> / ml base</LBL>
                     <INP type="number" placeholder="0" value={form.euroMl||""} onChange={(e:any)=>updateForm("euroMl",parseFloat(e.target.value)||0)}/>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Identità */}
+            {/* Identit- */}
             <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC",marginBottom:12}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identità</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identit</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                 <div><LBL>Codice DXF</LBL><INP placeholder="es. 140x01" value={form.codice||""} onChange={(e:any)=>updateForm("codice",e.target.value)} style={{fontFamily:"JetBrains Mono,monospace",fontWeight:700}}/></div>
                 <div><LBL>Marca</LBL><INP placeholder="Kommerling" value={form.marca||""} onChange={(e:any)=>updateForm("marca",e.target.value)}/></div>
@@ -752,7 +752,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
             <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC",marginBottom:12}}>
               <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dati tecnici</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                {[{l:"Uw (W/m²K)",k:"uw",ph:"1.1"},{l:"Uf (W/m²K)",k:"uf",ph:"1.3"},{l:"Rw (dB)",k:"rw",ph:"42"},{l:"Camere aria",k:"camere",ph:"5"},{l:"Classe tenuta aria",k:"classeTenuta",ph:"4"},{l:"Classe tenuta acqua",k:"classeAcqua",ph:"E1350"},{l:"Classe resist. vento",k:"classeVento",ph:"C5"},{l:"Classe termica",k:"classe",ph:"A"}].map(f=>(
+                {[{l:"Uw (W/mK)",k:"uw",ph:"1.1"},{l:"Uf (W/mK)",k:"uf",ph:"1.3"},{l:"Rw (dB)",k:"rw",ph:"42"},{l:"Camere aria",k:"camere",ph:"5"},{l:"Classe tenuta aria",k:"classeTenuta",ph:"4"},{l:"Classe tenuta acqua",k:"classeAcqua",ph:"E1350"},{l:"Classe resist. vento",k:"classeVento",ph:"C5"},{l:"Classe termica",k:"classe",ph:"A"}].map(f=>(
                   <div key={f.k}><LBL>{f.l}</LBL><INP placeholder={f.ph} value={form[f.k]||""} onChange={(e:any)=>updateForm(f.k,e.target.value)}/></div>
                 ))}
                 <div style={{gridColumn:"1/-1"}}><LBL>Certificazioni (EN, CE...)</LBL><INP placeholder="EN 14351-1, CE 0123" value={form.certificazioni||""} onChange={(e:any)=>updateForm("certificazioni",e.target.value)}/></div>
@@ -787,7 +787,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                       <span key={i} style={{padding:"3px 8px",borderRadius:5,background:"#FEF3C7",border:`1px solid ${AMB}`,fontSize:10,fontFamily:"JetBrains Mono,monospace",fontWeight:700,color:"#92400E"}}>{f}</span>
                     ))}
                   </div>
-                ):<div style={{fontSize:12,color:"#86868b"}}>Nessun codice — importa DXF</div>}
+                ):<div style={{fontSize:12,color:"#86868b"}}>Nessun codice  importa DXF</div>}
                 {form.quote?.length>0&&(
                   <div style={{marginTop:10}}>
                     <div style={{fontSize:9,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>Quote layer 15</div>
@@ -804,7 +804,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
             {/* Note + Attivo */}
             <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC",marginBottom:12}}>
               <LBL>Note tecniche / commerciali</LBL>
-              <textarea value={form.notetech||""} onChange={(e:any)=>updateForm("notetech",e.target.value)} placeholder="Note interne, particolarità, condizioni fornitore..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E5E3DC",fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:64,resize:"vertical"}}/>
+              <textarea value={form.notetech||""} onChange={(e:any)=>updateForm("notetech",e.target.value)} placeholder="Note interne, particolarit, condizioni fornitore..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E5E3DC",fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:64,resize:"vertical"}}/>
               <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10}}>
                 <div onClick={()=>updateForm("attivo",!form.attivo)} style={{width:38,height:22,borderRadius:11,background:form.attivo!==false?TEAL:"#E5E3DC",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:3,left:form.attivo!==false?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -883,7 +883,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
 
   return(
     <>
-    {/* ── MODAL SELEZIONE PROFILO DA NODO DXF ── */}
+    {/* -- MODAL SELEZIONE PROFILO DA NODO DXF -- */}
     {importModal&&(
       <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
         <div style={{background:"#fff",borderRadius:16,padding:28,maxWidth:600,width:"90%",boxShadow:"0 24px 80px rgba(0,0,0,0.4)"}}>
@@ -891,9 +891,9 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
           <div style={{fontSize:12,color:"#86868b",marginBottom:20}}>Il file <strong>{importModal.filename}</strong> contiene un nodo con piu profili. Scegli quale importare nell'archivio.</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
             {([
-              {k:"rahmen",l:"Telaio",desc:"Profilo Rahmen (X negativo)",col:"#3B7FE0",icon:"◫"},
-              {k:"flugel",l:"Anta",desc:"Profilo Flugel (Y negativo)",col:"#1A9E73",icon:"◨"},
-              {k:"front",l:"Frontale",desc:"Vista frontale (X+Y positivi)",col:"#D08008",icon:"□"},
+              {k:"rahmen",l:"Telaio",desc:"Profilo Rahmen (X negativo)",col:"#3B7FE0",icon:""},
+              {k:"flugel",l:"Anta",desc:"Profilo Flugel (Y negativo)",col:"#1A9E73",icon:""},
+              {k:"front",l:"Frontale",desc:"Vista frontale (X+Y positivi)",col:"#D08008",icon:""},
             ] as any[]).map(({k,l,desc,col,icon})=>{
               const pols=estraiProfilo(importModal.pols,k);
               const hasPols=pols.length>0;
@@ -997,7 +997,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
                   <span style={{fontSize:12,fontWeight:700,color:isOn?AMB:DARK}}>{n.nome}</span>
                 </div>
                 <div style={{fontSize:10,color:"#86868b",marginBottom:3}}>
-                  {TIPI.find((t:any)=>t.k===n.tipo)?.l||n.tipo} · {n.angolo}deg · kerf {n.kerf}mm
+                  {TIPI.find((t:any)=>t.k===n.tipo)?.l||n.tipo}  {n.angolo}deg  kerf {n.kerf}mm
                 </div>
                 <div style={{display:"flex",gap:4}}>
                   {pA2?<span style={{fontSize:9,padding:"1px 5px",borderRadius:3,background:"#DBEAFE",color:"#1E40AF",fontWeight:600}}>{pA2.codice||pA2.sistema}</span>:<span style={{fontSize:9,color:RED}}>A mancante</span>}
@@ -1023,7 +1023,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
               <div>
                 <div style={{fontSize:18,fontWeight:800,color:DARK}}>{sel.nome}</div>
-                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{TIPI.find((t:any)=>t.k===sel.tipo)?.l} · {sel.angolo}deg · kerf {sel.kerf}mm</div>
+                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{TIPI.find((t:any)=>t.k===sel.tipo)?.l}  {sel.angolo}deg  kerf {sel.kerf}mm</div>
               </div>
               <div onClick={()=>del(sel.id)} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>Elimina</div>
             </div>
@@ -1043,7 +1043,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
                   <div><LBL>Nome nodo</LBL><INP placeholder="es. Anta+Telaio 70+77mm" value={sel.nome||""} onChange={(e:any)=>upd(sel.id,"nome",e.target.value)}/></div>
                   <div><LBL>Tipo nodo</LBL>
                     <SEL value={sel.tipo||"anta_telaio"} onChange={(e:any)=>upd(sel.id,"tipo",e.target.value)}>
-                      {TIPI.map((t:any)=><option key={t.k} value={t.k}>{t.l} — {t.desc}</option>)}
+                      {TIPI.map((t:any)=><option key={t.k} value={t.k}>{t.l}  {t.desc}</option>)}
                     </SEL>
                   </div>
                 </div>
@@ -1051,15 +1051,15 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
 
               {/* Parametri CNC */}
               <div style={{background:"#F0FDF4",borderRadius:12,padding:"16px",border:`2px solid ${TEAL}`}}>
-                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Parametri taglio CNC ★</div>
+                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Parametri taglio CNC </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div>
                     <LBL>Angolo taglio (deg)</LBL>
                     <SEL value={String(sel.angolo||45)} onChange={(e:any)=>upd(sel.id,"angolo",parseFloat(e.target.value))}>
-                      <option value="45">45deg — Giunzione ad angolo</option>
-                      <option value="90">90deg — Taglio dritto</option>
-                      <option value="22.5">22.5deg — Angolo speciale</option>
-                      <option value="0">0deg — Parallelo</option>
+                      <option value="45">45deg  Giunzione ad angolo</option>
+                      <option value="90">90deg  Taglio dritto</option>
+                      <option value="22.5">22.5deg  Angolo speciale</option>
+                      <option value="0">0deg  Parallelo</option>
                     </SEL>
                   </div>
                   <div>
@@ -1084,30 +1084,30 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
               <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:12,alignItems:"center"}}>
                 {/* Profilo A */}
                 <div style={{border:`2px solid #DBEAFE`,borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#1E40AF",textTransform:"uppercase",marginBottom:8}}>Profilo A — Telaio (Rahmen)</div>
+                  <div style={{fontSize:10,fontWeight:800,color:"#1E40AF",textTransform:"uppercase",marginBottom:8}}>Profilo A  Telaio (Rahmen)</div>
                   <SEL value={sel.profiloA_id||""} onChange={(e:any)=>upd(sel.id,"profiloA_id",e.target.value)}>
-                    <option value="">— Seleziona profilo —</option>
+                    <option value=""> Seleziona profilo </option>
                     {profili.filter((p:any)=>p.tipo==="Rahmen"||!p.tipo).map((p:any)=>(
-                      <option key={p.id} value={p.id}>{p.codice||p.sistema} — {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
+                      <option key={p.id} value={p.id}>{p.codice||p.sistema}  {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
                     ))}
                   </SEL>
                   {pA&&<div style={{marginTop:8,padding:"6px 10px",background:"#EFF6FF",borderRadius:7,fontSize:11,color:"#1E40AF"}}>
-                    {pA.bautiefe}mm · {pA.grMl?pA.grMl+"kg/ml":""} · {pA.camere||"?"}cam
+                    {pA.bautiefe}mm  {pA.grMl?pA.grMl+"kg/ml":""}  {pA.camere||"?"}cam
                   </div>}
                 </div>
                 {/* Simbolo + */}
                 <div style={{fontSize:24,color:"#ccc",textAlign:"center",fontWeight:300}}>+</div>
                 {/* Profilo B */}
                 <div style={{border:`2px solid #D1FAE5`,borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#065F46",textTransform:"uppercase",marginBottom:8}}>Profilo B — Anta (Flugel)</div>
+                  <div style={{fontSize:10,fontWeight:800,color:"#065F46",textTransform:"uppercase",marginBottom:8}}>Profilo B  Anta (Flugel)</div>
                   <SEL value={sel.profiloB_id||""} onChange={(e:any)=>upd(sel.id,"profiloB_id",e.target.value)}>
-                    <option value="">— Seleziona profilo —</option>
+                    <option value=""> Seleziona profilo </option>
                     {profili.filter((p:any)=>p.tipo==="Flugel"||!p.tipo).map((p:any)=>(
-                      <option key={p.id} value={p.id}>{p.codice||p.sistema} — {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
+                      <option key={p.id} value={p.id}>{p.codice||p.sistema}  {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
                     ))}
                   </SEL>
                   {pB&&<div style={{marginTop:8,padding:"6px 10px",background:"#ECFDF5",borderRadius:7,fontSize:11,color:"#065F46"}}>
-                    {pB.bautiefe}mm · {pB.grMl?pB.grMl+"kg/ml":""} · {pB.camere||"?"}cam
+                    {pB.bautiefe}mm  {pB.grMl?pB.grMl+"kg/ml":""}  {pB.camere||"?"}cam
                   </div>}
                 </div>
               </div>
@@ -1176,13 +1176,13 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
                 {v.basso_emissivo&&badge(AMB+"12",AMB,"Basso-e")}
                 {v.stratificato&&badge(PUR+"12",PUR,"Stratificato")}
               </div>
-              <div style={{fontSize:12,color:"#86868b"}}>{v.composizione||v.descrizione||"—"}</div>
+              <div style={{fontSize:12,color:"#86868b"}}>{v.composizione||v.descrizione||""}</div>
               <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
-                {v.uw&&badge("#F2F1EC","#86868b",`Uw ${v.uw} W/m²K`)}
+                {v.uw&&badge("#F2F1EC","#86868b",`Uw ${v.uw} W/mK`)}
                 {v.g&&badge("#F2F1EC","#86868b",`g ${v.g}`)}
                 {v.rw&&badge("#F2F1EC","#86868b",`Rw ${v.rw} dB`)}
                 {v.spessore&&badge("#F2F1EC","#86868b",`${v.spessore}mm`)}
-                {v.euroMq>0&&badge(TEAL+"12",TEAL,`€${v.euroMq}/mq`)}
+                {v.euroMq>0&&badge(TEAL+"12",TEAL,`${v.euroMq}/mq`)}
               </div>
             </div>
             <div style={{display:"flex",gap:6}}>
@@ -1191,14 +1191,14 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
             </div>
           </div>
         ))}
-        {filtered.length===0&&<div style={{padding:"36px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun vetro — aggiungine uno</div>}
+        {filtered.length===0&&<div style={{padding:"36px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun vetro  aggiungine uno</div>}
       </Sez>
 
       {modal==="form"&&(
         <Modal title={form.id&&(vetriDB||[]).find((x:any)=>x.id===form.id)?"Modifica vetro":"Nuovo vetro"} onClose={()=>setModal(null)}>
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identità</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identit</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <div><LBL>Codice</LBL><INP placeholder="Es. 4-16-4 Low-E" value={form.code||""} onChange={(e:any)=>setForm((p:any)=>({...p,code:e.target.value}))}/></div>
                 <div><LBL>Nome commerciale</LBL><INP placeholder="Es. Planitherm Ultra" value={form.nome||""} onChange={(e:any)=>setForm((p:any)=>({...p,nome:e.target.value}))}/></div>
@@ -1220,7 +1220,7 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
               <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Prestazioni</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-                {[{l:"Uw (W/m²K)",k:"uw",ph:"1.1"},{l:"g (fattore solare)",k:"g",ph:"0.62"},{l:"Lt (trasmiss. luce)",k:"lt",ph:"0.75"},{l:"Rw (dB)",k:"rw",ph:"34"},{l:"Spessore totale (mm)",k:"spessore",ph:"28"},{l:"Gas intercapedine",k:"gas",ph:"Argon"}].map(f=>(
+                {[{l:"Uw (W/mK)",k:"uw",ph:"1.1"},{l:"g (fattore solare)",k:"g",ph:"0.62"},{l:"Lt (trasmiss. luce)",k:"lt",ph:"0.75"},{l:"Rw (dB)",k:"rw",ph:"34"},{l:"Spessore totale (mm)",k:"spessore",ph:"28"},{l:"Gas intercapedine",k:"gas",ph:"Argon"}].map(f=>(
                   <div key={f.k}><LBL>{f.l}</LBL><INP placeholder={f.ph} value={form[f.k]||""} onChange={(e:any)=>setForm((p:any)=>({...p,[f.k]:e.target.value}))}/></div>
                 ))}
               </div>
@@ -1236,7 +1236,7 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <div><LBL>€ / mq</LBL><INP type="number" placeholder="0" value={form.euroMq||""} onChange={(e:any)=>setForm((p:any)=>({...p,euroMq:parseFloat(e.target.value)||0}))}/></div>
+              <div><LBL> / mq</LBL><INP type="number" placeholder="0" value={form.euroMq||""} onChange={(e:any)=>setForm((p:any)=>({...p,euroMq:parseFloat(e.target.value)||0}))}/></div>
               <div><LBL>Fornitore</LBL><INP placeholder="Es. Saint-Gobain" value={form.fornitore||""} onChange={(e:any)=>setForm((p:any)=>({...p,fornitore:e.target.value}))}/></div>
             </div>
             <div><LBL>Note</LBL><textarea value={form.note||""} onChange={(e:any)=>setForm((p:any)=>({...p,note:e.target.value}))} placeholder="Note tecniche o commerciali..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:60,resize:"vertical"}}/></div>
@@ -1382,8 +1382,8 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
               </div>
               {a.descrizione&&<div style={{fontSize:12,color:"#86868b"}}>{a.descrizione}</div>}
               <div style={{display:"flex",gap:8,marginTop:4}}>
-                {a.prezzo>0&&badge(TEAL+"12",TEAL,`€${a.prezzo}/${a.unita||"pz"}`)}
-                {a.prezzoInstall>0&&badge(AMB+"12",AMB,`+€${a.prezzoInstall} install.`)}
+                {a.prezzo>0&&badge(TEAL+"12",TEAL,`${a.prezzo}/${a.unita||"pz"}`)}
+                {a.prezzoInstall>0&&badge(AMB+"12",AMB,`+${a.prezzoInstall} install.`)}
               </div>
             </div>
             <div style={{display:"flex",gap:6}}>
@@ -1392,7 +1392,7 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
             </div>
           </div>
         ))}
-        {items.length===0&&<div style={{padding:"32px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun elemento — aggiungine uno</div>}
+        {items.length===0&&<div style={{padding:"32px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun elemento  aggiungine uno</div>}
       </Sez>
 
       {modal&&(
@@ -1401,13 +1401,13 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div><LBL>Nome *</LBL><INP placeholder="Nome elemento" value={form.nome||""} onChange={(e:any)=>setForm((p:any)=>({...p,nome:e.target.value}))}/></div>
               <div><LBL>Codice / SKU</LBL><INP placeholder="Codice articolo" value={form.codice||""} onChange={(e:any)=>setForm((p:any)=>({...p,codice:e.target.value}))}/></div>
-              <div><LBL>Prezzo €</LBL><INP type="number" placeholder="0" value={form.prezzo||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzo:parseFloat(e.target.value)||0}))}/></div>
-              <div><LBL>Unità</LBL>
+              <div><LBL>Prezzo </LBL><INP type="number" placeholder="0" value={form.prezzo||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzo:parseFloat(e.target.value)||0}))}/></div>
+              <div><LBL>Unit</LBL>
                 <SEL value={form.unita||"pz"} onChange={(e:any)=>setForm((p:any)=>({...p,unita:e.target.value}))}>
                   <option value="pz">Pezzo</option><option value="ml">Metro lineare</option><option value="mq">Metro quadro</option><option value="set">Set</option>
                 </SEL>
               </div>
-              <div><LBL>Prezzo installazione €</LBL><INP type="number" placeholder="0" value={form.prezzoInstall||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzoInstall:parseFloat(e.target.value)||0}))}/></div>
+              <div><LBL>Prezzo installazione </LBL><INP type="number" placeholder="0" value={form.prezzoInstall||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzoInstall:parseFloat(e.target.value)||0}))}/></div>
               <div><LBL>Fornitore</LBL><INP placeholder="Fornitore" value={form.fornitore||""} onChange={(e:any)=>setForm((p:any)=>({...p,fornitore:e.target.value}))}/></div>
             </div>
             <div><LBL>Descrizione</LBL><textarea value={form.descrizione||""} onChange={(e:any)=>setForm((p:any)=>({...p,descrizione:e.target.value}))} placeholder="Descrizione, caratteristiche..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:60,resize:"vertical"}}/></div>
@@ -1488,7 +1488,7 @@ export default function DesktopSettings(){
               {[{l:"Nome azienda",k:"nome",ph:"Walter Cozza Serramenti"},{l:"Ragione sociale",k:"ragione",ph:"Walter Cozza Serramenti SRL"},{l:"Partita IVA",k:"piva",ph:"IT12345678901"},{l:"Codice fiscale",k:"cf",ph:""},{l:"Telefono",k:"telefono",ph:"+39 0984 000000"},{l:"Email",k:"email",ph:"info@azienda.it"},{l:"PEC",k:"pec",ph:"azienda@pec.it"},{l:"Sito web",k:"web",ph:"www.azienda.it"}].map(f=>(
                 <div key={f.k}><LBL>{f.l}</LBL><INP placeholder={f.ph} value={aziendaInfo?.[f.k]||""} onChange={(e:any)=>setAziendaInfo?.((p:any)=>({...p,[f.k]:e.target.value}))}/></div>
               ))}
-              <div style={{gridColumn:"1/-1"}}><LBL>Indirizzo</LBL><INP placeholder="Via, CAP, Città" value={aziendaInfo?.indirizzo||""} onChange={(e:any)=>setAziendaInfo?.((p:any)=>({...p,indirizzo:e.target.value}))}/></div>
+              <div style={{gridColumn:"1/-1"}}><LBL>Indirizzo</LBL><INP placeholder="Via, CAP, Citt" value={aziendaInfo?.indirizzo||""} onChange={(e:any)=>setAziendaInfo?.((p:any)=>({...p,indirizzo:e.target.value}))}/></div>
             </div>
           </Sez>
           <Sez title="Impostazioni operative">
@@ -1516,16 +1516,16 @@ export default function DesktopSettings(){
             return (
               <div key={p.id} style={{padding:"14px 18px",borderBottom:`1px solid #F2F1EC`,display:"flex",alignItems:"center",gap:12}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                  <div onClick={()=>{if(i===0)return;const a=[...pipelineDB];[a[i-1],a[i]]=[a[i],a[i-1]];setPipelineDB?.(a);}} style={{cursor:i===0?"default":"pointer",opacity:i===0?.2:1,color:"#86868b",fontSize:10}}>▲</div>
-                  <div onClick={()=>{if(i===pipelineDB.length-1)return;const a=[...pipelineDB];[a[i],a[i+1]]=[a[i+1],a[i]];setPipelineDB?.(a);}} style={{cursor:i===pipelineDB.length-1?"default":"pointer",opacity:i===pipelineDB.length-1?.2:1,color:"#86868b",fontSize:10}}>▼</div>
+                  <div onClick={()=>{if(i===0)return;const a=[...pipelineDB];[a[i-1],a[i]]=[a[i],a[i-1]];setPipelineDB?.(a);}} style={{cursor:i===0?"default":"pointer",opacity:i===0?.2:1,color:"#86868b",fontSize:10}}></div>
+                  <div onClick={()=>{if(i===pipelineDB.length-1)return;const a=[...pipelineDB];[a[i],a[i+1]]=[a[i+1],a[i]];setPipelineDB?.(a);}} style={{cursor:i===pipelineDB.length-1?"default":"pointer",opacity:i===pipelineDB.length-1?.2:1,color:"#86868b",fontSize:10}}></div>
                 </div>
                 <div style={{width:10,height:10,borderRadius:"50%",background:col,flexShrink:0}}/>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:DARK}}>{p.nome||p.id}</div>
                   <div style={{display:"flex",gap:6,marginTop:4}}>
-                    {(p.gateRequisiti||[]).length>0&&badge(RED+"12",RED,`⛔ ${p.gateRequisiti.length} gate`)}
+                    {(p.gateRequisiti||[]).length>0&&badge(RED+"12",RED,` ${p.gateRequisiti.length} gate`)}
                     {p.gateBloccante&&badge(RED+"20",RED,"Bloccante")}
-                    {(p.automazioni||[]).length>0&&badge(PUR+"12",PUR,`⚡ ${p.automazioni.length} auto`)}
+                    {(p.automazioni||[]).length>0&&badge(PUR+"12",PUR,` ${p.automazioni.length} auto`)}
                     {p.emailTemplate&&badge(BLU+"12",BLU,"Email")}
                   </div>
                 </div>
@@ -1543,7 +1543,7 @@ export default function DesktopSettings(){
           <div style={{padding:"18px",display:"flex",gap:12}}>
             {["chiaro","scuro","oceano"].map(t=>(
               <div key={t} onClick={()=>setTheme?.(t)} style={{flex:1,padding:"18px",borderRadius:10,border:`2px solid ${theme===t?TEAL:"#E5E3DC"}`,cursor:"pointer",textAlign:"center",background:theme===t?TEAL+"08":"#fff",transition:"all .15s"}}>
-                <div style={{fontSize:28,marginBottom:8}}>{t==="chiaro"?"☀️":t==="scuro"?"🌙":"🌊"}</div>
+                <div style={{fontSize:28,marginBottom:8}}>{t==="chiaro"?"":t==="scuro"?"":""}</div>
                 <div style={{fontSize:13,fontWeight:700,color:theme===t?TEAL:DARK,textTransform:"capitalize"}}>{t}</div>
               </div>
             ))}
