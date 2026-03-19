@@ -3,7 +3,7 @@
 // MASTRO — DesktopSettings v2
 // Sidebar nav + archivi completi: Profili, Vetri, Accessori, Colori
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM } from "./mastro-constants";
 
@@ -133,7 +133,7 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
   const [quotes,setQuotes]=useState<{x1:number,y1:number,x2:number,y2:number,mm:number}[]>([]);
   const [rotation,setRotation]=useState(0);
   const [editPols,setEditPols]=useState<any[]|null>(null);
-  const svgRef=React.useRef<SVGSVGElement>(null);
+  const svgRef=useRef<SVGSVGElement>(null);
 
   const basePols:any[]=editPols||(polylines&&polylines.length>0?polylines:dxfText?parseLWPolylines(dxfText):[]);
 
