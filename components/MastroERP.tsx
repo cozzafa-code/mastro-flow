@@ -19,6 +19,7 @@ import { generaFatturaPDF as _generaFatturaPDF, generaOrdinePDF as _generaOrdine
 import { generaPreventivoCondivisibile as _generaPrevCond, estraiDatiPDF as _estraiDatiPDF } from "../lib/pdf-condivisibile";
 import { importExcelCatalog as _importExcelCatalog } from "../lib/import-utils";
 import { caricaDemoCompleto as _caricaDemoCompleto } from "../lib/demo-data";
+import { verificaGate, buildLogEntry, eseguiAutomazioni, labelRequisito } from "../lib/workflow";
 import { MastroErrorBoundary, PanelErrorBoundary } from "./MastroErrorBoundary";
 import { useConfirmDialog, useToast, exportAllData } from "./mastro-ui-safety";
 import { validateCommessa, validateVano, validateTask, validateEvento, validateFatturaPassiva, validateMisura, sanitize, FormErrors, FieldError } from "./mastro-validation";
@@ -1289,22 +1290,67 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   };
 
   // === AUTO-ADVANCE: sincronizza fase pipeline con azioni reali ===
-  const setFaseTo = (cmId: string, targetFase: string) => {
+  const setFaseTo = (cmId: string, targetFase: string, operatore?: string) => {
     const targetIdx = faseIndex(targetFase);
-    setCantieri(cs => cs.map(c => {
+    const faseDef = pipelineDB.find((p: any) => p.id === targetFase);
+
+    // Funzione per costruire log entry con timestamp reale
+    const buildLog = (chi: string, cosa: string, color: string) => ({
+      chi, cosa, color,
+      quando: new Date().toLocaleString("it-IT", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }),
+      ts: new Date().toISOString(),
+    });
+
+    // Verifica gate sulla commessa corrente
+    const checkGateForCommessa = (c: any): { ok: boolean; mancanti: string[] } => {
+      if (!faseDef?.gateBloccante || !faseDef?.gateRequisiti?.length) return { ok: true, mancanti: [] };
+      return verificaGate(c, faseDef);
+    };
+
+    let bloccato = false;
+
+    setCantieri((cs: any[]) => cs.map(c => {
       if (c.id !== cmId) return c;
       const curIdx = faseIndex(c.fase);
-      if (targetIdx > curIdx) {
-        return { ...c, fase: targetFase, log: [{ chi: "MASTRO", cosa: `auto → ${PIPELINE.find(p=>p.id===targetFase)?.nome}`, quando: "Adesso", color: PIPELINE.find(p=>p.id===targetFase)?.color || "#0D7C6B" }, ...(c.log||[])] };
+      if (targetIdx <= curIdx) return c;
+
+      // Gate check
+      const { ok, mancanti } = checkGateForCommessa(c);
+      if (!ok) {
+        bloccato = true;
+        return c; // non avanza
       }
-      return c;
+
+      const chi = operatore || "MASTRO";
+      const logEntry = buildLog(chi, `→ ${faseDef?.nome || targetFase}`, faseDef?.color || "#0D7C6B");
+      const updated = { ...c, fase: targetFase, ultima_modifica: new Date().toISOString(), log: [logEntry, ...(c.log||[])] };
+
+      // Esegui automazioni async
+      if (faseDef?.automazioni?.length > 0) {
+        eseguiAutomazioni(updated, faseDef, team, aziendaInfo).catch(console.error);
+      }
+
+      return updated;
     }));
+
+    // Mostra errore se bloccato
+    if (bloccato) {
+      const c = cantieri.find((x: any) => x.id === cmId);
+      if (c) {
+        const { mancanti } = checkGateForCommessa(c);
+        toast(`⛔ Gate bloccante — ${mancanti.join(" · ")}`, "error");
+      }
+      return;
+    }
+
+    // Aggiorna selectedCM se è la commessa aperta
     if (selectedCM?.id === cmId) {
       const curIdx = faseIndex(selectedCM.fase);
       if (targetIdx > curIdx) {
-        const next = PIPELINE.find(p => p.id === targetFase);
-        setSelectedCM(prev => ({ ...prev, fase: targetFase, log: [{ chi: "MASTRO", cosa: `auto → ${next?.nome}`, quando: "Adesso", color: next?.color || "#0D7C6B" }, ...(prev?.log||[])] }));
-        setFaseNotif({ fase: next?.nome || targetFase, addetto: "Auto", color: next?.color || "#0D7C6B" });
+        const next = pipelineDB.find((p: any) => p.id === targetFase);
+        const logEntry = buildLog(operatore || "MASTRO", `→ ${next?.nome || targetFase}`, next?.color || "#0D7C6B");
+        setSelectedCM((prev: any) => ({ ...prev, fase: targetFase, ultima_modifica: new Date().toISOString(), log: [logEntry, ...(prev?.log||[])] }));
+        setFaseNotif({ fase: next?.nome || targetFase, addetto: operatore || "Auto", color: next?.color || "#0D7C6B" });
         setTimeout(() => setFaseNotif(null), 3000);
       }
     }
