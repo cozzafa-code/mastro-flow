@@ -91,6 +91,16 @@ const SoonView = ({ k, T }: any) => {
 export default function MastroDesktop() {
   const { T, cantieri=[], msgs=[], fattureDB=[], montaggiDB=[], aziendaInfo, setTab, tab, giorniFermaCM, sogliaDays=7 } = useMastro();
   const [collapsed, setCollapsed] = useState(false);
+  // Shortcut [ per toggle sidebar
+  typeof window !== "undefined" && (() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "[" && !["INPUT","TEXTAREA","SELECT"].includes((e.target as HTMLElement)?.tagName)) {
+        setCollapsed(c => !c);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  });
   const sw = collapsed ? 50 : 220;
   const active = tab || "home";
   const TODAY = new Date().toISOString().split("T")[0];
@@ -176,8 +186,13 @@ export default function MastroDesktop() {
               <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)" }}>Piano START · {cantieri.length} commesse</div>
             </div>
           </div>}
-          <div onClick={() => setCollapsed(c => !c)} style={{ height:30, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.2)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform:collapsed ? "rotate(0deg)" : "rotate(180deg)", transition:"transform .18s" }}><polyline points="9 18 15 12 9 6" /></svg>
+          <div onClick={() => setCollapsed(c => !c)}
+            title={collapsed ? "Espandi sidebar" : "Comprimi sidebar"}
+            style={{ height:36, display:"flex", alignItems:"center", justifyContent:collapsed?"center":"space-between", padding:collapsed?"0":"0 14px", cursor:"pointer", color:"rgba(255,255,255,0.35)", borderTop:"1px solid rgba(255,255,255,0.05)", transition:"background .15s" }}
+            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.06)"}
+            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background="transparent"}>
+            {!collapsed && <span style={{fontSize:10,color:"rgba(255,255,255,0.2)"}}>[ comprimi ]</span>}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" style={{ transform:collapsed?"rotate(0deg)":"rotate(180deg)", transition:"transform .18s", flexShrink:0 }}><polyline points="9 18 15 12 9 6" /></svg>
           </div>
         </div>
       </div>
