@@ -56,6 +56,121 @@ function VanoPreview({v}:{v:any}){
 
 // ── Kanban drag & drop ───────────────────────────────────────
 function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,sogliaDays,compact=false}:any){
+  const [dragging,setDragging]=useState<{id:string,fase:string}|null>(null);
+  const [overCol,setOverCol]=useState<string|null>(null);
+  const [overCard,setOverCard]=useState<string|null>(null);
+  const fmtE=(n:number)=>n>0?"€"+Math.round(n).toLocaleString("it-IT"):"—";
+  const daysTo=(d:string)=>Math.floor((new Date(d).getTime()-Date.now())/86400000);
+  const K={TEAL:"#1A9E73",DARK:"#1A1A1C",RED:"#DC4444",BLU:"#3B7FE0",AMB:"#D08008"};
+
+  const handleDrop=(colFase:string)=>{
+    if(!dragging)return;
+    if(dragging.fase!==colFase){
+      onMoveFase(dragging.id,colFase);
+    }
+    setDragging(null);setOverCol(null);setOverCard(null);
+  };
+
+  return (
+    <div style={{display:"flex",gap:compact?8:14,minWidth:"max-content",minHeight:"100%",alignItems:"flex-start",padding:compact?"12px 16px":"16px 20px"}}>
+      {pipeline.filter((p:any)=>p.attiva).map((p:any)=>{
+        const col=p.color||K.TEAL;
+        const items=cantieri.filter((c:any)=>c.fase===p.id);
+        const isOver=overCol===p.id;
+        const colW=compact?172:222;
+        return (
+          <div key={p.id}
+            onDragOver={e=>{e.preventDefault();setOverCol(p.id);}}
+            onDragLeave={e=>{if(!(e.currentTarget as any).contains(e.relatedTarget as Node)){setOverCol(null);}}}
+            onDrop={()=>handleDrop(p.id)}
+            style={{width:colW,minWidth:colW,display:"flex",flexDirection:"column",gap:compact?5:8,transition:"background .2s",background:isOver&&dragging&&dragging.fase!==p.id?col+"10":"transparent",borderRadius:14,padding:isOver&&dragging&&dragging.fase!==p.id?"10px 8px":"0",border:isOver&&dragging&&dragging.fase!==p.id?`2px dashed ${col}`:"2px solid transparent"}}>
+            {/* Header */}
+            <div style={{padding:"10px 14px",borderRadius:10,background:col+"18",border:`1.5px solid ${col}35`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:7}}>
+                <div style={{width:10,height:10,borderRadius:"50%",background:col,boxShadow:`0 0 0 3px ${col}25`}}/>
+                <span style={{fontSize:13,fontWeight:700,color:col}}>{p.nome||p.id}</span>
+              </div>
+              <span style={{fontSize:12,fontWeight:800,color:"#fff",background:col,padding:"2px 9px",borderRadius:10}}>{items.length}</span>
+            </div>
+            {/* Cards */}
+            {items.map((c:any)=>{
+              const ferma=giorniFermaCM(c)>=sogliaDays&&c.fase!=="chiusura";
+              const gg=giorniFermaCM(c);
+              const initials=((c.cliente||"?")[0]+(c.cognome||"")[0]).toUpperCase();
+              const isDragging=dragging?.id===c.id;
+              const isDropTarget=overCard===c.id&&dragging&&dragging.id!==c.id;
+              return (
+                <div key={c.id}
+                  draggable
+                  onDragStart={e=>{
+                    setDragging({id:c.id,fase:p.id});
+                    e.dataTransfer.effectAllowed="move";
+                    // ghost trasparente
+                    const ghost=document.createElement("div");
+                    ghost.style.cssText="position:fixed;top:-999px;width:180px;padding:8px 12px;background:#fff;border-radius:10px;font-family:Inter,sans-serif;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.2);";
+                    ghost.textContent=`${c.cliente} ${c.cognome||""}`;
+                    document.body.appendChild(ghost);
+                    e.dataTransfer.setDragImage(ghost,90,20);
+                    setTimeout(()=>ghost.remove(),0);
+                  }}
+                  onDragEnd={()=>{setDragging(null);setOverCol(null);setOverCard(null);}}
+                  onDragOver={e=>{e.preventDefault();e.stopPropagation();setOverCard(c.id);}}
+                  onClick={()=>!isDragging&&onSelect(c)}
+                  style={{
+                    borderRadius:12,
+                    background:isDragging?"#F2F1EC":"#fff",
+                    border:`1.5px solid ${isDropTarget?col:ferma?K.RED+"50":"#E5E3DC"}`,
+                    cursor:"grab",
+                    transition:"transform .15s, box-shadow .15s, opacity .15s, border-color .15s",
+                    opacity:isDragging?0.3:1,
+                    transform:isDropTarget?"translateY(-3px) scale(1.01)":"translateY(0) scale(1)",
+                    boxShadow:isDragging?"none":isDropTarget?`0 6px 20px ${col}30`:ferma?`0 0 0 1.5px ${K.RED}25`:"0 1px 4px rgba(0,0,0,.05)",
+                    overflow:"hidden",
+                  }}>
+                  {/* Striscia colore fase */}
+                  <div style={{height:4,background:`linear-gradient(90deg, ${col}, ${col}88)`,width:"100%"}}/>
+                  <div style={{padding:compact?"8px 10px":"12px 14px"}}>
+                    {/* Header card */}
+                    <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:compact?6:9}}>
+                      <div style={{width:34,height:34,borderRadius:9,background:ferma?K.RED+"15":col+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,color:ferma?K.RED:col,flexShrink:0,border:`1.5px solid ${ferma?K.RED+"30":col+"30"}`}}>{initials}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:K.DARK,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.cliente} {c.cognome||""}</div>
+                        <div style={{fontSize:10,color:"#86868b",marginTop:1}}>{c.code}</div>
+                      </div>
+                    </div>
+                    {/* Importo */}
+                    {c.euro&&<div style={{fontSize:16,fontWeight:800,color:K.DARK,fontFamily:FM,marginBottom:compact?4:8}}>{fmtE(parseFloat(c.euro))}</div>}
+                    {/* Badge */}
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:compact?4:6}}>
+                      {(c.rilievi||[]).length>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:K.BLU+"12",color:K.BLU,fontWeight:600}}>{(c.rilievi||[]).length} rilievi</span>}
+                      {(c.vani||[]).length>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:K.TEAL+"12",color:K.TEAL,fontWeight:600}}>{(c.vani||[]).length} vani</span>}
+                      {c.sistema&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:"#F2F1EC",color:"#86868b",fontWeight:500,maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.sistema}</span>}
+                    </div>
+                    {c.indirizzo&&!compact&&<div style={{fontSize:10,color:"#86868b",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.indirizzo}</div>}
+                    {/* Footer */}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:6,borderTop:`1px solid #F2F1EC`}}>
+                      {ferma
+                        ?<span style={{fontSize:10,padding:"2px 8px",borderRadius:6,background:K.RED+"12",color:K.RED,fontWeight:700}}>Ferma {gg}gg</span>
+                        :<span style={{fontSize:10,fontWeight:600,color:col,display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:col}}/>{p.nome}</span>
+                      }
+                      {c.dataConsegna&&<span style={{fontSize:10,fontWeight:700,color:daysTo(c.dataConsegna)<=7?K.RED:K.AMB}}>{daysTo(c.dataConsegna)<=0?"Scaduta":`${daysTo(c.dataConsegna)}gg`}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {/* Empty drop zone */}
+            {items.length===0&&(
+              <div style={{padding:"28px 12px",borderRadius:12,border:`1.5px dashed ${isOver&&dragging?col:"#E5E3DC"}`,textAlign:"center",fontSize:12,color:isOver&&dragging?col:"#C0C0C5",background:isOver&&dragging?col+"05":"transparent",transition:"all .2s",fontWeight:isOver&&dragging?700:400}}>
+                {isOver&&dragging?"Rilascia qui":"Nessuna commessa"}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}:any){
   const [dragId,setDragId]=useState<string|null>(null);
   const [overCol,setOverCol]=useState<string|null>(null);
   const fmtE=(n:number)=>n>0?"€"+Math.round(n).toLocaleString("it-IT"):"—";
