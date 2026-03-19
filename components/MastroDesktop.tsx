@@ -29,6 +29,7 @@ import AgendaPanel from "./AgendaPanel";
 import MessaggiPanel from "./MessaggiPanel";
 import SettingsPanel from "./SettingsPanel";
 import ConfiguratoreCommessa from "./ConfiguratoreCommessa";
+import QuickBar from "./QuickBar";
 
 const TEAL="#1A9E73", DARK="#1A1A1C", RED="#DC4444", PURPLE="#8B5CF6";
 
@@ -91,18 +92,21 @@ const SoonView = ({ k, T }: any) => {
 export default function MastroDesktop() {
   const { T, cantieri=[], msgs=[], fattureDB=[], montaggiDB=[], aziendaInfo, setTab, tab, giorniFermaCM, sogliaDays=7 } = useMastro();
   const [collapsed, setCollapsed] = useState(false);
-  // Shortcut [ per toggle sidebar
-  typeof window !== "undefined" && (() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "[" && !["INPUT","TEXTAREA","SELECT"].includes((e.target as HTMLElement)?.tagName)) {
-        setCollapsed(c => !c);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  });
+  const [history, setHistory] = useState<string[]>([]);
   const sw = collapsed ? 50 : 220;
   const active = tab || "home";
+
+  // Naviga con history
+  const navigate = (key: string) => {
+    setHistory(h => [...h.slice(-19), active]); // max 20 step
+    setTab(key);
+  };
+  const goBack = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setTab(prev);
+  };
   const TODAY = new Date().toISOString().split("T")[0];
 
   const ferme    = cantieri.filter(c => giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura").length;
@@ -157,7 +161,7 @@ export default function MastroDesktop() {
                 const on = active === key;
                 const b  = badge(key);
                 return (
-                  <div key={key} onClick={() => setTab(key)}
+                  <div key={key} onClick={() => navigate(key)}
                     style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 14px", cursor:"pointer", position:"relative", background:on ? "rgba(255,255,255,0.09)" : "transparent", transition:"background .1s" }}
                     onMouseEnter={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
                     onMouseLeave={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
@@ -186,13 +190,8 @@ export default function MastroDesktop() {
               <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)" }}>Piano START · {cantieri.length} commesse</div>
             </div>
           </div>}
-          <div onClick={() => setCollapsed(c => !c)}
-            title={collapsed ? "Espandi sidebar" : "Comprimi sidebar"}
-            style={{ height:36, display:"flex", alignItems:"center", justifyContent:collapsed?"center":"space-between", padding:collapsed?"0":"0 14px", cursor:"pointer", color:"rgba(255,255,255,0.35)", borderTop:"1px solid rgba(255,255,255,0.05)", transition:"background .15s" }}
-            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="rgba(255,255,255,0.06)"}
-            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background="transparent"}>
-            {!collapsed && <span style={{fontSize:10,color:"rgba(255,255,255,0.2)"}}>[ comprimi ]</span>}
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" style={{ transform:collapsed?"rotate(0deg)":"rotate(180deg)", transition:"transform .18s", flexShrink:0 }}><polyline points="9 18 15 12 9 6" /></svg>
+          <div onClick={() => setCollapsed(c => !c)} style={{ height:30, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.2)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform:collapsed ? "rotate(0deg)" : "rotate(180deg)", transition:"transform .18s" }}><polyline points="9 18 15 12 9 6" /></svg>
           </div>
         </div>
       </div>
@@ -200,7 +199,16 @@ export default function MastroDesktop() {
       {/* MAIN */}
       <div style={{ flex:1, display:"flex", flexDirection:"column" as any, overflow:"hidden", minWidth:0 }}>
         <div style={{ height:50, flexShrink:0, background:"#fff", borderBottom:`0.5px solid ${T.bdr}`, display:"flex", alignItems:"center", padding:"0 18px", gap:10 }}>
-          <span style={{ fontSize:14, fontWeight:500, color:T.text, whiteSpace:"nowrap" as any }}>{lbl}</span>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            {history.length > 0 && (
+              <div onClick={goBack} title="Indietro" style={{ width:30, height:30, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", border:`1px solid ${T.bdr}`, background:"#fff", flexShrink:0 }}
+                onMouseEnter={e=>((e.currentTarget as any).style.background="#F2F1EC")}
+                onMouseLeave={e=>((e.currentTarget as any).style.background="#fff")}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+            )}
+            <span style={{ fontSize:14, fontWeight:500, color:T.text, whiteSpace:"nowrap" as any }}>{lbl}</span>
+          </div>
           <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:7 }}>
             {ferme > 0 && <div onClick={() => setTab("commesse")} style={{ display:"flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:6, background:RED+"0E", border:`1px solid ${RED}20`, cursor:"pointer" }}><div style={{ width:4, height:4, borderRadius:"50%", background:RED }} /><span style={{ fontSize:11, fontWeight:500, color:RED }}>{ferme} ferme</span></div>}
             {montOggi > 0 && <div onClick={() => setTab("montaggi")} style={{ display:"flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:6, background:PURPLE+"0E", border:`1px solid ${PURPLE}20`, cursor:"pointer" }}><div style={{ width:4, height:4, borderRadius:"50%", background:PURPLE }} /><span style={{ fontSize:11, fontWeight:500, color:PURPLE }}>{montOggi} oggi</span></div>}
@@ -209,6 +217,7 @@ export default function MastroDesktop() {
             <div style={{ width:28, height:28, borderRadius:"50%", background:TEAL+"16", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:TEAL, cursor:"pointer", marginLeft:4 }} onClick={() => setTab("settings")}>{(aziendaInfo?.nome || aziendaInfo?.ragione || "M")[0].toUpperCase()}</div>
           </div>
         </div>
+        <QuickBar />
         <div style={{ flex:1, overflow:"hidden" }}>{content()}</div>
       </div>
     </div>
