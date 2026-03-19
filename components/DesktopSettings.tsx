@@ -1,10 +1,9 @@
 "use client";
 // @ts-nocheck
-// MASTRO  DesktopSettings v2
+// MASTRO — DesktopSettings v2
 // Sidebar nav + archivi completi: Profili, Vetri, Accessori, Colori
 
-import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM } from "./mastro-constants";
 
@@ -57,12 +56,12 @@ const badge=(bg:string,c:string,txt:string)=>(
   <span style={{fontSize:10,padding:"2px 8px",borderRadius:10,background:bg,color:c,fontWeight:700,whiteSpace:"nowrap"}}>{txt}</span>
 );
 
-//  Input/Label helpers 
+// ── Input/Label helpers ───────────────────────────────────────
 const LBL=({children}:any)=><label style={{fontSize:11,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:4,display:"block"}}>{children}</label>;
 const INP=({...p})=><input {...p} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",...(p.style||{})}}/>;
 const SEL=({children,...p}:any)=><select {...p} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",...(p.style||{})}}>{children}</select>;
 
-//  Sezione container 
+// ── Sezione container ─────────────────────────────────────────
 const Sez=({title,sub="",action=null,children}:any)=>(
   <div style={{marginBottom:24}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
@@ -81,14 +80,14 @@ const Sez=({title,sub="",action=null,children}:any)=>(
   </div>
 );
 
-//  Modal generico 
+// ── Modal generico ────────────────────────────────────────────
 function Modal({title,onClose,children}:any){
   return (
     <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={onClose}>
       <div style={{background:"#fff",borderRadius:16,width:640,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,.18)"}} onClick={e=>e.stopPropagation()}>
         <div style={{padding:"18px 22px",borderBottom:`1px solid #E5E3DC`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{fontSize:16,fontWeight:800,color:DARK}}>{title}</div>
-          <div onClick={onClose} style={{width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:`1px solid #E5E3DC`,color:"#86868b",fontSize:18,lineHeight:1}}></div>
+          <div onClick={onClose} style={{width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:`1px solid #E5E3DC`,color:"#86868b",fontSize:18,lineHeight:1}}>×</div>
         </div>
         <div style={{padding:"20px 22px"}}>{children}</div>
       </div>
@@ -96,11 +95,11 @@ function Modal({title,onClose,children}:any){
   );
 }
 
-// 
-// ARCHIVIO PROFILI v3  master-detail + DXF viewer SVG
-// 
+// ═══════════════════════════════════════════════════════════════
+// ARCHIVIO PROFILI v3 — master-detail + DXF viewer SVG
+// ═══════════════════════════════════════════════════════════════
 
-//  Parser LWPOLYLINE da testo DXF 
+// ── Parser LWPOLYLINE da testo DXF ───────────────────────────
 function parseLWPolylines(dxfText:string):{pts:{x:number,y:number}[],closed:boolean}[]{
   const lines=dxfText.split('\n');
   const result:{pts:{x:number,y:number}[],closed:boolean}[]=[];
@@ -123,377 +122,99 @@ function parseLWPolylines(dxfText:string):{pts:{x:number,y:number}[],closed:bool
   return result;
 }
 
-//  CAD Editor interattivo profilo DXF 
-function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:any){
+// ── Viewer sezione DXF reale con LWPOLYLINE ──────────────────
+function DXFViewer({polylines,dxfText,width=460,height=380}:any){
   const [view,setView]=useState("nodo");
-  const [zoom,setZoom]=useState(1);
-  const [pan,setPan]=useState({x:0,y:0});
-  const [tool,setTool]=useState<"select"|"quota"|"move">("select");
-  const [selPt,setSelPt]=useState<{pi:number,vi:number}|null>(null);
-  const [quotaPt1,setQuotaPt1]=useState<{x:number,y:number,sx:number,sy:number}|null>(null);
-  const [mousePos,setMousePos]=useState<{x:number,y:number,sx:number,sy:number}|null>(null);
-  const [quotes,setQuotes]=useState<{x1:number,y1:number,x2:number,y2:number,mm:number}[]>([]);
-  const [rotation,setRotation]=useState(0);
-  const [editPols,setEditPols]=useState<any[]|null>(null);
-  const [fullscreen,setFullscreen]=useState(false);
-  const [dragging,setDragging]=useState(false);
-  const [dragStart,setDragStart]=useState<any>(null);
-  const [panStart,setPanStart]=useState<any>(null);
-  const svgRef=useRef<SVGSVGElement>(null);
+  const pols:any[]=polylines&&polylines.length>0?polylines:dxfText?parseLWPolylines(dxfText):[];
 
-  const W = fullscreen ? Math.min(window.innerWidth-40, 1200) : width;
-  const H = fullscreen ? Math.min(window.innerHeight-160, 800) : height;
-
-  const basePols:any[]=editPols||(polylines&&polylines.length>0?polylines:dxfText?parseLWPolylines(dxfText):[]);
-
-  const rotatePt=(x:number,y:number,deg:number,cx:number,cy:number)=>{
-    const r=deg*Math.PI/180;
-    return {x:cx+(x-cx)*Math.cos(r)-(y-cy)*Math.sin(r),y:cy+(x-cx)*Math.sin(r)+(y-cy)*Math.cos(r)};
-  };
-
-  // Filtra vista
-  let raw=basePols;
-  if(view==="rahmen")raw=basePols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.x))<=2);
-  else if(view==="flugel")raw=basePols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.y))<=2&&Math.min(...p.pts.map((c:any)=>c.y))<-10);
-  else if(view==="front")raw=basePols.filter((p:any)=>Math.min(...p.pts.map((c:any)=>c.x))>=-2&&Math.min(...p.pts.map((c:any)=>c.y))>=-2);
-  if(raw.length===0)raw=basePols;
-
-  const allRaw=raw.flatMap((p:any)=>p.pts);
-  const cxR=allRaw.length?(Math.min(...allRaw.map((c:any)=>c.x))+Math.max(...allRaw.map((c:any)=>c.x)))/2:0;
-  const cyR=allRaw.length?(Math.min(...allRaw.map((c:any)=>c.y))+Math.max(...allRaw.map((c:any)=>c.y)))/2:0;
-  const target=raw.map((p:any)=>({...p,pts:p.pts.map((c:any)=>rotation?rotatePt(c.x,c.y,rotation,cxR,cyR):c)}));
-
-  if(basePols.length===0)return(
-    <div style={{width:W,height:H,background:"#1A1A1C",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
+  if(pols.length===0)return(
+    <div style={{width,height,background:"#1A1A1C",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <div style={{fontSize:11,color:"#444",textAlign:"center"}}>Importa DXF per modificare il profilo</div>
+      <div style={{fontSize:11,color:"#444",textAlign:"center"}}>Importa DXF per visualizzare il profilo</div>
     </div>
   );
+
+  // Filtra per vista
+  let target=pols;
+  if(view==="rahmen")target=pols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.x))<=2);
+  else if(view==="flugel")target=pols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.y))<=2&&Math.min(...p.pts.map((c:any)=>c.y))<-10);
+  else if(view==="front")target=pols.filter((p:any)=>Math.min(...p.pts.map((c:any)=>c.x))>=-2&&Math.min(...p.pts.map((c:any)=>c.y))>=-2);
+  if(target.length===0)target=pols;
 
   const allPts=target.flatMap((p:any)=>p.pts);
   const xs=allPts.map((c:any)=>c.x),ys=allPts.map((c:any)=>c.y);
   const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
   const rX=maxX-minX||1,rY=maxY-minY||1;
-  const TOOLBAR=38,STATUSBAR=26,PAD=12,QPAD=30;
-  const svgH=H-TOOLBAR-STATUSBAR;
-  const vW=W-PAD*2-QPAD,vH=svgH-PAD*2-QPAD;
-  const baseScale=Math.min(vW/rX,vH/rY)*0.92;
-  const sc=baseScale*zoom;
-  const offX=PAD+QPAD+(vW-rX*sc)/2+pan.x*sc;
-  const offY=PAD+(vH-rY*sc)/2+pan.y*sc;
+  const PAD=12,QPAD=28,TOOLBAR=32;
+  const svgH=height-TOOLBAR;
+  const vW=width-PAD*2-QPAD,vH=svgH-PAD*2-QPAD;
+  const scale=Math.min(vW/rX,vH/rY);
+  const offX=PAD+QPAD+(vW-rX*scale)/2;
+  const offY=PAD+(vH-rY*scale)/2;
+  const tx=(x:number)=>offX+(x-minX)*scale;
+  const ty=(y:number)=>svgH-PAD-QPAD-(y-minY)*scale;
 
-  const tx=(x:number)=>offX+(x-minX)*sc;
-  const ty=(y:number)=>svgH-PAD-QPAD-(y-minY)*sc;
-  const fromSVG=(sx:number,sy:number)=>({
-    x:minX+(sx-offX)/sc,
-    y:minY+(svgH-PAD-QPAD-sy)/sc
-  });
-
-  // Snap al punto pi vicino del profilo
-  const snapToProfile=(sx:number,sy:number,snapR=16):{x:number,y:number,sx:number,sy:number,pi:number,vi:number}|null=>{
-    let best:any=null;let bestD=snapR;
-    // Solo contorno esterno (polilinea pi grande)
-    const mainPol=target.reduce((a:any,b:any)=>b.pts.length>a.pts.length?b:a,target[0]);
-    if(!mainPol)return null;
-    // Salta i punti intermedi  prendi solo i vertici significativi
-    // Un vertice  significativo se cambia direzione > 5
-    const pts=mainPol.pts;
-    for(let vi=0;vi<pts.length;vi++){
-      const c=pts[vi];
-      const sx2=tx(c.x),sy2=ty(c.y);
-      const d=Math.hypot(sx2-sx,sy2-sy);
-      if(d<bestD){bestD=d;best={x:c.x,y:c.y,sx:sx2,sy:sy2,pi:target.indexOf(mainPol),vi};}
-    }
-    // Anche midpoint di ogni segmento
-    for(let vi=0;vi<pts.length;vi++){
-      const a=pts[vi],b=pts[(vi+1)%pts.length];
-      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-      const sx2=tx(mx),sy2=ty(my);
-      const d=Math.hypot(sx2-sx,sy2-sy);
-      if(d<bestD){bestD=d;best={x:mx,y:my,sx:sx2,sy:sy2,pi:-1,vi:-1};}
-    }
-    return best;
-  };
-
-  const getSVGPos=(e:React.MouseEvent)=>{
-    const r=svgRef.current?.getBoundingClientRect();
-    if(!r)return{sx:0,sy:0};
-    return{sx:e.clientX-r.left,sy:e.clientY-r.top};
-  };
-
-  const onMouseMove=(e:React.MouseEvent)=>{
-    const {sx,sy}=getSVGPos(e);
-    // Snap
-    const snapped=snapToProfile(sx,sy);
-    const world=snapped||fromSVG(sx,sy);
-    const wsx=snapped?snapped.sx:sx;
-    const wsy=snapped?snapped.sy:sy;
-    setMousePos({x:world.x,y:world.y,sx:wsx,sy:wsy});
-
-    if(panStart){
-      setPan({x:panStart.px+(sx-panStart.sx)/sc,y:panStart.py-(sy-panStart.sy)/sc});
-      return;
-    }
-    if(dragging&&dragStart){
-      const updated=(editPols||basePols).map((p:any,pi:number)=>
-        pi===dragStart.pi?{...p,pts:p.pts.map((c:any,vi:number)=>vi===dragStart.vi?fromSVG(sx,sy):c)}:p
-      );
-      setEditPols(updated);
-    }
-  };
-
-  const onMouseDown=(e:React.MouseEvent)=>{
-    const {sx,sy}=getSVGPos(e);
-    if(e.button===1||(e.shiftKey&&e.button===0)){
-      setPanStart({sx,sy,px:pan.x,py:pan.y});return;
-    }
-    if(tool==="quota"){
-      const snapped=snapToProfile(sx,sy);
-      const pt=snapped?{x:snapped.x,y:snapped.y,sx:snapped.sx,sy:snapped.sy}:{...fromSVG(sx,sy),sx,sy};
-      if(!quotaPt1){setQuotaPt1(pt);}
-      else{
-        const dx=pt.x-quotaPt1.x,dy=pt.y-quotaPt1.y;
-        const mm=Math.round(Math.sqrt(dx*dx+dy*dy)*10)/10;
-        if(mm>0.1)setQuotes(q=>[...q,{x1:quotaPt1.x,y1:quotaPt1.y,x2:pt.x,y2:pt.y,mm}]);
-        setQuotaPt1(null);
-      }
-      return;
-    }
-    if(tool==="move"){
-      let best:{pi:number,vi:number}|null=null;let bestD=14/sc;
-      target.forEach((p:any,pi:number)=>p.pts.forEach((c:any,vi:number)=>{
-        const d=Math.hypot(tx(c.x)-sx,ty(c.y)-sy);
-        if(d<bestD){bestD=d;best={pi,vi};}
-      }));
-      if(best){setSelPt(best);setDragging(true);setDragStart(best);}
-      return;
-    }
-    if(tool==="select"){
-      let best:{pi:number,vi:number}|null=null;let bestD=14/sc;
-      target.forEach((p:any,pi:number)=>p.pts.forEach((c:any,vi:number)=>{
-        const d=Math.hypot(tx(c.x)-sx,ty(c.y)-sy);
-        if(d<bestD){bestD=d;best={pi,vi};}
-      }));
-      setSelPt(best);
-    }
-  };
-
-  const onMouseUp=()=>{
-    setDragging(false);setDragStart(null);
-    if(panStart){setPanStart(null);}
-    if(editPols&&onUpdatePolylines)onUpdatePolylines(editPols);
-  };
-
-  const onWheel=(e:React.WheelEvent)=>{
-    e.preventDefault();
-    const delta=e.deltaY<0?1.18:0.85;
-    setZoom(z=>Math.max(0.2,Math.min(12,z*delta)));
-  };
-
-  const step=Math.ceil(Math.max(rX,rY)/6/5)*5||5;
+  const step=Math.ceil(rX/7/5)*5||5;
   const qX:number[]=[],qY:number[]=[];
   for(let v=Math.ceil(minX/step)*step;v<=maxX+0.1;v+=step)qX.push(v);
   for(let v=Math.ceil(minY/step)*step;v<=maxY+0.1;v+=step)qY.push(v);
 
-  const fills=['#D0840818','#1A9E7315','#3B7FE015','#8B5CF612','#F9731612','#06B6D412','#EC489912'];
+  const fills=['#D0840814','#1A9E7312','#3B7FE012','#8B5CF610','#F9731610','#06B6D410','#EC489910'];
   const strokes=['#D08008','#1A9E73','#3B7FE0','#8B5CF6','#F97316','#06B6D4','#EC4899'];
 
-  const resetEdit=()=>{setEditPols(null);setZoom(1);setPan({x:0,y:0});setRotation(0);setQuotes([]);setSelPt(null);setQuotaPt1(null);};
-
-  const inner = (
-    <div style={{background:"#1A1A1C",borderRadius:fullscreen?0:10,overflow:"hidden",userSelect:"none",
-      ...(fullscreen?{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column"}:{})}}>
-
-      {/* TOOLBAR */}
-      <div style={{height:TOOLBAR,display:"flex",alignItems:"center",padding:"0 10px",gap:3,borderBottom:"1px solid #2A2A2E",flexShrink:0,background:"#141416"}}>
-        {[{k:"nodo",l:"Nodo"},{k:"rahmen",l:"Telaio"},{k:"flugel",l:"Anta"},{k:"front",l:"Front."}].map(({k,l})=>(
+  return(
+    <div style={{background:"#1A1A1C",borderRadius:10,overflow:"hidden"}}>
+      {/* Toolbar */}
+      <div style={{height:TOOLBAR,display:"flex",alignItems:"center",padding:"0 12px",gap:4,borderBottom:"1px solid #2A2A2E"}}>
+        {[{k:"nodo",l:"Nodo"},{k:"rahmen",l:"Telaio"},{k:"flugel",l:"Anta"},{k:"front",l:"Frontale"}].map(({k,l})=>(
           <div key={k} onClick={()=>setView(k)}
-            style={{padding:"4px 10px",fontSize:10,fontWeight:600,cursor:"pointer",borderRadius:5,
-              background:view===k?"#D08008":"transparent",color:view===k?"#fff":"#555"}}>
+            style={{padding:"3px 10px",fontSize:10,fontWeight:600,cursor:"pointer",borderRadius:5,
+              background:view===k?"#D08008":"transparent",color:view===k?"#fff":"#666",transition:"all .15s"}}>
             {l}
           </div>
         ))}
-        <div style={{width:1,height:18,background:"#2A2A2E",margin:"0 4px"}}/>
-        {([
-          {k:"select",l:"",title:"Seleziona",c:"#9CA3AF"},
-          {k:"move",l:"",title:"Sposta punto",c:"#3B7FE0"},
-          {k:"quota",l:"",title:"Quota distanza",c:"#D08008"},
-        ] as any[]).map(({k,l,title,c})=>(
-          <div key={k} onClick={()=>{setTool(k);setQuotaPt1(null);}}
-            title={title}
-            style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:13,fontWeight:700,cursor:"pointer",borderRadius:6,
-              background:tool===k?c+"30":"transparent",
-              color:tool===k?c:"#555",
-              border:tool===k?`1.5px solid ${c}50`:"1.5px solid transparent"}}>
-            {l}
-          </div>
-        ))}
-        <div style={{width:1,height:18,background:"#2A2A2E",margin:"0 4px"}}/>
-        <div style={{display:"flex",alignItems:"center",gap:3}}>
-          <span style={{fontSize:9,color:"#555"}}></span>
-          <input type="number" value={rotation} onChange={(e:any)=>setRotation(parseFloat(e.target.value)||0)}
-            style={{width:40,background:"#2A2A2E",border:"1px solid #3A3A3E",borderRadius:4,color:"#fff",fontSize:9,padding:"2px 4px",textAlign:"center"}}/>
-          <span style={{fontSize:9,color:"#555"}}></span>
-        </div>
-        {(editPols||zoom!==1||rotation!==0||quotes.length>0)&&(
-          <div onClick={resetEdit} style={{padding:"2px 8px",fontSize:9,color:"#DC4444",cursor:"pointer",borderRadius:4,border:"1px solid #DC444330",marginLeft:4}}>Reset</div>
-        )}
-        {quotes.length>0&&(
-          <div onClick={()=>setQuotes([])} style={{padding:"2px 8px",fontSize:9,color:"#D08008",cursor:"pointer",borderRadius:4,border:"1px solid #D0800830"}}>{quotes.length}q</div>
-        )}
         <div style={{flex:1}}/>
-        <div onClick={()=>setFullscreen(!fullscreen)}
-          style={{padding:"3px 8px",fontSize:10,cursor:"pointer",borderRadius:5,color:fullscreen?"#D08008":"#555",
-            border:`1px solid ${fullscreen?"#D08008":"#333"}`,background:fullscreen?"#D0800820":"transparent"}}>
-          {fullscreen?" Esci":" Ingrandisci"}
-        </div>
-        <div style={{fontSize:8,color:"#333",fontFamily:"JetBrains Mono,monospace",marginLeft:8}}>
-          {Math.round(rX)}{Math.round(rY)}mm  {zoom.toFixed(1)}x
+        <div style={{fontSize:9,color:"#333",fontFamily:"JetBrains Mono,monospace"}}>
+          {Math.round(rX)}×{Math.round(rY)}mm · {pols.length} pol.
         </div>
       </div>
-
-      {/* SVG CAD */}
-      <svg ref={svgRef} width={W} height={svgH}
-        style={{display:"block",cursor:
-          tool==="quota"?"crosshair":
-          tool==="move"&&selPt?"grab":
-          panStart?"grabbing":"default",
-          flex:fullscreen?"1":"none"}}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={()=>{onMouseUp();setMousePos(null);}}
-        onWheel={onWheel}>
-        <rect width={W} height={svgH} fill="#1A1A1C"/>
+      {/* SVG viewer */}
+      <svg width={width} height={svgH} style={{display:"block"}}>
+        <rect width={width} height={svgH} fill="#1A1A1C"/>
         {/* Grid */}
-        {qX.map((v,i)=><line key={"gx"+i} x1={tx(v)} y1={PAD} x2={tx(v)} y2={svgH-PAD-QPAD} stroke="#222" strokeWidth="0.5"/>)}
-        {qY.map((v,i)=><line key={"gy"+i} x1={PAD+QPAD} y1={ty(v)} x2={W-PAD} y2={ty(v)} stroke="#222" strokeWidth="0.5"/>)}
+        {qX.map((v,i)=><line key={"gx"+i} x1={tx(v)} y1={PAD} x2={tx(v)} y2={svgH-PAD-QPAD} stroke="#252528" strokeWidth="0.5"/>)}
+        {qY.map((v,i)=><line key={"gy"+i} x1={PAD+QPAD} y1={ty(v)} x2={width-PAD} y2={ty(v)} stroke="#252528" strokeWidth="0.5"/>)}
         {/* Assi 0 */}
-        {minX<=0&&maxX>=0&&<line x1={tx(0)} y1={PAD} x2={tx(0)} y2={svgH-PAD-QPAD} stroke="#ffffff12" strokeWidth="0.8" strokeDasharray="4,4"/>}
-        {minY<=0&&maxY>=0&&<line x1={PAD+QPAD} y1={ty(0)} x2={W-PAD} y2={ty(0)} stroke="#ffffff12" strokeWidth="0.8" strokeDasharray="4,4"/>}
+        {minX<=0&&maxX>=0&&<line x1={tx(0)} y1={PAD} x2={tx(0)} y2={svgH-PAD-QPAD} stroke="#ffffff15" strokeWidth="0.8" strokeDasharray="4,3"/>}
+        {minY<=0&&maxY>=0&&<line x1={PAD+QPAD} y1={ty(0)} x2={width-PAD} y2={ty(0)} stroke="#ffffff15" strokeWidth="0.8" strokeDasharray="4,3"/>}
         {/* Profilo */}
         {target.map((p:any,pi:number)=>{
           const pStr=p.pts.map((c:any)=>`${tx(c.x).toFixed(1)},${ty(c.y).toFixed(1)}`).join(' ');
-          const isMain=pi===0||p.pts.length===Math.max(...target.map((x:any)=>x.pts.length));
-          return <polygon key={pi} points={pStr}
-            fill={fills[pi%fills.length]}
-            stroke={strokes[pi%strokes.length]}
-            strokeWidth={isMain?"1.8":"1.0"}
-            strokeLinejoin="round"/>;
+          return<polygon key={pi} points={pStr} fill={fills[pi%fills.length]} stroke={strokes[pi%strokes.length]} strokeWidth="0.9" strokeLinejoin="round"/>;
         })}
-        {/* Snap indicator su mouseover */}
-        {mousePos&&tool==="quota"&&<g>
-          <circle cx={mousePos.sx} cy={mousePos.sy} r="5" fill="#D08008" fillOpacity="0.7"/>
-          <line x1={mousePos.sx-8} y1={mousePos.sy} x2={mousePos.sx+8} y2={mousePos.sy} stroke="#D08008" strokeWidth="1"/>
-          <line x1={mousePos.sx} y1={mousePos.sy-8} x2={mousePos.sx} y2={mousePos.sy+8} stroke="#D08008" strokeWidth="1"/>
-        </g>}
-        {/* Linea live mentre si quota */}
-        {quotaPt1&&mousePos&&<g>
-          <line x1={tx(quotaPt1.x)} y1={ty(quotaPt1.y)} x2={mousePos.sx} y2={mousePos.sy}
-            stroke="#D08008" strokeWidth="1.2" strokeDasharray="6,3"/>
-          <circle cx={tx(quotaPt1.x)} cy={ty(quotaPt1.y)} r="5" fill="#D08008"/>
-          {/* Misura live */}
-          {(()=>{
-            const dx=mousePos.x-quotaPt1.x,dy=mousePos.y-quotaPt1.y;
-            const mm=Math.round(Math.sqrt(dx*dx+dy*dy)*10)/10;
-            const mx=(tx(quotaPt1.x)+mousePos.sx)/2,my=(ty(quotaPt1.y)+mousePos.sy)/2;
-            const lw=String(mm).length*8+20;
-            return <g>
-              <rect x={mx-lw/2} y={my-10} width={lw} height={19} fill="#D08008" rx={4}/>
-              <text x={mx} y={my+4} fontSize="11" fill="#fff" textAnchor="middle" fontFamily="JetBrains Mono,monospace" fontWeight="800">{mm}</text>
-            </g>;
-          })()}
-        </g>}
-        {/* Quote salvate */}
-        {quotes.map((q,i)=>{
-          const x1s=tx(q.x1),y1s=ty(q.y1),x2s=tx(q.x2),y2s=ty(q.y2);
-          const mx=(x1s+x2s)/2,my=(y1s+y2s)/2;
-          const lw=String(q.mm).length*8+20;
-          return <g key={i}>
-            {/* Linea quota */}
-            <line x1={x1s} y1={y1s} x2={x2s} y2={y2s} stroke="#D08008" strokeWidth="1.2"/>
-            {/* Frecce terminali */}
-            <circle cx={x1s} cy={y1s} r="3.5" fill="#D08008"/>
-            <circle cx={x2s} cy={y2s} r="3.5" fill="#D08008"/>
-            {/* Badge mm */}
-            <rect x={mx-lw/2} y={my-10} width={lw} height={19} fill="#1A1A1C" stroke="#D08008" strokeWidth="1" rx={4}/>
-            <text x={mx} y={my+4} fontSize="11" fill="#D08008" textAnchor="middle" fontFamily="JetBrains Mono,monospace" fontWeight="800">{q.mm}</text>
-            {/* Delete */}
-            <text x={x2s+8} y={y2s+4} fontSize="12" fill="#555" style={{cursor:"pointer"}}
-              onClick={(e:any)=>{e.stopPropagation();setQuotes(qs=>qs.filter((_,j)=>j!==i));}}></text>
-          </g>;
-        })}
-        {/* Punto selezionato */}
-        {selPt&&target[selPt.pi]?.pts[selPt.vi]&&(()=>{
-          const c=target[selPt.pi].pts[selPt.vi];
-          const lw=110;
-          return <g>
-            <circle cx={tx(c.x)} cy={ty(c.y)} r="8" fill="none" stroke="#D08008" strokeWidth="1.5" strokeDasharray="3,2"/>
-            <rect x={tx(c.x)+10} y={ty(c.y)-11} width={lw} height={17} fill="#1A1A1C" stroke="#D08008" strokeWidth="0.8" rx={3}/>
-            <text x={tx(c.x)+10+lw/2} y={ty(c.y)+2} fontSize="10" fill="#D08008" textAnchor="middle" fontFamily="JetBrains Mono,monospace">
-              x:{c.x.toFixed(1)} y:{c.y.toFixed(1)}
-            </text>
-          </g>;
-        })()}
         {/* Quote X */}
         {qX.map((v,i)=>(
           <g key={"qx"+i}>
-            <line x1={tx(v)} y1={svgH-PAD-QPAD} x2={tx(v)} y2={svgH-PAD-QPAD+3} stroke="#3B7FE040" strokeWidth="0.7"/>
-            <text x={tx(v)} y={svgH-PAD-QPAD+13} fontSize="8" fill="#3B7FE080" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+            <line x1={tx(v)} y1={svgH-PAD-QPAD} x2={tx(v)} y2={svgH-PAD-QPAD+3} stroke="#3B7FE050" strokeWidth="0.7"/>
+            <text x={tx(v)} y={svgH-PAD-QPAD+12} fontSize="8" fill="#3B7FE0" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
           </g>
         ))}
         {/* Quote Y */}
         {qY.map((v,i)=>(
           <g key={"qy"+i}>
-            <line x1={PAD+QPAD-3} y1={ty(v)} x2={PAD+QPAD} y2={ty(v)} stroke="#3B7FE040" strokeWidth="0.7"/>
-            <text x={PAD+QPAD-5} y={ty(v)+3} fontSize="8" fill="#3B7FE080" textAnchor="end" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+            <line x1={PAD+QPAD-3} y1={ty(v)} x2={PAD+QPAD} y2={ty(v)} stroke="#3B7FE050" strokeWidth="0.7"/>
+            <text x={PAD+QPAD-5} y={ty(v)+3} fontSize="8" fill="#3B7FE0" textAnchor="end" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
           </g>
         ))}
       </svg>
-
-      {/* STATUS BAR */}
-      <div style={{height:STATUSBAR,display:"flex",alignItems:"center",padding:"0 14px",gap:16,borderTop:"1px solid #1E1E20",background:"#0F0F11",flexShrink:0}}>
-        {tool==="quota"&&<span style={{fontSize:10,color:"#D08008",fontWeight:600}}>
-          {quotaPt1?" Click 2 punto (snap automatico ai vertici)":" Click 1 punto per iniziare quota"}
-        </span>}
-        {tool==="move"&&<span style={{fontSize:10,color:"#3B7FE0"}}>
-          {selPt?" Trascina per spostare il punto":"Click su un vertice per selezionarlo"}
-        </span>}
-        {tool==="select"&&selPt&&target[selPt.pi]?.pts[selPt.vi]&&(()=>{
-          const c=target[selPt.pi].pts[selPt.vi];
-          return <span style={{fontSize:10,color:"#9CA3AF",fontFamily:"JetBrains Mono,monospace"}}>
-            ({c.x.toFixed(2)}, {c.y.toFixed(2)}) mm
-          </span>;
-        })()}
-        {mousePos&&<span style={{fontSize:9,color:"#444",fontFamily:"JetBrains Mono,monospace"}}>
-          {mousePos.x.toFixed(1)}, {mousePos.y.toFixed(1)}
-        </span>}
-        {quotes.length>0&&<span style={{fontSize:10,color:"#D08008"}}>
-          {quotes.map(q=>q.mm+"mm").join("  ")}
-        </span>}
-        <span style={{marginLeft:"auto",fontSize:9,color:"#333"}}>scroll=zoom  shift+drag=pan</span>
-      </div>
     </div>
   );
-
-  if(fullscreen){
-    if(typeof document==="undefined")return inner;
-    return createPortal(
-      <div style={{position:"fixed",inset:0,zIndex:99999,background:"rgba(0,0,0,0.95)",display:"flex",flexDirection:"column"}}>
-        {inner}
-      </div>,
-      document.body
-    );
-  }
-  return inner;
 }
 
 function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
   const [search,setSearch]=useState("");
   const [selected,setSelected]=useState<string|null>(null);
   const [form,setForm]=useState<any>(null); // null = nessuna selezione
-  const [importModal,setImportModal]=useState<{text:string,filename:string,pols:any[]}|null>(null);
 
   const profili:any[]=sistemiDB||[];
   const filtered=profili.filter((s:any)=>
@@ -509,10 +230,11 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
     const bautiefe=quote.find((q:number)=>BAUT.includes(q))||quote.filter((q:number)=>q>=50&&q<=130).sort((a:number,b:number)=>a-b)[0]||0;
     const fermSet=new Set<string>(); const fp=/\b([2-6]\d{5})\b/g; let fm:any;
     while((fm=fp.exec(text))!==null)fermSet.add(fm[1]);
-    const coords:{x:number,y:number}[]=[]; const lines2=text.split('\n'); for(let li=0;li<lines2.length-3;li++){if(lines2[li].trim()==='10'){const xv=parseFloat(lines2[li+1]);if(lines2[li+2]?.trim()==='20'){const yv=parseFloat(lines2[li+3]);if(!isNaN(xv)&&!isNaN(yv))coords.push({x:xv,y:yv});}}}
+    const coords:{x:number,y:number}[]=[]; const cp=/\n\s*10\n\s*([-\d.]+)\n\s*20\n\s*([-\d.]+)/g; let cv:any;
+    while((cv=cp.exec(text))!==null)coords.push({x:parseFloat(cv[1]),y:parseFloat(cv[2])});
     const n=codice.toLowerCase();
-    const tipo=n.includes("x2")||n.includes("x3")?"Flgel":n.includes("x4")||n.includes("x5")?"Pfosten":n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9")?"Stulp":"Rahmen";
-    const fornitore=text.includes("OHNE_DICHTUNGEN")||text.includes("aluplast")||text.includes("mmerling")?"Kmmerling / aluplast":"Generico";
+    const tipo=n.includes("x2")||n.includes("x3")?"Flügel":n.includes("x4")||n.includes("x5")?"Pfosten":n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9")?"Stulp":"Rahmen";
+    const fornitore=text.includes("OHNE_DICHTUNGEN")||text.includes("aluplast")||text.includes("mmerling")?"Kömmerling / aluplast":"Generico";
     // Estrai LWPOLYLINE complete per il viewer
     const polylines=parseLWPolylines(text);
     return {id:"P-"+Date.now()+"_"+Math.random(),codice,marca:fornitore.split(" ")[0],sistema:codice,nome:tipo+" "+bautiefe+"mm",materiale:"PVC",tipo,bautiefe,grMl:"",qtaCassa:"",camere:0,uw:"",uf:"",rw:"",spessore:String(bautiefe),classe:"",certificazioni:"",notetech:"",sovRAL:0,sovLegno:0,euroMl:0,tipologie:"",sottosistemi:"",ferramenta:[...fermSet],quote,coords,polylines,dxfText:text,attivo:true};
@@ -536,14 +258,14 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
   };
 
   const tipoColor:Record<string,[string,string]>={
-    "Rahmen":["#DBEAFE","#1E40AF"],"Flgel":["#D1FAE5","#065F46"],
+    "Rahmen":["#DBEAFE","#1E40AF"],"Flügel":["#D1FAE5","#065F46"],
     "Pfosten":["#FEF3C7","#92400E"],"Stulp":["#FCE7F3","#9D174D"],
   };
 
   return (
     <div style={{display:"flex",height:"100%",gap:0}}>
 
-      {/*  LISTA SINISTRA  */}
+      {/* ── LISTA SINISTRA ─────────────────────────────────────── */}
       <div style={{width:280,flexShrink:0,borderRight:"1px solid #E5E3DC",display:"flex",flexDirection:"column",background:"#fff",height:"100%"}}>
         {/* Header lista */}
         <div style={{padding:"14px 14px 10px",borderBottom:"1px solid #E5E3DC",background:"#1A1A1C"}}>
@@ -563,7 +285,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
           </div>
         </div>
 
-        {/* Import DXF  uno alla volta */}
+        {/* Import DXF — uno alla volta */}
         <div style={{padding:"10px 12px",borderBottom:"1px solid #F2F1EC",background:"#FFFBF5"}}>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
             {/* DXF */}
@@ -572,26 +294,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                 onChange={e=>{
                   const file=e.target.files?.[0]; if(!file)return;
                   const r=new FileReader();
-                  r.onload=ev=>{
-                    const text=ev.target?.result as string;
-                    const pols=parseLWPolylines(text);
-                    // Rileva se  un nodo (pi quadranti) o profilo singolo
-                    const allPts=pols.flatMap((p:any)=>p.pts);
-                    if(allPts.length===0){const p=parseDXF(text,file.name);setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);setSelected(p.id);setForm(p);return;}
-                    const hasNegY=allPts.some((c:any)=>c.y<-5);
-                    const hasNegX=allPts.some((c:any)=>c.x<-5);
-                    const hasPosXY=allPts.some((c:any)=>c.x>2&&c.y>2);
-                    const isNodo=(hasNegY?1:0)+(hasNegX?1:0)+(hasPosXY?1:0)>=2;
-                    if(isNodo){
-                      // Mostra modal selezione profilo
-                      setImportModal({text,filename:file.name,pols});
-                    } else {
-                      // Profilo singolo  importa direttamente
-                      const p=parseDXF(text,file.name);
-                      setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);
-                      setSelected(p.id);setForm(p);
-                    }
-                  };
+                  r.onload=ev=>{const p=parseDXF(ev.target?.result as string,file.name);setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);setSelected(p.id);setForm(p);};
                   r.readAsText(file); e.target.value="";
                 }}/>
               <div style={{border:`1.5px dashed ${AMB}`,borderRadius:7,padding:"8px 4px",textAlign:"center",background:"#FFFBF5",cursor:"pointer"}}>
@@ -633,7 +336,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                 onMouseEnter={e=>!isOn&&((e.currentTarget as any).style.background="#F8F7F2")}
                 onMouseLeave={e=>!isOn&&((e.currentTarget as any).style.background="#fff")}>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}>
-                  <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,fontWeight:700,color:isOn?AMB:DARK}}>{s.codice||s.sistema||""}</span>
+                  <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,fontWeight:700,color:isOn?AMB:DARK}}>{s.codice||s.sistema||"—"}</span>
                   <span style={{fontSize:10,padding:"1px 6px",borderRadius:3,fontWeight:700,background:tbg,color:tfg}}>{s.tipo||"?"}</span>
                 </div>
                 <div style={{fontSize:11,color:"#86868b",marginBottom:2}}>{s.nome||s.marca}</div>
@@ -648,7 +351,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
         </div>
       </div>
 
-      {/*  DETTAGLIO DESTRA  */}
+      {/* ── DETTAGLIO DESTRA ───────────────────────────────────── */}
       <div style={{flex:1,overflowY:"auto",background:"#F2F1EC"}}>
         {!form?(
           <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",flexDirection:"column",gap:12,color:"#86868b"}}>
@@ -661,29 +364,19 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
               <div>
                 <div style={{fontSize:18,fontWeight:800,color:DARK}}>{form.codice||form.nome||"Nuovo profilo"}</div>
-                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{form.marca}  {form.sistema}  {form.tipo}</div>
+                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{form.marca} · {form.sistema} · {form.tipo}</div>
               </div>
               <div style={{display:"flex",gap:8}}>
                 <div onClick={()=>del(form.id)} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>Elimina</div>
               </div>
             </div>
 
-            {/*  VIEWER DXF + DATI PRODUZIONE  */}
+            {/* ── VIEWER DXF + DATI PRODUZIONE ── */}
             <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:16,marginBottom:16}}>
               {/* Viewer sezione */}
               <div>
                 <div style={{fontSize:10,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Sezione trasversale DXF</div>
-                <DXFViewer
-                    dxfText={form.dxfText}
-                    polylines={form.polylines}
-                    width={460}
-                    height={460}
-                    onUpdatePolylines={(newPols:any)=>{
-                      const next={...form,polylines:newPols};
-                      setForm(next);
-                      setProfili((prev:any[])=>prev.map((x:any)=>x.id===next.id?next:x));
-                    }}
-                  />
+                <DXFViewer dxfText={form.dxfText} polylines={form.polylines} width={460} height={380}/>
                 {form.imgBase64&&<img src={form.imgBase64} alt="profilo" style={{maxHeight:80,border:"1px solid #E5E3DC",borderRadius:8,display:"block",marginTop:8}}/>}
                 {form.coords?.length>0&&(
                   <div style={{marginTop:8,padding:"6px 10px",background:"#1A1A1C",borderRadius:6}}>
@@ -696,14 +389,14 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
               </div>
               {/* Dati produzione PVC */}
               <div style={{background:"#F0FDF4",borderRadius:12,padding:"16px",border:`2px solid ${TEAL}`}}>
-                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dati produzione PVC </div>
+                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dati produzione PVC ★</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div>
-                    <LBL>Peso kg / metro lineare </LBL>
+                    <LBL>Peso kg / metro lineare ★</LBL>
                     <INP type="number" placeholder="es. 1.350" value={form.grMl||""} onChange={(e:any)=>updateForm("grMl",e.target.value)} style={{border:`2px solid ${TEAL}`,fontWeight:700,fontSize:14}}/>
                   </div>
                   <div>
-                    <LBL>Quantit per cassa </LBL>
+                    <LBL>Quantità per cassa ★</LBL>
                     <INP placeholder="es. 50ml / 6m / 10pz" value={form.qtaCassa||""} onChange={(e:any)=>updateForm("qtaCassa",e.target.value)} style={{border:`2px solid ${BLU}`,fontWeight:700}}/>
                   </div>
                   <div>
@@ -711,7 +404,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                     <INP type="number" placeholder="70" value={form.bautiefe||""} onChange={(e:any)=>updateForm("bautiefe",parseFloat(e.target.value)||0)}/>
                   </div>
                   <div>
-                    <LBL>N camere</LBL>
+                    <LBL>N° camere</LBL>
                     <INP type="number" placeholder="5" value={form.camere||""} onChange={(e:any)=>updateForm("camere",parseInt(e.target.value)||0)}/>
                   </div>
                   <div>
@@ -719,19 +412,19 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                     <INP placeholder="70" value={form.spessore||""} onChange={(e:any)=>updateForm("spessore",e.target.value)}/>
                   </div>
                   <div>
-                    <LBL> / ml base</LBL>
+                    <LBL>€ / ml base</LBL>
                     <INP type="number" placeholder="0" value={form.euroMl||""} onChange={(e:any)=>updateForm("euroMl",parseFloat(e.target.value)||0)}/>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Identit */}
+            {/* Identità */}
             <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC",marginBottom:12}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identit</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identità</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                 <div><LBL>Codice DXF</LBL><INP placeholder="es. 140x01" value={form.codice||""} onChange={(e:any)=>updateForm("codice",e.target.value)} style={{fontFamily:"JetBrains Mono,monospace",fontWeight:700}}/></div>
-                <div><LBL>Marca</LBL><INP placeholder="Kmmerling" value={form.marca||""} onChange={(e:any)=>updateForm("marca",e.target.value)}/></div>
+                <div><LBL>Marca</LBL><INP placeholder="Kömmerling" value={form.marca||""} onChange={(e:any)=>updateForm("marca",e.target.value)}/></div>
                 <div><LBL>Sistema / Linea</LBL><INP placeholder="IDEAL 4000" value={form.sistema||""} onChange={(e:any)=>updateForm("sistema",e.target.value)}/></div>
                 <div><LBL>Nome commerciale</LBL><INP placeholder="Rahmen 70mm CL" value={form.nome||""} onChange={(e:any)=>updateForm("nome",e.target.value)}/></div>
                 <div><LBL>Materiale</LBL>
@@ -741,7 +434,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                 </div>
                 <div><LBL>Tipo elemento</LBL>
                   <SEL value={form.tipo||"Rahmen"} onChange={(e:any)=>updateForm("tipo",e.target.value)}>
-                    <option>Rahmen</option><option>Flgel</option><option>Pfosten</option><option>Stulp</option>
+                    <option>Rahmen</option><option>Flügel</option><option>Pfosten</option><option>Stulp</option>
                   </SEL>
                 </div>
               </div>
@@ -751,7 +444,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
             <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC",marginBottom:12}}>
               <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dati tecnici</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-                {[{l:"Uw (W/mK)",k:"uw",ph:"1.1"},{l:"Uf (W/mK)",k:"uf",ph:"1.3"},{l:"Rw (dB)",k:"rw",ph:"42"},{l:"Camere aria",k:"camere",ph:"5"},{l:"Classe tenuta aria",k:"classeTenuta",ph:"4"},{l:"Classe tenuta acqua",k:"classeAcqua",ph:"E1350"},{l:"Classe resist. vento",k:"classeVento",ph:"C5"},{l:"Classe termica",k:"classe",ph:"A"}].map(f=>(
+                {[{l:"Uw (W/m²K)",k:"uw",ph:"1.1"},{l:"Uf (W/m²K)",k:"uf",ph:"1.3"},{l:"Rw (dB)",k:"rw",ph:"42"},{l:"Camere aria",k:"camere",ph:"5"},{l:"Classe tenuta aria",k:"classeTenuta",ph:"4"},{l:"Classe tenuta acqua",k:"classeAcqua",ph:"E1350"},{l:"Classe resist. vento",k:"classeVento",ph:"C5"},{l:"Classe termica",k:"classe",ph:"A"}].map(f=>(
                   <div key={f.k}><LBL>{f.l}</LBL><INP placeholder={f.ph} value={form[f.k]||""} onChange={(e:any)=>updateForm(f.k,e.target.value)}/></div>
                 ))}
                 <div style={{gridColumn:"1/-1"}}><LBL>Certificazioni (EN, CE...)</LBL><INP placeholder="EN 14351-1, CE 0123" value={form.certificazioni||""} onChange={(e:any)=>updateForm("certificazioni",e.target.value)}/></div>
@@ -786,7 +479,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                       <span key={i} style={{padding:"3px 8px",borderRadius:5,background:"#FEF3C7",border:`1px solid ${AMB}`,fontSize:10,fontFamily:"JetBrains Mono,monospace",fontWeight:700,color:"#92400E"}}>{f}</span>
                     ))}
                   </div>
-                ):<div style={{fontSize:12,color:"#86868b"}}>Nessun codice  importa DXF</div>}
+                ):<div style={{fontSize:12,color:"#86868b"}}>Nessun codice — importa DXF</div>}
                 {form.quote?.length>0&&(
                   <div style={{marginTop:10}}>
                     <div style={{fontSize:9,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:.5,marginBottom:4}}>Quote layer 15</div>
@@ -803,7 +496,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
             {/* Note + Attivo */}
             <div style={{background:"#fff",borderRadius:12,padding:"16px",border:"1px solid #E5E3DC",marginBottom:12}}>
               <LBL>Note tecniche / commerciali</LBL>
-              <textarea value={form.notetech||""} onChange={(e:any)=>updateForm("notetech",e.target.value)} placeholder="Note interne, particolarit, condizioni fornitore..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E5E3DC",fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:64,resize:"vertical"}}/>
+              <textarea value={form.notetech||""} onChange={(e:any)=>updateForm("notetech",e.target.value)} placeholder="Note interne, particolarità, condizioni fornitore..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #E5E3DC",fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:64,resize:"vertical"}}/>
               <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10}}>
                 <div onClick={()=>updateForm("attivo",!form.attivo)} style={{width:38,height:22,borderRadius:11,background:form.attivo!==false?TEAL:"#E5E3DC",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
                   <div style={{position:"absolute",top:3,left:form.attivo!==false?18:3,width:16,height:16,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
@@ -816,14 +509,13 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
         )}
       </div>
     </div>
-    </>
   );
 }
 
 
-// 
-// ARCHIVIO NODI  Motore composizione profili per CNC
-// 
+// ═══════════════════════════════════════════════════════════════
+// ARCHIVIO NODI — Motore composizione profili per CNC
+// ═══════════════════════════════════════════════════════════════
 function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
   const [selected,setSelected]=useState<string|null>(null);
   const [search,setSearch]=useState("");
@@ -850,86 +542,12 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
     {k:"anta_telaio",l:"Anta + Telaio",desc:"Nodo laterale standard"},
     {k:"traverso",l:"Traverso",desc:"Nodo orizzontale"},
     {k:"pfosten",l:"Pfosten (montante)",desc:"Nodo verticale centrale"},
-    {k:"angolo_45",l:"Angolo 45",desc:"Giunzione ad angolo"},
+    {k:"angolo_45",l:"Angolo 45°",desc:"Giunzione ad angolo"},
     {k:"stulp",l:"Stulpo",desc:"Anta doppia senza montante"},
     {k:"soglia",l:"Soglia",desc:"Nodo inferiore"},
   ];
 
-  //  Helper: estrai profilo per quadrante 
-  const estraiProfilo=(pols:any[],tipo:"rahmen"|"flugel"|"front"|"tutti")=>{
-    if(tipo==="tutti")return pols;
-    if(tipo==="rahmen")return pols.filter((p:any)=>p.pts.length>0&&Math.max(...p.pts.map((c:any)=>c.x))<=2);
-    if(tipo==="flugel")return pols.filter((p:any)=>p.pts.length>0&&Math.max(...p.pts.map((c:any)=>c.y))<=2&&Math.min(...p.pts.map((c:any)=>c.y))<-10);
-    if(tipo==="front")return pols.filter((p:any)=>p.pts.length>0&&Math.min(...p.pts.map((c:any)=>c.x))>=-2&&Math.min(...p.pts.map((c:any)=>c.y))>=-2);
-    return pols;
-  };
-
-  const importaProfilo=(tipo:"rahmen"|"flugel"|"front")=>{
-    if(!importModal)return;
-    const polsFiltrate=estraiProfilo(importModal.pols,tipo);
-    const tipoLabel={rahmen:"Rahmen",flugel:"Flgel",front:"Frontale"}[tipo];
-    const p=parseDXF(importModal.text,importModal.filename);
-    const final={...p,
-      polylines:polsFiltrate,
-      tipo:tipoLabel,
-      nome:`${tipoLabel} ${p.bautiefe||0}mm`,
-      id:"P-"+Date.now()+"_"+Math.random()
-    };
-    setSistemiDB?.((prev:any[])=>[...(prev||[]),final]);
-    setSelected(final.id);setForm(final);
-    setImportModal(null);
-  };
-
   return(
-    <>
-    {/*  MODAL SELEZIONE PROFILO DA NODO DXF  */}
-    {importModal&&(
-      <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
-        <div style={{background:"#fff",borderRadius:16,padding:28,maxWidth:600,width:"90%",boxShadow:"0 24px 80px rgba(0,0,0,0.4)"}}>
-          <div style={{fontSize:16,fontWeight:800,color:DARK,marginBottom:4}}>Seleziona il profilo da importare</div>
-          <div style={{fontSize:12,color:"#86868b",marginBottom:20}}>Il file <strong>{importModal.filename}</strong> contiene un nodo con pi profili. Scegli quale importare nell'archivio.</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
-            {([
-              {k:"rahmen",l:"Telaio",desc:"Profilo Rahmen (X negativo)",col:"#3B7FE0",icon:""},
-              {k:"flugel",l:"Anta",desc:"Profilo Flgel (Y negativo)",col:"#1A9E73",icon:""},
-              {k:"front",l:"Frontale",desc:"Vista frontale (X+Y positivi)",col:"#D08008",icon:""},
-            ] as any[]).map(({k,l,desc,col,icon})=>{
-              const pols=estraiProfilo(importModal.pols,k);
-              const hasPols=pols.length>0;
-              return(
-                <div key={k} onClick={()=>hasPols&&importaProfilo(k as any)}
-                  style={{border:`2px solid ${hasPols?col:"#E5E3DC"}`,borderRadius:12,padding:14,cursor:hasPols?"pointer":"not-allowed",
-                    background:hasPols?col+"08":"#F9F8F5",opacity:hasPols?1:0.5,textAlign:"center",transition:"all .15s"}}
-                  onMouseEnter={e=>hasPols&&((e.currentTarget as any).style.background=col+"18")}
-                  onMouseLeave={e=>hasPols&&((e.currentTarget as any).style.background=col+"08")}>
-                  <div style={{fontSize:28,marginBottom:6}}>{icon}</div>
-                  <div style={{fontSize:13,fontWeight:800,color:hasPols?col:"#86868b"}}>{l}</div>
-                  <div style={{fontSize:10,color:"#86868b",marginTop:4}}>{desc}</div>
-                  <div style={{fontSize:9,color:hasPols?col:"#ccc",marginTop:6,fontWeight:700}}>
-                    {hasPols?`${pols.length} polilinee`:"Non trovato"}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
-            <div onClick={()=>{
-              // Importa tutto il nodo come profilo
-              const p=parseDXF(importModal.text,importModal.filename);
-              const final={...p,polylines:importModal.pols};
-              setSistemiDB?.((prev:any[])=>[...(prev||[]),final]);
-              setSelected(final.id);setForm(final);setImportModal(null);
-            }} style={{padding:"8px 16px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:12,fontWeight:600,cursor:"pointer",color:"#86868b"}}>
-              Importa nodo completo
-            </div>
-            <div onClick={()=>setImportModal(null)}
-              style={{padding:"8px 16px",borderRadius:8,background:"#F2F1EC",fontSize:12,fontWeight:600,cursor:"pointer",color:"#86868b"}}>
-              Annulla
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
     <div style={{display:"flex",height:"100%",gap:0}}>
 
       {/* LISTA SINISTRA */}
@@ -996,7 +614,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
                   <span style={{fontSize:12,fontWeight:700,color:isOn?AMB:DARK}}>{n.nome}</span>
                 </div>
                 <div style={{fontSize:10,color:"#86868b",marginBottom:3}}>
-                  {TIPI.find((t:any)=>t.k===n.tipo)?.l||n.tipo}  {n.angolo}  kerf {n.kerf}mm
+                  {TIPI.find((t:any)=>t.k===n.tipo)?.l||n.tipo} · {n.angolo}° · kerf {n.kerf}mm
                 </div>
                 <div style={{display:"flex",gap:4}}>
                   {pA2?<span style={{fontSize:9,padding:"1px 5px",borderRadius:3,background:"#DBEAFE",color:"#1E40AF",fontWeight:600}}>{pA2.codice||pA2.sistema}</span>:<span style={{fontSize:9,color:RED}}>A mancante</span>}
@@ -1022,7 +640,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
               <div>
                 <div style={{fontSize:18,fontWeight:800,color:DARK}}>{sel.nome}</div>
-                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{TIPI.find((t:any)=>t.k===sel.tipo)?.l}  {sel.angolo}  kerf {sel.kerf}mm</div>
+                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{TIPI.find((t:any)=>t.k===sel.tipo)?.l} · {sel.angolo}° · kerf {sel.kerf}mm</div>
               </div>
               <div onClick={()=>del(sel.id)} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>Elimina</div>
             </div>
@@ -1042,7 +660,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
                   <div><LBL>Nome nodo</LBL><INP placeholder="es. Anta+Telaio 70+77mm" value={sel.nome||""} onChange={(e:any)=>upd(sel.id,"nome",e.target.value)}/></div>
                   <div><LBL>Tipo nodo</LBL>
                     <SEL value={sel.tipo||"anta_telaio"} onChange={(e:any)=>upd(sel.id,"tipo",e.target.value)}>
-                      {TIPI.map((t:any)=><option key={t.k} value={t.k}>{t.l}  {t.desc}</option>)}
+                      {TIPI.map((t:any)=><option key={t.k} value={t.k}>{t.l} — {t.desc}</option>)}
                     </SEL>
                   </div>
                 </div>
@@ -1050,15 +668,15 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
 
               {/* Parametri CNC */}
               <div style={{background:"#F0FDF4",borderRadius:12,padding:"16px",border:`2px solid ${TEAL}`}}>
-                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Parametri taglio CNC </div>
+                <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Parametri taglio CNC ★</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div>
-                    <LBL>Angolo taglio ()</LBL>
+                    <LBL>Angolo taglio (°)</LBL>
                     <SEL value={String(sel.angolo||45)} onChange={(e:any)=>upd(sel.id,"angolo",parseFloat(e.target.value))}>
-                      <option value="45">45  Giunzione ad angolo</option>
-                      <option value="90">90  Taglio dritto</option>
-                      <option value="22.5">22.5  Angolo speciale</option>
-                      <option value="0">0  Parallelo</option>
+                      <option value="45">45° — Giunzione ad angolo</option>
+                      <option value="90">90° — Taglio dritto</option>
+                      <option value="22.5">22.5° — Angolo speciale</option>
+                      <option value="0">0° — Parallelo</option>
                     </SEL>
                   </div>
                   <div>
@@ -1083,30 +701,30 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
               <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:12,alignItems:"center"}}>
                 {/* Profilo A */}
                 <div style={{border:`2px solid #DBEAFE`,borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#1E40AF",textTransform:"uppercase",marginBottom:8}}>Profilo A  Telaio (Rahmen)</div>
+                  <div style={{fontSize:10,fontWeight:800,color:"#1E40AF",textTransform:"uppercase",marginBottom:8}}>Profilo A — Telaio (Rahmen)</div>
                   <SEL value={sel.profiloA_id||""} onChange={(e:any)=>upd(sel.id,"profiloA_id",e.target.value)}>
-                    <option value=""> Seleziona profilo </option>
+                    <option value="">— Seleziona profilo —</option>
                     {profili.filter((p:any)=>p.tipo==="Rahmen"||!p.tipo).map((p:any)=>(
-                      <option key={p.id} value={p.id}>{p.codice||p.sistema}  {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
+                      <option key={p.id} value={p.id}>{p.codice||p.sistema} — {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
                     ))}
                   </SEL>
                   {pA&&<div style={{marginTop:8,padding:"6px 10px",background:"#EFF6FF",borderRadius:7,fontSize:11,color:"#1E40AF"}}>
-                    {pA.bautiefe}mm  {pA.grMl?pA.grMl+"kg/ml":""}  {pA.camere||"?"}cam
+                    {pA.bautiefe}mm · {pA.grMl?pA.grMl+"kg/ml":""} · {pA.camere||"?"}cam
                   </div>}
                 </div>
                 {/* Simbolo + */}
                 <div style={{fontSize:24,color:"#ccc",textAlign:"center",fontWeight:300}}>+</div>
                 {/* Profilo B */}
                 <div style={{border:`2px solid #D1FAE5`,borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#065F46",textTransform:"uppercase",marginBottom:8}}>Profilo B  Anta (Flgel)</div>
+                  <div style={{fontSize:10,fontWeight:800,color:"#065F46",textTransform:"uppercase",marginBottom:8}}>Profilo B — Anta (Flügel)</div>
                   <SEL value={sel.profiloB_id||""} onChange={(e:any)=>upd(sel.id,"profiloB_id",e.target.value)}>
-                    <option value=""> Seleziona profilo </option>
-                    {profili.filter((p:any)=>p.tipo==="Flgel"||!p.tipo).map((p:any)=>(
-                      <option key={p.id} value={p.id}>{p.codice||p.sistema}  {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
+                    <option value="">— Seleziona profilo —</option>
+                    {profili.filter((p:any)=>p.tipo==="Flügel"||!p.tipo).map((p:any)=>(
+                      <option key={p.id} value={p.id}>{p.codice||p.sistema} — {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
                     ))}
                   </SEL>
                   {pB&&<div style={{marginTop:8,padding:"6px 10px",background:"#ECFDF5",borderRadius:7,fontSize:11,color:"#065F46"}}>
-                    {pB.bautiefe}mm  {pB.grMl?pB.grMl+"kg/ml":""}  {pB.camere||"?"}cam
+                    {pB.bautiefe}mm · {pB.grMl?pB.grMl+"kg/ml":""} · {pB.camere||"?"}cam
                   </div>}
                 </div>
               </div>
@@ -1135,9 +753,9 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
   );
 }
 
-// 
+// ═══════════════════════════════════════════════════════════════
 // ARCHIVIO VETRI
-// 
+// ═══════════════════════════════════════════════════════════════
 function ArchivioVetri({vetriDB,setVetriDB}:any){
   const [modal,setModal]=useState<any>(null);
   const [form,setForm]=useState<any>({});
@@ -1175,13 +793,13 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
                 {v.basso_emissivo&&badge(AMB+"12",AMB,"Basso-e")}
                 {v.stratificato&&badge(PUR+"12",PUR,"Stratificato")}
               </div>
-              <div style={{fontSize:12,color:"#86868b"}}>{v.composizione||v.descrizione||""}</div>
+              <div style={{fontSize:12,color:"#86868b"}}>{v.composizione||v.descrizione||"—"}</div>
               <div style={{display:"flex",gap:8,marginTop:4,flexWrap:"wrap"}}>
-                {v.uw&&badge("#F2F1EC","#86868b",`Uw ${v.uw} W/mK`)}
+                {v.uw&&badge("#F2F1EC","#86868b",`Uw ${v.uw} W/m²K`)}
                 {v.g&&badge("#F2F1EC","#86868b",`g ${v.g}`)}
                 {v.rw&&badge("#F2F1EC","#86868b",`Rw ${v.rw} dB`)}
                 {v.spessore&&badge("#F2F1EC","#86868b",`${v.spessore}mm`)}
-                {v.euroMq>0&&badge(TEAL+"12",TEAL,`${v.euroMq}/mq`)}
+                {v.euroMq>0&&badge(TEAL+"12",TEAL,`€${v.euroMq}/mq`)}
               </div>
             </div>
             <div style={{display:"flex",gap:6}}>
@@ -1190,14 +808,14 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
             </div>
           </div>
         ))}
-        {filtered.length===0&&<div style={{padding:"36px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun vetro  aggiungine uno</div>}
+        {filtered.length===0&&<div style={{padding:"36px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun vetro — aggiungine uno</div>}
       </Sez>
 
       {modal==="form"&&(
         <Modal title={form.id&&(vetriDB||[]).find((x:any)=>x.id===form.id)?"Modifica vetro":"Nuovo vetro"} onClose={()=>setModal(null)}>
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identit</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identità</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <div><LBL>Codice</LBL><INP placeholder="Es. 4-16-4 Low-E" value={form.code||""} onChange={(e:any)=>setForm((p:any)=>({...p,code:e.target.value}))}/></div>
                 <div><LBL>Nome commerciale</LBL><INP placeholder="Es. Planitherm Ultra" value={form.nome||""} onChange={(e:any)=>setForm((p:any)=>({...p,nome:e.target.value}))}/></div>
@@ -1219,7 +837,7 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
               <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Prestazioni</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-                {[{l:"Uw (W/mK)",k:"uw",ph:"1.1"},{l:"g (fattore solare)",k:"g",ph:"0.62"},{l:"Lt (trasmiss. luce)",k:"lt",ph:"0.75"},{l:"Rw (dB)",k:"rw",ph:"34"},{l:"Spessore totale (mm)",k:"spessore",ph:"28"},{l:"Gas intercapedine",k:"gas",ph:"Argon"}].map(f=>(
+                {[{l:"Uw (W/m²K)",k:"uw",ph:"1.1"},{l:"g (fattore solare)",k:"g",ph:"0.62"},{l:"Lt (trasmiss. luce)",k:"lt",ph:"0.75"},{l:"Rw (dB)",k:"rw",ph:"34"},{l:"Spessore totale (mm)",k:"spessore",ph:"28"},{l:"Gas intercapedine",k:"gas",ph:"Argon"}].map(f=>(
                   <div key={f.k}><LBL>{f.l}</LBL><INP placeholder={f.ph} value={form[f.k]||""} onChange={(e:any)=>setForm((p:any)=>({...p,[f.k]:e.target.value}))}/></div>
                 ))}
               </div>
@@ -1235,7 +853,7 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <div><LBL> / mq</LBL><INP type="number" placeholder="0" value={form.euroMq||""} onChange={(e:any)=>setForm((p:any)=>({...p,euroMq:parseFloat(e.target.value)||0}))}/></div>
+              <div><LBL>€ / mq</LBL><INP type="number" placeholder="0" value={form.euroMq||""} onChange={(e:any)=>setForm((p:any)=>({...p,euroMq:parseFloat(e.target.value)||0}))}/></div>
               <div><LBL>Fornitore</LBL><INP placeholder="Es. Saint-Gobain" value={form.fornitore||""} onChange={(e:any)=>setForm((p:any)=>({...p,fornitore:e.target.value}))}/></div>
             </div>
             <div><LBL>Note</LBL><textarea value={form.note||""} onChange={(e:any)=>setForm((p:any)=>({...p,note:e.target.value}))} placeholder="Note tecniche o commerciali..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:60,resize:"vertical"}}/></div>
@@ -1250,9 +868,9 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
   );
 }
 
-// 
+// ═══════════════════════════════════════════════════════════════
 // ARCHIVIO COLORI
-// 
+// ═══════════════════════════════════════════════════════════════
 function ArchivioColori({coloriDB,setColoriDB}:any){
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState<any>({});
@@ -1330,7 +948,7 @@ function ArchivioColori({coloriDB,setColoriDB}:any){
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div><LBL>Sovrapprezzo %</LBL><INP type="number" placeholder="0" value={form.sovrapprezzo||""} onChange={(e:any)=>setForm((p:any)=>({...p,sovrapprezzo:parseFloat(e.target.value)||0}))}/></div>
-              <div><LBL>Disponibile su sistemi</LBL><INP placeholder="Tutti / Aluplast / Schco..." value={form.sistemi||""} onChange={(e:any)=>setForm((p:any)=>({...p,sistemi:e.target.value}))}/></div>
+              <div><LBL>Disponibile su sistemi</LBL><INP placeholder="Tutti / Aluplast / Schüco..." value={form.sistemi||""} onChange={(e:any)=>setForm((p:any)=>({...p,sistemi:e.target.value}))}/></div>
             </div>
             <div><LBL>Note</LBL><INP placeholder="Note colore..." value={form.note||""} onChange={(e:any)=>setForm((p:any)=>({...p,note:e.target.value}))}/></div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:8,borderTop:`1px solid #E5E3DC`}}>
@@ -1344,9 +962,9 @@ function ArchivioColori({coloriDB,setColoriDB}:any){
   );
 }
 
-// 
+// ═══════════════════════════════════════════════════════════════
 // ARCHIVIO ACCESSORI (coprifili, lamiere, tapparelle, ecc.)
-// 
+// ═══════════════════════════════════════════════════════════════
 function ArchivioAccessori({db,setDb,titolo,categoria}:any){
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState<any>({});
@@ -1381,8 +999,8 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
               </div>
               {a.descrizione&&<div style={{fontSize:12,color:"#86868b"}}>{a.descrizione}</div>}
               <div style={{display:"flex",gap:8,marginTop:4}}>
-                {a.prezzo>0&&badge(TEAL+"12",TEAL,`${a.prezzo}/${a.unita||"pz"}`)}
-                {a.prezzoInstall>0&&badge(AMB+"12",AMB,`+${a.prezzoInstall} install.`)}
+                {a.prezzo>0&&badge(TEAL+"12",TEAL,`€${a.prezzo}/${a.unita||"pz"}`)}
+                {a.prezzoInstall>0&&badge(AMB+"12",AMB,`+€${a.prezzoInstall} install.`)}
               </div>
             </div>
             <div style={{display:"flex",gap:6}}>
@@ -1391,7 +1009,7 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
             </div>
           </div>
         ))}
-        {items.length===0&&<div style={{padding:"32px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun elemento  aggiungine uno</div>}
+        {items.length===0&&<div style={{padding:"32px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun elemento — aggiungine uno</div>}
       </Sez>
 
       {modal&&(
@@ -1400,13 +1018,13 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div><LBL>Nome *</LBL><INP placeholder="Nome elemento" value={form.nome||""} onChange={(e:any)=>setForm((p:any)=>({...p,nome:e.target.value}))}/></div>
               <div><LBL>Codice / SKU</LBL><INP placeholder="Codice articolo" value={form.codice||""} onChange={(e:any)=>setForm((p:any)=>({...p,codice:e.target.value}))}/></div>
-              <div><LBL>Prezzo </LBL><INP type="number" placeholder="0" value={form.prezzo||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzo:parseFloat(e.target.value)||0}))}/></div>
-              <div><LBL>Unit</LBL>
+              <div><LBL>Prezzo €</LBL><INP type="number" placeholder="0" value={form.prezzo||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzo:parseFloat(e.target.value)||0}))}/></div>
+              <div><LBL>Unità</LBL>
                 <SEL value={form.unita||"pz"} onChange={(e:any)=>setForm((p:any)=>({...p,unita:e.target.value}))}>
                   <option value="pz">Pezzo</option><option value="ml">Metro lineare</option><option value="mq">Metro quadro</option><option value="set">Set</option>
                 </SEL>
               </div>
-              <div><LBL>Prezzo installazione </LBL><INP type="number" placeholder="0" value={form.prezzoInstall||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzoInstall:parseFloat(e.target.value)||0}))}/></div>
+              <div><LBL>Prezzo installazione €</LBL><INP type="number" placeholder="0" value={form.prezzoInstall||""} onChange={(e:any)=>setForm((p:any)=>({...p,prezzoInstall:parseFloat(e.target.value)||0}))}/></div>
               <div><LBL>Fornitore</LBL><INP placeholder="Fornitore" value={form.fornitore||""} onChange={(e:any)=>setForm((p:any)=>({...p,fornitore:e.target.value}))}/></div>
             </div>
             <div><LBL>Descrizione</LBL><textarea value={form.descrizione||""} onChange={(e:any)=>setForm((p:any)=>({...p,descrizione:e.target.value}))} placeholder="Descrizione, caratteristiche..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:60,resize:"vertical"}}/></div>
@@ -1428,9 +1046,9 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
   );
 }
 
-// 
+// ═══════════════════════════════════════════════════════════════
 // MAIN COMPONENT
-// 
+// ═══════════════════════════════════════════════════════════════
 export default function DesktopSettings(){
   const ctx=useMastro() as any;
   const {settingsTab,setSettingsTab,
@@ -1487,7 +1105,7 @@ export default function DesktopSettings(){
               {[{l:"Nome azienda",k:"nome",ph:"Walter Cozza Serramenti"},{l:"Ragione sociale",k:"ragione",ph:"Walter Cozza Serramenti SRL"},{l:"Partita IVA",k:"piva",ph:"IT12345678901"},{l:"Codice fiscale",k:"cf",ph:""},{l:"Telefono",k:"telefono",ph:"+39 0984 000000"},{l:"Email",k:"email",ph:"info@azienda.it"},{l:"PEC",k:"pec",ph:"azienda@pec.it"},{l:"Sito web",k:"web",ph:"www.azienda.it"}].map(f=>(
                 <div key={f.k}><LBL>{f.l}</LBL><INP placeholder={f.ph} value={aziendaInfo?.[f.k]||""} onChange={(e:any)=>setAziendaInfo?.((p:any)=>({...p,[f.k]:e.target.value}))}/></div>
               ))}
-              <div style={{gridColumn:"1/-1"}}><LBL>Indirizzo</LBL><INP placeholder="Via, CAP, Citt" value={aziendaInfo?.indirizzo||""} onChange={(e:any)=>setAziendaInfo?.((p:any)=>({...p,indirizzo:e.target.value}))}/></div>
+              <div style={{gridColumn:"1/-1"}}><LBL>Indirizzo</LBL><INP placeholder="Via, CAP, Città" value={aziendaInfo?.indirizzo||""} onChange={(e:any)=>setAziendaInfo?.((p:any)=>({...p,indirizzo:e.target.value}))}/></div>
             </div>
           </Sez>
           <Sez title="Impostazioni operative">
@@ -1515,16 +1133,16 @@ export default function DesktopSettings(){
             return (
               <div key={p.id} style={{padding:"14px 18px",borderBottom:`1px solid #F2F1EC`,display:"flex",alignItems:"center",gap:12}}>
                 <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                  <div onClick={()=>{if(i===0)return;const a=[...pipelineDB];[a[i-1],a[i]]=[a[i],a[i-1]];setPipelineDB?.(a);}} style={{cursor:i===0?"default":"pointer",opacity:i===0?.2:1,color:"#86868b",fontSize:10}}></div>
-                  <div onClick={()=>{if(i===pipelineDB.length-1)return;const a=[...pipelineDB];[a[i],a[i+1]]=[a[i+1],a[i]];setPipelineDB?.(a);}} style={{cursor:i===pipelineDB.length-1?"default":"pointer",opacity:i===pipelineDB.length-1?.2:1,color:"#86868b",fontSize:10}}></div>
+                  <div onClick={()=>{if(i===0)return;const a=[...pipelineDB];[a[i-1],a[i]]=[a[i],a[i-1]];setPipelineDB?.(a);}} style={{cursor:i===0?"default":"pointer",opacity:i===0?.2:1,color:"#86868b",fontSize:10}}>▲</div>
+                  <div onClick={()=>{if(i===pipelineDB.length-1)return;const a=[...pipelineDB];[a[i],a[i+1]]=[a[i+1],a[i]];setPipelineDB?.(a);}} style={{cursor:i===pipelineDB.length-1?"default":"pointer",opacity:i===pipelineDB.length-1?.2:1,color:"#86868b",fontSize:10}}>▼</div>
                 </div>
                 <div style={{width:10,height:10,borderRadius:"50%",background:col,flexShrink:0}}/>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:DARK}}>{p.nome||p.id}</div>
                   <div style={{display:"flex",gap:6,marginTop:4}}>
-                    {(p.gateRequisiti||[]).length>0&&badge(RED+"12",RED,` ${p.gateRequisiti.length} gate`)}
+                    {(p.gateRequisiti||[]).length>0&&badge(RED+"12",RED,`⛔ ${p.gateRequisiti.length} gate`)}
                     {p.gateBloccante&&badge(RED+"20",RED,"Bloccante")}
-                    {(p.automazioni||[]).length>0&&badge(PUR+"12",PUR,` ${p.automazioni.length} auto`)}
+                    {(p.automazioni||[]).length>0&&badge(PUR+"12",PUR,`⚡ ${p.automazioni.length} auto`)}
                     {p.emailTemplate&&badge(BLU+"12",BLU,"Email")}
                   </div>
                 </div>
@@ -1542,7 +1160,7 @@ export default function DesktopSettings(){
           <div style={{padding:"18px",display:"flex",gap:12}}>
             {["chiaro","scuro","oceano"].map(t=>(
               <div key={t} onClick={()=>setTheme?.(t)} style={{flex:1,padding:"18px",borderRadius:10,border:`2px solid ${theme===t?TEAL:"#E5E3DC"}`,cursor:"pointer",textAlign:"center",background:theme===t?TEAL+"08":"#fff",transition:"all .15s"}}>
-                <div style={{fontSize:28,marginBottom:8}}>{t==="chiaro"?"":t==="scuro"?"":""}</div>
+                <div style={{fontSize:28,marginBottom:8}}>{t==="chiaro"?"☀️":t==="scuro"?"🌙":"🌊"}</div>
                 <div style={{fontSize:13,fontWeight:700,color:theme===t?TEAL:DARK,textTransform:"capitalize"}}>{t}</div>
               </div>
             ))}
