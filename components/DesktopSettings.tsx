@@ -512,8 +512,8 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
     const coords:{x:number,y:number}[]=[]; const cp=/\n\s*10\n\s*([-\d.]+)\n\s*20\n\s*([-\d.]+)/g; let cv:any;
     while((cv=cp.exec(text))!==null)coords.push({x:parseFloat(cv[1]),y:parseFloat(cv[2])});
     const n=codice.toLowerCase();
-    const tipo=n.includes("x2")||n.includes("x3")?"Flügel":n.includes("x4")||n.includes("x5")?"Pfosten":n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9")?"Stulp":"Rahmen";
-    const fornitore=text.includes("OHNE_DICHTUNGEN")||text.includes("aluplast")||text.includes("mmerling")?"Kömmerling / aluplast":"Generico";
+    const tipo=n.includes("x2")||n.includes("x3")?"Flugel":n.includes("x4")||n.includes("x5")?"Pfosten":n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9")?"Stulp":"Rahmen";
+    const fornitore=text.includes("OHNE_DICHTUNGEN")||text.includes("aluplast")||text.includes("mmerling")?"Kommerling / aluplast":"Generico";
     // Estrai LWPOLYLINE complete per il viewer
     const polylines=parseLWPolylines(text);
     return {id:"P-"+Date.now()+"_"+Math.random(),codice,marca:fornitore.split(" ")[0],sistema:codice,nome:tipo+" "+bautiefe+"mm",materiale:"PVC",tipo,bautiefe,grMl:"",qtaCassa:"",camere:0,uw:"",uf:"",rw:"",spessore:String(bautiefe),classe:"",certificazioni:"",notetech:"",sovRAL:0,sovLegno:0,euroMl:0,tipologie:"",sottosistemi:"",ferramenta:[...fermSet],quote,coords,polylines,dxfText:text,attivo:true};
@@ -537,7 +537,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
   };
 
   const tipoColor:Record<string,[string,string]>={
-    "Rahmen":["#DBEAFE","#1E40AF"],"Flügel":["#D1FAE5","#065F46"],
+    "Rahmen":["#DBEAFE","#1E40AF"],"Flugel":["#D1FAE5","#065F46"],
     "Pfosten":["#FEF3C7","#92400E"],"Stulp":["#FCE7F3","#9D174D"],
   };
 
@@ -732,7 +732,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
               <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identità</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                 <div><LBL>Codice DXF</LBL><INP placeholder="es. 140x01" value={form.codice||""} onChange={(e:any)=>updateForm("codice",e.target.value)} style={{fontFamily:"JetBrains Mono,monospace",fontWeight:700}}/></div>
-                <div><LBL>Marca</LBL><INP placeholder="Kömmerling" value={form.marca||""} onChange={(e:any)=>updateForm("marca",e.target.value)}/></div>
+                <div><LBL>Marca</LBL><INP placeholder="Kommerling" value={form.marca||""} onChange={(e:any)=>updateForm("marca",e.target.value)}/></div>
                 <div><LBL>Sistema / Linea</LBL><INP placeholder="IDEAL 4000" value={form.sistema||""} onChange={(e:any)=>updateForm("sistema",e.target.value)}/></div>
                 <div><LBL>Nome commerciale</LBL><INP placeholder="Rahmen 70mm CL" value={form.nome||""} onChange={(e:any)=>updateForm("nome",e.target.value)}/></div>
                 <div><LBL>Materiale</LBL>
@@ -742,7 +742,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                 </div>
                 <div><LBL>Tipo elemento</LBL>
                   <SEL value={form.tipo||"Rahmen"} onChange={(e:any)=>updateForm("tipo",e.target.value)}>
-                    <option>Rahmen</option><option>Flügel</option><option>Pfosten</option><option>Stulp</option>
+                    <option>Rahmen</option><option>Flugel</option><option>Pfosten</option><option>Stulp</option>
                   </SEL>
                 </div>
               </div>
@@ -868,7 +868,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
   const importaProfilo=(tipo:"rahmen"|"flugel"|"front")=>{
     if(!importModal)return;
     const polsFiltrate=estraiProfilo(importModal.pols,tipo);
-    const tipoLabel={rahmen:"Rahmen",flugel:"Flügel",front:"Frontale"}[tipo];
+    const tipoLabel={rahmen:"Rahmen",flugel:"Flugel",front:"Frontale"}[tipo];
     const p=parseDXF(importModal.text,importModal.filename);
     const final={...p,
       polylines:polsFiltrate,
@@ -892,7 +892,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
             {([
               {k:"rahmen",l:"Telaio",desc:"Profilo Rahmen (X negativo)",col:"#3B7FE0",icon:"◫"},
-              {k:"flugel",l:"Anta",desc:"Profilo Flügel (Y negativo)",col:"#1A9E73",icon:"◨"},
+              {k:"flugel",l:"Anta",desc:"Profilo Flugel (Y negativo)",col:"#1A9E73",icon:"◨"},
               {k:"front",l:"Frontale",desc:"Vista frontale (X+Y positivi)",col:"#D08008",icon:"□"},
             ] as any[]).map(({k,l,desc,col,icon})=>{
               const pols=estraiProfilo(importModal.pols,k);
@@ -1099,10 +1099,10 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
                 <div style={{fontSize:24,color:"#ccc",textAlign:"center",fontWeight:300}}>+</div>
                 {/* Profilo B */}
                 <div style={{border:`2px solid #D1FAE5`,borderRadius:10,padding:"12px"}}>
-                  <div style={{fontSize:10,fontWeight:800,color:"#065F46",textTransform:"uppercase",marginBottom:8}}>Profilo B — Anta (Flügel)</div>
+                  <div style={{fontSize:10,fontWeight:800,color:"#065F46",textTransform:"uppercase",marginBottom:8}}>Profilo B — Anta (Flugel)</div>
                   <SEL value={sel.profiloB_id||""} onChange={(e:any)=>upd(sel.id,"profiloB_id",e.target.value)}>
                     <option value="">— Seleziona profilo —</option>
-                    {profili.filter((p:any)=>p.tipo==="Flügel"||!p.tipo).map((p:any)=>(
+                    {profili.filter((p:any)=>p.tipo==="Flugel"||!p.tipo).map((p:any)=>(
                       <option key={p.id} value={p.id}>{p.codice||p.sistema} — {p.nome} {p.bautiefe?`(${p.bautiefe}mm)`:""}</option>
                     ))}
                   </SEL>
@@ -1331,7 +1331,7 @@ function ArchivioColori({coloriDB,setColoriDB}:any){
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
               <div><LBL>Sovrapprezzo %</LBL><INP type="number" placeholder="0" value={form.sovrapprezzo||""} onChange={(e:any)=>setForm((p:any)=>({...p,sovrapprezzo:parseFloat(e.target.value)||0}))}/></div>
-              <div><LBL>Disponibile su sistemi</LBL><INP placeholder="Tutti / Aluplast / Schüco..." value={form.sistemi||""} onChange={(e:any)=>setForm((p:any)=>({...p,sistemi:e.target.value}))}/></div>
+              <div><LBL>Disponibile su sistemi</LBL><INP placeholder="Tutti / Aluplast / Schuco..." value={form.sistemi||""} onChange={(e:any)=>setForm((p:any)=>({...p,sistemi:e.target.value}))}/></div>
             </div>
             <div><LBL>Note</LBL><INP placeholder="Note colore..." value={form.note||""} onChange={(e:any)=>setForm((p:any)=>({...p,note:e.target.value}))}/></div>
             <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:8,borderTop:`1px solid #E5E3DC`}}>
