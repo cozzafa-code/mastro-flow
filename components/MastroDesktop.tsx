@@ -26,9 +26,9 @@ import DesktopPortaleB2C from "./DesktopPortaleB2C";
 import DesktopCNC from "./DesktopCNC";
 import DesktopListini from "./DesktopListini";
 import AgendaPanel from "./AgendaPanel";
-import DesktopSettings from "./DesktopSettings";
 import MessaggiPanel from "./MessaggiPanel";
 import SettingsPanel from "./SettingsPanel";
+import DesktopSettings from "./DesktopSettings";
 import ConfiguratoreCommessa from "./ConfiguratoreCommessa";
 import QuickBar from "./QuickBar";
 
@@ -141,7 +141,7 @@ export default function MastroDesktop() {
       case "infissiora":    return <DesktopInfissiOra />;
       case "portale_b2c":   return <DesktopPortaleB2C />;
       case "team":          return <DesktopTeam />;
-      case "settings":      return <SettingsPanel />;
+      case "settings":      return <DesktopSettings />;
       default:              return <SoonView k={active} T={T} />;
     }
   };
