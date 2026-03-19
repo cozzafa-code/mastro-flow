@@ -58,7 +58,7 @@ function Widget({id,title,color="",badge="",onMore=null,hidden=false,onHide,drag
       onDragStart={()=>onDragStart(id)}
       onDragOver={e=>{e.preventDefault();onDragOver(id);}}
       onDrop={()=>onDrop(id)}
-      style={{background:"#fff",borderRadius:14,border:`1px solid ${color?color+"25":"#E5E3DC"}`,overflow:"hidden",marginBottom:16,opacity:dragging===id?.0.5:1,transition:"opacity .15s",cursor:"grab"}}>
+      style={{background:"#fff",borderRadius:14,border:`1px solid ${color?color+"25":"#E5E3DC"}`,overflow:"hidden",marginBottom:16,opacity:dragging===id?0.5:1,transition:"opacity .15s",cursor:"grab"}}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",cursor:"pointer",userSelect:"none",gap:10}}>
         <div onClick={()=>setOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}}>
           <div style={{display:"flex",flexDirection:"column",gap:2,flexShrink:0,opacity:.3}}>
