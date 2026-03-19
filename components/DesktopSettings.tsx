@@ -129,35 +129,41 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
   const [pan,setPan]=useState({x:0,y:0});
   const [tool,setTool]=useState<"select"|"quota"|"move">("select");
   const [selPt,setSelPt]=useState<{pi:number,vi:number}|null>(null);
-  const [quotaPt1,setQuotaPt1]=useState<{x:number,y:number}|null>(null);
+  const [quotaPt1,setQuotaPt1]=useState<{x:number,y:number,sx:number,sy:number}|null>(null);
+  const [mousePos,setMousePos]=useState<{x:number,y:number,sx:number,sy:number}|null>(null);
   const [quotes,setQuotes]=useState<{x1:number,y1:number,x2:number,y2:number,mm:number}[]>([]);
   const [rotation,setRotation]=useState(0);
   const [editPols,setEditPols]=useState<any[]|null>(null);
+  const [fullscreen,setFullscreen]=useState(false);
+  const [dragging,setDragging]=useState(false);
+  const [dragStart,setDragStart]=useState<any>(null);
+  const [panStart,setPanStart]=useState<any>(null);
   const svgRef=useRef<SVGSVGElement>(null);
+
+  const W = fullscreen ? Math.min(window.innerWidth-40, 1200) : width;
+  const H = fullscreen ? Math.min(window.innerHeight-160, 800) : height;
 
   const basePols:any[]=editPols||(polylines&&polylines.length>0?polylines:dxfText?parseLWPolylines(dxfText):[]);
 
-  // Applica rotazione
   const rotatePt=(x:number,y:number,deg:number,cx:number,cy:number)=>{
     const r=deg*Math.PI/180;
-    return {x:cx+(x-cx)*Math.cos(r)-(y-cy)*Math.sin(r), y:cy+(x-cx)*Math.sin(r)+(y-cy)*Math.cos(r)};
+    return {x:cx+(x-cx)*Math.cos(r)-(y-cy)*Math.sin(r),y:cy+(x-cx)*Math.sin(r)+(y-cy)*Math.cos(r)};
   };
 
-  // Filtra per vista
+  // Filtra vista
   let raw=basePols;
   if(view==="rahmen")raw=basePols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.x))<=2);
   else if(view==="flugel")raw=basePols.filter((p:any)=>Math.max(...p.pts.map((c:any)=>c.y))<=2&&Math.min(...p.pts.map((c:any)=>c.y))<-10);
   else if(view==="front")raw=basePols.filter((p:any)=>Math.min(...p.pts.map((c:any)=>c.x))>=-2&&Math.min(...p.pts.map((c:any)=>c.y))>=-2);
   if(raw.length===0)raw=basePols;
 
-  // Applica rotazione ai punti
   const allRaw=raw.flatMap((p:any)=>p.pts);
   const cxR=allRaw.length?(Math.min(...allRaw.map((c:any)=>c.x))+Math.max(...allRaw.map((c:any)=>c.x)))/2:0;
   const cyR=allRaw.length?(Math.min(...allRaw.map((c:any)=>c.y))+Math.max(...allRaw.map((c:any)=>c.y)))/2:0;
   const target=raw.map((p:any)=>({...p,pts:p.pts.map((c:any)=>rotation?rotatePt(c.x,c.y,rotation,cxR,cyR):c)}));
 
   if(basePols.length===0)return(
-    <div style={{width,height,background:"#1A1A1C",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
+    <div style={{width:W,height:H,background:"#1A1A1C",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8}}>
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <div style={{fontSize:11,color:"#444",textAlign:"center"}}>Importa DXF per modificare il profilo</div>
     </div>
@@ -167,13 +173,13 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
   const xs=allPts.map((c:any)=>c.x),ys=allPts.map((c:any)=>c.y);
   const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
   const rX=maxX-minX||1,rY=maxY-minY||1;
-  const TOOLBAR=36,STATUSBAR=24,PAD=16,QPAD=32;
-  const svgH=height-TOOLBAR-STATUSBAR;
-  const vW=width-PAD*2-QPAD,vH=svgH-PAD*2-QPAD;
+  const TOOLBAR=38,STATUSBAR=26,PAD=20,QPAD=36;
+  const svgH=H-TOOLBAR-STATUSBAR;
+  const vW=W-PAD*2-QPAD,vH=svgH-PAD*2-QPAD;
   const baseScale=Math.min(vW/rX,vH/rY);
   const sc=baseScale*zoom;
-  const offX=PAD+QPAD+(vW-rX*sc)/2+pan.x;
-  const offY=PAD+(vH-rY*sc)/2+pan.y;
+  const offX=PAD+QPAD+(vW-rX*sc)/2+pan.x*sc;
+  const offY=PAD+(vH-rY*sc)/2+pan.y*sc;
 
   const tx=(x:number)=>offX+(x-minX)*sc;
   const ty=(y:number)=>svgH-PAD-QPAD-(y-minY)*sc;
@@ -182,74 +188,92 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
     y:minY+(svgH-PAD-QPAD-sy)/sc
   });
 
-  const step=Math.ceil(rX/6/5)*5||5;
-  const qX:number[]=[],qY:number[]=[];
-  for(let v=Math.ceil(minX/step)*step;v<=maxX+0.1;v+=step)qX.push(v);
-  for(let v=Math.ceil(minY/step)*step;v<=maxY+0.1;v+=step)qY.push(v);
+  // Snap al punto più vicino del profilo
+  const snapToProfile=(sx:number,sy:number,snapR=16):{x:number,y:number,sx:number,sy:number,pi:number,vi:number}|null=>{
+    let best:any=null;let bestD=snapR;
+    // Solo contorno esterno (polilinea più grande)
+    const mainPol=target.reduce((a:any,b:any)=>b.pts.length>a.pts.length?b:a,target[0]);
+    if(!mainPol)return null;
+    // Salta i punti intermedi — prendi solo i vertici significativi
+    // Un vertice è significativo se cambia direzione > 5°
+    const pts=mainPol.pts;
+    for(let vi=0;vi<pts.length;vi++){
+      const c=pts[vi];
+      const sx2=tx(c.x),sy2=ty(c.y);
+      const d=Math.hypot(sx2-sx,sy2-sy);
+      if(d<bestD){bestD=d;best={x:c.x,y:c.y,sx:sx2,sy:sy2,pi:target.indexOf(mainPol),vi};}
+    }
+    // Anche midpoint di ogni segmento
+    for(let vi=0;vi<pts.length;vi++){
+      const a=pts[vi],b=pts[(vi+1)%pts.length];
+      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      const sx2=tx(mx),sy2=ty(my);
+      const d=Math.hypot(sx2-sx,sy2-sy);
+      if(d<bestD){bestD=d;best={x:mx,y:my,sx:sx2,sy:sy2,pi:-1,vi:-1};}
+    }
+    return best;
+  };
 
-  const fills=['#D0840818','#1A9E7315','#3B7FE015','#8B5CF612','#F9731612','#06B6D412','#EC489912'];
-  const strokes=['#D08008','#1A9E73','#3B7FE0','#8B5CF6','#F97316','#06B6D4','#EC4899'];
-
-  // ── Mouse handlers ──
   const getSVGPos=(e:React.MouseEvent)=>{
     const r=svgRef.current?.getBoundingClientRect();
     if(!r)return{sx:0,sy:0};
     return{sx:e.clientX-r.left,sy:e.clientY-r.top};
   };
 
-  const onSVGClick=(e:React.MouseEvent)=>{
+  const onMouseMove=(e:React.MouseEvent)=>{
     const {sx,sy}=getSVGPos(e);
-    const world=fromSVG(sx,sy);
+    // Snap
+    const snapped=snapToProfile(sx,sy);
+    const world=snapped||fromSVG(sx,sy);
+    const wsx=snapped?snapped.sx:sx;
+    const wsy=snapped?snapped.sy:sy;
+    setMousePos({x:world.x,y:world.y,sx:wsx,sy:wsy});
 
-    if(tool==="quota"){
-      if(!quotaPt1){setQuotaPt1(world);}
-      else{
-        const dx=world.x-quotaPt1.x,dy=world.y-quotaPt1.y;
-        const mm=Math.round(Math.sqrt(dx*dx+dy*dy)*10)/10;
-        setQuotes(q=>[...q,{x1:quotaPt1.x,y1:quotaPt1.y,x2:world.x,y2:world.y,mm}]);
-        setQuotaPt1(null);
-      }
+    if(panStart){
+      setPan({x:panStart.px+(sx-panStart.sx)/sc,y:panStart.py-(sy-panStart.sy)/sc});
       return;
     }
-
-    if(tool==="select"){
-      // Trova punto più vicino
-      let best:{pi:number,vi:number}|null=null;let bestD=12/sc;
-      target.forEach((p:any,pi:number)=>p.pts.forEach((c:any,vi:number)=>{
-        const d=Math.hypot(tx(c.x)-sx,ty(c.y)-sy);
-        if(d<bestD){bestD=d;best={pi,vi};}
-      }));
-      setSelPt(best);
+    if(dragging&&dragStart){
+      const updated=(editPols||basePols).map((p:any,pi:number)=>
+        pi===dragStart.pi?{...p,pts:p.pts.map((c:any,vi:number)=>vi===dragStart.vi?fromSVG(sx,sy):c)}:p
+      );
+      setEditPols(updated);
     }
   };
-
-  const [dragging,setDragging]=useState(false);
-  const [dragStart,setDragStart]=useState<{sx:number,sy:number,pi:number,vi:number}|null>(null);
-  const [panStart,setPanStart]=useState<{sx:number,sy:number,px:number,py:number}|null>(null);
 
   const onMouseDown=(e:React.MouseEvent)=>{
     const {sx,sy}=getSVGPos(e);
     if(e.button===1||(e.shiftKey&&e.button===0)){
       setPanStart({sx,sy,px:pan.x,py:pan.y});return;
     }
-    if(tool==="move"&&selPt){
-      setDragging(true);
-      setDragStart({sx,sy,pi:selPt.pi,vi:selPt.vi});
-    }
-  };
-
-  const onMouseMove=(e:React.MouseEvent)=>{
-    const {sx,sy}=getSVGPos(e);
-    if(panStart){
-      setPan({x:panStart.px+(sx-panStart.sx)/sc,y:panStart.py+(sy-panStart.sy)/sc});
+    if(tool==="quota"){
+      const snapped=snapToProfile(sx,sy);
+      const pt=snapped?{x:snapped.x,y:snapped.y,sx:snapped.sx,sy:snapped.sy}:{...fromSVG(sx,sy),sx,sy};
+      if(!quotaPt1){setQuotaPt1(pt);}
+      else{
+        const dx=pt.x-quotaPt1.x,dy=pt.y-quotaPt1.y;
+        const mm=Math.round(Math.sqrt(dx*dx+dy*dy)*10)/10;
+        if(mm>0.1)setQuotes(q=>[...q,{x1:quotaPt1.x,y1:quotaPt1.y,x2:pt.x,y2:pt.y,mm}]);
+        setQuotaPt1(null);
+      }
       return;
     }
-    if(dragging&&dragStart){
-      const world=fromSVG(sx,sy);
-      const updated=(editPols||basePols).map((p:any,pi:number)=>
-        pi===dragStart.pi?{...p,pts:p.pts.map((c:any,vi:number)=>vi===dragStart.vi?world:c)}:p
-      );
-      setEditPols(updated);
+    if(tool==="move"){
+      let best:{pi:number,vi:number}|null=null;let bestD=14/sc;
+      target.forEach((p:any,pi:number)=>p.pts.forEach((c:any,vi:number)=>{
+        const d=Math.hypot(tx(c.x)-sx,ty(c.y)-sy);
+        if(d<bestD){bestD=d;best={pi,vi};}
+      }));
+      if(best){setSelPt(best);setDragging(true);setDragStart(best);}
+      return;
+    }
+    if(tool==="select"){
+      let best:{pi:number,vi:number}|null=null;let bestD=14/sc;
+      target.forEach((p:any,pi:number)=>p.pts.forEach((c:any,vi:number)=>{
+        const d=Math.hypot(tx(c.x)-sx,ty(c.y)-sy);
+        if(d<bestD){bestD=d;best={pi,vi};}
+      }));
+      setSelPt(best);
     }
   };
 
@@ -261,169 +285,199 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
 
   const onWheel=(e:React.WheelEvent)=>{
     e.preventDefault();
-    const delta=e.deltaY<0?1.15:0.87;
-    setZoom(z=>Math.max(0.3,Math.min(8,z*delta)));
+    const delta=e.deltaY<0?1.18:0.85;
+    setZoom(z=>Math.max(0.2,Math.min(12,z*delta)));
   };
 
-  const pols2use=editPols||basePols;
-  const resetEdit=()=>{setEditPols(null);setZoom(1);setPan({x:0,y:0});setRotation(0);setQuotes([]);setSelPt(null);};
+  const step=Math.ceil(Math.max(rX,rY)/6/5)*5||5;
+  const qX:number[]=[],qY:number[]=[];
+  for(let v=Math.ceil(minX/step)*step;v<=maxX+0.1;v+=step)qX.push(v);
+  for(let v=Math.ceil(minY/step)*step;v<=maxY+0.1;v+=step)qY.push(v);
 
-  return(
-    <div style={{background:"#1A1A1C",borderRadius:10,overflow:"hidden",userSelect:"none"}}>
+  const fills=['#D0840818','#1A9E7315','#3B7FE015','#8B5CF612','#F9731612','#06B6D412','#EC489912'];
+  const strokes=['#D08008','#1A9E73','#3B7FE0','#8B5CF6','#F97316','#06B6D4','#EC4899'];
+
+  const resetEdit=()=>{setEditPols(null);setZoom(1);setPan({x:0,y:0});setRotation(0);setQuotes([]);setSelPt(null);setQuotaPt1(null);};
+
+  const inner = (
+    <div style={{background:"#1A1A1C",borderRadius:fullscreen?0:10,overflow:"hidden",userSelect:"none",
+      ...(fullscreen?{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column"}:{})}}>
+
       {/* TOOLBAR */}
-      <div style={{height:TOOLBAR,display:"flex",alignItems:"center",padding:"0 10px",gap:3,borderBottom:"1px solid #2A2A2E",flexShrink:0}}>
-        {/* Viste */}
+      <div style={{height:TOOLBAR,display:"flex",alignItems:"center",padding:"0 10px",gap:3,borderBottom:"1px solid #2A2A2E",flexShrink:0,background:"#141416"}}>
         {[{k:"nodo",l:"Nodo"},{k:"rahmen",l:"Telaio"},{k:"flugel",l:"Anta"},{k:"front",l:"Front."}].map(({k,l})=>(
           <div key={k} onClick={()=>setView(k)}
-            style={{padding:"3px 8px",fontSize:9,fontWeight:600,cursor:"pointer",borderRadius:4,
+            style={{padding:"4px 10px",fontSize:10,fontWeight:600,cursor:"pointer",borderRadius:5,
               background:view===k?"#D08008":"transparent",color:view===k?"#fff":"#555"}}>
             {l}
           </div>
         ))}
-        <div style={{width:1,height:16,background:"#333",margin:"0 4px"}}/>
-        {/* Tools */}
-        {[
-          {k:"select",l:"↖ Sel.",c:"#9CA3AF"},
-          {k:"move",l:"✥ Sposta",c:"#3B7FE0"},
-          {k:"quota",l:"↔ Quota",c:"#D08008"},
-        ].map(({k,l,c})=>(
-          <div key={k} onClick={()=>{setTool(k as any);setQuotaPt1(null);}}
-            style={{padding:"3px 8px",fontSize:9,fontWeight:600,cursor:"pointer",borderRadius:4,
-              background:tool===k?c+"25":"transparent",
+        <div style={{width:1,height:18,background:"#2A2A2E",margin:"0 4px"}}/>
+        {([
+          {k:"select",l:"↖",title:"Seleziona",c:"#9CA3AF"},
+          {k:"move",l:"✥",title:"Sposta punto",c:"#3B7FE0"},
+          {k:"quota",l:"↔",title:"Quota distanza",c:"#D08008"},
+        ] as any[]).map(({k,l,title,c})=>(
+          <div key={k} onClick={()=>{setTool(k);setQuotaPt1(null);}}
+            title={title}
+            style={{width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:13,fontWeight:700,cursor:"pointer",borderRadius:6,
+              background:tool===k?c+"30":"transparent",
               color:tool===k?c:"#555",
-              border:tool===k?`1px solid ${c}40`:"1px solid transparent"}}>
+              border:tool===k?`1.5px solid ${c}50`:"1.5px solid transparent"}}>
             {l}
           </div>
         ))}
-        <div style={{width:1,height:16,background:"#333",margin:"0 4px"}}/>
-        {/* Rotazione */}
+        <div style={{width:1,height:18,background:"#2A2A2E",margin:"0 4px"}}/>
         <div style={{display:"flex",alignItems:"center",gap:3}}>
           <span style={{fontSize:9,color:"#555"}}>↻</span>
           <input type="number" value={rotation} onChange={(e:any)=>setRotation(parseFloat(e.target.value)||0)}
-            style={{width:36,background:"#2A2A2E",border:"1px solid #3A3A3E",borderRadius:4,color:"#fff",fontSize:9,padding:"2px 4px",textAlign:"center"}}/>
+            style={{width:40,background:"#2A2A2E",border:"1px solid #3A3A3E",borderRadius:4,color:"#fff",fontSize:9,padding:"2px 4px",textAlign:"center"}}/>
           <span style={{fontSize:9,color:"#555"}}>°</span>
         </div>
-        <div style={{width:1,height:16,background:"#333",margin:"0 2px"}}/>
-        {/* Reset */}
         {(editPols||zoom!==1||rotation!==0||quotes.length>0)&&(
-          <div onClick={resetEdit} style={{padding:"2px 7px",fontSize:9,color:"#DC4444",cursor:"pointer",borderRadius:4,border:"1px solid #DC444430"}}>Reset</div>
+          <div onClick={resetEdit} style={{padding:"2px 8px",fontSize:9,color:"#DC4444",cursor:"pointer",borderRadius:4,border:"1px solid #DC444330",marginLeft:4}}>Reset</div>
         )}
         {quotes.length>0&&(
-          <div onClick={()=>setQuotes([])} style={{padding:"2px 7px",fontSize:9,color:"#D08008",cursor:"pointer",borderRadius:4,border:"1px solid #D0800830"}}>
-            ×{quotes.length} quote
-          </div>
+          <div onClick={()=>setQuotes([])} style={{padding:"2px 8px",fontSize:9,color:"#D08008",cursor:"pointer",borderRadius:4,border:"1px solid #D0800830"}}>×{quotes.length}q</div>
         )}
         <div style={{flex:1}}/>
-        <div style={{fontSize:8,color:"#333",fontFamily:"JetBrains Mono,monospace"}}>
+        <div onClick={()=>setFullscreen(!fullscreen)}
+          style={{padding:"3px 8px",fontSize:10,cursor:"pointer",borderRadius:5,color:fullscreen?"#D08008":"#555",
+            border:`1px solid ${fullscreen?"#D08008":"#333"}`,background:fullscreen?"#D0800820":"transparent"}}>
+          {fullscreen?"⊠ Esci":"⊞ Ingrandisci"}
+        </div>
+        <div style={{fontSize:8,color:"#333",fontFamily:"JetBrains Mono,monospace",marginLeft:8}}>
           {Math.round(rX)}×{Math.round(rY)}mm · {zoom.toFixed(1)}x
         </div>
       </div>
 
       {/* SVG CAD */}
-      <svg ref={svgRef} width={width} height={svgH}
-        style={{display:"block",cursor:tool==="quota"?"crosshair":tool==="move"&&selPt?"grab":"default"}}
-        onClick={onSVGClick}
+      <svg ref={svgRef} width={W} height={svgH}
+        style={{display:"block",cursor:
+          tool==="quota"?"crosshair":
+          tool==="move"&&selPt?"grab":
+          panStart?"grabbing":"default",
+          flex:fullscreen?"1":"none"}}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
+        onMouseLeave={()=>{onMouseUp();setMousePos(null);}}
         onWheel={onWheel}>
-        <rect width={width} height={svgH} fill="#1A1A1C"/>
+        <rect width={W} height={svgH} fill="#1A1A1C"/>
         {/* Grid */}
-        {qX.map((v,i)=><line key={"gx"+i} x1={tx(v)} y1={PAD} x2={tx(v)} y2={svgH-PAD-QPAD} stroke="#252528" strokeWidth="0.5"/>)}
-        {qY.map((v,i)=><line key={"gy"+i} x1={PAD+QPAD} y1={ty(v)} x2={width-PAD} y2={ty(v)} stroke="#252528" strokeWidth="0.5"/>)}
+        {qX.map((v,i)=><line key={"gx"+i} x1={tx(v)} y1={PAD} x2={tx(v)} y2={svgH-PAD-QPAD} stroke="#222" strokeWidth="0.5"/>)}
+        {qY.map((v,i)=><line key={"gy"+i} x1={PAD+QPAD} y1={ty(v)} x2={W-PAD} y2={ty(v)} stroke="#222" strokeWidth="0.5"/>)}
         {/* Assi 0 */}
-        {minX<=0&&maxX>=0&&<line x1={tx(0)} y1={PAD} x2={tx(0)} y2={svgH-PAD-QPAD} stroke="#ffffff18" strokeWidth="0.8" strokeDasharray="4,3"/>}
-        {minY<=0&&maxY>=0&&<line x1={PAD+QPAD} y1={ty(0)} x2={width-PAD} y2={ty(0)} stroke="#ffffff18" strokeWidth="0.8" strokeDasharray="4,3"/>}
-
-        {/* Polilinee profilo */}
+        {minX<=0&&maxX>=0&&<line x1={tx(0)} y1={PAD} x2={tx(0)} y2={svgH-PAD-QPAD} stroke="#ffffff12" strokeWidth="0.8" strokeDasharray="4,4"/>}
+        {minY<=0&&maxY>=0&&<line x1={PAD+QPAD} y1={ty(0)} x2={W-PAD} y2={ty(0)} stroke="#ffffff12" strokeWidth="0.8" strokeDasharray="4,4"/>}
+        {/* Profilo */}
         {target.map((p:any,pi:number)=>{
           const pStr=p.pts.map((c:any)=>`${tx(c.x).toFixed(1)},${ty(c.y).toFixed(1)}`).join(' ');
-          return<polygon key={pi} points={pStr} fill={fills[pi%fills.length]} stroke={strokes[pi%strokes.length]} strokeWidth={pi===0?"1.5":"0.9"} strokeLinejoin="round"/>;
+          const isMain=pi===0||p.pts.length===Math.max(...target.map((x:any)=>x.pts.length));
+          return <polygon key={pi} points={pStr}
+            fill={fills[pi%fills.length]}
+            stroke={strokes[pi%strokes.length]}
+            strokeWidth={isMain?"1.8":"1.0"}
+            strokeLinejoin="round"/>;
         })}
-
-        {/* Punti selezionabili in modalità select/move */}
-        {(tool==="select"||tool==="move")&&target.map((p:any,pi:number)=>
-          p.pts.filter((_:any,vi:number)=>vi%3===0).map((c:any,vi:number)=>{
-            const isSel=selPt?.pi===pi&&selPt?.vi===vi*3;
-            return <circle key={`pt${pi}-${vi}`} cx={tx(c.x)} cy={ty(c.y)} r={isSel?5:2.5}
-              fill={isSel?"#D08008":"#ffffff20"} stroke={isSel?"#D08008":"#ffffff30"} strokeWidth="0.8"
-              style={{cursor:"pointer"}}/>;
-          })
-        )}
-
-        {/* Punto selezionato con coordinate */}
-        {selPt&&target[selPt.pi]?.pts[selPt.vi]&&(()=>{
-          const c=target[selPt.pi].pts[selPt.vi];
-          return <g>
-            <circle cx={tx(c.x)} cy={ty(c.y)} r={7} fill="none" stroke="#D08008" strokeWidth="1.5" strokeDasharray="3,2"/>
-            <rect x={tx(c.x)+10} y={ty(c.y)-14} width={80} height={16} fill="#1A1A1C" rx={3}/>
-            <text x={tx(c.x)+50} y={ty(c.y)-3} fontSize="9" fill="#D08008" textAnchor="middle" fontFamily="JetBrains Mono,monospace">
-              {c.x.toFixed(1)},{c.y.toFixed(1)}
-            </text>
-          </g>;
-        })()}
-
-        {/* Quote manuali */}
+        {/* Snap indicator su mouseover */}
+        {mousePos&&tool==="quota"&&<g>
+          <circle cx={mousePos.sx} cy={mousePos.sy} r="5" fill="#D08008" fillOpacity="0.7"/>
+          <line x1={mousePos.sx-8} y1={mousePos.sy} x2={mousePos.sx+8} y2={mousePos.sy} stroke="#D08008" strokeWidth="1"/>
+          <line x1={mousePos.sx} y1={mousePos.sy-8} x2={mousePos.sx} y2={mousePos.sy+8} stroke="#D08008" strokeWidth="1"/>
+        </g>}
+        {/* Linea live mentre si quota */}
+        {quotaPt1&&mousePos&&<g>
+          <line x1={tx(quotaPt1.x)} y1={ty(quotaPt1.y)} x2={mousePos.sx} y2={mousePos.sy}
+            stroke="#D08008" strokeWidth="1.2" strokeDasharray="6,3"/>
+          <circle cx={tx(quotaPt1.x)} cy={ty(quotaPt1.y)} r="5" fill="#D08008"/>
+          {/* Misura live */}
+          {(()=>{
+            const dx=mousePos.x-quotaPt1.x,dy=mousePos.y-quotaPt1.y;
+            const mm=Math.round(Math.sqrt(dx*dx+dy*dy)*10)/10;
+            const mx=(tx(quotaPt1.x)+mousePos.sx)/2,my=(ty(quotaPt1.y)+mousePos.sy)/2;
+            const lw=String(mm).length*8+20;
+            return <g>
+              <rect x={mx-lw/2} y={my-10} width={lw} height={19} fill="#D08008" rx={4}/>
+              <text x={mx} y={my+4} fontSize="11" fill="#fff" textAnchor="middle" fontFamily="JetBrains Mono,monospace" fontWeight="800">{mm}</text>
+            </g>;
+          })()}
+        </g>}
+        {/* Quote salvate */}
         {quotes.map((q,i)=>{
           const x1s=tx(q.x1),y1s=ty(q.y1),x2s=tx(q.x2),y2s=ty(q.y2);
           const mx=(x1s+x2s)/2,my=(y1s+y2s)/2;
-          const ang=Math.atan2(y2s-y1s,x2s-x1s)*180/Math.PI;
-          const lw=String(q.mm).length*7+16;
+          const lw=String(q.mm).length*8+20;
           return <g key={i}>
-            <line x1={x1s} y1={y1s} x2={x2s} y2={y2s} stroke="#D08008" strokeWidth="1" strokeDasharray="4,2"/>
-            <circle cx={x1s} cy={y1s} r="3" fill="#D08008"/>
-            <circle cx={x2s} cy={y2s} r="3" fill="#D08008"/>
-            {/* Frecce */}
-            <line x1={x1s} y1={y1s-5} x2={x1s} y2={y1s+5} stroke="#D08008" strokeWidth="0.8"/>
-            <line x1={x2s} y1={y2s-5} x2={x2s} y2={y2s+5} stroke="#D08008" strokeWidth="0.8"/>
-            <rect x={mx-lw/2} y={my-9} width={lw} height={16} fill="#D08008" rx={3}/>
-            <text x={mx} y={my+3} fontSize="10" fill="#fff" textAnchor="middle" fontFamily="JetBrains Mono,monospace" fontWeight="700">
-              {q.mm}
-            </text>
-            <text x={mx+lw/2+3} y={my+3} fontSize="8" fill="#D08008" fontFamily="JetBrains Mono,monospace">mm</text>
-            <text x={x2s+8} y={y2s+3} fontSize="8" fill="#666" cursor="pointer" onClick={()=>setQuotes(qs=>qs.filter((_,j)=>j!==i))}>×</text>
+            {/* Linea quota */}
+            <line x1={x1s} y1={y1s} x2={x2s} y2={y2s} stroke="#D08008" strokeWidth="1.2"/>
+            {/* Frecce terminali */}
+            <circle cx={x1s} cy={y1s} r="3.5" fill="#D08008"/>
+            <circle cx={x2s} cy={y2s} r="3.5" fill="#D08008"/>
+            {/* Badge mm */}
+            <rect x={mx-lw/2} y={my-10} width={lw} height={19} fill="#1A1A1C" stroke="#D08008" strokeWidth="1" rx={4}/>
+            <text x={mx} y={my+4} fontSize="11" fill="#D08008" textAnchor="middle" fontFamily="JetBrains Mono,monospace" fontWeight="800">{q.mm}</text>
+            {/* Delete */}
+            <text x={x2s+8} y={y2s+4} fontSize="12" fill="#555" style={{cursor:"pointer"}}
+              onClick={(e:any)=>{e.stopPropagation();setQuotes(qs=>qs.filter((_,j)=>j!==i));}}>×</text>
           </g>;
         })}
-
-        {/* Primo punto quota attivo */}
-        {quotaPt1&&<g>
-          <circle cx={tx(quotaPt1.x)} cy={ty(quotaPt1.y)} r="5" fill="#D08008" fillOpacity="0.6"/>
-          <circle cx={tx(quotaPt1.x)} cy={ty(quotaPt1.y)} r="9" fill="none" stroke="#D08008" strokeWidth="1.5" strokeDasharray="3,2"/>
-          <text x={tx(quotaPt1.x)+12} y={ty(quotaPt1.y)+4} fontSize="9" fill="#D08008" fontFamily="JetBrains Mono,monospace">← click 2° punto</text>
-        </g>}
-
-        {/* Quote X automatiche */}
+        {/* Punto selezionato */}
+        {selPt&&target[selPt.pi]?.pts[selPt.vi]&&(()=>{
+          const c=target[selPt.pi].pts[selPt.vi];
+          const lw=110;
+          return <g>
+            <circle cx={tx(c.x)} cy={ty(c.y)} r="8" fill="none" stroke="#D08008" strokeWidth="1.5" strokeDasharray="3,2"/>
+            <rect x={tx(c.x)+10} y={ty(c.y)-11} width={lw} height={17} fill="#1A1A1C" stroke="#D08008" strokeWidth="0.8" rx={3}/>
+            <text x={tx(c.x)+10+lw/2} y={ty(c.y)+2} fontSize="10" fill="#D08008" textAnchor="middle" fontFamily="JetBrains Mono,monospace">
+              x:{c.x.toFixed(1)} y:{c.y.toFixed(1)}
+            </text>
+          </g>;
+        })()}
+        {/* Quote X */}
         {qX.map((v,i)=>(
           <g key={"qx"+i}>
-            <line x1={tx(v)} y1={svgH-PAD-QPAD} x2={tx(v)} y2={svgH-PAD-QPAD+3} stroke="#3B7FE050" strokeWidth="0.7"/>
-            <text x={tx(v)} y={svgH-PAD-QPAD+12} fontSize="8" fill="#3B7FE0" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+            <line x1={tx(v)} y1={svgH-PAD-QPAD} x2={tx(v)} y2={svgH-PAD-QPAD+3} stroke="#3B7FE040" strokeWidth="0.7"/>
+            <text x={tx(v)} y={svgH-PAD-QPAD+13} fontSize="8" fill="#3B7FE080" textAnchor="middle" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
           </g>
         ))}
-        {/* Quote Y automatiche */}
+        {/* Quote Y */}
         {qY.map((v,i)=>(
           <g key={"qy"+i}>
-            <line x1={PAD+QPAD-3} y1={ty(v)} x2={PAD+QPAD} y2={ty(v)} stroke="#3B7FE050" strokeWidth="0.7"/>
-            <text x={PAD+QPAD-5} y={ty(v)+3} fontSize="8" fill="#3B7FE0" textAnchor="end" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
+            <line x1={PAD+QPAD-3} y1={ty(v)} x2={PAD+QPAD} y2={ty(v)} stroke="#3B7FE040" strokeWidth="0.7"/>
+            <text x={PAD+QPAD-5} y={ty(v)+3} fontSize="8" fill="#3B7FE080" textAnchor="end" fontFamily="JetBrains Mono,monospace">{Math.round(v)}</text>
           </g>
         ))}
       </svg>
 
       {/* STATUS BAR */}
-      <div style={{height:STATUSBAR,display:"flex",alignItems:"center",padding:"0 12px",gap:12,borderTop:"1px solid #2A2A2E",background:"#141416"}}>
-        {tool==="quota"&&<span style={{fontSize:9,color:"#D08008",fontWeight:600}}>{quotaPt1?"Click 2° punto per misurare":"Click 1° punto per iniziare quota"}</span>}
-        {tool==="move"&&<span style={{fontSize:9,color:"#3B7FE0"}}>{selPt?"Selezionato — trascina per spostare":"Click su un punto per selezionarlo"}</span>}
+      <div style={{height:STATUSBAR,display:"flex",alignItems:"center",padding:"0 14px",gap:16,borderTop:"1px solid #1E1E20",background:"#0F0F11",flexShrink:0}}>
+        {tool==="quota"&&<span style={{fontSize:10,color:"#D08008",fontWeight:600}}>
+          {quotaPt1?"▶ Click 2° punto (snap automatico ai vertici)":"▶ Click 1° punto per iniziare quota"}
+        </span>}
+        {tool==="move"&&<span style={{fontSize:10,color:"#3B7FE0"}}>
+          {selPt?"↔ Trascina per spostare il punto":"Click su un vertice per selezionarlo"}
+        </span>}
         {tool==="select"&&selPt&&target[selPt.pi]?.pts[selPt.vi]&&(()=>{
           const c=target[selPt.pi].pts[selPt.vi];
-          return <span style={{fontSize:9,color:"#9CA3AF",fontFamily:"JetBrains Mono,monospace"}}>
-            P({c.x.toFixed(2)}, {c.y.toFixed(2)}) mm
+          return <span style={{fontSize:10,color:"#9CA3AF",fontFamily:"JetBrains Mono,monospace"}}>
+            ({c.x.toFixed(2)}, {c.y.toFixed(2)}) mm
           </span>;
         })()}
-        {quotes.length>0&&<span style={{fontSize:9,color:"#D08008"}}>{quotes.length} quota{quotes.length>1?"e":""}: {quotes.map(q=>q.mm+"mm").join(" · ")}</span>}
-        <span style={{marginLeft:"auto",fontSize:8,color:"#333"}}>rotella=zoom · shift+drag=pan</span>
+        {mousePos&&<span style={{fontSize:9,color:"#444",fontFamily:"JetBrains Mono,monospace"}}>
+          {mousePos.x.toFixed(1)}, {mousePos.y.toFixed(1)}
+        </span>}
+        {quotes.length>0&&<span style={{fontSize:10,color:"#D08008"}}>
+          {quotes.map(q=>q.mm+"mm").join(" · ")}
+        </span>}
+        <span style={{marginLeft:"auto",fontSize:9,color:"#333"}}>scroll=zoom · shift+drag=pan</span>
       </div>
     </div>
   );
+
+  if(fullscreen)return inner;
+  return inner;
 }
 
 function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
