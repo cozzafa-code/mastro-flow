@@ -54,29 +54,79 @@ function VanoPreview({v}:{v:any}){
   );
 }
 
-// ── Kanban column ─────────────────────────────────────────────
-function KanbanCol({fase,items,color,onSelect}:any){
+// ── Kanban drag & drop ───────────────────────────────────────
+function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,sogliaDays}:any){
+  const [dragId,setDragId]=useState<string|null>(null);
+  const [overCol,setOverCol]=useState<string|null>(null);
+  const fmtE=(n:number)=>n>0?"€"+Math.round(n).toLocaleString("it-IT"):"—";
+  const daysTo=(d:string)=>Math.floor((new Date(d).getTime()-Date.now())/86400000);
+
   return (
-    <div style={{minWidth:200,flex:1,display:"flex",flexDirection:"column",gap:8}}>
-      <div style={{padding:"6px 10px",borderRadius:8,background:color+"18",border:`1px solid ${color}30`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:11,fontWeight:700,color,textTransform:"capitalize"}}>{fase}</span>
-        <span style={{fontSize:11,fontWeight:700,color,background:color+"25",padding:"1px 7px",borderRadius:10}}>{items.length}</span>
-      </div>
-      {items.map((c:any)=>(
-        <div key={c.id} onClick={()=>onSelect(c)} style={{padding:"10px 12px",borderRadius:10,background:"#fff",border:`1px solid #E5E3DC`,cursor:"pointer",transition:"box-shadow .15s"}}
-          onMouseEnter={e=>((e.currentTarget as any).style.boxShadow="0 2px 12px rgba(0,0,0,0.08)")}
-          onMouseLeave={e=>((e.currentTarget as any).style.boxShadow="none")}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-            <div style={{width:28,height:28,borderRadius:7,background:color+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color,flexShrink:0}}>{((c.cliente||"?")[0]+(c.cognome||"")[0]).toUpperCase()}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:12,fontWeight:700,color:DARK,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.cliente} {c.cognome||""}</div>
-              <div style={{fontSize:10,color:"#86868b"}}>{c.code}</div>
+    <div style={{display:"flex",gap:12,minWidth:"max-content",height:"100%",alignItems:"flex-start",padding:"16px 18px",overflowX:"auto"}}>
+      {pipeline.filter((p:any)=>p.attiva).map((p:any)=>{
+        const items=cantieri.filter((c:any)=>c.fase===p.id);
+        const col=p.color||TEAL;
+        const isOver=overCol===p.id;
+        return (
+          <div key={p.id}
+            onDragOver={e=>{e.preventDefault();setOverCol(p.id);}}
+            onDragLeave={()=>setOverCol(null)}
+            onDrop={e=>{e.preventDefault();if(dragId&&dragId!==p.id){onMoveFase(dragId,p.id);}setDragId(null);setOverCol(null);}}
+            style={{minWidth:210,maxWidth:240,display:"flex",flexDirection:"column",gap:8,transition:"background .15s",background:isOver?col+"08":"transparent",borderRadius:12,padding:isOver?"8px":"0",border:isOver?`1.5px dashed ${col}`:"1.5px solid transparent"}}>
+            {/* Header colonna */}
+            <div style={{padding:"8px 12px",borderRadius:9,background:col+"15",border:`1px solid ${col}30`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+              <span style={{fontSize:12,fontWeight:700,color}}>{p.nome||p.id}</span>
+              <span style={{fontSize:11,fontWeight:800,color,background:col+"25",padding:"2px 8px",borderRadius:10}}>{items.length}</span>
             </div>
+            {/* Cards */}
+            {items.map((c:any)=>{
+              const ferma=giorniFermaCM(c)>=sogliaDays&&c.fase!=="chiusura";
+              const gg=giorniFermaCM(c);
+              const initials=((c.cliente||"?")[0]+(c.cognome||"")[0]).toUpperCase();
+              const vaniCount=(c.vani||[]).length;
+              const rilievi=(c.rilievi||[]).length;
+              return (
+                <div key={c.id}
+                  draggable
+                  onDragStart={()=>setDragId(c.id)}
+                  onDragEnd={()=>{setDragId(null);setOverCol(null);}}
+                  onClick={()=>onSelect(c)}
+                  style={{padding:"12px",borderRadius:10,background:"#fff",border:`1px solid ${ferma?RED+"40":"#E5E3DC"}`,cursor:"grab",transition:"box-shadow .15s, opacity .15s",opacity:dragId===c.id?0.4:1,boxShadow:ferma?"0 0 0 1.5px "+RED+"30":"none"}}
+                  onMouseEnter={e=>((e.currentTarget as any).style.boxShadow=ferma?"0 2px 12px "+RED+"20":"0 2px 12px rgba(0,0,0,0.08)")}
+                  onMouseLeave={e=>((e.currentTarget as any).style.boxShadow=ferma?"0 0 0 1.5px "+RED+"30":"none")}>
+                  {/* Header card */}
+                  <div style={{display:"flex",alignItems:"center",gap:9,marginBottom:8}}>
+                    <div style={{width:32,height:32,borderRadius:9,background:ferma?RED+"15":col+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:ferma?RED:col,flexShrink:0}}>{initials}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:DARK,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.cliente} {c.cognome||""}</div>
+                      <div style={{fontSize:10,color:"#86868b"}}>{c.code}</div>
+                    </div>
+                  </div>
+                  {/* Importo */}
+                  {c.euro&&<div style={{fontSize:15,fontWeight:800,color:DARK,fontFamily:FM,marginBottom:8}}>{fmtE(parseFloat(c.euro))}</div>}
+                  {/* Info riga */}
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:6}}>
+                    {vaniCount>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:TEAL+"12",color:TEAL,fontWeight:600}}>{vaniCount} vani</span>}
+                    {rilievi>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:BLU+"12",color:BLU,fontWeight:600}}>{rilievi} rilievi</span>}
+                    {c.sistema&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:"#F2F1EC",color:"#86868b",fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",maxWidth:90,whiteSpace:"nowrap"}}>{c.sistema}</span>}
+                  </div>
+                  {/* Indirizzo */}
+                  {c.indirizzo&&<div style={{fontSize:10,color:"#86868b",marginBottom:6,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.indirizzo}</div>}
+                  {/* Footer */}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+                    {ferma?<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:RED+"15",color:RED,fontWeight:700}}>Ferma {gg}gg</span>:<span style={{fontSize:10,color:"#86868b"}}>{c.fase}</span>}
+                    {c.dataConsegna&&<span style={{fontSize:10,fontWeight:700,color:daysTo(c.dataConsegna)<=7?RED:AMB}}>{daysTo(c.dataConsegna)<=0?"Scaduta":`${daysTo(c.dataConsegna)}gg`}</span>}
+                  </div>
+                </div>
+              );
+            })}
+            {/* Drop zone vuota */}
+            {items.length===0&&(
+              <div style={{padding:"20px 12px",borderRadius:10,border:"1.5px dashed #E5E3DC",textAlign:"center",fontSize:12,color:"#86868b"}}>Nessuna commessa</div>
+            )}
           </div>
-          {c.euro&&<div style={{fontSize:13,fontWeight:800,color:DARK,fontFamily:FM}}>{fmtE(parseFloat(c.euro))}</div>}
-          {c.dataConsegna&&<div style={{fontSize:10,color:daysTo(c.dataConsegna)<=7?RED:AMB,marginTop:4,fontWeight:600}}>Consegna: {new Date(c.dataConsegna+"T12:00:00").toLocaleDateString("it-IT",{day:"numeric",month:"short"})}</div>}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -187,13 +237,19 @@ export default function DesktopCommesse(){
 
       {/* KANBAN VIEW */}
       {viewMode==="kanban"&&(
-        <div style={{flex:1,overflowX:"auto",overflowY:"auto",padding:"16px 18px"}}>
-          <div style={{display:"flex",gap:12,minWidth:"max-content",height:"100%",alignItems:"flex-start"}}>
-            {PIPELINE.filter((p:any)=>p.attiva).map((p:any)=>{
-              const items=cantieri.filter(c=>c.fase===p.id);
-              return <KanbanCol key={p.id} fase={p.nome||p.id} items={items} color={p.color||TEAL} onSelect={(c:any)=>{setSelectedCM(c);setViewMode("lista");setDetTab("rilievi");}}/>;
-            })}
-          </div>
+        <div style={{flex:1,overflow:"hidden"}}>
+          <KanbanBoard
+            pipeline={PIPELINE}
+            cantieri={filteredAdv}
+            giorniFermaCM={giorniFermaCM}
+            sogliaDays={sogliaDays}
+            onSelect={(c:any)=>{setSelectedCM(c);setViewMode("lista");setDetTab("rilievi");}}
+            onMoveFase={(cmId:string,newFase:string)=>{
+              // Aggiorna fase commessa nel context
+              const updated=cantieri.map((c:any)=>c.id===cmId?{...c,fase:newFase}:c);
+              // setCantieri(updated); // decommentare quando setCantieri è disponibile nel context
+            }}
+          />
         </div>
       )}
 
