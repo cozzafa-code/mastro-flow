@@ -1159,33 +1159,70 @@ export default function VanoDetailPanel() {
               {/* ═══ MISURE STANDARD: Serramenti (8 punti) ═══ */}
               {!["TDBR","TDCAD","TDCAP","TDVER","TDRUL","TDPERG","TDZIP","TDVELA","VENEZIA","TDS","TDR","TVE","PBC","PGA","PGF","TCA","TCB","ZTE"].includes(v.tipo) && (<>
 
-              {/* ═══ DISEGNO TECNICO — Condiviso con preventivo ═══ */}
+              {/* ═══ DISEGNO TECNICO — Bottone apre fullscreen ═══ */}
               <div style={{ marginBottom: 14 }}>
                 <div onClick={() => setShowDisegno(!showDisegno)}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}>
-                  <span style={{ fontSize: 14 }}><I d={ICO.edit} /></span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: showDisegno ? T.purple : T.text, flex: 1 }}>Disegno tecnico</span>
-                  <span style={{ fontSize: 9, color: T.sub, fontFamily: FM }}>{(m.lCentro || m.lAlto || 1200)}×{(m.hCentro || m.hSx || 1400)}mm</span>
-                  {(v.disegno?.elements?.length > 0) && <span style={{ padding: "1px 6px", borderRadius: 4, background: `${T.grn}18`, fontSize: 8, fontWeight: 800, color: T.grn }}>{v.disegno.elements.length} el.</span>}
-                  <span style={{ fontSize: 9, color: T.sub, transform: showDisegno ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>▼</span>
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}>
+                  <span style={{ fontSize: 16 }}><I d={ICO.edit} /></span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: showDisegno ? T.purple : T.text }}>Disegno tecnico CAD</div>
+                    <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{(m.lCentro || m.lAlto || 1200)}×{(m.hCentro || m.hSx || 1400)}mm · {(v.disegno?.elements?.length || 0)} elementi</div>
+                  </div>
+                  {(v.disegno?.elements?.length > 0) && <span style={{ padding: "2px 8px", borderRadius: 5, background: `${T.grn}18`, fontSize: 9, fontWeight: 800, color: T.grn }}>{v.disegno.elements.length} el.</span>}
+                  <span style={{ fontSize: 11, fontWeight: 700, color: T.purple, padding: "4px 10px", borderRadius: 6, background: `${T.purple}12`, border: `1px solid ${T.purple}30` }}>Apri →</span>
                 </div>
-                {showDisegno && (
-                  <DisegnoTecnico
-                    vanoId={v.id}
-                    vanoNome={v.nome || `Vano ${v.numero || ""}`}
-                    vanoDisegno={v.disegno}
-                    realW={m.lCentro || m.lAlto || 1200}
-                    realH={m.hCentro || m.hSx || 1400}
-                    onUpdate={(newDisegno) => updateVanoField(v.id, "disegno", newDisegno)}
-                    onUpdateField={(field, value) => {
-                      if (field === "larghezza") updateMisura(v.id, "lCentro", value);
-                      if (field === "altezza") updateMisura(v.id, "hCentro", value);
-                    }}
-                    onClose={() => setShowDisegno(false)}
-                    T={T}
-                  />
-                )}
               </div>
+
+              {/* ═══ FULLSCREEN CAD MODAL ═══ */}
+              {showDisegno && (
+                <div style={{
+                  position: "fixed", inset: 0, zIndex: 9000,
+                  background: "rgba(0,0,0,0.65)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  backdropFilter: "blur(4px)",
+                }}>
+                  <div style={{
+                    width: "calc(100vw - 24px)", height: "calc(100vh - 24px)",
+                    maxWidth: 1400,
+                    background: T.card, borderRadius: 16,
+                    display: "flex", flexDirection: "column",
+                    overflow: "hidden",
+                    boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
+                    border: `2px solid ${T.purple}40`,
+                  }}>
+                    {/* Fullscreen header */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", background: `${T.purple}10`, borderBottom: `1px solid ${T.bdr}`, flexShrink: 0 }}>
+                      <span style={{ fontSize: 16 }}><I d={ICO.edit} /></span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: T.purple }}>CAD — {v.nome || `Vano ${v.numero || ""}`}</div>
+                        <div style={{ fontSize: 10, color: T.sub }}>{(m.lCentro || m.lAlto || 1200)}×{(m.hCentro || m.hSx || 1400)}mm</div>
+                      </div>
+                      <div onClick={() => setShowDisegno(false)}
+                        style={{ width: 32, height: 32, borderRadius: 8, background: "#DC444420", border: "1px solid #DC444440", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: "#DC4444", fontWeight: 700 }}>
+                        ×
+                      </div>
+                    </div>
+                    {/* CAD content — occupa tutto lo spazio */}
+                    <div style={{ flex: 1, overflow: "auto" }}>
+                      <DisegnoTecnico
+                        vanoId={v.id}
+                        vanoNome={v.nome || `Vano ${v.numero || ""}`}
+                        vanoDisegno={v.disegno}
+                        realW={m.lCentro || m.lAlto || 1200}
+                        realH={m.hCentro || m.hSx || 1400}
+                        onUpdate={(newDisegno) => updateVanoField(v.id, "disegno", newDisegno)}
+                        onUpdateField={(field, value) => {
+                          if (field === "larghezza") updateMisura(v.id, "lCentro", value);
+                          if (field === "altezza") updateMisura(v.id, "hCentro", value);
+                        }}
+                        onClose={() => setShowDisegno(false)}
+                        T={T}
+                        sistemiDB={sistemiDB}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div style={{ fontSize: 11, fontWeight: 800, color: "#507aff", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><I d={ICO.ruler} /> Larghezze</div>
               {bInput("Larghezza ALTO", "lAlto")}
               {m.lAlto > 0 && !m.lCentro && !m.lBasso && (
