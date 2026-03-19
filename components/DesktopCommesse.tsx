@@ -60,6 +60,7 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
   const [overCol,setOverCol]=useState<string|null>(null);
   const fmtE=(n:number)=>n>0?"€"+Math.round(n).toLocaleString("it-IT"):"—";
   const daysTo=(d:string)=>Math.floor((new Date(d).getTime()-Date.now())/86400000);
+  const TEAL="#1A9E73",DARK="#1A1A1C",RED="#DC4444",BLU="#3B7FE0",AMB="#D08008",PUR="#8B5CF6";
 
   return (
     <div style={{display:"flex",gap:12,minWidth:"max-content",height:"100%",alignItems:"flex-start",padding:"16px 18px",overflowX:"auto"}}>
