@@ -76,8 +76,8 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
             style={{minWidth:210,maxWidth:240,display:"flex",flexDirection:"column",gap:8,transition:"background .15s",background:isOver?col+"08":"transparent",borderRadius:12,padding:isOver?"8px":"0",border:isOver?`1.5px dashed ${col}`:"1.5px solid transparent"}}>
             {/* Header colonna */}
             <div style={{padding:"8px 12px",borderRadius:9,background:col+"15",border:`1px solid ${col}30`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
-              <span style={{fontSize:12,fontWeight:700,color}}>{p.nome||p.id}</span>
-              <span style={{fontSize:11,fontWeight:800,color,background:col+"25",padding:"2px 8px",borderRadius:10}}>{items.length}</span>
+              <span style={{fontSize:12,fontWeight:700,color:col}}>{p.nome||p.id}</span>
+              <span style={{fontSize:11,fontWeight:800,color:col,background:col+"25",padding:"2px 8px",borderRadius:10}}>{items.length}</span>
             </div>
             {/* Cards */}
             {items.map((c:any)=>{
