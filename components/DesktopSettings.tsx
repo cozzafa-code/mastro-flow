@@ -484,6 +484,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
   const [search,setSearch]=useState("");
   const [selected,setSelected]=useState<string|null>(null);
   const [form,setForm]=useState<any>(null); // null = nessuna selezione
+  const [importModal,setImportModal]=useState<{text:string,filename:string,pols:any[]}|null>(null);
 
   const profili:any[]=sistemiDB||[];
   const filtered=profili.filter((s:any)=>
@@ -563,7 +564,26 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                 onChange={e=>{
                   const file=e.target.files?.[0]; if(!file)return;
                   const r=new FileReader();
-                  r.onload=ev=>{const p=parseDXF(ev.target?.result as string,file.name);setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);setSelected(p.id);setForm(p);};
+                  r.onload=ev=>{
+                    const text=ev.target?.result as string;
+                    const pols=parseLWPolylines(text);
+                    // Rileva se è un nodo (più quadranti) o profilo singolo
+                    const allPts=pols.flatMap((p:any)=>p.pts);
+                    if(allPts.length===0){const p=parseDXF(text,file.name);setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);setSelected(p.id);setForm(p);return;}
+                    const hasNegY=allPts.some((c:any)=>c.y<-5);
+                    const hasNegX=allPts.some((c:any)=>c.x<-5);
+                    const hasPosXY=allPts.some((c:any)=>c.x>2&&c.y>2);
+                    const isNodo=(hasNegY?1:0)+(hasNegX?1:0)+(hasPosXY?1:0)>=2;
+                    if(isNodo){
+                      // Mostra modal selezione profilo
+                      setImportModal({text,filename:file.name,pols});
+                    } else {
+                      // Profilo singolo — importa direttamente
+                      const p=parseDXF(text,file.name);
+                      setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);
+                      setSelected(p.id);setForm(p);
+                    }
+                  };
                   r.readAsText(file); e.target.value="";
                 }}/>
               <div style={{border:`1.5px dashed ${AMB}`,borderRadius:7,padding:"8px 4px",textAlign:"center",background:"#FFFBF5",cursor:"pointer"}}>
@@ -788,6 +808,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
         )}
       </div>
     </div>
+    </>
   );
 }
 
@@ -826,7 +847,81 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
     {k:"soglia",l:"Soglia",desc:"Nodo inferiore"},
   ];
 
+  // ── Helper: estrai profilo per quadrante ──
+  const estraiProfilo=(pols:any[],tipo:"rahmen"|"flugel"|"front"|"tutti")=>{
+    if(tipo==="tutti")return pols;
+    if(tipo==="rahmen")return pols.filter((p:any)=>p.pts.length>0&&Math.max(...p.pts.map((c:any)=>c.x))<=2);
+    if(tipo==="flugel")return pols.filter((p:any)=>p.pts.length>0&&Math.max(...p.pts.map((c:any)=>c.y))<=2&&Math.min(...p.pts.map((c:any)=>c.y))<-10);
+    if(tipo==="front")return pols.filter((p:any)=>p.pts.length>0&&Math.min(...p.pts.map((c:any)=>c.x))>=-2&&Math.min(...p.pts.map((c:any)=>c.y))>=-2);
+    return pols;
+  };
+
+  const importaProfilo=(tipo:"rahmen"|"flugel"|"front")=>{
+    if(!importModal)return;
+    const polsFiltrate=estraiProfilo(importModal.pols,tipo);
+    const tipoLabel={rahmen:"Rahmen",flugel:"Flügel",front:"Frontale"}[tipo];
+    const p=parseDXF(importModal.text,importModal.filename);
+    const final={...p,
+      polylines:polsFiltrate,
+      tipo:tipoLabel,
+      nome:`${tipoLabel} ${p.bautiefe||0}mm`,
+      id:"P-"+Date.now()+"_"+Math.random()
+    };
+    setSistemiDB?.((prev:any[])=>[...(prev||[]),final]);
+    setSelected(final.id);setForm(final);
+    setImportModal(null);
+  };
+
   return(
+    <>
+    {/* ── MODAL SELEZIONE PROFILO DA NODO DXF ── */}
+    {importModal&&(
+      <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
+        <div style={{background:"#fff",borderRadius:16,padding:28,maxWidth:600,width:"90%",boxShadow:"0 24px 80px rgba(0,0,0,0.4)"}}>
+          <div style={{fontSize:16,fontWeight:800,color:DARK,marginBottom:4}}>Seleziona il profilo da importare</div>
+          <div style={{fontSize:12,color:"#86868b",marginBottom:20}}>Il file <strong>{importModal.filename}</strong> contiene un nodo con più profili. Scegli quale importare nell'archivio.</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+            {([
+              {k:"rahmen",l:"Telaio",desc:"Profilo Rahmen (X negativo)",col:"#3B7FE0",icon:"◫"},
+              {k:"flugel",l:"Anta",desc:"Profilo Flügel (Y negativo)",col:"#1A9E73",icon:"◨"},
+              {k:"front",l:"Frontale",desc:"Vista frontale (X+Y positivi)",col:"#D08008",icon:"□"},
+            ] as any[]).map(({k,l,desc,col,icon})=>{
+              const pols=estraiProfilo(importModal.pols,k);
+              const hasPols=pols.length>0;
+              return(
+                <div key={k} onClick={()=>hasPols&&importaProfilo(k as any)}
+                  style={{border:`2px solid ${hasPols?col:"#E5E3DC"}`,borderRadius:12,padding:14,cursor:hasPols?"pointer":"not-allowed",
+                    background:hasPols?col+"08":"#F9F8F5",opacity:hasPols?1:0.5,textAlign:"center",transition:"all .15s"}}
+                  onMouseEnter={e=>hasPols&&((e.currentTarget as any).style.background=col+"18")}
+                  onMouseLeave={e=>hasPols&&((e.currentTarget as any).style.background=col+"08")}>
+                  <div style={{fontSize:28,marginBottom:6}}>{icon}</div>
+                  <div style={{fontSize:13,fontWeight:800,color:hasPols?col:"#86868b"}}>{l}</div>
+                  <div style={{fontSize:10,color:"#86868b",marginTop:4}}>{desc}</div>
+                  <div style={{fontSize:9,color:hasPols?col:"#ccc",marginTop:6,fontWeight:700}}>
+                    {hasPols?`${pols.length} polilinee`:"Non trovato"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+            <div onClick={()=>{
+              // Importa tutto il nodo come profilo
+              const p=parseDXF(importModal.text,importModal.filename);
+              const final={...p,polylines:importModal.pols};
+              setSistemiDB?.((prev:any[])=>[...(prev||[]),final]);
+              setSelected(final.id);setForm(final);setImportModal(null);
+            }} style={{padding:"8px 16px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:12,fontWeight:600,cursor:"pointer",color:"#86868b"}}>
+              Importa nodo completo
+            </div>
+            <div onClick={()=>setImportModal(null)}
+              style={{padding:"8px 16px",borderRadius:8,background:"#F2F1EC",fontSize:12,fontWeight:600,cursor:"pointer",color:"#86868b"}}>
+              Annulla
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
     <div style={{display:"flex",height:"100%",gap:0}}>
 
       {/* LISTA SINISTRA */}
