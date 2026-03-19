@@ -55,7 +55,7 @@ function VanoPreview({v}:{v:any}){
 }
 
 // ── Kanban drag & drop ───────────────────────────────────────
-function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,sogliaDays,compact=false}:any){
+function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,sogliaDays,compact=false,kbValue="totale",fattureDB=[]}:any){
   const [dragging,setDragging]=useState<{id:string,fase:string}|null>(null);
   const [overCol,setOverCol]=useState<string|null>(null);
   const [overCard,setOverCard]=useState<string|null>(null);
@@ -139,7 +139,21 @@ function KanbanBoard({pipeline,cantieri,onSelect,onMoveFase,giorniFermaCM,soglia
                       </div>
                     </div>
                     {/* Importo */}
-                    {c.euro&&<div style={{fontSize:16,fontWeight:800,color:K.DARK,fontFamily:FM,marginBottom:compact?4:8}}>{fmtE(parseFloat(c.euro))}</div>}
+                    {(()=>{
+                    let val="—",valCol=K.DARK;
+                    if(kbValue==="totale"&&c.euro){val=fmtE(parseFloat(c.euro));}
+                    else if(kbValue==="saldo"){
+                      const fatturato=fattureDB.filter((f:any)=>f.cmId===c.id).reduce((s:number,f:any)=>s+(f.importo||0),0);
+                      const totIva=Math.round((parseFloat(c.euro)||0)*1.1);
+                      const saldo=totIva-fatturato;
+                      val=fmtE(saldo);valCol=saldo>0?K.RED:K.TEAL;
+                    }
+                    else if(kbValue==="consegna_gg"&&c.dataConsegna){
+                      const gg=Math.floor((new Date(c.dataConsegna).getTime()-Date.now())/86400000);
+                      val=gg<=0?"Scaduta":`${gg} gg`;valCol=gg<=7?K.RED:K.AMB;
+                    }
+                    return val!=="—"?<div style={{fontSize:16,fontWeight:800,color:valCol,fontFamily:FM,marginBottom:compact?4:8}}>{val}</div>:null;
+                  })()}
                     {/* Badge */}
                     <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:compact?4:6}}>
                       {(c.rilievi||[]).length>0&&<span style={{fontSize:10,padding:"2px 7px",borderRadius:6,background:K.BLU+"12",color:K.BLU,fontWeight:600}}>{(c.rilievi||[]).length} rilievi</span>}
@@ -185,6 +199,9 @@ export default function DesktopCommesse(){
   const [filters,setFilters]=useState({ferme:false});
   const [kanbanCompact,setKanbanCompact]=useState(false);
   const [previewRilievo,setPreviewRilievo]=useState<any>(null);
+  const [kbFilters,setKbFilters]=useState({ferme:false,scadenza:false,montaggi:false});
+  const [kbSort,setKbSort]=useState("importo_desc");
+  const [kbValue,setKbValue]=useState("totale");
   const dragging=useRef(false);
   const startX=useRef(0);
   const startW=useRef(268);
@@ -281,21 +298,74 @@ export default function DesktopCommesse(){
       {/* KANBAN VIEW */}
       {viewMode==="kanban"&&(
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          {/* Toolbar kanban */}
-          <div style={{padding:"8px 18px",background:"#fff",borderBottom:`1px solid #E5E3DC`,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-            <span style={{fontSize:11,color:"#86868b"}}>{filteredAdv.length} commesse</span>
-            <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-              <div onClick={()=>setKanbanCompact(false)} style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:!kanbanCompact?DARK:"transparent",color:!kanbanCompact?"#fff":"#86868b",border:`1px solid ${!kanbanCompact?DARK:"#E5E3DC"}`}}>Normale</div>
-              <div onClick={()=>setKanbanCompact(true)} style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:kanbanCompact?DARK:"transparent",color:kanbanCompact?"#fff":"#86868b",border:`1px solid ${kanbanCompact?DARK:"#E5E3DC"}`}}>Compatta</div>
+          {/* Toolbar kanban con filtri */}
+          <div style={{padding:"10px 18px",background:"#fff",borderBottom:`1px solid #E5E3DC`,display:"flex",alignItems:"center",gap:8,flexShrink:0,flexWrap:"wrap"}}>
+            {/* Pill ferme */}
+            {[
+              {id:"ferme",    label:"Ferme",           col:RED},
+              {id:"scadenza", label:"Scadenza 7gg",    col:AMB},
+              {id:"montaggi", label:"Con montaggio",   col:TEAL},
+            ].map(f=>{
+              const on=(kbFilters as any)[f.id];
+              return <div key={f.id} onClick={()=>setKbFilters(p=>({...p,[f.id]:!p[f.id as keyof typeof p]}))}
+                style={{display:"flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",border:`1px solid ${on?f.col+"60":"#E5E3DC"}`,background:on?f.col+"12":"transparent",color:on?f.col:"#86868b",transition:"all .15s"}}>
+                <div style={{width:7,height:7,borderRadius:"50%",background:on?f.col:"#C0C0C5"}}/>
+                {f.label}
+              </div>;
+            })}
+            <div style={{width:1,height:20,background:"#E5E3DC",flexShrink:0}}/>
+            {/* Sort */}
+            <select value={kbSort} onChange={e=>setKbSort(e.target.value)}
+              style={{fontSize:12,padding:"5px 10px",borderRadius:20,border:`1px solid #E5E3DC`,background:"transparent",color:DARK,cursor:"pointer",fontFamily:FF,outline:"none"}}>
+              <option value="importo_desc">Importo ↓</option>
+              <option value="importo_asc">Importo ↑</option>
+              <option value="consegna">Consegna vicina</option>
+              <option value="ferma">Più ferma</option>
+              <option value="modifica">Ultima modifica</option>
+            </select>
+            {/* Valore card */}
+            <select value={kbValue} onChange={e=>setKbValue(e.target.value)}
+              style={{fontSize:12,padding:"5px 10px",borderRadius:20,border:`1px solid #E5E3DC`,background:"transparent",color:DARK,cursor:"pointer",fontFamily:FF,outline:"none"}}>
+              <option value="totale">€ Totale</option>
+              <option value="saldo">€ Saldo</option>
+              <option value="consegna_gg">Gg consegna</option>
+            </select>
+            <div style={{width:1,height:20,background:"#E5E3DC",flexShrink:0}}/>
+            {/* Vista */}
+            {[{id:"normale",l:"Normale"},{id:"compatta",l:"Compatta"}].map(v=>(
+              <div key={v.id} onClick={()=>setKanbanCompact(v.id==="compatta")}
+                style={{padding:"5px 11px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",background:(v.id==="compatta")===kanbanCompact?DARK:"transparent",color:(v.id==="compatta")===kanbanCompact?"#fff":"#86868b",border:`1px solid ${(v.id==="compatta")===kanbanCompact?DARK:"#E5E3DC"}`}}>{v.l}</div>
+            ))}
+            <div style={{marginLeft:"auto",display:"flex",gap:12,alignItems:"center"}}>
+              {kbFilters.ferme&&<span style={{fontSize:12,color:RED,fontWeight:600}}>{filteredAdv.filter((c:any)=>isFerma(c)).length} ferme</span>}
+              <span style={{fontSize:12,color:"#86868b"}}>{filteredAdv.length} commesse</span>
             </div>
           </div>
           <div style={{flex:1,overflow:"auto"}}>
             <KanbanBoard
               pipeline={PIPELINE}
-              cantieri={filteredAdv}
+              cantieri={(()=>{
+                let arr=[...filteredAdv];
+                // Filtri
+                if(kbFilters.ferme) arr=arr.filter((c:any)=>isFerma(c));
+                if(kbFilters.scadenza) arr=arr.filter((c:any)=>c.dataConsegna&&daysTo(c.dataConsegna)<=7&&daysTo(c.dataConsegna)>=0);
+                if(kbFilters.montaggi) arr=arr.filter((c:any)=>montaggiDB.some((m:any)=>(m.cmId===c.id||m.commessaId===c.id)&&m.data>=TODAY));
+                // Sort
+                arr.sort((a:any,b:any)=>{
+                  if(kbSort==="importo_desc") return (parseFloat(b.euro)||0)-(parseFloat(a.euro)||0);
+                  if(kbSort==="importo_asc") return (parseFloat(a.euro)||0)-(parseFloat(b.euro)||0);
+                  if(kbSort==="consegna") return (a.dataConsegna||"9999").localeCompare(b.dataConsegna||"9999");
+                  if(kbSort==="ferma") return giorniFermaCM(b)-giorniFermaCM(a);
+                  if(kbSort==="modifica") return (b.ultima_modifica||b.updatedAt||"").localeCompare(a.ultima_modifica||a.updatedAt||"");
+                  return 0;
+                });
+                return arr;
+              })()}
               giorniFermaCM={giorniFermaCM}
               sogliaDays={sogliaDays}
               compact={kanbanCompact}
+              kbValue={kbValue}
+              fattureDB={fattureDB}
               onSelect={(c:any)=>{setSelectedCM(c);setViewMode("lista");setDetTab("rilievi");}}
               onMoveFase={(cmId:string,newFase:string)=>{
                 setCantieri?.((prev:any[])=>prev.map((c:any)=>c.id===cmId?{...c,fase:newFase}:c));
