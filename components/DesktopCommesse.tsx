@@ -51,6 +51,95 @@ function VanoPreview({v}:{v:any}){
         </svg>
       )}
     </div>
+
+      {/* ── MODAL ANTEPRIMA RILIEVO ─────────────────────── */}
+      {previewRilievo&&(
+        <div style={{position:"fixed",inset:0,zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.4)"}} onClick={()=>setPreviewRilievo(null)}>
+          <div style={{background:"#fff",borderRadius:16,width:620,maxHeight:"80vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+            {/* Header */}
+            <div style={{padding:"18px 22px",borderBottom:`1px solid #E5E3DC`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                {(()=>{const t=TIPO_RILIEVO.find((x:any)=>x.id===previewRilievo.tipo)||TIPO_RILIEVO[0];return(
+                  <div style={{width:40,height:40,borderRadius:10,background:t.color+"15",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <Svg path={t.icon} c={t.color} s={18}/>
+                  </div>
+                );})()}
+                <div>
+                  <div style={{fontSize:16,fontWeight:800,color:DARK}}>Rilievo #{rilievi.indexOf(previewRilievo)+1 || "—"}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:3}}>
+                    {(()=>{const t=TIPO_RILIEVO.find((x:any)=>x.id===previewRilievo.tipo)||TIPO_RILIEVO[0];return <span style={{fontSize:12,padding:"2px 10px",borderRadius:20,background:t.color+"15",color:t.color,fontWeight:700}}>{t.label}</span>;})()}
+                    <span style={{fontSize:12,color:"#86868b"}}>{previewRilievo.data||"—"} · {previewRilievo.rilevatore||"—"}</span>
+                  </div>
+                </div>
+              </div>
+              <div onClick={()=>setPreviewRilievo(null)} style={{width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:`1px solid #E5E3DC`,fontSize:18,color:"#86868b"}}>×</div>
+            </div>
+            {/* Statistiche */}
+            <div style={{padding:"16px 22px",borderBottom:`1px solid #E5E3DC`,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+              {(()=>{
+                const vaniR=previewRilievo.vani||[];
+                const misurati=vaniR.filter((v:any)=>Object.values(v.misure||{}).filter((x:any)=>(x as number)>0).length>=2).length;
+                const pct=Math.round(misurati/Math.max(vaniR.length,1)*100);
+                return [
+                  {l:"Vani totali",v:vaniR.length,c:DARK},
+                  {l:"Misurati",v:misurati,c:TEAL},
+                  {l:"Da misurare",v:vaniR.length-misurati,c:vaniR.length-misurati>0?RED:TEAL},
+                  {l:"Completamento",v:`${pct}%`,c:pct===100?TEAL:pct>50?AMB:RED},
+                ].map((k,i)=>(
+                  <div key={i} style={{background:"#F8F7F2",borderRadius:10,padding:"10px 12px",border:`1px solid #E5E3DC`}}>
+                    <div style={{fontSize:10,color:"#86868b",fontWeight:600,textTransform:"uppercase",letterSpacing:.5}}>{k.l}</div>
+                    <div style={{fontSize:20,fontWeight:800,color:k.c,fontFamily:FM,marginTop:4}}>{k.v}</div>
+                  </div>
+                ));
+              })()}
+            </div>
+            {/* Lista vani */}
+            <div style={{padding:"16px 22px"}}>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dettaglio vani</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {(previewRilievo.vani||[]).map((v:any,i:number)=>{
+                  const m=v.misure||{};
+                  const misurato=Object.values(m).filter((x:any)=>(x as number)>0).length>=2;
+                  const hasFoto=v.foto&&Object.keys(v.foto).length>0;
+                  return (
+                    <div key={v.id||i} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:10,background:misurato?TEAL+"05":"#F8F7F2",border:`1px solid ${misurato?TEAL+"25":"#E5E3DC"}`}}>
+                      <VanoPreview v={v}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:14,fontWeight:700,color:DARK}}>{v.nome||`Vano ${i+1}`}</div>
+                        <div style={{fontSize:12,color:"#86868b",marginTop:2}}>
+                          {v.tipo||"—"}
+                          {m.lCentro&&m.hCentro?<span style={{color:DARK,fontWeight:600}}> · {m.lCentro}×{m.hCentro}mm</span>:""}
+                          {v.sistema?` · ${v.sistema}`:""}
+                        </div>
+                        {v.stanza&&<div style={{fontSize:11,color:"#86868b",marginTop:1}}>{v.stanza}{v.piano?` · ${v.piano}`:""}</div>}
+                        {/* Misure extra */}
+                        {(m.lMuro||m.hMuro)&&(
+                          <div style={{fontSize:11,color:"#86868b",marginTop:2}}>Muro: {m.lMuro||"?"}×{m.hMuro||"?"}mm</div>
+                        )}
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+                        {misurato
+                          ?<div style={{width:26,height:26,borderRadius:7,background:TEAL,display:"flex",alignItems:"center",justifyContent:"center"}}><Svg path="M20 6L9 17l-5-5" c="#fff" s={12}/></div>
+                          :<span style={{fontSize:11,padding:"3px 9px",borderRadius:8,background:RED+"15",color:RED,fontWeight:700}}>Da misurare</span>
+                        }
+                        {hasFoto&&<span style={{fontSize:10,color:"#86868b"}}>📷 {Object.keys(v.foto).length} foto</span>}
+                        {v.note&&<span style={{fontSize:10,color:AMB,fontWeight:600}}>Note</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {previewRilievo.note&&(
+                <div style={{marginTop:14,padding:"10px 14px",borderRadius:10,background:AMB+"08",border:`1px solid ${AMB}20`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:AMB,marginBottom:4}}>Note rilievo</div>
+                  <div style={{fontSize:13,color:DARK}}>{previewRilievo.note}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -144,6 +233,7 @@ export default function DesktopCommesse(){
   const [listaW,setListaW]=useState(268);
   const [filters,setFilters]=useState({ferme:false});
   const [kanbanCompact,setKanbanCompact]=useState(false);
+  const [previewRilievo,setPreviewRilievo]=useState<any>(null);
   const dragging=useRef(false);
   const startX=useRef(0);
   const startW=useRef(268);
@@ -433,7 +523,16 @@ export default function DesktopCommesse(){
                               })}
                             </div>
                           )}
-                          {r.note&&<div style={{padding:"8px 18px 14px",fontSize:12,color:"#86868b",fontStyle:"italic",borderTop:`1px solid #F2F1EC`}}>Note: {r.note}</div>}
+                          {r.note&&<div style={{padding:"8px 18px 12px",fontSize:12,color:"#86868b",fontStyle:"italic",borderTop:`1px solid #F2F1EC`}}>Note: {r.note}</div>}
+                          {/* Bottone anteprima */}
+                          <div style={{padding:"10px 18px 14px",display:"flex",justifyContent:"flex-end"}}>
+                            <div onClick={()=>setPreviewRilievo(r)} style={{display:"flex",alignItems:"center",gap:6,padding:"7px 14px",borderRadius:8,background:"#F8F7F2",border:`1px solid #E5E3DC`,cursor:"pointer",fontSize:12,fontWeight:600,color:DARK,transition:"all .15s"}}
+                              onMouseEnter={e=>{(e.currentTarget as any).style.background=BLU+"12";(e.currentTarget as any).style.borderColor=BLU+"40";(e.currentTarget as any).style.color=BLU;}}
+                              onMouseLeave={e=>{(e.currentTarget as any).style.background="#F8F7F2";(e.currentTarget as any).style.borderColor="#E5E3DC";(e.currentTarget as any).style.color=DARK;}}>
+                              <Svg path="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" c="currentColor" s={14}/>
+                              Anteprima dettagliata
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
