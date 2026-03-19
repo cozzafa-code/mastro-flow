@@ -509,7 +509,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
     const bautiefe=quote.find((q:number)=>BAUT.includes(q))||quote.filter((q:number)=>q>=50&&q<=130).sort((a:number,b:number)=>a-b)[0]||0;
     const fermSet=new Set<string>(); const fp=/\b([2-6]\d{5})\b/g; let fm:any;
     while((fm=fp.exec(text))!==null)fermSet.add(fm[1]);
-    const coords:{x:number,y:number}[]=[]; const cp=/\n\s*10\n\s*([-\d.]+)\n\s*20\n\s*([-\d.]+)/g; let cv:any;
+    const coords:{x:number,y:number}[]=[]; const cp=/\n\s*10\n\s*([\d.\-]+)\n\s*20\n\s*([\d.\-]+)/g; let cv:any;
     while((cv=cp.exec(text))!==null)coords.push({x:parseFloat(cv[1]),y:parseFloat(cv[2])});
     const n=codice.toLowerCase();
     const tipo=n.includes("x2")||n.includes("x3")?"Flugel":n.includes("x4")||n.includes("x5")?"Pfosten":n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9")?"Stulp":"Rahmen";
