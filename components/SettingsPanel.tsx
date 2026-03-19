@@ -560,54 +560,142 @@ export default function SettingsPanel() {
     ...(!SETTORI.find((s: any) => s.id === "strutture") ? [{ id: "strutture", label: "Strutture", icon: "", desc: "Pergole, verande, pensiline, box, cancelli, ferro" }] : []),
   ];
 
-  return (
-    <div style={{ paddingBottom: 80 }}>
-      <div style={S.header}>
-        <div style={{ flex: 1 }}>
-          <div style={S.headerTitle}>Impostazioni</div>
-        </div>
-        {/* FIX: rimosso supabase.auth.signOut() — usa localStorage clear */}
-        <div onClick={async () => { try { localStorage.clear(); const { createClient } = await import("@/lib/supabase"); await createClient().auth.signOut(); } catch(e) {} window.location.href = "/login"; }}
-          style={{padding:"6px 12px",borderRadius:8,border:"1px solid #e5e5ea",background:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",color:"#86868b"}}>
-          Esci
-        </div>
-      </div>
+  // ─── Sidebar nav groups ────────────────────────────────────────────────────
+  const AMBER = "#D08008";
+  const AMBER_BG = "#FEF3C7";
 
-      {/* Settings sub-tabs — scrollable */}
-      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", margin: "8px 16px 12px", borderRadius: 8, border: `1px solid ${T.bdr}` }}>
-        <div style={{ display: "flex", minWidth: "max-content" }}>
-          {[
-            // Core — sempre visibili
-            { id: "settore", l: "Settore" }, { id: "azienda", l: "Azienda" }, { id: "generali", l: " Generali" }, { id: "piano", l: "Piano" }, { id: "team", l: "Team" }, { id: "squadre", l: "Squadre" }, { id: "fatture", l: "Fatture" },
-            // Serramenti — solo se attivo
-            ...(settoriAttivi.includes("serramenti") ? [{ id: "sistemi", l: "Sistemi" }, { id: "colori", l: "Colori" }, { id: "vetri", l: "Vetri" }, { id: "coprifili", l: "Coprifili" }, { id: "lamiere", l: "Lamiere" }, { id: "controtelaio", l: "Controtelaio" }] : []),
-            // Persiane
-            ...(settoriAttivi.includes("persiane") ? [{ id: "persiana", l: "Persiana" }] : []),
-            // Tapparelle
-            ...(settoriAttivi.includes("tapparelle") ? [{ id: "tapparella", l: "⬇ Tapparella" }, { id: "cassonetto", l: "Cassonetto" }] : []),
-            // Zanzariere
-            ...(settoriAttivi.includes("zanzariere") ? [{ id: "zanzariera", l: "Zanzariera" }] : []),
-            // Porte — nuovo
-            ...(settoriAttivi.includes("porte") ? [{ id: "porte_mat", l: "Mat. Porte" }, { id: "porte_cern", l: "Cerniere" }, { id: "porte_serr", l: "Serrature" }, { id: "porte_man", l: "Maniglie" }] : []),
-            // Tende da Sole — nuovo
-            ...(settoriAttivi.includes("tende") ? [{ id: "tende_tess", l: "Tessuti" }, { id: "tende_mot", l: "Motori Tende" }] : []),
-            // Box Doccia — nuovo
-            ...(settoriAttivi.includes("boxdoccia") ? [{ id: "bd_vetri", l: "Vetri Doccia" }, { id: "bd_profili", l: "Profili Doccia" }] : []),
-            // Cancelli — nuovo
-            ...(settoriAttivi.includes("cancelli") ? [{ id: "canc_mat", l: " Mat. Cancelli" }, { id: "canc_auto", l: "Automazioni" }] : []),
-            // Strutture — Configuratore
-            ...(settoriAttivi.includes("strutture") ? [{ id: "strutture", l: "Strutture" }] : []),
-            // Sempre visibili
-            { id: "tipologie", l: "Tipologie" }, { id: "salita", l: "Salita" }, { id: "pipeline", l: "Pipeline" }, { id: "manodopera", l: "Manodopera" }, { id: "libreria", l: "Libreria" }, { id: "importa", l: "Importa" }, { id: "guida", l: "Guida" }, { id: "kit", l: "Kit" }, { id: "marketplace", l: "Fornitori" }, { id: "temi", l: "Temi" },
-          ].map(t => (
-            <div key={t.id} onClick={() => setSettingsTab(t.id)} style={{ padding: "8px 12px", textAlign: "center", fontSize: 10, fontWeight: 600, background: settingsTab === t.id ? PRI : T.card, color: settingsTab === t.id ? "#fff" : T.sub, cursor: "pointer", whiteSpace: "nowrap", borderRadius: 6 }}>
-              {t.l}
+  const sidebarGroups = [
+    {
+      label: "Azienda",
+      items: [
+        { id: "settore",   l: "Settori attivi" },
+        { id: "azienda",   l: "Dati azienda" },
+        { id: "generali",  l: "Generali" },
+        { id: "piano",     l: "Piano & fatturazione" },
+        { id: "team",      l: "Team & operatori" },
+        { id: "squadre",   l: "Squadre" },
+        { id: "fatture",   l: "Fatture" },
+      ],
+    },
+    {
+      label: "Catalogo prodotti",
+      items: [
+        { id: "sistemi",       l: "Sistemi profilo",   show: settoriAttivi.includes("serramenti") },
+        { id: "profili_arch",  l: "Archivio profili",  show: settoriAttivi.includes("serramenti") },
+        { id: "vetri",         l: "Vetri & pacchetti", show: settoriAttivi.includes("serramenti") },
+        { id: "colori",        l: "Colori & RAL",      show: settoriAttivi.includes("serramenti") },
+        { id: "coprifili",     l: "Coprifili",         show: settoriAttivi.includes("serramenti") },
+        { id: "lamiere",       l: "Lamiere",           show: settoriAttivi.includes("serramenti") },
+        { id: "libreria",      l: "Libreria accessori" },
+        { id: "kit",           l: "Kit accessori" },
+        { id: "marketplace",   l: "Fornitori" },
+      ].filter(i => i.show !== false),
+    },
+    {
+      label: "Configurazione",
+      items: [
+        { id: "controtelaio",  l: "Controtelaio",      show: settoriAttivi.includes("serramenti") },
+        { id: "persiana",      l: "Persiane",          show: settoriAttivi.includes("persiane") },
+        { id: "tapparella",    l: "Tapparelle",        show: settoriAttivi.includes("tapparelle") },
+        { id: "cassonetto",    l: "Cassonetti",        show: settoriAttivi.includes("tapparelle") },
+        { id: "zanzariera",    l: "Zanzariere",        show: settoriAttivi.includes("zanzariere") },
+        { id: "porte_mat",     l: "Porte",             show: settoriAttivi.includes("porte") },
+        { id: "canc_mat",      l: "Cancelli",          show: settoriAttivi.includes("cancelli") },
+        { id: "strutture",     l: "Strutture",         show: settoriAttivi.includes("strutture") },
+        { id: "tipologie",     l: "Tipologie vano" },
+        { id: "salita",        l: "Salita & mezzi" },
+        { id: "manodopera",    l: "Manodopera" },
+        { id: "pipeline",      l: "Pipeline fasi" },
+      ].filter(i => i.show !== false),
+    },
+    {
+      label: "Avanzate",
+      items: [
+        { id: "importa",   l: "Importa dati" },
+        { id: "guida",     l: "Guida & tutorial" },
+        { id: "temi",      l: "Tema & aspetto" },
+      ],
+    },
+  ];
+
+  return (
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#F2F1EC", fontFamily: "Inter, system-ui, sans-serif" }}>
+
+      {/* ── SIDEBAR ──────────────────────────────────────────────────────────── */}
+      <div style={{
+        width: 220, flexShrink: 0,
+        background: "#fff", borderRight: "1px solid #E5E3DC",
+        overflowY: "auto", display: "flex", flexDirection: "column",
+      }}>
+        {/* Sidebar header */}
+        <div style={{ padding: "16px 16px 8px", borderBottom: "1px solid #E5E3DC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1C" }}>Impostazioni</div>
+          <div
+            onClick={async () => { try { localStorage.clear(); const { createClient } = await import("@/lib/supabase"); await createClient().auth.signOut(); } catch(e) {} window.location.href = "/login"; }}
+            style={{ fontSize: 11, color: "#9CA3AF", cursor: "pointer", padding: "3px 8px", borderRadius: 5, border: "1px solid #E5E3DC" }}
+          >Esci</div>
+        </div>
+
+        {/* Nav groups */}
+        <div style={{ padding: "8px 0", flex: 1 }}>
+          {sidebarGroups.map(group => (
+            <div key={group.label}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 16px 4px" }}>
+                {group.label}
+              </div>
+              {group.items.map(item => {
+                const isActive = settingsTab === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setSettingsTab(item.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "7px 16px", cursor: "pointer", fontSize: 13,
+                      fontWeight: isActive ? 600 : 400,
+                      color: isActive ? AMBER : "#4B5563",
+                      background: isActive ? AMBER_BG : "transparent",
+                      borderRight: isActive ? `3px solid ${AMBER}` : "3px solid transparent",
+                      transition: "all 0.12s",
+                    }}
+                  >
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: isActive ? AMBER : "#D1D5DB", flexShrink: 0 }} />
+                    {item.l}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
+
+        {/* Azienda info bottom */}
+        <div style={{ padding: "12px 16px", borderTop: "1px solid #E5E3DC" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 30, height: 30, borderRadius: "50%", background: AMBER, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+              {(aziendaInfo?.ragione || "W").charAt(0)}
+            </div>
+            <div style={{ overflow: "hidden" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#1A1A1C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {aziendaInfo?.ragione || "La tua azienda"}
+              </div>
+              <div style={{ fontSize: 10, color: "#9CA3AF" }}>
+                {settoriAttivi.length} {settoriAttivi.length === 1 ? "settore" : "settori"}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div style={{ padding: "0 16px" }}>
+      {/* ── CONTENT AREA ─────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {/* Content header */}
+        <div style={{ padding: "20px 28px 0", marginBottom: 20 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1C" }}>
+            {sidebarGroups.flatMap(g => g.items).find(i => i.id === settingsTab)?.l || "Impostazioni"}
+          </div>
+        </div>
+
+      <div style={{ padding: "0 28px 40px" }}>
 
         {/* === AZIENDA === */}
         {/* === SETTORE === */}
@@ -675,6 +763,385 @@ export default function SettingsPanel() {
             </div>
           </>
         )}
+
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {/* ARCHIVIO PROFILI PVC — v2                                         */}
+        {/* ═══════════════════════════════════════════════════════════════════ */}
+        {settingsTab === "profili_arch" && (() => {
+          const profili: any[] = sistemiDB || [];
+          const setProfili = setSistemiDB;
+          const [expandedProfilo, setExpandedProfilo] = React.useState<string|null>(null);
+          const [filtroTipo, setFiltroTipo] = React.useState("tutti");
+          const AMBER = "#D08008"; const AMBERBG = "#FEF9EC"; const AMBERLT = "#FEF3C7";
+
+          const parseDXF = (text: string, filename: string) => {
+            // ── Codice profilo (040x / 140x / 120x / 04xx / 14xx) ──
+            const codiceM = text.match(/\b((0[14][04]|1[0-9]{2}|0[46])x\d{2,3})\b/i);
+            const codice = codiceM ? codiceM[1] : filename.replace(/\.dxf$/i,"");
+            // ── Quote layer 15 — \A1;NN ──
+            const quote: number[] = [];
+            const mp = /\\A1;(\d+)/g; let mm;
+            while ((mm = mp.exec(text)) !== null) { const v=parseInt(mm[1]); if(v>=10&&v<=300) quote.push(v); }
+            // ── Bautiefe (profondità): 55,65,70,80,85,95,100,120 ──
+            const BAUTIEFEN = [55,65,70,80,85,95,100,120];
+            const bautiefe = quote.find(q=>BAUTIEFEN.includes(q)) || quote.filter(q=>q>=50&&q<=130).sort((a,b)=>a-b)[0] || 0;
+            // ── Codici ferramenta (6 cifre, 2xx-6xx) ──
+            const fermSet = new Set<string>();
+            const fp = /\b([2-6]\d{5})\b/g; let fm2;
+            while ((fm2=fp.exec(text))!==null) fermSet.add(fm2[1]);
+            const ferramenta = [...fermSet];
+            // ── Tipo da codice ──
+            const n = codice.toLowerCase();
+            const tipo = n.includes("x2")||n.includes("x3") ? "Flügel"
+              : n.includes("x4")||n.includes("x5") ? "Pfosten"
+              : n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9") ? "Stulp"
+              : "Rahmen";
+            // ── Coordinate nodo: estrai polilinee VERTEX dal DXF ──
+            const coords: {x:number,y:number}[] = [];
+            const coordP = /\n\s*10\n\s*([-\d.]+)\n\s*20\n\s*([-\d.]+)/g; let cp;
+            while ((cp=coordP.exec(text))!==null) {
+              coords.push({x:parseFloat(cp[1]),y:parseFloat(cp[2])});
+            }
+            // ── Fornitore ──
+            const fornitore = text.includes("OHNE_DICHTUNGEN")||text.includes("aluplast")||text.includes("Kommerling")||text.includes("K\u00f6mmerling")
+              ? "Kömmerling / aluplast" : "Generico";
+            return { codice, tipo, bautiefe, quote, ferramenta, coords, fornitore,
+              nome: `${tipo} ${bautiefe}mm`, grMl:"", qtaCassa:"", note:"",
+              attivo:true, id: Date.now().toString() };
+          };
+
+          const tipoColors: Record<string,[string,string]> = {
+            "Rahmen":  ["#DBEAFE","#1E3A8A"],
+            "Flügel":  ["#D1FAE5","#065F46"],
+            "Pfosten": ["#FEF3C7","#92400E"],
+            "Stulp":   ["#FCE7F3","#9D174D"],
+          };
+
+          const filtrati = filtroTipo==="tutti" ? profili : profili.filter((p:any)=>p.tipo===filtroTipo);
+
+          return (
+            <div style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+
+              {/* ── BANNER HERO ───────────────────────────────────────────── */}
+              <div style={{ background: `linear-gradient(135deg, #1A1A1C 0%, #2D2D30 100%)`, borderRadius: 14, padding: "24px 28px", marginBottom: 20, display:"flex", alignItems:"center", justifyContent:"space-between", gap:20 }}>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing:"-0.3px" }}>Archivio Profili PVC</div>
+                  <div style={{ fontSize: 13, color: "#9CA3AF", marginTop: 4 }}>
+                    Kömmerling · aluplast IDEAL 4000 · Import DXF/DWG/PNG
+                  </div>
+                  <div style={{ display:"flex", gap:16, marginTop:14 }}>
+                    {[
+                      { n: profili.length, l:"Profili", c: AMBER },
+                      { n: profili.filter((p:any)=>p.grMl).length, l:"Con kg/ml", c:"#1A9E73" },
+                      { n: profili.filter((p:any)=>p.qtaCassa).length, l:"Con qt/cassa", c:"#3B7FE0" },
+                      { n: profili.filter((p:any)=>!p.grMl||!p.qtaCassa).length, l:"Incompleti", c:"#DC4444" },
+                    ].map((s,i)=>(
+                      <div key={i}>
+                        <div style={{ fontSize:24, fontWeight:800, color:s.c, lineHeight:1 }}>{s.n}</div>
+                        <div style={{ fontSize:10, color:"#9CA3AF", marginTop:2 }}>{s.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Quick add button */}
+                <div
+                  onClick={()=>{ const np={id:Date.now().toString(),codice:"",nome:"",tipo:"Rahmen",bautiefe:70,grMl:"",qtaCassa:"",ferramenta:[],quote:[],coords:[],fornitore:"",note:"",attivo:true}; setProfili((p:any[])=>[...(p||[]),np]); setExpandedProfilo(np.id); }}
+                  style={{ background:AMBER, color:"#fff", padding:"12px 22px", borderRadius:10, fontSize:14, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}
+                >+ Profilo manuale</div>
+              </div>
+
+              {/* ── IMPORT ZONE ───────────────────────────────────────────── */}
+              <div style={{ background:"#fff", border:"1px solid #E5E3DC", borderRadius:12, marginBottom:16, overflow:"hidden" }}>
+                <div style={{ padding:"14px 18px", background: AMBERLT, borderBottom:`2px solid ${AMBER}`, display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:AMBER }} />
+                  <div style={{ fontSize:14, fontWeight:700, color:"#92400E" }}>Importa profilo</div>
+                  <div style={{ fontSize:11, color:"#92400E", opacity:0.7, marginLeft:4 }}>— parser automatico: codice, bautiefe, tipo, quote, ferramenta, coordinate nodo</div>
+                </div>
+                <div style={{ padding:18, display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                  {/* DXF */}
+                  <div style={{ position:"relative" }}>
+                    <input type="file" accept=".dxf" multiple
+                      style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
+                      onChange={e=>{
+                        const files = Array.from(e.target.files||[]);
+                        files.forEach(file=>{
+                          const r=new FileReader();
+                          r.onload=ev=>{ const t=ev.target?.result as string; const p=parseDXF(t,file.name); setProfili((prev:any[])=>[...(prev||[]),p]); };
+                          r.readAsText(file);
+                        });
+                        alert(`${files.length} file DXF importati`);
+                        e.target.value="";
+                      }}
+                    />
+                    <div style={{ border:`2px dashed ${AMBER}`, borderRadius:10, padding:"18px 12px", textAlign:"center", background:AMBERBG, cursor:"pointer" }}>
+                      <div style={{ fontSize:22, marginBottom:6, color:AMBER }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                      </div>
+                      <div style={{ fontSize:13, fontWeight:700, color:"#92400E" }}>DXF / DWG</div>
+                      <div style={{ fontSize:10, color:"#9CA3AF", marginTop:3 }}>Parser layer 15 automatico</div>
+                    </div>
+                  </div>
+                  {/* PNG/JPG */}
+                  <div style={{ position:"relative" }}>
+                    <input type="file" accept=".png,.jpg,.jpeg,.webp" multiple
+                      style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
+                      onChange={e=>{
+                        const files = Array.from(e.target.files||[]);
+                        files.forEach(file=>{
+                          const r=new FileReader();
+                          r.onload=ev=>{
+                            const np={id:Date.now().toString()+"_"+Math.random(),codice:file.name.replace(/\.[^.]+$/,""),nome:file.name.replace(/\.[^.]+$/,""),tipo:"Rahmen",bautiefe:0,grMl:"",qtaCassa:"",ferramenta:[],quote:[],coords:[],fornitore:"",note:"",attivo:true, imgBase64: ev.target?.result as string};
+                            setProfili((prev:any[])=>[...(prev||[]),np]);
+                          };
+                          r.readAsDataURL(file);
+                        });
+                        e.target.value="";
+                      }}
+                    />
+                    <div style={{ border:"2px dashed #3B7FE0", borderRadius:10, padding:"18px 12px", textAlign:"center", background:"#EFF6FF", cursor:"pointer" }}>
+                      <div style={{ fontSize:22, marginBottom:6, color:"#3B7FE0" }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      </div>
+                      <div style={{ fontSize:13, fontWeight:700, color:"#1E40AF" }}>PNG / JPG</div>
+                      <div style={{ fontSize:10, color:"#9CA3AF", marginTop:3 }}>Immagine profilo / catalogo</div>
+                    </div>
+                  </div>
+                  {/* Manuale veloce */}
+                  <div style={{ border:"2px dashed #1A9E73", borderRadius:10, padding:"18px 12px", textAlign:"center", background:"#ECFDF5", cursor:"pointer",
+                    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6 }}
+                    onClick={()=>{ const np={id:Date.now().toString(),codice:"",nome:"",tipo:"Rahmen",bautiefe:70,grMl:"",qtaCassa:"",ferramenta:[],quote:[],coords:[],fornitore:"",note:"",attivo:true}; setProfili((p:any[])=>[...(p||[]),np]); setExpandedProfilo(np.id); }}
+                  >
+                    <div style={{ fontSize:22, color:"#1A9E73" }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </div>
+                    <div style={{ fontSize:13, fontWeight:700, color:"#065F46" }}>Inserimento manuale</div>
+                    <div style={{ fontSize:10, color:"#9CA3AF" }}>Compila a mano tutti i campi</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── FILTRI + TABELLA ──────────────────────────────────────── */}
+              <div style={{ background:"#fff", border:"1px solid #E5E3DC", borderRadius:12, overflow:"hidden" }}>
+                {/* Header */}
+                <div style={{ padding:"14px 18px", borderBottom:"1px solid #E5E3DC", display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ fontSize:14, fontWeight:700, color:"#1A1A1C", flex:1 }}>Profili nel sistema</div>
+                  {/* Filtro tipo */}
+                  <div style={{ display:"flex", gap:4 }}>
+                    {["tutti","Rahmen","Flügel","Pfosten","Stulp"].map(t=>(
+                      <div key={t} onClick={()=>setFiltroTipo(t)}
+                        style={{ padding:"5px 12px", borderRadius:20, fontSize:12, fontWeight:600, cursor:"pointer",
+                          background: filtroTipo===t ? AMBER : "#F2F1EC",
+                          color: filtroTipo===t ? "#fff" : "#6B7280",
+                          border: filtroTipo===t ? `1px solid ${AMBER}` : "1px solid #E5E3DC" }}>
+                        {t==="tutti"?"Tutti":t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Header colonne */}
+                <div style={{ display:"grid", gridTemplateColumns:"100px 1fr 90px 70px 80px 90px 80px 80px 36px", gap:8, padding:"10px 18px", background:"#F9F8F5", borderBottom:"1px solid #E5E3DC", fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em" }}>
+                  <span>Codice</span>
+                  <span>Nome / Fornitore</span>
+                  <span>Tipo</span>
+                  <span>Bautiefe</span>
+                  <span>Kg/ml</span>
+                  <span>Qt/cassa</span>
+                  <span>Ferramenta</span>
+                  <span>Coordinate</span>
+                  <span></span>
+                </div>
+
+                {/* Righe */}
+                {filtrati.length===0 ? (
+                  <div style={{ padding:"32px 0", textAlign:"center", color:"#9CA3AF", fontSize:13 }}>
+                    Nessun profilo — importa un DXF o usa l'inserimento manuale
+                  </div>
+                ) : filtrati.map((p:any)=>{
+                  const [tbg,tfg] = tipoColors[p.tipo] || ["#F2F1EC","#6B7280"];
+                  const isOpen = expandedProfilo===p.id;
+                  return (
+                    <React.Fragment key={p.id}>
+                      {/* Riga compatta */}
+                      <div
+                        onClick={()=>setExpandedProfilo(isOpen?null:p.id)}
+                        style={{ display:"grid", gridTemplateColumns:"100px 1fr 90px 70px 80px 90px 80px 80px 36px", gap:8, alignItems:"center", padding:"11px 18px", borderBottom:"1px solid #F2F1EC", cursor:"pointer",
+                          background: isOpen ? AMBERLT : "transparent",
+                          transition:"background 0.12s" }}>
+                        <span style={{ fontFamily:"JetBrains Mono, monospace", fontSize:12, fontWeight:700, color:"#1A1A1C" }}>{p.codice||"—"}</span>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:500, color:"#1A1A1C" }}>{p.nome||p.codice||"Nuovo profilo"}</div>
+                          <div style={{ fontSize:10, color:"#9CA3AF" }}>{p.fornitore||"—"}</div>
+                        </div>
+                        <span><span style={{ display:"inline-flex", padding:"2px 8px", borderRadius:4, fontSize:11, fontWeight:700, background:tbg, color:tfg }}>{p.tipo||"—"}</span></span>
+                        <span style={{ fontSize:13, color:"#1A1A1C" }}>{p.bautiefe?`${p.bautiefe}mm`:"—"}</span>
+                        <span style={{ fontSize:13, fontWeight:600, color: p.grMl?"#1A9E73":"#DC4444" }}>{p.grMl?`${p.grMl} kg`:"—"}</span>
+                        <span style={{ fontSize:13, fontWeight:600, color: p.qtaCassa?"#3B7FE0":"#DC4444" }}>{p.qtaCassa||"—"}</span>
+                        <span style={{ fontSize:11, color:"#6B7280" }}>{p.ferramenta?.length?`${p.ferramenta.length} cod.`:"—"}</span>
+                        <span style={{ fontSize:11, color:"#6B7280" }}>{p.coords?.length?`${p.coords.length} pt.`:"—"}</span>
+                        <span style={{ fontSize:16, color: AMBER, textAlign:"center" }}>{isOpen?"▲":"▼"}</span>
+                      </div>
+
+                      {/* Pannello espanso — scheda completa profilo */}
+                      {isOpen && (
+                        <div style={{ padding:"20px 18px 24px", background:AMBERBG, borderBottom:`2px solid ${AMBER}` }}>
+                          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:16 }}>
+
+                            {/* Codice */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Codice fornitore</div>
+                              <input value={p.codice||""} placeholder="es. 140x01"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,codice:e.target.value}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:"1px solid #E5E3DC", borderRadius:7, fontSize:13, fontFamily:"JetBrains Mono, monospace", fontWeight:700, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+
+                            {/* Nome */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Nome profilo</div>
+                              <input value={p.nome||""} placeholder="es. Rahmen 70mm Classic"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,nome:e.target.value}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:"1px solid #E5E3DC", borderRadius:7, fontSize:13, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+
+                            {/* Fornitore */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Fornitore / Sistema</div>
+                              <input value={p.fornitore||""} placeholder="es. Kömmerling IDEAL 4000"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,fornitore:e.target.value}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:"1px solid #E5E3DC", borderRadius:7, fontSize:13, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+
+                            {/* Tipo */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Tipo elemento</div>
+                              <select value={p.tipo||"Rahmen"}
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,tipo:e.target.value}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:"1px solid #E5E3DC", borderRadius:7, fontSize:13, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}>
+                                <option>Rahmen</option><option>Flügel</option><option>Pfosten</option><option>Stulp</option>
+                              </select>
+                            </div>
+
+                            {/* Bautiefe */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Bautiefe (mm)</div>
+                              <input type="number" value={p.bautiefe||""} placeholder="es. 70"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,bautiefe:parseFloat(e.target.value)||0}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:"1px solid #E5E3DC", borderRadius:7, fontSize:13, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+
+                            {/* Kg/ml — CAMPO PRINCIPALE PER PVC */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#1A9E73", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Peso kg/ml ★</div>
+                              <input type="number" value={p.grMl||""} placeholder="es. 1.350"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,grMl:e.target.value}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:`2px solid #1A9E73`, borderRadius:7, fontSize:14, fontWeight:700, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+
+                            {/* Qt per cassa */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#3B7FE0", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Quantità per cassa ★</div>
+                              <input value={p.qtaCassa||""} placeholder="es. 50ml / 6m / 10pz"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,qtaCassa:e.target.value}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:`2px solid #3B7FE0`, borderRadius:7, fontSize:13, fontWeight:700, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+
+                            {/* Camere */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>N° camere</div>
+                              <input type="number" value={p.camere||""} placeholder="es. 5"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,camere:parseInt(e.target.value)||0}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:"1px solid #E5E3DC", borderRadius:7, fontSize:13, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+
+                            {/* Note */}
+                            <div>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:5 }}>Note</div>
+                              <input value={p.note||""} placeholder="es. powerdur inside, faserverstärkt"
+                                onChange={e=>setProfili((prev:any[])=>prev.map((x:any)=>x.id===p.id?{...x,note:e.target.value}:x))}
+                                style={{ width:"100%", padding:"8px 10px", border:"1px solid #E5E3DC", borderRadius:7, fontSize:13, background:"#fff", color:"#1A1A1C", boxSizing:"border-box" as any }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Quote layer 15 */}
+                          {p.quote?.length>0 && (
+                            <div style={{ marginBottom:14 }}>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:6 }}>Quote costruttive layer 15 (mm)</div>
+                              <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                                {p.quote.map((q:number,i:number)=>(
+                                  <span key={i} style={{ padding:"3px 10px", borderRadius:5, background:"#F2F1EC", border:"1px solid #E5E3DC", fontSize:12, fontFamily:"JetBrains Mono, monospace", fontWeight:700, color:"#1A1A1C" }}>{q}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Codici ferramenta */}
+                          <div style={{ marginBottom:14 }}>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:6 }}>
+                              Codici ferramenta ({p.ferramenta?.length||0})
+                              <span style={{ fontSize:9, fontWeight:400, color:"#9CA3AF", marginLeft:8 }}>estratti da DXF layer 15</span>
+                            </div>
+                            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                              {(p.ferramenta||[]).map((f:string,i:number)=>(
+                                <span key={i} style={{ padding:"3px 10px", borderRadius:5, background:AMBERLT, border:`1px solid ${AMBER}`, fontSize:11, fontFamily:"JetBrains Mono, monospace", fontWeight:700, color:"#92400E" }}>{f}</span>
+                              ))}
+                              {(!p.ferramenta?.length) && <span style={{ fontSize:12, color:"#9CA3AF" }}>Nessun codice — importa DXF per estrarlo automaticamente</span>}
+                            </div>
+                          </div>
+
+                          {/* Coordinate nodo */}
+                          <div style={{ marginBottom:16 }}>
+                            <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:6 }}>
+                              Coordinate nodo ({p.coords?.length||0} punti)
+                              <span style={{ fontSize:9, fontWeight:400, color:"#9CA3AF", marginLeft:8 }}>usate per rendering sezione e nodo anta/telaio/traverso</span>
+                            </div>
+                            {p.coords?.length>0 ? (
+                              <div style={{ background:"#1A1A1C", borderRadius:8, padding:"10px 14px", maxHeight:80, overflowY:"auto" }}>
+                                <span style={{ fontSize:10, fontFamily:"JetBrains Mono, monospace", color:"#D08008", lineHeight:1.8 }}>
+                                  {p.coords.slice(0,20).map((c:any,i:number)=>`(${c.x.toFixed(1)},${c.y.toFixed(1)})`).join("  ")}
+                                  {p.coords.length>20?` …+${p.coords.length-20} pt`:""}
+                                </span>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize:11, color:"#9CA3AF" }}>Coordinate non disponibili — importa DXF per estrarre la sezione trasversale</div>
+                            )}
+                          </div>
+
+                          {/* Immagine profilo se presente */}
+                          {p.imgBase64 && (
+                            <div style={{ marginBottom:16 }}>
+                              <div style={{ fontSize:10, fontWeight:700, color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.04em", marginBottom:6 }}>Immagine profilo</div>
+                              <img src={p.imgBase64} alt="profilo" style={{ maxHeight:120, border:"1px solid #E5E3DC", borderRadius:8, display:"block" }} />
+                            </div>
+                          )}
+
+                          {/* Azioni */}
+                          <div style={{ display:"flex", gap:8 }}>
+                            <div
+                              onClick={()=>setProfili((prev:any[])=>prev.filter((x:any)=>x.id!==p.id))}
+                              style={{ padding:"8px 18px", border:"1px solid #FCA5A5", background:"#FEF2F2", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", color:"#DC4444" }}
+                            >Elimina profilo</div>
+                            <div
+                              onClick={()=>setExpandedProfilo(null)}
+                              style={{ padding:"8px 18px", border:`1px solid ${AMBER}`, background:AMBERLT, borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", color:"#92400E" }}
+                            >Chiudi</div>
+                          </div>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {settingsTab === "azienda" && (
           <div style={{background:"#fff",borderRadius:12,overflow:"hidden",border:`1px solid ${T.bdr}`}}>
@@ -3055,6 +3522,7 @@ export default function SettingsPanel() {
         )}
 
       </div>
-    </div>
+      </div>{/* fine content area */}
+    </div>{/* fine layout flex */}
   );
 }
