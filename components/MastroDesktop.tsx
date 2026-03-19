@@ -38,7 +38,6 @@ const NAV = [
   { group:"Cantiere", items:[
     { key:"home",         ico:"home",     label:"Dashboard" },
     { key:"commesse",     ico:"folder",   label:"Commesse" },
-    { key:"configuratore",ico:"grid",     label:"Configuratore" },
     { key:"misure",       ico:"ruler",    label:"Misure" },
     { key:"agenda",       ico:"calendar", label:"Agenda" },
   ]},
