@@ -2958,7 +2958,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
-        {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
+        {selectedVano && <div style={{position:"fixed",top:0,left:0,zIndex:9999,background:"red",color:"white",padding:"8px",fontSize:12}}>VANO: {selectedVano?.nome} tab:{tab}</div>}{selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
         {tab === "messaggi" && !selectedMsg && <PanelErrorBoundary name="Messaggi">{renderMessaggi()}</PanelErrorBoundary>}
 
