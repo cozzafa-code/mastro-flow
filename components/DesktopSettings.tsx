@@ -1,6 +1,6 @@
 "use client";
 // @ts-nocheck
-// MASTRO — DesktopSettings v2
+// MASTRO  DesktopSettings v2
 // Sidebar nav + archivi completi: Profili, Vetri, Accessori, Colori
 
 import { useState, useRef, useEffect } from "react";
@@ -57,12 +57,12 @@ const badge=(bg:string,c:string,txt:string)=>(
   <span style={{fontSize:10,padding:"2px 8px",borderRadius:10,background:bg,color:c,fontWeight:700,whiteSpace:"nowrap"}}>{txt}</span>
 );
 
-// ── Input/Label helpers ───────────────────────────────────────
+//  Input/Label helpers 
 const LBL=({children}:any)=><label style={{fontSize:11,fontWeight:700,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:4,display:"block"}}>{children}</label>;
 const INP=({...p})=><input {...p} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",...(p.style||{})}}/>;
 const SEL=({children,...p}:any)=><select {...p} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",...(p.style||{})}}>{children}</select>;
 
-// ── Sezione container ─────────────────────────────────────────
+//  Sezione container 
 const Sez=({title,sub="",action=null,children}:any)=>(
   <div style={{marginBottom:24}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
@@ -81,14 +81,14 @@ const Sez=({title,sub="",action=null,children}:any)=>(
   </div>
 );
 
-// ── Modal generico ────────────────────────────────────────────
+//  Modal generico 
 function Modal({title,onClose,children}:any){
   return (
     <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={onClose}>
       <div style={{background:"#fff",borderRadius:16,width:640,maxHeight:"85vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,.18)"}} onClick={e=>e.stopPropagation()}>
         <div style={{padding:"18px 22px",borderBottom:`1px solid #E5E3DC`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
           <div style={{fontSize:16,fontWeight:800,color:DARK}}>{title}</div>
-          <div onClick={onClose} style={{width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:`1px solid #E5E3DC`,color:"#86868b",fontSize:18,lineHeight:1}}>×</div>
+          <div onClick={onClose} style={{width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",border:`1px solid #E5E3DC`,color:"#86868b",fontSize:18,lineHeight:1}}>x</div>
         </div>
         <div style={{padding:"20px 22px"}}>{children}</div>
       </div>
@@ -96,11 +96,11 @@ function Modal({title,onClose,children}:any){
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ARCHIVIO PROFILI v3 — master-detail + DXF viewer SVG
-// ═══════════════════════════════════════════════════════════════
+// 
+// ARCHIVIO PROFILI v3  master-detail + DXF viewer SVG
+// 
 
-// ── Parser LWPOLYLINE da testo DXF ───────────────────────────
+//  Parser LWPOLYLINE da testo DXF 
 function parseLWPolylines(dxfText:string):{pts:{x:number,y:number}[],closed:boolean}[]{
   const lines=dxfText.split('\n');
   const result:{pts:{x:number,y:number}[],closed:boolean}[]=[];
@@ -123,7 +123,7 @@ function parseLWPolylines(dxfText:string):{pts:{x:number,y:number}[],closed:bool
   return result;
 }
 
-// ── CAD Editor interattivo profilo DXF ──────────────────────
+//  CAD Editor interattivo profilo DXF 
 function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:any){
   const [view,setView]=useState("nodo");
   const [zoom,setZoom]=useState(1);
@@ -189,14 +189,14 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
     y:minY+(svgH-PAD-QPAD-sy)/sc
   });
 
-  // Snap al punto più vicino del profilo
+  // Snap al punto pi vicino del profilo
   const snapToProfile=(sx:number,sy:number,snapR=16):{x:number,y:number,sx:number,sy:number,pi:number,vi:number}|null=>{
     let best:any=null;let bestD=snapR;
-    // Solo contorno esterno (polilinea più grande)
+    // Solo contorno esterno (polilinea pi grande)
     const mainPol=target.reduce((a:any,b:any)=>b.pts.length>a.pts.length?b:a,target[0]);
     if(!mainPol)return null;
-    // Salta i punti intermedi — prendi solo i vertici significativi
-    // Un vertice è significativo se cambia direzione > 5°
+    // Salta i punti intermedi  prendi solo i vertici significativi
+    // Un vertice  significativo se cambia direzione > 5
     const pts=mainPol.pts;
     for(let vi=0;vi<pts.length;vi++){
       const c=pts[vi];
@@ -334,13 +334,13 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
           <span style={{fontSize:9,color:"#555"}}>↻</span>
           <input type="number" value={rotation} onChange={(e:any)=>setRotation(parseFloat(e.target.value)||0)}
             style={{width:40,background:"#2A2A2E",border:"1px solid #3A3A3E",borderRadius:4,color:"#fff",fontSize:9,padding:"2px 4px",textAlign:"center"}}/>
-          <span style={{fontSize:9,color:"#555"}}>°</span>
+          <span style={{fontSize:9,color:"#555"}}>deg</span>
         </div>
         {(editPols||zoom!==1||rotation!==0||quotes.length>0)&&(
           <div onClick={resetEdit} style={{padding:"2px 8px",fontSize:9,color:"#DC4444",cursor:"pointer",borderRadius:4,border:"1px solid #DC444330",marginLeft:4}}>Reset</div>
         )}
         {quotes.length>0&&(
-          <div onClick={()=>setQuotes([])} style={{padding:"2px 8px",fontSize:9,color:"#D08008",cursor:"pointer",borderRadius:4,border:"1px solid #D0800830"}}>×{quotes.length}q</div>
+          <div onClick={()=>setQuotes([])} style={{padding:"2px 8px",fontSize:9,color:"#D08008",cursor:"pointer",borderRadius:4,border:"1px solid #D0800830"}}>x{quotes.length}q</div>
         )}
         <div style={{flex:1}}/>
         <div onClick={()=>setFullscreen(!fullscreen)}
@@ -349,7 +349,7 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
           {fullscreen?"⊠ Esci":"⊞ Ingrandisci"}
         </div>
         <div style={{fontSize:8,color:"#333",fontFamily:"JetBrains Mono,monospace",marginLeft:8}}>
-          {Math.round(rX)}×{Math.round(rY)}mm · {zoom.toFixed(1)}x
+          {Math.round(rX)}x{Math.round(rY)}mm · {zoom.toFixed(1)}x
         </div>
       </div>
 
@@ -421,7 +421,7 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
             <text x={mx} y={my+4} fontSize="11" fill="#D08008" textAnchor="middle" fontFamily="JetBrains Mono,monospace" fontWeight="800">{q.mm}</text>
             {/* Delete */}
             <text x={x2s+8} y={y2s+4} fontSize="12" fill="#555" style={{cursor:"pointer"}}
-              onClick={(e:any)=>{e.stopPropagation();setQuotes(qs=>qs.filter((_,j)=>j!==i));}}>×</text>
+              onClick={(e:any)=>{e.stopPropagation();setQuotes(qs=>qs.filter((_,j)=>j!==i));}}>x</text>
           </g>;
         })}
         {/* Punto selezionato */}
@@ -455,7 +455,7 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
       {/* STATUS BAR */}
       <div style={{height:STATUSBAR,display:"flex",alignItems:"center",padding:"0 14px",gap:16,borderTop:"1px solid #1E1E20",background:"#0F0F11",flexShrink:0}}>
         {tool==="quota"&&<span style={{fontSize:10,color:"#D08008",fontWeight:600}}>
-          {quotaPt1?"▶ Click 2° punto (snap automatico ai vertici)":"▶ Click 1° punto per iniziare quota"}
+          {quotaPt1?"▶ Click 2deg punto (snap automatico ai vertici)":"▶ Click 1deg punto per iniziare quota"}
         </span>}
         {tool==="move"&&<span style={{fontSize:10,color:"#3B7FE0"}}>
           {selPt?"↔ Trascina per spostare il punto":"Click su un vertice per selezionarlo"}
@@ -576,7 +576,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                   r.onload=ev=>{
                     const text=ev.target?.result as string;
                     const pols=parseLWPolylines(text);
-                    // Rileva se è un nodo (più quadranti) o profilo singolo
+                    // Rileva se  un nodo (pi quadranti) o profilo singolo
                     const allPts=pols.flatMap((p:any)=>p.pts);
                     if(allPts.length===0){const p=parseDXF(text,file.name);setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);setSelected(p.id);setForm(p);return;}
                     const hasNegY=allPts.some((c:any)=>c.y<-5);
@@ -587,7 +587,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                       // Mostra modal selezione profilo
                       setImportModal({text,filename:file.name,pols});
                     } else {
-                      // Profilo singolo — importa direttamente
+                      // Profilo singolo  importa direttamente
                       const p=parseDXF(text,file.name);
                       setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);
                       setSelected(p.id);setForm(p);
@@ -712,7 +712,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
                     <INP type="number" placeholder="70" value={form.bautiefe||""} onChange={(e:any)=>updateForm("bautiefe",parseFloat(e.target.value)||0)}/>
                   </div>
                   <div>
-                    <LBL>N° camere</LBL>
+                    <LBL>Ndeg camere</LBL>
                     <INP type="number" placeholder="5" value={form.camere||""} onChange={(e:any)=>updateForm("camere",parseInt(e.target.value)||0)}/>
                   </div>
                   <div>
@@ -822,9 +822,9 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
 }
 
 
-// ═══════════════════════════════════════════════════════════════
-// ARCHIVIO NODI — Motore composizione profili per CNC
-// ═══════════════════════════════════════════════════════════════
+// 
+// ARCHIVIO NODI  Motore composizione profili per CNC
+// 
 function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
   const [selected,setSelected]=useState<string|null>(null);
   const [search,setSearch]=useState("");
@@ -851,12 +851,12 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
     {k:"anta_telaio",l:"Anta + Telaio",desc:"Nodo laterale standard"},
     {k:"traverso",l:"Traverso",desc:"Nodo orizzontale"},
     {k:"pfosten",l:"Pfosten (montante)",desc:"Nodo verticale centrale"},
-    {k:"angolo_45",l:"Angolo 45°",desc:"Giunzione ad angolo"},
+    {k:"angolo_45",l:"Angolo 45deg",desc:"Giunzione ad angolo"},
     {k:"stulp",l:"Stulpo",desc:"Anta doppia senza montante"},
     {k:"soglia",l:"Soglia",desc:"Nodo inferiore"},
   ];
 
-  // ── Helper: estrai profilo per quadrante ──
+  //  Helper: estrai profilo per quadrante 
   const estraiProfilo=(pols:any[],tipo:"rahmen"|"flugel"|"front"|"tutti")=>{
     if(tipo==="tutti")return pols;
     if(tipo==="rahmen")return pols.filter((p:any)=>p.pts.length>0&&Math.max(...p.pts.map((c:any)=>c.x))<=2);
@@ -888,7 +888,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
       <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"}}>
         <div style={{background:"#fff",borderRadius:16,padding:28,maxWidth:600,width:"90%",boxShadow:"0 24px 80px rgba(0,0,0,0.4)"}}>
           <div style={{fontSize:16,fontWeight:800,color:DARK,marginBottom:4}}>Seleziona il profilo da importare</div>
-          <div style={{fontSize:12,color:"#86868b",marginBottom:20}}>Il file <strong>{importModal.filename}</strong> contiene un nodo con più profili. Scegli quale importare nell'archivio.</div>
+          <div style={{fontSize:12,color:"#86868b",marginBottom:20}}>Il file <strong>{importModal.filename}</strong> contiene un nodo con piu profili. Scegli quale importare nell'archivio.</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
             {([
               {k:"rahmen",l:"Telaio",desc:"Profilo Rahmen (X negativo)",col:"#3B7FE0",icon:"◫"},
@@ -997,7 +997,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
                   <span style={{fontSize:12,fontWeight:700,color:isOn?AMB:DARK}}>{n.nome}</span>
                 </div>
                 <div style={{fontSize:10,color:"#86868b",marginBottom:3}}>
-                  {TIPI.find((t:any)=>t.k===n.tipo)?.l||n.tipo} · {n.angolo}° · kerf {n.kerf}mm
+                  {TIPI.find((t:any)=>t.k===n.tipo)?.l||n.tipo} · {n.angolo}deg · kerf {n.kerf}mm
                 </div>
                 <div style={{display:"flex",gap:4}}>
                   {pA2?<span style={{fontSize:9,padding:"1px 5px",borderRadius:3,background:"#DBEAFE",color:"#1E40AF",fontWeight:600}}>{pA2.codice||pA2.sistema}</span>:<span style={{fontSize:9,color:RED}}>A mancante</span>}
@@ -1023,7 +1023,7 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
               <div>
                 <div style={{fontSize:18,fontWeight:800,color:DARK}}>{sel.nome}</div>
-                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{TIPI.find((t:any)=>t.k===sel.tipo)?.l} · {sel.angolo}° · kerf {sel.kerf}mm</div>
+                <div style={{fontSize:12,color:"#86868b",marginTop:2}}>{TIPI.find((t:any)=>t.k===sel.tipo)?.l} · {sel.angolo}deg · kerf {sel.kerf}mm</div>
               </div>
               <div onClick={()=>del(sel.id)} style={{padding:"7px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>Elimina</div>
             </div>
@@ -1054,12 +1054,12 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
                 <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Parametri taglio CNC ★</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   <div>
-                    <LBL>Angolo taglio (°)</LBL>
+                    <LBL>Angolo taglio (deg)</LBL>
                     <SEL value={String(sel.angolo||45)} onChange={(e:any)=>upd(sel.id,"angolo",parseFloat(e.target.value))}>
-                      <option value="45">45° — Giunzione ad angolo</option>
-                      <option value="90">90° — Taglio dritto</option>
-                      <option value="22.5">22.5° — Angolo speciale</option>
-                      <option value="0">0° — Parallelo</option>
+                      <option value="45">45deg — Giunzione ad angolo</option>
+                      <option value="90">90deg — Taglio dritto</option>
+                      <option value="22.5">22.5deg — Angolo speciale</option>
+                      <option value="0">0deg — Parallelo</option>
                     </SEL>
                   </div>
                   <div>
@@ -1136,9 +1136,9 @@ function ArchivioNodi({nodiDB,setNodiDB,sistemiDB}:any){
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
+// 
 // ARCHIVIO VETRI
-// ═══════════════════════════════════════════════════════════════
+// 
 function ArchivioVetri({vetriDB,setVetriDB}:any){
   const [modal,setModal]=useState<any>(null);
   const [form,setForm]=useState<any>({});
@@ -1251,9 +1251,9 @@ function ArchivioVetri({vetriDB,setVetriDB}:any){
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
+// 
 // ARCHIVIO COLORI
-// ═══════════════════════════════════════════════════════════════
+// 
 function ArchivioColori({coloriDB,setColoriDB}:any){
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState<any>({});
@@ -1345,9 +1345,9 @@ function ArchivioColori({coloriDB,setColoriDB}:any){
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
+// 
 // ARCHIVIO ACCESSORI (coprifili, lamiere, tapparelle, ecc.)
-// ═══════════════════════════════════════════════════════════════
+// 
 function ArchivioAccessori({db,setDb,titolo,categoria}:any){
   const [modal,setModal]=useState(false);
   const [form,setForm]=useState<any>({});
@@ -1429,9 +1429,9 @@ function ArchivioAccessori({db,setDb,titolo,categoria}:any){
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
+// 
 // MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════
+// 
 export default function DesktopSettings(){
   const ctx=useMastro() as any;
   const {settingsTab,setSettingsTab,
