@@ -785,9 +785,23 @@ export default function PreventivoConfiguratoreTab() {
 
   // ÔöÇÔöÇ Aggiorna singolo vano ÔöÇÔöÇ
   const updVano = useCallback((vanoId: any, patch: any) => {
-    const newVani = (c.vani || []).map((v: any) => v.id === vanoId ? { ...v, ...patch } : v);
-    updCM("vani", newVani);
-  }, [c.vani, updCM]);
+    // FIX: scrive in rilievi[ultimo].vani — source of truth delle misure
+    const rilievi = c.rilievi || [];
+    if (rilievi.length > 0) {
+      const lastIdx = rilievi.length - 1;
+      const updRilievi = rilievi.map((r: any, i: number) =>
+        i === lastIdx
+          ? { ...r, vani: (r.vani || []).map((v: any) => v.id === vanoId ? { ...v, ...patch } : v) }
+          : r
+      );
+      setCantieri((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, rilievi: updRilievi } : x));
+      setSelectedCM((p: any) => ({ ...p, rilievi: updRilievi }));
+    } else {
+      // fallback: nessun rilievo, usa c.vani
+      const newVani = (c.vani || []).map((v: any) => v.id === vanoId ? { ...v, ...patch } : v);
+      updCM("vani", newVani);
+    }
+  }, [c.rilievi, c.vani, c.id, updCM, setCantieri, setSelectedCM]);
 
   const vani = getVaniAttivi ? getVaniAttivi(c) : (c.vani || []).filter((v: any) => !v.eliminato);
 
@@ -823,10 +837,8 @@ export default function PreventivoConfiguratoreTab() {
         <VanoConfiguratoreFullscreen
           vano={vanoInConfig}
           onSalva={(patch: any) => {
-            const newVani = (c.vani || []).map((v: any) =>
-              v.id === vanoInConfig.id ? { ...v, ...patch } : v
-            );
-            updCM("vani", newVani);
+            // FIX: salva in rilievi[ultimo].vani
+            updVano(vanoInConfig.id, patch);
             setVanoInConfig(null);
           }}
           onChiudi={() => setVanoInConfig(null)}
@@ -890,7 +902,18 @@ export default function PreventivoConfiguratoreTab() {
       {/* Aggiungi vano */}
       <div onClick={() => {
         const newV = { id: Date.now(), nome: `Vano ${vani.length + 1}`, tipo: "F2A", pezzi: 1, misure: {}, accessori: { tapparella: { attivo: false }, zanzariera: { attivo: false } }, accessoriCatalogo: [], vociLibere: [] };
-        updCM("vani", [...(c.vani || []), newV]);
+        // FIX: aggiunge al rilievo corretto
+        const rilievi = c.rilievi || [];
+        if (rilievi.length > 0) {
+          const lastIdx = rilievi.length - 1;
+          const updRilievi = rilievi.map((r: any, i: number) =>
+            i === lastIdx ? { ...r, vani: [...(r.vani || []), newV] } : r
+          );
+          setCantieri((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, rilievi: updRilievi } : x));
+          setSelectedCM((p: any) => ({ ...p, rilievi: updRilievi }));
+        } else {
+          updCM("vani", [...(c.vani || []), newV]);
+        }
         setVanoInConfig(newV);
       }} style={{ padding: "14px", borderRadius: 14, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.sub, marginBottom: 10, background: T.card }}>
         + Aggiungi vano
