@@ -95,131 +95,253 @@ function Modal({title,onClose,children}:any){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ARCHIVIO PROFILI
+// ARCHIVIO PROFILI v2 — DXF parser + kg/ml + qt/cassa + coords
 // ═══════════════════════════════════════════════════════════════
 function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
   const [search,setSearch]=useState("");
-  const [modal,setModal]=useState<any>(null); // null | "new" | profilo
+  const [modal,setModal]=useState<any>(null);
   const [form,setForm]=useState<any>({});
 
   const filtered=(sistemiDB||[]).filter((s:any)=>
-    !search||[s.marca,s.sistema,s.nome].some((v:string)=>v?.toLowerCase().includes(search.toLowerCase()))
+    !search||[s.marca,s.sistema,s.nome,s.codice].some((v:string)=>v?.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const parseDXF=(text:string,filename:string)=>{
+    const codM=text.match(/\b((0[14][04]|1[0-9]{2}|0[46])x\d{2,3})\b/i);
+    const codice=codM?codM[1]:filename.replace(/\.dxf$/i,"");
+    const quote:number[]=[]; const mp=/\\A1;(\d+)/g; let mm:any;
+    while((mm=mp.exec(text))!==null){const v=parseInt(mm[1]);if(v>=10&&v<=300)quote.push(v);}
+    const BAUT=[55,65,70,80,85,95,100,120];
+    const bautiefe=quote.find((q:number)=>BAUT.includes(q))||quote.filter((q:number)=>q>=50&&q<=130).sort((a:number,b:number)=>a-b)[0]||0;
+    const fermSet=new Set<string>(); const fp=/\b([2-6]\d{5})\b/g; let fm:any;
+    while((fm=fp.exec(text))!==null)fermSet.add(fm[1]);
+    const coords:{x:number,y:number}[]=[]; const cp=/\n\s*10\n\s*([-\d.]+)\n\s*20\n\s*([-\d.]+)/g; let cv:any;
+    while((cv=cp.exec(text))!==null)coords.push({x:parseFloat(cv[1]),y:parseFloat(cv[2])});
+    const n=codice.toLowerCase();
+    const tipo=n.includes("x2")||n.includes("x3")?"Flügel":n.includes("x4")||n.includes("x5")?"Pfosten":n.includes("x6")||n.includes("x7")||n.includes("x8")||n.includes("x9")?"Stulp":"Rahmen";
+    const fornitore=text.includes("OHNE_DICHTUNGEN")||text.includes("aluplast")||text.includes("mmerling")?"Kömmerling / aluplast":"Generico";
+    return {id:"P-"+Date.now()+"_"+Math.random(),codice,marca:fornitore.split(" ")[0],sistema:codice,nome:tipo+" "+bautiefe+"mm",materiale:"PVC",tipo,bautiefe,grMl:"",qtaCassa:"",camere:0,uw:"",uf:"",rw:"",spessore:String(bautiefe),classe:"",certificazioni:"",notetech:"",sovRAL:0,sovLegno:0,euroMq:0,tipologie:"",sottosistemi:"",ferramenta:[...fermSet],quote,coords,attivo:true};
+  };
+
   const openNew=()=>{
-    setForm({id:"P-"+Date.now(),marca:"",sistema:"",nome:"",materiale:"PVC",colori:[],euroMq:0,sovRAL:0,sovLegno:0,termico:"",uw:"",uf:"",rw:"",spessore:"",classe:"",certificazioni:"",notetech:"",sottosistemi:"",griglia:[],attivo:true});
-    setModal("new");
+    setForm({id:"P-"+Date.now(),codice:"",marca:"",sistema:"",nome:"",materiale:"PVC",tipo:"Rahmen",bautiefe:70,grMl:"",qtaCassa:"",camere:0,uw:"",uf:"",rw:"",spessore:"",classe:"",certificazioni:"",notetech:"",sovRAL:0,sovLegno:0,euroMq:0,tipologie:"",sottosistemi:"",ferramenta:[],quote:[],coords:[],attivo:true});
+    setModal("edit");
   };
   const openEdit=(s:any)=>{setForm({...s});setModal("edit");};
   const save=()=>{
-    if(modal==="new") setSistemiDB?.((p:any[])=>[...p,form]);
-    else setSistemiDB?.((p:any[])=>p.map((x:any)=>x.id===form.id?form:x));
+    const exists=(sistemiDB||[]).find((x:any)=>x.id===form.id);
+    if(exists) setSistemiDB?.((p:any[])=>p.map((x:any)=>x.id===form.id?form:x));
+    else setSistemiDB?.((p:any[])=>[...(p||[]),form]);
     setModal(null);
   };
   const del=(id:string)=>{if(confirm("Eliminare questo profilo?"))setSistemiDB?.((p:any[])=>p.filter((x:any)=>x.id!==id));};
 
+  const tipoColor:Record<string,[string,string]>={
+    "Rahmen":["#DBEAFE","#1E40AF"],"Flügel":["#D1FAE5","#065F46"],
+    "Pfosten":["#FEF3C7","#92400E"],"Stulp":["#FCE7F3","#9D174D"],
+  };
+
   return (
     <>
-      <Sez title="Archivio profili" sub={`${(sistemiDB||[]).length} sistemi configurati`} action={{label:"Nuovo profilo",fn:openNew}}>
-        <div style={{padding:"10px 14px",borderBottom:`1px solid #F2F1EC`,display:"flex",gap:8}}>
-          <div style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"#F8F7F2",borderRadius:8,border:`1px solid #E5E3DC`}}>
-            <Svg path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" c="#86868b" s={13}/>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca marca, sistema..." style={{border:"none",background:"transparent",fontSize:13,color:DARK,outline:"none",width:"100%",fontFamily:FF}}/>
+      {/* HERO BANNER */}
+      <div style={{background:"linear-gradient(135deg,#1A1A1C 0%,#2D2D30 100%)",borderRadius:14,padding:"20px 24px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
+        <div>
+          <div style={{fontSize:18,fontWeight:800,color:"#fff",letterSpacing:"-0.3px"}}>Archivio Profili PVC</div>
+          <div style={{fontSize:12,color:"#9CA3AF",marginTop:3}}>Kömmerling · aluplast IDEAL 4000 · Import DXF / PNG</div>
+          <div style={{display:"flex",gap:20,marginTop:12}}>
+            {[{n:(sistemiDB||[]).length,l:"Profili",c:AMB},{n:(sistemiDB||[]).filter((s:any)=>s.grMl).length,l:"Con kg/ml",c:TEAL},{n:(sistemiDB||[]).filter((s:any)=>s.qtaCassa).length,l:"Con qt/cassa",c:BLU},{n:(sistemiDB||[]).filter((s:any)=>!s.grMl||!s.qtaCassa).length,l:"Incompleti",c:RED}].map((k,i)=>(
+              <div key={i}><div style={{fontSize:22,fontWeight:800,color:k.c,lineHeight:"1"}}>{k.n}</div><div style={{fontSize:10,color:"#9CA3AF",marginTop:1}}>{k.l}</div></div>
+            ))}
           </div>
         </div>
-        {filtered.map((s:any)=>(
-          <div key={s.id} style={{padding:"14px 18px",borderBottom:`1px solid #F2F1EC`,display:"flex",alignItems:"flex-start",gap:14}}>
-            <div style={{width:46,height:46,borderRadius:12,background:TEAL+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,color:TEAL,flexShrink:0}}>{(s.marca||"P")[0]}</div>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                <span style={{fontSize:14,fontWeight:800,color:DARK}}>{s.marca}</span>
-                <span style={{fontSize:14,fontWeight:500,color:"#86868b"}}>{s.sistema||s.nome}</span>
-                {s.materiale&&badge(s.materiale==="PVC"?BLU+"15":s.materiale==="Alluminio"?AMB+"15":TEAL+"15",s.materiale==="PVC"?BLU:s.materiale==="Alluminio"?AMB:TEAL,s.materiale)}
-                {!s.attivo&&badge(RED+"15",RED,"Disattivo")}
-              </div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                {s.euroMq>0&&badge(TEAL+"12",TEAL,`€${s.euroMq}/mq`)}
-                {s.sovRAL>0&&badge(AMB+"12",AMB,`+${s.sovRAL}% RAL`)}
-                {s.sovLegno>0&&badge(PUR+"12",PUR,`+${s.sovLegno}% Legno`)}
-                {s.uw&&badge(BLU+"12",BLU,`Uw ${s.uw}`)}
-                {s.spessore&&badge("#F2F1EC","#86868b",`${s.spessore}mm`)}
-                {s.griglia?.length>0&&badge(ORG+"12",ORG,`${s.griglia.length} prezzi`)}
-                {s.colori?.length>0&&badge("#F2F1EC","#86868b",`${s.colori.length} colori`)}
-              </div>
-            </div>
-            <div style={{display:"flex",gap:6,flexShrink:0}}>
-              <div onClick={()=>openEdit(s)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:BLU+"12",color:BLU}}>Modifica</div>
-              <div onClick={()=>del(s.id)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>Elimina</div>
+        <div onClick={openNew} style={{background:AMB,color:"#fff",padding:"11px 20px",borderRadius:10,fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>+ Profilo manuale</div>
+      </div>
+
+      {/* IMPORT ZONE */}
+      <div style={{background:"#fff",border:"1px solid #E5E3DC",borderRadius:12,marginBottom:16,overflow:"hidden"}}>
+        <div style={{padding:"12px 16px",background:"#FEF3C7",borderBottom:`2px solid ${AMB}`,display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:7,height:7,borderRadius:"50%",background:AMB}}/><div style={{fontSize:13,fontWeight:700,color:"#92400E"}}>Importa profilo</div>
+          <div style={{fontSize:11,color:"#92400E",opacity:.7,marginLeft:4}}>parser automatico — codice, bautiefe, tipo, quote, ferramenta, coordinate nodo</div>
+        </div>
+        <div style={{padding:16,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+          {/* DXF */}
+          <div style={{position:"relative"}}>
+            <input type="file" accept=".dxf" multiple style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",zIndex:2}}
+              onChange={e=>{Array.from(e.target.files||[]).forEach(file=>{const r=new FileReader();r.onload=ev=>{const p=parseDXF(ev.target?.result as string,file.name);setSistemiDB?.((prev:any[])=>[...(prev||[]),p]);};r.readAsText(file);});e.target.value="";}}/>
+            <div style={{border:`2px dashed ${AMB}`,borderRadius:10,padding:"16px 12px",textAlign:"center",background:"#FFFBF5",cursor:"pointer"}}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={AMB} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:6}}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              <div style={{fontSize:13,fontWeight:700,color:"#92400E"}}>DXF / DWG</div>
+              <div style={{fontSize:10,color:"#9CA3AF",marginTop:2}}>Parser layer 15 automatico</div>
             </div>
           </div>
-        ))}
-        {filtered.length===0&&<div style={{padding:"36px",textAlign:"center",color:"#86868b",fontSize:14}}>Nessun profilo — aggiungine uno</div>}
+          {/* PNG */}
+          <div style={{position:"relative"}}>
+            <input type="file" accept=".png,.jpg,.jpeg,.webp" multiple style={{position:"absolute",inset:0,opacity:0,cursor:"pointer",zIndex:2}}
+              onChange={e=>{Array.from(e.target.files||[]).forEach(file=>{const r=new FileReader();r.onload=ev=>{const np:any={id:"P-"+Date.now()+"_"+Math.random(),codice:file.name.replace(/\.[^.]+$/,""),marca:"",sistema:"",nome:file.name.replace(/\.[^.]+$/,""),materiale:"PVC",tipo:"Rahmen",bautiefe:0,grMl:"",qtaCassa:"",ferramenta:[],quote:[],coords:[],attivo:true,imgBase64:ev.target?.result};setSistemiDB?.((prev:any[])=>[...(prev||[]),np]);};r.readAsDataURL(file);});e.target.value="";}}/>
+            <div style={{border:`2px dashed ${BLU}`,borderRadius:10,padding:"16px 12px",textAlign:"center",background:"#EFF6FF",cursor:"pointer"}}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={BLU} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:6}}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <div style={{fontSize:13,fontWeight:700,color:"#1E40AF"}}>PNG / JPG</div>
+              <div style={{fontSize:10,color:"#9CA3AF",marginTop:2}}>Immagine profilo / catalogo</div>
+            </div>
+          </div>
+          {/* Manuale */}
+          <div onClick={openNew} style={{border:`2px dashed ${TEAL}`,borderRadius:10,padding:"16px 12px",textAlign:"center",background:"#ECFDF5",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom:4}}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <div style={{fontSize:13,fontWeight:700,color:"#065F46"}}>Inserimento manuale</div>
+            <div style={{fontSize:10,color:"#9CA3AF"}}>Compila a mano tutti i campi</div>
+          </div>
+        </div>
+      </div>
+
+      {/* TABELLA PROFILI */}
+      <Sez title="Profili nel sistema" sub={`${filtered.length} profili`}>
+        <div style={{padding:"10px 14px",borderBottom:`1px solid #F2F1EC`,display:"flex",gap:8,alignItems:"center"}}>
+          <div style={{flex:1,display:"flex",alignItems:"center",gap:8,padding:"7px 11px",background:"#F8F7F2",borderRadius:8,border:`1px solid #E5E3DC`}}>
+            <Svg path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0" c="#86868b" s={13}/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca codice, marca, sistema..." style={{border:"none",background:"transparent",fontSize:13,color:DARK,outline:"none",width:"100%",fontFamily:FF}}/>
+          </div>
+        </div>
+        {/* Header colonne */}
+        <div style={{display:"grid",gridTemplateColumns:"90px 1fr 80px 70px 80px 90px 80px 80px",gap:8,padding:"8px 18px",background:"#F9F8F5",borderBottom:`1px solid #E5E3DC`,fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase",letterSpacing:"0.04em"}}>
+          <span>Codice</span><span>Nome / Fornitore</span><span>Tipo</span><span>Bautiefe</span><span>Kg/ml</span><span>Qt/cassa</span><span>Ferramenta</span><span>Azioni</span>
+        </div>
+        {filtered.map((s:any)=>{
+          const [tbg,tfg]=tipoColor[s.tipo as string]||["#F2F1EC","#6B7280"];
+          return (
+            <div key={s.id} style={{display:"grid",gridTemplateColumns:"90px 1fr 80px 70px 80px 90px 80px 80px",gap:8,alignItems:"center",padding:"11px 18px",borderBottom:`1px solid #F2F1EC`}}>
+              <span style={{fontFamily:"JetBrains Mono,monospace",fontSize:11,fontWeight:700,color:DARK}}>{s.codice||s.sistema||"—"}</span>
+              <div>
+                <div style={{fontSize:13,fontWeight:600,color:DARK}}>{s.nome||s.marca+" "+s.sistema}</div>
+                <div style={{fontSize:10,color:"#86868b"}}>{s.marca||s.fornitore||"—"}</div>
+              </div>
+              <span>{s.tipo?<span style={{fontSize:11,padding:"2px 7px",borderRadius:4,fontWeight:700,background:tbg,color:tfg}}>{s.tipo}</span>:"—"}</span>
+              <span style={{fontSize:12,color:DARK}}>{s.bautiefe?s.bautiefe+"mm":s.spessore?s.spessore+"mm":"—"}</span>
+              <span style={{fontSize:12,fontWeight:700,color:s.grMl?TEAL:RED}}>{s.grMl?s.grMl+" kg":"—"}</span>
+              <span style={{fontSize:12,fontWeight:700,color:s.qtaCassa?BLU:RED}}>{s.qtaCassa||"—"}</span>
+              <span style={{fontSize:11,color:"#86868b"}}>{s.ferramenta?.length?s.ferramenta.length+" cod.":"—"}</span>
+              <div style={{display:"flex",gap:4}}>
+                <div onClick={()=>openEdit(s)} style={{padding:"4px 9px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:BLU+"12",color:BLU}}>Modifica</div>
+                <div onClick={()=>del(s.id)} style={{padding:"4px 9px",borderRadius:6,fontSize:11,fontWeight:600,cursor:"pointer",background:RED+"12",color:RED}}>×</div>
+              </div>
+            </div>
+          );
+        })}
+        {filtered.length===0&&<div style={{padding:"36px",textAlign:"center",color:"#86868b",fontSize:13}}>Nessun profilo — importa un DXF o usa inserimento manuale</div>}
       </Sez>
 
-      {(modal==="new"||modal==="edit")&&(
-        <Modal title={modal==="new"?"Nuovo profilo":"Modifica profilo"} onClose={()=>setModal(null)}>
-          <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      {/* MODAL SCHEDA COMPLETA */}
+      {modal==="edit"&&(
+        <Modal title={form.codice||form.nome?"Modifica profilo":"Nuovo profilo"} onClose={()=>setModal(null)}>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
             {/* Identità */}
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Identità</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:10}}>Identità</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <div><LBL>Marca / Produttore</LBL><INP placeholder="Es. Aluplast" value={form.marca||""} onChange={(e:any)=>setForm((p:any)=>({...p,marca:e.target.value}))}/></div>
-                <div><LBL>Sistema / Linea</LBL><INP placeholder="Es. Ideal 4000" value={form.sistema||""} onChange={(e:any)=>setForm((p:any)=>({...p,sistema:e.target.value}))}/></div>
-                <div><LBL>Nome commerciale</LBL><INP placeholder="Es. Ideal 4000 Plus" value={form.nome||""} onChange={(e:any)=>setForm((p:any)=>({...p,nome:e.target.value}))}/></div>
+                <div><LBL>Codice DXF / fornitore</LBL><INP placeholder="es. 140x01" value={form.codice||""} onChange={(e:any)=>setForm((p:any)=>({...p,codice:e.target.value}))} style={{fontFamily:"JetBrains Mono,monospace",fontWeight:700}}/></div>
+                <div><LBL>Marca / Produttore</LBL><INP placeholder="Es. Kömmerling" value={form.marca||""} onChange={(e:any)=>setForm((p:any)=>({...p,marca:e.target.value}))}/></div>
+                <div><LBL>Sistema / Linea</LBL><INP placeholder="Es. IDEAL 4000" value={form.sistema||""} onChange={(e:any)=>setForm((p:any)=>({...p,sistema:e.target.value}))}/></div>
+                <div><LBL>Nome commerciale</LBL><INP placeholder="Es. Rahmen 70mm CL" value={form.nome||""} onChange={(e:any)=>setForm((p:any)=>({...p,nome:e.target.value}))}/></div>
                 <div><LBL>Materiale</LBL>
                   <SEL value={form.materiale||"PVC"} onChange={(e:any)=>setForm((p:any)=>({...p,materiale:e.target.value}))}>
-                    <option>PVC</option><option>Alluminio</option><option>Legno-Alluminio</option><option>Legno</option><option>Acciaio</option><option>Ferro</option><option>PVC-Legno</option>
+                    <option>PVC</option><option>Alluminio</option><option>Legno-Alluminio</option><option>Legno</option><option>Acciaio</option><option>Ferro</option>
+                  </SEL>
+                </div>
+                <div><LBL>Tipo elemento</LBL>
+                  <SEL value={form.tipo||"Rahmen"} onChange={(e:any)=>setForm((p:any)=>({...p,tipo:e.target.value}))}>
+                    <option>Rahmen</option><option>Flügel</option><option>Pfosten</option><option>Stulp</option>
                   </SEL>
                 </div>
               </div>
             </div>
+
+            {/* Dati produzione PVC — campo principale */}
+            <div style={{padding:"14px",background:"#F0FDF4",borderRadius:10,border:`2px solid ${TEAL}`}}>
+              <div style={{fontSize:11,fontWeight:800,color:TEAL,textTransform:"uppercase",letterSpacing:.7,marginBottom:10}}>Dati produzione PVC ★</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+                <div><LBL>Peso kg / metro lineare ★</LBL><INP type="number" placeholder="es. 1.350" value={form.grMl||""} onChange={(e:any)=>setForm((p:any)=>({...p,grMl:e.target.value}))} style={{border:`2px solid ${TEAL}`,fontWeight:700,fontSize:14}}/></div>
+                <div><LBL>Quantità per cassa ★</LBL><INP placeholder="es. 50ml / 6m / 10pz" value={form.qtaCassa||""} onChange={(e:any)=>setForm((p:any)=>({...p,qtaCassa:e.target.value}))} style={{border:`2px solid ${BLU}`,fontWeight:700}}/></div>
+                <div><LBL>Bautiefe (mm)</LBL><INP type="number" placeholder="70" value={form.bautiefe||""} onChange={(e:any)=>setForm((p:any)=>({...p,bautiefe:parseFloat(e.target.value)||0}))}/></div>
+                <div><LBL>N° camere</LBL><INP type="number" placeholder="5" value={form.camere||""} onChange={(e:any)=>setForm((p:any)=>({...p,camere:parseInt(e.target.value)||0}))}/></div>
+                <div><LBL>Spessore telaio (mm)</LBL><INP placeholder="70" value={form.spessore||""} onChange={(e:any)=>setForm((p:any)=>({...p,spessore:e.target.value}))}/></div>
+              </div>
+            </div>
+
             {/* Dati tecnici */}
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Dati tecnici</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:10}}>Dati tecnici</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-                {[
-                  {l:"Spessore telaio (mm)",k:"spessore",ph:"70"},
-                  {l:"Camere aria",k:"camere",ph:"6"},
-                  {l:"Uw (W/m²K)",k:"uw",ph:"1.1"},
-                  {l:"Uf (W/m²K)",k:"uf",ph:"1.3"},
-                  {l:"Rw (dB)",k:"rw",ph:"42"},
-                  {l:"Classe tenuta aria",k:"classeTenuta",ph:"4"},
-                  {l:"Classe tenuta acqua",k:"classeAcqua",ph:"E1350"},
-                  {l:"Classe resist. vento",k:"classeVento",ph:"C5"},
-                  {l:"Classe termica",k:"classe",ph:"A"},
-                ].map(f=>(
+                {[{l:"Uw (W/m²K)",k:"uw",ph:"1.1"},{l:"Uf (W/m²K)",k:"uf",ph:"1.3"},{l:"Rw (dB)",k:"rw",ph:"42"},{l:"Classe tenuta aria",k:"classeTenuta",ph:"4"},{l:"Classe tenuta acqua",k:"classeAcqua",ph:"E1350"},{l:"Classe resist. vento",k:"classeVento",ph:"C5"},{l:"Classe termica",k:"classe",ph:"A"},{l:"Certificazioni",k:"certificazioni",ph:"EN 14351-1, CE 0123"},].map(f=>(
                   <div key={f.k}><LBL>{f.l}</LBL><INP placeholder={f.ph} value={form[f.k]||""} onChange={(e:any)=>setForm((p:any)=>({...p,[f.k]:e.target.value}))}/></div>
                 ))}
               </div>
-              <div style={{marginTop:10}}><LBL>Certificazioni (EN, CE, ecc.)</LBL><INP placeholder="Es. EN 14351-1, CE 0123" value={form.certificazioni||""} onChange={(e:any)=>setForm((p:any)=>({...p,certificazioni:e.target.value}))}/></div>
             </div>
+
             {/* Prezzi */}
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Prezzi</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:10}}>Prezzi</div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-                <div><LBL>€ / mq base</LBL><INP type="number" placeholder="0" value={form.euroMq||""} onChange={(e:any)=>setForm((p:any)=>({...p,euroMq:parseFloat(e.target.value)||0}))}/></div>
+                <div><LBL>€ / ml base</LBL><INP type="number" placeholder="0" value={form.euroMl||form.euroMq||""} onChange={(e:any)=>setForm((p:any)=>({...p,euroMl:parseFloat(e.target.value)||0}))}/></div>
                 <div><LBL>Sovrapprezzo RAL %</LBL><INP type="number" placeholder="0" value={form.sovRAL||""} onChange={(e:any)=>setForm((p:any)=>({...p,sovRAL:parseFloat(e.target.value)||0}))}/></div>
                 <div><LBL>Sovrapprezzo legno %</LBL><INP type="number" placeholder="0" value={form.sovLegno||""} onChange={(e:any)=>setForm((p:any)=>({...p,sovLegno:parseFloat(e.target.value)||0}))}/></div>
-                <div><LBL>Minimo fatturazione mq</LBL><INP type="number" step="0.1" placeholder="1.5" value={form.minMq||""} onChange={(e:any)=>setForm((p:any)=>({...p,minMq:parseFloat(e.target.value)||0}))}/></div>
                 <div><LBL>Sconto max %</LBL><INP type="number" placeholder="20" value={form.scontoMax||""} onChange={(e:any)=>setForm((p:any)=>({...p,scontoMax:parseFloat(e.target.value)||0}))}/></div>
                 <div><LBL>Margine target %</LBL><INP type="number" placeholder="35" value={form.margineTarget||""} onChange={(e:any)=>setForm((p:any)=>({...p,margineTarget:parseFloat(e.target.value)||0}))}/></div>
               </div>
             </div>
+
             {/* Applicazioni */}
             <div style={{padding:"14px",background:"#F8F7F2",borderRadius:10,border:`1px solid #E5E3DC`}}>
-              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:12}}>Applicazioni</div>
+              <div style={{fontSize:11,fontWeight:800,color:"#86868b",textTransform:"uppercase",letterSpacing:.7,marginBottom:10}}>Applicazioni</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <div><LBL>Tipologie compatibili</LBL><INP placeholder="Finestra, Portafinestra, Scorrevole..." value={form.tipologie||""} onChange={(e:any)=>setForm((p:any)=>({...p,tipologie:e.target.value}))}/></div>
-                <div><LBL>Sottosistemi</LBL><INP placeholder="Es. Rehau, Schüco 70, 86 AD" value={form.sottosistemi||""} onChange={(e:any)=>setForm((p:any)=>({...p,sottosistemi:e.target.value}))}/></div>
-                <div><LBL>Altezza max (mm)</LBL><INP type="number" placeholder="2500" value={form.hMax||""} onChange={(e:any)=>setForm((p:any)=>({...p,hMax:e.target.value}))}/></div>
-                <div><LBL>Larghezza max (mm)</LBL><INP type="number" placeholder="3000" value={form.lMax||""} onChange={(e:any)=>setForm((p:any)=>({...p,lMax:e.target.value}))}/></div>
+                <div><LBL>Sottosistemi (CL/SL/RL)</LBL><INP placeholder="Classic-line, Soft-line, Round-line" value={form.sottosistemi||""} onChange={(e:any)=>setForm((p:any)=>({...p,sottosistemi:e.target.value}))}/></div>
               </div>
             </div>
+
+            {/* Quote layer 15 */}
+            {form.quote?.length>0&&(
+              <div>
+                <LBL>Quote costruttive layer 15 (mm) — estratte da DXF</LBL>
+                <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:4}}>
+                  {form.quote.map((q:number,i:number)=>(
+                    <span key={i} style={{padding:"3px 9px",borderRadius:5,background:"#F2F1EC",border:"1px solid #E5E3DC",fontSize:12,fontFamily:"JetBrains Mono,monospace",fontWeight:700,color:DARK}}>{q}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Codici ferramenta */}
+            {form.ferramenta?.length>0&&(
+              <div>
+                <LBL>Codici ferramenta ({form.ferramenta.length}) — estratti da DXF layer 15</LBL>
+                <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:4}}>
+                  {form.ferramenta.map((f:string,i:number)=>(
+                    <span key={i} style={{padding:"3px 9px",borderRadius:5,background:"#FEF3C7",border:`1px solid ${AMB}`,fontSize:11,fontFamily:"JetBrains Mono,monospace",fontWeight:700,color:"#92400E"}}>{f}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Coordinate nodo */}
+            {form.coords?.length>0&&(
+              <div>
+                <LBL>Coordinate nodo ({form.coords.length} punti) — sezione trasversale per rendering</LBL>
+                <div style={{background:"#1A1A1C",borderRadius:8,padding:"10px 14px",maxHeight:72,overflowY:"auto",marginTop:4}}>
+                  <span style={{fontSize:10,fontFamily:"JetBrains Mono,monospace",color:AMB,lineHeight:"1.8"}}>
+                    {form.coords.slice(0,20).map((c:any,i:number)=>`(${c.x.toFixed(1)},${c.y.toFixed(1)})`).join("  ")}{form.coords.length>20?` …+${form.coords.length-20} pt`:""}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Immagine */}
+            {form.imgBase64&&<div><LBL>Immagine profilo</LBL><img src={form.imgBase64} alt="profilo" style={{maxHeight:100,border:"1px solid #E5E3DC",borderRadius:8,display:"block",marginTop:4}}/></div>}
+
             {/* Note */}
             <div>
               <LBL>Note tecniche / commerciali</LBL>
-              <textarea value={form.notetech||""} onChange={(e:any)=>setForm((p:any)=>({...p,notetech:e.target.value}))} placeholder="Note interne, particolarità, condizioni fornitore..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:72,resize:"vertical"}}/>
+              <textarea value={form.notetech||""} onChange={(e:any)=>setForm((p:any)=>({...p,notetech:e.target.value}))} placeholder="Note interne, particolarità, condizioni fornitore..." style={{width:"100%",padding:"9px 12px",borderRadius:8,border:`1px solid #E5E3DC`,fontSize:13,fontFamily:FF,background:"#F8F7F2",color:DARK,outline:"none",boxSizing:"border-box",minHeight:64,resize:"vertical"}}/>
             </div>
+
             {/* Attivo */}
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div onClick={()=>setForm((p:any)=>({...p,attivo:!p.attivo}))} style={{width:38,height:22,borderRadius:11,background:form.attivo!==false?TEAL:"#E5E3DC",cursor:"pointer",position:"relative",transition:"background .2s",flexShrink:0}}>
@@ -227,7 +349,7 @@ function ArchivioProfili({sistemiDB,setSistemiDB,coloriDB}:any){
               </div>
               <span style={{fontSize:13,color:DARK}}>Profilo attivo nel configuratore</span>
             </div>
-            {/* Salva */}
+
             <div style={{display:"flex",gap:10,justifyContent:"flex-end",paddingTop:8,borderTop:`1px solid #E5E3DC`}}>
               <div onClick={()=>setModal(null)} style={{padding:"9px 18px",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",border:`1px solid #E5E3DC`,color:"#86868b"}}>Annulla</div>
               <div onClick={save} style={{padding:"9px 22px",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",background:TEAL,color:"#fff"}}>Salva profilo</div>
