@@ -3,7 +3,8 @@
 // MASTRO — DesktopSettings v2
 // Sidebar nav + archivi completi: Profili, Vetri, Accessori, Colori
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useMastro } from "./MastroContext";
 import { FF, FM } from "./mastro-constants";
 
@@ -173,10 +174,10 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
   const xs=allPts.map((c:any)=>c.x),ys=allPts.map((c:any)=>c.y);
   const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
   const rX=maxX-minX||1,rY=maxY-minY||1;
-  const TOOLBAR=38,STATUSBAR=26,PAD=20,QPAD=36;
+  const TOOLBAR=38,STATUSBAR=26,PAD=12,QPAD=30;
   const svgH=H-TOOLBAR-STATUSBAR;
   const vW=W-PAD*2-QPAD,vH=svgH-PAD*2-QPAD;
-  const baseScale=Math.min(vW/rX,vH/rY);
+  const baseScale=Math.min(vW/rX,vH/rY)*0.92;
   const sc=baseScale*zoom;
   const offX=PAD+QPAD+(vW-rX*sc)/2+pan.x*sc;
   const offY=PAD+(vH-rY*sc)/2+pan.y*sc;
@@ -476,7 +477,15 @@ function DXFViewer({polylines,dxfText,width=460,height=420,onUpdatePolylines}:an
     </div>
   );
 
-  if(fullscreen)return inner;
+  if(fullscreen){
+    if(typeof document==="undefined")return inner;
+    return createPortal(
+      <div style={{position:"fixed",inset:0,zIndex:99999,background:"rgba(0,0,0,0.95)",display:"flex",flexDirection:"column"}}>
+        {inner}
+      </div>,
+      document.body
+    );
+  }
   return inner;
 }
 
