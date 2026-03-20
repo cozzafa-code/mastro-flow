@@ -110,7 +110,14 @@ export default function ConfiguratoreCommessa({commessa, onClose}:{commessa:any,
   const [tab2,setTab2]=useState<"base"|"tecnica"|"accessori"|"note">("base");
   const [saved,setSaved]=useState(false);
   const [showBreakdown,setShowBreakdown]=useState(false);
+  const [cadStats,setCadStats]=useState<any>({});
   const vano=vani[selIdx]||vani[0];
+  
+  // Sync apertura → config CAD
+  const cadConfig = vano.disegno?.config || {};
+  const cadVetriConfig = vano.disegno?.vetriConfig || {};
+  const cadMontanti = vano.disegno?.montanti || [{id:"m1", x: (vano.misure?.lCentro||1200)/2}];
+  const cadTraversi = vano.disegno?.traversi || [];
   const sistemi=(sistemiDB||[]).map((s:any)=>s.sistema||s.nome).filter(Boolean);
   const vetri=(vetriDB||[]).map((v:any)=>v.nome||v.code).filter(Boolean);
 
@@ -434,19 +441,21 @@ export default function ConfiguratoreCommessa({commessa, onClose}:{commessa:any,
 
         {/* COL 3 — PREVIEW + TECNICA */}
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-          {/* DisegnoTecnico CAD — piena colonna centrale */}
+          {/* DisegnoTecnico CAD — piena colonna */}
           <div style={{flex:1,overflow:"hidden",minHeight:0,display:"flex",flexDirection:"column"}}>
             <DisegnoTecnico
               vanoNome={vano.nome || "Vano"}
               realW={vano.misure?.lCentro && vano.misure.lCentro > 0 ? vano.misure.lCentro : 1500}
               realH={vano.misure?.hCentro && vano.misure.hCentro > 0 ? vano.misure.hCentro : 2100}
+              montanti={cadMontanti}
+              traversi={cadTraversi}
+              config={cadConfig}
+              vetriConfig={cadVetriConfig}
               onUpdate={(d:any) => {
                 upd("disegno", d);
                 if (d.L && d.L > 0) updM("lCentro", d.L);
                 if (d.H && d.H > 0) updM("hCentro", d.H);
-                if (d.stats) {
-                  upd("cadStats", d.stats);
-                }
+                if (d.stats) setCadStats(d.stats);
               }}
               onClose={onClose}
             />
@@ -463,12 +472,6 @@ export default function ConfiguratoreCommessa({commessa, onClose}:{commessa:any,
                   {l:"Altezza",v:vano.misure?.hCentro?`${vano.misure.hCentro} mm`:"—"},
                   {l:"Sistema",v:vano.sistema||"—"},
                   {l:"Vetro",v:vano.vetro||"—"},
-                  ...(vano.cadStats ? [
-                    {l:"Peso vetri",v:`${vano.cadStats.peso||0} kg`},
-                    {l:"Sfrido",v:`${vano.cadStats.sfrido||0}%`},
-                    {l:"Ore produzione",v:`${vano.cadStats.ore||0}h`},
-                    {l:"Barre 6m",v:`${vano.cadStats.barre||0} pz`},
-                  ] : []),
                 ].map((d,i)=>(
                   <div key={i} style={{background:"#F8FAFC",borderRadius:8,padding:"7px 10px"}}>
                     <div style={{fontSize:9,color:T.sub}}>{d.l}</div>
@@ -476,15 +479,40 @@ export default function ConfiguratoreCommessa({commessa, onClose}:{commessa:any,
                   </div>
                 ))}
               </div>
-              {/* U-value */}
+              {/* U-value + CAD Stats */}
               {uw>0&&(
-                <div style={{padding:"10px 14px",borderRadius:10,background:uwC.color+"10",border:`1.5px solid ${uwC.color}25`}}>
+                <div style={{padding:"10px 14px",borderRadius:10,background:uwC.color+"10",border:`1.5px solid ${uwC.color}25`,marginBottom:8}}>
                   <div style={{fontSize:9,color:T.sub,marginBottom:2}}>Trasmittanza termica Uw — EN 14351 — CAM 2026</div>
                   <div style={{display:"flex",alignItems:"baseline",gap:8}}>
-                    <span style={{fontSize:22,fontWeight:900,color:uwC.color,fontFamily:FM}}>{uw}</span>
+                    <span style={{fontSize:22,fontWeight:900,color:uwC.color,fontFamily:FM}}>{cadStats?.uw||uw}</span>
                     <span style={{fontSize:11,color:T.sub}}>W/m²K</span>
                     <span style={{marginLeft:"auto",fontSize:11,fontWeight:700,color:uwC.color,background:uwC.color+"15",padding:"2px 8px",borderRadius:6}}>{uwC.label}</span>
                   </div>
+                </div>
+              )}
+              {cadStats?.peso>0&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:8}}>
+                  {[
+                    {l:"Peso vetri",v:`${cadStats.peso} kg`},
+                    {l:"Sfrido",v:`${cadStats.sfrido}%`},
+                    {l:"Ore produzione",v:`${cadStats.ore}h`},
+                    {l:"Barre 6m",v:`${cadStats.barre} pz`},
+                  ].map((d,i)=>(
+                    <div key={i} style={{background:"#F8FAFC",borderRadius:8,padding:"6px 10px"}}>
+                      <div style={{fontSize:9,color:T.sub}}>{d.l}</div>
+                      <div style={{fontSize:12,fontWeight:700,color:T.text}}>{d.v}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {cadStats?.condensa&&(
+                <div style={{padding:"8px 12px",borderRadius:8,background:"#DC444410",border:"1.5px solid #DC4444",marginBottom:6,fontSize:11,fontWeight:700,color:"#DC4444"}}>
+                  ⚠ Rischio Muffa — Usare vetro Warm Edge
+                </div>
+              )}
+              {cadStats?.critico&&(
+                <div style={{padding:"8px 12px",borderRadius:8,background:"#D0800810",border:"1.5px solid #D08008",fontSize:11,fontWeight:700,color:"#D08008"}}>
+                  ⚠ Limite Statico Superato — Verificare con tecnico
                 </div>
               )}
             </div>
