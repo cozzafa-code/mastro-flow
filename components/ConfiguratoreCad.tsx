@@ -8,7 +8,7 @@
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import { RendererSVG } from "./renderer_svg";
 import {
-  calcolaGriglia, addMontante, addTraverso,
+  calcolaGriglia, calcolaSubGriglia, addMontante, addTraverso,
   moveMontante, moveTraverso,
   addSubMontante, addSubTraverso, removeSubMontante, removeSubTraverso,
   suggerisciPosMontante, suggerisciPosTraverso, suggerisciSubPos,
@@ -81,27 +81,11 @@ function buildInfisso(L=1500, H=2100, profilo=PROFILO_DEFAULT) {
   };
 }
 
-function ricalcola(inf:any, prevL?:number, prevH?:number) {
+function ricalcola(inf:any) {
   const sp = inf.profilo.spessoreTelaio;
-  const L = inf.larghezzaVano;
-  const H = inf.altezzaVano;
-
-  // Scala montanti e traversi proporzionalmente se le dimensioni sono cambiate
-  let montanti = inf.montanti;
-  let traversi = inf.traversi;
-  if (prevL && prevL !== L && prevL > 0) {
-    montanti = montanti.map((m:any) => ({
-      ...m, xMm: Math.round(Math.max(sp*2, Math.min(L-sp*2, m.xMm * L / prevL)))
-    }));
-  }
-  if (prevH && prevH !== H && prevH > 0) {
-    traversi = traversi.map((t:any) => ({
-      ...t, yMm: Math.round(Math.max(sp*2, Math.min(H-sp*2, t.yMm * H / prevH)))
-    }));
-  }
-
-  const griglia = calcolaGriglia(L, H, montanti, traversi, { spessoreTelaio:sp }, inf.griglia.celle);
-  return { ...inf, montanti, traversi, griglia, sistema:{ ...inf.sistema, spessoreTelaio:sp } };
+  const griglia = calcolaGriglia(inf.larghezzaVano, inf.altezzaVano,
+    inf.montanti, inf.traversi, { spessoreTelaio:sp }, inf.griglia.celle);
+  return { ...inf, griglia, sistema:{ ...inf.sistema, spessoreTelaio:sp } };
 }
 
 // Trova cella per id (anche nested)
@@ -129,11 +113,7 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
   const [tabRight, setTabRight] = useState("risultati");
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const upd = (partial:any) => setInf((prev:any) => {
-    const prevL = prev.larghezzaVano;
-    const prevH = prev.altezzaVano;
-    return ricalcola({...prev,...partial}, prevL, prevH);
-  });
+  const upd = (partial:any) => setInf((prev:any) => ricalcola({...prev,...partial}));
 
   const updCella = (id:string, partial:any) => setInf((prev:any) => ({
     ...prev,
@@ -285,9 +265,7 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
               {[["L mm",inf.larghezzaVano,(v:number)=>upd({larghezzaVano:v})],["H mm",inf.altezzaVano,(v:number)=>upd({altezzaVano:v})]].map(([lbl,val,fn]:any)=>(
                 <div key={lbl} style={{flex:1}}>
                   <div style={{fontSize:9,color:SUB,marginBottom:2}}>{lbl}</div>
-                  <input type="number" defaultValue={val} key={val} style={INP}
-                    onBlur={e=>{const v=parseInt(e.target.value);if(v>200)fn(v);}}
-                    onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt((e.target as HTMLInputElement).value);if(v>200)fn(v);}}}/>
+                  <input type="number" defaultValue={val} key={val} style={INP} onBlur={e=>{const v=parseInt(e.target.value);if(v>200)fn(v);}} onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt((e.target as HTMLInputElement).value);if(v>200)fn(v);}}}/>
                 </div>
               ))}
             </div>
