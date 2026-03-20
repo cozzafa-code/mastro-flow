@@ -1,442 +1,489 @@
 "use client";
 // @ts-nocheck
-// ═══════════════════════════════════════════════════════════════
-// MASTRO — DisegnoTecnico v5
-// Legge profili reali da Supabase (profili_sezioni + sistemi)
-// Un solo renderer, un solo archivio
-// ═══════════════════════════════════════════════════════════════
-
-import React, { useState, useCallback, useEffect } from "react";
+// MASTRO — DisegnoTecnico v6
+// Base GPT + integrazione Supabase profili MASTRO
+// Sfondo bianco · linee nere · angoli 45° · stile tecnico
+import React, { useState, useRef, useCallback, useLayoutEffect, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 const C = {
-  bg: "#000000", profilo: "#FFFFFF", quota: "#CCCC00",
-  tratt: "#FFFFFF", maniglia: "#CCCCCC",
-  vetroFill: "#003344", vetroTratt: "#005566",
-  labelVetro: "#0099BB", label: "#FFFFFF",
-  toolBg: "#0F0F1A", toolBdr: "#222222",
-  panelBg: "#0D0D18",
+  bg:"#FFFFFF", telaio:"#000000", telaio_fill:"#E8E8E8",
+  anta:"#000000", anta_fill:"#F4F4F4", riporto:"#000000",
+  fermavetro:"#333333", quota:"#0055CC", tratt:"#444444",
+  vetroFill:"#C8DFF0", vetroTratt:"#90B8D8", sel:"#0077FF", drag:"#009944",
+};
+const LW = { telaio:1.2, anta:1.0, fv:0.7, quota:0.6, tratt:0.7 };
+
+const DEFAULT_PROFILES = {
+  tel_top:"14XX07+R", tel_bottom:"14XX07+R", tel_left:"14XX07+R", tel_right:"14XX07+R",
+  ant_top:"14XX22+R", ant_bottom:"14XX22+R", ant_left:"14XX22+R", ant_right:"14XX22+R",
+  riporto:"RP-16", fermavetro:"FV-18", vetro:"V4T-16Ar-4TSG",
 };
 
-export type TipApertura =
-  | "fisso" | "1anta_ar" | "2ante_ar" | "1anta_ab" | "2ante_ab"
-  | "balcone_1ar" | "balcone_2ar" | "wasistas"
-  | "scorrevole_2" | "ribalta_scorre";
-
 const TIPOLOGIE = [
-  { id: "fisso",          label: "Fisso",     nAnte: 0 },
-  { id: "1anta_ar",       label: "1A A-R",    nAnte: 1 },
-  { id: "2ante_ar",       label: "2A A-R",    nAnte: 2 },
-  { id: "1anta_ab",       label: "1A A-B",    nAnte: 1 },
-  { id: "2ante_ab",       label: "2A A-B",    nAnte: 2 },
-  { id: "balcone_1ar",    label: "Balc. 1A",  nAnte: 1 },
-  { id: "balcone_2ar",    label: "Balc. 2A",  nAnte: 2 },
-  { id: "wasistas",       label: "Wasistas",  nAnte: 1 },
-  { id: "scorrevole_2",   label: "Scorr. 2A", nAnte: 2 },
-  { id: "ribalta_scorre", label: "Rib+Sc.",   nAnte: 2 },
+  {id:"fisso",label:"Fisso",nAnte:0},
+  {id:"1anta_ar",label:"1A A-R",nAnte:1},
+  {id:"2ante_ar",label:"2A A-R",nAnte:2},
+  {id:"1anta_ab",label:"1A A-B",nAnte:1},
+  {id:"wasistas",label:"Wasistas",nAnte:1},
+  {id:"scorrevole_2",label:"Scorr.2A",nAnte:2},
 ];
 
-interface Props {
-  vanoId?: string; vanoNome?: string; vanoDisegno?: any;
-  realW: number; realH: number;
-  onUpdate?: (d: any) => void; onUpdateField?: (f: string, v: any) => void;
-  onClose?: () => void; T?: any; sistemiDB?: any[];
-}
-
-// ── Hook profili da Supabase ───────────────────────────────────
-function useProfiliSezioni(sistema: string) {
-  const [profili, setProfili] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(false);
+function useProfiliDB(sistema) {
+  const [profileList, setProfileList] = useState([
+    "14XX07+R","14XX22+R","14XX05+R","140X07+R","140X22+R",
+    "040x02","040x22","FV-18","FV-22","RP-12","RP-16",
+    "V4T-16Ar-4TSG","V6T-20Ar-6TSG","V4-12A-4",
+  ]);
+  const [bautiefe, setBautiefe] = useState(70);
   useEffect(() => {
-    if (!sistema) { setProfili({}); return; }
-    setLoading(true);
-    supabase
-      .from("profili_sezioni")
-      .select("*")
-      .eq("sistema", sistema)
-      .eq("attivo", true)
+    if (!sistema) return;
+    supabase.from("profili_sezioni").select("codice,larghezza_mm,tipo")
+      .eq("sistema", sistema).eq("attivo", true)
       .then(({ data }) => {
-        const byTipo: Record<string, any> = {};
-        (data || []).forEach(p => { byTipo[p.tipo] = p; });
-        setProfili(byTipo);
-        setLoading(false);
+        if (!data || !data.length) return;
+        const c = data.map(p => p.codice).filter(Boolean);
+        if (c.length) setProfileList(c);
+        const t = data.find(p => p.tipo === "telaio");
+        if (t?.larghezza_mm) setBautiefe(t.larghezza_mm);
       });
   }, [sistema]);
-  return { profili, loading };
+  return { profileList, bautiefe };
 }
 
-// ── VetroHatch ─────────────────────────────────────────────────
-function VetroHatch({ x, y, w, h, clipId }: any) {
-  const step = 10; const lines = [];
-  for (let i = -Math.ceil(h / step); i <= Math.ceil(w / step) + 2; i++) {
-    lines.push(<line key={i} x1={i * step} y1={h} x2={i * step + h} y2={0}
-      stroke={C.vetroTratt} strokeWidth={0.7} opacity={0.45} />);
-  }
+function cornerLines(ox,oy,W,H,sp,stroke,sw) {
+  return [
+    <line key="tl" x1={ox} y1={oy+sp} x2={ox+sp} y2={oy} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>,
+    <line key="tr" x1={ox+W-sp} y1={oy} x2={ox+W} y2={oy+sp} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>,
+    <line key="bl" x1={ox} y1={oy+H-sp} x2={ox+sp} y2={oy+H} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>,
+    <line key="br" x1={ox+W-sp} y1={oy+H} x2={ox+W} y2={oy+H-sp} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>,
+  ];
+}
+
+function cornerLinesAnta(ox,oy,W,H,sp,ai,nCols,stroke,sw) {
+  const lines = [];
+  const tl=nCols===1||ai===0, tr=nCols===1||ai===nCols-1;
+  const bl=nCols===1||ai===0, br=nCols===1||ai===nCols-1;
+  if(tl) lines.push(<line key="tl" x1={ox} y1={oy+sp} x2={ox+sp} y2={oy} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>);
+  if(tr) lines.push(<line key="tr" x1={ox+W-sp} y1={oy} x2={ox+W} y2={oy+sp} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>);
+  if(bl) lines.push(<line key="bl" x1={ox} y1={oy+H-sp} x2={ox+sp} y2={oy+H} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>);
+  if(br) lines.push(<line key="br" x1={ox+W-sp} y1={oy+H} x2={ox+W} y2={oy+H-sp} stroke={stroke} strokeWidth={sw} pointerEvents="none"/>);
+  return lines;
+}
+
+function VetroHatch({x,y,w,h,id}) {
+  if(w<=0||h<=0) return null;
+  const step=12, lines=[];
+  for(let i=-Math.ceil(h/step);i<=Math.ceil(w/step)+2;i++)
+    lines.push(<line key={i} x1={i*step} y1={h} x2={i*step+h} y2={0} stroke={C.vetroTratt} strokeWidth={0.6} opacity={0.5}/>);
   return (
     <g>
-      <defs><clipPath id={clipId}><rect x={0} y={0} width={w} height={h} /></clipPath></defs>
-      <g transform={`translate(${x},${y})`} clipPath={`url(#${clipId})`}>
-        <rect x={0} y={0} width={w} height={h} fill={C.vetroFill} />
+      <defs><clipPath id={id}><rect x={0} y={0} width={w} height={h}/></clipPath></defs>
+      <g transform={`translate(${x},${y})`} clipPath={`url(#${id})`}>
+        <rect x={0} y={0} width={w} height={h} fill={C.vetroFill}/>
         {lines}
       </g>
     </g>
   );
 }
 
-// ── ProfiloRect: rettangolo profilo con svg_path reale o fallback ──
-function ProfiloRect({ x, y, w, h, profilo, rotated = false, uid }: any) {
-  const codice = profilo?.codice || "";
-  const hasSvg = profilo?.svg_path && profilo.svg_path.length > 10;
-  const lx = x + w / 2; const ly = y + h / 2;
-  const fs = Math.max(5, Math.min(8, Math.min(w, h) * 0.55));
+function Tratteggio({tipo,ax,ay,aw,ah,isSx,nAnte,spA}) {
+  const isAR=tipo.includes("ar"), isAB=tipo.includes("ab");
+  const isWas=tipo==="wasistas", isSc=tipo==="scorrevole_2";
+  const pivX=nAnte>=2?(isSx?ax:ax+aw):ax;
+  const oppX=nAnte>=2?(isSx?ax+aw:ax):ax+aw;
+  const g=(ch)=><g stroke={C.tratt} strokeWidth={LW.tratt} strokeDasharray="5,3" opacity={0.7} fill="none">{ch}</g>;
+  if(isSc) return (
+    <g fill="none">
+      <line x1={ax+(isSx?aw*0.7:aw*0.3)} y1={ay+ah/2} x2={ax+(isSx?aw*0.2:aw*0.8)} y2={ay+ah/2} stroke={C.quota} strokeWidth={1.2}/>
+      <polygon points={`${ax+(isSx?aw*0.2:aw*0.8)},${ay+ah/2-4} ${ax+(isSx?aw*0.14:aw*0.86)},${ay+ah/2} ${ax+(isSx?aw*0.2:aw*0.8)},${ay+ah/2+4}`} fill={C.quota} stroke="none"/>
+    </g>
+  );
+  if(isAR) return g(<>
+    <line x1={pivX} y1={ay} x2={pivX} y2={ay+ah} strokeDasharray="none" strokeWidth={0.7} opacity={0.4}/>
+    <line x1={pivX} y1={ay} x2={oppX} y2={ay+ah/2}/>
+    <line x1={pivX} y1={ay+ah} x2={oppX} y2={ay+ah/2}/>
+    <path d={`M${ax} ${ay+ah} A${aw/2} ${Math.min(aw*0.36,48)} 0 0 ${isSx?0:1} ${ax+aw} ${ay+ah}`}/>
+  </>);
+  if(isAB) return g(<>
+    <line x1={ax} y1={ay+ah} x2={ax+aw} y2={ay+ah} strokeDasharray="none" strokeWidth={0.7} opacity={0.4}/>
+    <line x1={ax} y1={ay+ah} x2={ax+aw/2} y2={ay}/>
+    <line x1={ax+aw} y1={ay+ah} x2={ax+aw/2} y2={ay}/>
+    <path d={`M${pivX} ${ay} A${ah*0.38} ${ah*0.38} 0 0 ${isSx?1:0} ${pivX} ${ay+ah}`}/>
+  </>);
+  if(isWas) return g(<>
+    <line x1={ax+spA} y1={ay+ah-spA} x2={ax+aw-spA} y2={ay+ah-spA} strokeDasharray="none" strokeWidth={0.7} opacity={0.4}/>
+    <line x1={ax} y1={ay+ah-spA} x2={ax+aw/2} y2={ay}/>
+    <line x1={ax+aw} y1={ay+ah-spA} x2={ax+aw/2} y2={ay}/>
+    <path d={`M${ax} ${ay+ah-spA} A${aw*0.52} ${Math.min(aw*0.38,46)} 0 0 1 ${ax+aw} ${ay+ah-spA}`}/>
+  </>);
+  return null;
+}
 
-  if (hasSvg) {
-    const [, , vw = 100, vh = 100] = (profilo.svg_viewbox || "0 0 100 100").split(" ").map(Number);
-    const sx = w / vw; const sy = h / vh;
-    const tf = rotated
-      ? `translate(${x},${y + h}) rotate(-90) scale(${sy},${sx})`
-      : `translate(${x},${y}) scale(${sx},${sy})`;
-    return (
-      <g>
-        <defs><clipPath id={`c-${uid}`}><rect x={x} y={y} width={w} height={h} /></clipPath></defs>
-        <g transform={tf} clipPath={`url(#c-${uid})`}>
-          <path d={profilo.svg_path} fill="#1A1A1A" stroke={C.profilo} strokeWidth={0.6} />
-        </g>
-        {codice && <text x={lx} y={ly + 3} textAnchor="middle" fontSize={fs}
-          fill={C.label} fontFamily="monospace"
-          transform={rotated ? `rotate(-90,${lx},${ly})` : undefined}>{codice}</text>}
-      </g>
-    );
-  }
-
+function ManigliaDK({mx,my,verso="dx"}) {
+  const rw=6,rh=44,rr=3,gw=10,gh=28,gr=5,llen=24,lh=7,lr=3.5;
+  const lx=verso==="dx"?mx+gw/2:mx-gw/2-llen;
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} fill="#141414" stroke={C.profilo} strokeWidth={0.9} />
-      {codice && <text x={lx} y={ly + 3} textAnchor="middle" fontSize={fs}
-        fill={C.label} fontFamily="monospace"
-        transform={rotated ? `rotate(-90,${lx},${ly})` : undefined}>{codice}</text>}
+      <rect x={mx-rw/2} y={my-rh/2} width={rw} height={rh} rx={rr} fill="#CCCCCC" stroke="#333" strokeWidth={0.8}/>
+      <circle cx={mx} cy={my-rh/2+6} r={1.5} fill="#555"/>
+      <circle cx={mx} cy={my+rh/2-6} r={1.5} fill="#555"/>
+      <rect x={mx-gw/2} y={my-gh/2} width={gw} height={gh} rx={gr} fill="#AAAAAA" stroke="#333" strokeWidth={1}/>
+      <rect x={lx} y={my-lh/2} width={llen} height={lh} rx={lr} fill="#AAAAAA" stroke="#333" strokeWidth={0.8}/>
+      <rect x={mx-2.5} y={my-2.5} width={5} height={5} rx={0.8} fill="#666" stroke="#333" strokeWidth={0.5}/>
     </g>
   );
 }
 
-// ── SVG Disegno ────────────────────────────────────────────────
-function SvgDisegno({ tipo, L, H, nMontanti, nTraversi, showQuote, profili, bautiefe, w, h }: any) {
-  const uid = `dt${L}${H}${tipo}`;
-  const QH = 32; const QL = 48; const PAD = 18;
-  const fw = w - PAD * 2 - QL; const fh = h - PAD * 2 - QH - 20;
-  const ox = PAD + QL; const oy = PAD + QH;
-  const sc = Math.min(fw / L, fh / H);
-  const SW = L * sc; const SH = H * sc;
-  const cx = ox + (fw - SW) / 2; const cy = oy + (fh - SH) / 2;
-
-  // Spessori reali dall'archivio, fallback bautiefe
-  const spT = Math.max(7, (profili.telaio?.larghezza_mm || bautiefe) * sc);
-  const spA = Math.max(6, (profili.anta?.larghezza_mm || Math.max(bautiefe - 5, 60)) * sc);
-
-  const t = TIPOLOGIE.find(x => x.id === tipo);
-  const nAnte = t?.nAnte ?? 1;
-  const isAR = tipo.includes("ar"); const isAB = tipo.includes("ab");
-  const isWas = tipo === "wasistas"; const isFis = tipo === "fisso";
-  const isSc = tipo === "scorrevole_2";
-
-  const monPx: number[] = nAnte === 2 && nMontanti === 0
-    ? [SW / 2]
-    : Array.from({ length: nMontanti }, (_, i) => SW * (i + 1) / (nMontanti + 1));
-  const travPx = Array.from({ length: nTraversi }, (_, i) => SH * (i + 1) / (nTraversi + 1));
-  const cols: number[] = monPx.length > 0
-    ? (() => { const r: number[] = []; let p = 0; for (const m of monPx) { r.push(m - p); p = m; } r.push(SW - p); return r; })()
-    : [SW];
-
-  const codVet = profili.vetro?.codice || "Vetro";
-
-  const renderAnta = (ai: number, ax: number, ay: number, aw: number, ah: number) => {
-    const isSx = ai === 0;
-    const vx = ax + spA; const vy = ay + spA;
-    const vw = aw - spA * 2; const vh = ah - spA * 2;
-    if (vw <= 0 || vh <= 0) return null;
-    const clipId = `${uid}-v${ai}`;
-    const pivX = nAnte >= 2 ? (isSx ? ax + aw : ax) : ax;
-    return (
-      <g key={ai}>
-        <VetroHatch x={vx} y={vy} w={vw} h={vh} clipId={clipId} />
-        <text x={vx + vw / 2} y={vy + vh - 8} textAnchor="middle"
-          fontSize={Math.max(7, Math.min(11, vw / 10))} fill={C.labelVetro} fontFamily="monospace">{codVet}</text>
-        <ProfiloRect x={ax}            y={ay} w={spA} h={ah} profilo={profili.anta} rotated uid={`${uid}-a${ai}sx`} />
-        <ProfiloRect x={ax + aw - spA} y={ay} w={spA} h={ah} profilo={profili.anta} rotated uid={`${uid}-a${ai}dx`} />
-        <ProfiloRect x={ax} y={ay}            w={aw} h={spA} profilo={profili.anta} uid={`${uid}-a${ai}tp`} />
-        <ProfiloRect x={ax} y={ay + ah - spA} w={aw} h={spA} profilo={profili.anta} uid={`${uid}-a${ai}bt`} />
-        <rect x={ax} y={ay} width={aw} height={ah} fill="none" stroke={C.profilo} strokeWidth={1.2}
-          strokeDasharray={isSc ? "6,3" : "none"} />
-        {isAR && !isSc && !isWas && (
-          <g stroke={C.tratt} strokeWidth={0.65} strokeDasharray="4,2.5" opacity={0.85}>
-            <line x1={pivX} y1={ay} x2={isSx ? ax : ax + aw} y2={ay + ah / 2} />
-            <line x1={pivX} y1={ay + ah} x2={isSx ? ax : ax + aw} y2={ay + ah / 2} />
-            <line x1={isSx ? ax : ax + aw} y1={ay} x2={isSx ? ax : ax + aw} y2={ay + ah} />
-            <path d={`M ${ax} ${ay + ah} Q ${ax + aw / 2} ${ay + ah + Math.min(aw * 0.32, 60)} ${ax + aw} ${ay + ah}`} fill="none" />
-            <line x1={ax} y1={ay + ah} x2={ax + aw / 2} y2={ay + ah + Math.min(aw * 0.32, 60)} />
-            <line x1={ax + aw} y1={ay + ah} x2={ax + aw / 2} y2={ay + ah + Math.min(aw * 0.32, 60)} />
-          </g>
-        )}
-        {isAB && !isSc && (
-          <g stroke={C.tratt} strokeWidth={0.65} strokeDasharray="4,2.5" opacity={0.85}>
-            <path d={`M ${pivX} ${ay} Q ${pivX + (isSx ? -aw * 0.38 : aw * 0.38)} ${ay + ah / 2} ${pivX} ${ay + ah}`} fill="none" />
-            <line x1={pivX} y1={ay} x2={pivX + (isSx ? -aw * 0.38 : aw * 0.38)} y2={ay + ah / 2} />
-            <line x1={pivX} y1={ay + ah} x2={pivX + (isSx ? -aw * 0.38 : aw * 0.38)} y2={ay + ah / 2} />
-          </g>
-        )}
-        {isWas && (
-          <g stroke={C.tratt} strokeWidth={0.65} strokeDasharray="4,2.5" opacity={0.85}>
-            <path d={`M ${ax} ${ay} Q ${ax + aw / 2} ${ay - Math.min(aw * 0.3, 50)} ${ax + aw} ${ay}`} fill="none" />
-            <line x1={ax} y1={ay} x2={ax + aw / 2} y2={ay - Math.min(aw * 0.3, 50)} />
-            <line x1={ax + aw} y1={ay} x2={ax + aw / 2} y2={ay - Math.min(aw * 0.3, 50)} />
-          </g>
-        )}
-        {(isAR || isAB) && !isFis && !isSc && !isWas && (() => {
-          const mX = nAnte >= 2 ? (isSx ? ax + aw - spA * 2.2 : ax + spA * 1.2) : ax + aw - spA * 2.2;
-          const mY = ay + ah / 2;
-          return (
-            <g key="man">
-              <rect x={mX} y={mY - 12} width={7} height={24} rx={3} fill={C.maniglia} stroke="#777" strokeWidth={0.5} />
-              <rect x={mX + 7} y={mY - 5} width={16} height={10} rx={3} fill={C.maniglia} stroke="#777" strokeWidth={0.5} />
-            </g>
-          );
-        })()}
-      </g>
-    );
-  };
-
-  let anteRects: any[] = [];
-  if (nAnte === 0) { anteRects = []; }
-  else { let x = cx; anteRects = cols.map(cw => { const r = { ax: x, ay: cy, aw: cw, ah: SH }; x += cw; return r; }); }
-
-  return (
-    <svg width={w} height={h} style={{ display: "block", background: C.bg }}>
-      <defs>
-        <marker id="scArr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <polygon points="0,0 6,3 0,6" fill={C.quota} />
-        </marker>
-      </defs>
-
-      {/* Quote */}
-      {showQuote && (
-        <g>
-          <line x1={cx} y1={cy - 18} x2={cx + SW} y2={cy - 18} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx} y1={cy - 24} x2={cx} y2={cy - 12} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx + SW} y1={cy - 24} x2={cx + SW} y2={cy - 12} stroke={C.quota} strokeWidth={0.8} />
-          <text x={cx + SW / 2} y={cy - 5} textAnchor="middle"
-            fontSize={13} fill={C.quota} fontFamily="monospace" fontWeight="bold">{L}</text>
-          <line x1={cx - 18} y1={cy} x2={cx - 18} y2={cy + SH} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx - 24} y1={cy} x2={cx - 12} y2={cy} stroke={C.quota} strokeWidth={0.8} />
-          <line x1={cx - 24} y1={cy + SH} x2={cx - 12} y2={cy + SH} stroke={C.quota} strokeWidth={0.8} />
-          <text x={cx - 5} y={cy + SH / 2} textAnchor="middle"
-            fontSize={13} fill={C.quota} fontFamily="monospace" fontWeight="bold"
-            transform={`rotate(-90,${cx - 5},${cy + SH / 2})`}>{H}</text>
-          {monPx.length > 0 && (() => {
-            let prev = cx;
-            return cols.map((cw, i) => {
-              const el = (
-                <g key={i}>
-                  <line x1={prev} y1={cy + SH + 16} x2={prev + cw} y2={cy + SH + 16} stroke={C.quota} strokeWidth={0.6} />
-                  <line x1={prev} y1={cy + SH + 12} x2={prev} y2={cy + SH + 20} stroke={C.quota} strokeWidth={0.6} />
-                  <line x1={prev + cw} y1={cy + SH + 12} x2={prev + cw} y2={cy + SH + 20} stroke={C.quota} strokeWidth={0.6} />
-                  <text x={prev + cw / 2} y={cy + SH + 28} textAnchor="middle"
-                    fontSize={10} fill={C.quota} fontFamily="monospace">{Math.round(cw / sc)}</text>
-                </g>
-              );
-              prev += cw; return el;
-            });
-          })()}
-        </g>
-      )}
-
-      {/* Sfondo */}
-      <rect x={cx} y={cy} width={SW} height={SH} fill="#0A0A0A" />
-
-      {/* Telaio — z-order: prima */}
-      <ProfiloRect x={cx}            y={cy} w={spT} h={SH} profilo={profili.telaio} rotated uid={`${uid}-tlsx`} />
-      <ProfiloRect x={cx + SW - spT} y={cy} w={spT} h={SH} profilo={profili.telaio} rotated uid={`${uid}-tldx`} />
-      <ProfiloRect x={cx} y={cy}            w={SW}  h={spT} profilo={profili.telaio} uid={`${uid}-tltp`} />
-      <ProfiloRect x={cx} y={cy + SH - spT} w={SW}  h={spT} profilo={profili.telaio} uid={`${uid}-tlbt`} />
-
-      {/* Montanti */}
-      {monPx.map((mx2, mi) => (
-        <ProfiloRect key={mi} x={cx + mx2 - spT / 2} y={cy} w={spT} h={SH}
-          profilo={profili.montante || profili.telaio} rotated uid={`${uid}-mon${mi}`} />
-      ))}
-
-      {/* Traversi */}
-      {travPx.map((ty, ti) => (
-        <ProfiloRect key={ti} x={cx} y={cy + ty - spT / 2} w={SW} h={spT}
-          profilo={profili.traverso || profili.telaio} uid={`${uid}-trav${ti}`} />
-      ))}
-
-      {/* Fisso */}
-      {nAnte === 0 && (() => {
-        const vx = cx + spT; const vy = cy + spT;
-        const vw = SW - spT * 2; const vh = SH - spT * 2;
-        return (
-          <g>
-            <VetroHatch x={vx} y={vy} w={vw} h={vh} clipId={`${uid}-fisso`} />
-            <text x={vx + vw / 2} y={vy + vh - 10} textAnchor="middle"
-              fontSize={Math.max(8, vw / 10)} fill={C.labelVetro} fontFamily="monospace">{codVet}</text>
-          </g>
-        );
-      })()}
-
-      {/* Ante */}
-      {anteRects.map((r, i) => renderAnta(i, r.ax, r.ay, r.aw, r.ah))}
-
-      {/* Bordo telaio sopra tutto */}
-      <rect x={cx} y={cy} width={SW} height={SH} fill="none" stroke={C.profilo} strokeWidth={1.5} />
-      <text x={w - 10} y={h - 8} textAnchor="end" fontSize={11} fill={C.quota} fontFamily="monospace">Vista Interna</text>
-    </svg>
-  );
-}
-
-// ── TBtn ───────────────────────────────────────────────────────
-const TBtn = ({ active, onClick, label }: any) => (
+const TBtn=({active,onClick,label})=>(
   <div onClick={onClick} style={{
-    padding: "3px 8px", borderRadius: 3, fontSize: 10, cursor: "pointer",
-    fontFamily: "monospace", userSelect: "none" as any,
-    background: active ? "#223355" : "transparent",
-    color: active ? "#88AAFF" : "#777",
-    border: `1px solid ${active ? "#3355AA" : "#2A2A2A"}`,
+    padding:"3px 8px",borderRadius:3,fontSize:10,cursor:"pointer",
+    fontFamily:"monospace",userSelect:"none",
+    background:active?"#1A3A6A":"#F0F0F0",
+    color:active?"#FFFFFF":"#333",
+    border:`1px solid ${active?"#2255AA":"#CCCCCC"}`,
   }}>{label}</div>
 );
 
-// ── MAIN ───────────────────────────────────────────────────────
 export default function DisegnoTecnico({
-  vanoId, vanoNome = "Vano", vanoDisegno, realW, realH,
-  onUpdate, onUpdateField, onClose, T, sistemiDB = [],
-}: Props) {
-  const [tipo, setTipo]           = useState<TipApertura>(vanoDisegno?.tipologia || "2ante_ar");
-  const [nMontanti, setNMontanti] = useState(vanoDisegno?.nMontanti || 0);
-  const [nTraversi, setNTraversi] = useState(vanoDisegno?.nTraversi || 0);
-  const [showQuote, setShowQuote] = useState(true);
-  const [sistema, setSistema]     = useState(vanoDisegno?.sistema || "");
+  vanoNome="Vano", vanoDisegno, realW, realH,
+  onUpdate, onUpdateField, onClose, T, sistemiDB=[],
+}) {
+  const svgRef=useRef(null), dragRef=useRef(null);
+  const [L,setL]=useState(parseInt(String(realW))||1200);
+  const [H,setH]=useState(parseInt(String(realH))||2100);
+  const [tipo,setTipo]=useState(vanoDisegno?.tipologia||"2ante_ar");
+  const [nMontanti,setNMontanti]=useState(vanoDisegno?.nMontanti||0);
+  const [nTraversi,setNTraversi]=useState(vanoDisegno?.nTraversi||0);
+  const [showQuote,setShowQuote]=useState(true);
+  const [showSez,setShowSez]=useState(true);
+  const [profiles,setProfiles]=useState({...DEFAULT_PROFILES,...(vanoDisegno?.profiles||{})});
+  const [selected,setSelected]=useState(null);
+  const [hoverBar,setHoverBar]=useState(null);
+  const [dragging,setDragging]=useState(false);
+  const [sistema,setSistema]=useState(vanoDisegno?.sistema||"");
+  const {profileList,bautiefe}=useProfiliDB(sistema);
 
-  const L = parseInt(String(realW)) || 1200;
-  const H = parseInt(String(realH)) || 2100;
+  useEffect(()=>{setL(parseInt(String(realW))||1200);},[realW]);
+  useEffect(()=>{setH(parseInt(String(realH))||2100);},[realH]);
 
-  const sistemaRec = sistemiDB.find((s: any) =>
-    (s.marca + " " + s.sistema) === sistema || s.sistema === sistema
-  );
-  const bautiefe: number = sistemaRec?.bautiefe || 70;
+  const save=useCallback((patch={})=>{
+    onUpdate?.({...vanoDisegno,tipologia:tipo,nMontanti,nTraversi,sistema,profiles,...patch});
+  },[vanoDisegno,tipo,nMontanti,nTraversi,sistema,profiles,onUpdate]);
 
-  const { profili, loading } = useProfiliSezioni(sistema);
+  const PAD=20,QL=60,QH=46;
+  const svgW=Math.max(500,Math.min(860,L/2.4+180));
+  const svgH=Math.max(440,Math.min(780,H/3.1+190));
+  const fw=svgW-PAD*2-QL, fh=svgH-PAD*2-QH-40;
+  const sc=Math.min(fw/L,fh/H);
+  const SW=L*sc, SH=H*sc;
+  const cx=PAD+QL+(fw-SW)/2, cy=PAD+QH+(fh-SH)/2;
+  const spT=Math.max(14,bautiefe*0.9*sc);
+  const spA=Math.max(12,(bautiefe-8)*sc);
+  const fgW=Math.max(2.5,5*sc);
+  const spR=Math.max(5,18*sc);
+  const iX=cx+spT, iY=cy+spT, iW=SW-spT*2, iH=SH-spT*2;
+  const tObj=TIPOLOGIE.find(t=>t.id===tipo);
+  const nAnte=tObj?.nAnte??1;
+  const monPx=nAnte===2&&nMontanti===0?[iW/2]:Array.from({length:nMontanti},(_,i)=>iW*(i+1)/(nMontanti+1));
+  const travPx=Array.from({length:nTraversi},(_,i)=>iH*(i+1)/(nTraversi+1));
+  const cols=monPx.length>0?(()=>{const r=[],pts=[0,...monPx,iW];for(let i=0;i<pts.length-1;i++)r.push(pts[i+1]-pts[i]);return r;})():[iW];
+  const scRef=useRef(sc);
+  useLayoutEffect(()=>{scRef.current=sc;},[sc]);
 
-  const save = useCallback((patch: any = {}) => {
-    onUpdate?.({ ...vanoDisegno, tipologia: tipo, nMontanti, nTraversi, sistema, ...patch });
-  }, [vanoDisegno, tipo, nMontanti, nTraversi, sistema, onUpdate]);
-
-  const svgW = Math.max(420, Math.min(780, L / 2.8 + 140));
-  const svgH = Math.max(360, Math.min(680, H / 3.8 + 140));
-  const tipRec = TIPOLOGIE.find(t => t.id === tipo);
+  const getSvgPt=(e)=>{
+    const r=svgRef.current?.getBoundingClientRect();
+    if(!r)return{x:0,y:0};
+    return{x:e.clientX-r.left,y:e.clientY-r.top};
+  };
+  const startDrag=(side,e)=>{
+    e.stopPropagation();
+    e.currentTarget?.setPointerCapture?.(e.pointerId);
+    const pt=getSvgPt(e);
+    dragRef.current={side,x0:pt.x,y0:pt.y,L0:L,H0:H,sc:scRef.current};
+    setDragging(true); setSelected(`tel_${side}`);
+  };
+  const handleMove=useCallback((e)=>{
+    if(!dragRef.current)return;
+    const{side,x0,y0,L0,H0,sc:sc0}=dragRef.current;
+    const pt=getSvgPt(e);
+    if(side==="right"){const n=Math.max(300,Math.round(L0+(pt.x-x0)/sc0));setL(n);onUpdateField?.("larghezza",n);}
+    if(side==="left"){const n=Math.max(300,Math.round(L0-(pt.x-x0)/sc0));setL(n);onUpdateField?.("larghezza",n);}
+    if(side==="bottom"){const n=Math.max(300,Math.round(H0+(pt.y-y0)/sc0));setH(n);onUpdateField?.("altezza",n);}
+    if(side==="top"){const n=Math.max(300,Math.round(H0-(pt.y-y0)/sc0));setH(n);onUpdateField?.("altezza",n);}
+  },[onUpdateField]);
+  const handleUp=useCallback(()=>{dragRef.current=null;setDragging(false);save();},[save]);
+  const sideCursor=(s)=>s==="left"||s==="right"?"ew-resize":"ns-resize";
+  const dragAreas=[
+    {side:"top",x:cx,y:cy,w:SW,h:spT},
+    {side:"bottom",x:cx,y:cy+SH-spT,w:SW,h:spT},
+    {side:"left",x:cx,y:cy,w:spT,h:SH},
+    {side:"right",x:cx+SW-spT,y:cy,w:spT,h:SH},
+  ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#050508", fontFamily: "monospace" }}>
-
+    <div style={{display:"flex",flexDirection:"column",height:"100%",background:"#F0F0F0",fontFamily:"monospace",userSelect:"none"}}
+      onPointerMove={handleMove} onPointerUp={handleUp}>
       {/* Toolbar */}
-      <div style={{ background: C.toolBg, borderBottom: `1px solid ${C.toolBdr}`,
-        padding: "6px 12px", display: "flex", alignItems: "center", gap: 6,
-        flexShrink: 0, flexWrap: "wrap" as any }}>
-        <span style={{ fontSize: 11, color: C.quota, fontWeight: "bold", marginRight: 4 }}>{vanoNome}</span>
-        <span style={{ fontSize: 10, color: "#5588CC" }}>{L}×{H}</span>
-        <div style={{ width: 1, height: 16, background: "#2A2A2A" }} />
-        {TIPOLOGIE.map(t => (
-          <TBtn key={t.id} active={tipo === t.id}
-            onClick={() => { setTipo(t.id as TipApertura); save({ tipologia: t.id }); }}
-            label={t.label} />
-        ))}
-        <div style={{ width: 1, height: 16, background: "#2A2A2A" }} />
-        <span style={{ fontSize: 9, color: "#444" }}>Mont.</span>
-        {[0, 1, 2, 3].map(n => (
-          <TBtn key={n} active={nMontanti === n}
-            onClick={() => { setNMontanti(n); save({ nMontanti: n }); }} label={String(n)} />
-        ))}
-        <span style={{ fontSize: 9, color: "#444" }}>Trav.</span>
-        {[0, 1, 2].map(n => (
-          <TBtn key={n} active={nTraversi === n}
-            onClick={() => { setNTraversi(n); save({ nTraversi: n }); }} label={String(n)} />
-        ))}
-        <div style={{ width: 1, height: 16, background: "#2A2A2A" }} />
-        <TBtn active={showQuote} onClick={() => setShowQuote(q => !q)} label="Quote" />
-        {sistemiDB.length > 0 && (
-          <select value={sistema}
-            onChange={e => { setSistema(e.target.value); save({ sistema: e.target.value }); }}
-            style={{ padding: "2px 6px", background: "#111", border: "1px solid #2A2A2A",
-              borderRadius: 3, color: "#88AAFF", fontSize: 10, fontFamily: "monospace" }}>
+      <div style={{background:"#FFFFFF",borderBottom:"2px solid #CCCCCC",padding:"6px 10px",
+        display:"flex",alignItems:"center",gap:4,flexShrink:0,flexWrap:"wrap"}}>
+        <span style={{fontSize:11,color:"#003399",fontWeight:"bold",marginRight:4}}>{vanoNome}</span>
+        <span style={{fontSize:10,color:"#0055AA",minWidth:100,fontWeight:"bold"}}>{L} × {H} mm</span>
+        <div style={{width:1,height:16,background:"#DDD"}}/>
+        {TIPOLOGIE.map(t=><TBtn key={t.id} active={tipo===t.id} onClick={()=>{setTipo(t.id);save({tipologia:t.id});}} label={t.label}/>)}
+        <div style={{width:1,height:16,background:"#DDD"}}/>
+        <span style={{fontSize:9,color:"#888"}}>Mont.</span>
+        {[0,1,2].map(n=><TBtn key={n} active={nMontanti===n} onClick={()=>{setNMontanti(n);save({nMontanti:n});}} label={String(n)}/>)}
+        <span style={{fontSize:9,color:"#888"}}>Trav.</span>
+        {[0,1,2].map(n=><TBtn key={n} active={nTraversi===n} onClick={()=>{setNTraversi(n);save({nTraversi:n});}} label={String(n)}/>)}
+        <div style={{width:1,height:16,background:"#DDD"}}/>
+        <TBtn active={showQuote} onClick={()=>setShowQuote(q=>!q)} label="Quote"/>
+        <TBtn active={showSez} onClick={()=>setShowSez(s=>!s)} label="Sez."/>
+        {sistemiDB.length>0&&(
+          <select value={sistema} onChange={e=>{setSistema(e.target.value);save({sistema:e.target.value});}}
+            style={{padding:"2px 6px",background:"#F8F8F8",border:"1px solid #CCC",borderRadius:3,color:"#003399",fontSize:10,fontFamily:"monospace"}}>
             <option value="">— Sistema —</option>
-            {sistemiDB.map((s: any) => (
-              <option key={s.id} value={s.marca + " " + s.sistema}>{s.marca} {s.sistema}</option>
-            ))}
+            {sistemiDB.map(s=><option key={s.id} value={s.marca+" "+s.sistema}>{s.marca} {s.sistema}</option>)}
           </select>
         )}
-        {sistema && (
-          <span style={{ fontSize: 9, color: loading ? "#666" : "#1A9E73", fontFamily: "monospace" }}>
-            {loading ? "…" : `${Object.keys(profili).length} profili`}
-          </span>
-        )}
-        {onClose && (
-          <div onClick={onClose} style={{ marginLeft: "auto", padding: "3px 9px", borderRadius: 3,
-            background: "#220000", border: "1px solid #440000", color: "#FF4444", fontSize: 10, cursor: "pointer" }}>✕</div>
-        )}
+        {onClose&&<div onClick={onClose} style={{marginLeft:"auto",padding:"3px 9px",borderRadius:3,background:"#FFF0F0",border:"1px solid #FFAAAA",color:"#CC2222",fontSize:10,cursor:"pointer"}}>✕</div>}
       </div>
 
-      {/* Canvas + pannello */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-          overflow: "auto", padding: 12, background: "#050508" }}>
-          <SvgDisegno tipo={tipo} L={L} H={H} nMontanti={nMontanti} nTraversi={nTraversi}
-            showQuote={showQuote} profili={profili} bautiefe={bautiefe} w={svgW} h={svgH} />
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        {/* Canvas */}
+        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",overflow:"auto",padding:12,background:"#E8E8E8"}}>
+          <svg ref={svgRef} width={svgW} height={svgH}
+            style={{display:"block",background:C.bg,cursor:dragging?"grabbing":"default",border:"1px solid #AAA",boxShadow:"2px 2px 8px rgba(0,0,0,0.15)"}}
+            onClick={()=>setSelected(null)}>
+
+            {/* Quote */}
+            {showQuote&&(
+              <g fill={C.quota} stroke={C.quota} strokeWidth={LW.quota}>
+                <line x1={cx} y1={cy-6} x2={cx} y2={cy-28}/>
+                <line x1={cx+SW} y1={cy-6} x2={cx+SW} y2={cy-28}/>
+                <line x1={cx} y1={cy-24} x2={cx+SW} y2={cy-24}/>
+                <polygon points={`${cx},${cy-24} ${cx+6},${cy-26.5} ${cx+6},${cy-21.5}`}/>
+                <polygon points={`${cx+SW},${cy-24} ${cx+SW-6},${cy-26.5} ${cx+SW-6},${cy-21.5}`}/>
+                <text x={cx+SW/2} y={cy-28} textAnchor="middle" fontSize={13} fontWeight="bold" stroke="none">{L}</text>
+                <line x1={cx-6} y1={cy} x2={cx-38} y2={cy}/>
+                <line x1={cx-6} y1={cy+SH} x2={cx-38} y2={cy+SH}/>
+                <line x1={cx-34} y1={cy} x2={cx-34} y2={cy+SH}/>
+                <polygon points={`${cx-34},${cy} ${cx-31.5},${cy+6} ${cx-36.5},${cy+6}`}/>
+                <polygon points={`${cx-34},${cy+SH} ${cx-31.5},${cy+SH-6} ${cx-36.5},${cy+SH-6}`}/>
+                <text x={cx-40} y={cy+SH/2} textAnchor="middle" fontSize={13} fontWeight="bold" stroke="none"
+                  transform={`rotate(-90,${cx-40},${cy+SH/2})`}>{H}</text>
+              </g>
+            )}
+
+            <rect x={cx} y={cy} width={SW} height={SH} fill="#F8F8F8"/>
+
+            {/* Telaio 4 barre */}
+            {[
+              {pid:"tel_top",rx:cx,ry:cy,rw:SW,rh:spT},
+              {pid:"tel_bottom",rx:cx,ry:cy+SH-spT,rw:SW,rh:spT},
+              {pid:"tel_left",rx:cx,ry:cy,rw:spT,rh:SH},
+              {pid:"tel_right",rx:cx+SW-spT,ry:cy,rw:spT,rh:SH},
+            ].map(({pid,rx,ry,rw,rh})=>{
+              const sel=selected===pid;
+              return <rect key={pid} x={rx} y={ry} width={rw} height={rh}
+                fill={sel?"#CCE0FF":C.telaio_fill} stroke={sel?C.sel:C.telaio}
+                strokeWidth={sel?1.8:LW.telaio} pointerEvents="none"/>;
+            })}
+            {cornerLines(cx,cy,SW,SH,spT,C.telaio,LW.telaio+0.3)}
+            {[
+              {pid:"tel_left",x:cx+spT/2,y:cy+SH/2,rot:true},
+              {pid:"tel_right",x:cx+SW-spT/2,y:cy+SH/2,rot:true},
+              {pid:"tel_top",x:cx+SW/2,y:cy+spT/2,rot:false},
+              {pid:"tel_bottom",x:cx+SW/2,y:cy+SH-spT/2,rot:false},
+            ].map(({pid,x,y,rot})=>(
+              <text key={pid} x={x} y={y+2} textAnchor="middle"
+                fontSize={Math.max(5,Math.min(8,spT*0.38))}
+                fill={selected===pid?"#0044AA":"#666"} fontFamily="monospace"
+                transform={rot?`rotate(-90,${x},${y})`:undefined} pointerEvents="none">
+                {profiles[pid]}
+              </text>
+            ))}
+
+            {/* Montanti */}
+            {monPx.map((mx2,mi)=>{
+              const absX=iX+mx2-spT/2;
+              return (<g key={mi} pointerEvents="none">
+                <rect x={absX} y={cy} width={spT} height={SH} fill={C.telaio_fill} stroke={C.telaio} strokeWidth={LW.telaio}/>
+                <text x={absX+spT/2} y={cy+SH/2} textAnchor="middle" fontSize={Math.max(5,spT*0.35)} fill="#666" fontFamily="monospace"
+                  transform={`rotate(-90,${absX+spT/2},${cy+SH/2})`}>{profiles.tel_left}</text>
+              </g>);
+            })}
+
+            {/* Traversi */}
+            {travPx.map((ty,ti)=>(
+              <g key={ti} pointerEvents="none">
+                <rect x={cx} y={iY+ty-spT/2} width={SW} height={spT} fill={C.telaio_fill} stroke={C.telaio} strokeWidth={LW.telaio}/>
+                <text x={cx+SW/2} y={iY+ty+3} textAnchor="middle" fontSize={Math.max(5,spT*0.35)} fill="#666" fontFamily="monospace">{profiles.tel_top}</text>
+              </g>
+            ))}
+
+            {/* Ante o fisso */}
+            {nAnte===0?(()=>{
+              const vx=iX+fgW,vy=iY+fgW,vw=iW-fgW*2,vh=iH-fgW*2;
+              return (<g>
+                {[{rx:iX,ry:iY,rw:fgW,rh:iH},{rx:iX+iW-fgW,ry:iY,rw:fgW,rh:iH},
+                  {rx:iX,ry:iY,rw:iW,rh:fgW},{rx:iX,ry:iY+iH-fgW,rw:iW,rh:fgW}]
+                  .map((p,pi)=><rect key={pi} x={p.rx} y={p.ry} width={p.rw} height={p.rh} fill="#DDD" stroke={C.fermavetro} strokeWidth={LW.fv}/>)}
+                <VetroHatch x={vx} y={vy} w={vw} h={vh} id="v-fisso"/>
+                <text x={iX+iW/2} y={iY+iH/2+4} textAnchor="middle" fontSize={Math.max(7,iW/14)} fill="#336688" fontFamily="monospace" opacity={0.8} pointerEvents="none">{profiles.vetro}</text>
+              </g>);
+            })():(()=>{
+              let xOff=0;
+              const showRiporto=nAnte===2&&!tipo.includes("scorr")&&cols.length===2;
+              const riportoCenterX=iX+cols[0];
+              const anteEls=cols.map((cw,ai)=>{
+                const isSx=ai===0;
+                const ax=iX+xOff,ay=iY,aw=cw,ah=iH;
+                xOff+=cw;
+                const vx=ax+spA,vy=ay+spA,vw=aw-spA*2,vh=ah-spA*2;
+                if(vw<=0||vh<=0)return null;
+                const isAR=tipo.includes("ar"),isAB=tipo.includes("ab");
+                const hasMan=(isAR||isAB)&&!tipo.includes("scorr")&&tipo!=="wasistas";
+                const showMan=hasMan&&(nAnte<=1||ai===0);
+                const manX=isSx?ax+aw-spA/2:ax+spA/2;
+                return (<g key={ai}>
+                  <VetroHatch x={vx} y={vy} w={vw} h={vh} id={`v-a${ai}`}/>
+                  <text x={ax+aw/2} y={ay+ah/2+4} textAnchor="middle"
+                    fontSize={Math.max(6,Math.min(10,vw/14))} fill="#336688" fontFamily="monospace" opacity={0.7} pointerEvents="none">
+                    {profiles.vetro}
+                  </text>
+                  {[
+                    {pid:"ant_top",rx:ax,ry:ay,rw:aw,rh:spA},
+                    {pid:"ant_bottom",rx:ax,ry:ay+ah-spA,rw:aw,rh:spA},
+                    {pid:"ant_left",rx:ax,ry:ay,rw:spA,rh:ah},
+                    {pid:"ant_right",rx:ax+aw-spA,ry:ay,rw:spA,rh:ah},
+                  ].map(({pid,rx,ry,rw,rh})=>{
+                    const sel=selected===pid;
+                    return <rect key={pid} x={rx} y={ry} width={rw} height={rh}
+                      fill={sel?"#CCE0FF":C.anta_fill} stroke={sel?C.sel:C.anta}
+                      strokeWidth={sel?1.5:LW.anta} style={{cursor:"pointer"}}
+                      onClick={(e)=>{e.stopPropagation();setSelected(sel?null:pid);}}/>;
+                  })}
+                  {cornerLinesAnta(ax,ay,aw,ah,spA,ai,cols.length,C.anta,LW.anta+0.2)}
+                  {[
+                    {pid:"ant_left",x:ax+spA/2,y:ay+ah/2,rot:true},
+                    {pid:"ant_right",x:ax+aw-spA/2,y:ay+ah/2,rot:true},
+                    {pid:"ant_top",x:ax+aw/2,y:ay+spA/2,rot:false},
+                    {pid:"ant_bottom",x:ax+aw/2,y:ay+ah-spA/2,rot:false},
+                  ].map(({pid,x,y,rot})=>(
+                    <text key={pid} x={x} y={y+2} textAnchor="middle"
+                      fontSize={Math.max(4.5,Math.min(7,spA*0.38))}
+                      fill={selected===pid?"#0044AA":"#888"} fontFamily="monospace"
+                      transform={rot?`rotate(-90,${x},${y})`:undefined} pointerEvents="none">
+                      {profiles[pid]}
+                    </text>
+                  ))}
+                  {[
+                    {rx:ax+spA,ry:ay+spA,rw:fgW,rh:vh},
+                    {rx:ax+aw-spA-fgW,ry:ay+spA,rw:fgW,rh:vh},
+                    {rx:ax+spA,ry:ay+spA,rw:vw,rh:fgW},
+                    {rx:ax+spA,ry:ay+ah-spA-fgW,rw:vw,rh:fgW},
+                  ].map((p,pi)=><rect key={`fv${pi}`} x={p.rx} y={p.ry} width={p.rw} height={p.rh} fill="#BBBBBB" stroke={C.fermavetro} strokeWidth={LW.fv}/>)}
+                  <Tratteggio tipo={tipo} ax={ax} ay={ay} aw={aw} ah={ah} isSx={isSx} nAnte={nAnte} spA={spA}/>
+                  {showMan&&<ManigliaDK mx={manX} my={ay+ah/2} verso={isSx?"dx":"sx"}/>}
+                </g>);
+              });
+              return (<>
+                {anteEls}
+                {showRiporto&&(
+                  <g style={{cursor:"pointer"}} onClick={(e)=>{e.stopPropagation();setSelected(selected==="riporto"?null:"riporto");}}>
+                    <rect x={riportoCenterX-spR/2} y={iY} width={spR} height={iH}
+                      fill={selected==="riporto"?"#CCE0FF":"#D8D8D8"}
+                      stroke={selected==="riporto"?C.sel:"#888"} strokeWidth={0.6}/>
+                    <text x={riportoCenterX} y={iY+iH/2+3} textAnchor="middle"
+                      fontSize={Math.max(4,spR*0.5)} fill={selected==="riporto"?"#0044AA":"#666"}
+                      fontFamily="monospace" transform={`rotate(-90,${riportoCenterX},${iY+iH/2})`} pointerEvents="none">
+                      {profiles.riporto}
+                    </text>
+                  </g>
+                )}
+              </>);
+            })()}
+
+            {/* Bordo telaio */}
+            <rect x={cx} y={cy} width={SW} height={SH} fill="none" stroke={C.telaio} strokeWidth={LW.telaio+0.4} pointerEvents="none"/>
+
+            {/* Drag areas */}
+            {dragAreas.map(({side,x,y,w,h})=>(
+              <rect key={side} x={x} y={y} width={w} height={h} fill="transparent"
+                style={{cursor:sideCursor(side)}}
+                onPointerEnter={()=>setHoverBar(side)}
+                onPointerLeave={()=>setHoverBar(null)}
+                onPointerDown={(e)=>startDrag(side,e)}/>
+            ))}
+
+            {/* Sezione orizzontale */}
+            {showSez&&(()=>{
+              const ox=svgW-112,oy=svgH-70;
+              const tW=18,aW=14,fW=4,glW=12,bH=42;
+              return (<g transform={`translate(${ox},${oy})`} pointerEvents="none">
+                <rect x={0} y={0} width={106} height={bH+22} fill="#FFF" stroke="#333" strokeWidth={0.7} rx={2}/>
+                <text x={3} y={9} fontSize={5.5} fill="#003399" fontFamily="monospace" fontWeight="bold">SEZ. ORIZZONTALE</text>
+                <rect x={4} y={11} width={tW} height={bH-11} fill="#E0E0E0" stroke="#000" strokeWidth={0.8}/>
+                <text x={4+tW/2} y={11+(bH-11)/2+2} textAnchor="middle" fontSize={4} fill="#333" fontFamily="monospace">T</text>
+                <rect x={4+tW} y={13} width={aW} height={bH-15} fill="#F0F0F0" stroke="#000" strokeWidth={0.7}/>
+                <text x={4+tW+aW/2} y={13+(bH-15)/2+2} textAnchor="middle" fontSize={4} fill="#333" fontFamily="monospace">A</text>
+                <rect x={4+tW+aW} y={15} width={fW} height={bH-19} fill="#CCC" stroke="#333" strokeWidth={0.5}/>
+                <rect x={4+tW+aW+fW} y={17} width={glW} height={bH-23} fill={C.vetroFill} stroke="#336688" strokeWidth={0.5}/>
+                <rect x={4+tW+aW+fW+glW} y={15} width={fW} height={bH-19} fill="#CCC" stroke="#333" strokeWidth={0.5}/>
+                <rect x={4+tW+aW+fW+glW+fW} y={13} width={aW} height={bH-15} fill="#F0F0F0" stroke="#000" strokeWidth={0.7}/>
+                <rect x={4+tW+aW+fW+glW+fW+aW} y={11} width={tW} height={bH-11} fill="#E0E0E0" stroke="#000" strokeWidth={0.8}/>
+                <line x1={4} y1={bH+15} x2={4+tW*2+aW*2+fW*2+glW} y2={bH+15} stroke={C.quota} strokeWidth={0.5}/>
+                <text x={53} y={bH+13} textAnchor="middle" fontSize={5.5} fill={C.quota} fontFamily="monospace">{bautiefe}mm</text>
+              </g>);
+            })()}
+
+            <text x={svgW-10} y={svgH-6} textAnchor="end" fontSize={8.5} fill="#999" fontFamily="monospace" pointerEvents="none">Vista Interna</text>
+          </svg>
         </div>
-        <div style={{ width: 190, flexShrink: 0, background: C.panelBg,
-          borderLeft: `1px solid ${C.toolBdr}`, padding: 10, overflowY: "auto" as any }}>
-          <div style={{ fontSize: 9, color: "#333", textTransform: "uppercase" as any, letterSpacing: 1, marginBottom: 8 }}>Dati tecnici</div>
-          {[
-            ["Sistema",  sistema || "—"],
-            ["Tipo",     tipRec?.label || tipo],
-            ["L",        `${L} mm`],
-            ["H",        `${H} mm`],
-            ["Area",     `${((L / 1000) * (H / 1000)).toFixed(3)} m²`],
-            ["Perim.",   `${(2 * (L + H) / 1000).toFixed(2)} m`],
-            ["Ante",     String(tipRec?.nAnte ?? "—")],
-            ["Mont.+",   String(nMontanti)],
-            ["Trav.+",   String(nTraversi)],
-            ["Bautiefe", `${bautiefe} mm`],
-          ].map(([l, v], i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between",
-              padding: "3px 0", borderBottom: "1px solid #111", fontSize: 9 }}>
-              <span style={{ color: "#444" }}>{l}</span>
-              <span style={{ color: C.quota, fontWeight: "bold" }}>{v}</span>
+
+        {/* Pannello destra */}
+        <div style={{width:210,flexShrink:0,background:"#FFF",borderLeft:"1px solid #CCC",padding:10,overflowY:"auto",display:"flex",flexDirection:"column",gap:8}}>
+          {selected?(
+            <div style={{background:"#EEF4FF",border:`1.5px solid ${C.sel}`,borderRadius:5,padding:8}}>
+              <div style={{fontSize:7,color:C.sel,textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Profilo selezionato</div>
+              <div style={{fontSize:9.5,color:"#003388",fontWeight:"bold",marginBottom:6}}>{selected.replace(/_/g," ").toUpperCase()}</div>
+              <select value={profiles[selected]||""} onChange={e=>setProfiles(p=>({...p,[selected]:e.target.value}))}
+                style={{width:"100%",padding:"4px",background:"#FFF",border:`1px solid ${C.sel}`,borderRadius:3,color:"#003388",fontSize:9.5,fontFamily:"monospace",marginBottom:5}}>
+                {profileList.map(p=><option key={p} value={p}>{p}</option>)}
+              </select>
+              <input value={profiles[selected]||""} onChange={e=>setProfiles(p=>({...p,[selected]:e.target.value}))}
+                placeholder="Digita codice..."
+                style={{width:"100%",boxSizing:"border-box",padding:"4px",background:"#F8F8F8",border:"1px solid #CCD",borderRadius:3,color:"#003388",fontSize:9.5,fontFamily:"monospace"}}/>
+              <button onClick={()=>save()} style={{width:"100%",marginTop:8,padding:"5px",borderRadius:3,background:"#1A3A6A",color:"#FFF",border:"none",fontSize:10,cursor:"pointer",fontFamily:"monospace"}}>Salva</button>
             </div>
-          ))}
-          {Object.keys(profili).length > 0 && (
-            <>
-              <div style={{ marginTop: 10, fontSize: 9, color: "#333",
-                textTransform: "uppercase" as any, letterSpacing: 1, marginBottom: 6 }}>Profili archivio</div>
-              {Object.entries(profili).map(([t2, p]: any) => (
-                <div key={t2} style={{ padding: "3px 0", borderBottom: "1px solid #111" }}>
-                  <div style={{ fontSize: 8, color: "#333", textTransform: "capitalize" as any }}>{t2}</div>
-                  <div style={{ fontSize: 9, color: "#5588CC", fontWeight: "bold" }}>{p.codice}</div>
-                  <div style={{ fontSize: 8, color: "#444" }}>{p.larghezza_mm}×{p.altezza_mm}mm</div>
-                </div>
-              ))}
-            </>
-          )}
-          {sistema && !loading && Object.keys(profili).length === 0 && (
-            <div style={{ marginTop: 10, padding: "6px 8px", borderRadius: 4,
-              background: "#220000", border: "1px solid #440000", fontSize: 9, color: "#FF6666" }}>
-              Nessun profilo in archivio per questo sistema. Aggiungili da Impostazioni → Profili.
+          ):(
+            <div style={{background:"#F8F8F8",border:"1px solid #DDD",borderRadius:5,padding:10,fontSize:9,color:"#999",textAlign:"center",lineHeight:1.8}}>
+              Clicca un profilo per modificarlo
+              <div style={{marginTop:6,fontSize:7.5,color:"#CCC"}}>Trascina i lati per ridimensionare</div>
             </div>
           )}
-          {(onUpdate || onUpdateField) && (
-            <button onClick={() => save()} style={{ width: "100%", marginTop: 12, padding: "6px",
-              borderRadius: 3, background: "#112233", color: "#5588CC",
-              border: "1px solid #223344", fontSize: 10, cursor: "pointer", fontFamily: "monospace" }}>
-              Salva
-            </button>
-          )}
+          <div style={{background:"#F8F8F8",border:"1px solid #DDD",borderRadius:5,padding:8}}>
+            <div style={{fontSize:7,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Dimensioni</div>
+            {[{label:"L (mm)",val:L,set:setL},{label:"H (mm)",val:H,set:setH}].map(({label,val,set})=>(
+              <div key={label} style={{marginBottom:6}}>
+                <div style={{fontSize:7.5,color:"#888",marginBottom:3}}>{label}</div>
+                <input type="number" value={val}
+                  onChange={e=>set(Math.max(300,Math.min(4000,parseInt(e.target.value)||300)))}
+                  style={{width:"100%",boxSizing:"border-box",padding:"4px 6px",background:"#FFF",border:"1px solid #CCC",borderRadius:3,color:C.quota,fontSize:13,fontFamily:"monospace",fontWeight:"bold",textAlign:"right"}}/>
+              </div>
+            ))}
+          </div>
+          <div style={{background:"#F8F8F8",border:"1px solid #DDD",borderRadius:5,padding:8}}>
+            <div style={{fontSize:7,color:"#999",textTransform:"uppercase",letterSpacing:1,marginBottom:5}}>Profili vano</div>
+            {Object.entries(profiles).map(([k,v])=>(
+              <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"3px 0",borderBottom:"1px solid #EEE",fontSize:7.5,cursor:"pointer",background:selected===k?"#EEF4FF":undefined}}
+                onClick={()=>setSelected(selected===k?null:k)}>
+                <span style={{color:selected===k?C.sel:"#AAA"}}>{k.replace(/_/g," ")}</span>
+                <span style={{color:selected===k?"#003388":C.quota,fontWeight:"bold"}}>{String(v)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
