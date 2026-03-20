@@ -399,16 +399,20 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
               {/* Luci nette */}
               <div style={{background:"#F8FAFC",borderRadius:7,padding:"7px 9px",marginBottom:8,border:`1px solid ${BDR}`}}>
                 <div style={{fontSize:9,fontWeight:700,color:SUB,textTransform:"uppercase",marginBottom:4}}>Luci nette</div>
-                {[
-                  ["Vetro",`${luci[slotSel.id]?.vetroL||0}×${luci[slotSel.id]?.vetroH||0}mm`,DARK],
-                  ["m²",`${(luci[slotSel.id]?.vetroMq||0).toFixed(3)}`,SUB],
-                  ...(!["fisso","pannello_cieco"].includes(slotSel.tipo)?[["Anta",`${luci[slotSel.id]?.antaL||0}×${luci[slotSel.id]?.antaH||0}mm`,TEAL]]:[] as any[]),
-                ].map(([l,v,c]:any)=>(
-                  <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-                    <span style={{fontSize:10,color:SUB}}>{l}</span>
-                    <span style={{fontSize:10,fontWeight:700,fontFamily:FM,color:c}}>{v}</span>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                  <span style={{fontSize:10,color:SUB}}>Vetro</span>
+                  <span style={{fontSize:10,fontWeight:700,fontFamily:FM,color:DARK}}>{luci[slotSel.id]?.vetroL||0}×{luci[slotSel.id]?.vetroH||0}mm</span>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                  <span style={{fontSize:10,color:SUB}}>m²</span>
+                  <span style={{fontSize:10,fontWeight:700,fontFamily:FM,color:SUB}}>{(luci[slotSel.id]?.vetroMq||0).toFixed(3)}</span>
+                </div>
+                {!["fisso","pannello_cieco"].includes(slotSel.tipo) && (
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                    <span style={{fontSize:10,color:SUB}}>Anta</span>
+                    <span style={{fontSize:10,fontWeight:700,fontFamily:FM,color:TEAL}}>{luci[slotSel.id]?.antaL||0}×{luci[slotSel.id]?.antaH||0}mm</span>
                   </div>
-                ))}
+                )}
               </div>
 
               <div style={{marginBottom:6}}>
@@ -437,10 +441,10 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
               </div>
 
               <div style={{display:"flex",gap:4}}>
-                {[["Maniglia","maniglia"],["Multipunto","chiusuraMultipunto"]].map(([l,k]:any)=>(
-                  <button key={k} onClick={()=>updSlot(slotSel.id,{ferramenta:{...(slotSel.ferramenta||FER),[k]:!slotSel.ferramenta?.[k]}})}
-                    style={{flex:1,padding:"5px 4px",border:`1.5px solid ${slotSel.ferramenta?.[k]?TEAL:BDR}`,borderRadius:6,fontSize:10,cursor:"pointer",background:slotSel.ferramenta?.[k]?TEAL+"12":"#fff",color:slotSel.ferramenta?.[k]?TEAL:DARK}}>{l}</button>
-                ))}
+                <button onClick={()=>updSlot(slotSel.id,{ferramenta:{...(slotSel.ferramenta||FER),maniglia:!slotSel.ferramenta?.maniglia}})}
+                  style={{flex:1,padding:"5px 4px",border:`1.5px solid ${slotSel.ferramenta?.maniglia?TEAL:BDR}`,borderRadius:6,fontSize:10,cursor:"pointer",background:slotSel.ferramenta?.maniglia?TEAL+"12":"#fff",color:slotSel.ferramenta?.maniglia?TEAL:DARK}}>Maniglia</button>
+                <button onClick={()=>updSlot(slotSel.id,{ferramenta:{...(slotSel.ferramenta||FER),chiusuraMultipunto:!slotSel.ferramenta?.chiusuraMultipunto}})}
+                  style={{flex:1,padding:"5px 4px",border:`1.5px solid ${slotSel.ferramenta?.chiusuraMultipunto?TEAL:BDR}`,borderRadius:6,fontSize:10,cursor:"pointer",background:slotSel.ferramenta?.chiusuraMultipunto?TEAL+"12":"#fff",color:slotSel.ferramenta?.chiusuraMultipunto?TEAL:DARK}}>Multipunto</button>
               </div>
 
               {violazioni.filter((v:any)=>v.cellaId===slotSel.id).map((v:any,i:number)=>(
