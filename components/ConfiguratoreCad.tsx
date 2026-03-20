@@ -510,7 +510,28 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
       {/* CANVAS */}
       <div style={{flex:1,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:isMkt?DARK:"#F0F2F5",minWidth:0}}
         onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
-        onContextMenu={e=>{e.preventDefault();}}> 
+        onContextMenu={(e)=>{
+          e.preventDefault();
+          if(!svgRef.current)return;
+          const CTM=svgRef.current.getScreenCTM();
+          if(!CTM)return;
+          const svgX=(e.clientX-CTM.e)/CTM.a;
+          const svgY=(e.clientY-CTM.f)/CTM.d;
+          const sp=inf.profilo.spessoreTelaio;
+          const H=inf.altezzaVano;
+          const altNetta=H-sp*2;
+          const xPts=[sp,...inf.montanti.map((m:any)=>m.xMm).sort((a:number,b:number)=>a-b),inf.larghezzaVano-sp];
+          let colIdx=-1;
+          for(let i=0;i<xPts.length-1;i++){if(svgX>=xPts[i]&&svgX<=xPts[i+1]){colIdx=i;break;}}
+          if(colIdx<0||colIdx>=inf.colonne.length)return;
+          const col=inf.colonne[colIdx];
+          const yRel=svgY-sp;
+          const yPts=[0,...col.traversiLocali.map((t:any)=>t.yMmRel).sort((a:number,b:number)=>a-b),altNetta];
+          let slotIdx=0;
+          for(let i=0;i<yPts.length-1;i++){if(yRel>=yPts[i]&&yRel<=yPts[i+1]){slotIdx=i;break;}}
+          const slot=col.slots[slotIdx];
+          if(slot)setCtxMenu({x:e.clientX,y:e.clientY,slotId:slot.id});
+        }}}> 
         <RendererSVG infisso={infForRenderer} width="90%" height="90%" svgRef={svgRef}
           setDragging={(d:any)=>{wasDrag.current=false;setDragging(d);}}
           onCellaClick={handleCellaClick}/>
