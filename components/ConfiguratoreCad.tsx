@@ -328,8 +328,8 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
         <div style={{padding:"10px 12px",borderBottom:`1px solid ${BDR}`,flexShrink:0}}>
           <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{vanoNome||"CAD"}</div>
           <div style={{display:"flex",background:"#F3F4F6",borderRadius:8,padding:2}}>
-            {["industrial","marketing"].map(m=>(
-              <button key={m} onClick={()=>upd({_mode:m})} style={{flex:1,padding:"5px 0",border:"none",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,textTransform:"uppercase",background:inf._mode===m?(m==="marketing"?AMBER:DARK):"transparent",color:inf._mode===m?"#fff":SUB}}>{m==="industrial"?"TECNICO":"MKT"}</button>
+            {(["industrial","marketing"] as string[]).map((modeOpt)=>(
+              <button key={modeOpt} onClick={()=>upd({_mode:modeOpt})} style={{flex:1,padding:"5px 0",border:"none",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,textTransform:"uppercase",background:inf._mode===modeOpt?(modeOpt==="marketing"?AMBER:DARK):"transparent",color:inf._mode===modeOpt?"#fff":SUB}}>{modeOpt==="industrial"?"TECNICO":"MKT"}</button>
             ))}
           </div>
         </div>
@@ -430,9 +430,8 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
                 <div style={{marginBottom:6}}>
                   <div style={{fontSize:9,color:SUB,marginBottom:3}}>Verso</div>
                   <div style={{display:"flex",gap:4}}>
-                    {["sx","dx"].map(v=>(
-                      <button key={v} onClick={()=>updSlot(slotSel.id,{verso:v})} style={{flex:1,padding:"5px 0",border:`1.5px solid ${slotSel.verso===v?TEAL:BDR}`,borderRadius:6,fontSize:11,fontWeight:slotSel.verso===v?700:400,cursor:"pointer",background:slotSel.verso===v?TEAL+"12":"#fff",color:slotSel.verso===v?TEAL:DARK}}>{v==="sx"?"◄ SX":"DX ►"}</button>
-                    ))}
+                    <button onClick={()=>updSlot(slotSel.id,{verso:"sx"})} style={{flex:1,padding:"5px 0",border:`1.5px solid ${slotSel.verso==="sx"?TEAL:BDR}`,borderRadius:6,fontSize:11,fontWeight:slotSel.verso==="sx"?700:400,cursor:"pointer",background:slotSel.verso==="sx"?TEAL+"12":"#fff",color:slotSel.verso==="sx"?TEAL:DARK}}>◄ SX</button>
+                    <button onClick={()=>updSlot(slotSel.id,{verso:"dx"})} style={{flex:1,padding:"5px 0",border:`1.5px solid ${slotSel.verso==="dx"?TEAL:BDR}`,borderRadius:6,fontSize:11,fontWeight:slotSel.verso==="dx"?700:400,cursor:"pointer",background:slotSel.verso==="dx"?TEAL+"12":"#fff",color:slotSel.verso==="dx"?TEAL:DARK}}>DX ►</button>
                   </div>
                 </div>
               )}
