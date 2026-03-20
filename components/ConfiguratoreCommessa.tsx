@@ -434,23 +434,24 @@ export default function ConfiguratoreCommessa({commessa, onClose}:{commessa:any,
 
         {/* COL 3 — PREVIEW + TECNICA */}
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-          {/* Preview SVG */}
-          <div style={{background:"#fff",borderBottom:`1px solid ${T.bdr}`,padding:"14px 20px",display:"flex",gap:20,alignItems:"flex-start",flexShrink:0}}>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-              <div style={{fontSize:10,fontWeight:600,color:T.sub,textTransform:"uppercase" as any,letterSpacing:0.4}}>Anteprima</div>
-              <div style={{background:"#F8FAFC",borderRadius:12,padding:12,border:`1px solid ${T.bdr}`}}>
-                <DisegnoTecnico
-                  vanoNome={vano.nome || "Vano"}
-                  realW={vano.misure?.lCentro || 1200}
-                  realH={vano.misure?.hCentro || 2100}
-                  vanoDisegno={vano.disegno}
-                  sistemiDB={sistemiDB || []}
-                  onUpdate={(d) => updateVanoField(vano.id, "disegno", d)}
-                  T={T}
-                />
-              </div>
-              <div style={{fontSize:10,color:T.sub,textAlign:"center" as any}}>{vano.apertura||"fisso"} · {vano.materiale||"—"}</div>
-            </div>
+          {/* DisegnoTecnico CAD — piena colonna centrale */}
+          <div style={{flex:1,overflow:"hidden",minHeight:0,display:"flex",flexDirection:"column"}}>
+            <DisegnoTecnico
+              vanoNome={vano.nome || "Vano"}
+              realW={vano.misure?.lCentro && vano.misure.lCentro > 0 ? vano.misure.lCentro : 1500}
+              realH={vano.misure?.hCentro && vano.misure.hCentro > 0 ? vano.misure.hCentro : 2100}
+              onUpdate={(d:any) => {
+                upd("disegno", d);
+                if (d.L && d.L > 0) updM("lCentro", d.L);
+                if (d.H && d.H > 0) updM("hCentro", d.H);
+                if (d.stats) {
+                  upd("cadStats", d.stats);
+                }
+              }}
+              onClose={onClose}
+            />
+          </div>
+          <div style={{display:"none"}}>
             {/* Dati tecnici rapidi */}
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:10,fontWeight:600,color:T.sub,textTransform:"uppercase" as any,letterSpacing:0.4,marginBottom:10}}>Dati tecnici</div>
@@ -462,6 +463,12 @@ export default function ConfiguratoreCommessa({commessa, onClose}:{commessa:any,
                   {l:"Altezza",v:vano.misure?.hCentro?`${vano.misure.hCentro} mm`:"—"},
                   {l:"Sistema",v:vano.sistema||"—"},
                   {l:"Vetro",v:vano.vetro||"—"},
+                  ...(vano.cadStats ? [
+                    {l:"Peso vetri",v:`${vano.cadStats.peso||0} kg`},
+                    {l:"Sfrido",v:`${vano.cadStats.sfrido||0}%`},
+                    {l:"Ore produzione",v:`${vano.cadStats.ore||0}h`},
+                    {l:"Barre 6m",v:`${vano.cadStats.barre||0} pz`},
+                  ] : []),
                 ].map((d,i)=>(
                   <div key={i} style={{background:"#F8FAFC",borderRadius:8,padding:"7px 10px"}}>
                     <div style={{fontSize:9,color:T.sub}}>{d.l}</div>
