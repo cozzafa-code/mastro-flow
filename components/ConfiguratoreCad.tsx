@@ -146,9 +146,6 @@ function toInfissoRender(inf:any) {
         areaMq: s.areaMq,
         tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
         subMontanti:[], subTraversi:[], subCelle:[],
-        // traversi locali come "sub-traversi visivi"
-        _traversiLocali: col.traversiLocali,
-        _slots: col.slots,
       });
     } else {
       // Colonna con traversi = mostra come cella contenitore con slot figli
@@ -166,20 +163,23 @@ function toInfissoRender(inf:any) {
           areaMq: s.areaMq,
           tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
           subMontanti:[], subTraversi:[], subCelle:[],
-          _yOffset: yStart, // offset verticale dentro la colonna
         });
       });
     }
   });
 
-  // Calcola xPunti e yPunti per la griglia
   const xPts = [sp, ...inf.montanti.map((m:any)=>m.xMm).sort((a:number,b:number)=>a-b), inf.larghezzaVano-sp];
-  const yPts = [sp, inf.altezzaVano-sp]; // solo bordi per la griglia globale
+  // yPunti include tutti i traversi locali di tutte le colonne per il posizionamento
+  const allY = new Set<number>([sp, inf.altezzaVano-sp]);
+  inf.colonne.forEach((col:any)=>{
+    col.traversiLocali?.forEach((t:any)=>allY.add(sp+t.yMmRel));
+  });
+  const yPts = Array.from(allY).sort((a:number,b:number)=>a-b);
 
   return {
     ...inf,
     traversi: [],
-    griglia: { nColonne: inf.colonne.length, nRighe: 1, xPunti: xPts, yPunti: yPts, celle },
+    griglia: { nColonne: inf.colonne.length, nRighe: yPts.length-1, xPunti: xPts, yPunti: yPts, celle },
     sistema: {
       spessoreTelaio: sp, tipo: inf.profilo.materiale, serieNome: inf.profilo.nome,
       ufProfilo: inf.profilo.Uf, costoMlTelaio: inf.profilo.costoMlTelaio,
