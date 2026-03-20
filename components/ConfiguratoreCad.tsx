@@ -128,56 +128,68 @@ function ricalcola(inf:any, prevL?:number, prevH?:number) {
 // Converte il modello colonne/slots in formato atteso dal RendererSVG
 function toInfissoRender(inf:any) {
   const sp = inf.profilo.spessoreTelaio;
+  const L = inf.larghezzaVano;
   const H = inf.altezzaVano;
   const altNetta = H - sp*2;
-  const celle:any[] = [];
 
-  inf.colonne.forEach((col:any) => {
+  // xPunti: bordi colonne
+  const xPts = [sp, ...inf.montanti.map((m:any)=>m.xMm).sort((a:number,b:number)=>a-b), L-sp];
+
+  // Costruisce celle PIATTE — una per slot, con xPunti/yPunti calcolati
+  // Raccoglie tutti i yPunti unici (unione traversi locali di tutte le colonne)
+  const allYSet = new Set<number>([sp, H-sp]);
+  inf.colonne.forEach((col:any)=>{
+    col.traversiLocali?.forEach((t:any)=>allYSet.add(sp+t.yMmRel));
+  });
+  const yPts = Array.from(allYSet).sort((a:number,b:number)=>a-b);
+
+  // Celle flat: una per ogni slot
+  const celle:any[] = [];
+  inf.colonne.forEach((col:any)=>{
     const colIdx = parseInt(col.id.replace("col",""));
-    // Cella unica per colonna — traversi locali come subTraversi per il renderer
-    celle.push({
-      id: col.id,
-      colIdx,
-      rowIdx: 0,
-      larghezzaNetta: col.larghezzaNetta,
-      altezzaNetta: altNetta,
-      areaMq: Math.round(col.larghezzaNetta * altNetta) / 1_000_000,
-      tipo: col.slots[0]?.tipo || "fisso",
-      verso: col.slots[0]?.verso || "sx",
-      vetro: col.slots[0]?.vetro,
-      ferramenta: col.slots[0]?.ferramenta,
-      // Traversi locali come subTraversi — il renderer li disegna e li rende draggabili
-      subMontanti: [],
-      subTraversi: col.traversiLocali.map((t:any) => ({
-        id: t.id,
-        yMmRel: t.yMmRel,
-        spessoreMm: sp,
-        colId: col.id,
-      })),
-      // Sub-celle dagli slot
-      subCelle: col.slots.length > 1 ? col.slots.map((s:any, si:number) => {
-        const yPts = [0,...col.traversiLocali.map((t:any)=>t.yMmRel).sort((a:number,b:number)=>a-b), altNetta];
-        return {
-          id: s.id,
-          colIdx: 0,
-          rowIdx: si,
-          larghezzaNetta: col.larghezzaNetta,
-          altezzaNetta: s.altezzaNetta,
-          areaMq: s.areaMq,
-          tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
-          subMontanti:[], subTraversi:[], subCelle:[],
-        };
-      }) : [],
+    const colYPts = [sp, ...col.traversiLocali.map((t:any)=>sp+t.yMmRel).sort((a:number,b:number)=>a-b), H-sp];
+    
+    col.slots.forEach((s:any, si:number)=>{
+      // Calcola rowIdx globale: trova quale riga yPts corrisponde
+      const yStart = colYPts[si];
+      const rowIdx = yPts.indexOf(yStart);
+      
+      // Calcola altezza netta dello slot
+      const yEnd = colYPts[si+1];
+      const spTop = si===0 ? 0 : sp/2;
+      const spBot = si===col.slots.length-1 ? 0 : sp/2;
+      const hNetta = Math.round((yEnd-yStart) - spTop - spBot);
+
+      // Calcola larghezza netta della colonna
+      const nCol = xPts.length-1;
+      const spSx = colIdx===0 ? 0 : sp/2;
+      const spDx = colIdx===nCol-1 ? 0 : sp/2;
+      const lNetta = Math.round(xPts[colIdx+1]-xPts[colIdx]-spSx-spDx);
+
+      celle.push({
+        id: s.id,
+        colIdx,
+        rowIdx: rowIdx >= 0 ? rowIdx : si,
+        larghezzaNetta: lNetta,
+        altezzaNetta: Math.max(50, hNetta),
+        areaMq: Math.round(lNetta*Math.max(50,hNetta))/1_000_000,
+        tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
+        subMontanti: [],
+        // Traversi locali solo per il rendering visivo (non per subCelle)
+        subTraversi: si===0 ? col.traversiLocali.map((t:any)=>({
+          id: t.id, yMmRel: t.yMmRel, spessoreMm: sp, colId: col.id,
+        })) : [],
+        subCelle: [],
+        _colYStart: yStart, // offset assoluto y inizio slot
+        _colYEnd: yEnd,
+      });
     });
   });
-
-  const xPts = [sp, ...inf.montanti.map((m:any)=>m.xMm).sort((a:number,b:number)=>a-b), inf.larghezzaVano-sp];
-  const yPts = [sp, inf.altezzaVano-sp];
 
   return {
     ...inf,
     traversi: [],
-    griglia: { nColonne: inf.colonne.length, nRighe: 1, xPunti: xPts, yPunti: yPts, celle },
+    griglia: { nColonne: inf.colonne.length, nRighe: yPts.length-1, xPunti: xPts, yPunti: yPts, celle },
     sistema: {
       spessoreTelaio: sp, tipo: inf.profilo.materiale, serieNome: inf.profilo.nome,
       ufProfilo: inf.profilo.Uf, costoMlTelaio: inf.profilo.costoMlTelaio,

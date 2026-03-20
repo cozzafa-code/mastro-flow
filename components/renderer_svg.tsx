@@ -314,7 +314,10 @@ export function RendererSVG({infisso,width="90%",height="90%",onCellaClick,onCel
       {/* Celle (ricorsive) */}
       {griglia.celle.map((c:any)=>{
         const gx = griglia.xPunti[c.colIdx] + (c.colIdx>0?sp/2:0);
-        const gy = griglia.yPunti[c.rowIdx] + (c.rowIdx>0?sp/2:0);
+        // _colYStart: posizione assoluta dello slot (per celle con traversi locali)
+        const gy = c._colYStart !== undefined
+          ? c._colYStart + (c._colYStart > sp ? sp/2 : 0)
+          : griglia.yPunti[c.rowIdx] + (c.rowIdx>0?sp/2:0);
         return (
           <RenderCella key={c.id} c={c} gx={gx} gy={gy}
             sp={sp} isMkt={isMkt}
