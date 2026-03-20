@@ -136,7 +136,8 @@ function RenderCella({c, gx, gy, sp, isMkt, cellaSel, onCellaClick, setDragging}
       <rect x={gx} y={gy} width={gw} height={gh}
         fill={isMobile?PROFILO_ANTA:PROFILO_TELAIO}
         stroke={isSel?AMBER:stroke} strokeWidth={isSel?3:1} strokeOpacity={isSel?1:0.4}
-        style={{cursor:"pointer"}}/>
+        style={{cursor:"pointer"}}
+          onContextMenu={(e)=>{e.preventDefault();e.stopPropagation();onCellaContextMenu?.(c.id,e.clientX,e.clientY);}}/>
 
       {/* Profilo anta visibile (spessore ridotto) */}
       {isMobile && (

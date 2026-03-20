@@ -498,72 +498,62 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
       {/* CANVAS */}
       <div style={{flex:1,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:isMkt?DARK:"#F0F2F5",minWidth:0}}
         onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
-        onContextMenu={e=>{e.preventDefault();}}>
+        onContextMenu={e=>{e.preventDefault();}}> 
         <RendererSVG infisso={infForRenderer} width="90%" height="90%" svgRef={svgRef}
           setDragging={(d:any)=>{wasDrag.current=false;setDragging(d);}}
-          onCellaClick={handleCellaClick}
-          onCellaContextMenu={(slotId:string,x:number,y:number)=>setCtxMenu({x,y,slotId})}/>
+          onCellaClick={handleCellaClick}/>
         
-        {/* Context Menu */}
-        {ctxMenu && (
-          <div style={{position:"absolute",left:ctxMenu.x,top:ctxMenu.y,zIndex:9999,
-            background:"#fff",borderRadius:10,boxShadow:"0 4px 24px rgba(0,0,0,0.18)",
-            border:"1px solid #E5E7EB",minWidth:200,overflow:"hidden",fontFamily:"Inter,system-ui,sans-serif"}}
-            onMouseLeave={()=>setCtxMenu(null)}>
-            {/* Header */}
-            <div style={{padding:"8px 14px",background:"#F9FAFB",borderBottom:"1px solid #E5E7EB",
-              fontSize:11,fontWeight:700,color:"#6B7280",textTransform:"uppercase",letterSpacing:0.5}}>
-              {ctxMenu.slotId}
+        {/* CONTEXT MENU */}
+        {ctxMenu&&(
+          <div style={{position:"fixed",left:ctxMenu.x,top:ctxMenu.y,zIndex:99999,
+            background:"#fff",borderRadius:10,boxShadow:"0 8px 32px rgba(0,0,0,0.22)",
+            border:"1px solid #E5E7EB",minWidth:220,overflow:"hidden",fontFamily:"Inter,system-ui,sans-serif"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{padding:"8px 14px",background:"#1A1A1C",borderBottom:"1px solid #333",
+              fontSize:11,fontWeight:700,color:"#D08008",textTransform:"uppercase",letterSpacing:0.5}}>
+              {ctxMenu.slotId.replace("col","Col.").replace("-slot"," · Slot ")}
             </div>
-            {/* Tipi apertura */}
-            {[{id:"fisso",label:"Fisso",icon:"▣"},
-              {id:"anta_battente",label:"Anta battente",icon:"◧"},
-              {id:"anta_ribalta",label:"Anta-ribalta",icon:"◨"},
-              {id:"wasistas",label:"Wasistas",icon:"◩"},
-              {id:"porta",label:"Porta",icon:"🚪"},
-              {id:"scorrevole",label:"Scorrevole",icon:"⇔"},
-              {id:"pannello_cieco",label:"Pannello cieco",icon:"▪"},
-            ].map(t=>(
-              <div key={t.id} onClick={()=>{updSlot(ctxMenu.slotId,{tipo:t.id});setCtxMenu(null);setInf((p:any)=>({...p,_slotSel:ctxMenu.slotId}));}}
-                style={{padding:"8px 14px",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",gap:10,
-                  background:tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.tipo===t.id?"#FFF3D6":"#fff",
-                  color:"#1A1A1C"}}
-                onMouseEnter={e=>(e.currentTarget.style.background="#F3F4F6")}
-                onMouseLeave={e=>(e.currentTarget.style.background=tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.tipo===t.id?"#FFF3D6":"#fff")}>
-                <span style={{fontSize:16}}>{t.icon}</span>
-                <span>{t.label}</span>
-                {tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.tipo===t.id && 
-                  <span style={{marginLeft:"auto",color:"#D08008",fontWeight:700}}>✓</span>}
+            <div style={{padding:"4px 0 2px"}}>
+              <div style={{padding:"2px 14px",fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase"}}>Tipo apertura</div>
+              {([{id:"fisso",l:"Fisso",ic:"▣"},{id:"anta_battente",l:"Anta battente",ic:"◧"},{id:"anta_ribalta",l:"Anta-ribalta",ic:"◨"},{id:"wasistas",l:"Wasistas",ic:"◩"},{id:"porta",l:"Porta",ic:"🚪"},{id:"scorrevole",l:"Scorrevole",ic:"⇔"},{id:"pannello_cieco",l:"Pannello cieco",ic:"▪"}] as any[]).map((t:any)=>{
+                const isCur=tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.tipo===t.id;
+                return <div key={t.id} onClick={()=>{updSlot(ctxMenu.slotId,{tipo:t.id});setInf((p:any)=>({...p,_slotSel:ctxMenu.slotId}));setCtxMenu(null);}}
+                  style={{padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,
+                    background:isCur?"#FFF8E7":"transparent",fontSize:13,color:"#1A1A1C"}}>
+                  <span style={{fontSize:15,width:20}}>{t.ic}</span>
+                  <span style={{flex:1}}>{t.l}</span>
+                  {isCur&&<span style={{color:"#D08008",fontWeight:900}}>✓</span>}
+                </div>;
+              })}
+            </div>
+            {(["anta_battente","anta_ribalta","porta"] as string[]).includes(tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.tipo||"")&&(
+              <div style={{borderTop:"1px solid #F3F4F6",padding:"4px 14px 8px"}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase",marginBottom:4}}>Verso</div>
+                <div style={{display:"flex",gap:6}}>
+                  {(["sx","dx"] as string[]).map((v:string)=>{
+                    const isCur=tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.verso===v;
+                    return <button key={v} onClick={()=>{updSlot(ctxMenu.slotId,{verso:v});setCtxMenu(null);}}
+                      style={{flex:1,padding:"5px 0",border:`1.5px solid ${isCur?"#1A9E73":"#E5E7EB"}`,borderRadius:6,
+                        fontSize:12,fontWeight:700,cursor:"pointer",
+                        background:isCur?"#1A9E7318":"#fff",color:isCur?"#1A9E73":"#1A1A1C"}}>
+                      {v==="sx"?"◄ SX":"DX ►"}
+                    </button>;
+                  })}
+                </div>
               </div>
-            ))}
-            {/* Separatore verso */}
-            {["anta_battente","anta_ribalta","porta"].includes(tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.tipo||"") && <>
-              <div style={{borderTop:"1px solid #E5E7EB",padding:"4px 14px 2px",fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase"}}>Verso</div>
-              <div style={{display:"flex",padding:"4px 14px 8px",gap:6}}>
-                {["sx","dx"].map(v=>(
-                  <button key={v} onClick={()=>{updSlot(ctxMenu.slotId,{verso:v});setCtxMenu(null);}}
-                    style={{flex:1,padding:"5px 0",border:`1.5px solid ${tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.verso===v?"#1A9E73":"#E5E7EB"}`,
-                      borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",
-                      background:tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.verso===v?"#1A9E7318":"#fff",
-                      color:tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.verso===v?"#1A9E73":"#1A1A1C"}}>
-                    {v==="sx"?"◄ SX":"DX ►"}
-                  </button>
-                ))}
-              </div>
-            </>}
-            {/* Separatore vetro */}
-            <div style={{borderTop:"1px solid #E5E7EB",padding:"4px 14px 2px",fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase"}}>Vetro</div>
-            {VETRI.map(v=>(
-              <div key={v.id} onClick={()=>{updSlot(ctxMenu.slotId,{vetro:v});setCtxMenu(null);}}
-                style={{padding:"6px 14px",cursor:"pointer",fontSize:12,display:"flex",justifyContent:"space-between",
-                  background:tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.vetro?.id===v.id?"#F0FDF4":"#fff",
-                  color:"#1A1A1C"}}
-                onMouseEnter={e=>(e.currentTarget.style.background="#F3F4F6")}
-                onMouseLeave={e=>(e.currentTarget.style.background=tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.vetro?.id===v.id?"#F0FDF4":"#fff")}>
-                <span>{v.label}</span>
-                <span style={{color:"#6B7280",fontSize:11}}>Ug {v.ugValore}</span>
-              </div>
-            ))}
+            )}
+            <div style={{borderTop:"1px solid #F3F4F6",padding:"4px 0 4px"}}>
+              <div style={{padding:"2px 14px",fontSize:10,fontWeight:700,color:"#9CA3AF",textTransform:"uppercase"}}>Vetro</div>
+              {(VETRI as any[]).map((v:any)=>{
+                const isCur=tuttiSlots.find((s:any)=>s.id===ctxMenu.slotId)?.vetro?.id===v.id;
+                return <div key={v.id} onClick={()=>{updSlot(ctxMenu.slotId,{vetro:v});setCtxMenu(null);}}
+                  style={{padding:"6px 14px",cursor:"pointer",display:"flex",justifyContent:"space-between",
+                    background:isCur?"#F0FDF4":"transparent",fontSize:12,color:"#1A1A1C"}}>
+                  <span>{v.label}</span>
+                  <span style={{color:"#6B7280",fontSize:11}}>Ug {v.ugValore}{isCur?" ✓":""}</span>
+                </div>;
+              })}
+            </div>
           </div>
         )}
       </div>
