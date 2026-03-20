@@ -265,7 +265,9 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
               {[["L mm",inf.larghezzaVano,(v:number)=>upd({larghezzaVano:v})],["H mm",inf.altezzaVano,(v:number)=>upd({altezzaVano:v})]].map(([lbl,val,fn]:any)=>(
                 <div key={lbl} style={{flex:1}}>
                   <div style={{fontSize:9,color:SUB,marginBottom:2}}>{lbl}</div>
-                  <input type="number" value={val} style={INP} onChange={e=>{const v=parseInt(e.target.value);if(v>200)fn(v);}}/>
+                  <input type="number" defaultValue={val} key={val} style={INP}
+                    onBlur={e=>{const v=parseInt(e.target.value);if(v>200)fn(v);}}
+                    onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt((e.target as HTMLInputElement).value);if(v>200)fn(v);}}}/>
                 </div>
               ))}
             </div>
