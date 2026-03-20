@@ -136,7 +136,8 @@ function RenderCella({c, gx, gy, sp, isMkt, cellaSel, onCellaClick, setDragging}
       <rect x={gx} y={gy} width={gw} height={gh}
         fill={isMobile?PROFILO_ANTA:PROFILO_TELAIO}
         stroke={isSel?AMBER:stroke} strokeWidth={isSel?3:1} strokeOpacity={isSel?1:0.4}
-        style={{cursor:"pointer"}}/>
+        style={{cursor:hasChildren?"default":"pointer"}}
+        onClick={!hasChildren?(e)=>{e.stopPropagation();onCellaClick?.(c.id);}:undefined}/>
 
       {/* Profilo anta visibile (spessore ridotto) */}
       {isMobile && (
@@ -220,11 +221,20 @@ function RenderCella({c, gx, gy, sp, isMkt, cellaSel, onCellaClick, setDragging}
         fill={AMBER} fillOpacity="0.07" stroke="none"
         style={{pointerEvents:"none"}}/>}
 
-      {/* Click area trasparente sopra tutto */}
-      <rect x={gx} y={gy} width={gw} height={gh} fill="transparent" stroke="none"
-        style={{cursor:"pointer"}}
-        onClick={(e)=>{e.stopPropagation();onCellaClick?.(c.id);}}
-        onMouseDown={(e)=>e.stopPropagation()}/>
+      {/* Click area trasparente sopra tutto — solo se cella foglia */}
+      {!hasChildren && (
+        <rect x={gx} y={gy} width={gw} height={gh} fill="transparent" stroke="none"
+          style={{cursor:"pointer"}}
+          onClick={(e)=>{e.stopPropagation();onCellaClick?.(c.id);}}
+          onMouseDown={(e)=>{e.stopPropagation();}}/>
+      )}
+      {/* Se ha figli, click solo sul bordo (profilo) */}
+      {hasChildren && (
+        <rect x={gx} y={gy} width={gw} height={gh} fill="transparent" stroke="none"
+          style={{cursor:"default"}}
+          onClick={(e)=>e.stopPropagation()}
+          onMouseDown={(e)=>e.stopPropagation()}/>
+      )}
     </g>
   );
 }
@@ -312,8 +322,11 @@ export function RendererSVG({infisso,width="90%",height="90%",onCellaClick,svgRe
 
       {/* Celle (ricorsive) */}
       {griglia.celle.map((c:any)=>{
-        const gx = griglia.xPunti[c.colIdx] + (c.colIdx>0?sp/2:0);
-        const gy = griglia.yPunti[c.rowIdx] + (c.rowIdx>0?sp/2:0);
+        const nCol = griglia.xPunti.length - 1;
+        const nRow = griglia.yPunti.length - 1;
+        // Posizione reale = bordo segmento + mezzo profilo se non è bordo telaio
+        const gx = griglia.xPunti[c.colIdx] + (c.colIdx > 0 ? sp/2 : 0);
+        const gy = griglia.yPunti[c.rowIdx] + (c.rowIdx > 0 ? sp/2 : 0);
         return (
           <RenderCella key={c.id} c={c} gx={gx} gy={gy}
             sp={sp} isMkt={isMkt}
