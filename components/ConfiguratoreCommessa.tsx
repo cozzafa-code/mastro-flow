@@ -1,4 +1,5 @@
 "use client";
+import DisegnoTecnico from "./DisegnoTecnico";
 // @ts-nocheck
 // MASTRO — ConfiguratoreCommessa v2 — Professional Grade
 // Tutto quello che hanno Opera + FPPRO + quello che non hanno
@@ -438,7 +439,15 @@ export default function ConfiguratoreCommessa({commessa, onClose}:{commessa:any,
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
               <div style={{fontSize:10,fontWeight:600,color:T.sub,textTransform:"uppercase" as any,letterSpacing:0.4}}>Anteprima</div>
               <div style={{background:"#F8FAFC",borderRadius:12,padding:12,border:`1px solid ${T.bdr}`}}>
-                <InfissoSVG tipo={vano.tipo} l={vano.misure?.lCentro} h={vano.misure?.hCentro} apertura={vano.apertura} colore={vano.coloreInt||vano.colore}/>
+                <DisegnoTecnico
+                  vanoNome={vano.nome || "Vano"}
+                  realW={vano.misure?.lCentro || 1200}
+                  realH={vano.misure?.hCentro || 2100}
+                  vanoDisegno={vano.disegno}
+                  sistemiDB={sistemiDB || []}
+                  onUpdate={(d) => updateVanoField(vano.id, "disegno", d)}
+                  T={T}
+                />
               </div>
               <div style={{fontSize:10,color:T.sub,textAlign:"center" as any}}>{vano.apertura||"fisso"} · {vano.materiale||"—"}</div>
             </div>
