@@ -1,214 +1,99 @@
 // ═══════════════════════════════════════════════════════════════
-// MASTRO CAD — MODELLO DATI TECNICO v1.0
-// Fonte di verità per tutti i moduli del configuratore
+// MASTRO CAD — types_cad.ts v2.0
+// Modello dati ricorsivo: ogni cella può avere sub-griglia
 // ═══════════════════════════════════════════════════════════════
 
-// ── ENUMERAZIONI ───────────────────────────────────────────────
-
 export type TipoCella =
-  | "fisso"
-  | "anta_battente"
-  | "anta_ribalta"
-  | "wasistas"
-  | "porta"
-  | "scorrevole"
-  | "pannello_cieco";
+  | "fisso" | "anta_battente" | "anta_ribalta"
+  | "wasistas" | "porta" | "scorrevole" | "pannello_cieco";
 
 export type VersoApertura = "sx" | "dx" | "interno" | "esterno";
 
-export type TipoVetro =
-  | "std_4_16_4"
-  | "stratificato_33_1"
-  | "riflettente"
-  | "triplo"
-  | "camera"
-  | "antisfondamento"
-  | "personalizzato";
-
-export type TipoProfilo = "ALLUMINIO" | "PVC" | "LEGNO";
-
-export type TipoPannello = "cieco_lamiera" | "cieco_legno" | "sandwich" | "vetro";
-
-// ── PROFILO SISTEMA ────────────────────────────────────────────
-
-export interface SistemaProfilo {
-  tipo: TipoProfilo;
-  serieNome: string;          // es. "Schüco AWS 70"
-  spessoreTelaio: number;     // mm — larghezza profilo vista frontale
-  spessoreMuro: number;       // mm — profondità profilo
-  costoMlTelaio: number;      // €/ml telaio
-  costoMlAnte: number;        // €/ml profili anta
-  ufProfilo: number;          // W/m²K trasmittanza profilo
-  coloreEsterno: string;      // hex
-  coloreInterno: string;      // hex
-}
-
-// ── VETRO ──────────────────────────────────────────────────────
-
 export interface ConfigVetro {
-  tipo: TipoVetro;
-  label: string;              // nome commerciale
-  composizione: string;       // es. "4-16-4 Argon"
-  ugValore: number;           // W/m²K
-  sfValore: number;           // fattore solare
-  spessoreToale: number;      // mm
-  pesoMq: number;             // kg/m²
-  costoMq: number;            // €/m²
-  puntoDiRugiada: number;     // °C interno
-  resistenzaUrto: boolean;    // antisfondamento
-  trattamenti: string[];      // ["basso_emissivo", "selettivo", ...]
+  id: string;
+  label: string;
+  ugValore: number;
+  pesoMq: number;
+  costoMq: number;
 }
-
-// ── FERRAMENTA CELLA ──────────────────────────────────────────
 
 export interface FerramentaCella {
   maniglia: boolean;
-  maniglione: boolean;        // per porte
-  nCerniere: number;          // 2 | 3
+  maniglione: boolean;
+  nCerniere: number;
   cerniereTipo: "standard" | "rinforzate" | "nascoste";
   chiusuraMultipunto: boolean;
-  costoFerramenta: number;    // € totale ferramenta cella
+  costoFerramenta: number;
 }
 
-// ── CELLA ─────────────────────────────────────────────────────
+// ── MONTANTE/TRAVERSO LOCALE (relativo alla cella padre) ───────
+export interface MontanteLocale {
+  id: string;
+  xMmRel: number;    // mm dal bordo sinistro della cella padre
+  spessoreMm: number;
+}
 
+export interface TraversoLocale {
+  id: string;
+  yMmRel: number;    // mm dal bordo superiore della cella padre
+  spessoreMm: number;
+}
+
+// ── CELLA RICORSIVA ────────────────────────────────────────────
 export interface Cella {
-  id: string;                 // "0-0", "1-0", ecc.
-  // Posizione nella griglia
+  id: string;
+  // Posizione nella griglia padre
   colIdx: number;
   rowIdx: number;
-  // Dimensioni nette interne (mm) — calcolate dal motore geometrico
+  // Dimensioni nette (mm) — calcolate dal motore
   larghezzaNetta: number;
   altezzaNetta: number;
-  areaMq: number;             // larghezzaNetta * altezzaNetta / 1e6
-  // Configurazione
+  areaMq: number;
+  // Configurazione apertura
   tipo: TipoCella;
   verso: VersoApertura;
   riempimento: "vetro" | "pannello";
   vetro?: ConfigVetro;
-  pannello?: { tipo: TipoPannello; spessore: number; costoMq: number };
   ferramenta: FerramentaCella;
-  // Output tecnico (calcolato)
-  pesoVetro: number;          // kg
-  costoVetro: number;         // €
-  costoFerramenta: number;    // €
+  // ── SUB-GRIGLIA (ricorsiva) ──
+  // Se presenti, questa cella è un contenitore con sotto-celle
+  subMontanti: MontanteLocale[];
+  subTraversi: TraversoLocale[];
+  subCelle: Cella[];           // celle figlie, vuoto se cella foglia
+  // Calcolati
+  pesoVetro: number;
+  costoVetro: number;
 }
 
-// ── MONTANTE / TRAVERSO ────────────────────────────────────────
-
-export interface Montante {
-  id: string;
-  xMm: number;                // posizione dal bordo sinistro telaio (mm)
-  spessoreMm: number;         // stesso del sistema profilo
-}
-
-export interface Traverso {
-  id: string;
-  yMm: number;                // posizione dal bordo superiore telaio (mm)
-  spessoreMm: number;
-}
-
-// ── GRIGLIA ───────────────────────────────────────────────────
-
+// ── GRIGLIA DI PRIMO LIVELLO ───────────────────────────────────
 export interface Griglia {
-  nColonne: number;           // montanti.length + 1
-  nRighe: number;             // traversi.length + 1
-  xPunti: number[];           // punti X assoluti (inclusi bordi telaio)
-  yPunti: number[];           // punti Y assoluti (inclusi bordi telaio)
-  celle: Cella[];             // nColonne * nRighe celle
+  nColonne: number;
+  nRighe: number;
+  xPunti: number[];   // coordinate assolute bordi colonne
+  yPunti: number[];   // coordinate assolute bordi righe
+  celle: Cella[];
 }
 
-// ── INFISSO (UNITÀ PRINCIPALE) ────────────────────────────────
-
+// ── INFISSO PRINCIPALE ─────────────────────────────────────────
 export interface Infisso {
   id: string;
-  vanoId: string;             // FK commessa vano
-  // Dimensioni vano (mm)
+  vanoId: string;
   larghezzaVano: number;
   altezzaVano: number;
   spessoreMuro: number;
-  // Sistema
-  sistema: SistemaProfilo;
-  // Struttura
-  montanti: Montante[];
-  traversi: Traverso[];
+  profilo: any;           // Profilo da lib/engine/profili
+  montanti: { id: string; xMm: number; spessoreMm: number }[];
+  traversi:  { id: string; yMm: number; spessoreMm: number }[];
   griglia: Griglia;
-  // Stato UI (non persistito su DB)
-  _cellaSel: string | null;
+  _cellaSel: string | null;   // id cella selezionata (path: "0-0" o "0-0.1-0")
   _mode: "industrial" | "marketing";
-  // Output tecnico aggregato (calcolato, non persistito)
-  output?: OutputTecnico;
+  sistema: any;               // compat layer renderer
 }
 
-// ── OUTPUT TECNICO ────────────────────────────────────────────
-
-export interface OutputTecnico {
-  // Superfici
-  areaTotMq: number;
-  areaVetroMq: number;
-  areaPannelliMq: number;
-  // Profili
-  mlTelaio: number;
-  mlAnte: number;
-  mlTotale: number;
-  nBarre6m: number;
-  sfrido: number;             // %
-  // Pesi
-  pesoVetriKg: number;
-  pesoProfiliKg: number;      // stima ml * kg/ml sistema
-  pesoTotaleKg: number;
-  // Termica
-  uw: number;                 // W/m²K calcolato EN 14351
-  ugMedio: number;            // media pesata vetri
-  classeEnergetica: "A4"|"A3"|"A2"|"A1"|"A"|"B"|"C"|"D";
-  rischioBrinamento: boolean;
-  // Economico
-  costoVetri: number;
-  costoProfiloTelaio: number;
-  costoProfiloAnte: number;
-  costoFerramenta: number;
-  costoTotMateriali: number;
-  margine: number;            // %
-  prezzoVendita: number;
-  // Distinta tagli
-  listaTagli: TaglioProfilo[];
-  // Distinta componenti
-  distinta: DistintaVoce[];
-}
-
-export interface TaglioProfilo {
-  profiloId: string;
-  descrizione: string;
-  lunghezzaMm: number;
-  quantita: number;
-  barraAssegnata: number;     // numero barra 6m
-  offset: number;             // posizione nel barra mm
-}
-
-export interface DistintaVoce {
-  codice: string;
-  descrizione: string;
-  um: "pz" | "ml" | "m2" | "kg";
-  quantita: number;
-  costoUnit: number;
-  costoTot: number;
-}
-
-// ── PAYLOAD SUPABASE ──────────────────────────────────────────
-// Tutto ciò che viene persistito — senza i campi _ui e output calcolati
-
-export interface InfissoJSON {
-  id: string;
-  vano_id: string;
-  larghezza_vano: number;
-  altezza_vano: number;
-  spessore_muro: number;
-  sistema: SistemaProfilo;
-  montanti: Montante[];
-  traversi: Traverso[];
-  celle: Pick<Cella,
-    "id"|"colIdx"|"rowIdx"|"tipo"|"verso"|"riempimento"|"vetro"|"pannello"|"ferramenta"
-  >[];
-  created_at?: string;
-  updated_at?: string;
-}
+// ── PRESET APERTURE ────────────────────────────────────────────
+export type PresetApertura =
+  | "1_anta_sx" | "1_anta_dx"
+  | "2_ante"    | "3_ante"
+  | "2_ante_bilico"
+  | "fisso"     | "porta_sx" | "porta_dx"
+  | "scorrevole_2" | "scorrevole_3";

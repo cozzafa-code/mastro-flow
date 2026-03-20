@@ -1,171 +1,266 @@
 // ═══════════════════════════════════════════════════════════════
-// MASTRO CAD — MODULO 1: MOTORE GEOMETRICO
-// Input: dimensioni vano + montanti + traversi
-// Output: griglia di celle con dimensioni nette reali
-// Puro TypeScript, nessuna dipendenza React/UI
+// MASTRO CAD — motore_geometrico.ts v2.0
+// Supporta griglia ricorsiva: sub-montanti/traversi per cella
 // ═══════════════════════════════════════════════════════════════
-import type { Montante, Traverso, Griglia, Cella, SistemaProfilo, FerramentaCella } from "./types_cad";
+import type { Cella, Griglia, MontanteLocale, TraversoLocale, PresetApertura } from "./types_cad";
 
-const FERRAMENTA_DEFAULT: FerramentaCella = {
-  maniglia: true, maniglione: false, nCerniere: 2,
-  cerniereTipo: "standard", chiusuraMultipunto: false, costoFerramenta: 0
+const FER_DEFAULT = {
+  maniglia:true, maniglione:false, nCerniere:2,
+  cerniereTipo:"standard" as const, chiusuraMultipunto:false, costoFerramenta:0
 };
 
-/**
- * Calcola la griglia di celle dato il vano e la struttura.
- * Restituisce celle con dimensioni nette reali in mm.
- */
+// ── CALCOLA SUB-GRIGLIA DI UNA SINGOLA CELLA ──────────────────
+export function calcolaSubGriglia(
+  cella: Cella,
+  sp: number,
+  celleEsistenti: Cella[] = []
+): Cella[] {
+  if (!cella.subMontanti.length && !cella.subTraversi.length) return [];
+
+  const L = cella.larghezzaNetta;
+  const H = cella.altezzaNetta;
+
+  const xPts = [0, ...cella.subMontanti.map(m=>m.xMmRel).sort((a,b)=>a-b), L];
+  const yPts = [0, ...cella.subTraversi.map(t=>t.yMmRel).sort((a,b)=>a-b), H];
+
+  const nCol = xPts.length - 1;
+  const nRow = yPts.length - 1;
+  const subCelle: Cella[] = [];
+
+  for (let row = 0; row < nRow; row++) {
+    for (let col = 0; col < nCol; col++) {
+      const subId = `${cella.id}.${col}-${row}`;
+      const esistente = celleEsistenti.find(c => c.id === subId) || {};
+
+      const x0 = xPts[col];
+      const x1 = xPts[col+1];
+      const y0 = yPts[row];
+      const y1 = yPts[row+1];
+
+      // Spessore profilo interno: mezzo sp per lato interno, 0 per bordo cella
+      const spSx = col === 0       ? 0 : sp/2;
+      const spDx = col === nCol-1  ? 0 : sp/2;
+      const spTop= row === 0       ? 0 : sp/2;
+      const spBot= row === nRow-1  ? 0 : sp/2;
+
+      const lNetta = Math.round(x1-x0-spSx-spDx);
+      const hNetta = Math.round(y1-y0-spTop-spBot);
+      const areaMq = Math.round(lNetta*hNetta)/1_000_000;
+
+      subCelle.push({
+        id: subId,
+        colIdx: col, rowIdx: row,
+        larghezzaNetta: lNetta,
+        altezzaNetta: hNetta,
+        areaMq,
+        tipo: (esistente as any).tipo || "fisso",
+        verso: (esistente as any).verso || "sx",
+        riempimento: (esistente as any).riempimento || "vetro",
+        vetro: (esistente as any).vetro,
+        ferramenta: (esistente as any).ferramenta || {...FER_DEFAULT},
+        subMontanti: (esistente as any).subMontanti || [],
+        subTraversi: (esistente as any).subTraversi || [],
+        subCelle: [],
+        pesoVetro: 0, costoVetro: 0,
+      });
+    }
+  }
+  return subCelle;
+}
+
+// ── CALCOLA GRIGLIA PRINCIPALE ────────────────────────────────
 export function calcolaGriglia(
-  larghezzaVano: number,
-  altezzaVano: number,
-  montanti: Montante[],
-  traversi: Traverso[],
-  sistema: SistemaProfilo,
+  L: number, H: number,
+  montanti: {id:string;xMm:number;spessoreMm:number}[],
+  traversi:  {id:string;yMm:number;spessoreMm:number}[],
+  sistema: {spessoreTelaio:number},
   celleEsistenti: Partial<Cella>[] = []
 ): Griglia {
   const sp = sistema.spessoreTelaio;
 
-  // Punti X: bordo interno sx + posizioni montanti + bordo interno dx
-  const xPunti = [
-    sp,
-    ...montanti.map(m => m.xMm).sort((a,b) => a-b),
-    larghezzaVano - sp
-  ];
+  const xPts = [sp, ...montanti.map(m=>m.xMm).sort((a,b)=>a-b), L-sp];
+  const yPts = [sp, ...traversi.map(t=>t.yMm).sort((a,b)=>a-b), H-sp];
 
-  // Punti Y: bordo interno top + posizioni traversi + bordo interno bottom
-  const yPunti = [
-    sp,
-    ...traversi.map(t => t.yMm).sort((a,b) => a-b),
-    altezzaVano - sp
-  ];
-
-  const nCol = xPunti.length - 1;
-  const nRow = yPunti.length - 1;
+  const nCol = xPts.length-1;
+  const nRow = yPts.length-1;
   const celle: Cella[] = [];
 
-  for (let row = 0; row < nRow; row++) {
-    for (let col = 0; col < nCol; col++) {
+  for (let row=0; row<nRow; row++) {
+    for (let col=0; col<nCol; col++) {
       const id = `${col}-${row}`;
-      const esistente = celleEsistenti.find(c => c.id === id) || {};
+      const es = celleEsistenti.find(c=>c.id===id) || {} as any;
 
-      // Larghezza netta: sottrae mezzo profilo montante su ogni lato (se non è bordo telaio)
-      const x0 = xPunti[col];
-      const x1 = xPunti[col + 1];
-      const spSxMezzo = col === 0 ? 0 : sp / 2;
-      const spDxMezzo = col === nCol - 1 ? 0 : sp / 2;
-      const larghezzaNetta = x1 - x0 - spSxMezzo - spDxMezzo;
+      const x0 = xPts[col], x1 = xPts[col+1];
+      const y0 = yPts[row], y1 = yPts[row+1];
+      const spSx = col===0       ? 0 : sp/2;
+      const spDx = col===nCol-1  ? 0 : sp/2;
+      const spTop= row===0       ? 0 : sp/2;
+      const spBot= row===nRow-1  ? 0 : sp/2;
 
-      const y0 = yPunti[row];
-      const y1 = yPunti[row + 1];
-      const spTopMezzo = row === 0 ? 0 : sp / 2;
-      const spBotMezzo = row === nRow - 1 ? 0 : sp / 2;
-      const altezzaNetta = y1 - y0 - spTopMezzo - spBotMezzo;
+      const lNetta = Math.round(x1-x0-spSx-spDx);
+      const hNetta = Math.round(y1-y0-spTop-spBot);
 
-      const areaMq = (larghezzaNetta * altezzaNetta) / 1_000_000;
+      const cella: Cella = {
+        id, colIdx:col, rowIdx:row,
+        larghezzaNetta: lNetta,
+        altezzaNetta: hNetta,
+        areaMq: Math.round(lNetta*hNetta)/1_000_000,
+        tipo: es.tipo || "fisso",
+        verso: es.verso || "sx",
+        riempimento: es.riempimento || "vetro",
+        vetro: es.vetro,
+        ferramenta: es.ferramenta || {...FER_DEFAULT},
+        subMontanti: es.subMontanti || [],
+        subTraversi: es.subTraversi || [],
+        subCelle: [],
+        pesoVetro:0, costoVetro:0,
+      };
 
-      celle.push({
-        id,
-        colIdx: col,
-        rowIdx: row,
-        larghezzaNetta: Math.round(larghezzaNetta),
-        altezzaNetta: Math.round(altezzaNetta),
-        areaMq: Math.round(areaMq * 1000) / 1000,
-        tipo: esistente.tipo || "fisso",
-        verso: esistente.verso || "sx",
-        riempimento: esistente.riempimento || "vetro",
-        vetro: esistente.vetro,
-        pannello: esistente.pannello,
-        ferramenta: esistente.ferramenta || { ...FERRAMENTA_DEFAULT },
-        pesoVetro: 0,   // calcolato da calcolaOutput
-        costoVetro: 0,
-        costoFerramenta: 0,
-      });
+      // Ricalcola sub-griglia se esistente
+      if (cella.subMontanti.length || cella.subTraversi.length) {
+        cella.subCelle = calcolaSubGriglia(cella, sp, es.subCelle||[]);
+      }
+
+      celle.push(cella);
     }
   }
 
-  return { nColonne: nCol, nRighe: nRow, xPunti, yPunti, celle };
+  return { nColonne:nCol, nRighe:nRow, xPunti:xPts, yPunti:yPts, celle };
 }
 
-/**
- * Aggiunge un montante alla posizione xMm.
- * Clamp: non può stare a meno di 2x spessore dal bordo o da altri montanti.
- */
-export function addMontante(
-  montanti: Montante[],
-  xMm: number,
-  larghezzaVano: number,
-  sistema: SistemaProfilo
-): Montante[] {
+// ── MONTANTI GLOBALI ──────────────────────────────────────────
+export function addMontante(montanti:any[], xMm:number, L:number, sistema:any) {
   const sp = sistema.spessoreTelaio;
-  const min = sp * 2;
-  const max = larghezzaVano - sp * 2;
-  const x = Math.round(Math.max(min, Math.min(max, xMm)));
-  // evita duplicati troppo vicini (< 2x spessore)
-  if (montanti.some(m => Math.abs(m.xMm - x) < sp * 2)) return montanti;
-  const id = `m${Date.now()}`;
-  return [...montanti, { id, xMm: x, spessoreMm: sp }].sort((a,b) => a.xMm - b.xMm);
+  const x = Math.round(Math.max(sp*2, Math.min(L-sp*2, xMm)));
+  if (montanti.some(m=>Math.abs(m.xMm-x)<sp*2)) return montanti;
+  return [...montanti, {id:`m${Date.now()}`,xMm:x,spessoreMm:sp}].sort((a,b)=>a.xMm-b.xMm);
 }
 
-export function addTraverso(
-  traversi: Traverso[],
-  yMm: number,
-  altezzaVano: number,
-  sistema: SistemaProfilo
-): Traverso[] {
+export function addTraverso(traversi:any[], yMm:number, H:number, sistema:any) {
   const sp = sistema.spessoreTelaio;
-  const min = sp * 2;
-  const max = altezzaVano - sp * 2;
-  const y = Math.round(Math.max(min, Math.min(max, yMm)));
-  if (traversi.some(t => Math.abs(t.yMm - y) < sp * 2)) return traversi;
-  const id = `t${Date.now()}`;
-  return [...traversi, { id, yMm: y, spessoreMm: sp }].sort((a,b) => a.yMm - b.yMm);
+  const y = Math.round(Math.max(sp*2, Math.min(H-sp*2, yMm)));
+  if (traversi.some(t=>Math.abs(t.yMm-y)<sp*2)) return traversi;
+  return [...traversi, {id:`t${Date.now()}`,yMm:y,spessoreMm:sp}].sort((a,b)=>a.yMm-b.yMm);
 }
 
-export function moveMontante(
-  montanti: Montante[],
-  id: string,
-  newX: number,
-  larghezzaVano: number,
-  sistema: SistemaProfilo
-): Montante[] {
+export function moveMontante(montanti:any[], id:string, newX:number, L:number, sistema:any) {
   const sp = sistema.spessoreTelaio;
-  const x = Math.round(Math.max(sp * 2, Math.min(larghezzaVano - sp * 2, newX)));
-  return montanti.map(m => m.id === id ? { ...m, xMm: x } : m);
+  const x = Math.round(Math.max(sp*2, Math.min(L-sp*2, newX)));
+  return montanti.map(m=>m.id===id?{...m,xMm:x}:m);
 }
 
-export function moveTraverso(
-  traversi: Traverso[],
-  id: string,
-  newY: number,
-  altezzaVano: number,
-  sistema: SistemaProfilo
-): Traverso[] {
+export function moveTraverso(traversi:any[], id:string, newY:number, H:number, sistema:any) {
   const sp = sistema.spessoreTelaio;
-  const y = Math.round(Math.max(sp * 2, Math.min(altezzaVano - sp * 2, newY)));
-  return traversi.map(t => t.id === id ? { ...t, yMm: y } : t);
+  const y = Math.round(Math.max(sp*2, Math.min(H-sp*2, newY)));
+  return traversi.map(t=>t.id===id?{...t,yMm:y}:t);
 }
 
-/**
- * Suggerisce posizione centrale per nuovo montante/traverso.
- */
-export function suggerisciPosMontante(montanti: Montante[], larghezzaVano: number, sistema: SistemaProfilo): number {
+// ── SUB-MONTANTI/TRAVERSI PER CELLA ──────────────────────────
+export function addSubMontante(cella: Cella, xMmRel:number, sp:number): Cella {
+  const x = Math.round(Math.max(sp, Math.min(cella.larghezzaNetta-sp, xMmRel)));
+  if (cella.subMontanti.some(m=>Math.abs(m.xMmRel-x)<sp)) return cella;
+  const subMontanti = [...cella.subMontanti, {id:`sm${Date.now()}`,xMmRel:x,spessoreMm:sp}]
+    .sort((a,b)=>a.xMmRel-b.xMmRel);
+  const updated = {...cella, subMontanti};
+  updated.subCelle = calcolaSubGriglia(updated, sp, cella.subCelle);
+  return updated;
+}
+
+export function addSubTraverso(cella: Cella, yMmRel:number, sp:number): Cella {
+  const y = Math.round(Math.max(sp, Math.min(cella.altezzaNetta-sp, yMmRel)));
+  if (cella.subTraversi.some(t=>Math.abs(t.yMmRel-y)<sp)) return cella;
+  const subTraversi = [...cella.subTraversi, {id:`st${Date.now()}`,yMmRel:y,spessoreMm:sp}]
+    .sort((a,b)=>a.yMmRel-b.yMmRel);
+  const updated = {...cella, subTraversi};
+  updated.subCelle = calcolaSubGriglia(updated, sp, cella.subCelle);
+  return updated;
+}
+
+export function removeSubMontante(cella: Cella, id:string, sp:number): Cella {
+  const subMontanti = cella.subMontanti.filter(m=>m.id!==id);
+  const updated = {...cella, subMontanti};
+  updated.subCelle = calcolaSubGriglia(updated, sp, cella.subCelle);
+  return updated;
+}
+
+export function removeSubTraverso(cella: Cella, id:string, sp:number): Cella {
+  const subTraversi = cella.subTraversi.filter(t=>t.id!==id);
+  const updated = {...cella, subTraversi};
+  updated.subCelle = calcolaSubGriglia(updated, sp, cella.subCelle);
+  return updated;
+}
+
+// ── POSIZIONE SUGGERITA ────────────────────────────────────────
+export function suggerisciPosMontante(montanti:any[], L:number, sistema:any) {
   const sp = sistema.spessoreTelaio;
-  const pts = [sp, ...montanti.map(m => m.xMm), larghezzaVano - sp];
-  let maxGap = 0; let bestX = larghezzaVano / 2;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const gap = pts[i+1] - pts[i];
-    if (gap > maxGap) { maxGap = gap; bestX = Math.round((pts[i] + pts[i+1]) / 2); }
-  }
+  const pts = [sp, ...montanti.map((m:any)=>m.xMm), L-sp];
+  let maxGap=0, bestX=Math.round(L/2);
+  for (let i=0;i<pts.length-1;i++){const g=pts[i+1]-pts[i];if(g>maxGap){maxGap=g;bestX=Math.round((pts[i]+pts[i+1])/2);}}
   return bestX;
 }
 
-export function suggerisciPosTraverso(traversi: Traverso[], altezzaVano: number, sistema: SistemaProfilo): number {
+export function suggerisciPosTraverso(traversi:any[], H:number, sistema:any) {
   const sp = sistema.spessoreTelaio;
-  const pts = [sp, ...traversi.map(t => t.yMm), altezzaVano - sp];
-  let maxGap = 0; let bestY = altezzaVano / 2;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const gap = pts[i+1] - pts[i];
-    if (gap > maxGap) { maxGap = gap; bestY = Math.round((pts[i] + pts[i+1]) / 2); }
-  }
+  const pts = [sp, ...traversi.map((t:any)=>t.yMm), H-sp];
+  let maxGap=0, bestY=Math.round(H/2);
+  for (let i=0;i<pts.length-1;i++){const g=pts[i+1]-pts[i];if(g>maxGap){maxGap=g;bestY=Math.round((pts[i]+pts[i+1])/2);}}
   return bestY;
+}
+
+export function suggerisciSubPos(items:any[], dim:number, sp:number, key:"xMmRel"|"yMmRel") {
+  const pts = [0, ...items.map((x:any)=>x[key]).sort((a:number,b:number)=>a-b), dim];
+  let maxGap=0, best=Math.round(dim/2);
+  for (let i=0;i<pts.length-1;i++){const g=pts[i+1]-pts[i];if(g>maxGap){maxGap=g;best=Math.round((pts[i]+pts[i+1])/2);}}
+  return best;
+}
+
+// ── PRESET APERTURE ───────────────────────────────────────────
+export function applicaPreset(
+  L:number, H:number, preset:string, sp:number
+): { montanti:{id:string;xMm:number;spessoreMm:number}[]; celle_config: Record<string,Partial<Cella>> } {
+  const celle_config: Record<string,Partial<Cella>> = {};
+
+  if (preset==="fisso") {
+    celle_config["0-0"] = {tipo:"fisso"};
+    return {montanti:[], celle_config};
+  }
+  if (preset==="1_anta_sx") {
+    celle_config["0-0"] = {tipo:"anta_battente",verso:"sx"};
+    return {montanti:[], celle_config};
+  }
+  if (preset==="1_anta_dx") {
+    celle_config["0-0"] = {tipo:"anta_battente",verso:"dx"};
+    return {montanti:[], celle_config};
+  }
+  if (preset==="porta_sx") {
+    celle_config["0-0"] = {tipo:"porta",verso:"sx"};
+    return {montanti:[], celle_config};
+  }
+  if (preset==="porta_dx") {
+    celle_config["0-0"] = {tipo:"porta",verso:"dx"};
+    return {montanti:[], celle_config};
+  }
+  if (preset==="2_ante") {
+    const m = [{id:"m_preset",xMm:Math.round(L/2),spessoreMm:sp}];
+    celle_config["0-0"] = {tipo:"anta_battente",verso:"dx"};
+    celle_config["1-0"] = {tipo:"anta_battente",verso:"sx"};
+    return {montanti:m, celle_config};
+  }
+  if (preset==="3_ante") {
+    const m = [
+      {id:"m_preset1",xMm:Math.round(L/3),spessoreMm:sp},
+      {id:"m_preset2",xMm:Math.round(L*2/3),spessoreMm:sp},
+    ];
+    celle_config["0-0"] = {tipo:"anta_battente",verso:"dx"};
+    celle_config["1-0"] = {tipo:"fisso"};
+    celle_config["2-0"] = {tipo:"anta_battente",verso:"sx"};
+    return {montanti:m, celle_config};
+  }
+  if (preset==="scorrevole_2") {
+    const m = [{id:"m_preset",xMm:Math.round(L/2),spessoreMm:sp}];
+    celle_config["0-0"] = {tipo:"scorrevole"};
+    celle_config["1-0"] = {tipo:"scorrevole"};
+    return {montanti:m, celle_config};
+  }
+  return {montanti:[], celle_config};
 }
