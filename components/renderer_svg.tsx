@@ -136,7 +136,7 @@ function RenderCella({c, gx, gy, sp, isMkt, cellaSel, onCellaClick, setDragging}
       <rect x={gx} y={gy} width={gw} height={gh}
         fill={isMobile?PROFILO_ANTA:PROFILO_TELAIO}
         stroke={isSel?AMBER:stroke} strokeWidth={isSel?3:1} strokeOpacity={isSel?1:0.4}
-        style={{cursor:"pointer"}} onClick={()=>onCellaClick?.(c.id)}/>
+        style={{cursor:"pointer"}}/>
 
       {/* Profilo anta visibile (spessore ridotto) */}
       {isMobile && (
@@ -222,7 +222,9 @@ function RenderCella({c, gx, gy, sp, isMkt, cellaSel, onCellaClick, setDragging}
 
       {/* Click area trasparente sopra tutto */}
       <rect x={gx} y={gy} width={gw} height={gh} fill="transparent" stroke="none"
-        style={{cursor:"pointer"}} onClick={()=>onCellaClick?.(c.id)}/>
+        style={{cursor:"pointer"}}
+        onClick={(e)=>{e.stopPropagation();onCellaClick?.(c.id);}}
+        onMouseDown={(e)=>e.stopPropagation()}/>
     </g>
   );
 }
