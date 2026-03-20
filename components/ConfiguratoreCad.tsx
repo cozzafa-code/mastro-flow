@@ -8,7 +8,7 @@
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import { RendererSVG } from "./renderer_svg";
 import {
-  calcolaGriglia, calcolaSubGriglia, addMontante, addTraverso,
+  calcolaGriglia, addMontante, addTraverso,
   moveMontante, moveTraverso,
   addSubMontante, addSubTraverso, removeSubMontante, removeSubTraverso,
   suggerisciPosMontante, suggerisciPosTraverso, suggerisciSubPos,
@@ -384,28 +384,36 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
                     ["+ SubMont",()=>{
                       const sp=inf.profilo.spessoreTelaio;
                       const x=suggerisciSubPos(cellaSel.subMontanti,cellaSel.larghezzaNetta,sp,"xMmRel");
-                      const nuova=addSubMontante(cellaSel,x,sp);
-                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,nuova)}}));
+                      const subMontanti=[...cellaSel.subMontanti,{id:`sm${Date.now()}`,xMmRel:x,spessoreMm:sp}].sort((a:any,b:any)=>a.xMmRel-b.xMmRel);
+                      const updated={...cellaSel,subMontanti};
+                      updated.subCelle=calcolaSubGriglia(updated,sp,cellaSel.subCelle||[]);
+                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,updated)}}));
                     },DARK,false],
                     ["− SubMont",()=>{
                       if(!cellaSel.subMontanti.length)return;
                       const sp=inf.profilo.spessoreTelaio;
-                      const last=cellaSel.subMontanti[cellaSel.subMontanti.length-1];
-                      const nuova=removeSubMontante(cellaSel,last.id,sp);
-                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,nuova)}}));
+                      const subMontanti=cellaSel.subMontanti.slice(0,-1);
+                      const updated={...cellaSel,subMontanti};
+                      updated.subCelle=calcolaSubGriglia(updated,sp,cellaSel.subCelle||[]);
+                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,updated)}}));
                     },RED,cellaSel.subMontanti.length===0],
                     ["+ SubTrav",()=>{
                       const sp=inf.profilo.spessoreTelaio;
                       const y=suggerisciSubPos(cellaSel.subTraversi,cellaSel.altezzaNetta,sp,"yMmRel");
-                      const nuova=addSubTraverso(cellaSel,y,sp);
-                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,nuova)}}));
+                      // Aggiungi traverso e ricalcola sub-griglia
+                      const subTraversi=[...cellaSel.subTraversi,{id:`st${Date.now()}`,yMmRel:y,spessoreMm:sp}].sort((a:any,b:any)=>a.yMmRel-b.yMmRel);
+                      const updated={...cellaSel,subTraversi};
+                      updated.subCelle=calcolaSubGriglia(updated,sp,cellaSel.subCelle||[]);
+                      // Aggiorna SOLO questa cella senza ricalcolare griglia globale
+                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,updated)}}));
                     },DARK,false],
                     ["− SubTrav",()=>{
                       if(!cellaSel.subTraversi.length)return;
                       const sp=inf.profilo.spessoreTelaio;
-                      const last=cellaSel.subTraversi[cellaSel.subTraversi.length-1];
-                      const nuova=removeSubTraverso(cellaSel,last.id,sp);
-                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,nuova)}}));
+                      const subTraversi=cellaSel.subTraversi.slice(0,-1);
+                      const updated={...cellaSel,subTraversi};
+                      updated.subCelle=calcolaSubGriglia(updated,sp,cellaSel.subCelle||[]);
+                      setInf((p:any)=>({...p,griglia:{...p.griglia,celle:replaceCellaInGriglia(p.griglia.celle,cellaSel.id,updated)}}));
                     },RED,cellaSel.subTraversi.length===0],
                   ].map(([lbl,fn,col,dis]:any)=>(
                     <button key={lbl} onClick={fn} disabled={dis} style={{padding:"5px 2px",border:`1px solid ${BDR}`,borderRadius:6,fontSize:10,cursor:dis?"default":"pointer",background:"#F9FAFB",color:dis?"#CCC":col}}>{lbl}</button>
