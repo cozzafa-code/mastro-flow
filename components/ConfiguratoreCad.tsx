@@ -340,14 +340,18 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
           <div>
             <div style={LBL}>Dimensioni vano</div>
             <div style={{display:"flex",gap:6}}>
-              {[["L mm",inf.larghezzaVano,(v:number)=>upd({larghezzaVano:v})],["H mm",inf.altezzaVano,(v:number)=>upd({altezzaVano:v})]].map(([l,val,fn]:any)=>(
-                <div key={l} style={{flex:1}}>
-                  <div style={{fontSize:9,color:SUB,marginBottom:2}}>{l}</div>
-                  <input type="number" defaultValue={val} key={val} style={INP}
-                    onBlur={e=>{const v=parseInt(e.target.value);if(v>200)fn(v);}}
-                    onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt((e.target as HTMLInputElement).value);if(v>200)fn(v);}}}/>
-                </div>
-              ))}
+              <div style={{flex:1}}>
+                <div style={{fontSize:9,color:SUB,marginBottom:2}}>L mm</div>
+                <input type="number" defaultValue={inf.larghezzaVano} key={inf.larghezzaVano} style={INP}
+                  onBlur={e=>{const v=parseInt(e.target.value);if(v>200)upd({larghezzaVano:v});}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt((e.target as HTMLInputElement).value);if(v>200)upd({larghezzaVano:v});}}}/>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:9,color:SUB,marginBottom:2}}>H mm</div>
+                <input type="number" defaultValue={inf.altezzaVano} key={inf.altezzaVano} style={INP}
+                  onBlur={e=>{const v=parseInt(e.target.value);if(v>200)upd({altezzaVano:v});}}
+                  onKeyDown={e=>{if(e.key==="Enter"){const v=parseInt((e.target as HTMLInputElement).value);if(v>200)upd({altezzaVano:v});}}}/>
+              </div>
             </div>
           </div>
 
@@ -482,9 +486,10 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
       {/* PANNELLO DESTRO */}
       <div style={{width:230,flexShrink:0,background:"#fff",borderLeft:`1px solid ${BDR}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <div style={{display:"flex",borderBottom:`1px solid ${BDR}`,flexShrink:0}}>
-          {[["risultati","Risultati"],["distinta","Distinta"],["regole",nErr>0?`Regole ⛔${nErr}`:nWarn>0?`Regole ⚠${nWarn}`:"Regole"]].map(([id,l]:any)=>(
-            <button key={id} onClick={()=>setTabRight(id)} style={{flex:1,padding:"8px 2px",border:"none",borderBottom:`2px solid ${tabRight===id?AMBER:"transparent"}`,fontSize:10,fontWeight:tabRight===id?700:400,cursor:"pointer",background:"#fff",color:tabRight===id?AMBER:SUB}}>{l}</button>
-          ))}
+          {["risultati","distinta","regole"].map(id=>{
+            const l = id==="risultati"?"Risultati":id==="distinta"?"Distinta":(nErr>0?`Regole ⛔${nErr}`:nWarn>0?`Regole ⚠${nWarn}`:"Regole");
+            return <button key={id} onClick={()=>setTabRight(id)} style={{flex:1,padding:"8px 2px",border:"none",borderBottom:`2px solid ${tabRight===id?AMBER:"transparent"}`,fontSize:10,fontWeight:tabRight===id?700:400,cursor:"pointer",background:"#fff",color:tabRight===id?AMBER:SUB}}>{l}</button>;
+          })}
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
           {tabRight==="risultati"&&<>
@@ -499,12 +504,12 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
                 <span style={{fontSize:10,color:SUB}}>Ug {uwCalc.ugMedio}</span>
               </div>
             </div>
-            {[["Sup. tot.",`${Math.round(inf.larghezzaVano*inf.altezzaVano/10000)/100} m²`],
+            {([["Sup. tot.",`${Math.round(inf.larghezzaVano*inf.altezzaVano/10000)/100} m²`],
               ["ML telaio",`${mlTelaio.toFixed(2)} m`],["ML ante",`${mlAnte.toFixed(2)} m`],
               ["Peso vetri",`${pesi.pesoVetriKg} kg`],["Peso profili",`${pesi.pesoProfiliKg} kg`],
               ["Peso totale",`${pesi.pesoTotaleKg} kg`],
               ["Barre 6m",`${distinta.nBarre6m} pz`],["Sfrido",`${distinta.sfrido}%`],
-            ].map(([l,v]:any)=>(
+            ] as [string,string][]).map(([l,v])=>(
               <div key={l} style={ROW}><span style={{fontSize:11,color:SUB}}>{l}</span><span style={{fontSize:12,fontWeight:700,fontFamily:FM}}>{v}</span></div>
             ))}
           </>}
@@ -535,7 +540,7 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
         </div>
         <div style={{borderTop:`1px solid ${BDR}`,padding:"10px 12px",flexShrink:0,background:"#FAFAFA"}}>
           <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",marginBottom:6}}>Preventivo</div>
-          {[["Profili",`€${distinta.costoProfilatoTot.toLocaleString("it-IT")}`],["Vetri",`€${distinta.costoVetriTot.toLocaleString("it-IT")}`],["Ferramenta",`€${distinta.costoFerramentaTot.toLocaleString("it-IT")}`]].map(([l,v]:any)=>(
+          {([["Profili",`€${distinta.costoProfilatoTot.toLocaleString("it-IT")}`],["Vetri",`€${distinta.costoVetriTot.toLocaleString("it-IT")}`],["Ferramenta",`€${distinta.costoFerramentaTot.toLocaleString("it-IT")}`]] as [string,string][]).map(([l,v])=>(
             <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
               <span style={{fontSize:11,color:SUB}}>{l}</span><span style={{fontSize:11,fontWeight:600,fontFamily:FM}}>{v}</span>
             </div>
