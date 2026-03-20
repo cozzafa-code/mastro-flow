@@ -270,8 +270,8 @@ export function RendererSVG({infisso,width="90%",height="90%",onCellaClick,svgRe
       style={{display:"block"}}>
 
       <defs>
-        <marker id="arr-cad" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-          <path d="M0,0 L8,4 L0,8 Z" fill={stroke}/>
+        <marker id="arr-cad" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill={stroke}/>
         </marker>
       </defs>
 

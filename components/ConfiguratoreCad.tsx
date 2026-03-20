@@ -130,56 +130,54 @@ function toInfissoRender(inf:any) {
   const sp = inf.profilo.spessoreTelaio;
   const H = inf.altezzaVano;
   const altNetta = H - sp*2;
-
-  // Crea celle "fake" per il renderer dalle colonne e slot
   const celle:any[] = [];
+
   inf.colonne.forEach((col:any) => {
-    if (col.slots.length === 1) {
-      // Colonna intera = 1 slot
-      const s = col.slots[0];
-      celle.push({
-        id: s.id,
-        colIdx: parseInt(col.id.replace("col","")),
-        rowIdx: 0,
-        larghezzaNetta: col.larghezzaNetta,
-        altezzaNetta: altNetta,
-        areaMq: s.areaMq,
-        tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
-        subMontanti:[], subTraversi:[], subCelle:[],
-      });
-    } else {
-      // Colonna con traversi = mostra come cella contenitore con slot figli
-      const colIdx = parseInt(col.id.replace("col",""));
-      col.slots.forEach((s:any, si:number) => {
+    const colIdx = parseInt(col.id.replace("col",""));
+    // Cella unica per colonna — traversi locali come subTraversi per il renderer
+    celle.push({
+      id: col.id,
+      colIdx,
+      rowIdx: 0,
+      larghezzaNetta: col.larghezzaNetta,
+      altezzaNetta: altNetta,
+      areaMq: Math.round(col.larghezzaNetta * altNetta) / 1_000_000,
+      tipo: col.slots[0]?.tipo || "fisso",
+      verso: col.slots[0]?.verso || "sx",
+      vetro: col.slots[0]?.vetro,
+      ferramenta: col.slots[0]?.ferramenta,
+      // Traversi locali come subTraversi — il renderer li disegna e li rende draggabili
+      subMontanti: [],
+      subTraversi: col.traversiLocali.map((t:any) => ({
+        id: t.id,
+        yMmRel: t.yMmRel,
+        spessoreMm: sp,
+        colId: col.id,
+      })),
+      // Sub-celle dagli slot
+      subCelle: col.slots.length > 1 ? col.slots.map((s:any, si:number) => {
         const yPts = [0,...col.traversiLocali.map((t:any)=>t.yMmRel).sort((a:number,b:number)=>a-b), altNetta];
-        const yStart = yPts[si];
-        const yEnd = yPts[si+1];
-        celle.push({
+        return {
           id: s.id,
-          colIdx,
+          colIdx: 0,
           rowIdx: si,
           larghezzaNetta: col.larghezzaNetta,
           altezzaNetta: s.altezzaNetta,
           areaMq: s.areaMq,
           tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
           subMontanti:[], subTraversi:[], subCelle:[],
-        });
-      });
-    }
+        };
+      }) : [],
+    });
   });
 
   const xPts = [sp, ...inf.montanti.map((m:any)=>m.xMm).sort((a:number,b:number)=>a-b), inf.larghezzaVano-sp];
-  // yPunti include tutti i traversi locali di tutte le colonne per il posizionamento
-  const allY = new Set<number>([sp, inf.altezzaVano-sp]);
-  inf.colonne.forEach((col:any)=>{
-    col.traversiLocali?.forEach((t:any)=>allY.add(sp+t.yMmRel));
-  });
-  const yPts = Array.from(allY).sort((a:number,b:number)=>a-b);
+  const yPts = [sp, inf.altezzaVano-sp];
 
   return {
     ...inf,
     traversi: [],
-    griglia: { nColonne: inf.colonne.length, nRighe: yPts.length-1, xPunti: xPts, yPunti: yPts, celle },
+    griglia: { nColonne: inf.colonne.length, nRighe: 1, xPunti: xPts, yPunti: yPts, celle },
     sistema: {
       spessoreTelaio: sp, tipo: inf.profilo.materiale, serieNome: inf.profilo.nome,
       ufProfilo: inf.profilo.Uf, costoMlTelaio: inf.profilo.costoMlTelaio,
@@ -193,6 +191,7 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
   const [dragging, setDragging] = useState<any>(null);
   const wasDrag = useRef(false);
   const [tabRight, setTabRight] = useState("risultati");
+  const [ctxMenu, setCtxMenu] = useState<{x:number,y:number,slotId:string}|null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const upd = (partial:any) => setInf((p:any)=>{
@@ -301,7 +300,29 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
         return ricalcola({...p,montanti});
       });
     }
-  },[dragging,inf.profilo]);
+    // Drag traverso locale per colonna
+    if(dragging.type==="st"&&dragging.colId){
+      const altNetta=inf.altezzaVano-sp*2;
+      // Calcola xStart della colonna per ottenere yMmRel
+      const col=inf.colonne.find((c:any)=>c.id===dragging.colId);
+      if(!col)return;
+      const newYRel=Math.round(Math.max(sp,Math.min(altNetta-sp,pt.y-sp)));
+      setInf((p:any)=>({
+        ...p,
+        colonne:p.colonne.map((c:any)=>{
+          if(c.id!==dragging.colId)return c;
+          const traversiLocali=c.traversiLocali.map((t:any)=>t.id===dragging.id?{...t,yMmRel:newYRel}:t);
+          const altNetta2=p.altezzaVano-sp*2;
+          const yPts=[0,...traversiLocali.map((t:any)=>t.yMmRel).sort((a:number,b:number)=>a-b),altNetta2];
+          const slots=c.slots.map((s:any,si:number)=>{
+            const hNetta=Math.round(yPts[si+1]-yPts[si]-(si>0?sp/2:0)-(si<yPts.length-2?sp/2:0));
+            return {...s,altezzaNetta:Math.max(50,hNetta),areaMq:Math.round(c.larghezzaNetta*Math.max(50,hNetta))/1_000_000};
+          });
+          return {...c,traversiLocali,slots};
+        })
+      }));
+    }
+  },[dragging,inf.profilo,inf.colonne,inf.altezzaVano]);
 
   const handleMouseUp=useCallback(()=>{setDragging(null);setTimeout(()=>{wasDrag.current=false;},50);},[]);
 
@@ -476,7 +497,8 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
 
       {/* CANVAS */}
       <div style={{flex:1,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:isMkt?DARK:"#F0F2F5",minWidth:0}}
-        onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+        onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
+        onContextMenu={e=>{e.preventDefault();}}> 
         <RendererSVG infisso={infForRenderer} width="90%" height="90%" svgRef={svgRef}
           setDragging={(d:any)=>{wasDrag.current=false;setDragging(d);}}
           onCellaClick={handleCellaClick}/>
