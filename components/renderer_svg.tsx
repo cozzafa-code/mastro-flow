@@ -256,7 +256,7 @@ function QuoteStruttura({xPunti,yPunti,sp,L,H,stroke}:any) {
 }
 
 // ── RENDERER PRINCIPALE ───────────────────────────────────────
-export function RendererSVG({infisso,width="90%",height="90%",onCellaClick,svgRef,setDragging}:any) {
+export function RendererSVG({infisso,width="90%",height="90%",onCellaClick,onCellaContextMenu,svgRef,setDragging}:any) {
   const {larghezzaVano:L,altezzaVano:H,sistema,montanti,traversi,griglia} = infisso;
   const sp = sistema.spessoreTelaio;
   const isMkt = infisso._mode==="marketing";
