@@ -109,7 +109,7 @@ function aggiornaCella(celle:any[], id:string, partial:any):any[] {
 export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onClose }:any) {
   const [inf, setInf] = useState(()=>buildInfisso(parseInt(realW)||1500, parseInt(realH)||2100));
   const [dragging, setDragging] = useState<any>(null);
-  const [wasDragging, setWasDragging] = useState(false);
+  const wasDraggingRef = useRef(false);
   const [tabRight, setTabRight] = useState("risultati");
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -172,7 +172,7 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
   // ── DRAG ─────────────────────────────────────────────────────
   const handleMouseMove = useCallback((e:any)=>{
     if(!dragging||!svgRef.current) return;
-    setWasDragging(true);
+    wasDraggingRef.current = true;
     const CTM = svgRef.current.getScreenCTM()!;
     const pt = {x:(e.clientX-CTM.e)/CTM.a, y:(e.clientY-CTM.f)/CTM.d};
     const sp = inf.profilo.spessoreTelaio;
@@ -210,13 +210,13 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
 
   const handleMouseUp = useCallback(()=>{
     setDragging(null);
-    setTimeout(()=>setWasDragging(false),50);
+    setTimeout(()=>{ wasDraggingRef.current = false; },50);
   },[]);
 
   const handleCellaClick = useCallback((id:string)=>{
-    if(wasDragging) return;
+    if(wasDraggingRef.current) return;
     setInf((p:any)=>({...p,_cellaSel:p._cellaSel===id?null:id}));
-  },[wasDragging]);
+  },[]);
 
   const cellaSel = trovaCella(inf.griglia.celle, inf._cellaSel||"");
   const isMkt = inf._mode==="marketing";
@@ -443,7 +443,7 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
       <div style={{flex:1,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:isMkt?DARK:"#F0F2F5",minWidth:0}}
         onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
         <RendererSVG infisso={inf} width="90%" height="90%" svgRef={svgRef}
-          setDragging={(d:any)=>{setWasDragging(false);setDragging(d);}}
+          setDragging={(d:any)=>{ wasDraggingRef.current = false; setDragging(d); }}
           onCellaClick={handleCellaClick}/>
       </div>
 
