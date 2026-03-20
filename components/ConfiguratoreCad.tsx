@@ -1,16 +1,41 @@
 "use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════════
-// MASTRO CAD — ConfiguratoreCad v5.0 — GRIGLIA SEMPLICE
-// Ogni cella è autonoma. Niente sub-struttura.
+// MASTRO CAD — ConfiguratoreCad v6.0
+// Montanti globali (colonne) + traversi per-cella (righe locali)
+// Ogni slot (cella finale) è configurabile indipendentemente
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import { RendererSVG } from "./renderer_svg";
-import { calcolaGriglia, addMontante, addTraverso, moveMontante, moveTraverso, suggerisciPosMontante, suggerisciPosTraverso } from "./motore_geometrico";
+import { addMontante, moveMontante, suggerisciPosMontante } from "./motore_geometrico";
 import { PROFILI_DEMO, PROFILO_DEFAULT } from "../lib/engine/profili";
 import { calcolaLuceCella, calcolaUw, calcolaPesi } from "../lib/engine/calcoli";
 import { generaDistinta } from "../lib/engine/distinta";
 import { verificaConfigurazione, haErrori } from "../lib/engine/regole";
+
+// ── TIPI LOCALI ─────────────────────────────────────────────────
+// Slot = unità configurabile finale (porzione di colonna divisa da traversi locali)
+interface Slot {
+  id: string;           // es. "col0-slot0"
+  colId: string;        // es. "col0"
+  slotIdx: number;
+  larghezzaNetta: number;
+  altezzaNetta: number;
+  areaMq: number;
+  tipo: string;
+  verso: string;
+  vetro: any;
+  ferramenta: any;
+}
+
+// Colonna = una sezione verticale del vano
+interface Colonna {
+  id: string;           // "col0", "col1", ...
+  xStart: number;       // mm assoluto inizio (dopo spessore profilo)
+  larghezzaNetta: number;
+  traversiLocali: { id: string; yMmRel: number }[]; // relativi alla colonna
+  slots: Slot[];
+}
 
 const VETRI = [
   { id:"std",   label:"Vetro standard 4-16-4",   ugValore:1.1, pesoMq:20, costoMq:55  },
@@ -31,18 +56,6 @@ const TIPI = [
   { id:"pannello_cieco", label:"Pannello cieco" },
 ];
 
-const PRESET = [
-  { id:"fisso",       label:"Fisso",        icon:"▣" },
-  { id:"1_anta_sx",   label:"1 Anta SX",    icon:"◧" },
-  { id:"1_anta_dx",   label:"1 Anta DX",    icon:"◨" },
-  { id:"2_ante",      label:"2 Ante",       icon:"◫" },
-  { id:"3_ante",      label:"3 Ante",       icon:"⊞" },
-  { id:"porta_sx",    label:"Porta SX",     icon:"🚪" },
-  { id:"scorrevole_2",label:"Scorrevole 2", icon:"⇔" },
-];
-
-function cerniereAuto(h:number, kg:number) { return h>1800||kg>50?3:2; }
-
 const AMBER="#D08008"; const DARK="#1A1A1C"; const TEAL="#1A9E73";
 const RED="#DC4444"; const BDR="#E5E7EB"; const SUB="#6B7280";
 const FF="Inter,system-ui,sans-serif"; const FM="JetBrains Mono,monospace";
@@ -51,139 +64,266 @@ const ROW:any={display:"flex",justifyContent:"space-between",padding:"4px 0",bor
 const LBL:any={fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6};
 const FER={maniglia:true,maniglione:false,nCerniere:2,cerniereTipo:"standard",chiusuraMultipunto:false,costoFerramenta:0};
 
-function buildInfisso(L=1500,H=2100,profilo=PROFILO_DEFAULT) {
-  const sp=profilo.spessoreTelaio;
-  const montanti=[{id:"m1",xMm:Math.round(L/2),spessoreMm:sp}];
-  const griglia=calcolaGriglia(L,H,montanti,[],{spessoreTelaio:sp});
-  griglia.celle.forEach((c:any)=>{
-    c.vetro=VETRI[0]; c.ferramenta={...FER};
-    c.subMontanti=[]; c.subTraversi=[]; c.subCelle=[];
+// ── MOTORE GEOMETRICO LOCALE ────────────────────────────────────
+
+function calcolaColonne(L:number, H:number, montanti:any[], sp:number, colonneEsistenti:Colonna[]): Colonna[] {
+  // Punti X delle colonne: tra profilo sx e montanti e profilo dx
+  const xPts = [sp, ...montanti.map((m:any)=>m.xMm).sort((a:number,b:number)=>a-b), L-sp];
+  const nCol = xPts.length - 1;
+  const altNetta = H - sp*2;
+
+  return Array.from({length: nCol}, (_,i) => {
+    const id = `col${i}`;
+    const xStart = xPts[i] + (i>0 ? sp/2 : 0);
+    const xEnd   = xPts[i+1] - (i<nCol-1 ? sp/2 : 0);
+    const lNetta = Math.round(xEnd - xStart);
+    const old = colonneEsistenti.find(c=>c.id===id);
+    const traversiLocali = old?.traversiLocali || [];
+
+    // Calcola slots dalla colonna
+    const yPts = [0, ...traversiLocali.map(t=>t.yMmRel).sort((a:number,b:number)=>a-b), altNetta];
+    const slots: Slot[] = Array.from({length: yPts.length-1}, (_,j) => {
+      const slotId = `${id}-slot${j}`;
+      const oldSlot = old?.slots?.find(s=>s.id===slotId);
+      const hNetta = Math.round(yPts[j+1] - yPts[j] - (j>0 ? sp/2 : 0) - (j<yPts.length-2 ? sp/2 : 0));
+      return {
+        id: slotId, colId: id, slotIdx: j,
+        larghezzaNetta: lNetta,
+        altezzaNetta: Math.max(50, hNetta),
+        areaMq: Math.round(lNetta * Math.max(50,hNetta)) / 1_000_000,
+        tipo: oldSlot?.tipo || "fisso",
+        verso: oldSlot?.verso || "sx",
+        vetro: oldSlot?.vetro || VETRI[0],
+        ferramenta: oldSlot?.ferramenta || {...FER},
+      };
+    });
+
+    return { id, xStart, larghezzaNetta: lNetta, traversiLocali, slots };
   });
-  return {id:`inf_${Date.now()}`,vanoId:"",larghezzaVano:L,altezzaVano:H,spessoreMuro:150,
-    profilo,montanti,traversi:[],griglia,_cellaSel:null,_mode:"industrial",
-    sistema:{spessoreTelaio:sp,tipo:profilo.materiale,serieNome:profilo.nome,ufProfilo:profilo.Uf,
-      costoMlTelaio:profilo.costoMlTelaio,costoMlAnte:profilo.costoMlAnta,coloreEsterno:"#9CA3AF",coloreInterno:"#F2F1EC"}
+}
+
+function buildInfisso(L=1500, H=2100, profilo=PROFILO_DEFAULT) {
+  const sp = profilo.spessoreTelaio;
+  // Parte SENZA montanti — l'utente li aggiunge
+  const montanti:any[] = [];
+  const colonne = calcolaColonne(L, H, montanti, sp, []);
+  return {
+    id:`inf_${Date.now()}`, larghezzaVano:L, altezzaVano:H, spessoreMuro:150,
+    profilo, montanti, colonne, _slotSel:null, _mode:"industrial",
+    sistema:{spessoreTelaio:sp, tipo:profilo.materiale, serieNome:profilo.nome,
+      ufProfilo:profilo.Uf, costoMlTelaio:profilo.costoMlTelaio, costoMlAnte:profilo.costoMlAnta}
   };
 }
 
-function ricalcola(inf:any,prevL?:number,prevH?:number) {
-  const sp=inf.profilo.spessoreTelaio;
-  const L=inf.larghezzaVano, H=inf.altezzaVano;
-  let {montanti,traversi}=inf;
+function ricalcola(inf:any, prevL?:number, prevH?:number) {
+  const sp = inf.profilo.spessoreTelaio;
+  const L = inf.larghezzaVano, H = inf.altezzaVano;
+  let montanti = inf.montanti;
   if(prevL&&prevL!==L) montanti=montanti.map((m:any)=>({...m,xMm:Math.round(Math.max(sp*2,Math.min(L-sp*2,m.xMm*L/prevL)))}));
-  if(prevH&&prevH!==H) traversi=traversi.map((t:any)=>({...t,yMm:Math.round(Math.max(sp*2,Math.min(H-sp*2,t.yMm*H/prevH)))}));
-  const celle=inf.griglia?.celle||[];
-  const griglia=calcolaGriglia(L,H,montanti,traversi,{spessoreTelaio:sp},celle);
-  // Preserva configurazione celle esistenti
-  griglia.celle=griglia.celle.map((c:any)=>{
-    const old=celle.find((e:any)=>e.id===c.id);
-    if(!old) return {...c,vetro:VETRI[0],ferramenta:{...FER},subMontanti:[],subTraversi:[],subCelle:[]};
-    return {...c,tipo:old.tipo||"fisso",verso:old.verso||"sx",vetro:old.vetro||VETRI[0],ferramenta:old.ferramenta||{...FER},subMontanti:[],subTraversi:[],subCelle:[]};
+  const colonne = calcolaColonne(L, H, montanti, sp, inf.colonne||[]);
+  return {...inf, montanti, colonne, sistema:{...inf.sistema, spessoreTelaio:sp}};
+}
+
+// ── RENDERER ADAPTER ────────────────────────────────────────────
+// Converte il modello colonne/slots in formato atteso dal RendererSVG
+function toInfissoRender(inf:any) {
+  const sp = inf.profilo.spessoreTelaio;
+  const H = inf.altezzaVano;
+  const altNetta = H - sp*2;
+
+  // Crea celle "fake" per il renderer dalle colonne e slot
+  const celle:any[] = [];
+  inf.colonne.forEach((col:any) => {
+    if (col.slots.length === 1) {
+      // Colonna intera = 1 slot
+      const s = col.slots[0];
+      celle.push({
+        id: s.id,
+        colIdx: parseInt(col.id.replace("col","")),
+        rowIdx: 0,
+        larghezzaNetta: col.larghezzaNetta,
+        altezzaNetta: altNetta,
+        areaMq: s.areaMq,
+        tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
+        subMontanti:[], subTraversi:[], subCelle:[],
+        // traversi locali come "sub-traversi visivi"
+        _traversiLocali: col.traversiLocali,
+        _slots: col.slots,
+      });
+    } else {
+      // Colonna con traversi = mostra come cella contenitore con slot figli
+      const colIdx = parseInt(col.id.replace("col",""));
+      col.slots.forEach((s:any, si:number) => {
+        const yPts = [0,...col.traversiLocali.map((t:any)=>t.yMmRel).sort((a:number,b:number)=>a-b), altNetta];
+        const yStart = yPts[si];
+        const yEnd = yPts[si+1];
+        celle.push({
+          id: s.id,
+          colIdx,
+          rowIdx: si,
+          larghezzaNetta: col.larghezzaNetta,
+          altezzaNetta: s.altezzaNetta,
+          areaMq: s.areaMq,
+          tipo: s.tipo, verso: s.verso, vetro: s.vetro, ferramenta: s.ferramenta,
+          subMontanti:[], subTraversi:[], subCelle:[],
+          _yOffset: yStart, // offset verticale dentro la colonna
+        });
+      });
+    }
   });
-  return {...inf,montanti,traversi,griglia,sistema:{...inf.sistema,spessoreTelaio:sp}};
+
+  // Calcola xPunti e yPunti per la griglia
+  const xPts = [sp, ...inf.montanti.map((m:any)=>m.xMm).sort((a:number,b:number)=>a-b), inf.larghezzaVano-sp];
+  const yPts = [sp, inf.altezzaVano-sp]; // solo bordi per la griglia globale
+
+  return {
+    ...inf,
+    traversi: [],
+    griglia: { nColonne: inf.colonne.length, nRighe: 1, xPunti: xPts, yPunti: yPts, celle },
+    sistema: {
+      spessoreTelaio: sp, tipo: inf.profilo.materiale, serieNome: inf.profilo.nome,
+      ufProfilo: inf.profilo.Uf, costoMlTelaio: inf.profilo.costoMlTelaio,
+      costoMlAnte: inf.profilo.costoMlAnta, coloreEsterno:"#9CA3AF", coloreInterno:"#F2F1EC"
+    }
+  };
 }
 
-function applicaPresetUI(L:number,H:number,preset:string,sp:number) {
-  const montanti:any[]=[]; const cfg:any={};
-  if(preset==="fisso"){cfg["0-0"]={tipo:"fisso"};}
-  else if(preset==="1_anta_sx"){cfg["0-0"]={tipo:"anta_battente",verso:"sx"};}
-  else if(preset==="1_anta_dx"){cfg["0-0"]={tipo:"anta_battente",verso:"dx"};}
-  else if(preset==="porta_sx"){cfg["0-0"]={tipo:"porta",verso:"sx"};}
-  else if(preset==="2_ante"){
-    montanti.push({id:"mp1",xMm:Math.round(L/2),spessoreMm:sp});
-    cfg["0-0"]={tipo:"anta_battente",verso:"dx"};
-    cfg["1-0"]={tipo:"anta_battente",verso:"sx"};
-  } else if(preset==="3_ante"){
-    montanti.push({id:"mp1",xMm:Math.round(L/3),spessoreMm:sp});
-    montanti.push({id:"mp2",xMm:Math.round(L*2/3),spessoreMm:sp});
-    cfg["0-0"]={tipo:"anta_battente",verso:"dx"};
-    cfg["1-0"]={tipo:"fisso"};
-    cfg["2-0"]={tipo:"anta_battente",verso:"sx"};
-  } else if(preset==="scorrevole_2"){
-    montanti.push({id:"mp1",xMm:Math.round(L/2),spessoreMm:sp});
-    cfg["0-0"]={tipo:"scorrevole"};cfg["1-0"]={tipo:"scorrevole"};
-  }
-  return {montanti,cfg};
-}
+export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onClose}:any) {
+  const [inf, setInf] = useState(()=>buildInfisso(parseInt(realW)||1500, parseInt(realH)||2100));
+  const [dragging, setDragging] = useState<any>(null);
+  const wasDrag = useRef(false);
+  const [tabRight, setTabRight] = useState("risultati");
+  const svgRef = useRef<SVGSVGElement>(null);
 
-export default function ConfiguratoreCad({realW,realH,vanoNome,onUpdate,onClose}:any) {
-  const [inf,setInf]=useState(()=>buildInfisso(parseInt(realW)||1500,parseInt(realH)||2100));
-  const [dragging,setDragging]=useState<any>(null);
-  const wasDrag=useRef(false);
-  const [tabRight,setTabRight]=useState("risultati");
-  const svgRef=useRef<SVGSVGElement>(null);
-
-  const upd=(partial:any)=>setInf((p:any)=>{
-    const pL=p.larghezzaVano,pH=p.altezzaVano;
+  const upd = (partial:any) => setInf((p:any)=>{
+    const pL=p.larghezzaVano, pH=p.altezzaVano;
     return ricalcola({...p,...partial},pL,pH);
   });
 
-  const updCella=(id:string,partial:any)=>setInf((p:any)=>({
-    ...p,griglia:{...p.griglia,
-      celle:p.griglia.celle.map((c:any)=>c.id===id?{...c,...partial}:c)
-    }
+  // Tutti gli slot flat
+  const tuttiSlots = useMemo(()=>inf.colonne.flatMap((c:any)=>c.slots),[inf.colonne]);
+
+  const slotSel = tuttiSlots.find((s:any)=>s.id===inf._slotSel);
+  const colSel = slotSel ? inf.colonne.find((c:any)=>c.id===slotSel.colId) : null;
+
+  const updSlot = (slotId:string, partial:any) => setInf((p:any)=>({
+    ...p, colonne: p.colonne.map((col:any)=>({
+      ...col, slots: col.slots.map((s:any)=>s.id===slotId?{...s,...partial}:s)
+    }))
   }));
 
+  const addTraversoLocale = (colId:string) => {
+    setInf((p:any)=>{
+      const sp = p.profilo.spessoreTelaio;
+      const H = p.altezzaVano;
+      const altNetta = H - sp*2;
+      const colonne = p.colonne.map((col:any)=>{
+        if(col.id!==colId) return col;
+        const existing = col.traversiLocali.map((t:any)=>t.yMmRel);
+        const yPts = [0,...existing.sort((a:number,b:number)=>a-b), altNetta];
+        // Trova il gap più grande
+        let maxGap=0, bestY=Math.round(altNetta/2);
+        for(let i=0;i<yPts.length-1;i++){const g=yPts[i+1]-yPts[i];if(g>maxGap){maxGap=g;bestY=Math.round((yPts[i]+yPts[i+1])/2);}}
+        const traversiLocali=[...col.traversiLocali,{id:`tl${Date.now()}`,yMmRel:bestY}].sort((a:any,b:any)=>a.yMmRel-b.yMmRel);
+        // Ricalcola slots
+        const yPts2=[0,...traversiLocali.map((t:any)=>t.yMmRel), altNetta];
+        const slots:Slot[]=Array.from({length:yPts2.length-1},(_,j)=>{
+          const slotId=`${colId}-slot${j}`;
+          const oldSlot=col.slots?.find((s:any)=>s.id===slotId);
+          const hNetta=Math.round(yPts2[j+1]-yPts2[j]-(j>0?sp/2:0)-(j<yPts2.length-2?sp/2:0));
+          return {id:slotId,colId,slotIdx:j,larghezzaNetta:col.larghezzaNetta,altezzaNetta:Math.max(50,hNetta),areaMq:Math.round(col.larghezzaNetta*Math.max(50,hNetta))/1_000_000,tipo:oldSlot?.tipo||"fisso",verso:oldSlot?.verso||"sx",vetro:oldSlot?.vetro||VETRI[0],ferramenta:oldSlot?.ferramenta||{...FER}};
+        });
+        return {...col, traversiLocali, slots};
+      });
+      return {...p, colonne};
+    });
+  };
+
+  const removeTraversoLocale = (colId:string) => {
+    setInf((p:any)=>{
+      const sp = p.profilo.spessoreTelaio;
+      const H = p.altezzaVano;
+      const altNetta = H - sp*2;
+      const colonne = p.colonne.map((col:any)=>{
+        if(col.id!==colId||!col.traversiLocali.length) return col;
+        const traversiLocali = col.traversiLocali.slice(0,-1);
+        const yPts=[0,...traversiLocali.map((t:any)=>t.yMmRel), altNetta];
+        const slots:Slot[]=Array.from({length:yPts.length-1},(_,j)=>{
+          const slotId=`${colId}-slot${j}`;
+          const oldSlot=col.slots?.find((s:any)=>s.id===slotId);
+          const hNetta=Math.round(yPts[j+1]-yPts[j]-(j>0?sp/2:0)-(j<yPts.length-2?sp/2:0));
+          return {id:slotId,colId,slotIdx:j,larghezzaNetta:col.larghezzaNetta,altezzaNetta:Math.max(50,hNetta),areaMq:Math.round(col.larghezzaNetta*Math.max(50,hNetta))/1_000_000,tipo:oldSlot?.tipo||"fisso",verso:oldSlot?.verso||"sx",vetro:oldSlot?.vetro||VETRI[0],ferramenta:oldSlot?.ferramenta||{...FER}};
+        });
+        return {...col, traversiLocali, slots};
+      });
+      return {...p, colonne};
+    });
+  };
+
   // Calcoli
-  const luci=useMemo(()=>{
+  const luci = useMemo(()=>{
     const m:any={};
-    inf.griglia.celle.forEach((c:any)=>{m[c.id]=calcolaLuceCella(c.larghezzaNetta,c.altezzaNetta,inf.profilo,c.tipo);});
+    tuttiSlots.forEach((s:any)=>{m[s.id]=calcolaLuceCella(s.larghezzaNetta,s.altezzaNetta,inf.profilo,s.tipo);});
     return m;
-  },[inf.griglia.celle,inf.profilo]);
+  },[tuttiSlots,inf.profilo]);
 
-  const uwCalc=useMemo(()=>calcolaUw(inf.larghezzaVano,inf.altezzaVano,
-    inf.griglia.celle.map((c:any)=>({areaMq:luci[c.id]?.vetroMq||c.areaMq,vetroUg:c.vetro?.ugValore||1.1})),
-    inf.profilo),[inf,luci]);
+  const uwCalc = useMemo(()=>calcolaUw(inf.larghezzaVano,inf.altezzaVano,
+    tuttiSlots.map((s:any)=>({areaMq:luci[s.id]?.vetroMq||s.areaMq,vetroUg:s.vetro?.ugValore||1.1})),
+    inf.profilo),[inf,luci,tuttiSlots]);
 
-  const mlTelaio=useMemo(()=>(inf.larghezzaVano*2+inf.altezzaVano*2)/1000,[inf]);
-  const mlAnte=useMemo(()=>inf.griglia.celle.filter((c:any)=>!["fisso","pannello_cieco"].includes(c.tipo))
-    .reduce((a:number,c:any)=>a+(c.larghezzaNetta*2+c.altezzaNetta*2)/1000,0),[inf.griglia.celle]);
+  const mlTelaio = useMemo(()=>(inf.larghezzaVano*2+inf.altezzaVano*2)/1000,[inf]);
+  const mlAnte = useMemo(()=>tuttiSlots.filter((s:any)=>!["fisso","pannello_cieco"].includes(s.tipo))
+    .reduce((a:number,s:any)=>a+(s.larghezzaNetta*2+s.altezzaNetta*2)/1000,0),[tuttiSlots]);
 
-  const pesi=useMemo(()=>calcolaPesi(mlTelaio,mlAnte,
-    inf.griglia.celle.map((c:any)=>({areaMq:luci[c.id]?.vetroMq||c.areaMq,pesoMqVetro:c.vetro?.pesoMq||20,tipo:c.tipo})),
-    inf.profilo),[mlTelaio,mlAnte,inf.griglia.celle,luci,inf.profilo]);
+  const pesi = useMemo(()=>calcolaPesi(mlTelaio,mlAnte,
+    tuttiSlots.map((s:any)=>({areaMq:luci[s.id]?.vetroMq||s.areaMq,pesoMqVetro:s.vetro?.pesoMq||20,tipo:s.tipo})),
+    inf.profilo),[mlTelaio,mlAnte,tuttiSlots,luci,inf.profilo]);
 
-  const distinta=useMemo(()=>generaDistinta(inf.larghezzaVano,inf.altezzaVano,
-    inf.montanti.map((m:any)=>m.xMm),inf.traversi.map((t:any)=>t.yMm),
-    inf.griglia.celle.map((c:any)=>({id:c.id,tipo:c.tipo,larghezzaNetta:c.larghezzaNetta,altezzaNetta:c.altezzaNetta,areaMq:c.areaMq,
-      vetroTipo:c.vetro?.label,vetroUg:c.vetro?.ugValore,vetroMq:luci[c.id]?.vetroMq,
-      vetroPesoMq:c.vetro?.pesoMq,vetroCostoMq:c.vetro?.costoMq,ferramenta:c.ferramenta||FER})),
-    inf.profilo),[inf,luci]);
+  const distinta = useMemo(()=>generaDistinta(inf.larghezzaVano,inf.altezzaVano,
+    inf.montanti.map((m:any)=>m.xMm),[],
+    tuttiSlots.map((s:any)=>({id:s.id,tipo:s.tipo,larghezzaNetta:s.larghezzaNetta,altezzaNetta:s.altezzaNetta,areaMq:s.areaMq,vetroTipo:s.vetro?.label,vetroUg:s.vetro?.ugValore,vetroMq:luci[s.id]?.vetroMq,vetroPesoMq:s.vetro?.pesoMq,vetroCostoMq:s.vetro?.costoMq,ferramenta:s.ferramenta||FER})),
+    inf.profilo),[inf,tuttiSlots,luci]);
 
-  const violazioni=useMemo(()=>verificaConfigurazione(
-    inf.griglia.celle.map((c:any)=>({id:c.id,tipo:c.tipo,larghezzaNetta:c.larghezzaNetta,altezzaNetta:c.altezzaNetta,
-      pesoAntaKg:pesi.pesoAntaMax,vetroL:luci[c.id]?.vetroL||0,vetroH:luci[c.id]?.vetroH||0})),
-    inf.profilo),[inf.griglia.celle,inf.profilo,pesi,luci]);
+  const violazioni = useMemo(()=>verificaConfigurazione(
+    tuttiSlots.map((s:any)=>({id:s.id,tipo:s.tipo,larghezzaNetta:s.larghezzaNetta,altezzaNetta:s.altezzaNetta,pesoAntaKg:pesi.pesoAntaMax,vetroL:luci[s.id]?.vetroL||0,vetroH:luci[s.id]?.vetroH||0})),
+    inf.profilo),[tuttiSlots,inf.profilo,pesi,luci]);
 
-  const handleMouseMove=useCallback((e:any)=>{
+  // Drag montanti
+  const handleMouseMove = useCallback((e:any)=>{
     if(!dragging||!svgRef.current)return;
     wasDrag.current=true;
     const CTM=svgRef.current.getScreenCTM()!;
     const pt={x:(e.clientX-CTM.e)/CTM.a,y:(e.clientY-CTM.f)/CTM.d};
     const sp=inf.profilo.spessoreTelaio;
-    setInf((p:any)=>{
-      if(dragging.type==="m"){const montanti=moveMontante(p.montanti,dragging.id,pt.x,p.larghezzaVano,{spessoreTelaio:sp});return ricalcola({...p,montanti});}
-      if(dragging.type==="t"){const traversi=moveTraverso(p.traversi,dragging.id,pt.y,p.altezzaVano,{spessoreTelaio:sp});return ricalcola({...p,traversi});}
-      return p;
-    });
+    if(dragging.type==="m"){
+      setInf((p:any)=>{
+        const montanti=moveMontante(p.montanti,dragging.id,pt.x,p.larghezzaVano,{spessoreTelaio:sp});
+        return ricalcola({...p,montanti});
+      });
+    }
   },[dragging,inf.profilo]);
 
   const handleMouseUp=useCallback(()=>{setDragging(null);setTimeout(()=>{wasDrag.current=false;},50);},[]);
+
   const handleCellaClick=useCallback((id:string)=>{
     if(wasDrag.current)return;
-    setInf((p:any)=>({...p,_cellaSel:p._cellaSel===id?null:id}));
+    setInf((p:any)=>({...p,_slotSel:p._slotSel===id?null:id}));
   },[]);
 
-  const cellaSel=inf.griglia.celle.find((c:any)=>c.id===inf._cellaSel);
-  const isMkt=inf._mode==="marketing";
-  const uwC=uwCalc.uw<=1.0?TEAL:uwCalc.uw<=1.4?AMBER:RED;
-  const nErr=violazioni.filter((v:any)=>v.severita==="errore").length;
-  const nWarn=violazioni.filter((v:any)=>v.severita==="warning").length;
+  // Adatta inf per renderer
+  const infRender = useMemo(()=>toInfissoRender(inf),[inf]);
+  // Sovrascrive _cellaSel con _slotSel
+  const infForRenderer = useMemo(()=>({...infRender,_cellaSel:inf._slotSel}),[infRender,inf._slotSel]);
+
+  const isMkt = inf._mode==="marketing";
+  const uwC = uwCalc.uw<=1.0?TEAL:uwCalc.uw<=1.4?AMBER:RED;
+  const nErr = violazioni.filter((v:any)=>v.severita==="errore").length;
+  const nWarn = violazioni.filter((v:any)=>v.severita==="warning").length;
 
   return (
     <div style={{width:"100%",height:"100%",display:"flex",overflow:"hidden",fontFamily:FF}}>
 
-      {/* ── SIDEBAR ── */}
+      {/* SIDEBAR */}
       <div style={{width:250,flexShrink:0,background:"#fff",borderRight:`1px solid ${BDR}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <div style={{padding:"10px 12px",borderBottom:`1px solid ${BDR}`,flexShrink:0}}>
           <div style={{fontSize:11,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:0.5,marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{vanoNome||"CAD"}</div>
@@ -222,62 +362,47 @@ export default function ConfiguratoreCad({realW,realH,vanoNome,onUpdate,onClose}
             ))}
           </div>
 
-          {/* Preset */}
+          {/* Montanti globali */}
           <div>
-            <div style={LBL}>Preset apertura</div>
+            <div style={LBL}>Montanti (colonne)</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-              {PRESET.map(p=>(
-                <button key={p.id} onClick={()=>{
-                  const sp=inf.profilo.spessoreTelaio;
-                  const {montanti,cfg}=applicaPresetUI(inf.larghezzaVano,inf.altezzaVano,p.id,sp);
-                  setInf((prev:any)=>{
-                    const griglia=calcolaGriglia(prev.larghezzaVano,prev.altezzaVano,montanti,[],{spessoreTelaio:sp});
-                    griglia.celle.forEach((c:any)=>{
-                      const c2=cfg[c.id]||{};
-                      c.vetro=VETRI[0];c.ferramenta={...FER};c.subMontanti=[];c.subTraversi=[];c.subCelle=[];
-                      Object.assign(c,c2);
-                    });
-                    return {...prev,montanti,traversi:[],griglia,_cellaSel:null,sistema:{...prev.sistema,spessoreTelaio:sp}};
-                  });
-                }} style={{padding:"6px 4px",border:`1px solid ${BDR}`,borderRadius:6,fontSize:10,fontWeight:600,cursor:"pointer",background:"#F9FAFB",color:DARK,textAlign:"center" as any}}>
-                  <div style={{fontSize:14}}>{p.icon}</div>
-                  <div>{p.label}</div>
-                </button>
-              ))}
+              <button onClick={()=>setInf((p:any)=>{const sp=p.profilo.spessoreTelaio;const m=addMontante(p.montanti,suggerisciPosMontante(p.montanti,p.larghezzaVano,{spessoreTelaio:sp}),p.larghezzaVano,{spessoreTelaio:sp});return ricalcola({...p,montanti:m});})} style={{padding:"6px",border:`1px solid ${BDR}`,borderRadius:6,fontSize:11,cursor:"pointer",background:"#F9FAFB",color:DARK}}>+ Montante</button>
+              <button onClick={()=>setInf((p:any)=>{if(!p.montanti.length)return p;return ricalcola({...p,montanti:p.montanti.slice(0,-1)});})} disabled={inf.montanti.length===0} style={{padding:"6px",border:`1px solid ${BDR}`,borderRadius:6,fontSize:11,cursor:inf.montanti.length===0?"default":"pointer",background:"#F9FAFB",color:inf.montanti.length===0?"#CCC":RED}}>− Montante</button>
             </div>
+            <div style={{fontSize:10,color:SUB,marginTop:4}}>{inf.colonne.length} colonne · {tuttiSlots.length} slot totali</div>
           </div>
 
-          {/* Struttura */}
+          {/* Colonne con traversi locali */}
           <div>
-            <div style={LBL}>Montanti / Traversi</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
-              {[
-                ["+ Mont",()=>setInf((p:any)=>{const m=addMontante(p.montanti,suggerisciPosMontante(p.montanti,p.larghezzaVano,{spessoreTelaio:p.profilo.spessoreTelaio}),p.larghezzaVano,{spessoreTelaio:p.profilo.spessoreTelaio});return ricalcola({...p,montanti:m});}),DARK,false],
-                ["− Mont",()=>setInf((p:any)=>{if(!p.montanti.length)return p;return ricalcola({...p,montanti:p.montanti.slice(0,-1)});}),RED,inf.montanti.length===0],
-                ["+ Trav",()=>setInf((p:any)=>{const t=addTraverso(p.traversi,suggerisciPosTraverso(p.traversi,p.altezzaVano,{spessoreTelaio:p.profilo.spessoreTelaio}),p.altezzaVano,{spessoreTelaio:p.profilo.spessoreTelaio});return ricalcola({...p,traversi:t});}),DARK,false],
-                ["− Trav",()=>setInf((p:any)=>{if(!p.traversi.length)return p;return ricalcola({...p,traversi:p.traversi.slice(0,-1)});}),RED,inf.traversi.length===0],
-              ].map(([l,fn,col,dis]:any)=>(
-                <button key={l} onClick={fn} disabled={dis} style={{padding:"5px 2px",border:`1px solid ${BDR}`,borderRadius:6,fontSize:11,cursor:dis?"default":"pointer",background:"#F9FAFB",color:dis?"#CCC":col}}>{l}</button>
-              ))}
-            </div>
-            <div style={{fontSize:10,color:SUB,marginTop:4}}>{inf.montanti.length} mont · {inf.traversi.length} trav · {inf.griglia.celle.length} celle</div>
+            <div style={LBL}>Traversi per colonna</div>
+            {inf.colonne.map((col:any)=>(
+              <div key={col.id} style={{marginBottom:6,padding:"6px 8px",background:"#F9FAFB",borderRadius:7,border:`1px solid ${BDR}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <span style={{fontSize:10,fontWeight:700,color:DARK}}>{col.id.replace("col","Col.")} — {col.larghezzaNetta}mm</span>
+                  <span style={{fontSize:9,color:SUB}}>{col.slots.length} slot</span>
+                </div>
+                <div style={{display:"flex",gap:4}}>
+                  <button onClick={()=>addTraversoLocale(col.id)} style={{flex:1,padding:"4px",border:`1px solid ${BDR}`,borderRadius:5,fontSize:10,cursor:"pointer",background:"#fff",color:DARK}}>+ Traverso</button>
+                  <button onClick={()=>removeTraversoLocale(col.id)} disabled={col.traversiLocali.length===0} style={{flex:1,padding:"4px",border:`1px solid ${BDR}`,borderRadius:5,fontSize:10,cursor:col.traversiLocali.length===0?"default":"pointer",background:"#fff",color:col.traversiLocali.length===0?"#CCC":RED}}>− Traverso</button>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* CELLA SELEZIONATA */}
-          {cellaSel ? (
+          {/* Slot selezionato */}
+          {slotSel ? (
             <div style={{border:`1.5px solid ${AMBER}`,borderRadius:10,padding:"10px",background:AMBER+"06"}}>
               <div style={{fontSize:10,fontWeight:700,color:AMBER,textTransform:"uppercase",marginBottom:8}}>
-                Cella {cellaSel.id} — {cellaSel.larghezzaNetta}×{cellaSel.altezzaNetta}mm
+                {slotSel.colId.replace("col","Col.")} Slot {slotSel.slotIdx+1} — {slotSel.larghezzaNetta}×{slotSel.altezzaNetta}mm
               </div>
 
               {/* Luci nette */}
               <div style={{background:"#F8FAFC",borderRadius:7,padding:"7px 9px",marginBottom:8,border:`1px solid ${BDR}`}}>
                 <div style={{fontSize:9,fontWeight:700,color:SUB,textTransform:"uppercase",marginBottom:4}}>Luci nette</div>
                 {[
-                  ["Vetro",`${luci[cellaSel.id]?.vetroL||0}×${luci[cellaSel.id]?.vetroH||0}mm`,DARK],
-                  ["m²",`${(luci[cellaSel.id]?.vetroMq||0).toFixed(3)}`,SUB],
-                  ...(!["fisso","pannello_cieco"].includes(cellaSel.tipo)?[["Anta",`${luci[cellaSel.id]?.antaL||0}×${luci[cellaSel.id]?.antaH||0}mm`,TEAL]]:[] as any[]),
-                  ...(cellaSel.tipo==="porta"&&luci[cellaSel.id]?.passaggioL?[["Passaggio",`${luci[cellaSel.id].passaggioL}×${luci[cellaSel.id].passaggioH}mm`,AMBER]]:[] as any[]),
+                  ["Vetro",`${luci[slotSel.id]?.vetroL||0}×${luci[slotSel.id]?.vetroH||0}mm`,DARK],
+                  ["m²",`${(luci[slotSel.id]?.vetroMq||0).toFixed(3)}`,SUB],
+                  ...(!["fisso","pannello_cieco"].includes(slotSel.tipo)?[["Anta",`${luci[slotSel.id]?.antaL||0}×${luci[slotSel.id]?.antaH||0}mm`,TEAL]]:[] as any[]),
                 ].map(([l,v,c]:any)=>(
                   <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
                     <span style={{fontSize:10,color:SUB}}>{l}</span>
@@ -286,51 +411,39 @@ export default function ConfiguratoreCad({realW,realH,vanoNome,onUpdate,onClose}
                 ))}
               </div>
 
-              {/* Tipo */}
               <div style={{marginBottom:6}}>
                 <div style={{fontSize:9,color:SUB,marginBottom:3}}>Tipo apertura</div>
-                <select value={cellaSel.tipo} onChange={e=>updCella(cellaSel.id,{tipo:e.target.value})} style={INP}>
+                <select value={slotSel.tipo} onChange={e=>updSlot(slotSel.id,{tipo:e.target.value})} style={INP}>
                   {TIPI.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
               </div>
 
-              {/* Verso */}
-              {["anta_battente","porta","anta_ribalta"].includes(cellaSel.tipo)&&(
+              {["anta_battente","porta","anta_ribalta"].includes(slotSel.tipo)&&(
                 <div style={{marginBottom:6}}>
                   <div style={{fontSize:9,color:SUB,marginBottom:3}}>Verso</div>
                   <div style={{display:"flex",gap:4}}>
                     {["sx","dx"].map(v=>(
-                      <button key={v} onClick={()=>updCella(cellaSel.id,{verso:v})} style={{flex:1,padding:"5px 0",border:`1.5px solid ${cellaSel.verso===v?TEAL:BDR}`,borderRadius:6,fontSize:11,fontWeight:cellaSel.verso===v?700:400,cursor:"pointer",background:cellaSel.verso===v?TEAL+"12":"#fff",color:cellaSel.verso===v?TEAL:DARK}}>{v==="sx"?"◄ SX":"DX ►"}</button>
+                      <button key={v} onClick={()=>updSlot(slotSel.id,{verso:v})} style={{flex:1,padding:"5px 0",border:`1.5px solid ${slotSel.verso===v?TEAL:BDR}`,borderRadius:6,fontSize:11,fontWeight:slotSel.verso===v?700:400,cursor:"pointer",background:slotSel.verso===v?TEAL+"12":"#fff",color:slotSel.verso===v?TEAL:DARK}}>{v==="sx"?"◄ SX":"DX ►"}</button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Vetro */}
               <div style={{marginBottom:6}}>
                 <div style={{fontSize:9,color:SUB,marginBottom:3}}>Vetro</div>
-                <select value={cellaSel.vetro?.id||"std"} onChange={e=>updCella(cellaSel.id,{vetro:VETRI.find(v=>v.id===e.target.value)})} style={INP}>
+                <select value={slotSel.vetro?.id||"std"} onChange={e=>updSlot(slotSel.id,{vetro:VETRI.find(v=>v.id===e.target.value)})} style={INP}>
                   {VETRI.map(v=><option key={v.id} value={v.id}>{v.label} (Ug {v.ugValore})</option>)}
                 </select>
-                {cellaSel.vetro&&<div style={{fontSize:9,color:SUB,marginTop:2,fontFamily:FM}}>{cellaSel.vetro.pesoMq}kg/m² · €{cellaSel.vetro.costoMq}/m²</div>}
               </div>
 
-              {/* Ferramenta */}
-              <div style={{marginBottom:6}}>
-                <div style={{fontSize:9,color:SUB,marginBottom:4}}>Ferramenta</div>
-                <div style={{background:"#F3F4F6",borderRadius:6,padding:"4px 8px",marginBottom:4,fontSize:10}}>
-                  Cerniere auto: <strong>{cerniereAuto(cellaSel.altezzaNetta,(luci[cellaSel.id]?.vetroMq||cellaSel.areaMq)*(cellaSel.vetro?.pesoMq||20)+3.5)} pz</strong>
-                </div>
-                <div style={{display:"flex",gap:4}}>
-                  {[["Maniglia","maniglia"],["Multipunto","chiusuraMultipunto"]].map(([l,k]:any)=>(
-                    <button key={k} onClick={()=>updCella(cellaSel.id,{ferramenta:{...(cellaSel.ferramenta||FER),[k]:!cellaSel.ferramenta?.[k]}})}
-                      style={{flex:1,padding:"5px 4px",border:`1.5px solid ${cellaSel.ferramenta?.[k]?TEAL:BDR}`,borderRadius:6,fontSize:10,cursor:"pointer",background:cellaSel.ferramenta?.[k]?TEAL+"12":"#fff",color:cellaSel.ferramenta?.[k]?TEAL:DARK}}>{l}</button>
-                  ))}
-                </div>
+              <div style={{display:"flex",gap:4}}>
+                {[["Maniglia","maniglia"],["Multipunto","chiusuraMultipunto"]].map(([l,k]:any)=>(
+                  <button key={k} onClick={()=>updSlot(slotSel.id,{ferramenta:{...(slotSel.ferramenta||FER),[k]:!slotSel.ferramenta?.[k]}})}
+                    style={{flex:1,padding:"5px 4px",border:`1.5px solid ${slotSel.ferramenta?.[k]?TEAL:BDR}`,borderRadius:6,fontSize:10,cursor:"pointer",background:slotSel.ferramenta?.[k]?TEAL+"12":"#fff",color:slotSel.ferramenta?.[k]?TEAL:DARK}}>{l}</button>
+                ))}
               </div>
 
-              {/* Violazioni cella */}
-              {violazioni.filter((v:any)=>v.cellaId===cellaSel.id).map((v:any,i:number)=>(
+              {violazioni.filter((v:any)=>v.cellaId===slotSel.id).map((v:any,i:number)=>(
                 <div key={i} style={{padding:"5px 7px",background:v.severita==="errore"?"#FEF2F2":"#FEF3C7",borderRadius:6,marginTop:4,fontSize:10,color:v.severita==="errore"?RED:"#92400E",fontWeight:600}}>
                   {v.severita==="errore"?"⛔":"⚠"} {v.messaggio}
                 </div>
@@ -338,109 +451,89 @@ export default function ConfiguratoreCad({realW,realH,vanoNome,onUpdate,onClose}
             </div>
           ) : (
             <div style={{padding:"12px",background:"#F9FAFB",borderRadius:8,fontSize:11,color:SUB,textAlign:"center" as any,border:`1px dashed ${BDR}`}}>
-              Clicca una cella per configurarla
+              Clicca uno slot nel canvas
             </div>
           )}
 
           {/* Vetro globale */}
           <div>
-            <div style={LBL}>Vetro su tutte</div>
+            <div style={LBL}>Vetro su tutti gli slot</div>
             <select id="vg" defaultValue="std" style={{...INP,marginBottom:5}}>
               {VETRI.map(v=><option key={v.id} value={v.id}>{v.label}</option>)}
             </select>
-            <button onClick={()=>{const el=document.getElementById("vg") as HTMLSelectElement;const vetro=VETRI.find(v=>v.id===el.value);if(!vetro)return;setInf((p:any)=>({...p,griglia:{...p.griglia,celle:p.griglia.celle.map((c:any)=>({...c,vetro}))}}));}}
-              style={{width:"100%",padding:"6px 0",border:`1px solid ${BDR}`,borderRadius:7,background:"#F9FAFB",color:DARK,fontSize:11,fontWeight:600,cursor:"pointer"}}>Applica a tutte</button>
+            <button onClick={()=>{const el=document.getElementById("vg") as HTMLSelectElement;const vetro=VETRI.find(v=>v.id===el.value);if(!vetro)return;setInf((p:any)=>({...p,colonne:p.colonne.map((col:any)=>({...col,slots:col.slots.map((s:any)=>({...s,vetro}))}))}}));}}
+              style={{width:"100%",padding:"6px 0",border:`1px solid ${BDR}`,borderRadius:7,background:"#F9FAFB",color:DARK,fontSize:11,fontWeight:600,cursor:"pointer"}}>Applica a tutti</button>
           </div>
         </div>
       </div>
 
-      {/* ── CANVAS ── */}
+      {/* CANVAS */}
       <div style={{flex:1,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",background:isMkt?DARK:"#F0F2F5",minWidth:0}}
         onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
-        <RendererSVG infisso={inf} width="90%" height="90%" svgRef={svgRef}
+        <RendererSVG infisso={infForRenderer} width="90%" height="90%" svgRef={svgRef}
           setDragging={(d:any)=>{wasDrag.current=false;setDragging(d);}}
           onCellaClick={handleCellaClick}/>
       </div>
 
-      {/* ── PANNELLO DESTRO ── */}
+      {/* PANNELLO DESTRO */}
       <div style={{width:230,flexShrink:0,background:"#fff",borderLeft:`1px solid ${BDR}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <div style={{display:"flex",borderBottom:`1px solid ${BDR}`,flexShrink:0}}>
           {[["risultati","Risultati"],["distinta","Distinta"],["regole",nErr>0?`Regole ⛔${nErr}`:nWarn>0?`Regole ⚠${nWarn}`:"Regole"]].map(([id,l]:any)=>(
             <button key={id} onClick={()=>setTabRight(id)} style={{flex:1,padding:"8px 2px",border:"none",borderBottom:`2px solid ${tabRight===id?AMBER:"transparent"}`,fontSize:10,fontWeight:tabRight===id?700:400,cursor:"pointer",background:"#fff",color:tabRight===id?AMBER:SUB}}>{l}</button>
           ))}
         </div>
-
         <div style={{flex:1,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:8}}>
           {tabRight==="risultati"&&<>
             <div style={{background:"#F8FAFC",borderRadius:8,padding:"8px 10px",border:`1px solid ${BDR}`}}>
-              <div style={{fontSize:9,color:SUB,marginBottom:2}}>Trasmittanza Uw (EN ISO 10077)</div>
+              <div style={{fontSize:9,color:SUB,marginBottom:2}}>Trasmittanza Uw</div>
               <div style={{display:"flex",alignItems:"baseline",gap:4}}>
                 <span style={{fontSize:24,fontWeight:900,fontFamily:FM,color:uwC}}>{uwCalc.uw}</span>
                 <span style={{fontSize:11,color:SUB}}>W/m²K</span>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:6,marginTop:3}}>
                 <div style={{background:uwC,color:"#fff",fontSize:10,fontWeight:800,padding:"1px 7px",borderRadius:4}}>{uwCalc.classeEnergetica}</div>
-                <span style={{fontSize:10,color:SUB}}>Ug medio: {uwCalc.ugMedio}</span>
+                <span style={{fontSize:10,color:SUB}}>Ug {uwCalc.ugMedio}</span>
               </div>
             </div>
             {[["Sup. tot.",`${Math.round(inf.larghezzaVano*inf.altezzaVano/10000)/100} m²`],
-              ["Sup. vetro",`${distinta.vetri.reduce((a:number,v:any)=>a+v.mq,0).toFixed(2)} m²`],
               ["ML telaio",`${mlTelaio.toFixed(2)} m`],["ML ante",`${mlAnte.toFixed(2)} m`],
               ["Peso vetri",`${pesi.pesoVetriKg} kg`],["Peso profili",`${pesi.pesoProfiliKg} kg`],
-              ["Peso totale",`${pesi.pesoTotaleKg} kg`],["Anta max",`${pesi.pesoAntaMax} kg`],
+              ["Peso totale",`${pesi.pesoTotaleKg} kg`],
               ["Barre 6m",`${distinta.nBarre6m} pz`],["Sfrido",`${distinta.sfrido}%`],
             ].map(([l,v]:any)=>(
               <div key={l} style={ROW}><span style={{fontSize:11,color:SUB}}>{l}</span><span style={{fontSize:12,fontWeight:700,fontFamily:FM}}>{v}</span></div>
             ))}
           </>}
-
           {tabRight==="distinta"&&<>
-            <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",marginBottom:2}}>Profili — {distinta.profili.length} tagli</div>
             {distinta.profili.map((p:any,i:number)=>(
               <div key={i} style={{padding:"5px 7px",background:"#F9FAFB",borderRadius:6,marginBottom:2}}>
                 <div style={{fontSize:10,fontWeight:600,color:DARK}}>{p.descrizione}</div>
-                <div style={{fontSize:9,color:SUB,fontFamily:FM}}>{p.lunghezzaMm}mm×{p.quantita}={p.mlTotale}m · <span style={{color:AMBER}}>€{p.costoTot}</span></div>
-                {p.barraAssegnata&&<div style={{fontSize:9,color:TEAL}}>Barra {p.barraAssegnata} @ {p.offsetMm}mm</div>}
+                <div style={{fontSize:9,color:SUB,fontFamily:FM}}>{p.lunghezzaMm}mm×{p.quantita} · <span style={{color:AMBER}}>€{p.costoTot}</span></div>
+                {p.barraAssegnata&&<div style={{fontSize:9,color:TEAL}}>Barra {p.barraAssegnata}@{p.offsetMm}mm</div>}
               </div>
             ))}
-            <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",marginTop:6,marginBottom:2}}>Vetri — {distinta.vetri.length} pz</div>
             {distinta.vetri.map((v:any,i:number)=>(
               <div key={i} style={{padding:"5px 7px",background:"#F0FDF4",borderRadius:6,marginBottom:2}}>
-                <div style={{fontSize:10,fontWeight:600,color:DARK}}>{v.tipo} — cella {v.cellaId}</div>
-                <div style={{fontSize:9,color:SUB,fontFamily:FM}}>{v.mq.toFixed(3)}m² · {v.pesoKg}kg · <span style={{color:TEAL}}>€{v.costoTot}</span></div>
+                <div style={{fontSize:10,fontWeight:600,color:DARK}}>{v.tipo}</div>
+                <div style={{fontSize:9,color:SUB,fontFamily:FM}}>{v.mq.toFixed(3)}m² · <span style={{color:TEAL}}>€{v.costoTot}</span></div>
               </div>
             ))}
-            <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",marginTop:6,marginBottom:2}}>Ferramenta</div>
-            {distinta.ferramenta.map((f:any,i:number)=>(
-              <div key={i} style={{padding:"5px 7px",background:"#FFF7ED",borderRadius:6,marginBottom:2}}>
-                <div style={{fontSize:10,fontWeight:600,color:DARK}}>{f.descrizione}</div>
-                <div style={{fontSize:9,color:SUB,fontFamily:FM}}>{f.quantita}pz · <span style={{color:AMBER}}>€{f.costoTot}</span></div>
-              </div>
-            ))}
-            <div style={{padding:"6px 8px",background:"#F8FAFC",borderRadius:6,border:`1px solid ${BDR}`}}>
-              {[["Profili",distinta.costoProfilatoTot],["Vetri",distinta.costoVetriTot],["Ferramenta",distinta.costoFerramentaTot]].map(([l,v]:any)=>(
-                <div key={l} style={ROW}><span style={{fontSize:11,color:SUB}}>{l}</span><span style={{fontSize:11,fontWeight:700,fontFamily:FM}}>€{v}</span></div>
-              ))}
-            </div>
           </>}
-
           {tabRight==="regole"&&(violazioni.length===0
-            ?<div style={{padding:"12px",background:"#F0FDF4",borderRadius:8,border:"1px solid #BBF7D0",fontSize:12,color:TEAL,fontWeight:600,textAlign:"center" as any}}>✓ Nessuna violazione</div>
+            ?<div style={{padding:"12px",background:"#F0FDF4",borderRadius:8,fontSize:12,color:TEAL,fontWeight:600,textAlign:"center" as any}}>✓ OK</div>
             :violazioni.map((v:any,i:number)=>(
               <div key={i} style={{padding:"7px 10px",background:v.severita==="errore"?"#FEF2F2":"#FEF3C7",borderRadius:8,border:`1px solid ${v.severita==="errore"?"#FCA5A5":"#FCD34D"}`}}>
-                <div style={{fontSize:11,fontWeight:700,color:v.severita==="errore"?RED:"#92400E"}}>{v.severita==="errore"?"⛔":"⚠"} Cella {v.cellaId}</div>
-                <div style={{fontSize:10,color:v.severita==="errore"?"#7F1D1D":"#78350F",marginTop:2}}>{v.messaggio}</div>
+                <div style={{fontSize:11,fontWeight:700,color:v.severita==="errore"?RED:"#92400E"}}>{v.severita==="errore"?"⛔":"⚠"} {v.cellaId}</div>
+                <div style={{fontSize:10,marginTop:2}}>{v.messaggio}</div>
               </div>
             ))
           )}
         </div>
-
         <div style={{borderTop:`1px solid ${BDR}`,padding:"10px 12px",flexShrink:0,background:"#FAFAFA"}}>
-          <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>Preventivo</div>
+          <div style={{fontSize:10,fontWeight:700,color:SUB,textTransform:"uppercase",marginBottom:6}}>Preventivo</div>
           {[["Profili",`€${distinta.costoProfilatoTot.toLocaleString("it-IT")}`],["Vetri",`€${distinta.costoVetriTot.toLocaleString("it-IT")}`],["Ferramenta",`€${distinta.costoFerramentaTot.toLocaleString("it-IT")}`]].map(([l,v]:any)=>(
             <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-              <span style={{fontSize:11,color:SUB}}>{l}</span>
-              <span style={{fontSize:11,fontWeight:600,fontFamily:FM}}>{v}</span>
+              <span style={{fontSize:11,color:SUB}}>{l}</span><span style={{fontSize:11,fontWeight:600,fontFamily:FM}}>{v}</span>
             </div>
           ))}
           <div style={{display:"flex",justifyContent:"space-between",paddingTop:6,borderTop:`1px solid ${BDR}`,marginTop:2}}>
