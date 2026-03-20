@@ -468,7 +468,7 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
             <select id="vg" defaultValue="std" style={{...INP,marginBottom:5}}>
               {VETRI.map(v=><option key={v.id} value={v.id}>{v.label}</option>)}
             </select>
-            <button onClick={()=>{const el=document.getElementById("vg") as HTMLSelectElement;const vetro=VETRI.find(v=>v.id===el.value);if(!vetro)return;setInf((p:any)=>({...p,colonne:p.colonne.map((col:any)=>({...col,slots:col.slots.map((s:any)=>({...s,vetro}))}))}))}}>
+            <button onClick={()=>{const el=document.getElementById("vg") as HTMLSelectElement;const vetro=VETRI.find(v=>v.id===el.value);if(!vetro)return;setInf((p:any)=>({...p,colonne:p.colonne.map((col:any)=>({...col,slots:col.slots.map((s:any)=>({...s,vetro}))}))}))}}
               style={{width:"100%",padding:"6px 0",border:`1px solid ${BDR}`,borderRadius:7,background:"#F9FAFB",color:DARK,fontSize:11,fontWeight:600,cursor:"pointer"}}>Applica a tutti</button>
           </div>
         </div>
