@@ -81,11 +81,27 @@ function buildInfisso(L=1500, H=2100, profilo=PROFILO_DEFAULT) {
   };
 }
 
-function ricalcola(inf:any) {
+function ricalcola(inf:any, prevL?:number, prevH?:number) {
   const sp = inf.profilo.spessoreTelaio;
-  const griglia = calcolaGriglia(inf.larghezzaVano, inf.altezzaVano,
-    inf.montanti, inf.traversi, { spessoreTelaio:sp }, inf.griglia.celle);
-  return { ...inf, griglia, sistema:{ ...inf.sistema, spessoreTelaio:sp } };
+  const L = inf.larghezzaVano;
+  const H = inf.altezzaVano;
+
+  // Scala montanti e traversi proporzionalmente se le dimensioni sono cambiate
+  let montanti = inf.montanti;
+  let traversi = inf.traversi;
+  if (prevL && prevL !== L && prevL > 0) {
+    montanti = montanti.map((m:any) => ({
+      ...m, xMm: Math.round(Math.max(sp*2, Math.min(L-sp*2, m.xMm * L / prevL)))
+    }));
+  }
+  if (prevH && prevH !== H && prevH > 0) {
+    traversi = traversi.map((t:any) => ({
+      ...t, yMm: Math.round(Math.max(sp*2, Math.min(H-sp*2, t.yMm * H / prevH)))
+    }));
+  }
+
+  const griglia = calcolaGriglia(L, H, montanti, traversi, { spessoreTelaio:sp }, inf.griglia.celle);
+  return { ...inf, montanti, traversi, griglia, sistema:{ ...inf.sistema, spessoreTelaio:sp } };
 }
 
 // Trova cella per id (anche nested)
@@ -113,7 +129,11 @@ export default function ConfiguratoreCad({ realW, realH, vanoNome, onUpdate, onC
   const [tabRight, setTabRight] = useState("risultati");
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const upd = (partial:any) => setInf((prev:any) => ricalcola({...prev,...partial}));
+  const upd = (partial:any) => setInf((prev:any) => {
+    const prevL = prev.larghezzaVano;
+    const prevH = prev.altezzaVano;
+    return ricalcola({...prev,...partial}, prevL, prevH);
+  });
 
   const updCella = (id:string, partial:any) => setInf((prev:any) => ({
     ...prev,
