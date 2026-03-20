@@ -531,7 +531,7 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
           for(let i=0;i<yPts.length-1;i++){if(yRel>=yPts[i]&&yRel<=yPts[i+1]){slotIdx=i;break;}}
           const slot=col.slots[slotIdx];
           if(slot)setCtxMenu({x:e.clientX,y:e.clientY,slotId:slot.id});
-        }}}> 
+        }}> 
         <RendererSVG infisso={infForRenderer} width="90%" height="90%" svgRef={svgRef}
           setDragging={(d:any)=>{wasDrag.current=false;setDragging(d);}}
           onCellaClick={handleCellaClick}/>
