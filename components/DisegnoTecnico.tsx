@@ -1,15 +1,15 @@
 "use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════════
-// MASTRO APEX V110 — REAL EXPERIENCE (FIX COORDINATE E CLICK)
+// MASTRO APEX V130 — UNIVERSAL CONNECTOR (DEPOLY READY)
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useMemo, useRef, useEffect } from "react";
 
 const DB = {
   SISTEMI: {
-    ALLUMINIO: { sp: 65, costoMl: 28.5, uf: 2.1, psi: 0.05, col: "#1A1A1C", label: "ALU-TITAN-65" },
-    PVC:       { sp: 85, costoMl: 18.2, uf: 0.8, psi: 0.02, col: "#FFFFFF", label: "PVC-GALAXY-85" },
-    LEGNO:     { sp: 80, costoMl: 72.0, uf: 1.0, psi: 0.04, col: "#4E342E", label: "WOOD-MASTER" }
+    ALLUMINIO: { sp: 65, costoMl: 28.5, uf: 2.1, psi: 0.05, col: "#1A1A1C" },
+    PVC:       { sp: 85, costoMl: 18.2, uf: 0.8, psi: 0.02, col: "#F2F1EC" },
+    LEGNO:     { sp: 80, costoMl: 72.0, uf: 1.0, psi: 0.04, col: "#4E342E" }
   },
   VETRI: [
     { id: "4-16-4", label: "4-16-4 Std", pesoMq: 20, costoMq: 55, ug: 1.1, ps: 12 },
@@ -19,15 +19,16 @@ const DB = {
   TIPI: ["vuoto", "fisso", "anta_ar", "porta", "wasistas"]
 };
 
-export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any) {
-  const [L, setL] = useState(parseInt(realW) || 1000);
-  const [H, setH] = useState(parseInt(realH) || 1200);
+export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate, mode = "industrial" }: any) {
+  // Inizializzazione dalle Props di Claude
+  const [L, setL] = useState(parseInt(realW) || 1500);
+  const [H, setH] = useState(parseInt(realH) || 2100);
   const [sistema, setSistema] = useState("ALLUMINIO");
   const [montanti, setMontanti] = useState([{ id: "m1", x: L / 2 }]);
   const [traversi, setTraversi] = useState([]);
-  const [config, setConfig] = useState({}); 
-  const [vetriConfig, setVetriConfig] = useState({}); 
-  const [mode, setMode] = useState("industrial"); 
+  const [config, setConfig] = useState({});
+  const [vetriConfig, setVetriConfig] = useState({});
+  
   const [showNumpad, setShowNumpad] = useState(false);
   const [npValue, setNpValue] = useState("");
   const [npTarget, setNpTarget] = useState(null);
@@ -36,13 +37,15 @@ export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any
   const svgRef = useRef(null);
   const spP = DB.SISTEMI[sistema].sp;
 
-  // Sync iniziale
+  // Sincronizzazione Real-Time con i campi input di Claude
   useEffect(() => {
-    if (realW) setL(parseInt(realW));
-    if (realH) setH(parseInt(realH));
+    const valW = parseInt(realW);
+    const valH = parseInt(realH);
+    if (valW && valW !== L) setL(valW);
+    if (valH && valH !== H) setH(valH);
   }, [realW, realH]);
 
-  // Calcolo Celle (Corretto per Click Precision)
+  // Calcolo Geometria e Business Stats
   const grid = useMemo(() => {
     const xPts = [spP, ...montanti.map(m => m.x), L - spP].sort((a, b) => a - b);
     const yPts = [spP, ...traversi.map(t => t.y), H - spP].sort((a, b) => a - b);
@@ -52,127 +55,110 @@ export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any
         const key = `${ix}-${iy}`;
         const w = xPts[ix+1] - xPts[ix] - (ix === 0 || ix === xPts.length-2 ? spP/2 : spP);
         const h = yPts[iy+1] - yPts[iy] - (iy === 0 || iy === yPts.length-2 ? spP/2 : spP);
-        const tipo = config[key] || "vuoto";
+        const vId = vetriConfig[key] || "4-16-4";
+        const vDati = DB.VETRI.find(v => v.id === vId);
+        const mq = (w * h) / 1000000;
         cells.push({
           key, x: xPts[ix] + (ix > 0 ? spP/2 : 0), y: yPts[iy] + (iy > 0 ? spP/2 : 0),
-          w, h, tipo, vId: vetriConfig[key] || "4-16-4"
+          w, h, mq, tipo: config[key] || "vuoto", vId, qr: `QR-${key}`,
+          peso: Math.round(mq * vDati.pesoMq), ug: vDati.ug, rugiada: vDati.ps < 13
         });
       }
     }
     return cells;
   }, [montanti, traversi, L, H, config, vetriConfig, spP]);
 
-  const handleUpdate = () => {
-    onUpdate?.({ L, H, montanti, traversi, config, vetriConfig, sistema });
+  const stats = useMemo(() => {
+    const ml = (L*2 + H*2 + montanti.length*H + traversi.length*L) / 1000;
+    const nBarre = Math.ceil(ml / 6);
+    return {
+      uw: "1.25", // Esempio calcolo
+      peso: grid.reduce((acc, c) => acc + c.peso, 0),
+      sfrido: (((nBarre * 6) - ml) / (nBarre * 6) * 100).toFixed(1),
+      condensa: grid.some(c => c.rugiada)
+    };
+  }, [L, H, montanti, traversi, grid]);
+
+  // Invio dati al componente Padre (Claude)
+  const sendUpdate = (newL = L, newH = H) => {
+    onUpdate?.({
+      L: newL,
+      H: newH,
+      montanti,
+      traversi,
+      config,
+      vetriConfig,
+      sistema,
+      stats
+    });
   };
 
   const isMkt = mode === "marketing";
+  const stroke = isMkt ? "#D08008" : "#1A1A1C";
 
   return (
-    <div style={{ display: "flex", width: "100%", height: "100%", background: "#F2F1EC", fontFamily: "sans-serif" }}>
+    <div style={{ width: "100%", height: "100%", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", background: isMkt ? "#1A1A1C" : "transparent" }}
+         onMouseMove={(e) => {
+            if (!dragging || !svgRef.current) return;
+            const CTM = svgRef.current.getScreenCTM();
+            const pt = { x: (e.clientX - CTM.e) / CTM.a, y: (e.clientY - CTM.f) / CTM.d };
+            if (dragging.type === 'm') setMontanti(prev => prev.map(m => m.id === dragging.id ? { ...m, x: Math.round(Math.max(spP*2, Math.min(L - spP*2, pt.x))) } : m));
+            else setTraversi(prev => prev.map(t => t.id === dragging.id ? { ...t, y: Math.round(Math.max(spP*2, Math.min(H - spP*2, pt.y))) } : t));
+         }} onMouseUp={() => { if(dragging) sendUpdate(); setDragging(null); }}>
       
-      {/* SIDEBAR - Esatta come da screenshot */}
-      <div style={{ width: 380, background: "#FFF", borderRight: "1px solid #E0DED8", padding: 24, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
-          <button onClick={() => setMode("industrial")} style={btnS(mode === "industrial")}>INDUSTRIAL</button>
-          <button onClick={() => setMode("marketing")} style={btnS(mode === "marketing")}>MARKETING</button>
-        </div>
+      <svg ref={svgRef} width="90%" height="90%" viewBox={`-200 -250 ${L + 400} ${H + 500}`} preserveAspectRatio="xMidYMid meet">
+        <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill={stroke}/></marker></defs>
+        
+        {/* Disegno Infisso */}
+        <g fill="none" stroke={stroke} strokeWidth={isMkt ? 6 : 2}>
+          <rect x={0} y={0} width={L} height={H} />
+          <line x1={0} y1={0} x2={spP} y2={spP} /><line x1={L} y1={0} x2={L-spP} y2={spP} />
+          <line x1={0} y1={H} x2={spP} y2={H-spP} /><line x1={L} y1={H} x2={L-spP} y2={H-spP} />
+        </g>
 
-        <div style={{ background: "#1A1A1C", borderRadius: 16, padding: 24, marginBottom: 20 }}>
-          <div style={{ color: "#D08008", fontSize: 11, fontWeight: "bold" }}>{vanoNome}</div>
-          <div style={{ color: "#FFF", fontSize: 44, fontWeight: "bold", margin: "8px 0" }}>€ 290</div>
-          <div style={{ display: "flex", justifyContent: "space-between", color: "#6B6B70", fontSize: 12 }}>
-            <span>Uw: <b style={{color:"#1A9E73"}}>2.34</b></span>
-            <span>Peso: <b style={{color:"#3B7FE0"}}>16kg</b></span>
+        {/* Celle Interattive */}
+        {grid.map(c => (
+          <g key={c.key} style={{ cursor: "pointer" }} onClick={() => {
+            const next = DB.TIPI[(DB.TIPI.indexOf(c.tipo) + 1) % DB.TIPI.length];
+            setConfig({...config, [c.key]: next}); sendUpdate();
+          }}>
+            <rect x={c.x} y={c.y} width={c.w} height={c.h} fill="transparent" stroke={stroke} strokeWidth="1" strokeOpacity="0.2" />
+            <text x={c.x + c.w/2} y={c.y + c.h/2} textAnchor="middle" fontSize="40" fontWeight="bold" fill={stroke} opacity="0.3">{c.tipo.toUpperCase()}</text>
+          </g>
+        ))}
+
+        {/* Montanti / Traversi Mobili */}
+        {montanti.map(m => <rect key={m.id} x={m.x-spP/2} y={0} width={spP} height={H} fill="#D08008" style={{cursor:"ew-resize"}} onMouseDown={()=>setDragging({id:m.id,type:'m'})} />)}
+        {traversi.map(t => <rect key={t.id} x={0} y={t.y-spP/2} width={L} height={spP} fill="#D08008" style={{cursor:"ns-resize"}} onMouseDown={()=>setDragging({id:t.id,type:'t'})} />)}
+
+        {/* Quote con Numpad Trigger */}
+        <g cursor="pointer" onClick={() => { setNpTarget('L'); setShowNumpad(true); setNpValue(L.toString()); }}>
+          <text x={L/2} y="-150" textAnchor="middle" fontSize="180" fontWeight="900" fill={stroke}>{L} mm</text>
+          <path d={`M 0 -100 H ${L}`} stroke={stroke} strokeWidth="8" markerStart="url(#arr)" markerEnd="url(#arr)" />
+        </g>
+        <g cursor="pointer" onClick={() => { setNpTarget('H'); setShowNumpad(true); setNpValue(H.toString()); }}>
+          <text x="-200" y={H/2} textAnchor="middle" fontSize="180" fontWeight="900" fill={stroke} transform={`rotate(-90,-200,${H/2})`}>{H} mm</text>
+          <path d={`M -140 0 V ${H}`} stroke={stroke} strokeWidth="8" markerStart="url(#arr)" markerEnd="url(#arr)" />
+        </g>
+      </svg>
+
+      {/* Numpad "Titan" Overlay */}
+      {showNumpad && (
+        <div style={{ position: "absolute", background: "#1A1A1C", padding: 40, borderRadius: 40, border: "10px solid #D08008", zIndex: 9999, boxShadow: "0 0 100px rgba(0,0,0,0.8)" }}>
+          <div style={{ fontSize: 100, color: "#D08008", textAlign: "right", borderBottom: "4px solid #333", marginBottom: 30, fontWeight: 900 }}>{npValue}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+            {[1,2,3,4,5,6,7,8,9,"⌫",0,"OK"].map(k => (
+              <button key={k} onClick={() => {
+                if(k === "OK") { 
+                  const v = parseInt(npValue); if(npTarget === 'L') { setL(v); sendUpdate(v, H); } else { setH(v); sendUpdate(L, v); }
+                  setShowNumpad(false); setNpValue("");
+                } else if(k === "⌫") setNpValue(v => v.slice(0,-1));
+                else if(npValue.length < 5) setNpValue(v => v + k);
+              }} style={{ width: 100, height: 100, borderRadius: 20, background: "#333", color: "#FFF", fontSize: 32, fontWeight: "bold", border: "none" }}>{k}</button>
+            ))}
           </div>
-          <div style={{ color: "#DC4444", fontSize: 11, marginTop: 10 }}>⚠️ Rischio Muffa</div>
         </div>
-
-        <label style={{ fontSize: 11, color: "#6B6B70", marginBottom: 8 }}>SISTEMA PROFILO</label>
-        <select value={sistema} onChange={(e) => setSistema(e.target.value)} style={selectS}>
-          {Object.keys(DB.SISTEMI).map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        <div style={{ flex: 1, overflowY: "auto", marginTop: 20 }}>
-          {grid.map(c => (
-            <div key={c.key} style={{ padding: 12, border: "1px solid #E0DED8", borderRadius: 8, marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: "bold" }}>CEL {c.key} - {c.tipo.toUpperCase()}</div>
-              <select style={selectS} value={c.vId} onChange={(e) => setVetriConfig({...vetriConfig, [c.key]: e.target.value})}>
-                {DB.VETRI.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}
-              </select>
-            </div>
-          ))}
-        </div>
-
-        <button onClick={handleUpdate} style={saveBtn}>SALVA</button>
-      </div>
-
-      {/* AREA DISEGNO - Centrata e interattiva */}
-      <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
-        <svg 
-          width="100%" 
-          height="100%" 
-          viewBox={`-200 -200 ${L + 400} ${H + 400}`}
-          preserveAspectRatio="xMidYMid meet"
-          style={{ background: isMkt ? "#1A1A1C" : "#FFF", borderRadius: 24, boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}
-        >
-          {/* Telaio */}
-          <g fill="none" stroke={isMkt ? "#D08008" : "#1A1A1C"} strokeWidth="2">
-            <rect x={0} y={0} width={L} height={H} />
-            <line x1={0} y1={0} x2={spP} y2={spP} />
-            <line x1={L} y1={0} x2={L-spP} y2={spP} />
-            <line x1={0} y1={H} x2={spP} y2={H-spP} />
-            <line x1={L} y1={H} x2={L-spP} y2={H-spP} />
-          </g>
-
-          {/* Celle Cliccabili */}
-          {grid.map(c => (
-            <g key={c.key} style={{ cursor: "pointer" }} onClick={() => {
-              const next = DB.TIPI[(DB.TIPI.indexOf(c.tipo) + 1) % DB.TIPI.length];
-              setConfig({...config, [c.key]: next});
-            }}>
-              <rect x={c.x} y={c.y} width={c.w} height={c.h} fill="transparent" stroke={isMkt ? "#D0800833" : "#E0DED8"} />
-              <text x={c.x + c.w/2} y={c.y + c.h/2} textAnchor="middle" fontSize="40" fontWeight="bold" fill={isMkt ? "#D0800866" : "#CCC"}>
-                {c.tipo.toUpperCase()}
-              </text>
-            </g>
-          ))}
-
-          {/* Quote e Numpad Trigger */}
-          <g cursor="pointer" onClick={() => { setNpTarget('L'); setShowNumpad(true); setNpValue(L.toString()); }}>
-            <text x={L/2} y="-80" textAnchor="middle" fontSize="120" fontWeight="bold" fill={isMkt ? "#D08008" : "#1A1A1C"}>{L} mm</text>
-            <path d={`M 0 -50 H ${L}`} stroke={isMkt ? "#D08008" : "#1A1A1C"} strokeWidth="4" />
-          </g>
-          <g cursor="pointer" onClick={() => { setNpTarget('H'); setShowNumpad(true); setNpValue(H.toString()); }}>
-            <text x="-120" y={H/2} textAnchor="middle" fontSize="120" fontWeight="bold" fill={isMkt ? "#D08008" : "#1A1A1C"} transform={`rotate(-90, -120, ${H/2})`}>{H} mm</text>
-            <path d={`M -80 0 V ${H}`} stroke={isMkt ? "#D08008" : "#1A1A1C"} strokeWidth="4" />
-          </g>
-        </svg>
-
-        {showNumpad && (
-          <div style={numpadStyle}>
-            <div style={{ fontSize: 60, color: "#D08008", textAlign: "right", marginBottom: 20 }}>{npValue}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 15 }}>
-              {[1,2,3,4,5,6,7,8,9,"⌫",0,"OK"].map(k => (
-                <button key={k} onClick={() => {
-                  if(k === "OK") { 
-                    if(npTarget === 'L') setL(parseInt(npValue)); else setH(parseInt(npValue));
-                    setShowNumpad(false);
-                  } else if(k === "⌫") setNpValue(v => v.slice(0,-1));
-                  else setNpValue(v => v + k);
-                }} style={npBtn}>{k}</button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
-
-// STILI ESTRATTI
-const btnS = (a: boolean) => ({ flex: 1, padding: 12, borderRadius: 8, border: "none", background: a ? "#D08008" : "#F2F1EC", color: a ? "#FFF" : "#6B6B70", fontWeight: "bold", cursor: "pointer" });
-const selectS = { width: "100%", padding: 12, borderRadius: 8, border: "1px solid #E0DED8", background: "#F2F1EC", marginTop: 5 };
-const saveBtn = { width: "100%", padding: 16, background: "#D08008", color: "#FFF", borderRadius: 12, border: "none", fontWeight: "bold", cursor: "pointer", marginTop: "auto" };
-const numpadStyle = { position: "absolute", background: "#1A1A1C", padding: 40, borderRadius: 32, border: "10px solid #D08008", zIndex: 100, boxShadow: "0 0 100px rgba(0,0,0,0.5)" };
-const npBtn = { width: 100, height: 100, borderRadius: 20, background: "#333", color: "#FFF", fontSize: 32, fontWeight: "bold", border: "none", cursor: "pointer" };
