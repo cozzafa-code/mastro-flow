@@ -1,19 +1,18 @@
 "use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════════
-// MASTRO ULTRA-DOMINATOR V100 — THE ETERNAL FACTORY SYSTEM
+// MASTRO APEX PREDATOR V100 — INTEGRATED EDITION
 // ═══════════════════════════════════════════════════════════════
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 
-// --- DATABASE SUPREMO ---
 const DB = {
   SISTEMI: {
-    ALLUMINIO: { sp: 65, costoMl: 28.5, uf: 2.1, psi: 0.05, col: "#0a0a0a", label: "ALU-TITAN-PRO" },
-    PVC:       { sp: 85, costoMl: 18.2, uf: 0.8, psi: 0.02, col: "#fcfcfc", label: "PVC-GALAXY-85" },
-    LEGNO:     { sp: 80, costoMl: 72.0, uf: 1.0, psi: 0.04, col: "#3e2723", label: "WOOD-MASTER-80" }
+    ALLUMINIO: { sp: 65, costoMl: 28.5, uf: 2.1, psi: 0.05, col: "#1A1A1C", label: "TITAN-ALU-65" },
+    PVC:       { sp: 85, costoMl: 18.2, uf: 0.8, psi: 0.02, col: "#FFFFFF", label: "GALAXY-PVC-85" },
+    LEGNO:     { sp: 80, costoMl: 72.0, uf: 1.0, psi: 0.04, col: "#4E342E", label: "MASTER-WOOD-80" }
   },
   VETRI: [
-    { id: "4-16-4", label: "4-16-4 Std", pesoMq: 20, costoMq: 55, ug: 1.1, limiteMq: 2.5, ps: 12 }, // ps = punto rugiada stimato
+    { id: "4-16-4", label: "4-16-4 Std", pesoMq: 20, costoMq: 55, ug: 1.1, limiteMq: 2.5, ps: 12 },
     { id: "lam", label: "33.1 Safetop", pesoMq: 32, costoMq: 115, ug: 1.1, limiteMq: 5.5, ps: 14 },
     { id: "triplo", label: "Triplo 0.5", pesoMq: 45, costoMq: 195, ug: 0.5, limiteMq: 4.2, ps: 18 },
     { id: "blind", label: "P8B Blindato", pesoMq: 85, costoMq: 550, ug: 1.3, limiteMq: 8.0, ps: 10 }
@@ -22,14 +21,17 @@ const DB = {
 };
 
 export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any) {
-  const [L, setL] = useState(parseInt(realW) || 2400);
-  const [H, setH] = useState(parseInt(realH) || 2200);
+  // Integrazione Props Esterne
+  const [L, setL] = useState(parseInt(realW) || 1000);
+  const [H, setH] = useState(parseInt(realH) || 1200);
+  
   const [sistema, setSistema] = useState("ALLUMINIO");
-  const [montanti, setMontanti] = useState([{ id: "m1", x: 1200 }]);
-  const [traversi, setTraversi] = useState([{ id: "t1", y: 1800 }]);
+  const [montanti, setMontanti] = useState([{ id: "m1", x: L / 2 }]);
+  const [traversi, setTraversi] = useState([]);
   const [config, setConfig] = useState({}); 
   const [vetriConfig, setVetriConfig] = useState({}); 
-  const [mode, setMode] = useState("render"); 
+  
+  const [mode, setMode] = useState("industrial"); // "industrial" o "marketing"
   const [showNumpad, setShowNumpad] = useState(false);
   const [npValue, setNpValue] = useState("");
   const [npTarget, setNpTarget] = useState(null);
@@ -38,7 +40,13 @@ export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any
   const svgRef = useRef(null);
   const sis = DB.SISTEMI[sistema];
   const spP = sis.sp;
-  const sc = 0.18;
+  const sc = 0.22;
+
+  // Sincronizzazione se le props cambiano dall'esterno
+  useEffect(() => {
+    if (realW) setL(parseInt(realW));
+    if (realH) setH(parseInt(realH));
+  }, [realW, realH]);
 
   // --- ENGINE ANALITICO V100 ---
   const grid = useMemo(() => {
@@ -54,15 +62,12 @@ export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any
         const vDati = DB.VETRI.find(v => v.id === vId);
         const mq = (w * h) / 1000000;
         const tipo = config[key] || "vuoto";
-        
-        let cerniere = 0;
-        if (tipo === "anta_ar" || tipo === "porta") cerniere = (h > 1800 || mq*vDati.pesoMq > 100) ? 4 : 3;
+        let cerniere = (tipo === "anta_ar" || tipo === "porta") ? (h > 1800 || mq*vDati.pesoMq > 100 ? 4 : 3) : 0;
 
         cells.push({
           key, x: xPts[ix] + (ix > 0 ? spP/2 : 0), y: yPts[iy] + (iy > 0 ? spP/2 : 0),
-          w, h, mq, tipo, vId, qr: `QR-${key}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
-          peso: Math.round(mq * vDati.pesoMq),
-          costoV: Math.round(mq * vDati.costoMq),
+          w, h, mq, tipo, vId, qr: `QR-${key}`,
+          peso: Math.round(mq * vDati.pesoMq), costoV: Math.round(mq * vDati.costoMq),
           costoAcc: (cerniere * DB.OFFICINA.cerniera) + (tipo !== "vuoto" && tipo !== "fisso" ? DB.OFFICINA.maniglia : 0),
           ug: vDati.ug, danger: mq > vDati.limiteMq, rugiada: vDati.ps < 13, perim: (w*2 + h*2)/1000
         });
@@ -78,116 +83,138 @@ export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any
     const uw = ((areaV * (grid[0]?.ug || 1.1) + (areaT - areaV) * sis.uf + (grid.reduce((acc,c)=>acc+c.perim,0) * sis.psi)) / areaT).toFixed(2);
     const nBarre = Math.ceil(ml / 6);
     const oreProd = (grid.filter(c=>c.tipo!=="vuoto").length * 2) + (ml * 0.3);
-    const volume = (areaT * 0.15).toFixed(2); // Volume stimato imballo (m3)
 
     return { 
         tot: Math.round(ml * sis.costoMl + grid.reduce((acc,c)=>acc+c.costoV+c.costoAcc,0) + (oreProd * DB.OFFICINA.costoOra)), 
         peso: grid.reduce((acc,c)=>acc+c.peso, 0), uw, sfrido: (((nBarre * 6) - ml) / (nBarre * 6) * 100).toFixed(1), 
-        barre: nBarre, ore: oreProd.toFixed(1), vol: volume,
-        condensa: grid.some(c => c.rugiada), critico: grid.some(c => c.danger) || H > 2800
+        barre: nBarre, ore: oreProd.toFixed(1), condensa: grid.some(c => c.rugiada), critico: grid.some(c => c.danger) || H > 2800
     };
   }, [L, H, montanti, traversi, grid, sis]);
 
-  const handleNpKey = (k: string) => {
-    if (k === "OK") { setL(parseInt(npValue) || L); setShowNumpad(false); setNpValue(""); return; }
-    if (k === "⌫") { setNpValue(v => v.slice(0, -1)); return; }
-    setNpValue(v => v + k);
+  // Funzione salvataggio unificata
+  const handleSave = (newL = L, newH = H) => {
+    onUpdate?.({
+      L: newL,
+      H: newH,
+      montanti,
+      traversi,
+      config,
+      vetriConfig,
+      stats,
+      sistema,
+      vanoNome
+    });
   };
 
-  const isTec = mode === "tecnico";
-  const stroke = isTec ? "#000" : "#fbbf24";
+  const handleNpKey = (k: string) => {
+    if (k === "OK") {
+      const v = parseInt(npValue) || 0;
+      if (npTarget === 'L') { setL(v); handleSave(v, H); } 
+      else { setH(v); handleSave(L, v); }
+      setShowNumpad(false); setNpValue(""); return;
+    }
+    if (k === "⌫") { setNpValue(v => v.slice(0, -1)); return; }
+    if (npValue.length < 5) setNpValue(v => v + k);
+  };
+
+  // Colori dinamici in base alla modalità
+  const isMkt = mode === "marketing";
+  const canvasBg = isMkt ? "#1A1A1C" : "#FFFFFF";
+  const stroke = isMkt ? "#D08008" : "#1A1A1C";
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: isTec ? "#FFF" : "#0d1117", fontFamily: "monospace", overflow: "hidden" }}
+    <div style={{ display: "flex", height: "100vh", background: "#F2F1EC", fontFamily: "Inter, sans-serif", color: "#1A1A1C", overflow: "hidden" }}
          onMouseMove={(e) => {
             if (!dragging || !svgRef.current) return;
             const CTM = svgRef.current.getScreenCTM();
             const pt = { x: (e.clientX - CTM.e) / CTM.a, y: (e.clientY - CTM.f) / CTM.d };
             if (dragging.type === 'm') setMontanti(prev => prev.map(m => m.id === dragging.id ? { ...m, x: Math.round(Math.max(spP*2, Math.min(L - spP*2, pt.x))) } : m));
             else setTraversi(prev => prev.map(t => t.id === dragging.id ? { ...t, y: Math.round(Math.max(spP*2, Math.min(H - spP*2, pt.y))) } : t));
-         }} onMouseUp={() => setDragging(null)}>
+         }} onMouseUp={() => { if(dragging) handleSave(); setDragging(null); }}>
       
-      {/* SIDEBAR V100 TOTAL CONTROL */}
-      <div style={{ width: 480, background: isTec ? "#F0F2F5" : "#161b22", padding: 30, borderRight: "1px solid #333", display: "flex", flexDirection: "column", overflowY: "auto" }}>
-        <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-          <button onClick={() => setMode("tecnico")} style={btnS(isTec)}>📐 INDUSTRIAL</button>
-          <button onClick={() => setMode("render")} style={btnS(!isTec)}>🎨 MARKETING</button>
+      {/* SIDEBAR */}
+      <div style={{ width: 440, background: "#FFFFFF", padding: 25, borderRight: "1px solid #E0DED8", display: "flex", flexDirection: "column", overflowY: "auto", boxShadow: "4px 0 15px rgba(0,0,0,0.02)" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+          <button onClick={() => setMode("industrial")} style={modeBtn(mode === "industrial")}>INDUSTRIAL</button>
+          <button onClick={() => setMode("marketing")} style={modeBtn(mode === "marketing")}>MARKETING</button>
         </div>
 
-        <div style={{ background: "#000", padding: 25, borderRadius: 25, border: `4px solid ${stats.critico ? "#F00" : "#fbbf24"}`, marginBottom: 20 }}>
-          <div style={{ fontSize: 10, color: "#fbbf24", fontWeight: 900, letterSpacing: 3 }}>MASTRO DOMINATOR V100</div>
-          <div style={{ fontSize: 62, fontWeight: 950, color: "#fbbf24" }}>€ {stats.tot}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15, marginTop: 20, fontSize: 14 }}>
-            <div style={{ color: "#10B981" }}>Efficienza: <b>{stats.uw} Uw</b></div>
-            <div style={{ color: "#3B82F6" }}>Massa: <b>{stats.peso}kg</b></div>
-            <div style={{ color: "#888" }}>Sfrido: {stats.sfrido}%</div>
-            <div style={{ color: stats.condensa ? "#F00" : "#888" }}>Condensa: {stats.condensa ? "ALTO RISCHIO" : "ASSENTE"}</div>
-            <div style={{ color: "#888" }}>Volume: {stats.vol}m³</div>
-            <div style={{ color: "#fbbf24" }}>Lavoro: {stats.ore}h</div>
+        <div style={{ background: "#1A1A1C", padding: 20, borderRadius: 16, border: `2px solid ${stats.critico ? "#DC4444" : "#D08008"}`, marginBottom: 15 }}>
+          <div style={{ fontSize: 10, color: "#D08008", fontWeight: 700, letterSpacing: 1.5 }}>{vanoNome || "CONFIGURAZIONE"}</div>
+          <div style={{ fontSize: 48, fontWeight: 800, color: "#FFFFFF", margin: "5px 0" }}>€ {stats.tot}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontSize: 12 }}>
+            <div style={{ color: "#1A9E73" }}>Uw: <b>{stats.uw}</b></div>
+            <div style={{ color: "#3B7FE0" }}>Peso: <b>{stats.peso}kg</b></div>
+            <div style={{ color: "#6B6B70" }}>Sfrido: {stats.sfrido}%</div>
+            <div style={{ color: stats.condensa ? "#DC4444" : "#6B6B70" }}>{stats.condensa ? "⚠️ Rischio Muffa" : "✅ Termica OK"}</div>
           </div>
         </div>
 
         <div style={{ flex: 1 }}>
-          <select value={sistema} onChange={e => setSistema(e.target.value)} style={selStyle}>
+          <label style={{ fontSize: 11, color: "#6B6B70", fontWeight: 600 }}>SISTEMA PROFILO</label>
+          <select value={sistema} onChange={e => {setSistema(e.target.value); handleSave();}} style={selStyle}>
             {Object.keys(DB.SISTEMI).map(s => <option key={s} value={s}>{s}</option>)}
           </select>
 
           {grid.map(c => c.tipo !== "vuoto" && (
-            <div key={c.key} style={{ padding: 20, background: c.rugiada ? "#421" : "#0d1117", borderRadius: 20, marginBottom: 12, border: `2px solid ${c.rugiada ? "#F00" : "#333"}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#eee" }}>
-                <span>ID: {c.qr}</span>
-                <span style={{ color: "#fbbf24", fontWeight: 900 }}>€ {c.costoV + c.costoAcc}</span>
+            <div key={c.key} style={{ padding: 15, background: "#F2F1EC", borderRadius: 12, marginBottom: 8, border: `1px solid ${c.rugiada ? "#DC4444" : "#E0DED8"}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 }}>
+                <span>CEL {c.key}</span>
+                <span style={{ color: "#D08008" }}>€ {c.costoV + c.costoAcc}</span>
               </div>
-              <select value={c.vId} onChange={e => setVetriConfig({...vetriConfig, [c.key]: e.target.value})} style={selStyleMini}>
+              <select value={c.vId} onChange={e => {setVetriConfig({...vetriConfig, [c.key]: e.target.value}); handleSave();}} style={selStyleMini}>
                 {DB.VETRI.map(v => <option key={v.id} value={v.id}>{v.label}</option>)}
               </select>
-              {c.rugiada && <div style={{ fontSize: 9, color: "#F00", marginTop: 8, fontWeight: "bold" }}>⚠️ RISCHIO CONDENSA/MUFFA - USA WARM EDGE</div>}
             </div>
           ))}
         </div>
 
-        <button onClick={() => onUpdate?.({L, H, montanti, traversi, config, vetriConfig, stats, sistema})} style={saveBtn}>STAMPA ETICHETTE QR & SALVA ERP</button>
+        <button onClick={() => handleSave()} style={saveBtn}>SALVA COMMESSA</button>
       </div>
 
-      {/* CAD CANVAS V100 */}
+      {/* CAD AREA */}
       <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <svg ref={svgRef} width={L*sc+100} height={H*sc+100} viewBox={`-300 -300 ${L+600} ${H+600}`}>
-          <g fill={isTec ? "none" : sis.col} stroke={stroke} strokeWidth={isTec ? 1 : 8}>
+        <svg ref={svgRef} width={L*sc+100} height={H*sc+100} viewBox={`-300 -300 ${L+600} ${H+600}`} style={{ background: canvasBg, borderRadius: 20, boxShadow: "0 20px 40px rgba(0,0,0,0.05)" }}>
+          <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill={stroke}/></marker></defs>
+          
+          <g fill={isMkt ? "none" : canvasBg} stroke={stroke} strokeWidth={isMkt ? 6 : 2}>
             <rect x={0} y={0} width={L} height={H} />
             <line x1={0} y1={0} x2={spP} y2={spP} /><line x1={L} y1={0} x2={L-spP} y2={spP} />
             <line x1={0} y1={H} x2={spP} y2={H-spP} /><line x1={L} y1={H} x2={L-spP} y2={H-spP} />
           </g>
 
           {grid.map(c => (
-            <g key={c.key} onClick={() => setConfig({...config, [c.key]: DB.TIPI_CELLA[(DB.TIPI_CELLA.indexOf(c.tipo)+1)%DB.TIPI_CELLA.length]})}>
-              <rect x={c.x} y={c.y} width={c.w} height={c.h} fill={c.tipo==="vuoto"?"transparent":(c.rugiada?"#F002":"#1e3a8a30")} stroke={c.rugiada?"#F00":stroke} strokeWidth={c.rugiada?15:1} />
-              <text x={c.x+c.w/2} y={c.y+c.h/2} textAnchor="middle" fontSize="65" fill={stroke} fontWeight="950">{c.tipo.toUpperCase()}</text>
-              <text x={c.x+10} y={c.y+c.h-10} fontSize="12" fill="#888">{c.qr}</text>
+            <g key={c.key} onClick={() => {setConfig({...config, [c.key]: DB.TIPI_CELLA[(DB.TIPI_CELLA.indexOf(c.tipo)+1)%DB.TIPI_CELLA.length]}); handleSave();}}>
+              <rect x={c.x} y={c.y} width={c.w} height={c.h} fill={c.tipo==="vuoto"?"transparent":"#3B7FE010"} stroke={c.rugiada?"#DC4444":stroke} strokeWidth={c.rugiada?4:1} />
+              <text x={c.x+c.w/2} y={c.y+c.h/2} textAnchor="middle" fontSize="50" fill={stroke} fontWeight="800" opacity="0.6">{c.tipo.toUpperCase()}</text>
             </g>
           ))}
 
-          {montanti.map(m => <rect key={m.id} x={m.x-spP/2} y={0} width={spP} height={H} fill="#fbbf24" style={{cursor:"ew-resize"}} onMouseDown={()=>setDragging({id:m.id,type:'m'})} />)}
-          {traversi.map(t => <rect key={t.id} x={0} y={t.y-spP/2} width={L} height={spP} fill="#fbbf24" style={{cursor:"ns-resize"}} onMouseDown={()=>setDragging({id:t.id,type:'t'})} />)}
+          {montanti.map(m => <rect key={m.id} x={m.x-spP/2} y={0} width={spP} height={H} fill="#D08008" style={{cursor:"ew-resize"}} onMouseDown={()=>setDragging({id:m.id,type:'m'})} />)}
+          {traversi.map(t => <rect key={t.id} x={0} y={t.y-spP/2} width={L} height={spP} fill="#D08008" style={{cursor:"ns-resize"}} onMouseDown={()=>setDragging({id:t.id,type:'t'})} />)}
 
-          {/* QUOTE TITANICHE 2026 */}
           <g cursor="pointer" onClick={() => { setNpTarget('L'); setShowNumpad(true); setNpValue(L.toString()); }}>
-            <text x={L/2} y="-220" fill={stroke} textAnchor="middle" fontSize="280" fontWeight="950">{L} mm</text>
-            <path d={`M 0 -140 L ${L} -140`} stroke={stroke} strokeWidth="15" markerStart="url(#arr)" markerEnd="url(#arr)" />
+            <text x={L/2} y="-160" fill={stroke} textAnchor="middle" fontSize="220" fontWeight="900">{L} mm</text>
+            <path d={`M 0 -110 L ${L} -110`} stroke={stroke} strokeWidth="10" markerStart="url(#arr)" markerEnd="url(#arr)" />
           </g>
           <g cursor="pointer" onClick={() => { setNpTarget('H'); setShowNumpad(true); setNpValue(H.toString()); }}>
-            <text x="-280" y={H/2} fill={stroke} textAnchor="middle" fontSize="280" fontWeight="950" transform={`rotate(-90,-280,${H/2})`}>{H} mm</text>
-            <path d={`M -200 0 L -200 ${H}`} stroke={stroke} strokeWidth="15" markerStart="url(#arr)" markerEnd="url(#arr)" />
+            <text x="-240" y={H/2} fill={stroke} textAnchor="middle" fontSize="220" fontWeight="900" transform={`rotate(-90,-240,${H/2})`}>{H} mm</text>
+            <path d={`M -190 0 L -190 ${H}`} stroke={stroke} strokeWidth="10" markerStart="url(#arr)" markerEnd="url(#arr)" />
           </g>
-          <defs><marker id="arr" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill={stroke}/></marker></defs>
+          
+          <g transform={`translate(0, ${H + 180})`} fontSize="24" fill={stroke} fontWeight="800">
+             <text x="0" y="0">SEZIONE TECNICA: {sistema} ({spP}mm)</text>
+             <rect x="0" y="30" width="300" height="60" fill={isMkt ? "#000" : "#F2F1EC"} stroke={stroke} />
+             <rect x="320" y="30" width={spP} height="60" fill="#D08008" />
+          </g>
         </svg>
 
-        {/* NUMPAD GORILLA 9.0 — 240px */}
         {showNumpad && (
-          <div style={{ position: "absolute", right: 60, top: "2%", background: "#000", padding: 80, borderRadius: 80, border: "30px solid #fbbf24", boxShadow: "0 0 500px rgba(0,0,0,1)", zIndex: 9999 }}>
-            <div style={{ fontSize: 260, color: "#fbbf24", textAlign: "right", borderBottom: "25 Gemini " }}>{npValue || "0"}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
+          <div style={{ position: "absolute", right: 60, top: "5%", background: "#1A1A1C", padding: 60, borderRadius: 60, border: "20px solid #D08008", boxShadow: "0 0 500px rgba(0,0,0,0.8)", zIndex: 9999 }}>
+            <div style={{ fontSize: 180, color: "#D08008", textAlign: "right", borderBottom: "10px solid #333", marginBottom: 30, paddingBottom: 20, fontWeight: 900 }}>{npValue || "0"}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
               {[1,2,3,4,5,6,7,8,9,"⌫",0,"OK"].map(k => (
-                <button key={k} onClick={()=>{ if(k==="OK"){ setL(parseInt(npValue)); setShowNumpad(false); setNpValue(""); } else if(k==="⌫") setNpValue(v=>v.slice(0,-1)); else setNpValue(v=>v+k); }} style={{ width:240, height:240, background:k==="OK"?"#10b981":"#222", color:"#fff", border:"none", borderRadius:70, fontSize:120, fontWeight:950, cursor:"pointer" }}>{k}</button>
+                <button key={k} onClick={()=>handleNpKey(k.toString())} style={{ width:160, height:160, background:k==="OK"?"#1A9E73":"#333", color:"#fff", border:"none", borderRadius:40, fontSize:70, fontWeight:950, cursor:"pointer" }}>{k}</button>
               ))}
             </div>
           </div>
@@ -197,7 +224,7 @@ export default function DisegnoTecnico({ realW, realH, vanoNome, onUpdate }: any
   );
 }
 
-const btnS = (a: any) => ({ flex:1, padding:30, fontSize:22, fontWeight:900, borderRadius:25, border:"none", background:a?"#fbbf24":"#333", color:a?"#000":"#888", cursor:"pointer" });
-const selStyle = { width: "100%", padding: 40, background: "#000", color: "#fbbf24", border: "5px solid #444", borderRadius: 35, fontSize: 34, fontWeight: 950, marginBottom: 40 };
-const selStyleMini = { width: "100%", background: "#161b22", color: "#fbbf24", border: "1px solid #444", padding: 25, fontSize: 22, borderRadius: 25, marginTop: 20 };
-const saveBtn = { width: "100%", background: "#fbbf24", color: "#000", padding: 50, borderRadius: 50, fontWeight: 950, fontSize: 34, border: "none", cursor: "pointer", marginTop: 50 };
+const modeBtn = (a: boolean) => ({ flex:1, padding:12, fontSize:12, fontWeight:700, borderRadius:8, border:"none", background:a?"#D08008":"#F2F1EC", color:a?"#FFF":"#6B6B70", cursor:"pointer" });
+const selStyle = { width: "100%", padding: 15, background: "#F2F1EC", color: "#1A1A1C", border: "1px solid #E0DED8", borderRadius: 10, fontSize: 16, fontWeight: 700, marginBottom: 20, marginTop: 5 };
+const selStyleMini = { width: "100%", background: "#FFF", color: "#1A1A1C", border: "1px solid #E0DED8", padding: 10, fontSize: 14, borderRadius: 8, marginTop: 8 };
+const saveBtn = { width: "100%", background: "#D08008", color: "#FFF", padding: 25, borderRadius: 16, fontWeight: 800, fontSize: 18, border: "none", cursor: "pointer", marginTop: 25 };
