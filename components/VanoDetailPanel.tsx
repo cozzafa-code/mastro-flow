@@ -1195,6 +1195,7 @@ export default function VanoDetailPanel() {
                         realW={m.lCentro||m.lAlto||1200}
                         realH={m.hCentro||m.hSx||1400}
                         onUpdate={(d:any)=>updateVanoField(v.id,"disegno",d)}
+                        T={T}
                       />
                     </div>
                   </div>
