@@ -619,13 +619,17 @@ export default function SettingsPanel() {
   ];
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#F2F1EC", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: isDesktop ? "row" : "column", height: isDesktop ? "100vh" : "auto", minHeight: "100vh", overflow: isDesktop ? "hidden" : "auto", background: "#F2F1EC", fontFamily: "Inter, system-ui, sans-serif" }}>
 
       {/* ── SIDEBAR ──────────────────────────────────────────────────────────── */}
       <div style={{
-        width: 220, flexShrink: 0,
-        background: "#fff", borderRight: "1px solid #E5E3DC",
-        overflowY: "auto", display: "flex", flexDirection: "column",
+        width: isDesktop ? 220 : "100%", flexShrink: 0,
+        background: "#fff", borderRight: isDesktop ? "1px solid #E5E3DC" : "none",
+        borderBottom: isDesktop ? "none" : "1px solid #E5E3DC",
+        overflowY: isDesktop ? "auto" : "hidden",
+        overflowX: isDesktop ? "hidden" : "auto",
+        display: "flex", flexDirection: "column",
+        maxHeight: isDesktop ? undefined : 200,
       }}>
         {/* Sidebar header */}
         <div style={{ padding: "16px 16px 8px", borderBottom: "1px solid #E5E3DC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -689,13 +693,13 @@ export default function SettingsPanel() {
       {/* ── CONTENT AREA ─────────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {/* Content header */}
-        <div style={{ padding: "20px 28px 0", marginBottom: 20 }}>
+        <div style={{ padding: isDesktop ? "20px 28px 0" : "16px 16px 0", marginBottom: 20 }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1C" }}>
             {sidebarGroups.flatMap(g => g.items).find(i => i.id === settingsTab)?.l || "Impostazioni"}
           </div>
         </div>
 
-      <div style={{ padding: "0 28px 40px" }}>
+      <div style={{ padding: isDesktop ? "0 28px 40px" : "0 16px 40px" }}>
 
         {/* === AZIENDA === */}
         {/* === SETTORE === */}
