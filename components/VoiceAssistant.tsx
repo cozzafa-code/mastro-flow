@@ -257,7 +257,7 @@ export default function VoiceAssistant({ onClose }) {
       }, 350); }
     };
     rec.onerror = (e) => { if (e.error === "not-allowed") toast("Microfono non autorizzato", "error"); };
-    rec.onend = () => {};
+    rec.onend = () => { if (recognitionRef.current) { recognitionRef.current = null; setRecording(false); const full = (transcript+" "+interim).trim(); if (full) { setProcessing(true); const analysis = analyzeVoice(full, { contatti, cantieri, selectedCM, selectedVano, events, tasks }); executeAction(analysis); setTimeout(() => { setResult(analysis); setProcessing(false); }, 400); } } };
     recognitionRef.current = rec; rec.start();
     setRecording(true); setTranscript(""); setInterim(""); setResult(null); setLiveActions([]);
   };
