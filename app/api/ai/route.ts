@@ -45,6 +45,7 @@ const KEYWORDS_TECNICI = [
   "kg/ml", "peso profilo", "cerniera", "cremonese", "portata",
   "posa", "giunto", "nastro", "schiuma", "membrana",
   "distanza angolo", "interasse", "fissaggio",
+  "grande", "grandi", "migliore", "bonamassa", "maestro", "montaggio", "spessore", "carica vetro", "punta corta", "punta lunga", "schiuma", "soudal", "anta tocca",
 ];
 
 function isDomandaTecnica(msg: string): boolean {
