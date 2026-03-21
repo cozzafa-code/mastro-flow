@@ -14,7 +14,6 @@ import InterventoTab from "./InterventoTab";
 import InterventoFlowPanel from "./InterventoFlowPanel";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
 import DisegnoTecnico from "./DisegnoTecnico";
-import ValidatoreAlert from "./ValidatoreAlert";
 // @cadDraw state added below
 
 export default function CMDetailPanel() {
@@ -55,7 +54,7 @@ export default function CMDetailPanel() {
     exportPDF, playAllegato, setFaseTo, addAllegato, faseIndex,
     fileInputRef, fotoInputRef,
     // Navigation
-    setSelectedVano, setVanoStep, setTab,
+    setSelectedVano, setVanoStep,
     // Business logic
     generaPreventivoPDF, creaFattura, creaOrdineFornitore,
     generaPreventivoCondivisibile,
@@ -350,24 +349,6 @@ export default function CMDetailPanel() {
                         </div>
                       );
                     })()}
-
-
-                    {/* Validatore AI */}
-                    <ValidatoreAlert
-                      datiVano={{
-                        sistema: v.sistema || c.sistema,
-                        vetro: v.vetro,
-                        larghezza: mis.lCentro || v.larghezza || v.l || 0,
-                        altezza: mis.hCentro || v.altezza || v.h || 0,
-                        zonaClimatica: aziendaInfo?.zonaClimatica,
-                        zonaCostiera: aziendaInfo?.zonaCostiera,
-                        posizionePosa: v.posizionePosa,
-                        altezzaDaTerra: v.altezzaDaTerra,
-                        destinazione: v.destinazione,
-                        accessori: v.accessori,
-                      }}
-                      compact={false}
-                    />
 
                     {/* Quick actions */}
                     <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
@@ -1028,7 +1009,7 @@ export default function CMDetailPanel() {
                         </div>
                       )}
                       {vaniCC.length === 0 ? (
-                        <button onClick={() => { /* scroll to rilievo section */ }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.mapPin} /> AVVIA SOPRALLUOGO</button>
+                        <div style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: `1.5px dashed ${T.grn}`, background: `${T.grn}08`, display: "flex", alignItems: "center", gap: 10 }}><I d={ICO.mapPin} s={18} c={T.grn} /><div><div style={{ fontSize: 13, fontWeight: 700, color: T.grn }}>Avvia sopralluogo</div><div style={{ fontSize: 11, color: T.sub }}>Aggiungi i vani e inserisci le misure sul cantiere</div></div></div>
                       ) : (
                         <div style={{ fontSize: 12, color: T.grn, fontWeight: 700, textAlign: "center" }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
@@ -1630,8 +1611,8 @@ export default function CMDetailPanel() {
         {/* == TAB: vani / visite / info == */}
         <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
           {[
-            {k:"sopralluoghi",l:`🏠 Vani (${vaniList.length})`},
-            {k:"visite",l:`📐 Visite (${(c.rilievi||[]).length})`},
+            {k:"sopralluoghi",l:`Vani (${vaniList.length})`},
+            {k:"visite",l:`Visite (${(c.rilievi||[]).length})`},
             {k:"info",l:"ℹ Info"},
           ].map(t => (
             <div key={t.k} onClick={() => setCmSubTab(t.k)} style={{
@@ -1694,7 +1675,7 @@ export default function CMDetailPanel() {
                       {ril.tipo === "modifica" && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 4, background: "#ff9500", color: "#fff" }}>MODIFICA</span>}
                     </div>
                     <div style={{ fontSize: 11, color: T.sub }}>
-                      📸 {ril.rilevatore || "·"} · 🏠 {nVani} vani · {nMisurati === nVani && nVani > 0 ? "✓ tutte le misure" : `${nMisurati}/${nVani} misurati`}
+                      {ril.rilevatore || "·"} · {nVani} vani · {nMisurati === nVani && nVani > 0 ? "✓ tutte le misure" : `${nMisurati}/${nVani} misurati`}
                     </div>
                     {ril.motivoModifica && <div style={{ fontSize: 11, color: "#ff9500", marginTop: 2 }}><I d={ICO.wrench} /> {ril.motivoModifica}</div>}
                     {ril.note && <div style={{ fontSize: 11, color: T.sub, marginTop: 2, fontStyle: "italic" }}>"{ril.note}"</div>}
@@ -1776,7 +1757,7 @@ export default function CMDetailPanel() {
               const bloccato = v.note?.startsWith("+ BLOCCATO");
               const colore = bloccato ? T.red : completo ? T.grn : T.orange;
               return (
-                <div key={v.id} onClick={() => { setSelectedVano(v); setVanoStep(0); setTab("commesse"); }}
+                <div key={v.id} onClick={() => { console.log("CLICK VANO", v?.id, v?.nome); setSelectedVano(v); setVanoStep(0); }}
                   style={{ ...S.card, marginBottom: 8, padding: "12px 14px", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 12,
                     borderLeft: `3px solid ${colore}` }}>
