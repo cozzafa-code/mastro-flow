@@ -7,7 +7,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
-import DisegnoTecnico from "./DisegnoTecnico";
 import { generaTavolaTecnica } from "../lib/pdf-tavola-tecnica";
 import FotoMisure from "./FotoMisure";
 import AccessoriCatalogoVano from "./AccessoriCatalogoVano";
@@ -1161,11 +1160,11 @@ export default function VanoDetailPanel() {
 
               {/* ═══ DISEGNO TECNICO — Bottone apre fullscreen ═══ */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}
-                  onClick={() => setShowDisegno(true)}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, background: T.card, cursor: "pointer" }}
+                  onClick={() => setDrawFullscreen(true)}>
                   <span style={{ fontSize: 16 }}><I d={ICO.edit} /></span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: showDisegno ? T.purple : T.text }}>Disegno tecnico CAD</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: showDisegno ? T.purple : T.text }}>Disegno a mano libera ✏️</div>
                     <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{(m.lCentro || m.lAlto || 1200)}×{(m.hCentro || m.hSx || 1400)}mm · {(v.disegno?.elements?.length || 0)} elementi</div>
                   </div>
                   {(v.disegno?.elements?.length > 0) && <span style={{ padding: "2px 8px", borderRadius: 5, background: `${T.grn}18`, fontSize: 9, fontWeight: 800, color: T.grn }}>{v.disegno.elements.length} el.</span>}
@@ -1174,40 +1173,6 @@ export default function VanoDetailPanel() {
               </div>
 
               
-              {/* Modal DisegnoTecnico CAD */}
-              {showDisegno && (
-                <div style={{
-                  position: "fixed", inset: 0, zIndex: 9000,
-                  background: "rgba(0,0,0,0.65)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <div style={{
-                    width: "calc(100vw - 16px)", height: "calc(100vh - 16px)",
-                    background: "#fff", borderRadius: 16,
-                    display: "flex", flexDirection: "column", overflow: "hidden",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-                      background: "#1A1A1C", borderBottom: "1px solid #333", flexShrink: 0 }}>
-                      <div style={{ flex: 1, color: "#D08008", fontWeight: 700, fontSize: 13 }}>
-                        📐 CAD — {v.nome || "Vano"}
-                      </div>
-                      <div onClick={() => setShowDisegno(false)}
-                        style={{ color: "#fff", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>✕</div>
-                    </div>
-                    <div style={{ flex: 1, overflow: "hidden" }}>
-                      <DisegnoTecnico
-                        vanoId={v.id}
-                        vanoNome={v.nome || `Vano ${v.numero || ""}`}
-                        vanoDisegno={v.disegno}
-                        realW={m.lCentro || m.lAlto || 1200}
-                        realH={m.hCentro || m.hSx || 1400}
-                        onUpdate={(newDisegno: any) => updateVanoField(v.id, "disegno", newDisegno)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
 {/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
                 const W = drawFullscreen ? 760 : 380;
