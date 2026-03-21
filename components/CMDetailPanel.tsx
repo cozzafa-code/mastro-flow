@@ -608,7 +608,7 @@ export default function CMDetailPanel() {
     const vaniA = vaniList;
     const tipoRil = r?.tipo || "rilievo";
     const tipoColRil = tipoRil === "definitiva" ? T.grn : tipoRil === "modifica" ? T.orange : T.blue;
-    const tipoIcoRil = tipoRil === "definitiva" ? ICO.checkCircle : tipoRil === "modifica" ? ICO.wrench : ICO.mapPin;
+    const tipoIcoRil = tipoRil === "definitiva" ? "checkCircle" : tipoRil === "modifica" ? "wrench" : "mapPin";
     const tipoLblRil = tipoRil === "definitiva" ? "Misure Definitive" : tipoRil === "modifica" ? "Modifica" : "Rilievo Misure";
 
     // Calcolo avanzamento misure
@@ -931,14 +931,14 @@ export default function CMDetailPanel() {
 
           const skipped = (id) => (c.skipLog || []).some(s => s.fase === id);
           const stepsCC = [
-            { id: "sopralluogo", icon: ICO.mapPin, l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
-            { id: "preventivo",  icon: ICO.fileText, l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
+            { id: "sopralluogo", icon: "mapPin", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
+            { id: "preventivo",  icon: "fileText", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
             { id: "conferma",    icon: "✍️",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
-            { id: "ordini",      icon: ICO.package, l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
+            { id: "ordini",      icon: "package", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
             { id: "produzione",  icon: "🏭", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
-            { id: "posa",        icon: ICO.wrench, l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
-            { id: "collaudo",    icon: ICO.checkCircle, l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
-            { id: "chiusura",    icon: ICO.tag, l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
+            { id: "posa",        icon: "wrench", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
+            { id: "collaudo",    icon: "checkCircle", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
+            { id: "chiusura",    icon: "tag", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
           ];
           const doneCC = stepsCC.filter(s => s.done).length;
           const curIdxCC = stepsCC.findIndex(s => !s.done);
