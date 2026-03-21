@@ -853,7 +853,7 @@ export default function CMDetailPanel() {
           <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); }} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: T.bg, border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: T.text }}><Ico d={ICO.back} s={16} c={T.text} /> Indietro</div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <IcoKey name={tipoIcoRil} s={16} c={T.sub} />
+              {tipoRil === "definitiva" ? <Ico d={ICO.checkCircle} s={16} c={T.sub} /> : tipoRil === "modifica" ? <Ico d={ICO.wrench} s={16} c={T.sub} /> : <Ico d={ICO.mapPin} s={16} c={T.sub} />}
               <div style={S.headerTitle}>{tipoLblRil} · R{r?.n}</div>
             </div>
             <div style={{ fontSize: 12, color: T.sub, marginTop: 1 }}><span style={{ fontFamily: "monospace", fontWeight: 700, color: T.acc }}>{c.code}</span> · {c.cliente} {c.cognome || ""} · {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
@@ -956,7 +956,7 @@ export default function CMDetailPanel() {
                         width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
                         background: s.skipped ? "#ff9500" : s.done ? "#34c759" : i === curIdxCC ? T.acc : T.bg,
                         color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
-                      }}>{s.skipped ? <I d={ICO.check} s={10} c="#fff" /> : s.done ? <I d={ICO.check} s={10} c="#fff" /> : <IcoKey name={s.icon} s={10} c="#fff" />}</div>
+                      }}>{s.skipped ? <I d={ICO.check} s={10} c="#fff" /> : s.done ? <I d={ICO.check} s={10} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={10} c="#fff" />}</div>
                       <div style={{ fontSize: 7, color: i === curIdxCC ? T.acc : s.done ? "#34c759" : T.sub, fontWeight: i === curIdxCC ? 800 : 500, whiteSpace: "nowrap", maxWidth: 32, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>{s.l}</div>
                     </div>
                     {i < stepsCC.length - 1 && <div style={{ width: 6, height: 2, background: s.done ? "#34c759" : T.bdr, marginBottom: 12 }} />}
