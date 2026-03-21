@@ -2155,6 +2155,16 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [extractingPDF, setExtractingPDF] = useState(false); // loading AI extraction
   const [showInboxDoc, setShowInboxDoc] = useState(false); // global document inbox
   const [inboxResult, setInboxResult] = useState<any>(null); // extracted data from inbox
+  // Onboarding wizard state (spostato fuori dalla IIFE per regola hooks)
+  const [obNome, setObNome] = React.useState("");
+  const [obRagione, setObRagione] = React.useState("");
+  const [obPiva, setObPiva] = React.useState("");
+  const [obTel, setObTel] = React.useState("");
+  const [obEmail, setObEmail] = React.useState("");
+  const [obIndirizzo, setObIndirizzo] = React.useState("");
+  const [obSettori, setObSettori] = React.useState<string[]>(["serramenti"]);
+  const [obPrezzoMq, setObPrezzoMq] = React.useState("350");
+  const [obPosa, setObPosa] = React.useState("80");
 
 
 
@@ -3475,15 +3485,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       {tutoStep >= 1 && tutoStep <= 5 && (() => {
         const ACC = "#D08008";
         const DARK = "#1A1A1C";
-        const [obNome, setObNome] = React.useState(aziendaInfo?.nome || "");
-        const [obRagione, setObRagione] = React.useState(aziendaInfo?.ragione || "");
-        const [obPiva, setObPiva] = React.useState(aziendaInfo?.piva || "");
-        const [obTel, setObTel] = React.useState(aziendaInfo?.telefono || "");
-        const [obEmail, setObEmail] = React.useState(aziendaInfo?.email || "");
-        const [obIndirizzo, setObIndirizzo] = React.useState(aziendaInfo?.indirizzo || "");
-        const [obSettori, setObSettori] = React.useState<string[]>(settoriAttivi || ["serramenti"]);
-        const [obPrezzoMq, setObPrezzoMq] = React.useState(aziendaInfo?.prezzoMqDefault || "350");
-        const [obPosa, setObPosa] = React.useState(aziendaInfo?.prezzoPosaVano || "80");
 
         const SETTORI_OPT = [
           { id: "serramenti", label: "Serramenti" },
