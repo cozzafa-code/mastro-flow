@@ -203,8 +203,21 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
   const [dragging, setDragging] = useState<any>(null);
   const wasDrag = useRef(false);
   const [tabRight, setTabRight] = useState("risultati");
-  const [ctxMenu, setCtxMenu] = useState<{x:number,y:number,slotId:string}|null>(null);
+  const [ctxMenu, setCtxMenu] = useState<any>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  
+  // Tracking frequenza d'uso per ordinamento intelligente context menu
+  const [usageStats, setUsageStats] = React.useState<Record<string,number>>(()=>{
+    try { return JSON.parse(localStorage.getItem('mastro_cad_usage')||'{}'); } catch { return {}; }
+  });
+  
+  const trackUsage = (key:string) => {
+    setUsageStats((prev:any)=>{
+      const next = {...prev, [key]: (prev[key]||0)+1};
+      try { localStorage.setItem('mastro_cad_usage', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const upd = (partial:any) => setInf((p:any)=>{
     const pL=p.larghezzaVano, pH=p.altezzaVano;
