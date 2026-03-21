@@ -6,7 +6,7 @@
 // ═════════════════════════════════════
 import React from "react";
 import { useMastro } from "./MastroContext";
-import { FM } from "./mastro-constants";
+import { FM, ICO, I } from "./mastro-constants";
 
 export default function ModalPanel() {
   const {
@@ -184,9 +184,9 @@ Fabio Cozza - Walter Cozza Serramenti` },
                     {[
                       { id: "preventivo", l: "📋 Preventivo", c: "#007aff" },
                       { id: "conferma", l: "📋 Conferma", c: "#34c759" },
-                      { id: "montaggio", l: "🔧 Montaggio", c: "#5856d6" },
+                      { id: "montaggio", l: "Montaggio", c: "#5856d6" },
                       { id: "saldo", l: "💰 Saldo", c: "#ff9500" },
-                      { id: "generico", l: "📝 Libero", c: "#86868b" },
+                      { id: "generico", l: "Libero", c: "#86868b" },
                     ].map(t => (
                       <div key={t.id} onClick={() => inviaEmail(showEmailComposer.cm, t.id)}
                         style={{ padding:"6px 12px", borderRadius:20, border:`1.5px solid ${showEmailComposer.tipo === t.id ? t.c : t.c+"40"}`, background: showEmailComposer.tipo === t.id ? t.c+"15" : "transparent", fontSize:11, fontWeight:700, color:t.c, cursor:"pointer" }}>
@@ -310,7 +310,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 10 }}>
                         <span>{a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎵" : a.tipo === "foto" ? "📸" : "📁"}</span>
                         <span style={{ color: T.text, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</span>
-                        <span onClick={() => setTaskAllegati(al => al.filter(x => x.id !== a.id))} style={{ cursor: "pointer", color: T.red }}>Ô£ò</span>
+                        <span onClick={() => setTaskAllegati(al => al.filter(x => x.id !== a.id))} style={{ cursor: "pointer", color: T.red }}><I d={ICO.x} /></span>
                       </div>
                     ))}
                   </div>
@@ -351,7 +351,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
             <>
               <div style={S.modalTitle}>Nuova commessa</div>
               <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
-                {[{ id: "nuova", l: "🏠 Nuova installazione", c: T.acc }, { id: "riparazione", l: "🔧 Riparazione", c: T.orange }].map(t => (
+                {[{ id: "nuova", l: "Nuova installazione", c: T.acc }, { id: "riparazione", l: "Riparazione", c: T.orange }].map(t => (
                   <div key={t.id} onClick={() => { setNewCM(c => ({ ...c, tipo: t.id })); setRipSearch(""); setRipCMSel(null); setRipProblema(""); setRipFotos([]); setRipUrgenza("media"); }}
                     style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: `2px solid ${newCM.tipo === t.id ? (t.id==="nuova"?T.acc:T.orange) : T.bdr}`, background: newCM.tipo === t.id ? (t.id==="nuova"?T.acc:T.orange)+"12" : T.card, textAlign: "center", cursor: "pointer", transition:"all 0.15s" }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: newCM.tipo === t.id ? (t.id==="nuova"?T.acc:T.orange) : T.sub }}>{t.l}</div>
@@ -460,7 +460,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                             <div style={{ fontSize:12, fontWeight:700, color:T.acc }}>✓ Collegata a {ripCMSel.code}</div>
                             <div style={{ fontSize:11, color:T.sub, marginTop:1 }}>{ripCMSel.cliente} À {ripCMSel.indirizzo}</div>
                           </div>
-                          <div onClick={() => { setRipCMSel(null); setRipSearch(""); setNewCM(x=>({...x,indirizzo:"",telefono:""})); }} style={{ fontSize:14, color:T.sub, cursor:"pointer", padding:4 }}>Ô£ò</div>
+                          <div onClick={() => { setRipCMSel(null); setRipSearch(""); setNewCM(x=>({...x,indirizzo:"",telefono:""})); }} style={{ fontSize:14, color:T.sub, cursor:"pointer", padding:4 }}><I d={ICO.x} /></div>
                         </div>
                       )}
                       {!ripCMSel && (
@@ -574,7 +574,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                                 <div key={f.id} style={{ position:"relative", width:76, height:76, borderRadius:10, overflow:"hidden", background:T.bg }}>
                                   <img src={f.dataUrl} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt={`Foto ${i+1}`}/>
                                   <div onClick={() => setRipFotos(fs => fs.filter(x => x.id !== f.id))}
-                                    style={{ position:"absolute", top:3, right:3, width:20, height:20, borderRadius:"50%", background:"rgba(0,0,0,0.55)", color:"#fff", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontWeight:700 }}>Ô£ò</div>
+                                    style={{ position:"absolute", top:3, right:3, width:20, height:20, borderRadius:"50%", background:"rgba(0,0,0,0.55)", color:"#fff", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontWeight:700 }}><I d={ICO.x} /></div>
                                   <div style={{ position:"absolute", bottom:2, left:4, fontSize:9, color:"#fff", fontWeight:700, textShadow:"0 1px 2px rgba(0,0,0,0.7)" }}>#{i+1}</div>
                                 </div>
                               ))}
@@ -596,7 +596,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       )}
                       <button style={{ ...S.btn, background:ripProblema.trim()?T.orange:"#ccc", cursor:ripProblema.trim()?"pointer":"not-allowed" }}
                         onClick={addRiparazione} disabled={!ripProblema.trim()}>
-                        🔧 Crea riparazione
+                        Crea riparazione
                       </button>
                       <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
                     </div>
@@ -659,7 +659,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                           : [];
                         const allSugg = [
                           ...matches.map(ct => ({ tipo: "rubrica", nome: ct.nome, cognome: ct.cognome || "", tel: ct.telefono || "", email: ct.email || "", indirizzo: ct.indirizzo || "", ico: "📊" })),
-                          ...cmMatches.map(cm => ({ tipo: "commessa", nome: cm.cliente, cognome: cm.cognome || "", tel: cm.telefono || "", email: cm.email || "", indirizzo: cm.indirizzo || "", ico: "ôü" }))
+                          ...cmMatches.map(cm => ({ tipo: "commessa", nome: cm.cliente, cognome: cm.cognome || "", tel: cm.telefono || "", email: cm.email || "", indirizzo: cm.indirizzo || "", ico: "👤" }))
                         ];
                         const seen = new Set();
                         const unique = allSugg.filter(s => { const k = (s.nome+s.cognome).toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
@@ -667,7 +667,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                         return <div style={{ background:"#fff", border:"1.5px solid " + T.acc + "40", borderRadius:10, marginTop:6, marginBottom:8, overflow:"hidden", maxHeight:220, overflowY:"auto" }}>
                           <div style={{ padding:"6px 10px", fontSize:9, fontWeight:700, color:T.acc, background:T.acc+"08", borderBottom:"1px solid " + T.acc + "20", display:"flex", justifyContent:"space-between", position:"sticky", top:0 }}>
                             <span>📊 Seleziona dalla rubrica ({unique.length})</span>
-                            <span onClick={(e) => { e.stopPropagation(); setNewCM(c => ({...c, cliente: ""})); }} style={{ cursor:"pointer", color:T.sub }}>Ô£ò</span>
+                            <span onClick={(e) => { e.stopPropagation(); setNewCM(c => ({...c, cliente: ""})); }} style={{ cursor:"pointer", color:T.sub }}><I d={ICO.x} /></span>
                           </div>
                           {unique.map((s, i) => (
                             <div key={i} onClick={() => setNewCM(c => ({...c, cliente: s.nome, cognome: s.cognome, telefono: s.tel, email: s.email, indirizzo: s.indirizzo || c.indirizzo }))}
@@ -690,7 +690,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       </div>
                     </div>
 
-                    <AccordionSection id="accesso" icon="🚀" label="Accesso / Difficoltà salita"
+                    <AccordionSection id="accesso" icon="rocket" label="Accesso / Difficoltà salita"
                       badge={newCM.difficoltaSalita||null}>
                       <div style={{ display:"flex", gap:4, marginBottom:8 }}>
                         {[{id:"facile",l:"Facile",c:T.grn,e:"📋"},{id:"media",l:"Media",c:T.orange,e:"🚨"},{id:"difficile",l:"Difficile",c:T.red,e:""}].map(d => (
@@ -721,7 +721,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       </select>
                     </AccordionSection>
 
-                    <AccordionSection id="note" icon="📝" label="Note aggiuntive"
+                    <AccordionSection id="note" icon="note" label="Note aggiuntive"
                       badge={newCM.note ? "✓" : null}>
                       <textarea style={{...S.input,minHeight:70,resize:"vertical"}}
                         placeholder="Note aggiuntive sulla commessa…"
