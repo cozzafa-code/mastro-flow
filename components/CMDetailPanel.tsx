@@ -967,7 +967,7 @@ export default function CMDetailPanel() {
               {curCC && (
                 <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: "12px 14px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 18 }}>{curCC.icon}</span>
+                    <IcoKey name={curCC.icon} s={18} c={T.acc} />
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{curCC.l}</span>
                       <div style={{ fontSize: 10, color: T.sub }}>{curCC.desc}</div>
