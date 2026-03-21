@@ -3,6 +3,7 @@
 import React from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I } from "./mastro-constants";
+import AiTecnicoChat from "./AiTecnicoChat";
 
 export default function MessaggiPanel() {
   const {
@@ -44,7 +45,8 @@ export default function MessaggiPanel() {
             { id: "chat", l: "Chat", ico: ICO.messageCircle, count: unread },
             { id: "email", l: "Email", ico: ICO.mail, count: gmailMessages.filter(m => m.unread).length },
             { id: "ai", l: "AI", ico: ICO.cpu, count: aiInbox.filter(m => !m.read).length },
-            { id: "rubrica", l: "Rubrica", ico: ICO.users, count: 0 }
+            { id: "rubrica", l: "Rubrica", ico: ICO.users, count: 0 },
+            { id: "tecnico", l: "Tecnico", ico: ICO.cpu, count: 0 }
           ].map(st => (
             <div key={st.id} onClick={() => setMsgSubTab(st.id)} style={{ flex: 1, padding: "10px 4px", textAlign: "center", fontSize: 12, fontWeight: 700, cursor: "pointer", background: msgSubTab === st.id ? T.acc : T.card, color: msgSubTab === st.id ? "#fff" : T.sub, transition: "all 0.2s", position: "relative" }}>
               <span style={{display:"inline-flex",alignItems:"center",gap:4}}><Ico d={st.ico} s={13} c={msgSubTab === st.id ? "#fff" : T.sub} /> {st.l}</span>
@@ -409,6 +411,11 @@ Grazie per il suo messaggio.
             })}
           </div>
         </>)}
+
+        {/* == AI TECNICO TAB == */}
+        {msgSubTab === "tecnico" && (
+          <AiTecnicoChat />
+        )}
 
         {/* == RUBRICA TAB == */}
         {msgSubTab === "rubrica" && (<>
