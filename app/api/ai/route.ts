@@ -45,6 +45,7 @@ const KEYWORDS_TECNICI = [
   "kg/ml", "peso profilo", "cerniera", "cremonese", "portata",
   "posa", "giunto", "nastro", "schiuma", "membrana",
   "distanza angolo", "interasse", "fissaggio",
+  "montaggio", "spessore", "carica vetro", "punta corta", "punta lunga", "schiuma", "soudal", "anta tocca", "allineamento ante",
 ];
 
 function isDomandaTecnica(msg: string): boolean {
@@ -176,6 +177,16 @@ async function cercaDBTecnico(domanda: string): Promise<string> {
       "NORMATIVE:\n" + data.map((r: any) =>
         `- [${r.severita}] ${r.codice_norma}: ${r.descrizione}`
       ).join("\n")
+    );
+  }
+
+  // Know-how tecnico pratico
+  if (q.match(/montaggio|spessore|carica.*vetro|vetro.*toc|anta.*toc|toc.*basso|allinea|punta.*cort|punta.*lung|schiuma|soudal|sfi.*600|fissagg|telaio.*vano|appendere.*ant/)) {
+    const data = await sbFetch("know_how_tecnico", "titolo,contenuto,categoria");
+    if (data?.length) risultati.push(
+      "KNOW-HOW TECNICO MASTRO:\n" + data.map((k: any) =>
+        `[${k.categoria.toUpperCase()}] ${k.titolo}:\n${k.contenuto}`
+      ).join("\n\n")
     );
   }
 
