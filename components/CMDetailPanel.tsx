@@ -14,6 +14,7 @@ import InterventoTab from "./InterventoTab";
 import InterventoFlowPanel from "./InterventoFlowPanel";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
 import DisegnoTecnico from "./DisegnoTecnico";
+import ValidatoreAlert from "./ValidatoreAlert";
 // @cadDraw state added below
 
 export default function CMDetailPanel() {
@@ -54,7 +55,7 @@ export default function CMDetailPanel() {
     exportPDF, playAllegato, setFaseTo, addAllegato, faseIndex,
     fileInputRef, fotoInputRef,
     // Navigation
-    setSelectedVano, setVanoStep, setTab,
+    setSelectedVano, setVanoStep,
     // Business logic
     generaPreventivoPDF, creaFattura, creaOrdineFornitore,
     generaPreventivoCondivisibile,
@@ -349,6 +350,24 @@ export default function CMDetailPanel() {
                         </div>
                       );
                     })()}
+
+
+                    {/* Validatore AI */}
+                    <ValidatoreAlert
+                      datiVano={{
+                        sistema: v.sistema || c.sistema,
+                        vetro: v.vetro,
+                        larghezza: mis.lCentro || v.larghezza || v.l || 0,
+                        altezza: mis.hCentro || v.altezza || v.h || 0,
+                        zonaClimatica: aziendaInfo?.zonaClimatica,
+                        zonaCostiera: aziendaInfo?.zonaCostiera,
+                        posizionePosa: v.posizionePosa,
+                        altezzaDaTerra: v.altezzaDaTerra,
+                        destinazione: v.destinazione,
+                        accessori: v.accessori,
+                      }}
+                      compact={false}
+                    />
 
                     {/* Quick actions */}
                     <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
@@ -1757,7 +1776,7 @@ export default function CMDetailPanel() {
               const bloccato = v.note?.startsWith("+ BLOCCATO");
               const colore = bloccato ? T.red : completo ? T.grn : T.orange;
               return (
-                <div key={v.id} onClick={() => { setSelectedVano(v); setVanoStep(0); setTab("commesse"); }}
+                <div key={v.id} onClick={() => { console.log("CLICK VANO", v?.id, v?.nome); setSelectedVano(v); setVanoStep(0); }}
                   style={{ ...S.card, marginBottom: 8, padding: "12px 14px", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 12,
                     borderLeft: `3px solid ${colore}` }}>
