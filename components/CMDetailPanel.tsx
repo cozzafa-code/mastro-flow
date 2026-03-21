@@ -850,13 +850,13 @@ export default function CMDetailPanel() {
       <div style={{ paddingBottom: 80 }}>
         {/* Header rilievo */}
         <div style={{ ...S.header }}>
-          <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+          <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); }} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: T.bg, border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: T.text }}><Ico d={ICO.back} s={16} c={T.text} /> Indietro</div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 14 }}>{tipoIcoRil}</span>
               <div style={S.headerTitle}>{tipoLblRil} · R{r?.n}</div>
             </div>
-            <div style={S.headerSub}>{c.code} · {c.cliente} {c.cognome || ""} · {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
+            <div style={{ fontSize: 12, color: T.sub, marginTop: 1 }}><span style={{ fontFamily: "monospace", fontWeight: 700, color: T.acc }}>{c.code}</span> · {c.cliente} {c.cognome || ""} · {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
           </div>
           {vaniList.length > 0 && (
             <div style={{ textAlign: "right" }}>
@@ -893,10 +893,10 @@ export default function CMDetailPanel() {
         {/* Info badges */}
         <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.wrench} /> Riparazione</span>}
-          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>🆕 Nuova</span>}
+          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>Nuova</span>}
           {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
           {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
-          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>🚀 {c.mezzoSalita}</span>}
+          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>{c.mezzoSalita}</span>}
           {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
           {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
           {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}><I d={ICO.phone} /> {c.telefono}</span>}
