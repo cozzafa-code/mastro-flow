@@ -1173,56 +1173,105 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
 
-              {/* ═══ FULLSCREEN CAD MODAL ═══ */}
-              {showDisegno && (
-                <div style={{
-                  position: "fixed", inset: 0, zIndex: 9000,
-                  background: "rgba(0,0,0,0.65)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  backdropFilter: "blur(4px)",
-                }}>
-                  <div style={{
-                    width: "calc(100vw - 24px)", height: "calc(100vh - 24px)",
-                    maxWidth: 1400,
-                    background: T.card, borderRadius: 16,
-                    display: "flex", flexDirection: "column",
-                    overflow: "hidden",
-                    boxShadow: "0 24px 80px rgba(0,0,0,0.5)",
-                    border: `2px solid ${T.purple}40`,
-                  }}>
-                    {/* Fullscreen header */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", background: `${T.purple}10`, borderBottom: `1px solid ${T.bdr}`, flexShrink: 0 }}>
-                      <span style={{ fontSize: 16 }}><I d={ICO.edit} /></span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: T.purple }}>CAD — {v.nome || `Vano ${v.numero || ""}`}</div>
-                        <div style={{ fontSize: 10, color: T.sub }}>{(m.lCentro || m.lAlto || 1200)}×{(m.hCentro || m.hSx || 1400)}mm</div>
-                      </div>
-                      <div onClick={() => setShowDisegno(false)}
-                        style={{ width: 32, height: 32, borderRadius: 8, background: "#DC444420", border: "1px solid #DC444440", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, color: "#DC4444", fontWeight: 700 }}>
-                        ×
-                      </div>
+              {/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
+              {(() => {
+                const W = drawFullscreen ? 760 : 380;
+                const H = drawFullscreen ? 680 : 340;
+                const savePageData = () => { const cv = canvasRef.current; if (cv) { setDrawPages(prev => { const n = [...prev]; n[drawPageIdx] = cv.toDataURL(); return n; }); } };
+                const loadPageData = (idx: number) => { const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx && cv) { ctx.clearRect(0, 0, cv.width, cv.height); if (drawPages[idx]) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = drawPages[idx]; } } };
+                const addPage = () => { savePageData(); setDrawPages(prev => [...prev, ""]); setDrawPageIdx(drawPages.length); setTimeout(() => { const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx && cv) ctx.clearRect(0, 0, cv.width, cv.height); }, 50); };
+                const switchPage = (idx: number) => { if (idx === drawPageIdx) return; savePageData(); setDrawPageIdx(idx); setTimeout(() => loadPageData(idx), 50); };
+                const canvasEl = (
+                  <canvas ref={canvasRef} width={W} height={H} style={{ width: "100%", height: drawFullscreen ? "calc(100vh - 140px)" : 340, background: "#fff", touchAction: "none", cursor: drawTool === "eraser" ? "cell" : "crosshair" }}
+                    onPointerDown={e => {
+                      canvasRef.current?.setPointerCapture(e.pointerId); setIsDrawing(true);
+                      const cv = canvasRef.current; const ctx = cv?.getContext("2d");
+                      if (ctx && cv) {
+                        const r = cv.getBoundingClientRect(); const sx = cv.width / r.width, sy = cv.height / r.height;
+                        ctx.beginPath(); ctx.moveTo((e.clientX - r.left) * sx, (e.clientY - r.top) * sy);
+                        if (drawTool === "eraser") { ctx.globalCompositeOperation = "destination-out"; ctx.lineWidth = penSize * 8; }
+                        else { ctx.globalCompositeOperation = "source-over"; ctx.strokeStyle = penColor; ctx.lineWidth = penSize; }
+                        ctx.lineCap = "round"; ctx.lineJoin = "round";
+                      }
+                    }}
+                    onPointerMove={e => {
+                      if (!isDrawing) return; const cv = canvasRef.current; const ctx = cv?.getContext("2d");
+                      if (ctx && cv) { const r = cv.getBoundingClientRect(); const sx = cv.width / r.width, sy = cv.height / r.height; ctx.lineTo((e.clientX - r.left) * sx, (e.clientY - r.top) * sy); ctx.stroke(); }
+                    }}
+                    onPointerUp={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx) ctx.globalCompositeOperation = "source-over"; }}
+                    onPointerLeave={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx) ctx.globalCompositeOperation = "source-over"; }}
+                  />
+                );
+                const toolbar = (
+                  <div style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" as const }}>
+                    {["#1d1d1f", "#ff3b30", "#007aff", "#34c759", "#ff9500", "#af52de", "#ff2d55", "#ffffff"].map(c => (
+                      <div key={c} onClick={() => { setPenColor(c); setDrawTool("pen"); }} style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: penColor === c && drawTool === "pen" ? `3px solid ${T.acc}` : c === "#ffffff" ? `1px solid ${T.bdr}` : "2px solid transparent", cursor: "pointer" }} />
+                    ))}
+                    <div style={{ width: 1, height: 20, background: T.bdr, margin: "0 4px" }} />
+                    {/* Gomma */}
+                    <div onClick={() => setDrawTool(drawTool === "eraser" ? "pen" : "eraser")}
+                      style={{ width: 32, height: 32, borderRadius: 8, background: drawTool === "eraser" ? "#ff3b30" + "18" : T.bg, border: drawTool === "eraser" ? "2px solid #ff3b30" : `1px solid ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "✕" : "🧹"}</span>
                     </div>
-                    {/* CAD content — occupa tutto lo spazio */}
-                    <div style={{ flex: 1, overflow: "auto" }}>
-                      <DisegnoTecnico
-                        vanoId={v.id}
-                        vanoNome={v.nome || `Vano ${v.numero || ""}`}
-                        vanoDisegno={v.disegno}
-                        realW={m.lCentro || m.lAlto || 1200}
-                        realH={m.hCentro || m.hSx || 1400}
-                        onUpdate={(newDisegno) => updateVanoField(v.id, "disegno", newDisegno)}
-                        onUpdateField={(field, value) => {
-                          if (field === "larghezza") updateMisura(v.id, "lCentro", value);
-                          if (field === "altezza") updateMisura(v.id, "hCentro", value);
-                        }}
-                        onClose={() => setShowDisegno(false)}
-                        T={T}
-                        sistemiDB={sistemiDB}
-                      />
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
+                      {[1, 2, 4, 6].map(s => (
+                        <div key={s} onClick={() => setPenSize(s)} style={{ width: 24, height: 24, borderRadius: 6, background: penSize === s ? T.accLt : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                          <div style={{ width: s * 2 + 1, height: s * 2 + 1, borderRadius: "50%", background: drawTool === "eraser" ? "#ff3b30" : T.text }} />
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
+                );
+                const pageStrip = (
+                  <div style={{ padding: "6px 14px", borderTop: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" as const }}>Fogli:</span>
+                    {drawPages.map((_: string, i: number) => (
+                      <div key={i} onClick={() => switchPage(i)}
+                        style={{ minWidth: drawPageIdx === i ? 22 : 8, height: 8, borderRadius: 4, background: drawPageIdx === i ? T.acc : T.bdr, cursor: "pointer", transition: "all 0.15s", position: "relative" as const }}>
+                        {drawPageIdx === i && <span style={{ position: "absolute" as const, top: -12, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: T.acc }}>{i + 1}</span>}
+                      </div>
+                    ))}
+                    <div onClick={addPage} style={{ width: 22, height: 22, borderRadius: "50%", background: T.bg, border: `1.5px dashed ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: T.sub, cursor: "pointer", fontWeight: 700 }}>+</div>
+                    <span style={{ fontSize: 9, color: T.sub }}>{drawPageIdx + 1}/{drawPages.length}</span>
+                    <div style={{ marginLeft: "auto" }} />
+                    <div onClick={() => { savePageData(); setDrawFullscreen(!drawFullscreen); }}
+                      style={{ padding: "3px 8px", borderRadius: 6, background: drawFullscreen ? T.acc + "12" : T.bg, border: `1px solid ${drawFullscreen ? T.acc : T.bdr}`, fontSize: 10, fontWeight: 700, color: drawFullscreen ? T.acc : T.sub, cursor: "pointer" }}>
+                      {drawFullscreen ? "↙ Riduci" : "↗ Ingrandisci"}
+                    </div>
+                  </div>
+                );
+
+                if (drawFullscreen) return (
+                  <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff", display: "flex", flexDirection: "column" as const }}>
+                    <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#ff6b6b" }}>✏️ Disegno — Foglio {drawPageIdx + 1}/{drawPages.length}</span>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci foglio</button>
+                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#ff3b30", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
+                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>✕ Chiudi</button>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, overflow: "hidden" }}>{canvasEl}</div>
+                    {toolbar}
+                    {pageStrip}
+                  </div>
+                );
+
+                return (
+                  <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginBottom: 12, overflow: "hidden" }}>
+                    <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "#ff6b6b" }}>✏️ Disegno a mano libera</span>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci foglio</button>
+                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#ff3b30", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
+                      </div>
+                    </div>
+                    {canvasEl}
+                    {toolbar}
+                    {pageStrip}
+                  </div>
+                );
+              })()}
               <div style={{ fontSize: 11, fontWeight: 800, color: "#507aff", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><I d={ICO.ruler} /> Larghezze</div>
               {bInput("Larghezza ALTO", "lAlto")}
               {m.lAlto > 0 && !m.lCentro && !m.lBasso && (
