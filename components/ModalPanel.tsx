@@ -294,7 +294,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                 <div style={{ display: "flex", gap: 6 }}>
                   {[
                     { ico: "📁", l: "File", act: () => setTaskAllegati(a => [...a, { id: Date.now(), tipo: "file", nome: "Allegato_" + (a.length + 1) }]) },
-                    { ico: "ôØ", l: "Nota", act: () => { let txt; try{txt=window.prompt("Nota:");}catch(e){} if (txt) setTaskAllegati(a => [...a, { id: Date.now(), tipo: "nota", nome: txt }]); }},
+                    { ico: "📝", l: "Nota", act: () => { let txt; try{txt=window.prompt("Nota:");}catch(e){} if (txt) setTaskAllegati(a => [...a, { id: Date.now(), tipo: "nota", nome: txt }]); }},
                     { ico: "🎵", l: "Audio", act: () => setTaskAllegati(a => [...a, { id: Date.now(), tipo: "vocale", nome: "Audio " + (a.length + 1) }]) },
                     { ico: "📸", l: "Foto", act: () => setTaskAllegati(a => [...a, { id: Date.now(), tipo: "foto", nome: "Foto " + (a.length + 1) }]) },
                   ].map((b, i) => (
@@ -308,7 +308,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                   <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
                     {taskAllegati.map(a => (
                       <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 10 }}>
-                        <span>{a.tipo === "nota" ? "ôØ" : a.tipo === "vocale" ? "🎵" : a.tipo === "foto" ? "📸" : "📁"}</span>
+                        <span>{a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎵" : a.tipo === "foto" ? "📸" : "📁"}</span>
                         <span style={{ color: T.text, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</span>
                         <span onClick={() => setTaskAllegati(al => al.filter(x => x.id !== a.id))} style={{ cursor: "pointer", color: T.red }}>Ô£ò</span>
                       </div>
@@ -636,7 +636,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                     </div>
 
                     <div style={{ marginBottom:14, padding:"14px", background:T.card, borderRadius:12, border:`1.5px solid ${T.bdr}` }}>
-                      <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>æñ Dati cliente *</div>
+                      <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>👤 Dati cliente *</div>
                       <div style={{ display:"flex", gap:8, marginBottom:0 }}>
                         <input style={{...S.input,flex:1}} placeholder="Nome" value={newCM.cliente} onChange={e=>setNewCM(c=>({...c,cliente:e.target.value}))}/>
                         <input style={{...S.input,flex:1}} placeholder="Cognome" value={newCM.cognome||""} onChange={e=>setNewCM(c=>({...c,cognome:e.target.value}))}/>
@@ -721,7 +721,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       </select>
                     </AccordionSection>
 
-                    <AccordionSection id="note" icon="ôØ" label="Note aggiuntive"
+                    <AccordionSection id="note" icon="📝" label="Note aggiuntive"
                       badge={newCM.note ? "✓" : null}>
                       <textarea style={{...S.input,minHeight:70,resize:"vertical"}}
                         placeholder="Note aggiuntive sulla commessa…"
