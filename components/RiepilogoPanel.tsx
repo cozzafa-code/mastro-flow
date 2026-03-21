@@ -27,7 +27,7 @@ export default function RiepilogoPanel() {
     // Info rilievo attivo
     const rilAttivo = c.rilievi?.find(r => r.vani?.length > 0);
 
-    const SEP = "ÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü";
+    const SEP = "─────────────────────────────";
     const waMsg = [
       "📋 *RIEPILOGO COMMESSA "+c.code+"*",
       "📅 "+today+" → Fase: *"+(PIPELINE.find(p=>p.id===c.fase)?.nome||c.fase).toUpperCase()+"*",
@@ -62,7 +62,7 @@ export default function RiepilogoPanel() {
         const lines=[
           SEP,
           "*"+(i+1)+". "+v.nome.toUpperCase()+"*"+(v.pezzi>1?" x *"+v.pezzi+" PZ*":""),
-          tl+" → "+v.tipo+" → "+(v.stanza||"")+" → "+(v.piano||"")+" "+(fuori?"Üá´©Å":"£à"),
+          tl+" → "+v.tipo+" → "+(v.stanza||"")+" → "+(v.piano||"")+" "+(fuori?"Üá":"£à"),
           SEP,
           "",
           "📐 *MISURE VANO*",
@@ -71,7 +71,7 @@ export default function RiepilogoPanel() {
           "",
           (m.d1>0||m.d2>0)?"Ôåx *DIAGONALI*":"",
           (m.d1>0&&m.d2>0)
-            ?(fuori?"Üá´©Å D1: "+m.d1+" / D2: "+m.d2+"  *FUORI SQUADRA "+diff+"mm*":"D1: "+m.d1+" / D2: "+m.d2+" £à OK")
+            ?(fuori?"Üá D1: "+m.d1+" / D2: "+m.d2+"  *FUORI SQUADRA "+diff+"mm*":"D1: "+m.d1+" / D2: "+m.d2+" £à OK")
             :(m.d1>0?"D1: "+m.d1+" (D2 mancante)":""),
           "",
           (m.spSx>0||m.spDx>0||m.spSopra>0||m.spSotto>0)?"Ô¼ø *SPALLETTE*":"",
@@ -129,7 +129,7 @@ export default function RiepilogoPanel() {
       c.dataRilievo?"📅 Data rilievo: "+c.dataRilievo:"",
       "",
       SEP,
-      "📊 Totale: *"+vaniR.length+"* vani → *"+totPezzi+"* pezzi"+(fuoriSqN>0?" → Üá´©Å *"+fuoriSqN+"* fuorisquadra":""),
+      "📊 Totale: *"+vaniR.length+"* vani → *"+totPezzi+"* pezzi"+(fuoriSqN>0?" → Üá *"+fuoriSqN+"* fuorisquadra":""),
       "",
       "_Generato con MASTRO → "+today+"_",
     ].filter(Boolean).join("\n");
