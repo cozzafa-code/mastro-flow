@@ -1161,8 +1161,7 @@ export default function VanoDetailPanel() {
 
               {/* ═══ DISEGNO TECNICO — Bottone apre fullscreen ═══ */}
               <div style={{ marginBottom: 14 }}>
-                <div onClick={() => setShowDisegno(!showDisegno)}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 10, border: `1.5px solid ${showDisegno ? T.purple : T.bdr}`, background: showDisegno ? `${T.purple}08` : T.card, cursor: "pointer" }}
                   onClick={() => setShowDisegno(true)}>
                   <span style={{ fontSize: 16 }}><I d={ICO.edit} /></span>
                   <div style={{ flex: 1 }}>
