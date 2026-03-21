@@ -853,7 +853,7 @@ export default function CMDetailPanel() {
           <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); }} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: T.bg, border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: T.text }}><Ico d={ICO.back} s={16} c={T.text} /> Indietro</div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {tipoRil === "definitiva" ? <Ico d={ICO.checkCircle} s={16} c={T.sub} /> : tipoRil === "modifica" ? <Ico d={ICO.wrench} s={16} c={T.sub} /> : <Ico d={ICO.mapPin} s={16} c={T.sub} />}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{tipoRil === "definitiva" ? <><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></> : tipoRil === "modifica" ? <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/> : <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>}</svg>
               <div style={S.headerTitle}>{tipoLblRil} · R{r?.n}</div>
             </div>
             <div style={{ fontSize: 12, color: T.sub, marginTop: 1 }}><span style={{ fontFamily: "monospace", fontWeight: 700, color: T.acc }}>{c.code}</span> · {c.cliente} {c.cognome || ""} · {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
