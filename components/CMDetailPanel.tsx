@@ -62,6 +62,8 @@ export default function CMDetailPanel() {
     aziendaInfo,
   } = useMastro();
 
+  if (!selectedCM) return null;
+
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null); // null=non chiesto, true=s, false=no
     const [showAccontoModal, setShowAccontoModal] = useState(false);
@@ -76,8 +78,6 @@ export default function CMDetailPanel() {
     const [fascicoloLinkCopied, setFascicoloLinkCopied] = useState(false);
     const [fascicoloStep, setFascicoloStep] = useState<"idle"|"generato">("idle");
     const [fascicoliStorico, setFascicoliStorico] = useState<any[]>([]);
-
-    if (!selectedCM) return null;
 
   // Â·ç CAD DRAW FULLSCREEN Â·ç
   if (showCadDraw) {
