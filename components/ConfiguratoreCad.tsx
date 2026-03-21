@@ -207,9 +207,14 @@ export default function ConfiguratoreCad({realW, realH, vanoNome, onUpdate, onCl
   const svgRef = useRef<SVGSVGElement>(null);
   
   // Tracking frequenza d'uso per ordinamento intelligente context menu
-  const [usageStats, setUsageStats] = React.useState<Record<string,number>>(()=>{
-    try { return JSON.parse(localStorage.getItem('mastro_cad_usage')||'{}'); } catch { return {}; }
-  });
+  const [usageStats, setUsageStats] = React.useState<Record<string,number>>({});
+  
+  React.useEffect(()=>{
+    try { 
+      const saved = JSON.parse(localStorage.getItem('mastro_cad_usage')||'{}');
+      setUsageStats(saved);
+    } catch {}
+  },[]);
   
   const trackUsage = (key:string) => {
     setUsageStats((prev:any)=>{
