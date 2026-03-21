@@ -1173,7 +1173,42 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
 
-              {/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
+              
+              {/* Modal DisegnoTecnico CAD */}
+              {showDisegno && (
+                <div style={{
+                  position: "fixed", inset: 0, zIndex: 9000,
+                  background: "rgba(0,0,0,0.65)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <div style={{
+                    width: "calc(100vw - 16px)", height: "calc(100vh - 16px)",
+                    background: "#fff", borderRadius: 16,
+                    display: "flex", flexDirection: "column", overflow: "hidden",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
+                      background: "#1A1A1C", borderBottom: "1px solid #333", flexShrink: 0 }}>
+                      <div style={{ flex: 1, color: "#D08008", fontWeight: 700, fontSize: 13 }}>
+                        📐 CAD — {v.nome || "Vano"}
+                      </div>
+                      <div onClick={() => setShowDisegno(false)}
+                        style={{ color: "#fff", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>✕</div>
+                    </div>
+                    <div style={{ flex: 1, overflow: "hidden" }}>
+                      <DisegnoTecnico
+                        vanoId={v.id}
+                        vanoNome={v.nome || `Vano ${v.numero || ""}`}
+                        vanoDisegno={v.disegno}
+                        realW={m.lCentro || m.lAlto || 1200}
+                        realH={m.hCentro || m.hSx || 1400}
+                        onUpdate={(newDisegno: any) => updateVanoField(v.id, "disegno", newDisegno)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+{/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
               {(() => {
                 const W = drawFullscreen ? 760 : 380;
                 const H = drawFullscreen ? 680 : 340;
