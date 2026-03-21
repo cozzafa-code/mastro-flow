@@ -608,7 +608,7 @@ export default function CMDetailPanel() {
     const vaniA = vaniList;
     const tipoRil = r?.tipo || "rilievo";
     const tipoColRil = tipoRil === "definitiva" ? T.grn : tipoRil === "modifica" ? T.orange : T.blue;
-    const tipoIcoRil = tipoRil === "definitiva" ? "✓" : tipoRil === "modifica" ? "🔧" : "📐";
+    const tipoIcoRil = tipoRil === "definitiva" ? "check" : tipoRil === "modifica" ? "wrench" : "ruler";
     const tipoLblRil = tipoRil === "definitiva" ? "Misure Definitive" : tipoRil === "modifica" ? "Modifica" : "Rilievo Misure";
 
     // Calcolo avanzamento misure
@@ -853,7 +853,7 @@ export default function CMDetailPanel() {
           <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); }} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: T.bg, border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: T.text }}><Ico d={ICO.back} s={16} c={T.text} /> Indietro</div>
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 14 }}>{tipoIcoRil}</span>
+              <I d={ICO[tipoIcoRil] || ICO.ruler} s={16} c={T.sub} />
               <div style={S.headerTitle}>{tipoLblRil} · R{r?.n}</div>
             </div>
             <div style={{ fontSize: 12, color: T.sub, marginTop: 1 }}><span style={{ fontFamily: "monospace", fontWeight: 700, color: T.acc }}>{c.code}</span> · {c.cliente} {c.cognome || ""} · {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
@@ -931,14 +931,14 @@ export default function CMDetailPanel() {
 
           const skipped = (id) => (c.skipLog || []).some(s => s.fase === id);
           const stepsCC = [
-            { id: "sopralluogo", icon: "📐", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
-            { id: "preventivo",  icon: "📋", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
+            { id: "sopralluogo", icon: "ruler", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
+            { id: "preventivo",  icon: "clipboard", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
             { id: "conferma",    icon: "✍️",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
-            { id: "ordini",      icon: "📦", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
+            { id: "ordini",      icon: "package", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
             { id: "produzione",  icon: "🏭", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
-            { id: "posa",        icon: "🔧", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
-            { id: "collaudo",    icon: "✓", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
-            { id: "chiusura",    icon: "📐å▶", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
+            { id: "posa",        icon: "wrench", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
+            { id: "collaudo",    icon: "check", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
+            { id: "chiusura",    icon: "flag", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
           ];
           const doneCC = stepsCC.filter(s => s.done).length;
           const curIdxCC = stepsCC.findIndex(s => !s.done);
@@ -1009,7 +1009,7 @@ export default function CMDetailPanel() {
                         </div>
                       )}
                       {vaniCC.length === 0 ? (
-                        <div style={{ width: "100%", padding: "12px 16px", borderRadius: 10, border: `1.5px dashed ${T.grn}`, background: `${T.grn}08`, display: "flex", alignItems: "center", gap: 10 }}><I d={ICO.mapPin} s={18} c={T.grn} /><div><div style={{ fontSize: 13, fontWeight: 700, color: T.grn }}>Avvia sopralluogo</div><div style={{ fontSize: 11, color: T.sub }}>Aggiungi i vani e inserisci le misure sul cantiere</div></div></div>
+                        <div style={{ padding: "12px 16px", borderRadius: 10, border: `1.5px dashed ${T.grn}`, background: `${T.grn}08`, display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}><I d={ICO.mapPin} s={18} c={T.grn} /><div><div style={{ fontSize: 13, fontWeight: 700, color: T.grn }}>Avvia sopralluogo</div><div style={{ fontSize: 11, color: T.sub }}>Aggiungi i vani e inserisci le misure sul cantiere</div></div></div>
                       ) : (
                         <div style={{ fontSize: 12, color: T.grn, fontWeight: 700, textAlign: "center" }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
