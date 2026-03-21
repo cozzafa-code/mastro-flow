@@ -54,7 +54,7 @@ export default function CMDetailPanel() {
     exportPDF, playAllegato, setFaseTo, addAllegato, faseIndex,
     fileInputRef, fotoInputRef,
     // Navigation
-    setSelectedVano, setVanoStep,
+    setSelectedVano, setVanoStep, setTab,
     // Business logic
     generaPreventivoPDF, creaFattura, creaOrdineFornitore,
     generaPreventivoCondivisibile,
@@ -1757,7 +1757,7 @@ export default function CMDetailPanel() {
               const bloccato = v.note?.startsWith("+ BLOCCATO");
               const colore = bloccato ? T.red : completo ? T.grn : T.orange;
               return (
-                <div key={v.id} onClick={() => { console.log("CLICK VANO", v?.id, v?.nome); setSelectedVano(v); setVanoStep(0); }}
+                <div key={v.id} onClick={() => { setSelectedVano(v); setVanoStep(0); setTab("commesse"); }}
                   style={{ ...S.card, marginBottom: 8, padding: "12px 14px", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 12,
                     borderLeft: `3px solid ${colore}` }}>
