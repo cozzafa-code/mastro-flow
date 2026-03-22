@@ -19,19 +19,11 @@ const DIRS = [
 ];
 
 const CT_PRESETS = [
-  { n:"STH5",   ids:["STH5","STH6","STH5I","STH6I"], segs:[{dir:"dx",mm:350},{dir:"giu",mm:60}],
-    divs:[{axis:"v",pos:50,id:1},{axis:"v",pos:300,id:2}],
-    mat:{"0_0":"sede","0_1":"eps","0_2":"sede"} },
-  { n:"PROS",   ids:["PROS","PROI"], segs:[{dir:"dx",mm:280},{dir:"giu",mm:80},{dir:"sx",mm:60},{dir:"su",mm:40}],
-    divs:[], mat:{"0_0":"eps"} },
-  { n:"PROGCP", ids:["PROGCP","PROGC","PROIG","PROG"], segs:[{dir:"dx",mm:280},{dir:"giu",mm:60},{dir:"sx",mm:50},{dir:"giu",mm:110},{dir:"sx",mm:230}],
-    divs:[], mat:{"0_0":"legno"} },
-  { n:"STH3",   ids:["STH3","STH3I","STF3","STF3I"], segs:[{dir:"dx",mm:325},{dir:"giu",mm:80}],
-    divs:[{axis:"v",pos:50,id:3}], mat:{"0_0":"sede","0_1":"eps"} },
-  { n:"STF5",   ids:["STF5","STF6","STF5I","STF6I"], segs:[{dir:"dx",mm:350},{dir:"giu",mm:44}],
-    divs:[{axis:"v",pos:50,id:4},{axis:"v",pos:300,id:5}],
-    mat:{"0_0":"sede","0_1":"profilo","0_2":"sede"} },
-  { n:"Libero", ids:[], segs:[], divs:[], mat:{"0_0":"eps"} },
+  { n:"STH5",   segs:[{dir:"dx",mm:350},{dir:"giu",mm:60}] },
+  { n:"PROS",   segs:[{dir:"dx",mm:280},{dir:"giu",mm:80},{dir:"sx",mm:60},{dir:"su",mm:40}] },
+  { n:"PROGCP", segs:[{dir:"dx",mm:280},{dir:"giu",mm:60},{dir:"sx",mm:50},{dir:"giu",mm:110},{dir:"sx",mm:230}] },
+  { n:"STH3",   segs:[{dir:"dx",mm:325},{dir:"giu",mm:80}] },
+  { n:"Libero", segs:[] },
 ];
 
 function buildNodes(segs) {
@@ -66,25 +58,16 @@ function scaleNodes(pts, VW, VH, PAD) {
   };
 }
 
-export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, T }) {
+export default function ConfiguratoreControtelaio({ value, onChange, T }) {
   const Tc = T || {bg:"#F2F1EC",card:"#FFFFFF",bdr:"#E5E3DC",text:"#1A1A1C",
     sub:"#8E8E93",acc:"#D08008",grn:"#1A9E73",red:"#DC4444",blue:"#3B7FE0"};
 
   const init = value||{};
-
-  // Auto-load preset dal sistemaId se non c'è già un disegno salvato
-  const getPresetForSistema = (sid) =>
-    CT_PRESETS.find(p => p.ids?.includes(sid)) || null;
-
-  const initPreset = !init.segs?.length && sistemaId
-    ? getPresetForSistema(sistemaId)
-    : null;
-
-  // ptsOverride: solo quando l'utente trascina un vertice manualmente
-  const [ptsOverride, setPtsOverride] = useState(null);
-  const [segs,    setSegs]    = useState(initPreset?.segs || init.segs || []);
-  const [divs,    setDivs]    = useState(initPreset?.divs || init.divs || []);
-  const [zoneMat, setZoneMat] = useState(initPreset?.mat  || init.zoneMat || {"0_0":"eps"});
+  // pts = array di punti mm (modificabili dall'utente trascinando)
+  const [pts,     setPts]     = useState(init.pts || buildNodes(init.segs || []));
+  const [segs,    setSegs]    = useState(init.segs || []);
+  const [divs,    setDivs]    = useState(init.divs || []);
+  const [zoneMat, setZoneMat] = useState(init.zoneMat || {"0_0":"eps"});
   const [pDir,    setPDir]    = useState("dx");
   const [pMm,     setPMm]     = useState("");
   const [selIdx,  setSelIdx]  = useState(null);
@@ -106,39 +89,26 @@ export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, 
 
   const sviluppata = segs.reduce((a,s)=>a+s.mm,0);
 
-  // Quando il sistema cambia dall'esterno, carica il preset corrispondente
-  // (solo se il disegno non è stato personalizzato dall'utente)
-  const prevSistemaId = useRef(sistemaId);
+  // Sync pts quando cambiano i segs
   useEffect(()=>{
-    if(sistemaId && sistemaId !== prevSistemaId.current) {
-      prevSistemaId.current = sistemaId;
-      const preset = getPresetForSistema(sistemaId);
-      if(preset) {
-        setSegs(preset.segs); setDivs(preset.divs||[]);
-        setZoneMat(preset.mat||{"0_0":"eps"});
-        setPtsOverride(null); setSelZone("0_0");
-        setZoom(1); setPanX(0); setPanY(0);
-      }
-    }
-  },[sistemaId]);
-
-  // pts: usa override se l'utente ha trascinato, altrimenti ricalcola dai segs
-  const pts = ptsOverride || buildNodes(segs);
-
-  // Reset ptsOverride quando cambiano i segs
-  useEffect(()=>{
-    setPtsOverride(null);
+    setPts(buildNodes(segs));
     setZoom(1); setPanX(0); setPanY(0);
   },[segs]);
 
-  useEffect(()=>{ onChange?.({segs,divs,zoneMat,misuraL,misuraH}); },
-    [segs,divs,zoneMat,misuraL,misuraH]);
+  useEffect(()=>{ onChange?.({segs,pts,divs,zoneMat,misuraL,misuraH}); },
+    [segs,pts,divs,zoneMat,misuraL,misuraH]);
 
   const VW = fullscreen ? (typeof window!=="undefined"?window.innerWidth:400) : 340;
-  const VH = fullscreen ? (typeof window!=="undefined"?window.innerHeight-220:300) : 200;
-  const PAD = fullscreen ? 60 : 36;
+  const PAD = fullscreen ? 60 : 40;
 
-  // Coordinate SVG
+  // Altezza canvas proporzionale alla sagoma (min 140, max 300 inline / tutto in fullscreen)
+  const bbox = getBBox(pts);
+  const aspect = bbox.h > 0 ? bbox.h / bbox.w : 0.4;
+  const VH = fullscreen
+    ? (typeof window!=="undefined"?window.innerHeight-220:300)
+    : Math.min(300, Math.max(140, VW * aspect + PAD * 2));
+
+  // Coordinate SVG — scala uniforme (preserva proporzioni reali)
   const sc = scaleNodes(pts, VW, VH, PAD);
 
   // ViewBox con zoom/pan
@@ -168,7 +138,7 @@ export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, 
     const w = clientToWorld(e.clientX, e.clientY);
     const snap = 5;
     const snapped = {x: Math.round(w.x/snap)*snap, y: Math.round(w.y/snap)*snap};
-    setPtsOverride(prev => (prev||buildNodes(segs)).map((p,i)=>i===dragIdx?snapped:p));
+    setPts(prev => prev.map((p,i)=>i===dragIdx?snapped:p));
   }, [dragIdx, clientToWorld]);
 
   const onPointerUp = useCallback(() => { setDragIdx(null); }, []);
@@ -223,7 +193,6 @@ export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, 
     setPMm("");
   };
 
-  const bbox = getBBox(pts);
   const mToSx = (mx) => mx*sc.scale+sc.offX;
   const mToSy = (my) => my*sc.scale+sc.offY;
 
@@ -271,6 +240,7 @@ export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, 
 
       <svg ref={svgRef} width="100%" height="100%"
         viewBox={viewBox}
+        preserveAspectRatio="xMidYMid meet"
         style={{display:"block",touchAction:"none"}}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -574,7 +544,7 @@ export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, 
         );
       })}
       <span style={{fontSize:9,color:Tc.sub,fontFamily:FMono}}>📏{sviluppata}mm</span>
-      {segs.length>0&&<button onClick={()=>{setSegs([]);setPtsOverride(null);setDivs([]);
+      {segs.length>0&&<button onClick={()=>{setSegs([]);setPts([]);setDivs([]);
         setZoneMat({"0_0":"eps"});setSelIdx(null);setSelZone("0_0");resetView();}}
         style={{marginLeft:"auto",padding:"2px 6px",borderRadius:5,border:"1px solid "+Tc.bdr,
           background:"white",color:Tc.sub,fontSize:9,cursor:"pointer"}}>🗑</button>}
@@ -601,7 +571,7 @@ export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, 
               {CT_PRESETS.map(p=>(
                 <button key={p.n} onClick={()=>{
                   setSegs(p.segs);setDivs([]);setZoneMat({"0_0":"eps"});
-                  setSelIdx(null);setSelZone("0_0");setPtsOverride(null);resetView();
+                  setSelIdx(null);setSelZone("0_0");resetView();
                 }} style={{padding:"3px 8px",borderRadius:5,border:"1px solid rgba(255,255,255,0.3)",
                   background:"rgba(255,255,255,0.15)",color:"#fff",
                   fontSize:10,fontWeight:700,cursor:"pointer"}}>
@@ -630,7 +600,7 @@ export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, 
         {CT_PRESETS.map(p=>(
           <button key={p.n} onClick={()=>{
             setSegs(p.segs);setDivs([]);setZoneMat({"0_0":"eps"});
-            setSelIdx(null);setSelZone("0_0");setPtsOverride(null);resetView();
+            setSelIdx(null);setSelZone("0_0");resetView();
           }} style={{padding:"4px 10px",borderRadius:6,border:"1.5px solid "+Tc.bdr,
             background:Tc.card,fontSize:10,fontWeight:700,cursor:"pointer",
             color:Tc.text,whiteSpace:"nowrap"}}>
