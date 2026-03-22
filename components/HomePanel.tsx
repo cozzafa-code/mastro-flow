@@ -172,7 +172,7 @@ export default function HomePanel() {
   const goToday = () => { setDayOffset(0); setWeekOffset(0); };
 
   return (
-    <div style={{ paddingBottom: 80 }}>
+    <div style={{ paddingBottom: "env(safe-area-inset-bottom, 70px)" }}>
       {/* Banner notifiche push */}
       {notifBanner && (
         <div onClick={() => { Notification.requestPermission().then(p => { if(p==="granted") setNotifBanner(false); }); }} style={{ background: "#1A1A1C", borderRadius: 12, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
@@ -203,7 +203,7 @@ export default function HomePanel() {
       </div>
 
       {/* SALUTO */}
-      <div style={{ padding: "12px 20px 4px" }}>
+      <div style={{ padding: "8px 20px 2px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <div suppressHydrationWarning style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: "-0.03em" }}>{saluto}, Fabio</div>
@@ -250,7 +250,7 @@ export default function HomePanel() {
       )}
 
       {/* ═══ CALENDARIO SWIPEABLE ═══ */}
-      <div style={{ margin: "20px 20px 0" }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div style={{ margin: "14px 20px 0" }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <div onClick={() => { setWeekOffset(w => w - 1); const nw = getWeekForOffset(weekOffset - 1); if (!nw.some(d => d.offset === dayOffset)) setDayOffset(nw[3].offset); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: T.bg }}>
@@ -314,7 +314,7 @@ export default function HomePanel() {
       </div>
 
       {/* PIPELINE */}
-      <div style={{ margin: "20px 20px 0" }}>
+      <div style={{ margin: "14px 20px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pipeline</span>
           <span onClick={() => setTab("commesse")} style={{ fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer" }}>{totAttive} attive →</span>
@@ -333,7 +333,7 @@ export default function HomePanel() {
       </div>
 
       {/* NUMERI */}
-      <div style={{ margin: "20px 20px 0", display: "flex", gap: 6 }}>
+      <div style={{ margin: "14px 20px 0", display: "flex", gap: 6 }}>
         <div onClick={() => setTab("commesse")} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Preventivato</div>
           <div style={{ fontSize: 16, fontWeight: 900, color: T.text, fontFamily: FM, marginTop: 3 }}>€{totPrev > 999 ? Math.round(totPrev / 1000) + "k" : totPrev.toLocaleString("it-IT")}</div>
@@ -361,10 +361,6 @@ export default function HomePanel() {
           {montAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer" }}><I d={ICO.wrench} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{montAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Montaggi</div></div></div>)}
         </div>
       )}
-
-
-
-      <div style={{ height: 20 }} />
     </div>
   );
 }
