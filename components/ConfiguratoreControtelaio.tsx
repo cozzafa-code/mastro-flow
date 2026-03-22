@@ -63,8 +63,8 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
     sub:"#8E8E93",acc:"#D08008",grn:"#1A9E73",red:"#DC4444",blue:"#3B7FE0"};
 
   const init = value||{};
-  // pts = array di punti mm (modificabili dall'utente trascinando)
-  const [pts,     setPts]     = useState(init.pts || buildNodes(init.segs || []));
+  // ptsOverride: solo quando l'utente trascina un vertice manualmente
+  const [ptsOverride, setPtsOverride] = useState(null);
   const [segs,    setSegs]    = useState(init.segs || []);
   const [divs,    setDivs]    = useState(init.divs || []);
   const [zoneMat, setZoneMat] = useState(init.zoneMat || {"0_0":"eps"});
@@ -89,14 +89,17 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
 
   const sviluppata = segs.reduce((a,s)=>a+s.mm,0);
 
-  // Sync pts quando cambiano i segs
+  // pts: usa override se l'utente ha trascinato, altrimenti ricalcola dai segs
+  const pts = ptsOverride || buildNodes(segs);
+
+  // Reset ptsOverride quando cambiano i segs
   useEffect(()=>{
-    setPts(buildNodes(segs));
+    setPtsOverride(null);
     setZoom(1); setPanX(0); setPanY(0);
   },[segs]);
 
-  useEffect(()=>{ onChange?.({segs,pts,divs,zoneMat,misuraL,misuraH}); },
-    [segs,pts,divs,zoneMat,misuraL,misuraH]);
+  useEffect(()=>{ onChange?.({segs,divs,zoneMat,misuraL,misuraH}); },
+    [segs,divs,zoneMat,misuraL,misuraH]);
 
   const VW = fullscreen ? (typeof window!=="undefined"?window.innerWidth:400) : 340;
   const VH = fullscreen ? (typeof window!=="undefined"?window.innerHeight-220:300) : 200;
@@ -132,7 +135,7 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
     const w = clientToWorld(e.clientX, e.clientY);
     const snap = 5;
     const snapped = {x: Math.round(w.x/snap)*snap, y: Math.round(w.y/snap)*snap};
-    setPts(prev => prev.map((p,i)=>i===dragIdx?snapped:p));
+    setPtsOverride(prev => (prev||buildNodes(segs)).map((p,i)=>i===dragIdx?snapped:p));
   }, [dragIdx, clientToWorld]);
 
   const onPointerUp = useCallback(() => { setDragIdx(null); }, []);
@@ -538,7 +541,7 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
         );
       })}
       <span style={{fontSize:9,color:Tc.sub,fontFamily:FMono}}>📏{sviluppata}mm</span>
-      {segs.length>0&&<button onClick={()=>{setSegs([]);setPts([]);setDivs([]);
+      {segs.length>0&&<button onClick={()=>{setSegs([]);setPtsOverride(null);setDivs([]);
         setZoneMat({"0_0":"eps"});setSelIdx(null);setSelZone("0_0");resetView();}}
         style={{marginLeft:"auto",padding:"2px 6px",borderRadius:5,border:"1px solid "+Tc.bdr,
           background:"white",color:Tc.sub,fontSize:9,cursor:"pointer"}}>🗑</button>}
@@ -565,7 +568,7 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
               {CT_PRESETS.map(p=>(
                 <button key={p.n} onClick={()=>{
                   setSegs(p.segs);setDivs([]);setZoneMat({"0_0":"eps"});
-                  setSelIdx(null);setSelZone("0_0");resetView();
+                  setSelIdx(null);setSelZone("0_0");setPtsOverride(null);resetView();
                 }} style={{padding:"3px 8px",borderRadius:5,border:"1px solid rgba(255,255,255,0.3)",
                   background:"rgba(255,255,255,0.15)",color:"#fff",
                   fontSize:10,fontWeight:700,cursor:"pointer"}}>
@@ -594,7 +597,7 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
         {CT_PRESETS.map(p=>(
           <button key={p.n} onClick={()=>{
             setSegs(p.segs);setDivs([]);setZoneMat({"0_0":"eps"});
-            setSelIdx(null);setSelZone("0_0");resetView();
+            setSelIdx(null);setSelZone("0_0");setPtsOverride(null);resetView();
           }} style={{padding:"4px 10px",borderRadius:6,border:"1.5px solid "+Tc.bdr,
             background:Tc.card,fontSize:10,fontWeight:700,cursor:"pointer",
             color:Tc.text,whiteSpace:"nowrap"}}>
