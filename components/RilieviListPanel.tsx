@@ -94,106 +94,121 @@ export default function RilieviListPanel() {
       if (!nuovoRilData.data) setTimeout(() => setNuovoRilData(d => ({ ...d, data: d.data || oggi, ora: d.ora || oraAdesso })), 0);
 
       return (
-      <div style={{ paddingBottom: 80 }}>
-        <div style={S.header}>
-          <div onClick={() => setShowNuovoRilievo(false)} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+      <div style={{ paddingBottom: 100, background: "#F8FAFC", minHeight: "100vh" }}>
+        {/* Header */}
+        <div style={{ background: "#0F766E", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+          <div onClick={() => setShowNuovoRilievo(false)} style={{ cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: 22, lineHeight: 1 }}>←</div>
           <div style={{ flex: 1 }}>
-            <div style={S.headerTitle}>Nuovo Rilievo</div>
-            <div style={S.headerSub}>{c.code} · {c.cliente} {c.cognome}</div>
+            <div style={{ color: "#fff", fontSize: 17, fontWeight: 800 }}>Nuovo Rilievo</div>
+            <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginTop: 2 }}>{c.code} · {c.cliente} {c.cognome}</div>
           </div>
         </div>
-        <div style={{ padding: 16 }}>
 
-          {/* ═══ STATO AUTOMATICO ═══ */}
+        <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+          {/* Tipo rilievo */}
           {autoTipo === "rilievo" && (
-            <div style={{ padding: "14px 16px", borderRadius: 12, marginBottom: 16, border: `1.5px solid ${T.acc}40`, background: `${T.acc}08` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 22 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/></svg></span>
+            <div style={{ padding: "16px", borderRadius: 14, border: "1.5px solid #1A9E7340", background: "#1A9E7308" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: "#1A9E7320", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A9E73" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: T.acc }}>Rilievo {rilievi.length === 0 ? "iniziale" : `#${rilievi.length + 1}`}</div>
-                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>
-                    {rilievi.length === 0 
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#1A9E73" }}>
+                    {rilievi.length === 0 ? "Rilievo iniziale" : `Rilievo #${rilievi.length + 1}`}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#666", marginTop: 3, lineHeight: 1.4 }}>
+                    {rilievi.length === 0
                       ? "Prima visita al cantiere — le misure saranno indicative fino alla firma del cliente"
-                      : `Rilievo aggiuntivo — hai già ${rilievi.length} rilievi. Le misure restano indicative fino alla firma`}
+                      : `Rilievo aggiuntivo — hai già ${rilievi.length} rilievi`}
                   </div>
                 </div>
-                <span style={{ padding: "4px 10px", borderRadius: 8, background: "#ff950020", color: "#ff9500", fontSize: 10, fontWeight: 800 }}>INDICATIVO</span>
+                <span style={{ padding: "4px 10px", borderRadius: 8, background: "#ff950020", color: "#ff9500", fontSize: 10, fontWeight: 800, whiteSpace: "nowrap" }}>INDICATIVO</span>
               </div>
             </div>
           )}
 
           {autoTipo === "modifica" && (
-            <div style={{ padding: "14px 16px", borderRadius: 12, marginBottom: 16, border: "1.5px solid #ff950060", background: "#ff950008" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 22 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "#ff9500" }}>Modifica post-firma</div>
-                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️ Il cliente ha già firmato il preventivo. Questa modifica potrebbe richiedere un nuovo preventivo e ritardare la produzione.
-                  </div>
-                </div>
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginBottom: 5 }}>MOTIVO DELLA MODIFICA *</div>
-              <input style={{ ...S.input, borderColor: !nuovoRilData.motivoModifica ? "#ff9500" : T.bdr }} placeholder="Es: cliente cambia 3 balconi in finestre..." value={nuovoRilData.motivoModifica} onChange={e => setNuovoRilData(d => ({...d, motivoModifica: e.target.value}))} />
+            <div style={{ padding: "16px", borderRadius: 14, border: "1.5px solid #ff950060", background: "#ff950008" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#ff9500", marginBottom: 10 }}>Modifica post-firma</div>
+              <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.6 }}>Motivo della modifica *</div>
+              <input style={{ ...S.input, borderColor: !nuovoRilData.motivoModifica ? "#ff9500" : T.bdr, fontSize: 15, padding: "12px 14px" }}
+                placeholder="Es: cliente ha richiesto modifica dimensioni..."
+                value={nuovoRilData.motivoModifica} onChange={e => setNuovoRilData(d => ({...d, motivoModifica: e.target.value}))} />
             </div>
           )}
 
-          {/* ═══ VANI EREDITATI (se ci sono rilievi precedenti) ═══ */}
+          {/* Vani ereditati */}
           {rilievi.length > 0 && (() => {
-            const prevR = rilievi[rilievi.length - 1];
-            const prevVani = prevR?.vani || [];
+            const prevVani = rilievi[rilievi.length - 1]?.vani || [];
             return prevVani.length > 0 ? (
-              <div style={{ padding: "12px 14px", borderRadius: 12, marginBottom: 16, border: `1.5px solid #34c75940`, background: "#34c75908" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 16 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759" }}>{prevVani.length} vani ereditati da R{prevR.n}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>Continui a misurare gli stessi vani. Puoi aggiungerne di nuovi o rimuoverne.</div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {prevVani.slice(0, 8).map((v, i) => (
-                    <span key={i} style={{ fontSize: 10, padding: "3px 8px", borderRadius: 6, background: "#34c75915", color: "#34c759", fontWeight: 700 }}>
+              <div style={{ padding: "14px 16px", borderRadius: 14, border: "1.5px solid #1A9E7340", background: "#1A9E7306" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1A9E73", marginBottom: 8 }}>{prevVani.length} vani ereditati dal rilievo precedente</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {prevVani.slice(0, 8).map((v: any, i: number) => (
+                    <span key={i} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 8, background: "#1A9E7315", color: "#1A9E73", fontWeight: 600 }}>
                       {v.nome || `Vano ${i+1}`}
                     </span>
                   ))}
-                  {prevVani.length > 8 && <span style={{ fontSize: 10, color: T.sub }}>+{prevVani.length - 8} altri</span>}
+                  {prevVani.length > 8 && <span style={{ fontSize: 11, color: T.sub }}>+{prevVani.length - 8} altri</span>}
                 </div>
               </div>
             ) : null;
           })()}
 
-          {/* ═══ DATA + ORA (pre-compilati) ═══ */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: T.sub, marginBottom: 4 }}>DATA</div>
-              <input style={S.input} type="date" value={nuovoRilData.data || oggi} onChange={e => setNuovoRilData(d => ({...d, data: e.target.value}))} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: T.sub, marginBottom: 4 }}>ORA</div>
-              <input style={S.input} type="time" value={nuovoRilData.ora || oraAdesso} onChange={e => setNuovoRilData(d => ({...d, ora: e.target.value}))} />
+          {/* Data e Ora */}
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12 }}>Data e ora del rilievo</div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#64748B", display: "block", marginBottom: 6 }}>Data</label>
+                <input style={{ ...S.input, fontSize: 16, padding: "12px 14px", borderRadius: 10, fontWeight: 600 }}
+                  type="date" value={nuovoRilData.data || oggi}
+                  onChange={e => setNuovoRilData(d => ({...d, data: e.target.value}))} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#64748B", display: "block", marginBottom: 6 }}>Ora</label>
+                <input style={{ ...S.input, fontSize: 16, padding: "12px 14px", borderRadius: 10, fontWeight: 600 }}
+                  type="time" value={nuovoRilData.ora || oraAdesso}
+                  onChange={e => setNuovoRilData(d => ({...d, ora: e.target.value}))} />
+              </div>
             </div>
           </div>
 
-          {/* Rilevatore + Note (collassabili) */}
-          <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 11, color: T.sub, marginBottom: 4 }}>RILEVATORE</div>
-            <input style={S.input} placeholder="Chi esegue il rilievo..." value={nuovoRilData.rilevatore} onChange={e => setNuovoRilData(d => ({...d, rilevatore: e.target.value}))} />
+          {/* Rilevatore */}
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Chi esegue il rilievo</label>
+            <input style={{ ...S.input, fontSize: 16, padding: "12px 14px", borderRadius: 10 }}
+              placeholder="Nome del rilevatore..."
+              value={nuovoRilData.rilevatore}
+              onChange={e => setNuovoRilData(d => ({...d, rilevatore: e.target.value}))} />
           </div>
-          <div>
-            <div style={{ fontSize: 11, color: T.sub, marginBottom: 4 }}>NOTE</div>
-            <textarea style={{ ...S.input, minHeight: 50, resize: "vertical" }} placeholder="Note preliminari (opzionale)..." value={nuovoRilData.note} onChange={e => setNuovoRilData(d => ({...d, note: e.target.value}))} />
+
+          {/* Note */}
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Note preliminari</label>
+            <textarea style={{ ...S.input, fontSize: 15, padding: "12px 14px", borderRadius: 10, minHeight: 80, resize: "none", lineHeight: 1.5 }}
+              placeholder="Annotazioni, accesso al cantiere, particolarità..."
+              value={nuovoRilData.note}
+              onChange={e => setNuovoRilData(d => ({...d, note: e.target.value}))} />
           </div>
 
           {/* CTA */}
-          <button 
+          <button
             onClick={() => { if (autoTipo === "modifica" && !nuovoRilData.motivoModifica) { alert("Inserisci il motivo della modifica"); return; } salvaRilievo(); }}
-            style={{ ...S.btn, width: "100%", marginTop: 20, padding: "16px", fontSize: 15, background: autoTipo === "modifica" ? "#ff9500" : "#1A9E73", boxShadow: autoTipo === "modifica" ? "0 4px 0 #c07000" : "0 4px 0 #0D7C6B", transition: "all 0.1s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            {autoTipo === "modifica" ? "Crea Rilievo Modifica" : `Crea Rilievo #${rilievi.length + 1}`} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginLeft:6}}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            style={{ ...S.btn, width: "100%", padding: "18px", fontSize: 16, fontWeight: 800,
+              background: autoTipo === "modifica" ? "#ff9500" : "#1A9E73",
+              boxShadow: autoTipo === "modifica" ? "0 4px 0 #c07000" : "0 4px 0 #0D7C6B",
+              borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              transition: "all 0.1s", marginTop: 4 }}>
+            <span>{autoTipo === "modifica" ? "Crea Rilievo Modifica" : `Crea Rilievo #${rilievi.length + 1}`}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
+
         </div>
       </div>
     );
+    }
     }
 
     // == REPORT DIFFERENZE ==
