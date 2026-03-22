@@ -1897,6 +1897,140 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                     </div>
                     <div style={{ fontSize: 8, color: T.sub, marginTop: 3, textAlign: "center" }}>Obbligatori per pratiche fiscali con detrazione/bonus</div>
                   </div>
+                  {/* ═══ PRESTAMPATI COPIABILI ═══ */}
+                  {(() => {
+                    const cf = c.cf || "________________";
+                    const cliente = `${c.cliente || ""} ${c.cognome || ""}`.trim();
+                    const indirizzo = c.indirizzo || "________________";
+                    const code = c.code || "";
+                    const piva = "IT________________________"; // da settings azienda
+
+                    const PRESTAMPATI: Record<string, { titolo: string; color: string; voci: Array<{ label: string; testo: string }> }> = {
+                      iva10: {
+                        titolo: "IVA 10% — Testi prestampati",
+                        color: "#ff9500",
+                        voci: [
+                          {
+                            label: "Testo fattura (causale)",
+                            testo: `Fornitura e posa in opera infissi - manutenzione straordinaria residenziale
+IVA agevolata 10% ai sensi dell'art. 127-quaterdecies DPR 633/72
+Immobile: ${indirizzo}
+Commessa: ${code}`,
+                          },
+                          {
+                            label: "Dichiarazione IVA 10% (da far firmare al cliente)",
+                            testo: `Il/La sottoscritto/a ${cliente}, C.F. ${cf},
+residente in ${indirizzo},
+DICHIARA che i lavori di sostituzione infissi presso ${indirizzo}
+rientrano in manutenzione straordinaria ex art.3 c.1 lett.b DPR 380/2001
+e CHIEDE l'applicazione IVA agevolata 10% (art.7 c.1 lett.b L.488/99).
+Data: ___________     Firma: _______________________`,
+                          },
+                        ],
+                      },
+                      detrazione50: {
+                        titolo: "Detrazione 50% — Testi prestampati",
+                        color: "#007aff",
+                        voci: [
+                          {
+                            label: "Causale bonifico parlante",
+                            testo: `Bonifico relativo a detrazione fiscale per ristrutturazione edilizia
+art. 16-bis DPR 917/86 (ex art. 1 L. 449/97)
+Beneficiario: ${cliente} - C.F. ${cf}
+Ditta esecutrice: Walter Cozza Serramenti SRL - P.IVA ${piva}
+Commessa: ${code} - ${indirizzo}`,
+                          },
+                          {
+                            label: "Testo fattura (causale)",
+                            testo: `Fornitura e posa infissi - ristrutturazione edilizia
+art. 16-bis TUIR - Detrazione IRPEF 50%
+Immobile: ${indirizzo} - Commessa: ${code}
+IVA 10% manutenzione straordinaria`,
+                          },
+                          {
+                            label: "Promemoria ENEA",
+                            testo: `ATTENZIONE: Inviare comunicazione ENEA entro 90 giorni dalla fine lavori
+sito: https://detrazionifiscali.enea.it
+Dati necessari: CF cliente, dati immobile, tipo intervento, importo`,
+                          },
+                        ],
+                      },
+                      ecobonus65: {
+                        titolo: "Ecobonus 65% — Testi prestampati",
+                        color: "#34c759",
+                        voci: [
+                          {
+                            label: "Causale bonifico parlante",
+                            testo: `Bonifico per detrazione fiscale risparmio energetico
+art. 1 c. 344 L. 296/2006 - Ecobonus 65%
+Beneficiario: ${cliente} - C.F. ${cf}
+Ditta esecutrice: Walter Cozza Serramenti SRL - P.IVA ${piva}
+Commessa: ${code} - ${indirizzo}`,
+                          },
+                          {
+                            label: "Testo fattura",
+                            testo: `Fornitura e posa infissi a risparmio energetico
+Ecobonus 65% - art.1 c.344 L.296/2006
+Trasmittanza Uw: ______ W/m²K (zona climatica: ______)
+Immobile: ${indirizzo} - Commessa: ${code}`,
+                          },
+                          {
+                            label: "Promemoria ENEA (obbligatorio)",
+                            testo: `OBBLIGATORIO: Trasmissione ENEA entro 90 giorni dalla fine lavori
+sito: https://detrazionifiscali.enea.it
+Dati: CF, codice fiscale ditta, scheda tecnica infisso con Uw, importo lavori`,
+                          },
+                        ],
+                      },
+                      superbonus: {
+                        titolo: "Superbonus — Testi prestampati",
+                        color: "#af52de",
+                        voci: [
+                          {
+                            label: "Causale bonifico parlante",
+                            testo: `Bonifico per Superbonus 110%/90%
+art. 119 DL 34/2020 - Superbonus
+Beneficiario: ${cliente} - C.F. ${cf}
+Ditta esecutrice: Walter Cozza Serramenti SRL - P.IVA ${piva}
+CILAS n. ________ - Commessa: ${code}`,
+                          },
+                          {
+                            label: "Testo fattura",
+                            testo: `Fornitura e posa infissi - Superbonus art.119 DL 34/2020
+CILAS n. ________ del ________
+Immobile: ${indirizzo} - Commessa: ${code}
+IVA 10% manutenzione straordinaria`,
+                          },
+                        ],
+                      },
+                    };
+
+                    const pp = c.praticaFiscale ? PRESTAMPATI[c.praticaFiscale] : null;
+                    if (!pp) return null;
+
+                    return (
+                      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${pp.color}20` }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: pp.color, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>
+                          {pp.titolo}
+                        </div>
+                        {pp.voci.map((voce, vi) => (
+                          <div key={vi} style={{ marginBottom: 10, background: pp.color + "06", borderRadius: 10, border: `1px solid ${pp.color}20`, overflow: "hidden" }}>
+                            <div style={{ padding: "8px 12px", background: pp.color + "12", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: pp.color }}>{voce.label}</div>
+                              <div onClick={() => { try { navigator.clipboard.writeText(voce.testo); } catch(e) { const ta = document.createElement("textarea"); ta.value = voce.testo; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); } }}
+                                style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: pp.color, padding: "3px 10px", borderRadius: 6, cursor: "pointer", whiteSpace: "nowrap" }}>
+                                Copia
+                              </div>
+                            </div>
+                            <div style={{ padding: "8px 12px" }}>
+                              <pre style={{ fontSize: 10, color: "#444", lineHeight: 1.6, whiteSpace: "pre-wrap", fontFamily: "monospace", margin: 0 }}>{voce.testo}</pre>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
                   <button onClick={() => {
                     const tipoL = c.praticaFiscale === "iva10" ? "IVA Agevolata 10%" : c.praticaFiscale === "detrazione50" ? "Detrazione 50%" : c.praticaFiscale === "ecobonus65" ? "Ecobonus 65%" : "Superbonus";
                     const txt = [
