@@ -25,7 +25,7 @@ const CATEGORIE = [
 
 export default function SpesaQuick({ onClose }: { onClose: () => void }) {
   const { T, cantieri, userId, team } = useMastro();
-  const [step, setStep] = useState<"foto"|"dati"|"inviata">("foto");
+  const [step, setStep] = useState<"foto"|"dati"|"inviata">("dati");
   const [foto, setFoto] = useState<string | null>(null);
   const [importo, setImporto] = useState("");
   const [categoria, setCategoria] = useState("varie");
@@ -157,17 +157,30 @@ export default function SpesaQuick({ onClose }: { onClose: () => void }) {
 
       {/* STEP DATI */}
       {step === "dati" && (
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 100px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 90px" }}>
 
-          {/* Foto preview */}
-          {foto && (
-            <div style={{ marginBottom: 16, borderRadius: 12, overflow: "hidden", border: `1px solid ${T.bdr}`, position: "relative" }}>
-              <img src={foto} style={{ width: "100%", maxHeight: 160, objectFit: "cover" }} />
-              <div onClick={() => setFoto(null)} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", borderRadius: 8, padding: "4px 8px", fontSize: 11, cursor: "pointer" }}>
-                Cambia
+          {/* Foto scontrino inline */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 8 }}>Foto scontrino</label>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFoto} style={{ display: "none" }} />
+            {foto ? (
+              <div style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${T.bdr}`, position: "relative" }}>
+                <img src={foto} style={{ width: "100%", maxHeight: 140, objectFit: "cover" }} />
+                <div onClick={() => setFoto(null)} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", color: "#fff", borderRadius: 8, padding: "4px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>× Rimuovi</div>
+                <div onClick={() => fileRef.current?.click()} style={{ position: "absolute", bottom: 8, right: 8, background: AMB, color: "#fff", borderRadius: 8, padding: "4px 8px", fontSize: 11, cursor: "pointer", fontWeight: 700 }}>Cambia</div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div onClick={() => fileRef.current?.click()}
+                style={{ padding: "14px 16px", borderRadius: 12, border: `1.5px dashed ${AMB}60`, background: AMB + "08", display: "flex", alignItems: "center", gap: 12, cursor: "pointer",
+                  boxShadow: `0 2px 0 ${AMB}20` }}>
+                <I d={ICO.camera} s={24} c={AMB} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: AMB }}>Scatta o allega foto scontrino</div>
+                  <div style={{ fontSize: 11, color: T.sub }}>Opzionale — aiuta per la rendicontazione</div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Importo — grande e numerico */}
           <div style={{ marginBottom: 16 }}>
