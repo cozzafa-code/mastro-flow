@@ -35,6 +35,7 @@ export default function RilieviListPanel() {
     generaPreventivoPDF, generaPreventivoCondivisibile, creaFattura, creaOrdineFornitore,
     apriInboxDocumento,
   } = useMastro();
+  const [showGuidaFiscale, setShowGuidaFiscale] = React.useState(false);
 
     if (!selectedCM) return null;
     const c = selectedCM;
@@ -1714,7 +1715,78 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" }}>️ Pratica Fiscale</div>
                 {c.praticaFiscale && <span style={{ fontSize: 10, fontWeight: 700, color: "#34c759", background: "#34c75912", padding: "2px 8px", borderRadius: 6 }}>Attiva</span>}
+                <span onClick={(e) => { e.stopPropagation(); setShowGuidaFiscale(sg => !sg); }}
+                  style={{ fontSize: 10, fontWeight: 700, color: "#3B7FE0", background: "#3B7FE010", padding: "2px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid #3B7FE030" }}>
+                  {showGuidaFiscale ? "× Chiudi guida" : "ℹ Guida IVA/Detrazioni"}
+                </span>
               </div>
+
+              {showGuidaFiscale && (() => {
+                const VOCI_GUIDA = [
+                  { id: "iva4", titolo: "IVA 4%", tagColor: "#3B7FE0", tag: "Prima casa / Disabilità",
+                    requisiti: ["Abitazione principale (prima casa)", "Soggetti con disabilità L.104/92"],
+                    documenti: ["Dichiarazione sostitutiva prima casa", "Certificazione invalidità (se disabilità)"],
+                    fattura: "Fornitura infissi abitazione principale - IVA 4% art.127-undecies DPR 633/72",
+                    limite: null },
+                  { id: "iva10", titolo: "IVA 10%", tagColor: "#ff9500", tag: "Manutenzione straordinaria",
+                    requisiti: ["Immobile residenziale", "Sostituzione infissi = manutenzione straordinaria", "NON nuova costruzione"],
+                    documenti: ["Dichiarazione cliente uso abitativo"],
+                    fattura: "Fornitura infissi - manutenzione straordinaria residenziale - IVA 10% n.127-quaterdecies DPR 633/72",
+                    limite: null },
+                  { id: "det50", titolo: "Detrazione 50%", tagColor: "#007aff", tag: "Ristrutturazione IRPEF",
+                    requisiti: ["Immobile residenziale", "Bonifico parlante obbligatorio", "Fattura intestata al beneficiario", "ENEA entro 90gg fine lavori"],
+                    documenti: ["Bonifico parlante", "Fattura intestata proprietario", "Comunicazione ENEA", "Codice fiscale proprietario"],
+                    fattura: "Bonifico: art.16-bis DPR 917/86 - [P.IVA ditta] - [CF cliente]",
+                    limite: "Max €96.000 → detrazione max €48.000 in 10 rate (€4.800/anno)" },
+                  { id: "eco65", titolo: "Ecobonus 65%", tagColor: "#34c759", tag: "Risparmio energetico",
+                    requisiti: ["Uw ≤ 1,4 W/m²K (zona C-F)", "Bonifico parlante", "Asseverazione tecnico abilitato", "Scheda tecnica con Uw certificato"],
+                    documenti: ["Bonifico parlante", "Scheda tecnica Uw", "Asseverazione tecnico", "ENEA entro 90gg"],
+                    fattura: "Bonifico: art.1 c.344 L.296/2006 - [P.IVA] - [CF]",
+                    limite: "Max €60.000 → detrazione max €39.000 in 10 rate" },
+                  { id: "bar75", titolo: "Barriere 75%", tagColor: "#8B5CF6", tag: "Accessibilità L.13/89",
+                    requisiti: ["Interventi abbattimento barriere", "Tutti i tipi di immobile", "Bonifico parlante"],
+                    documenti: ["Bonifico parlante", "Fattura con descrizione specifica"],
+                    fattura: "Fornitura infissi per eliminazione barriere architettoniche - art.119-ter DL 34/2020",
+                    limite: "Max €50.000 → detrazione max €37.500 in 5 rate (non 10)" },
+                ];
+                const [selGuida, setSelGuida] = React.useState<string|null>(null);
+                const sg = VOCI_GUIDA.find(v => v.id === selGuida);
+                return (
+                  <div style={{ marginBottom: 12, background: "#F8FAFC", borderRadius: 10, border: "1px solid #ddd", overflow: "hidden" }}>
+                    {!selGuida ? (
+                      <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#3B7FE0", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>Seleziona per vedere requisiti e testo fattura</div>
+                        {VOCI_GUIDA.map(v => (
+                          <div key={v.id} onClick={() => setSelGuida(v.id)}
+                            style={{ padding: "8px 12px", borderRadius: 8, border: `1.5px solid ${v.tagColor}30`, background: v.tagColor + "08", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between",
+                              boxShadow: `0 2px 0 ${v.tagColor}20` }}>
+                            <div>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: v.tagColor }}>{v.titolo}</div>
+                              <div style={{ fontSize: 10, color: "#888" }}>{v.tag}</div>
+                            </div>
+                            <div style={{ fontSize: 14, color: v.tagColor }}>›</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : sg ? (
+                      <div style={{ padding: "10px 12px" }}>
+                        <div onClick={() => setSelGuida(null)} style={{ color: "#3B7FE0", fontSize: 12, fontWeight: 600, cursor: "pointer", marginBottom: 8 }}>← Torna</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: sg.tagColor, marginBottom: 4 }}>{sg.titolo} — {sg.tag}</div>
+                        {sg.limite && <div style={{ padding: "6px 10px", background: sg.tagColor + "12", borderRadius: 8, border: `1px solid ${sg.tagColor}30`, marginBottom: 8, fontSize: 11, fontWeight: 700, color: sg.tagColor }}>{sg.limite}</div>}
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", marginBottom: 4 }}>Requisiti</div>
+                        {sg.requisiti.map((r, i) => <div key={i} style={{ fontSize: 11, color: "#333", padding: "3px 0", borderBottom: "1px solid #f0f0f0" }}>· {r}</div>)}
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", margin: "8px 0 4px" }}>Documenti</div>
+                        {sg.documenti.map((d, i) => <div key={i} style={{ fontSize: 11, color: "#333", padding: "3px 0", borderBottom: "1px solid #f0f0f0" }}>✓ {d}</div>)}
+                        <div style={{ marginTop: 8, padding: "8px 10px", background: "#FFF8EC", borderRadius: 8, border: "1px solid #D0800830" }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: "#D08008", marginBottom: 3 }}>TESTO FATTURA / BONIFICO</div>
+                          <div style={{ fontSize: 11, color: "#555", fontStyle: "italic", lineHeight: 1.5 }}>{sg.fattura}</div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()}
+
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" as any, marginBottom: c.praticaFiscale ? 8 : 0 }}>
                 {[
                   { id: "", l: "Nessuna", color: T.sub },
