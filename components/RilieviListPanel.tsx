@@ -36,6 +36,7 @@ export default function RilieviListPanel() {
     apriInboxDocumento,
   } = useMastro();
   const [showGuidaFiscale, setShowGuidaFiscale] = React.useState(false);
+  const [selGuidaFiscale, setSelGuidaFiscale] = React.useState<string|null>(null);
 
     if (!selectedCM) return null;
     const c = selectedCM;
@@ -1749,7 +1750,8 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                     fattura: "Fornitura infissi per eliminazione barriere architettoniche - art.119-ter DL 34/2020",
                     limite: "Max €50.000 → detrazione max €37.500 in 5 rate (non 10)" },
                 ];
-                const [selGuida, setSelGuida] = React.useState<string|null>(null);
+                const selGuida = selGuidaFiscale;
+                const setSelGuida = setSelGuidaFiscale;
                 const sg = VOCI_GUIDA.find(v => v.id === selGuida);
                 return (
                   <div style={{ marginBottom: 12, background: "#F8FAFC", borderRadius: 10, border: "1px solid #ddd", overflow: "hidden" }}>
