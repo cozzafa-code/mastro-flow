@@ -563,6 +563,7 @@ export default function VanoDetailPanel() {
 
           const sections = [
             { id:"accesso", icon: "", label:"Accesso / Difficoltà",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z\"/><polyline points=\"9 22 9 12 15 12 15 22\"/></svg>",
               badge: v.difficoltaSalita||null, filled: [v.difficoltaSalita, v.mezzoSalita].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:4}}>
@@ -586,6 +587,7 @@ export default function VanoDetailPanel() {
               </div>
             },
             { id:"tipologia", icon:"□", label:"Tipologia",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\"/></svg>",
               badge: v.tipo||null, filled: v.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:2,borderBottom:`1px solid ${T.bdr}`,paddingBottom:0,marginBottom:4}}>
@@ -621,6 +623,7 @@ export default function VanoDetailPanel() {
               </div>
             },
             { id:"posizione", icon: "", label:"Stanza / Piano",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></svg>",
               badge: v.stanza?`${v.stanza}`:null, filled: [v.stanza].filter(Boolean).length, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
@@ -645,6 +648,7 @@ export default function VanoDetailPanel() {
               </div>
             },
             { id:"sistema", icon: "", label:"Sistema / Vetro",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"2\" y=\"3\" width=\"20\" height=\"14\" rx=\"2\"/><line x1=\"8\" y1=\"21\" x2=\"16\" y2=\"21\"/><line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"21\"/></svg>",
               badge: v.sistema?v.sistema.split(" ").slice(0,2).join(" · "):null, filled: [v.sistema, v.vetro].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
@@ -676,6 +680,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>},
             { id:"colori", icon: "", label:"Colori profili",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 2a10 10 0 010 20\"/></svg>",
               badge: v.coloreInt||null, filled: [v.coloreInt, v.bicolore && v.coloreEst, v.coloreAcc].filter(Boolean).length, total: v.bicolore ? 3 : 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 {!v.sistema && <div style={{padding:"14px",textAlign:"center",color:T.sub,fontSize:12,background:T.bg,borderRadius:10,border:"1px dashed "+T.bdr}}><I d={ICO.alertTriangle} />️ Scegli prima il sistema profili</div>}
@@ -721,6 +726,7 @@ export default function VanoDetailPanel() {
               </div>
             },
             { id:"telaio", icon: "", label:"Telaio / Rifilato",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><rect x=\"7\" y=\"7\" width=\"10\" height=\"10\"/></svg>",
               badge: v.telaio?(v.telaio==="Z"?"Telaio Z":"Telaio L"):(v.rifilato?"Rifilato":null), filled: [v.telaio, v.rifilato, v.telaioAlaZ].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:6}}>
@@ -751,6 +757,7 @@ export default function VanoDetailPanel() {
               </div>
             },
             { id:"finiture", icon: "", label:"Coprifilo / Lamiera",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
               badge: (v.coprifilo||v.lamiera)?"":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
@@ -781,6 +788,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>},
             { id:"controtelaio", icon:"◻", label:"Controtelaio",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"9\" y1=\"21\" x2=\"9\" y2=\"9\"/></svg>",
               badge: v.controtelaio?.tipo ? (v.controtelaio.tipo==="singolo"?"Singolo":v.controtelaio.tipo==="doppio"?"Doppio":"Con cassonetto") : null, filled: v.controtelaio?.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:2}}>TIPO CONTROTELAIO</div>
@@ -942,12 +950,12 @@ export default function VanoDetailPanel() {
                 return (
                   <div key={sec.id} ref={el=>sectionRefs.current[sec.id]=el}
                     className={isFlashing?"m-flash":""}
-                    style={{marginBottom:3,borderRadius:10,border:"1px solid "+(isOpen?T.acc+"50":isDone?T.grn+"40":hasFill?T.grn+"30":T.bdr),overflow:"hidden",transition:"border-color 0.3s, box-shadow 0.3s",boxShadow:isOpen?"0 2px 10px "+T.acc+"12":"none"}}>
+                    style={{marginBottom:2,borderRadius:8,border:"1px solid "+(isOpen?T.acc+"50":isDone?T.grn+"40":hasFill?T.grn+"30":T.bdr),overflow:"hidden",transition:"border-color 0.3s, box-shadow 0.3s",boxShadow:isOpen?"0 2px 10px "+T.acc+"12":"none"}}>
                     <div onClick={()=>setVanoInfoOpen(isOpen?null:sec.id)}
-                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",background:isFlashing?T.grn+"12":isOpen?T.acc+"05":T.card,cursor:"pointer",transition:"background 0.3s"}}>
+                      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 12px",background:isFlashing?T.grn+"12":isOpen?T.acc+"05":T.card,cursor:"pointer",transition:"background 0.3s"}}>
                       <div style={{display:"flex",alignItems:"center",gap:7}}>
-                        <span style={{fontSize:14}}>{sec.icon}</span>
-                        <span style={{fontSize:12,fontWeight:600,color:isOpen?T.acc:T.text}}>{sec.label}</span>
+                        {sec.iconSVG && <span style={{width:16,height:16,display:"inline-flex",alignItems:"center",justifyContent:"center",color:isOpen?T.acc:T.sub,flexShrink:0}} dangerouslySetInnerHTML={{__html:sec.iconSVG}} />}
+                        <span style={{fontSize:13,fontWeight:600,color:isOpen?T.acc:T.text}}>{sec.label}</span>
                         {isOptional && !hasFill && <span style={{fontSize:9,color:T.sub,fontStyle:"italic"}}>opz.</span>}
                         {sec.badge && <span className={isFlashing?"m-badge-pop":""} style={{...S.badge(isDone?T.grn+"15":T.accLt, isDone?T.grn:T.acc),fontSize:9,padding:"1px 6px"}}>{sec.badge}</span>}
                       </div>
@@ -957,7 +965,7 @@ export default function VanoDetailPanel() {
                         <span style={{fontSize:9,color:T.sub,display:"inline-block",transform:isOpen?"rotate(180deg)":"none",transition:"transform 0.15s"}}>▼</span>
                       </div>
                     </div>
-                    {isOpen && <div className="m-slide" style={{padding:"12px",background:T.bg,borderTop:"1px solid "+T.bdr}}>
+                    {isOpen && <div className="m-slide" style={{padding:"8px 12px 10px",background:T.bg,borderTop:"1px solid "+T.bdr}}>
                       {sec.body}
                       {isOptional && <div onClick={()=>flashAndAdvance(sec.id)} style={{marginTop:8,padding:"8px",borderRadius:8,border:"1px dashed "+T.bdr,textAlign:"center",fontSize:11,color:T.sub,cursor:"pointer"}}>Salta →</div>}
                     </div>}
