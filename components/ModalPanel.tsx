@@ -706,7 +706,24 @@ Fabio Cozza - Walter Cozza Serramenti` },
                           <div style={{ fontSize:10, color:T.sub, fontWeight:600, marginBottom:2 }}>Piano edificio</div>
                           <select style={S.select} value={newCM.pianoEdificio} onChange={e=>setNewCM(c=>({...c,pianoEdificio:e.target.value}))}>
                             <option value="">· Seleziona ·</option>
-                            {["S2  2Seminterrato","S1  Seminterrato","PT  Piano Terra","P1  1Piano","P2  2Piano","P3  3Piano","P4  4Piano","P5  5Piano","P6  6Piano","P7  7Piano","P8  8Piano","P9  9Piano","P10  10Piano","P11  11Piano","P12  12Piano","P13  13Piano","P14  14Piano","P15  15Piano","P16  16Piano","P17  17Piano","P18  18Piano","P19  19Piano","P20  20Piano","M  Mansarda"].map(p=><option key={p} value={p}>{p}</option>)}
+                            {[
+                              {v:"S2",l:"S2 — Secondo seminterrato"},
+                              {v:"S1",l:"S1 — Seminterrato"},
+                              {v:"PT",l:"PT — Piano Terra"},
+                              {v:"P1",l:"P1 — Primo piano"},
+                              {v:"P2",l:"P2 — Secondo piano"},
+                              {v:"P3",l:"P3 — Terzo piano"},
+                              {v:"P4",l:"P4 — Quarto piano"},
+                              {v:"P5",l:"P5 — Quinto piano"},
+                              {v:"P6",l:"P6 — Sesto piano"},
+                              {v:"P7",l:"P7 — Settimo piano"},
+                              {v:"P8",l:"P8 — Ottavo piano"},
+                              {v:"P9",l:"P9 — Nono piano"},
+                              {v:"P10",l:"P10 — Decimo piano"},
+                              {v:"P15",l:"P15 — 15° piano"},
+                              {v:"P20",l:"P20 — 20° piano"},
+                              {v:"M",l:"M — Mansarda"},
+                            ].map(p=><option key={p.v} value={p.v}>{p.l}</option>)}
                           </select>
                         </div>
                         <div style={{ flex:1 }}>

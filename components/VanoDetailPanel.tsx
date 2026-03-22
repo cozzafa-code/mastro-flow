@@ -126,6 +126,10 @@ export default function VanoDetailPanel() {
   const [lamieraPieghe, setLamieraPieghe] = useState<Array<{dir:'su'|'giu'|'sx'|'dx', mm:number}>>([]);
   const [lamieraPDir, setLamieraPDir] = useState<'sx'|'dx'|'su'|'giu'>('sx');
   const [lamieraPMm, setLamieraPMm] = useState('');
+  const [lamieraLatoBuono, setLamieraLatoBuono] = useState<'interno'|'esterno'>('esterno');
+  const [lamieraAngoloInput, setLamieraAngoloInput] = useState(false);
+  const [lamieraAngolo, setLamieraAngolo] = useState('90');
+  const [lastDirTap, setLastDirTap] = useState<string>('');
   // ── NUMPAD NATIVO ────────────────────────────────────────
   const [numpadField, setNumpadField] = useState<string|null>(null);
   const [numpadVal, setNumpadVal] = useState("");
@@ -820,7 +824,7 @@ export default function VanoDetailPanel() {
                           L {v.misure?.lCentro||"?"}mm × H {v.misure?.hCentro||"?"}mm
                         </div>
                       </div>
-                      <div onClick={()=>setShowLamieraDisegno(true)}
+                      <div onClick={e=>{e.stopPropagation();setShowLamieraDisegno(true);}}
                         style={{padding:"7px 14px",borderRadius:8,background:"#0F766E",color:"#fff",
                           fontSize:12,fontWeight:700,cursor:"pointer",
                           boxShadow:"0 3px 0 #0D5C56",display:"flex",alignItems:"center",gap:6}}>
@@ -2695,196 +2699,260 @@ export default function VanoDetailPanel() {
       )}
 
       {/* ═══ MODAL DISEGNO TECNICO LAMIERA ═══ */}
-      {/* ═══ MODAL LAMIERA — Disegno segmento per segmento ═══ */}
+      {/* ═══ FULLSCREEN DISEGNO LAMIERA ═══ */}
       {showLamieraDisegno && (() => {
-        const lForo = v.misure?.lCentro || 0;
-        const hForo = v.misure?.hCentro || 0;
-
-        // Calcola percorso SVG dai segmenti
-        const W = 300, H = 180, OX = 20, OY = 30;
         const allSegs = lamieraPieghe;
-        let cx = OX, cy = OY;
-        const nodes: {x:number,y:number}[] = [{x:cx,y:cy}];
-        // Scala automatica
-        const totalH = allSegs.filter(s=>s.dir==='giu').reduce((a,s)=>a+s.mm,0)
-                     + allSegs.filter(s=>s.dir==='su').reduce((a,s)=>a+s.mm,0);
-        const totalW = (lForo>0?lForo:200) + allSegs.filter(s=>s.dir==='dx').reduce((a,s)=>a+s.mm,0)
-                     + allSegs.filter(s=>s.dir==='sx').reduce((a,s)=>a+s.mm,0);
-        const sc = Math.min((W-OX*2)/Math.max(totalW,50), (H-OY*2)/Math.max(totalH,30), 1.2);
-        allSegs.forEach(s => {
-          const d = s.mm * sc;
-          if (s.dir==='dx') cx+=d;
-          else if (s.dir==='sx') cx-=d;
-          else if (s.dir==='giu') cy+=d;
-          else if (s.dir==='su') cy-=d;
-          nodes.push({x:cx,y:cy});
-        });
+        const angGradi = parseFloat(lamieraAngolo) || 90;
+        const angRad = (angGradi * Math.PI) / 180;
+
+        // Build SVG path con angoli
+        const buildNodes = () => {
+          let cx = 60, cy = 60;
+          const nodes: {x:number,y:number}[] = [{x:cx,y:cy}];
+          const MAX = 500;
+          allSegs.forEach(s => {
+            const d = Math.min(s.mm * 0.6, MAX);
+            const a = s.angolo || 90;
+            const ar = (a * Math.PI) / 180;
+            if (s.dir==='dx') { cx += d * Math.cos(ar < Math.PI/2 ? 0 : ar); cy += d * Math.sin(ar < Math.PI/2 ? 0 : ar); }
+            else if (s.dir==='sx') { cx -= d; }
+            else if (s.dir==='giu') { cy += d; }
+            else if (s.dir==='su') { cy -= d; }
+            nodes.push({x:Math.max(10,Math.min(cx,750)),y:Math.max(10,Math.min(cy,550))});
+          });
+          return nodes;
+        };
+
+        const nodes = buildNodes();
         const pts = nodes.map(n=>`${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
+        // Lunghezza sviluppata totale
+        const sviluppata = allSegs.reduce((a,s)=>a+s.mm, 0);
+
         const DIRS = [
-          {d:'dx', label:'→', name:'Destra'},
-          {d:'sx', label:'←', name:'Sinistra'},
-          {d:'giu', label:'↓', name:'Giù'},
-          {d:'su', label:'↑', name:'Su'},
+          {d:'dx',label:'→',name:'Destra'},
+          {d:'sx',label:'←',name:'Sinistra'},
+          {d:'giu',label:'↓',name:'Giù'},
+          {d:'su',label:'↑',name:'Su'},
         ] as const;
 
         return (
-          <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,0.65)',display:'flex',alignItems:'flex-end'}}>
-            <div style={{width:'100%',background:'#fff',borderRadius:'18px 18px 0 0',maxHeight:'92vh',overflowY:'auto'}}>
-
-              {/* Header */}
-              <div style={{background:'#0F766E',padding:'13px 16px',borderRadius:'18px 18px 0 0',
-                display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                <div>
-                  <div style={{color:'#fff',fontSize:16,fontWeight:800}}>Lamiera {v.lamiera||''}</div>
-                  <div style={{color:'rgba(255,255,255,0.7)',fontSize:11}}>
-                    {allSegs.length===0?'Aggiungi il primo segmento':
-                     `${allSegs.length} segmenti — ${allSegs.map(s=>`${s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}${s.mm}`).join(' ')}`}
-                  </div>
+          <div style={{position:'fixed',inset:0,zIndex:3000,background:'#fff',display:'flex',flexDirection:'column'}}>
+            
+            {/* Header fullscreen */}
+            <div style={{background:'#0F766E',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+              <div>
+                <div style={{color:'#fff',fontSize:16,fontWeight:800}}>Disegno lamiera {v.lamiera||''}</div>
+                <div style={{color:'rgba(255,255,255,0.75)',fontSize:11,marginTop:1}}>
+                  {allSegs.length===0?'Aggiungi segmenti dal basso':`${allSegs.length} seg · sviluppata ${sviluppata}mm`}
+                  {sviluppata>0 && <span style={{marginLeft:8,background:'rgba(255,255,255,0.2)',padding:'1px 6px',borderRadius:4,fontSize:10}}>{sviluppata} mm totale</span>}
+                </div>
+              </div>
+              <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                {/* Lato buono */}
+                <div onClick={()=>setLamieraLatoBuono(lamieraLatoBuono==='esterno'?'interno':'esterno')}
+                  style={{padding:'5px 10px',borderRadius:8,background:'rgba(255,255,255,0.15)',
+                    color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',border:'1px solid rgba(255,255,255,0.3)'}}>
+                  ◐ {lamieraLatoBuono==='esterno'?'Est.':'Int.'}
                 </div>
                 <div onClick={()=>setShowLamieraDisegno(false)}
-                  style={{color:'rgba(255,255,255,0.7)',fontSize:26,cursor:'pointer',lineHeight:1,padding:'4px 8px'}}>×</div>
+                  style={{color:'rgba(255,255,255,0.7)',fontSize:26,cursor:'pointer',padding:'0 4px'}}>×</div>
               </div>
+            </div>
 
-              <div style={{padding:'14px 14px 32px'}}>
-
-                {/* SVG profilo GRANDE */}
-                <div style={{background:'#F0FDF9',borderRadius:12,border:'1.5px solid #0F766E30',
-                  padding:'8px',marginBottom:14,position:'relative'}}>
-                  {allSegs.length===0 && (
-                    <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
-                      justifyContent:'center',color:'#94A3B8',fontSize:12,pointerEvents:'none'}}>
-                      Il profilo apparirà qui
-                    </div>
-                  )}
-                  <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{display:'block',minHeight:140}}>
-                    {/* Griglia */}
-                    {[1,2,3,4,5].map(i=>(
-                      <line key={'gv'+i} x1={i*W/6} y1="0" x2={i*W/6} y2={H} stroke="#E2E8F0" strokeWidth="0.5"/>
-                    ))}
-                    {[1,2,3].map(i=>(
-                      <line key={'gh'+i} x1="0" y1={i*H/4} x2={W} y2={i*H/4} stroke="#E2E8F0" strokeWidth="0.5"/>
-                    ))}
-                    {/* Punto di partenza */}
-                    <circle cx={OX} cy={OY} r="4" fill="#0F766E"/>
-                    <text x={OX+8} y={OY-6} fontSize="8" fill="#0F766E" fontWeight="600">0,0</text>
-                    {/* Profilo */}
-                    {allSegs.length > 0 && (
-                      <polyline points={pts} fill="none" stroke="#0F766E"
-                        strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                    )}
-                    {/* Nodi intermedi */}
-                    {nodes.slice(1).map((n,i)=>(
-                      <circle key={i} cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="3.5"
-                        fill="#fff" stroke="#0F766E" strokeWidth="1.5"/>
-                    ))}
-                    {/* Quote sui segmenti */}
-                    {nodes.slice(1).map((n,i)=>{
-                      const prev = nodes[i];
-                      const mx = (prev.x+n.x)/2, my = (prev.y+n.y)/2;
-                      const seg = allSegs[i];
-                      return (
-                        <text key={i} x={mx} y={my-5} textAnchor="middle" fontSize="8"
-                          fill="#0F766E" fontWeight="700">{seg.mm}mm</text>
-                      );
-                    })}
-                  </svg>
+            {/* SVG FULLSCREEN */}
+            <div style={{flex:1,background:'#F0FDF9',overflow:'hidden',position:'relative'}}>
+              {allSegs.length===0 && (
+                <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
+                  justifyContent:'center',flexDirection:'column',gap:8,color:'#94A3B8'}}>
+                  <div style={{fontSize:40}}>✏️</div>
+                  <div style={{fontSize:14,fontWeight:600}}>Aggiungi il primo segmento</div>
+                  <div style={{fontSize:11}}>Scegli direzione e inserisci i mm</div>
                 </div>
-
-                {/* Lista segmenti aggiunti */}
+              )}
+              <svg width="100%" height="100%" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+                {/* Griglia */}
+                {Array.from({length:16}).map((_,i)=>(
+                  <line key={'gv'+i} x1={i*50} y1="0" x2={i*50} y2="600" stroke="#E2E8F0" strokeWidth="0.5"/>
+                ))}
+                {Array.from({length:12}).map((_,i)=>(
+                  <line key={'gh'+i} x1="0" y1={i*50} x2="800" y2={i*50} stroke="#E2E8F0" strokeWidth="0.5"/>
+                ))}
+                {/* Punto 0 */}
+                <circle cx={nodes[0].x} cy={nodes[0].y} r="5" fill="#0F766E"/>
+                <text x={nodes[0].x+10} y={nodes[0].y-8} fontSize="10" fill="#0F766E" fontWeight="700">0</text>
+                {/* Lato buono indicator */}
                 {allSegs.length > 0 && (
-                  <div style={{marginBottom:12,display:'flex',gap:4,flexWrap:'wrap'}}>
-                    {allSegs.map((s,i)=>(
-                      <div key={i}
-                        onClick={()=>setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i))}
-                        style={{display:'flex',alignItems:'center',gap:4,padding:'5px 8px',
-                          background:'#F0FDF9',borderRadius:8,border:'1px solid #0F766E30',
-                          cursor:'pointer',fontSize:12,fontWeight:700,color:'#0F766E'}}>
-                        <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
-                        <span style={{fontSize:10,color:'#DC4444',fontWeight:800}}>×</span>
-                      </div>
-                    ))}
-                  </div>
+                  <text x={nodes[0].x} y={nodes[0].y+20} fontSize="9" fill="#0F766E" opacity="0.6">
+                    ◐ lato {lamieraLatoBuono}
+                  </text>
                 )}
+                {/* Profilo */}
+                {allSegs.length > 0 && (
+                  <polyline points={pts} fill="none" stroke="#0F766E"
+                    strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                )}
+                {/* Nodi con quote */}
+                {nodes.slice(1).map((n,i)=>{
+                  const prev = nodes[i];
+                  const seg = allSegs[i];
+                  const mx = (prev.x+n.x)/2, my = (prev.y+n.y)/2;
+                  const isH = Math.abs(n.y-prev.y)<Math.abs(n.x-prev.x);
+                  return (
+                    <g key={i}>
+                      <circle cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="5"
+                        fill="#fff" stroke="#0F766E" strokeWidth="2"/>
+                      {/* Quota */}
+                      <text x={mx+(isH?0:-20)} y={my+(isH?-10:5)}
+                        textAnchor="middle" fontSize="11" fill="#0F172A" fontWeight="700">
+                        {seg.mm}mm
+                      </text>
+                      {seg.angolo && seg.angolo !== 90 && (
+                        <text x={n.x.toFixed(1)} y={(n.y+14).toFixed(1)}
+                          textAnchor="middle" fontSize="9" fill="#D08008">{seg.angolo}°</text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
 
-                {/* AGGIUNGI SEGMENTO */}
-                <div style={{background:'#F8FAFC',borderRadius:14,border:'1px solid #E2E8F0',padding:'12px',marginBottom:12}}>
-                  {/* Direzione — 4 tasti grandi */}
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginBottom:10}}>
-                    {DIRS.map(({d,label,name})=>(
-                      <div key={d} onClick={()=>setLamieraPDir(d as any)}
-                        style={{padding:'12px 4px',borderRadius:10,textAlign:'center',cursor:'pointer',
-                          border:`2px solid ${lamieraPDir===d?'#0F766E':'#E2E8F0'}`,
-                          background:lamieraPDir===d?'#0F766E':'#fff',
-                          boxShadow:lamieraPDir===d?'0 4px 0 #0D5C56':'0 2px 0 rgba(0,0,0,0.08)',
-                          transition:'all 0.1s'}}>
-                        <div style={{fontSize:24,color:lamieraPDir===d?'#fff':'#94A3B8',lineHeight:1}}>{label}</div>
-                        <div style={{fontSize:10,fontWeight:600,
-                          color:lamieraPDir===d?'rgba(255,255,255,0.8)':'#CBD5E1',marginTop:4}}>{name}</div>
-                      </div>
-                    ))}
+            {/* Chips segmenti */}
+            {allSegs.length > 0 && (
+              <div style={{padding:'6px 12px',background:'#fff',
+                borderTop:'1px solid #E2E8F0',display:'flex',gap:4,flexWrap:'wrap',flexShrink:0}}>
+                {allSegs.map((s,i)=>(
+                  <div key={i} onClick={()=>setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i))}
+                    style={{display:'flex',alignItems:'center',gap:3,padding:'4px 8px',
+                      background:'#F0FDF9',borderRadius:6,border:'1px solid #0F766E30',
+                      cursor:'pointer',fontSize:12,fontWeight:700,color:'#0F766E'}}>
+                    <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
+                    <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
+                    {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:'#D08008'}}>{s.angolo}°</span>}
+                    <span style={{fontSize:10,color:'#DC4444',fontWeight:800,marginLeft:2}}>×</span>
                   </div>
-                  {/* mm + aggiungi */}
-                  <div style={{display:'flex',gap:8,alignItems:'stretch'}}>
-                    <div style={{flex:1,position:'relative'}}>
-                      <input
-                        inputMode="decimal" value={lamieraPMm}
-                        onChange={e=>setLamieraPMm(e.target.value)}
-                        onKeyDown={e=>{
-                          if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
-                            setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm)}]);
-                            setLamieraPMm('');
-                          }
-                        }}
-                        placeholder="mm"
-                        style={{width:'100%',padding:'16px 44px 16px 16px',borderRadius:10,
-                          border:'1.5px solid #E2E8F0',fontSize:26,fontWeight:800,
-                          fontFamily:"'JetBrains Mono',monospace",textAlign:'center',
-                          boxSizing:'border-box',background:'#fff',color:'#0F172A'}}/>
-                      <span style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',
-                        fontSize:13,color:'#94A3B8',fontWeight:600}}>mm</span>
-                    </div>
-                    <div onClick={()=>{
-                      if(!lamieraPMm||parseFloat(lamieraPMm)<=0) return;
-                      setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm)}]);
-                      setLamieraPMm('');
-                    }}
-                      style={{width:64,borderRadius:10,background:'#0F766E',color:'#fff',
-                        display:'flex',alignItems:'center',justifyContent:'center',
-                        fontSize:32,fontWeight:800,cursor:'pointer',
-                        boxShadow:'0 4px 0 #0D5C56',flexShrink:0}}>
-                      +
-                    </div>
-                  </div>
+                ))}
+                <div style={{padding:'4px 8px',background:'#F1F5F9',borderRadius:6,
+                  fontSize:11,fontWeight:600,color:'#64748B',display:'flex',alignItems:'center'}}>
+                  📏 {sviluppata}mm
                 </div>
-
-                {/* Salva / Annulla */}
-                <div style={{display:'flex',gap:8}}>
-                  <div onClick={()=>setShowLamieraDisegno(false)}
-                    style={{flex:1,padding:'14px',borderRadius:12,textAlign:'center',
-                      fontSize:14,fontWeight:600,cursor:'pointer',
-                      background:'#F1F5F9',color:'#64748B'}}>
-                    Annulla
-                  </div>
-                  <div onClick={()=>{
-                    updateV('lamieraPieghe',lamieraPieghe);
-                    setShowLamieraDisegno(false);
-                  }}
-                    style={{flex:2,padding:'14px',borderRadius:12,textAlign:'center',
-                      fontSize:15,fontWeight:800,cursor:'pointer',
-                      background:'#0F766E',color:'#fff',
-                      boxShadow:'0 4px 0 #0D5C56',
-                      display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    Salva
-                  </div>
-                </div>
-
               </div>
+            )}
+
+            {/* Pannello aggiunta — in basso */}
+            <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'10px 14px 24px',flexShrink:0}}>
+              
+              {/* Angolo personalizzato — appare solo se lamieraAngoloInput */}
+              {lamieraAngoloInput && (
+                <div style={{marginBottom:8,display:'flex',alignItems:'center',gap:8,
+                  padding:'8px 12px',background:'#FFF8EC',borderRadius:10,border:'1px solid #D0800830'}}>
+                  <span style={{fontSize:12,fontWeight:700,color:'#D08008'}}>Angolo:</span>
+                  <input inputMode="decimal" value={lamieraAngolo}
+                    onChange={e=>setLamieraAngolo(e.target.value)}
+                    style={{width:70,padding:'6px 10px',borderRadius:8,border:'1px solid #D0800860',
+                      fontSize:18,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
+                      textAlign:'center',background:'#fff'}}/>
+                  <span style={{fontSize:12,color:'#D08008',fontWeight:600}}>°</span>
+                  <div onClick={()=>setLamieraAngoloInput(false)}
+                    style={{marginLeft:'auto',fontSize:11,color:'#D08008',cursor:'pointer',fontWeight:700}}>90° default</div>
+                </div>
+              )}
+
+              {/* 4 tasti direzione */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:6,marginBottom:8}}>
+                {DIRS.map(({d,label,name})=>(
+                  <div key={d}
+                    onClick={()=>{
+                      if(lamieraPDir===d && lastDirTap===d){
+                        // Doppio tap = apri angolo
+                        setLamieraAngoloInput(true);
+                        setLastDirTap('');
+                      } else {
+                        setLamieraPDir(d as any);
+                        setLastDirTap(d);
+                        setTimeout(()=>setLastDirTap(''),800);
+                      }
+                    }}
+                    style={{padding:'10px 4px',borderRadius:10,textAlign:'center',cursor:'pointer',
+                      border:`2px solid ${lamieraPDir===d?'#0F766E':'#E2E8F0'}`,
+                      background:lamieraPDir===d?'#0F766E':'#fff',
+                      boxShadow:lamieraPDir===d?'0 3px 0 #0D5C56':'0 2px 0 rgba(0,0,0,0.07)',
+                      transition:'all 0.1s'}}>
+                    <div style={{fontSize:22,color:lamieraPDir===d?'#fff':'#94A3B8',lineHeight:1}}>{label}</div>
+                    <div style={{fontSize:9,fontWeight:600,
+                      color:lamieraPDir===d?'rgba(255,255,255,0.8)':'#CBD5E1',marginTop:3}}>{name}</div>
+                    {lamieraPDir===d && !lamieraAngoloInput && (
+                      <div style={{fontSize:8,color:'rgba(255,255,255,0.6)',marginTop:1}}>tap 2x=°</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* mm + + */}
+              <div style={{display:'flex',gap:8,marginBottom:8}}>
+                <div style={{flex:1,position:'relative'}}>
+                  <input inputMode="decimal" value={lamieraPMm}
+                    onChange={e=>setLamieraPMm(e.target.value)}
+                    onKeyDown={e=>{
+                      if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
+                        const angolo = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                        setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}]);
+                        setLamieraPMm('');
+                        setLamieraAngoloInput(false);
+                        setLamieraAngolo('90');
+                      }
+                    }}
+                    placeholder="mm"
+                    style={{width:'100%',padding:'14px 44px 14px 16px',borderRadius:10,
+                      border:'1.5px solid #E2E8F0',fontSize:28,fontWeight:800,
+                      fontFamily:"'JetBrains Mono',monospace",textAlign:'center',
+                      boxSizing:'border-box',background:'#fff',color:'#0F172A'}}/>
+                  <span style={{position:'absolute',right:14,top:'50%',transform:'translateY(-50%)',
+                    fontSize:13,color:'#94A3B8',fontWeight:600}}>mm</span>
+                </div>
+                <div onClick={()=>{
+                  if(!lamieraPMm||parseFloat(lamieraPMm)<=0) return;
+                  const angolo = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                  setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}]);
+                  setLamieraPMm('');
+                  setLamieraAngoloInput(false);
+                  setLamieraAngolo('90');
+                }}
+                  style={{width:64,borderRadius:10,background:'#0F766E',color:'#fff',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    fontSize:32,fontWeight:800,cursor:'pointer',
+                    boxShadow:'0 4px 0 #0D5C56',flexShrink:0}}>
+                  +
+                </div>
+              </div>
+
+              {/* Salva / Annulla */}
+              <div style={{display:'flex',gap:8}}>
+                <div onClick={()=>setShowLamieraDisegno(false)}
+                  style={{flex:1,padding:'13px',borderRadius:12,textAlign:'center',
+                    fontSize:14,fontWeight:600,cursor:'pointer',
+                    background:'#F1F5F9',color:'#64748B'}}>
+                  Annulla
+                </div>
+                <div onClick={()=>{
+                  updateV('lamieraPieghe',lamieraPieghe);
+                  updateV('lamieraLatoBuono',lamieraLatoBuono);
+                  setShowLamieraDisegno(false);
+                }}
+                  style={{flex:2,padding:'13px',borderRadius:12,textAlign:'center',
+                    fontSize:15,fontWeight:800,cursor:'pointer',
+                    background:'#0F766E',color:'#fff',
+                    boxShadow:'0 4px 0 #0D5C56',
+                    display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Salva lamiera
+                </div>
+              </div>
+
             </div>
           </div>
         );
       })()}
+
 </div>
 
     );
