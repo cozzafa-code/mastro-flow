@@ -470,10 +470,16 @@ Fabio Cozza - Walter Cozza Serramenti` },
                             </div>
                           </div>
                         )}
-                        <button style={{ ...S.btn, background: canNext0 ? T.orange : "#ccc", cursor: canNext0 ? "pointer" : "not-allowed", marginTop:4 }}
-                          onClick={() => canNext0 && setRipStep(1)}>
-                          Avanti — Problema →
-                        </button>
+                        <div style={{ display:"flex", gap:8, marginTop:4 }}>
+                          <button style={{ ...S.btn, background:T.card, color:T.sub, border:`1px solid ${T.bdr}`, flex:1 }}
+                            onClick={() => { setNewCM(c=>({...c,tipo:"nuova"})); setRipSearch(""); setRipCMSel(null); setRipStep(0); setShowModal(null); }}>
+                            Annulla
+                          </button>
+                          <button style={{ ...S.btn, background: canNext0 ? T.orange : "#ccc", cursor: canNext0 ? "pointer" : "not-allowed", flex:2 }}
+                            onClick={() => canNext0 && setRipStep(1)}>
+                            Avanti — Problema →
+                          </button>
+                        </div>
                       </div>
                     )}
 
