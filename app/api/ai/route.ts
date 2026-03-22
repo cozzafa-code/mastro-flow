@@ -190,6 +190,16 @@ async function cercaDBTecnico(domanda: string): Promise<string> {
     );
   }
 
+  // Know-how tecnico pratico
+  if (q.match(/grande|grandi|bonamassa|maestro|montaggio|spessore|carica.*vetro|anta.*tocc|tocc.*basso|allinea|punta.*cort|punta.*lung|schiuma|soudal|sfi|fissagg|appendere|spessori/)) {
+    const data = await sbFetch("know_how_tecnico", "titolo,contenuto,categoria");
+    if (data?.length) risultati.push(
+      "KNOW-HOW TECNICO MASTRO:\n" + data.map((k: any) =>
+        `[${k.categoria.toUpperCase()}] ${k.titolo}:\n${k.contenuto}`
+      ).join("\n\n")
+    );
+  }
+
   return risultati.join("\n\n");
 }
 
