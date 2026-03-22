@@ -448,7 +448,7 @@ export default function VanoDetailPanel() {
   useEffect(() => () => { if (recognitionRef.current) try { recognitionRef.current.stop(); } catch(e) {} }, []);
 
   // ── RENDER BODY ──────────────────────────────────────
-  const renderBody = () => {
+  function renderBody() {
     if (!selectedVano || !selectedCM) return null;
     const v = selectedVano;
     const m = v.misure || {};
@@ -460,18 +460,7 @@ export default function VanoDetailPanel() {
     const hasHWarnings = !m.hSx && !m.hCentro && !m.hDx;
     const fSq = m.d1 > 0 && m.d2 > 0 ? Math.abs(m.d1 - m.d2) : null;
 
-    // Mini SVG per step — componente esterno, riceve stepColor come prop
-    function MiniSVG({ type }: { type: string }) {
-      return <VanoMiniSVG type={type} stepColor={step.color} />;
-    }
 
-    // Inline input renderer — usa componente esterno
-    function bInput(label: string, field: string) {
-      return <VanoBInput key={field} label={label} field={field}
-        value={m[field] as number} stepColor={step.color}
-        textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-        onUpdate={(val: number) => updateMisura(v.id, field, val)} />;
-    }
 
     return (
       <div style={{ paddingBottom: 80, background: T.bg }}>
@@ -1215,23 +1204,38 @@ export default function VanoDetailPanel() {
 
                     {/* LARGHEZZA — sempre presente */}
                     <div style={{ fontSize:11, fontWeight:800, color:"#507aff", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}><I d={ICO.ruler} /> Larghezza</div>
-                    {bInput("Larghezza mm", "lCentro")}
+                    {<VanoBInput key="lCentro" label={"Larghezza mm"} field="lCentro"
+                        value={m["lCentro"] as number} stepColor={step.color}
+                        textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                        onUpdate={(val: number) => updateMisura(v.id, "lCentro", val)} />}
 
                     {/* ALTEZZA/DROP — sempre presente */}
                     <div style={{ fontSize:11, fontWeight:800, color:"#1A9E73", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}><I d={ICO.ruler} /> {isPergola ? "Altezza colonne" : "Altezza / Drop"}</div>
-                    {bInput(isPergola ? "Altezza colonne mm" : "Altezza (caduta) mm", "hCentro")}
+                    {<VanoBInput key="hCentro" label={isPergola ? "Altezza colonne mm" : "Altezza (caduta) mm"} field="hCentro"
+                        value={m["hCentro"] as number} stepColor={step.color}
+                        textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                        onUpdate={(val: number) => updateMisura(v.id, "hCentro", val)} />}
 
                     {/* PROFONDITA/SPORGENZA — pergole e bracci */}
                     {(isPergola || isBracci) && (<>
                       <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}>↕️ {isPergola ? "Profondità" : "Sporgenza (Aggetto)"}</div>
-                      {bInput(isPergola ? "Profondità mm" : "Sporgenza/Aggetto mm", "sporgenza")}
+                      {<VanoBInput key="sporgenza" label={isPergola ? "Profondità mm" : "Sporgenza/Aggetto mm"} field="sporgenza"
+                          value={m["sporgenza"] as number} stepColor={step.color}
+                          textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                          onUpdate={(val: number) => updateMisura(v.id, "sporgenza", val)} />}
                     </>)}
 
                     {/* VELA: 3 lati */}
                     {isVela && (<>
                       <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}><I d={ICO.ruler} /> Lati vela</div>
-                      {bInput("Lato 2 mm", "lAlto")}
-                      {bInput("Lato 3 mm", "lBasso")}
+                      {<VanoBInput key="lAlto" label={"Lato 2 mm"} field="lAlto"
+                          value={m["lAlto"] as number} stepColor={step.color}
+                          textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                          onUpdate={(val: number) => updateMisura(v.id, "lAlto", val)} />}
+                      {<VanoBInput key="lBasso" label={"Lato 3 mm"} field="lBasso"
+                          value={m["lBasso"] as number} stepColor={step.color}
+                          textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                          onUpdate={(val: number) => updateMisura(v.id, "lBasso", val)} />}
                     </>)}
 
                     {/* PERGOLA: extra fields */}
@@ -1319,7 +1323,10 @@ export default function VanoDetailPanel() {
 
                     {/* Altezza montaggio da terra */}
                     <div style={{ marginTop:8 }}>
-                      {bInput("Altezza montaggio da terra mm", "hMontaggio")}
+                      {<VanoBInput key="hMontaggio" label={"Altezza montaggio da terra mm"} field="hMontaggio"
+                          value={m["hMontaggio"] as number} stepColor={step.color}
+                          textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                          onUpdate={(val: number) => updateMisura(v.id, "hMontaggio", val)} />}
                     </div>
 
                     {/* Riepilogo visivo */}
@@ -1484,30 +1491,54 @@ export default function VanoDetailPanel() {
                 );
               })()}
               <div style={{ fontSize: 11, fontWeight: 800, color: "#507aff", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><I d={ICO.ruler} /> Larghezze</div>
-              {bInput("Larghezza ALTO", "lAlto")}
+              {<VanoBInput key="lAlto" label={"Larghezza ALTO"} field="lAlto"
+                  value={m["lAlto"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "lAlto", val)} />}
               {m.lAlto > 0 && !m.lCentro && !m.lBasso && (
                 <div onClick={() => { updateMisura(v.id, "lCentro", m.lAlto); updateMisura(v.id, "lBasso", m.lAlto); }} style={{ margin: "-4px 0 12px", padding: "10px", borderRadius: 10, background: T.accLt, border: `1px solid ${T.acc}40`, textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 700, color: T.acc }}>
                   = Tutte uguali ({m.lAlto} mm)
                 </div>
               )}
-              {bInput("Larghezza CENTRO (luce netta)", "lCentro")}
-              {bInput("Larghezza BASSO", "lBasso")}
+              {<VanoBInput key="lCentro" label={"Larghezza CENTRO (luce netta)"} field="lCentro"
+                  value={m["lCentro"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "lCentro", val)} />}
+              {<VanoBInput key="lBasso" label={"Larghezza BASSO"} field="lBasso"
+                  value={m["lBasso"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "lBasso", val)} />}
 
               {/* ALTEZZE */}
               <div style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}><I d={ICO.ruler} /> Altezze</div>
-              {bInput("Altezza SINISTRA", "hSx")}
+              {<VanoBInput key="hSx" label={"Altezza SINISTRA"} field="hSx"
+                  value={m["hSx"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "hSx", val)} />}
               {m.hSx > 0 && !m.hCentro && !m.hDx && (
                 <div onClick={() => { updateMisura(v.id, "hCentro", m.hSx); updateMisura(v.id, "hDx", m.hSx); }} style={{ margin: "-4px 0 12px", padding: "10px", borderRadius: 10, background: T.accLt, border: `1px solid ${T.acc}40`, textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 700, color: T.acc }}>
                   = Tutte uguali ({m.hSx} mm)
                 </div>
               )}
-              {bInput("Altezza CENTRO", "hCentro")}
-              {bInput("Altezza DESTRA", "hDx")}
+              {<VanoBInput key="hCentro" label={"Altezza CENTRO"} field="hCentro"
+                  value={m["hCentro"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "hCentro", val)} />}
+              {<VanoBInput key="hDx" label={"Altezza DESTRA"} field="hDx"
+                  value={m["hDx"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "hDx", val)} />}
 
               {/* DIAGONALI */}
               <div style={{ fontSize: 11, fontWeight: 800, color: "#E8A020", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>Diagonali</div>
-              {bInput("Diagonale 1 ↗", "d1")}
-              {bInput("Diagonale 2 ↘", "d2")}
+              {<VanoBInput key="d1" label={"Diagonale 1 ↗"} field="d1"
+                  value={m["d1"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "d1", val)} />}
+              {<VanoBInput key="d2" label={"Diagonale 2 ↘"} field="d2"
+                  value={m["d2"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "d2", val)} />}
               {fSq !== null && fSq > 3 && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}><I d={ICO.alertTriangle} /> Fuori squadra: {fSq}mm</div>
@@ -1607,10 +1638,22 @@ export default function VanoDetailPanel() {
               </div>
               {detailOpen.spallette && (
                 <div style={{ marginBottom: 12 }}>
-              {bInput("Spalletta SINISTRA", "spSx")}
-              {bInput("Spalletta DESTRA", "spDx")}
-              {bInput("Spalletta SOPRA", "spSopra")}
-              {bInput("Profondità IMBOTTE", "imbotte")}
+              {<VanoBInput key="spSx" label={"Spalletta SINISTRA"} field="spSx"
+                  value={m["spSx"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "spSx", val)} />}
+              {<VanoBInput key="spDx" label={"Spalletta DESTRA"} field="spDx"
+                  value={m["spDx"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "spDx", val)} />}
+              {<VanoBInput key="spSopra" label={"Spalletta SOPRA"} field="spSopra"
+                  value={m["spSopra"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "spSopra", val)} />}
+              {<VanoBInput key="imbotte" label={"Profondità IMBOTTE"} field="imbotte"
+                  value={m["imbotte"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "imbotte", val)} />}
               {/* DISEGNO LIBERO SPALLETTE */}
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginTop: 8, overflow: "hidden" }}>
                 <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1652,9 +1695,18 @@ export default function VanoDetailPanel() {
               </div>
               {detailOpen.davanzale && (
                 <div style={{ marginBottom: 12 }}>
-              {bInput("Davanzale PROFONDITÀ", "davProf")}
-              {bInput("Davanzale SPORGENZA", "davSporg")}
-              {bInput("Altezza SOGLIA", "soglia")}
+              {<VanoBInput key="davProf" label={"Davanzale PROFONDITÀ"} field="davProf"
+                  value={m["davProf"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "davProf", val)} />}
+              {<VanoBInput key="davSporg" label={"Davanzale SPORGENZA"} field="davSporg"
+                  value={m["davSporg"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "davSporg", val)} />}
+              {<VanoBInput key="soglia" label={"Altezza SOGLIA"} field="soglia"
+                  value={m["soglia"] as number} stepColor={step.color}
+                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                  onUpdate={(val: number) => updateMisura(v.id, "soglia", val)} />}
               {/* Cassonetto toggle */}
               <div style={{ marginTop: 8, padding: "12px 16px", borderRadius: 12, border: `1px dashed ${T.bdr}`, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => {
                 const nv = { ...v, cassonetto: !v.cassonetto };
@@ -1667,11 +1719,26 @@ export default function VanoDetailPanel() {
               </div>
               {v.cassonetto && (
                 <div style={{ marginTop: 8 }}>
-                  {bInput("Cassonetto LARGHEZZA", "casL")}
-                  {bInput("Cassonetto ALTEZZA", "casH")}
-                  {bInput("Cassonetto PROFONDITÀ", "casP")}
-                  {bInput("Cielino LARGHEZZA", "casLCiel")}
-                  {bInput("Cielino PROFONDITÀ", "casPCiel")}
+                  {<VanoBInput key="casL" label={"Cassonetto LARGHEZZA"} field="casL"
+                      value={m["casL"] as number} stepColor={step.color}
+                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                      onUpdate={(val: number) => updateMisura(v.id, "casL", val)} />}
+                  {<VanoBInput key="casH" label={"Cassonetto ALTEZZA"} field="casH"
+                      value={m["casH"] as number} stepColor={step.color}
+                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                      onUpdate={(val: number) => updateMisura(v.id, "casH", val)} />}
+                  {<VanoBInput key="casP" label={"Cassonetto PROFONDITÀ"} field="casP"
+                      value={m["casP"] as number} stepColor={step.color}
+                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                      onUpdate={(val: number) => updateMisura(v.id, "casP", val)} />}
+                  {<VanoBInput key="casLCiel" label={"Cielino LARGHEZZA"} field="casLCiel"
+                      value={m["casLCiel"] as number} stepColor={step.color}
+                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                      onUpdate={(val: number) => updateMisura(v.id, "casLCiel", val)} />}
+                  {<VanoBInput key="casPCiel" label={"Cielino PROFONDITÀ"} field="casPCiel"
+                      value={m["casPCiel"] as number} stepColor={step.color}
+                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                      onUpdate={(val: number) => updateMisura(v.id, "casPCiel", val)} />}
                 </div>
               )}
                 </div>
