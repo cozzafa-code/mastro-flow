@@ -58,16 +58,23 @@ function scaleNodes(pts, VW, VH, PAD) {
   };
 }
 
-export default function ConfiguratoreControtelaio({ value, onChange, T }) {
+export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, T }) {
   const Tc = T || {bg:"#F2F1EC",card:"#FFFFFF",bdr:"#E5E3DC",text:"#1A1A1C",
     sub:"#8E8E93",acc:"#D08008",grn:"#1A9E73",red:"#DC4444",blue:"#3B7FE0"};
 
   const init = value||{};
+
+  // Auto-load preset dal sistemaId se non c'è disegno salvato
+  const getPresetForSistema = (sid) =>
+    CT_PRESETS.find(p => p.ids?.includes(sid)) || null;
+  const initPreset = (!init.segs?.length && sistemaId)
+    ? getPresetForSistema(sistemaId) : null;
+
   // pts = array di punti mm (modificabili dall'utente trascinando)
-  const [pts,     setPts]     = useState(init.pts || buildNodes(init.segs || []));
-  const [segs,    setSegs]    = useState(init.segs || []);
-  const [divs,    setDivs]    = useState(init.divs || []);
-  const [zoneMat, setZoneMat] = useState(init.zoneMat || {"0_0":"eps"});
+  const [pts,     setPts]     = useState(buildNodes(initPreset?.segs || init.segs || []));
+  const [segs,    setSegs]    = useState(initPreset?.segs  || init.segs  || []);
+  const [divs,    setDivs]    = useState(initPreset?.divs  || init.divs  || []);
+  const [zoneMat, setZoneMat] = useState(initPreset?.mat   || init.zoneMat || {"0_0":"eps"});
   const [pDir,    setPDir]    = useState("dx");
   const [pMm,     setPMm]     = useState("");
   const [selIdx,  setSelIdx]  = useState(null);
@@ -88,6 +95,21 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
   const lastPinchDist = useRef(null);
 
   const sviluppata = segs.reduce((a,s)=>a+s.mm,0);
+
+  // Quando il sistema cambia dall'esterno, carica il preset
+  const prevSistemaRef = useRef(sistemaId);
+  useEffect(()=>{
+    if(sistemaId && sistemaId !== prevSistemaRef.current) {
+      prevSistemaRef.current = sistemaId;
+      const preset = getPresetForSistema(sistemaId);
+      if(preset) {
+        setSegs(preset.segs||[]); setDivs(preset.divs||[]);
+        setZoneMat(preset.mat||{"0_0":"eps"});
+        setPts(buildNodes(preset.segs||[]));
+        setSelZone("0_0"); setZoom(1); setPanX(0); setPanY(0);
+      }
+    }
+  },[sistemaId]);
 
   // Sync pts quando cambiano i segs
   useEffect(()=>{
