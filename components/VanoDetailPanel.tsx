@@ -3314,29 +3314,22 @@ export default function VanoDetailPanel() {
                     background:'#F1F5F9',color:'#64748B'}}>
                   Annulla
                 </div>
-                {/* ESPORTA: genera testo riepilogo lamiere del vano */}
+                {/* ESPORTA */}
                 {allSegs.length>0 && (
                   <div onClick={()=>{
-                    // Build testo riepilogo
-                    const dirsym = (d:string)=>d==='dx'?'→':d==='sx'?'←':d==='giu'?'↓':'↑';
-                    const latoLabel = lamieraLatoInfisso ? `Lato: ${lamieraLatoInfisso.toUpperCase()}` : '';
-                    const lunghLabel = lamieraLunghezza ? `Lunghezza: ${lamieraLunghezza}mm` : '';
-                    const piegheStr = allSegs.map((s,i)=>`  ${i+1}. ${dirsym(s.dir)} ${s.mm}mm${s.angolo&&s.angolo!==90?` @ ${s.angolo}°`:''}`).join('
-');
-                    const testo = [
-                      `═══ LAMIERA ${v.lamiera||''} ═══`,
-                      latoLabel, lunghLabel,
-                      `Sviluppata: ${sviluppata}mm`,
-                      `Lato buono: ${lamieraLatoBuono.toUpperCase()}`,
-                      `Pieghe (${allSegs.length}):`,
-                      piegheStr,
-                    ].filter(Boolean).join('
-');
-                    // Copia negli appunti
+                    const dirsym=(d:string)=>d==='dx'?'→':d==='sx'?'←':d==='giu'?'↓':'↑';
+                    const parti=[
+                      'LAMIERA '+(v.lamiera||''),
+                      lamieraLatoInfisso?'Lato: '+lamieraLatoInfisso.toUpperCase():'',
+                      lamieraLunghezza?'Lunghezza: '+lamieraLunghezza+'mm':'',
+                      'Sviluppata: '+sviluppata+'mm',
+                      'Lato buono: '+lamieraLatoBuono.toUpperCase(),
+                      'Pieghe ('+allSegs.length+'):',
+                    ].filter(Boolean);
+                    const piegheStr=allSegs.map((s,i)=>'  '+(i+1)+'. '+dirsym(s.dir)+' '+s.mm+'mm'+(s.angolo&&s.angolo!==90?' @ '+s.angolo+'deg':'')).join('\n');
+                    const testo=parti.join('\n')+'\n'+piegheStr;
                     if(navigator.clipboard){navigator.clipboard.writeText(testo);}
-                    alert('Riepilogo copiato negli appunti:
-
-'+testo);
+                    alert('Copiato negli appunti!\n\n'+testo.slice(0,300));
                   }}
                     style={{flex:'0 0 auto',padding:'12px 14px',borderRadius:12,textAlign:'center',
                       fontSize:12,fontWeight:700,cursor:'pointer',
