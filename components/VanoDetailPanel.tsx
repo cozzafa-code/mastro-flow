@@ -618,8 +618,6 @@ export default function VanoDetailPanel() {
                     </div>
                   )}
                 </div>
-                  ))}
-                </div>
               </div>
             },
             { id:"posizione", icon: "", label:"Stanza / Piano",
