@@ -93,7 +93,7 @@ async function cercaDBTecnico(domanda: string): Promise<string> {
 
   // Profili alluminio Twin Systems
   if (q.match(/cx\d+|twin|alluminio|telaio|anta|traverso|kg.ml|peso profil/)) {
-    const m = q.match(/cx(\d+)/); const serieNum = m ? (m[1].length <= 2 ? m[1] + "0" : m[1]) : null; const filters = serieNum ? `serie=eq.CX${serieNum.toUpperCase()}` : "";
+    const m = q.match(/cx(\d+)/); const seriePrefix = m ? `CX${m[1]}` : null; const filters = seriePrefix ? `codice=like.${seriePrefix}*` : "";
     const data = await sbFetch(
       "profili_alluminio",
       "codice,descrizione,tipo,serie,spessore_mm,peso_ml,jx_cm4,taglio_termico",
