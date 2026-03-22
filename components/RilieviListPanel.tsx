@@ -737,13 +737,8 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
             <div style={S.headerTitle}>{c.code} · {c.cliente} {c.cognome || ""}</div>
             <div style={S.headerSub}>{c.indirizzo}</div>
           </div>
-          {c.fase === "chiusura" ? (
+          {c.fase === "chiusura" && (
             <span style={{ padding: "6px 14px", borderRadius: 9, background: "#34c75918", color: "#34c759", fontSize: 11, fontWeight: 800, border: "1.5px solid #34c759" }}>ARCHIVIATA</span>
-          ) : (
-          <div onClick={() => setShowNuovoRilievo(true)}
-            style={{ padding: "7px 14px", borderRadius: 9, background: T.acc, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            + Rilievo
-          </div>
           )}
         </div>
 
