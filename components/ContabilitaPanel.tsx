@@ -491,18 +491,6 @@ export default function ContabilitaPanel() {
             .then(({ data }) => { setSpese(data || []); setLoadingSpese(false); })
             .catch(() => { setLoadingSpese(false); });
         }
-        const inAttesa = spese.filter(s => s.stato === "in_attesa");
-        const approvate = spese.filter(s => s.stato === "approvata");
-        const totInAttesa = inAttesa.reduce((s, x) => s + (x.importo || 0), 0);
-        const totApprovate = approvate.reduce((s, x) => s + (x.importo || 0), 0);
-        const approva = async (id: string) => {
-          await supabase.from("spese_operatori").update({ stato: "approvata" }).eq("id", id);
-          setSpese(prev => prev.map(s => s.id === id ? { ...s, stato: "approvata" } : s));
-        };
-        const rifiuta = async (id: string) => {
-          await supabase.from("spese_operatori").update({ stato: "rifiutata" }).eq("id", id);
-          setSpese(prev => prev.map(s => s.id === id ? { ...s, stato: "rifiutata" } : s));
-        };
         const tutteSpese = spese;
         const inAttesa = tutteSpese.filter(s => s.stato === "in_attesa");
         const approvate = tutteSpese.filter(s => s.stato === "approvata");
