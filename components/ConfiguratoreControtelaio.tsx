@@ -19,11 +19,19 @@ const DIRS = [
 ];
 
 const CT_PRESETS = [
-  { n:"STH5",   segs:[{dir:"dx",mm:350},{dir:"giu",mm:60}] },
-  { n:"PROS",   segs:[{dir:"dx",mm:280},{dir:"giu",mm:80},{dir:"sx",mm:60},{dir:"su",mm:40}] },
-  { n:"PROGCP", segs:[{dir:"dx",mm:280},{dir:"giu",mm:60},{dir:"sx",mm:50},{dir:"giu",mm:110},{dir:"sx",mm:230}] },
-  { n:"STH3",   segs:[{dir:"dx",mm:325},{dir:"giu",mm:80}] },
-  { n:"Libero", segs:[] },
+  { n:"STH5",   ids:["STH5","STH6","STH5I","STH6I"], segs:[{dir:"dx",mm:350},{dir:"giu",mm:60}],
+    divs:[{axis:"v",pos:50,id:1},{axis:"v",pos:300,id:2}],
+    mat:{"0_0":"sede","0_1":"eps","0_2":"sede"} },
+  { n:"PROS",   ids:["PROS","PROI"], segs:[{dir:"dx",mm:280},{dir:"giu",mm:80},{dir:"sx",mm:60},{dir:"su",mm:40}],
+    divs:[], mat:{"0_0":"eps"} },
+  { n:"PROGCP", ids:["PROGCP","PROGC","PROIG","PROG"], segs:[{dir:"dx",mm:280},{dir:"giu",mm:60},{dir:"sx",mm:50},{dir:"giu",mm:110},{dir:"sx",mm:230}],
+    divs:[], mat:{"0_0":"legno"} },
+  { n:"STH3",   ids:["STH3","STH3I","STF3","STF3I"], segs:[{dir:"dx",mm:325},{dir:"giu",mm:80}],
+    divs:[{axis:"v",pos:50,id:3}], mat:{"0_0":"sede","0_1":"eps"} },
+  { n:"STF5",   ids:["STF5","STF6","STF5I","STF6I"], segs:[{dir:"dx",mm:350},{dir:"giu",mm:44}],
+    divs:[{axis:"v",pos:50,id:4},{axis:"v",pos:300,id:5}],
+    mat:{"0_0":"sede","0_1":"profilo","0_2":"sede"} },
+  { n:"Libero", ids:[], segs:[], divs:[], mat:{"0_0":"eps"} },
 ];
 
 function buildNodes(segs) {
@@ -58,16 +66,25 @@ function scaleNodes(pts, VW, VH, PAD) {
   };
 }
 
-export default function ConfiguratoreControtelaio({ value, onChange, T }) {
+export default function ConfiguratoreControtelaio({ value, sistemaId, onChange, T }) {
   const Tc = T || {bg:"#F2F1EC",card:"#FFFFFF",bdr:"#E5E3DC",text:"#1A1A1C",
     sub:"#8E8E93",acc:"#D08008",grn:"#1A9E73",red:"#DC4444",blue:"#3B7FE0"};
 
   const init = value||{};
+
+  // Auto-load preset dal sistemaId se non c'è già un disegno salvato
+  const getPresetForSistema = (sid) =>
+    CT_PRESETS.find(p => p.ids?.includes(sid)) || null;
+
+  const initPreset = !init.segs?.length && sistemaId
+    ? getPresetForSistema(sistemaId)
+    : null;
+
   // ptsOverride: solo quando l'utente trascina un vertice manualmente
   const [ptsOverride, setPtsOverride] = useState(null);
-  const [segs,    setSegs]    = useState(init.segs || []);
-  const [divs,    setDivs]    = useState(init.divs || []);
-  const [zoneMat, setZoneMat] = useState(init.zoneMat || {"0_0":"eps"});
+  const [segs,    setSegs]    = useState(initPreset?.segs || init.segs || []);
+  const [divs,    setDivs]    = useState(initPreset?.divs || init.divs || []);
+  const [zoneMat, setZoneMat] = useState(initPreset?.mat  || init.zoneMat || {"0_0":"eps"});
   const [pDir,    setPDir]    = useState("dx");
   const [pMm,     setPMm]     = useState("");
   const [selIdx,  setSelIdx]  = useState(null);
@@ -88,6 +105,22 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
   const lastPinchDist = useRef(null);
 
   const sviluppata = segs.reduce((a,s)=>a+s.mm,0);
+
+  // Quando il sistema cambia dall'esterno, carica il preset corrispondente
+  // (solo se il disegno non è stato personalizzato dall'utente)
+  const prevSistemaId = useRef(sistemaId);
+  useEffect(()=>{
+    if(sistemaId && sistemaId !== prevSistemaId.current) {
+      prevSistemaId.current = sistemaId;
+      const preset = getPresetForSistema(sistemaId);
+      if(preset) {
+        setSegs(preset.segs); setDivs(preset.divs||[]);
+        setZoneMat(preset.mat||{"0_0":"eps"});
+        setPtsOverride(null); setSelZone("0_0");
+        setZoom(1); setPanX(0); setPanY(0);
+      }
+    }
+  },[sistemaId]);
 
   // pts: usa override se l'utente ha trascinato, altrimenti ricalcola dai segs
   const pts = ptsOverride || buildNodes(segs);

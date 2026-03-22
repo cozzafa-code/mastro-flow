@@ -956,9 +956,10 @@ export default function VanoDetailPanel() {
                 const gruppi = [...new Set(CT_SISTEMI.map(s => s.gruppo))];
 
                 // ── CONFIGURATORE CONTROTELAIO ──────────────────────────────────
-                const renderSagoma = (_sis) => (
+                const renderSagoma = (sis) => (
                   <ConfiguratoreControtelaio
                     value={v.controtelaio?.disegno}
+                    sistemaId={sis?.id || null}
                     onChange={(d) => updateV("controtelaio", { ...(v.controtelaio || {}), disegno: d })}
                     T={T}
                   />
