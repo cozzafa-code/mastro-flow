@@ -16,6 +16,9 @@ export default function ContabilitaPanel() {
     const today = new Date();
     const [calFiltro, setCalFiltro] = React.useState<"settimana"|"mese"|"trimestre"|"anno">("mese");
     const [calGiornoSel, setCalGiornoSel] = React.useState<string>("");
+    const [spese, setSpese] = React.useState<any[]>([]);
+    const [loadingSpese, setLoadingSpese] = React.useState(true);
+    const [speseLoaded, setSpeseLoaded] = React.useState(false);
     const [cY, cM] = contabMese.split("-").map(Number);
     const daysInMonth = new Date(cY, cM, 0).getDate();
     const firstDow = (new Date(cY, cM - 1, 1).getDay() + 6) % 7; // Mon=0
@@ -467,16 +470,18 @@ export default function ContabilitaPanel() {
       
       {/*  SPESE OPERATORI  */}
       {contabTab === "spese" && (() => {
-        const [spese, setSpese] = React.useState<any[]>([]);
-        const [loadingSpese, setLoadingSpese] = React.useState(true);
+        // useState dichiarati nel componente padre
+        // Carica spese quando si apre il tab
         const CATEGORIE_COLORS: Record<string, string> = {
           carburante: "#E8A020", pranzo: "#1A9E73", materiale: "#3B7FE0",
           attrezzatura: "#8B5CF6", trasferta: "#DC4444", telefono: "#0EA5E9", varie: "#6B7280"
         };
-        React.useEffect(() => {
+        if (!speseLoaded) {
+          setSpeseLoaded(true);
           supabase.from("spese_operatori").select("*").order("created_at", { ascending: false }).limit(50)
-            .then(({ data }) => { setSpese(data || []); setLoadingSpese(false); });
-        }, []);
+            .then(({ data }) => { setSpese(data || []); setLoadingSpese(false); })
+            .catch(() => setLoadingSpese(false));
+        }
         const inAttesa = spese.filter(s => s.stato === "in_attesa");
         const approvate = spese.filter(s => s.stato === "approvata");
         const totInAttesa = inAttesa.reduce((s, x) => s + (x.importo || 0), 0);
