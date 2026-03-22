@@ -824,7 +824,10 @@ export default function VanoDetailPanel() {
                           L {v.misure?.lCentro||"?"}mm × H {v.misure?.hCentro||"?"}mm
                         </div>
                       </div>
-                      <div onClick={e=>{e.stopPropagation();setShowLamieraDisegno(true);}}
+                      <div onClick={e=>{e.stopPropagation();
+                        if(v.lamieraPieghe) setLamieraPieghe(v.lamieraPieghe as any);
+                        if(v.lamieraLatoBuono) setLamieraLatoBuono(v.lamieraLatoBuono as any);
+                        setShowLamieraDisegno(true);}}
                         style={{padding:"7px 14px",borderRadius:8,background:"#0F766E",color:"#fff",
                           fontSize:12,fontWeight:700,cursor:"pointer",
                           boxShadow:"0 3px 0 #0D5C56",display:"flex",alignItems:"center",gap:6}}>
@@ -832,19 +835,64 @@ export default function VanoDetailPanel() {
                         Disegno tecnico
                       </div>
                     </div>
-                    {/* Mini anteprima SVG lamiera */}
-                    <svg viewBox="0 0 200 80" width="100%" style={{borderRadius:6,background:"#fff",border:"1px solid #E2E8F0"}}>
-                      <rect x="10" y="8" width="180" height="12" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
-                      <rect x="10" y="60" width="180" height="12" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
-                      <rect x="10" y="8" width="12" height="64" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
-                      <rect x="178" y="8" width="12" height="64" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
-                      <line x1="22" y1="4" x2="178" y2="4" stroke="#64748B" strokeWidth="0.7"/>
-                      <line x1="22" y1="2" x2="22" y2="6" stroke="#64748B" strokeWidth="0.7"/>
-                      <line x1="178" y1="2" x2="178" y2="6" stroke="#64748B" strokeWidth="0.7"/>
-                      <text x="100" y="3" textAnchor="middle" fontSize="7" fill="#64748B">{v.misure?.lCentro||"L"} mm</text>
-                      <text x="100" y="44" textAnchor="middle" fontSize="8" fill="#0F766E" fontWeight="600">{v.lamiera}</text>
-                      <text x="100" y="54" textAnchor="middle" fontSize="7" fill="#64748B">tocca "Disegno tecnico" per pieghe e quote</text>
-                    </svg>
+                    {/* Preview SVG lamiera — mostra pieghe se già inserite */}
+                    {(() => {
+                      const pieghe: Array<{dir:string,mm:number,angolo?:number}> = (v.lamieraPieghe as any) || lamieraPieghe;
+                      if(pieghe.length === 0){
+                        return (
+                          <div onClick={e=>{e.stopPropagation();setShowLamieraDisegno(true);}}
+                            style={{borderRadius:8,background:"#F0FDF9",border:"1.5px dashed #0F766E60",
+                              padding:"14px",textAlign:"center",cursor:"pointer"}}>
+                            <div style={{fontSize:11,color:"#0F766E",fontWeight:700}}>✏️ Aggiungi disegno pieghe</div>
+                            <div style={{fontSize:10,color:"#94A3B8",marginTop:2}}>Tocca per aprire editor</div>
+                          </div>
+                        );
+                      }
+                      // Build preview nodes
+                      let cx2=20,cy2=30;
+                      const preNodes=[{x:cx2,y:cy2}];
+                      pieghe.forEach(s=>{
+                        const d=Math.min(s.mm*0.08,80);
+                        if(s.dir==='dx'){cx2+=d;}else if(s.dir==='sx'){cx2-=d;}
+                        else if(s.dir==='giu'){cy2+=d;}else if(s.dir==='su'){cy2-=d;}
+                        preNodes.push({x:Math.max(5,Math.min(cx2,195)),y:Math.max(5,Math.min(cy2,75))});
+                      });
+                      const prePts=preNodes.map(n=>`${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
+                      const latoBuono=(v.lamieraLatoBuono||lamieraLatoBuono) as string;
+                      const svilTot=pieghe.reduce((a,s)=>a+s.mm,0);
+                      return (
+                        <div>
+                          <svg viewBox="0 0 200 80" width="100%"
+                            style={{borderRadius:8,background:"#F0FDF9",border:"1.5px solid #0F766E30",cursor:"pointer",display:"block"}}
+                            onClick={e=>{e.stopPropagation();setShowLamieraDisegno(true);}}>
+                            {/* Griglia leggera */}
+                            {Array.from({length:8}).map((_,i)=>(
+                              <line key={i} x1={i*25} y1="0" x2={i*25} y2="80" stroke="#E2E8F0" strokeWidth="0.3"/>
+                            ))}
+                            <polyline points={prePts} fill="none" stroke="#0F766E" strokeWidth="2.5"
+                              strokeLinecap="round" strokeLinejoin="round"/>
+                            {preNodes.map((n,i)=>(
+                              <circle key={i} cx={n.x} cy={n.y} r={i===0?3.5:2.5}
+                                fill={i===0?"#0F766E":"#fff"} stroke="#0F766E" strokeWidth="1.5"/>
+                            ))}
+                            {/* Lato buono badge */}
+                            <rect x="2" y="2" width={latoBuono==='esterno'?42:38} height="13" rx="4"
+                              fill={latoBuono==='esterno'?"#3B7FE0":"#D08008"}/>
+                            <text x="5" y="11" fontSize="7" fill="#fff" fontWeight="800">
+                              ◐ {latoBuono==='esterno'?'ESTERNO':'INTERNO'}
+                            </text>
+                            {/* Sviluppata */}
+                            <text x="198" y="77" textAnchor="end" fontSize="8" fill="#0F766E" fontWeight="700">
+                              {svilTot}mm
+                            </text>
+                            {/* Edit hint */}
+                            <text x="100" y="77" textAnchor="middle" fontSize="7" fill="#94A3B8">
+                              tocca per modificare
+                            </text>
+                          </svg>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -2759,17 +2807,80 @@ export default function VanoDetailPanel() {
               </div>
             </div>
 
-            {/* SVG FULLSCREEN */}
-            <div style={{flex:1,background:'#F0FDF9',overflow:'hidden',position:'relative'}}>
+            {/* SVG FULLSCREEN con pinch-zoom + pan */}
+            <div
+              style={{flex:1,background:'#F0FDF9',overflow:'hidden',position:'relative',touchAction:'none'}}
+              onTouchStart={e=>{
+                const ts = Array.from(e.touches) as any;
+                lamieraTouches.current = ts;
+              }}
+              onTouchMove={e=>{
+                e.preventDefault();
+                const ts = Array.from(e.touches) as any;
+                if(ts.length===1 && lamieraTouches.current.length===1){
+                  // Pan
+                  const dx = ts[0].clientX - lamieraTouches.current[0].clientX;
+                  const dy = ts[0].clientY - lamieraTouches.current[0].clientY;
+                  lamieraPan.current = {x: lamieraPan.current.x+dx, y: lamieraPan.current.y+dy};
+                  lamieraTouches.current = ts;
+                  if(lamieraSvgRef.current){
+                    lamieraSvgRef.current.style.transform = `translate(${lamieraPan.current.x}px,${lamieraPan.current.y}px) scale(${lamieraZoom.current})`;
+                  }
+                } else if(ts.length===2 && lamieraTouches.current.length===2){
+                  // Pinch zoom
+                  const dist = (a:any,b:any)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+                  const prev = dist(lamieraTouches.current[0],lamieraTouches.current[1]);
+                  const curr = dist(ts[0],ts[1]);
+                  const delta = curr/prev;
+                  lamieraZoom.current = Math.min(5,Math.max(0.3,lamieraZoom.current*delta));
+                  lamieraTouches.current = ts;
+                  if(lamieraSvgRef.current){
+                    lamieraSvgRef.current.style.transform = `translate(${lamieraPan.current.x}px,${lamieraPan.current.y}px) scale(${lamieraZoom.current})`;
+                  }
+                }
+              }}
+              onTouchEnd={e=>{lamieraTouches.current = Array.from(e.touches) as any;}}
+            >
               {allSegs.length===0 && (
                 <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
-                  justifyContent:'center',flexDirection:'column',gap:8,color:'#94A3B8'}}>
+                  justifyContent:'center',flexDirection:'column',gap:8,color:'#94A3B8',pointerEvents:'none'}}>
                   <div style={{fontSize:40}}>✏️</div>
                   <div style={{fontSize:14,fontWeight:600}}>Aggiungi il primo segmento</div>
                   <div style={{fontSize:11}}>Scegli direzione e inserisci i mm</div>
                 </div>
               )}
-              <svg width="100%" height="100%" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+              {/* Hint zoom */}
+              {allSegs.length>0 && (
+                <div style={{position:'absolute',bottom:10,right:10,zIndex:10,
+                  background:'rgba(0,0,0,0.45)',color:'#fff',borderRadius:8,
+                  padding:'4px 10px',fontSize:10,fontWeight:600,pointerEvents:'none'}}>
+                  🤏 Pizzica per zoomare · Trascina per muovere
+                </div>
+              )}
+              {/* Bottoni zoom */}
+              {allSegs.length>0 && (
+                <div style={{position:'absolute',top:10,right:10,zIndex:10,display:'flex',flexDirection:'column',gap:4}}>
+                  {[{l:'+',d:1.3},{l:'−',d:0.77},{l:'↺',d:0}].map(btn=>(
+                    <div key={btn.l}
+                      onClick={()=>{
+                        if(btn.d===0){lamieraZoom.current=1;lamieraPan.current={x:0,y:0};}
+                        else{lamieraZoom.current=Math.min(5,Math.max(0.3,lamieraZoom.current*btn.d));}
+                        if(lamieraSvgRef.current){
+                          lamieraSvgRef.current.style.transform=`translate(${lamieraPan.current.x}px,${lamieraPan.current.y}px) scale(${lamieraZoom.current})`;
+                        }
+                      }}
+                      style={{width:34,height:34,borderRadius:8,background:'rgba(255,255,255,0.9)',
+                        border:'1px solid #E2E8F0',display:'flex',alignItems:'center',justifyContent:'center',
+                        fontSize:btn.l==='↺'?16:20,fontWeight:800,cursor:'pointer',color:'#0F766E',
+                        boxShadow:'0 2px 6px rgba(0,0,0,0.12)'}}>
+                      {btn.l}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <svg ref={lamieraSvgRef} width="100%" height="100%" viewBox="0 0 800 600"
+                preserveAspectRatio="xMidYMid meet"
+                style={{transformOrigin:'center center',transition:'transform 0.05s'}}>
                 {/* Griglia */}
                 {Array.from({length:16}).map((_,i)=>(
                   <line key={'gv'+i} x1={i*50} y1="0" x2={i*50} y2="600" stroke="#E2E8F0" strokeWidth="0.5"/>
@@ -2780,17 +2891,37 @@ export default function VanoDetailPanel() {
                 {/* Punto 0 */}
                 <circle cx={nodes[0].x} cy={nodes[0].y} r="5" fill="#0F766E"/>
                 <text x={nodes[0].x+10} y={nodes[0].y-8} fontSize="10" fill="#0F766E" fontWeight="700">0</text>
-                {/* Lato buono indicator */}
-                {allSegs.length > 0 && (
-                  <text x={nodes[0].x} y={nodes[0].y+20} fontSize="9" fill="#0F766E" opacity="0.6">
-                    ◐ lato {lamieraLatoBuono}
-                  </text>
-                )}
                 {/* Profilo */}
                 {allSegs.length > 0 && (
                   <polyline points={pts} fill="none" stroke="#0F766E"
                     strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
                 )}
+                {/* LATO BUONO — freccia + badge visuale sul segmento */}
+                {allSegs.length > 0 && (() => {
+                  const isEst = lamieraLatoBuono==='esterno';
+                  // Midpoint del profilo totale
+                  const mid = nodes[Math.floor(nodes.length/2)];
+                  const perp = lamieraPieghe[0]?.dir==='dx'||lamieraPieghe[0]?.dir==='sx' ? 'v' : 'h';
+                  const arrowDx = perp==='v' ? 0 : (isEst ? 0 : 0);
+                  const arrowDy = isEst ? -30 : 30;
+                  return (
+                    <g>
+                      {/* Freccia lato buono */}
+                      <line x1={mid.x} y1={mid.y} x2={mid.x+arrowDx} y2={mid.y+arrowDy}
+                        stroke={isEst?"#3B7FE0":"#D08008"} strokeWidth="2.5" strokeDasharray="4,3"/>
+                      <polygon
+                        points={`${mid.x+arrowDx},${mid.y+arrowDy} ${mid.x+arrowDx-5},${mid.y+arrowDy+(isEst?-10:10)} ${mid.x+arrowDx+5},${mid.y+arrowDy+(isEst?-10:10)}`}
+                        fill={isEst?"#3B7FE0":"#D08008"}/>
+                      {/* Badge */}
+                      <rect x={mid.x-30} y={mid.y+arrowDy+(isEst?-30:12)} width="60" height="16" rx="6"
+                        fill={isEst?"#3B7FE0":"#D08008"} opacity="0.9"/>
+                      <text x={mid.x} y={mid.y+arrowDy+(isEst?-19:23)}
+                        textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">
+                        ◐ {isEst?'ESTERNO':'INTERNO'}
+                      </text>
+                    </g>
+                  );
+                })()}
                 {/* Nodi con quote */}
                 {nodes.slice(1).map((n,i)=>{
                   const prev = nodes[i];
@@ -2801,7 +2932,6 @@ export default function VanoDetailPanel() {
                     <g key={i}>
                       <circle cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="5"
                         fill="#fff" stroke="#0F766E" strokeWidth="2"/>
-                      {/* Quota */}
                       <text x={mx+(isH?0:-20)} y={my+(isH?-10:5)}
                         textAnchor="middle" fontSize="11" fill="#0F172A" fontWeight="700">
                         {seg.mm}mm
