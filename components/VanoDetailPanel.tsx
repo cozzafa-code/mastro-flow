@@ -47,6 +47,70 @@ async function deleteFotoVano(url) {
 }
 
 
+function VanoMiniSVG({ type, stepColor }: { type: string; stepColor: string }) {
+  const w = 60, h = 70;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ display: "block" }}>
+      <rect x={5} y={5} width={w-10} height={h-10} fill={stepColor + "12"} stroke={stepColor + "40"} strokeWidth={1.5} rx={3} />
+      {type === "larghezze" && <>
+        <line x1={10} y1={18} x2={w-10} y2={18} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+        <line x1={10} y1={h/2} x2={w-10} y2={h/2} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+        <line x1={10} y1={h-18} x2={w-10} y2={h-18} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+      </>}
+      {type === "altezze" && <>
+        <line x1={14} y1={10} x2={14} y2={h-10} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+        <line x1={w/2} y1={10} x2={w/2} y2={h-10} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+        <line x1={w-14} y1={10} x2={w-14} y2={h-10} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+      </>}
+      {type === "diagonali" && <>
+        <line x1={10} y1={10} x2={w-10} y2={h-10} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+        <line x1={w-10} y1={10} x2={10} y2={h-10} stroke={stepColor} strokeWidth={1.2} strokeDasharray="3,2" />
+      </>}
+      {type === "spallette" && <>
+        <rect x={2} y={5} width={10} height={h-10} fill={stepColor + "25"} stroke={stepColor+"60"} rx={1} />
+        <rect x={w-12} y={5} width={10} height={h-10} fill={stepColor + "25"} stroke={stepColor+"60"} rx={1} />
+        <rect x={5} y={2} width={w-10} height={8} fill={stepColor + "18"} stroke={stepColor+"40"} rx={1} />
+      </>}
+      {type === "davanzale" && <>
+        <rect x={5} y={h-16} width={w-10} height={10} fill={stepColor + "25"} stroke={stepColor+"60"} rx={1} />
+      </>}
+    </svg>
+  );
+}
+
+function VanoBInput({ label, field, value, stepColor, textColor, subColor, bdrColor, cardBg, onUpdate }: {
+  label: string; field: string; value: number;
+  stepColor: string; textColor: string; subColor: string; bdrColor: string; cardBg: string;
+  onUpdate: (val: number) => void;
+}) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: textColor, marginBottom: 4 }}>{label}</div>
+      <div style={{ position: "relative" }}>
+        <input
+          type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={value > 0 ? value : ""}
+          placeholder="Tocca per inserire"
+          onChange={e => onUpdate(parseInt(e.target.value) || 0)}
+          style={{
+            width: "100%", padding: "14px 16px", fontSize: 22, fontWeight: 700,
+            fontFamily: "'JetBrains Mono',monospace", textAlign: "center" as const,
+            border: `2px solid ${value > 0 ? stepColor : bdrColor}`,
+            borderRadius: 12,
+            background: value > 0 ? stepColor + "08" : cardBg,
+            color: value > 0 ? textColor : subColor,
+            outline: "none", boxSizing: "border-box" as const,
+            WebkitAppearance: "none" as const,
+          }}
+        />
+        {value > 0 && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: subColor, pointerEvents: "none" }}>mm</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function VanoDetailPanel() {
   const {
     T, S, isDesktop, fs, tipologieFiltrate,
@@ -396,70 +460,18 @@ export default function VanoDetailPanel() {
     const hasHWarnings = !m.hSx && !m.hCentro && !m.hDx;
     const fSq = m.d1 > 0 && m.d2 > 0 ? Math.abs(m.d1 - m.d2) : null;
 
-    // Mini SVG per step
-    const MiniSVG = ({ type }) => {
-      const w = 60, h = 70;
-      return (
-        <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ display: "block" }}>
-          <rect x={5} y={5} width={w-10} height={h-10} fill={step.color + "12"} stroke={step.color + "40"} strokeWidth={1.5} rx={3} />
-          {type === "larghezze" && <>
-            <line x1={10} y1={18} x2={w-10} y2={18} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-            <line x1={10} y1={h/2} x2={w-10} y2={h/2} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-            <line x1={10} y1={h-18} x2={w-10} y2={h-18} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-          </>}
-          {type === "altezze" && <>
-            <line x1={14} y1={10} x2={14} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-            <line x1={w/2} y1={10} x2={w/2} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-            <line x1={w-14} y1={10} x2={w-14} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-          </>}
-          {type === "diagonali" && <>
-            <line x1={10} y1={10} x2={w-10} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-            <line x1={w-10} y1={10} x2={10} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
-          </>}
-          {type === "spallette" && <>
-            <rect x={2} y={5} width={10} height={h-10} fill={step.color + "25"} stroke={step.color+"60"} rx={1} />
-            <rect x={w-12} y={5} width={10} height={h-10} fill={step.color + "25"} stroke={step.color+"60"} rx={1} />
-            <rect x={5} y={2} width={w-10} height={8} fill={step.color + "18"} stroke={step.color+"40"} rx={1} />
-          </>}
-          {type === "davanzale" && <>
-            <rect x={5} y={h-16} width={w-10} height={10} fill={step.color + "25"} stroke={step.color+"60"} rx={1} />
-          </>}
-        </svg>
-      );
-    };
+    // Mini SVG per step — componente esterno, riceve stepColor come prop
+    function MiniSVG({ type }: { type: string }) {
+      return <VanoMiniSVG type={type} stepColor={step.color} />;
+    }
 
-    // Inline input renderer — input nativo HTML (no numpad custom)
-    const bInput = (label: string, field: string) => {
-      return (
-      <div key={field} style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>{label}</div>
-        <div style={{ position: "relative" }}>
-          <input
-            type="number"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={m[field] > 0 ? m[field] : ""}
-            placeholder="Tocca per inserire"
-            onChange={e => {
-              const val = parseInt(e.target.value) || 0;
-              updateMisura(v.id, field, val);
-            }}
-            style={{
-              width: "100%", padding: "14px 16px", fontSize: 22, fontWeight: 700,
-              fontFamily: FM, textAlign: "center" as const,
-              border: `2px solid ${m[field] > 0 ? step.color : T.bdr}`,
-              borderRadius: 12,
-              background: m[field] > 0 ? step.color + "08" : T.card,
-              color: m[field] > 0 ? T.text : T.sub,
-              outline: "none", boxSizing: "border-box" as const,
-              WebkitAppearance: "none" as const,
-            }}
-          />
-          {m[field] > 0 && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: T.sub, pointerEvents: "none" }}>mm</span>}
-        </div>
-      </div>
-      );
-    };
+    // Inline input renderer — usa componente esterno
+    function bInput(label: string, field: string) {
+      return <VanoBInput key={field} label={label} field={field}
+        value={m[field] as number} stepColor={step.color}
+        textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+        onUpdate={(val: number) => updateMisura(v.id, field, val)} />;
+    }
 
     return (
       <div style={{ paddingBottom: 80, background: T.bg }}>
