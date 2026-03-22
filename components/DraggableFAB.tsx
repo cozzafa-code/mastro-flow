@@ -138,9 +138,11 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   }));
   const items = recent.length > 0 ? [...baseItems, { l: "SEP", c: "#555", t: "SEP", a: null }, ...recent] : baseItems;
   const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
+  const NAVBAR_H = 70; // altezza navbar inferiore
   const itemsH = items.filter(i => i.t !== "SEP").length * 70 + 20;
-  const showAbove = (screenH - topPx - 60) < itemsH;
-  const actionsTop = showAbove ? Math.max(20, topPx - itemsH - 10) : Math.min(screenH - itemsH - 20, topPx + 60);
+  const spaceBelow = screenH - topPx - 60 - NAVBAR_H;
+  const showAbove = spaceBelow < itemsH;
+  const actionsTop = showAbove ? Math.max(20, topPx - itemsH - 10) : Math.min(screenH - itemsH - NAVBAR_H - 10, topPx + 60);
   const MIC = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>;
   const CAL = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
   const USR = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>;
