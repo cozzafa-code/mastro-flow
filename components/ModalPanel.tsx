@@ -6,7 +6,7 @@
 // ═════════════════════════════════════
 import React from "react";
 import { useMastro } from "./MastroContext";
-import { FM, ICO, I } from "./mastro-constants";
+import { FM } from "./mastro-constants";
 
 export default function ModalPanel() {
   const {
@@ -184,9 +184,9 @@ Fabio Cozza - Walter Cozza Serramenti` },
                     {[
                       { id: "preventivo", l: "📋 Preventivo", c: "#007aff" },
                       { id: "conferma", l: "📋 Conferma", c: "#34c759" },
-                      { id: "montaggio", l: "Montaggio", c: "#5856d6" },
+                      { id: "montaggio", l: "🔧 Montaggio", c: "#5856d6" },
                       { id: "saldo", l: "💰 Saldo", c: "#ff9500" },
-                      { id: "generico", l: "Libero", c: "#86868b" },
+                      { id: "generico", l: "📝 Libero", c: "#86868b" },
                     ].map(t => (
                       <div key={t.id} onClick={() => inviaEmail(showEmailComposer.cm, t.id)}
                         style={{ padding:"6px 12px", borderRadius:20, border:`1.5px solid ${showEmailComposer.tipo === t.id ? t.c : t.c+"40"}`, background: showEmailComposer.tipo === t.id ? t.c+"15" : "transparent", fontSize:11, fontWeight:700, color:t.c, cursor:"pointer" }}>
@@ -310,7 +310,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 10 }}>
                         <span>{a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎵" : a.tipo === "foto" ? "📸" : "📁"}</span>
                         <span style={{ color: T.text, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</span>
-                        <span onClick={() => setTaskAllegati(al => al.filter(x => x.id !== a.id))} style={{ cursor: "pointer", color: T.red }}><I d={ICO.x} /></span>
+                        <span onClick={() => setTaskAllegati(al => al.filter(x => x.id !== a.id))} style={{ cursor: "pointer", color: T.red }}>×</span>
                       </div>
                     ))}
                   </div>
@@ -359,17 +359,16 @@ Fabio Cozza - Walter Cozza Serramenti` },
                 ))}
               </div>
 
-              {/* == FLUSSO RIPARAZIONE == */}
+              {/* == FLUSSO RIPARAZIONE WIZARD FLASH == */}
               {newCM.tipo === "riparazione" && (() => {
+                const [ripStep, setRipStep] = React.useState(0);
+                const STEPS_RIP = ["Cliente","Problema","Dettagli","Foto"];
                 const addRipFoto = (e) => {
                   const file = e.target.files?.[0]; if(!file) return;
                   const r = new FileReader();
-                  r.onload = ev => setRipFotos(fs => [...fs, { id: Date.now(), dataUrl: ev.target.result, nome: file.name }]);
+                  r.onload = ev => setRipFotos(fs => [...fs, { id: Date.now(), dataUrl: ev.target.result }]);
                   r.readAsDataURL(file); e.target.value = "";
                 };
-                const cmResults = ripSearch.length > 1
-                  ? cantieri.filter(c => c.cliente.toLowerCase().includes(ripSearch.toLowerCase()) || c.code.toLowerCase().includes(ripSearch.toLowerCase()) || c.indirizzo.toLowerCase().includes(ripSearch.toLowerCase()))
-                  : [];
                 const addRiparazione = () => {
                   if (!ripProblema.trim()) return;
                   const code = "CM-" + String(cantieri.length + 1).padStart(4, "0");
@@ -378,234 +377,229 @@ Fabio Cozza - Walter Cozza Serramenti` },
                     cliente: ripCMSel ? ripCMSel.cliente : (newCM.cliente || ripSearch),
                     indirizzo: newCM.indirizzo || ripCMSel?.indirizzo || "",
                     telefono: newCM.telefono || ripCMSel?.telefono || "",
-                    sistema: ripCMSel?.sistema || "",
                     tipo: "riparazione", fase: "sopralluogo",
                     cmCollegata: ripCMSel?.code || null,
                     problema: ripProblema,
                     tipoProblema: newCM.tipoProblema || "",
                     tipoInfisso: newCM.tipoInfisso || "",
-                    vanoProblema: newCM.vanoProblema || "",
-                    dataRichiesta: newCM.dataRichiesta || "",
-                    chiSegnala: newCM.chiSegnala || "",
-                    preventivoStimato: newCM.preventivoStimato || "",
                     urgenza: ripUrgenza,
                     fotoProblema: ripFotos,
-                    vani: ripCMSel?.vani || [], note: ripProblema,
-                    alert: ripUrgenza === "urgente" ? "🚨 Riparazione urgente" : null,
+                    chiSegnala: newCM.chiSegnala || "",
+                    preventivoStimato: newCM.preventivoStimato || "",
+                    note: ripProblema,
+                    alert: ripUrgenza === "urgente" ? "Riparazione urgente" : null,
                     creato: new Date().toLocaleDateString("it-IT", {day:"numeric",month:"short"}),
                     aggiornato: new Date().toLocaleDateString("it-IT", {day:"numeric",month:"short"}),
-                    allegati: [],
+                    vani: ripCMSel?.vani || [], allegati: [],
                   };
                   setCantieri(cs => [nuova, ...cs]);
-                  setRipSearch(""); setRipCMSel(null); setRipProblema(""); setRipFotos([]); setRipUrgenza("media");
-                  setNewCM(c => ({...c, tipo:"nuova", cliente:"", indirizzo:"", telefono:"", tipoProblema:"", tipoInfisso:"", vanoProblema:"", dataRichiesta:"", chiSegnala:"", preventivoStimato:""}));
+                  setRipSearch(""); setRipCMSel(null); setRipProblema(""); setRipFotos([]); setRipUrgenza("media"); setRipStep(0);
+                  setNewCM(c => ({...c, tipo:"nuova", cliente:"", indirizzo:"", telefono:"", tipoProblema:"", tipoInfisso:"", chiSegnala:"", preventivoStimato:""}));
                   setShowModal(null);
                   setSelectedCM(nuova); setTab("commesse");
                 };
+                const canNext0 = ripCMSel || newCM.cliente?.trim() || ripSearch?.trim();
+                const canNext1 = ripProblema.trim();
+                const labelUrgenza = ripUrgenza === "urgente" ? "Urgente" : ripUrgenza === "normale" ? "Normale" : "Media";
+                const colorUrgenza = ripUrgenza === "urgente" ? T.red : ripUrgenza === "normale" ? T.grn : T.orange;
                 return (
-                  <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                  <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                    {/* Stepper */}
+                    <div style={{ display:"flex", alignItems:"center", marginBottom:16 }}>
+                      {STEPS_RIP.map((s,i) => (
+                        <React.Fragment key={s}>
+                          <div onClick={() => i < ripStep && setRipStep(i)}
+                            style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1, cursor: i < ripStep ? "pointer" : "default" }}>
+                            <div style={{ width:28, height:28, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700,
+                              background: i < ripStep ? T.grn : i === ripStep ? T.orange : T.bdr,
+                              color: i <= ripStep ? "#fff" : T.sub }}>
+                              {i < ripStep ? "✓" : i+1}
+                            </div>
+                            <div style={{ fontSize:9, fontWeight: i===ripStep?700:500, color: i===ripStep?T.orange:T.sub, marginTop:3 }}>{s}</div>
+                          </div>
+                          {i < STEPS_RIP.length-1 && <div style={{ flex:1, height:2, background: i < ripStep ? T.grn : T.bdr, marginBottom:14 }} />}
+                        </React.Fragment>
+                      ))}
+                    </div>
 
-                    <div>
-                      <label style={S.fieldLabel}>Cliente o commessa esistente</label>
-                      <input style={S.input} placeholder="Cerca nome, codice CM, indirizzo…"
-                        value={ripSearch} onChange={e => { setRipSearch(e.target.value); if(ripCMSel) setRipCMSel(null); }}/>
-                      {/* Rubrica button when empty */}
-                      {!ripSearch && !ripCMSel && (
-                        <div onClick={() => setRipSearch(" ")} style={{ margin:"6px 0", padding:"8px 12px", borderRadius:8, border:"1.5px dashed "+T.acc+"60", background:T.acc+"06", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                          <span style={{ fontSize:14 }}>📊</span>
-                          <span style={{ fontSize:11, fontWeight:700, color:T.acc }}>Scegli dalla rubrica</span>
-                        </div>
-                      )}
-                      {/* Contatti rubrica results */}
-                      {ripSearch.length >= 1 && !ripCMSel && (() => {
-                        const qr = ripSearch.trim().toLowerCase();
-                        const ctMatches = qr.length > 0
-                          ? contatti.filter(ct => ct.tipo === "cliente" && (ct.nome?.toLowerCase().includes(qr) || (ct.cognome||"").toLowerCase().includes(qr))).slice(0, 5)
-                          : contatti.filter(ct => ct.tipo === "cliente").slice(0, 8);
-                        if (ctMatches.length === 0 && cmResults.length === 0) return null;
-                        return ctMatches.length > 0 && cmResults.length === 0 ? (
-                          <div style={{ marginTop:4, background:T.card, border:"1.5px solid "+T.acc+"40", borderRadius:10, overflow:"hidden", maxHeight:200, overflowY:"auto" }}>
-                            <div style={{ padding:"5px 10px", fontSize:9, fontWeight:700, color:T.acc, background:T.acc+"08", borderBottom:"1px solid "+T.acc+"20" }}>📊 Rubrica ({ctMatches.length})</div>
-                            {ctMatches.map(ct => (
-                              <div key={ct.id} onClick={() => { setRipSearch(ct.nome + " " + (ct.cognome||"")); setNewCM(x=>({...x, cliente: ct.nome, cognome: ct.cognome||"", indirizzo: ct.indirizzo||"", telefono: ct.telefono||"", email: ct.email||"" })); }}
-                                style={{ padding:"8px 12px", borderBottom:"1px solid "+T.bdr+"40", cursor:"pointer", display:"flex", alignItems:"center", gap:8 }}>
-                                <span style={{ fontSize:14 }}>📊</span>
-                                <div style={{ flex:1 }}>
-                                  <div style={{ fontSize:12, fontWeight:700 }}>{ct.nome} {ct.cognome||""}</div>
-                                  <div style={{ fontSize:9, color:T.sub }}>{ct.telefono} {ct.indirizzo ? "À "+ct.indirizzo : ""}</div>
+                    {/* STEP 0 — Cliente */}
+                    {ripStep === 0 && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                        <input style={S.input} placeholder="Cerca cliente o commessa..."
+                          value={ripSearch} onChange={e => { setRipSearch(e.target.value); if(ripCMSel) setRipCMSel(null); }}
+                          autoFocus />
+                        {ripSearch.length >= 1 && !ripCMSel && (() => {
+                          const q = ripSearch.trim().toLowerCase();
+                          const cmR = cantieri.filter(c => c.cliente?.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q)).slice(0,4);
+                          const ctR = contatti.filter(ct => ct.tipo==="cliente" && (ct.nome?.toLowerCase().includes(q)||(ct.cognome||"").toLowerCase().includes(q))).slice(0,4);
+                          if (!cmR.length && !ctR.length) return null;
+                          return (
+                            <div style={{ background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, overflow:"hidden" }}>
+                              {ctR.map(ct => (
+                                <div key={ct.id} onClick={() => { setRipSearch(ct.nome+" "+(ct.cognome||"")); setNewCM(x=>({...x,cliente:ct.nome,cognome:ct.cognome||"",indirizzo:ct.indirizzo||"",telefono:ct.telefono||""})); }}
+                                  style={{ padding:"10px 14px", borderBottom:`1px solid ${T.bdr}`, cursor:"pointer", display:"flex", alignItems:"center", gap:8 }}>
+                                  <div style={{ width:28,height:28,borderRadius:"50%",background:T.accLt,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:T.acc }}>
+                                    {(ct.nome||"?")[0]}
+                                  </div>
+                                  <div><div style={{ fontSize:13,fontWeight:700 }}>{ct.nome} {ct.cognome||""}</div><div style={{ fontSize:10,color:T.sub }}>{ct.telefono}</div></div>
                                 </div>
+                              ))}
+                              {cmR.map(c => (
+                                <div key={c.id} onClick={() => { setRipCMSel(c); setRipSearch(c.cliente); setNewCM(x=>({...x,indirizzo:c.indirizzo,telefono:c.telefono})); }}
+                                  style={{ padding:"10px 14px", borderBottom:`1px solid ${T.bdr}`, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                                  <div><div style={{ fontSize:13,fontWeight:700 }}>{c.cliente}</div><div style={{ fontSize:10,color:T.sub }}>{c.code} · {c.indirizzo}</div></div>
+                                  <div style={{ fontSize:11,color:T.acc,fontWeight:700 }}>Collega →</div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                        {ripCMSel && (
+                          <div style={{ padding:"10px 12px", background:T.accLt, border:`1px solid ${T.acc}30`, borderRadius:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                            <div><div style={{ fontSize:12,fontWeight:700,color:T.acc }}>✓ {ripCMSel.code}</div><div style={{ fontSize:11,color:T.sub }}>{ripCMSel.cliente}</div></div>
+                            <div onClick={() => { setRipCMSel(null); setRipSearch(""); }} style={{ color:T.sub,cursor:"pointer",fontSize:18 }}>×</div>
+                          </div>
+                        )}
+                        {!ripCMSel && (
+                          <div style={{ display:"flex", flexDirection:"column", gap:8, padding:"10px 12px", background:T.bg, borderRadius:10, border:`1px solid ${T.bdr}` }}>
+                            <div style={{ fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:"0.06em" }}>Cliente nuovo</div>
+                            <input style={S.input} placeholder="Nome e cognome" value={newCM.cliente||""} onChange={e=>setNewCM(c=>({...c,cliente:e.target.value}))} />
+                            <div style={{ display:"flex",gap:8 }}>
+                              <input style={{...S.input,flex:2}} placeholder="Indirizzo" value={newCM.indirizzo||""} onChange={e=>setNewCM(c=>({...c,indirizzo:e.target.value}))} />
+                              <input style={{...S.input,flex:1}} placeholder="Tel" value={newCM.telefono||""} onChange={e=>setNewCM(c=>({...c,telefono:e.target.value}))} inputMode="tel" />
+                            </div>
+                          </div>
+                        )}
+                        <button style={{ ...S.btn, background: canNext0 ? T.orange : "#ccc", cursor: canNext0 ? "pointer" : "not-allowed", marginTop:4 }}
+                          onClick={() => canNext0 && setRipStep(1)}>
+                          Avanti — Problema →
+                        </button>
+                      </div>
+                    )}
+
+                    {/* STEP 1 — Problema */}
+                    {ripStep === 1 && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                        <div>
+                          <label style={S.fieldLabel}>Urgenza</label>
+                          <div style={{ display:"flex", gap:8 }}>
+                            {[{id:"normale",l:"Normale",c:T.grn},{id:"media",l:"Media",c:T.orange},{id:"urgente",l:"Urgente",c:T.red}].map(u => (
+                              <div key={u.id} onClick={() => setRipUrgenza(u.id)}
+                                style={{ flex:1, padding:"12px 4px", borderRadius:12, border:`2px solid ${ripUrgenza===u.id?u.c:T.bdr}`, background:ripUrgenza===u.id?u.c+"18":T.card, textAlign:"center", cursor:"pointer",
+                                  boxShadow: ripUrgenza===u.id ? `0 3px 0 ${u.c}40` : "0 2px 0 rgba(0,0,0,0.08)", transition:"all 0.1s" }}>
+                                <div style={{ fontSize:13,fontWeight:700,color:ripUrgenza===u.id?u.c:T.sub }}>{u.l}</div>
                               </div>
                             ))}
                           </div>
-                        ) : null;
-                      })()}
-                      {cmResults.length > 0 && !ripCMSel && (
-                        <div style={{ marginTop:4, background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, overflow:"hidden" }}>
-                          {cmResults.slice(0,4).map(c => (
-                            <div key={c.id} onClick={() => { setRipCMSel(c); setRipSearch(c.cliente); setNewCM(x=>({...x,indirizzo:c.indirizzo,telefono:c.telefono})); }}
-                              style={{ padding:"10px 14px", borderBottom:`1px solid ${T.bg}`, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                              <div>
-                                <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.cliente}</div>
-                                <div style={{ fontSize:11, color:T.sub, marginTop:1 }}>{c.code} À {c.indirizzo}</div>
-                                {getVaniAttivi(c).length>0 && <div style={{ fontSize:10, color:T.sub }}>{getVaniAttivi(c).length} vani</div>}
+                        </div>
+                        <div>
+                          <label style={S.fieldLabel}>Tipo problema</label>
+                          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                            {["Vetro rotto","Cardine","Guarnizione","Serratura","Maniglia","Tapparella","Infiltrazioni","Deformazione","Altro"].map(t => (
+                              <div key={t} onClick={() => setNewCM(c=>({...c,tipoProblema:c.tipoProblema===t?"":t}))}
+                                style={{ padding:"7px 12px", borderRadius:20, border:`1.5px solid ${newCM.tipoProblema===t?T.orange:T.bdr}`, background:newCM.tipoProblema===t?T.orange+"18":T.card, fontSize:12, fontWeight:600, color:newCM.tipoProblema===t?T.orange:T.sub, cursor:"pointer",
+                                  boxShadow: newCM.tipoProblema===t ? `0 2px 0 ${T.orange}40` : "none", transition:"all 0.1s" }}>
+                                {t}
                               </div>
-                              <div style={{ fontSize:10, fontWeight:600, color:T.acc }}>Collega →</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {ripCMSel && (
-                        <div style={{ marginTop:6, padding:"8px 12px", background:T.accLt, border:`1px solid ${T.acc}30`, borderRadius:8, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                          <div>
-                            <div style={{ fontSize:12, fontWeight:700, color:T.acc }}>✓ Collegata a {ripCMSel.code}</div>
-                            <div style={{ fontSize:11, color:T.sub, marginTop:1 }}>{ripCMSel.cliente} À {ripCMSel.indirizzo}</div>
+                            ))}
                           </div>
-                          <div onClick={() => { setRipCMSel(null); setRipSearch(""); setNewCM(x=>({...x,indirizzo:"",telefono:""})); }} style={{ fontSize:14, color:T.sub, cursor:"pointer", padding:4 }}><I d={ICO.x} /></div>
                         </div>
-                      )}
-                      {!ripCMSel && (
-                        <div style={{ fontSize:10, color:T.sub, marginTop:3 }}>Lascia vuoto per cliente nuovo</div>
-                      )}
-                    </div>
-
-                    {!ripCMSel && (
-                      <div style={{ padding:"12px", background:T.bg, borderRadius:10, border:`1px solid ${T.bdr}`, display:"flex", flexDirection:"column", gap:8 }}>
-                        <div style={{ fontSize:10, fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:"0.06em" }}>Dati cliente nuovo</div>
-                        <input style={S.input} placeholder="Nome e cognome" value={newCM.cliente} onChange={e=>setNewCM(c=>({...c,cliente:e.target.value}))}/>
+                        <div>
+                          <label style={S.fieldLabel}>Tipo infisso</label>
+                          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                            {["Finestra","Porta","Portafinestra","Scorrevole","Tapparella","Persiana","Zanzariera","Altro"].map(t => (
+                              <div key={t} onClick={() => setNewCM(c=>({...c,tipoInfisso:c.tipoInfisso===t?"":t}))}
+                                style={{ padding:"7px 12px", borderRadius:20, border:`1.5px solid ${newCM.tipoInfisso===t?T.acc:T.bdr}`, background:newCM.tipoInfisso===t?T.accLt:T.card, fontSize:12, fontWeight:600, color:newCM.tipoInfisso===t?T.acc:T.sub, cursor:"pointer",
+                                  boxShadow: newCM.tipoInfisso===t ? `0 2px 0 ${T.acc}40` : "none", transition:"all 0.1s" }}>
+                                {t}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label style={S.fieldLabel}>Descrizione problema *</label>
+                          <textarea style={{ ...S.input, minHeight:70, resize:"vertical" }}
+                            placeholder="Descrivi il problema..."
+                            value={ripProblema} onChange={e => setRipProblema(e.target.value)} autoFocus />
+                        </div>
                         <div style={{ display:"flex", gap:8 }}>
-                          <input style={{...S.input,flex:2}} placeholder="Indirizzo" value={newCM.indirizzo} onChange={e=>setNewCM(c=>({...c,indirizzo:e.target.value}))}/>
-                          <input style={{...S.input,flex:1}} placeholder="Telefono" value={newCM.telefono} onChange={e=>setNewCM(c=>({...c,telefono:e.target.value}))}/>
+                          <button style={{ ...S.btn, background:T.card, color:T.sub, border:`1px solid ${T.bdr}`, flex:1 }} onClick={() => setRipStep(0)}>← Indietro</button>
+                          <button style={{ ...S.btn, background:canNext1?T.orange:"#ccc", cursor:canNext1?"pointer":"not-allowed", flex:2 }} onClick={() => canNext1 && setRipStep(2)}>Avanti →</button>
                         </div>
                       </div>
                     )}
 
-                    <div>
-                      <label style={S.fieldLabel}>Urgenza</label>
-                      <div style={{ display:"flex", gap:6 }}>
-                        {[{id:"normale",l:"Normale",c:T.grn,e:"✓"},{id:"media",l:"Media",c:T.orange,e:"ƒí"},{id:"urgente",l:"Urgente",c:T.red,e:""}].map(u => (
-                          <div key={u.id} onClick={() => setRipUrgenza(u.id)}
-                            style={{ flex:1, padding:"8px 4px", borderRadius:8, border:`1.5px solid ${ripUrgenza===u.id?u.c:T.bdr}`, background:ripUrgenza===u.id?u.c+"15":T.card, textAlign:"center", cursor:"pointer", transition:"all 0.12s" }}>
-                            <div style={{ fontSize:14 }}>{u.e}</div>
-                            <div style={{ fontSize:10, fontWeight:700, color:ripUrgenza===u.id?u.c:T.sub, marginTop:2 }}>{u.l}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={S.fieldLabel}>Tipo problema</label>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                        {["Vetro rotto","Cardine","Guarnizione","Serratura","Maniglia","Tapparella","Infiltrazioni","Deformazione","Altro"].map(t => (
-                          <div key={t} onClick={() => setNewCM(c=>({...c,tipoProblema:c.tipoProblema===t?"":t}))}
-                            style={{ padding:"5px 10px", borderRadius:20, border:`1.5px solid ${newCM.tipoProblema===t?T.orange:T.bdr}`, background:newCM.tipoProblema===t?T.orangeLt:T.card, fontSize:11, fontWeight:600, color:newCM.tipoProblema===t?T.orange:T.sub, cursor:"pointer", transition:"all 0.12s" }}>
-                            {t}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={S.fieldLabel}>Tipo infisso</label>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                        {["Finestra","Porta","Portafinestra","Scorrevole","Tapparella","Persiana","Zanzariera","Altro"].map(t => (
-                          <div key={t} onClick={() => setNewCM(c=>({...c,tipoInfisso:c.tipoInfisso===t?"":t}))}
-                            style={{ padding:"5px 10px", borderRadius:20, border:`1.5px solid ${newCM.tipoInfisso===t?T.acc:T.bdr}`, background:newCM.tipoInfisso===t?T.accLt:T.card, fontSize:11, fontWeight:600, color:newCM.tipoInfisso===t?T.acc:T.sub, cursor:"pointer", transition:"all 0.12s" }}>
-                            {t}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {ripCMSel && getVaniAttivi(ripCMSel).length > 0 && (
-                      <div>
-                        <label style={S.fieldLabel}>Vano con il problema</label>
-                        <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                          {getVaniAttivi(ripCMSel).map(v => (
-                            <div key={v.id} onClick={() => setNewCM(c=>({...c,vanoProblema:c.vanoProblema===v.nome?"":v.nome}))}
-                              style={{ padding:"5px 10px", borderRadius:20, border:`1.5px solid ${newCM.vanoProblema===v.nome?T.acc:T.bdr}`, background:newCM.vanoProblema===v.nome?T.accLt:T.card, fontSize:11, fontWeight:600, color:newCM.vanoProblema===v.nome?T.acc:T.sub, cursor:"pointer" }}>
-                              {v.nome}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <label style={S.fieldLabel}>Descrizione problema *</label>
-                      <textarea style={{ ...S.input, minHeight:70, resize:"vertical" }}
-                        placeholder="Descrivi il problema in dettaglio…"
-                        value={ripProblema} onChange={e => setRipProblema(e.target.value)}/>
-                    </div>
-
-                    <div>
-                      <label style={S.fieldLabel}>Chi segnala</label>
-                      <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
-                        {["Cliente","Posatore","Tecnico","Subappaltatore","Altro"].map(t => (
-                          <div key={t} onClick={() => setNewCM(c=>({...c,chiSegnala:c.chiSegnala===t?"":t}))}
-                            style={{ padding:"5px 10px", borderRadius:20, border:`1.5px solid ${newCM.chiSegnala===t?T.acc:T.bdr}`, background:newCM.chiSegnala===t?T.accLt:T.card, fontSize:11, fontWeight:600, color:newCM.chiSegnala===t?T.acc:T.sub, cursor:"pointer" }}>
-                            {t}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={S.fieldLabel}>Data richiesta intervento</label>
-                      <input type="date" style={S.input} value={newCM.dataRichiesta} onChange={e=>setNewCM(c=>({...c,dataRichiesta:e.target.value}))}/>
-                    </div>
-
-                    <div>
-                      <label style={S.fieldLabel}>Preventivo stimato (€)</label>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="es. 250" value={newCM.preventivoStimato} onChange={e=>setNewCM(c=>({...c,preventivoStimato:e.target.value}))}/>
-                    </div>
-
-                    <div>
-                      <label style={S.fieldLabel}>Foto del problema ({ripFotos.length})</label>
-                      {ripFotos.length === 0
-                        ? <div onClick={() => ripFotoRef.current?.click()}
-                            style={{ border:`1.5px dashed ${T.bdr}`, borderRadius:10, padding:"20px", textAlign:"center", cursor:"pointer" }}>
-                            <div style={{ fontSize:28, marginBottom:4 }}>📸</div>
-                            <div style={{ fontSize:12, color:T.sub }}>Scatta o allega una foto</div>
-                            <div style={{ fontSize:10, color:T.sub2||T.sub, marginTop:2 }}>Puoi aggiungerne quante vuoi</div>
-                          </div>
-                        : <div>
-                            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
-                              {ripFotos.map((f,i) => (
-                                <div key={f.id} style={{ position:"relative", width:76, height:76, borderRadius:10, overflow:"hidden", background:T.bg }}>
-                                  <img src={f.dataUrl} style={{ width:"100%", height:"100%", objectFit:"cover" }} alt={`Foto ${i+1}`}/>
-                                  <div onClick={() => setRipFotos(fs => fs.filter(x => x.id !== f.id))}
-                                    style={{ position:"absolute", top:3, right:3, width:20, height:20, borderRadius:"50%", background:"rgba(0,0,0,0.55)", color:"#fff", fontSize:11, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontWeight:700 }}><I d={ICO.x} /></div>
-                                  <div style={{ position:"absolute", bottom:2, left:4, fontSize:9, color:"#fff", fontWeight:700, textShadow:"0 1px 2px rgba(0,0,0,0.7)" }}>#{i+1}</div>
-                                </div>
-                              ))}
-                              {/* FIX: usa ref invece di getElementById */}
-                              <div onClick={() => ripFotoRef.current?.click()}
-                                style={{ width:76, height:76, borderRadius:10, border:`1.5px dashed ${T.bdr}`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", color:T.sub }}>
-                                <div style={{ fontSize:22 }}>+</div>
-                                <div style={{ fontSize:9, fontWeight:600 }}>Aggiungi</div>
+                    {/* STEP 2 — Dettagli */}
+                    {ripStep === 2 && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                        <div>
+                          <label style={S.fieldLabel}>Chi segnala</label>
+                          <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                            {["Cliente","Posatore","Tecnico","Subappaltatore","Altro"].map(t => (
+                              <div key={t} onClick={() => setNewCM(c=>({...c,chiSegnala:c.chiSegnala===t?"":t}))}
+                                style={{ padding:"7px 12px", borderRadius:20, border:`1.5px solid ${newCM.chiSegnala===t?T.acc:T.bdr}`, background:newCM.chiSegnala===t?T.accLt:T.card, fontSize:12, fontWeight:600, color:newCM.chiSegnala===t?T.acc:T.sub, cursor:"pointer",
+                                  boxShadow: newCM.chiSegnala===t ? `0 2px 0 ${T.acc}40` : "none", transition:"all 0.1s" }}>
+                                {t}
                               </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                          <div>
+                            <label style={S.fieldLabel}>Data intervento</label>
+                            <input type="date" style={S.input} value={newCM.dataRichiesta||""} onChange={e=>setNewCM(c=>({...c,dataRichiesta:e.target.value}))} />
+                          </div>
+                          <div>
+                            <label style={S.fieldLabel}>Preventivo stimato (€)</label>
+                            <input style={S.input} inputMode="numeric" placeholder="es. 250" value={newCM.preventivoStimato||""} onChange={e=>setNewCM(c=>({...c,preventivoStimato:e.target.value}))} />
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:8 }}>
+                          <button style={{ ...S.btn, background:T.card, color:T.sub, border:`1px solid ${T.bdr}`, flex:1 }} onClick={() => setRipStep(1)}>← Indietro</button>
+                          <button style={{ ...S.btn, background:T.orange, flex:2 }} onClick={() => setRipStep(3)}>Avanti →</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* STEP 3 — Foto + Crea */}
+                    {ripStep === 3 && (
+                      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                        <div>
+                          <label style={S.fieldLabel}>Foto problema ({ripFotos.length})</label>
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                            {ripFotos.map((f,i) => (
+                              <div key={f.id} style={{ position:"relative", width:76, height:76, borderRadius:10, overflow:"hidden" }}>
+                                <img src={f.dataUrl} style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                                <div onClick={() => setRipFotos(fs => fs.filter(x => x.id !== f.id))}
+                                  style={{ position:"absolute", top:3, right:3, width:20, height:20, borderRadius:"50%", background:"rgba(0,0,0,0.6)", color:"#fff", fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontWeight:700 }}>×</div>
+                              </div>
+                            ))}
+                            <div onClick={() => ripFotoRef.current?.click()}
+                              style={{ width:76, height:76, borderRadius:10, border:`2px dashed ${T.bdr}`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", gap:4 }}>
+                              <div style={{ fontSize:24, color:T.sub }}>+</div>
+                              <div style={{ fontSize:9, color:T.sub, fontWeight:600 }}>Foto</div>
                             </div>
                           </div>
-                      }
-                      <input ref={ripFotoRef} type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={addRipFoto}/>
-                    </div>
-
-                    <div style={{ paddingTop:4 }}>
-                      {!ripProblema.trim() && (
-                        <div style={{ fontSize:11, color:T.orange, fontWeight:600, marginBottom:8, textAlign:"center" }}>🚨 Descrivi il problema per procedere</div>
-                      )}
-                      <button style={{ ...S.btn, background:ripProblema.trim()?T.orange:"#ccc", cursor:ripProblema.trim()?"pointer":"not-allowed" }}
-                        onClick={addRiparazione} disabled={!ripProblema.trim()}>
-                        Crea riparazione
-                      </button>
-                      <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
-                    </div>
-
+                          <input ref={ripFotoRef} type="file" accept="image/*" capture="environment" style={{ display:"none" }} onChange={addRipFoto} />
+                        </div>
+                        {/* Riepilogo */}
+                        <div style={{ padding:"12px 14px", background:T.orange+"10", borderRadius:12, border:`1px solid ${T.orange}30` }}>
+                          <div style={{ fontSize:11, fontWeight:700, color:T.orange, marginBottom:6 }}>Riepilogo riparazione</div>
+                          <div style={{ fontSize:12, color:T.text }}>{ripCMSel ? ripCMSel.cliente : newCM.cliente || ripSearch}</div>
+                          <div style={{ fontSize:11, color:T.sub, marginTop:2 }}>{newCM.tipoProblema && newCM.tipoProblema+" · "}{newCM.tipoInfisso && newCM.tipoInfisso+" · "}<span style={{ color:colorUrgenza, fontWeight:700 }}>{labelUrgenza}</span></div>
+                          <div style={{ fontSize:11, color:T.sub, marginTop:2, fontStyle:"italic" }}>{ripProblema.slice(0,60)}{ripProblema.length>60?"...":""}</div>
+                        </div>
+                        <div style={{ display:"flex", gap:8 }}>
+                          <button style={{ ...S.btn, background:T.card, color:T.sub, border:`1px solid ${T.bdr}`, flex:1 }} onClick={() => setRipStep(2)}>← Indietro</button>
+                          <button style={{ ...S.btn, background:T.orange, flex:2 }} onClick={addRiparazione}>Crea riparazione ✓</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
 
-              {/* == FLUSSO NUOVA INSTALLAZIONE == */}
+                            {/* == FLUSSO NUOVA INSTALLAZIONE == */}
               {newCM.tipo === "nuova" && (() => {
                 const AccordionSection = ({ id, icon, label, badge, children }) => {
                   const open = newCM._open === id;
@@ -618,7 +612,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                           <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{label}</span>
                           {badge && <span style={{ ...S.badge(T.accLt,T.acc), fontSize:10 }}>{badge}</span>}
                         </div>
-                        <span style={{ fontSize:12, color:T.sub, transition:"transform 0.2s", display:"inline-block", transform:open?"rotate(180deg)":"rotate(0deg)" }}>û</span>
+                        <span style={{ fontSize:12, color:T.sub, transition:"transform 0.2s", display:"inline-block", transform:open?"rotate(180deg)":"rotate(0deg)" }}>>▾</span>
                       </div>
                       {open && <div style={{ padding:"12px 14px", background:T.bg, borderTop:`1px solid ${T.bdr}` }}>{children}</div>}
                     </div>
@@ -667,7 +661,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                         return <div style={{ background:"#fff", border:"1.5px solid " + T.acc + "40", borderRadius:10, marginTop:6, marginBottom:8, overflow:"hidden", maxHeight:220, overflowY:"auto" }}>
                           <div style={{ padding:"6px 10px", fontSize:9, fontWeight:700, color:T.acc, background:T.acc+"08", borderBottom:"1px solid " + T.acc + "20", display:"flex", justifyContent:"space-between", position:"sticky", top:0 }}>
                             <span>📊 Seleziona dalla rubrica ({unique.length})</span>
-                            <span onClick={(e) => { e.stopPropagation(); setNewCM(c => ({...c, cliente: ""})); }} style={{ cursor:"pointer", color:T.sub }}><I d={ICO.x} /></span>
+                            <span onClick={(e) => { e.stopPropagation(); setNewCM(c => ({...c, cliente: ""})); }} style={{ cursor:"pointer", color:T.sub }}>×</span>
                           </div>
                           {unique.map((s, i) => (
                             <div key={i} onClick={() => setNewCM(c => ({...c, cliente: s.nome, cognome: s.cognome, telefono: s.tel, email: s.email, indirizzo: s.indirizzo || c.indirizzo }))}
@@ -690,7 +684,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       </div>
                     </div>
 
-                    <AccordionSection id="accesso" icon="rocket" label="Accesso / Difficoltà salita"
+                    <AccordionSection id="accesso" icon="→" label="Accesso / Difficoltà salita"
                       badge={newCM.difficoltaSalita||null}>
                       <div style={{ display:"flex", gap:4, marginBottom:8 }}>
                         {[{id:"facile",l:"Facile",c:T.grn,e:"📋"},{id:"media",l:"Media",c:T.orange,e:"🚨"},{id:"difficile",l:"Difficile",c:T.red,e:""}].map(d => (
@@ -721,7 +715,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       </select>
                     </AccordionSection>
 
-                    <AccordionSection id="note" icon="note" label="Note aggiuntive"
+                    <AccordionSection id="note" icon="≡" label="Note aggiuntive"
                       badge={newCM.note ? "✓" : null}>
                       <textarea style={{...S.input,minHeight:70,resize:"vertical"}}
                         placeholder="Note aggiuntive sulla commessa…"
