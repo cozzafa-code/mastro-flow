@@ -427,7 +427,8 @@ export default function VanoDetailPanel() {
     };
 
     // Inline input renderer — input nativo HTML (no numpad custom)
-    const bInput = (label, field) => (
+    const bInput = (label: string, field: string) => {
+      return (
       <div key={field} style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>{label}</div>
         <div style={{ position: "relative" }}>
@@ -455,7 +456,8 @@ export default function VanoDetailPanel() {
           {m[field] > 0 && <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: T.sub, pointerEvents: "none" }}>mm</span>}
         </div>
       </div>
-    );
+      );
+    };
 
     return (
       <div style={{ paddingBottom: 80, background: T.bg }}>
