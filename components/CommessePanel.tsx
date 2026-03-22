@@ -19,7 +19,7 @@ export default function CommessePanel() {
   } = useMastro();
 
   const TODAY = new Date().toISOString().split("T")[0];
-  const [sortBy, setSortBy] = React.useState("default"); // "default" | "nome" | "data" | "euro"
+  const [sortBy, setSortBy] = React.useState("default");
   const fmtEuro = (n: number) => n > 0 ? "€" + n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) : "";
   const fmtData = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "";
   const initials = (c: any) => ((c.cliente || "?").charAt(0) + (c.cognome || "").charAt(0)).toUpperCase();
@@ -165,15 +165,11 @@ export default function CommessePanel() {
   if (selectedCM) return <RilieviListPanel />;
 
   const fermeCount = cantieri.filter(c => isFerma(c)).length;
-
-  // Totale euro commesse filtrate
   const totaleEuro = filtered.reduce((sum, c) => sum + (c.euro ? parseFloat(c.euro) : 0), 0);
-
-  // Sort
   const filteredSorted = [...filtered].sort((a, b) => {
     if (sortBy === "nome") return (a.cliente || "").localeCompare(b.cliente || "");
     if (sortBy === "euro") return (parseFloat(b.euro) || 0) - (parseFloat(a.euro) || 0);
-    if (sortBy === "data") return (b.aggiornato || "").localeCompare(a.aggiornato || "");
+    if (sortBy === "data") return (b.aggiornato || b.creato || "").localeCompare(a.aggiornato || a.creato || "");
     return 0;
   });
 
@@ -235,20 +231,21 @@ export default function CommessePanel() {
       </div>
 
       {/* Sort + Totale */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 10px" }}>
+      <div style={{ padding: "0 20px 10px" }}>
         <div style={{ display: "flex", gap: 6 }}>
-          {[["default","Recenti"],["nome","Nome"],["euro","€"],["data","Data"]].map(([v,l]) => (
-            <div key={v} onClick={() => setSortBy(v)} style={{
-              padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer",
-              background: sortBy === v ? T.acc : T.bg,
+          {[["default","Recenti"],["nome","A-Z"],["euro","€ desc"],["data","Data"]].map(([v,l]) => (
+            <div key={v} onClick={() => setSortBy(v as any)} style={{
+              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
+              background: sortBy === v ? T.acc : T.card,
               color: sortBy === v ? "#fff" : T.sub,
-              border: `1px solid ${sortBy === v ? T.acc : T.bdr}`
+              border: `1.5px solid ${sortBy === v ? T.acc : T.bdr}`
             }}>{l}</div>
           ))}
         </div>
         {totaleEuro > 0 && (
-          <div style={{ fontSize: 12, fontWeight: 800, color: T.text, fontFamily: FM }}>
-            Tot: €{totaleEuro.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, background: T.card, border: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: T.sub, fontWeight: 600 }}>Totale {filtered.length} commesse</span>
+            <span style={{ fontSize: 15, fontWeight: 900, color: T.text, fontFamily: FM }}>€{totaleEuro.toLocaleString("it-IT", { maximumFractionDigits: 0 })}</span>
           </div>
         )}
       </div>
