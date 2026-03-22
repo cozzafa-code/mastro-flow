@@ -122,6 +122,7 @@ export default function VanoDetailPanel() {
   // ═══ VOICE RECOGNITION — Self-contained implementation ═══
   const [vrActive, setVrActive] = useState(false);
   const [showFotoMisure, setShowFotoMisure] = useState(false);
+  const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
   // ── NUMPAD NATIVO ────────────────────────────────────────
   const [numpadField, setNumpadField] = useState<string|null>(null);
   const [numpadVal, setNumpadVal] = useState("");
@@ -731,7 +732,7 @@ export default function VanoDetailPanel() {
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:6}}>
                   {[{id:"Z",l:"Telaio a Z"},{id:"L",l:"Telaio a L"}].map(t=>(
-                    <div key={t.id} onClick={()=>updateV("telaio",v.telaio===t.id?"":t.id)}
+                    <div key={t.id} onClick={()=>{ updateV("telaio",v.telaio===t.id?"":t.id); if(v.telaio!==t.id) setTimeout(()=>flashAndAdvance("telaio"),200); }}
                       style={{flex:1,padding:"9px",borderRadius:8,border:`1.5px solid ${v.telaio===t.id?T.acc:T.bdr}`,background:v.telaio===t.id?T.accLt:T.card,textAlign:"center",fontSize:12,fontWeight:700,color:v.telaio===t.id?T.acc:T.sub,cursor:"pointer"}}>
                       {t.l}
                     </div>
@@ -759,32 +760,50 @@ export default function VanoDetailPanel() {
             { id:"finiture", icon: "", label:"Coprifilo / Lamiera",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
               badge: (v.coprifilo||v.lamiera)?"":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
-              body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              body: <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {/* ── COPRIFILO ── */}
                 <div>
-                  <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase"}}>COPRIFILO</div>
+                  <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.6px"}}>Coprifilo</div>
                   <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                    <div onClick={()=>updateV("coprifilo","")} style={{padding:"7px 10px",borderRadius:8,border:"2px solid "+(!v.coprifilo?T.sub+"40":T.bdr),background:!v.coprifilo?T.bg:T.card,fontSize:11,fontWeight:!v.coprifilo?700:500,color:!v.coprifilo?T.sub:T.text,cursor:"pointer"}}>Nessuno</div>
+                    <div onClick={()=>updateV("coprifilo","")} style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(!v.coprifilo?T.acc:T.bdr),background:!v.coprifilo?T.accLt:T.card,fontSize:11,fontWeight:600,color:!v.coprifilo?T.acc:T.sub,cursor:"pointer"}}>Nessuno</div>
                     {coprifiliDB.map(c=>{
                       const sel=v.coprifilo===c.cod;
-                      return <div key={c.id} onClick={()=>{updateV("coprifilo",c.cod);}}
-                        style={{padding:"7px 10px",borderRadius:8,border:"2px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,fontSize:11,fontWeight:sel?700:500,color:sel?T.acc:T.text,cursor:"pointer",transition:"all 0.15s"}}>
+                      return <div key={c.id} onClick={()=>{updateV("coprifilo",c.cod); setTimeout(()=>flashAndAdvance("finiture"),200);}}
+                        style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,fontSize:11,fontWeight:600,color:sel?T.acc:T.text,cursor:"pointer",
+                          boxShadow:sel?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
                         {c.cod}
                       </div>;
                     })}
                   </div>
                 </div>
-                <div>
-                  <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase"}}>LAMIERA</div>
+
+                {/* ── LAMIERA ── */}
+                <div style={{borderTop:"1px solid "+T.bdr,paddingTop:10}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+                    <div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:"0.6px"}}>Lamiera</div>
+                    {v.lamiera && v.lamiera!=="" && (
+                      <div onClick={()=>setShowLamieraDisegno(true)}
+                        style={{fontSize:10,fontWeight:700,color:T.acc,background:T.accLt,padding:"3px 8px",borderRadius:6,cursor:"pointer",border:"1px solid "+T.acc+"40"}}>
+                        ✏ Disegno →
+                      </div>
+                    )}
+                  </div>
                   <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                    <div onClick={()=>updateV("lamiera","")} style={{padding:"7px 10px",borderRadius:8,border:"2px solid "+(!v.lamiera?T.sub+"40":T.bdr),background:!v.lamiera?T.bg:T.card,fontSize:11,fontWeight:!v.lamiera?700:500,color:!v.lamiera?T.sub:T.text,cursor:"pointer"}}>Nessuna</div>
+                    <div onClick={()=>updateV("lamiera","")} style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(!v.lamiera?T.acc:T.bdr),background:!v.lamiera?T.accLt:T.card,fontSize:11,fontWeight:600,color:!v.lamiera?T.acc:T.sub,cursor:"pointer"}}>Nessuna</div>
                     {lamiereDB.map(l=>{
                       const sel=v.lamiera===l.cod;
-                      return <div key={l.id} onClick={()=>{updateV("lamiera",l.cod);setTimeout(()=>flashAndAdvance("finiture"),150);}}
-                        style={{padding:"7px 10px",borderRadius:8,border:"2px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,fontSize:11,fontWeight:sel?700:500,color:sel?T.acc:T.text,cursor:"pointer",transition:"all 0.15s"}}>
+                      return <div key={l.id} onClick={()=>{updateV("lamiera",l.cod); setTimeout(()=>flashAndAdvance("finiture"),200);}}
+                        style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,fontSize:11,fontWeight:600,color:sel?T.acc:T.text,cursor:"pointer",
+                          boxShadow:sel?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
                         {l.cod}
                       </div>;
                     })}
                   </div>
+                  {v.lamiera && v.lamiera!=="" && (
+                    <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:T.accLt,border:"1px solid "+T.acc+"30",fontSize:11,color:T.acc,fontWeight:600}}>
+                      Lamiera {v.lamiera} selezionata — tocca "Disegno →" per aggiungere pieghe e misure
+                    </div>
+                  )}
                 </div>
               </div>},
             { id:"controtelaio", icon:"◻", label:"Controtelaio",
