@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════════════════════
 import React, { useRef } from "react";
 import { useMastro } from "./MastroContext";
+import SpesaQuick from "./SpesaQuick";
 import { FF, FM, ICO, Ico, I } from "./mastro-constants";
 
 export default function HomePanel() {
@@ -19,11 +20,12 @@ export default function HomePanel() {
     cmFaseIdx, setCmFaseIdx,
     montView, setMontView, montExpandId, setMontExpandId, montCalDate, setMontCalDate,
     setTab, setFilterFase, setSelectedCM, setSelectedEvent, setSelectedVano,
-    setSettingsTab, setShowContabilita, setShowProblemiView,
+    setSettingsTab, setShowContabilita, setShowProblemiView, setShowModal,
     getVaniAttivi, giorniFermaCM, toggleCollapse, SectionHead,
     filtered, calDays, today, ORDINE_STATI, activePlan, trialDaysLeft, drag,
     apriInboxDocumento,
   } = useMastro();
+  const [showSpesaHome, setShowSpesaHome] = React.useState(false);
 
   const [weekOffset, setWeekOffset] = React.useState(0);
   const touchStart = useRef({ x: 0, y: 0 });
@@ -380,6 +382,53 @@ export default function HomePanel() {
           {montAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}><I d={ICO.wrench} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{montAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Montaggi</div></div></div>)}
         </div>
       )}
+
+      {/* AZIONI RAPIDE */}
+      <div style={{ margin: "14px 20px 0" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Azioni rapide</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div onClick={() => setShowModal("commessa")}
+            style={{ padding: "14px 12px", borderRadius: 14, background: T.acc, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+              boxShadow: "0 4px 0 #0D7C6B, 0 6px 16px rgba(13,124,107,0.20)", transition: "all 0.1s" }}>
+            <I d={ICO.folder} s={22} c="#fff" />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Commessa</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)" }}>Nuova pratica</div>
+            </div>
+          </div>
+          <div onClick={() => setShowSpesaHome(true)}
+            style={{ padding: "14px 12px", borderRadius: 14, background: "#E8A020", cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+              boxShadow: "0 4px 0 #B8780A, 0 6px 16px rgba(232,160,32,0.20)", transition: "all 0.1s" }}>
+            <I d={ICO.receipt || ICO.tag} s={22} c="#fff" />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Invia spesa</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)" }}>Scontrino / nota</div>
+            </div>
+          </div>
+          <div onClick={() => setShowModal("contatto")}
+            style={{ padding: "14px 12px", borderRadius: 14, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+              boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
+            <I d={ICO.user} s={22} c={T.acc} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Cliente</div>
+              <div style={{ fontSize: 10, color: T.sub }}>Nuovo contatto</div>
+            </div>
+          </div>
+          <div onClick={() => setShowModal("evento")}
+            style={{ padding: "14px 12px", borderRadius: 14, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+              boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
+            <I d={ICO.calendar} s={22} c="#5856d6" />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Appuntamento</div>
+              <div style={{ fontSize: 10, color: T.sub }}>Agenda</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* SpesaQuick overlay */}
+      {showSpesaHome && <SpesaQuick onClose={() => setShowSpesaHome(false)} />}
+
     </div>
   );
 }
