@@ -2693,7 +2693,6 @@ export default function VanoDetailPanel() {
           </div>
         </div>
       )}
-</div>
 
       {/* ═══ MODAL DISEGNO TECNICO LAMIERA ═══ */}
       {showLamieraDisegno && (() => {
@@ -2891,6 +2890,7 @@ export default function VanoDetailPanel() {
           </div>
         );
       })()}
+</div>
 
     );
 
