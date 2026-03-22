@@ -131,6 +131,7 @@ export default function VanoDetailPanel() {
   const [lamieraAngolo, setLamieraAngolo] = useState('90');
   const [lastDirTap, setLastDirTap] = useState<string>('');
   const [lamieraLatoInfisso, setLamieraLatoInfisso] = useState<'alto'|'basso'|'sx'|'dx'|''>('');
+  const [lamieraSelIdx, setLamieraSelIdx] = useState<number|null>(null);
   const [lamieraLunghezza, setLamieraLunghezza] = useState('');
   // ── LAMIERA ZOOM/PAN refs ────────────────────────────────
   const lamieraZoom = React.useRef(1);
@@ -2956,6 +2957,12 @@ export default function VanoDetailPanel() {
                       {/* Profilo principale */}
                       <polyline points={pts} fill="none" stroke="#0F766E"
                         strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                      {/* Highlight segmento selezionato */}
+                      {lamieraSelIdx!==null && lamieraSelIdx<nodes.length-1 && (() => {
+                        const n0 = nodes[lamieraSelIdx], n1 = nodes[lamieraSelIdx+1];
+                        return <line x1={n0.x} y1={n0.y} x2={n1.x} y2={n1.y}
+                          stroke="#D08008" strokeWidth="7" strokeLinecap="round" opacity="0.7"/>;
+                      })()}
 
                       {/* Punto START con label */}
                       <circle cx={nodes[0].x} cy={nodes[0].y} r="7" fill="#0F766E"/>
@@ -3025,21 +3032,39 @@ export default function VanoDetailPanel() {
               </svg>
             </div>
 
-            {/* Chips segmenti */}
+            {/* Chips segmenti — tap=seleziona edit, X=elimina */}
             {allSegs.length > 0 && (
               <div style={{padding:'6px 12px',background:'#fff',
-                borderTop:'1px solid #E2E8F0',display:'flex',gap:4,flexWrap:'wrap',flexShrink:0}}>
-                {allSegs.map((s,i)=>(
-                  <div key={i} onClick={()=>setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i))}
-                    style={{display:'flex',alignItems:'center',gap:3,padding:'4px 8px',
-                      background:'#F0FDF9',borderRadius:6,border:'1px solid #0F766E30',
-                      cursor:'pointer',fontSize:12,fontWeight:700,color:'#0F766E'}}>
-                    <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
-                    <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
-                    {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:'#D08008'}}>{s.angolo}°</span>}
-                    <span style={{fontSize:10,color:'#DC4444',fontWeight:800,marginLeft:2}}>×</span>
-                  </div>
-                ))}
+                borderTop:'1px solid #E2E8F0',display:'flex',gap:4,flexWrap:'wrap',flexShrink:0,alignItems:'center'}}>
+                {allSegs.map((s,i)=>{
+                  const isSel = lamieraSelIdx===i;
+                  return (
+                    <div key={i} style={{display:'flex',alignItems:'center',gap:2,padding:'4px 6px',
+                      background:isSel?'#0F766E':'#F0FDF9',borderRadius:7,
+                      border:`1.5px solid ${isSel?'#0F766E':'#0F766E30'}`,cursor:'pointer',
+                      fontSize:12,fontWeight:700,color:isSel?'#fff':'#0F766E',
+                      boxShadow:isSel?'0 2px 6px #0F766E40':'none',transition:'all 0.1s'}}>
+                      {/* Tap chip = seleziona per edit */}
+                      <span onClick={()=>{
+                        if(isSel){setLamieraSelIdx(null);}
+                        else{
+                          setLamieraSelIdx(i);
+                          setLamieraPDir(s.dir);
+                          setLamieraPMm(String(s.mm));
+                          setLamieraAngolo(String(s.angolo||90));
+                          setLamieraAngoloInput((s.angolo||90)!==90);
+                        }
+                      }} style={{display:'flex',alignItems:'center',gap:3}}>
+                        <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
+                        <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
+                        {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo}°</span>}
+                      </span>
+                      {/* X = elimina */}
+                      <span onClick={e=>{e.stopPropagation();setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i));if(isSel)setLamieraSelIdx(null);}}
+                        style={{fontSize:11,color:isSel?'rgba(255,255,255,0.8)':'#DC4444',fontWeight:900,marginLeft:2,padding:'0 2px'}}>×</span>
+                    </div>
+                  );
+                })}
                 <div style={{padding:'4px 8px',background:'#F1F5F9',borderRadius:6,
                   fontSize:11,fontWeight:600,color:'#64748B',display:'flex',alignItems:'center'}}>
                   📏 {sviluppata}mm
@@ -3086,6 +3111,19 @@ export default function VanoDetailPanel() {
                   </div>
                 </div>
               </div>
+
+              {/* Banner modifica segmento */}
+              {lamieraSelIdx!==null && (
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+                  padding:'7px 12px',borderRadius:10,background:'#FFF8EC',
+                  border:'1.5px solid #D08008',marginBottom:8}}>
+                  <span style={{fontSize:12,fontWeight:700,color:'#D08008'}}>
+                    ✏️ Modifica segmento {lamieraSelIdx+1} — cambia valori e premi OK
+                  </span>
+                  <span onClick={()=>{setLamieraSelIdx(null);setLamieraPMm('');}}
+                    style={{fontSize:18,color:'#D08008',cursor:'pointer',fontWeight:800}}>✕</span>
+                </div>
+              )}
 
               {/* Angolo personalizzato — appare solo se lamieraAngoloInput */}
               {lamieraAngoloInput && (
@@ -3141,7 +3179,12 @@ export default function VanoDetailPanel() {
                     onKeyDown={e=>{
                       if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
                         const angolo = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
-                        setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}]);
+                        if(lamieraSelIdx!==null){
+                          setLamieraPieghe(prev=>prev.map((s,i)=>i===lamieraSelIdx?{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}:s));
+                          setLamieraSelIdx(null);
+                        } else {
+                          setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}]);
+                        }
                         setLamieraPMm('');
                         setLamieraAngoloInput(false);
                         setLamieraAngolo('90');
@@ -3158,27 +3201,68 @@ export default function VanoDetailPanel() {
                 <div onClick={()=>{
                   if(!lamieraPMm||parseFloat(lamieraPMm)<=0) return;
                   const angolo = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
-                  setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}]);
+                  if(lamieraSelIdx!==null){
+                    // EDIT segmento esistente
+                    setLamieraPieghe(prev=>prev.map((s,i)=>i===lamieraSelIdx?{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}:s));
+                    setLamieraSelIdx(null);
+                  } else {
+                    // AGGIUNGI nuovo
+                    setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}]);
+                  }
                   setLamieraPMm('');
                   setLamieraAngoloInput(false);
                   setLamieraAngolo('90');
                 }}
-                  style={{width:64,borderRadius:10,background:'#0F766E',color:'#fff',
+                  style={{width:64,borderRadius:10,
+                    background:lamieraSelIdx!==null?'#D08008':'#0F766E',color:'#fff',
                     display:'flex',alignItems:'center',justifyContent:'center',
-                    fontSize:32,fontWeight:800,cursor:'pointer',
-                    boxShadow:'0 4px 0 #0D5C56',flexShrink:0}}>
-                  +
+                    fontSize:lamieraSelIdx!==null?12:32,fontWeight:800,cursor:'pointer',
+                    boxShadow:`0 4px 0 ${lamieraSelIdx!==null?'#A06006':'#0D5C56'}`,
+                    flexShrink:0,textAlign:'center',padding:'0 4px'}}>
+                  {lamieraSelIdx!==null?'✓ OK':'+'}
                 </div>
               </div>
 
               {/* Salva / Annulla */}
-              <div style={{display:'flex',gap:8}}>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                 <div onClick={()=>setShowLamieraDisegno(false)}
-                  style={{flex:1,padding:'13px',borderRadius:12,textAlign:'center',
-                    fontSize:14,fontWeight:600,cursor:'pointer',
+                  style={{flex:'0 0 auto',padding:'12px 16px',borderRadius:12,textAlign:'center',
+                    fontSize:13,fontWeight:600,cursor:'pointer',
                     background:'#F1F5F9',color:'#64748B'}}>
                   Annulla
                 </div>
+                {/* ESPORTA: genera testo riepilogo lamiere del vano */}
+                {allSegs.length>0 && (
+                  <div onClick={()=>{
+                    // Build testo riepilogo
+                    const dirsym = (d:string)=>d==='dx'?'→':d==='sx'?'←':d==='giu'?'↓':'↑';
+                    const latoLabel = lamieraLatoInfisso ? `Lato: ${lamieraLatoInfisso.toUpperCase()}` : '';
+                    const lunghLabel = lamieraLunghezza ? `Lunghezza: ${lamieraLunghezza}mm` : '';
+                    const piegheStr = allSegs.map((s,i)=>`  ${i+1}. ${dirsym(s.dir)} ${s.mm}mm${s.angolo&&s.angolo!==90?` @ ${s.angolo}°`:''}`).join('
+');
+                    const testo = [
+                      `═══ LAMIERA ${v.lamiera||''} ═══`,
+                      latoLabel, lunghLabel,
+                      `Sviluppata: ${sviluppata}mm`,
+                      `Lato buono: ${lamieraLatoBuono.toUpperCase()}`,
+                      `Pieghe (${allSegs.length}):`,
+                      piegheStr,
+                    ].filter(Boolean).join('
+');
+                    // Copia negli appunti
+                    if(navigator.clipboard){navigator.clipboard.writeText(testo);}
+                    alert('Riepilogo copiato negli appunti:
+
+'+testo);
+                  }}
+                    style={{flex:'0 0 auto',padding:'12px 14px',borderRadius:12,textAlign:'center',
+                      fontSize:12,fontWeight:700,cursor:'pointer',
+                      background:'#3B7FE010',color:'#3B7FE0',border:'1.5px solid #3B7FE040',
+                      display:'flex',alignItems:'center',gap:6}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Esporta
+                  </div>
+                )}
                 <div onClick={()=>{
                   updateV('lamieraPieghe',lamieraPieghe);
                   updateV('lamieraLatoBuono',lamieraLatoBuono);
@@ -3186,7 +3270,7 @@ export default function VanoDetailPanel() {
                   updateV('lamieraLunghezza',lamieraLunghezza);
                   setShowLamieraDisegno(false);
                 }}
-                  style={{flex:2,padding:'13px',borderRadius:12,textAlign:'center',
+                  style={{flex:1,minWidth:140,padding:'13px',borderRadius:12,textAlign:'center',
                     fontSize:15,fontWeight:800,cursor:'pointer',
                     background:'#0F766E',color:'#fff',
                     boxShadow:'0 4px 0 #0D5C56',
