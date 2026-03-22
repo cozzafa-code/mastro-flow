@@ -15,7 +15,7 @@ import { supabase } from "@/lib/supabase";
 
 // ─── STATI MISURE ──────────────────────────────────────────
 const STATO_MISURE = [
-  { id: "provvisorie", label: "Provvisorie", color: "#8e8e93", bg: "#8e8e9315", icon: "", desc: "Misure non ancora verificate" },
+  { id: "provvisorie", label: "Provvisorie", color: "#D08008", bg: "#D0800818", icon: "", desc: "Misure non ancora verificate" },
   { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "", desc: "Verificate sul posto, non ancora confermate" },
   { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "", desc: "Misure definitive — preventivo sbloccato" },
   { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "", desc: "Rilevate discrepanze — ricontrollare" },
@@ -72,7 +72,7 @@ export default function VanoDetailPanel() {
     ctProfDB, ctSezioniDB, ctCieliniDB, ctOffset,
     mezziSalita, fabOpen,
     // Helpers
-    goBack, updateMisura, updateMisureBatch, updateVanoField,
+    goBack, updateMisura, updateMisureBatch, updateVanoField, aziendaId,
     toggleAccessorio, updateAccessorio, compressImage,
     // Cataloghi accessori espansi
     zanzModelliDB, zanzRetiDB,
@@ -339,13 +339,30 @@ export default function VanoDetailPanel() {
     try { rec.start(); } catch(e) { setVrError("Errore avvio microfono."); }
   }, [parseVoiceText]);
 
-  const vrStop = useCallback(() => {
+  const vrStop = useCallback(async () => {
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch(e) {}
       recognitionRef.current = null;
     }
     setVrActive(false);
-  }, []);
+    // Alimenta il dataset AI con le misure inserite
+    try {
+      const v = selectedVano;
+      const m = v?.misure || {};
+      if (v && Object.values(m).some(x => (x as number) > 0)) {
+        await supabase.from("misure_apprese").insert({
+          tipo_vano: v.tipo || "sconosciuto",
+          sistema: v.sistema || null,
+          misure: m,
+          stanza: v.stanza || null,
+          piano: v.piano || null,
+          azienda_id: aziendaId || null,
+          fonte: "dettatura",
+          created_at: new Date().toISOString(),
+        }).then(() => {}).catch(() => {});
+      }
+    } catch(e) {}
+  }, [selectedVano, aziendaId]);
 
   // Cleanup on unmount
   useEffect(() => () => { if (recognitionRef.current) try { recognitionRef.current.stop(); } catch(e) {} }, []);
@@ -443,10 +460,7 @@ export default function VanoDetailPanel() {
               </div>
             );
           })()}
-          <div onClick={() => { setShowAIPhoto(true); setAiPhotoStep(0); }} style={{ padding: "5px 10px", borderRadius: 8, background: "linear-gradient(135deg, #af52de20, #0D7C6B20)", border: "1px solid #af52de40", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontSize: 14 }}><I d={ICO.cpu} /></span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#af52de" }}>AI</span>
-          </div>
+
         </div>
 
         {/* ═══ STORICO: BANNER SOLA LETTURA ═══ */}
@@ -463,12 +477,21 @@ export default function VanoDetailPanel() {
         <div style={{ margin: "8px 16px" }}>
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 20px", borderRadius: 16, background: vrActive ? "linear-gradient(135deg, #DC4444, #ff6b6b)" : "linear-gradient(135deg, #D08008, #b86e00)", border: "none", cursor: "pointer", justifyContent: "center", boxShadow: vrActive ? "0 0 20px rgba(255,59,48,0.4)" : "0 2px 8px rgba(208,128,8,0.3)" }}>
-            <span style={{ fontSize: 22 }}>{vrActive ? "" : ""}</span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderRadius: 10,
+              background: vrActive ? "#DC4444" : "#0F766E",
+              border: "none", cursor: "pointer", justifyContent: "center",
+              boxShadow: vrActive ? "0 4px 0 #991B1B" : "0 4px 0 #0D5C56",
+              transition: "all 0.1s" }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+              <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: "0.02em" }}>
               {vrActive ? "STOP" : "Avvia Dettatura"}
             </span>
-            {vrActive && <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff", animation: "pulse 1s infinite" }} />}
+            {vrActive && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff", animation: "pulse 1s infinite", marginLeft: 4 }} />}
           </div>
           <style>{`@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }`}</style>
 
