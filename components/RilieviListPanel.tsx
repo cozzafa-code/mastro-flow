@@ -1787,9 +1787,11 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" as any, marginBottom: c.praticaFiscale ? 8 : 0 }}>
                 {[
                   { id: "", l: "Nessuna", color: T.sub },
+                  { id: "iva4", l: "IVA 4%", color: "#3B7FE0" },
                   { id: "iva10", l: "IVA 10%", color: "#ff9500" },
                   { id: "detrazione50", l: "Detraz. 50%", color: "#007aff" },
                   { id: "ecobonus65", l: "Ecobonus 65%", color: "#34c759" },
+                  { id: "barriere75", l: "Barriere 75%", color: "#8B5CF6" },
                   { id: "superbonus", l: "Superbonus", color: "#af52de" },
                 ].map(opt => (
                   <div key={opt.id} onClick={() => {
@@ -1808,6 +1810,10 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}>Documenti necessari:</div>
                   {[
+                    ...(c.praticaFiscale === "iva4" ? [
+                      { l: "Dichiarazione abitazione principale", desc: "Autocertificazione cliente", key: "dich_prima_casa" },
+                      { l: "Atto di proprietà / contratto locazione", desc: "Per verifica prima casa", key: "atto_prop" },
+                    ] : []),
                     ...(c.praticaFiscale === "iva10" ? [
                       { l: "Dichiarazione IVA agevolata 10%", desc: "Autocertificazione cliente per ristrutturazione", key: "dich_iva10" },
                       { l: "Titolo abilitativo (CILA/SCIA)", desc: "Numero protocollo e data", key: "titolo_abit" },
@@ -1825,6 +1831,11 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                       { l: "Comunicazione ENEA (obbligatoria)", desc: "Entro 90gg", key: "enea" },
                       { l: "Asseverazione tecnico", desc: "Prestazione energetica", key: "asseverazione" },
                       { l: "APE ante e post intervento", desc: "Attestato energetico", key: "ape" },
+                    ] : []),
+                    ...(c.praticaFiscale === "barriere75" ? [
+                      { l: "Bonifico parlante", desc: "Con causale specifica barriere", key: "bonifico" },
+                      { l: "Fattura con descrizione specifica", desc: "Eliminazione barriere architettoniche", key: "fattura" },
+                      { l: "Eventuale CILA/SCIA", desc: "Se richiesta dal Comune", key: "titolo_abit" },
                     ] : []),
                     ...(c.praticaFiscale === "superbonus" ? [
                       { l: "Dichiarazione IVA agevolata", key: "dich_iva10", desc: "Autocertificazione" },
@@ -1906,6 +1917,20 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                     const piva = "IT________________________"; // da settings azienda
 
                     const PRESTAMPATI: Record<string, { titolo: string; color: string; voci: Array<{ label: string; testo: string }> }> = {
+                      iva4: {
+                        titolo: "IVA 4% — Testi prestampati",
+                        color: "#3B7FE0",
+                        voci: [
+                          {
+                            label: "Testo fattura (causale)",
+                            testo: `Fornitura e posa infissi abitazione principale\nIVA agevolata 4% ai sensi art.127-undecies DPR 633/72\nImmobile adibito ad abitazione principale\nCommessa: ${code} - ${indirizzo}`,
+                          },
+                          {
+                            label: "Dichiarazione prima casa (da far firmare)",
+                            testo: `Il/La sottoscritto/a ${cliente}, C.F. ${cf},\nDICHIARA che l'immobile sito in ${indirizzo}\ncostituisce la propria abitazione principale\ne CHIEDE l'applicazione IVA agevolata 4%\nai sensi dell'art.127-undecies DPR 633/72.\nData: ___________     Firma: _______________________`,
+                          },
+                        ],
+                      },
                       iva10: {
                         titolo: "IVA 10% — Testi prestampati",
                         color: "#ff9500",
@@ -1982,6 +2007,20 @@ Dati: CF, codice fiscale ditta, scheda tecnica infisso con Uw, importo lavori`,
                           },
                         ],
                       },
+                      barriere75: {
+                        titolo: "Barriere 75% — Testi prestampati",
+                        color: "#8B5CF6",
+                        voci: [
+                          {
+                            label: "Causale bonifico parlante",
+                            testo: `Bonifico per detrazione barriere architettoniche\nart. 119-ter DL 34/2020 - Detrazione 75%\nBeneficiario: ${cliente} - C.F. ${cf}\nDitta esecutrice: Walter Cozza Serramenti SRL - P.IVA ${piva}\nCommessa: ${code} - ${indirizzo}`,
+                          },
+                          {
+                            label: "Testo fattura",
+                            testo: `Fornitura e posa infissi per eliminazione barriere architettoniche\nDetrazione 75% art.119-ter DL 34/2020\nImmobile: ${indirizzo} - Commessa: ${code}\nIVA 10% manutenzione straordinaria`,
+                          },
+                        ],
+                      },
                       superbonus: {
                         titolo: "Superbonus — Testi prestampati",
                         color: "#af52de",
@@ -2045,7 +2084,11 @@ IVA 10% manutenzione straordinaria`,
                       `ai sensi dell'art. 3 c.1 lett. b) DPR 380/2001`, ``,
                       `Titolo abilitativo: CILA/SCIA n. ________ del ________`,
                       `Comune di: ________`, ``,
-                      ...(c.praticaFiscale === "iva10" ? [`CHIEDE l'applicazione dell'IVA agevolata al 10%`, `(art. 7 c.1 lett. b L. 488/99)`, ``] : []),
+                      ...(c.praticaFiscale === "iva4" ? [
+                      { l: "Dichiarazione abitazione principale", desc: "Autocertificazione cliente", key: "dich_prima_casa" },
+                      { l: "Atto di proprietà / contratto locazione", desc: "Per verifica prima casa", key: "atto_prop" },
+                    ] : []),
+                    ...(c.praticaFiscale === "iva10" ? [`CHIEDE l'applicazione dell'IVA agevolata al 10%`, `(art. 7 c.1 lett. b L. 488/99)`, ``] : []),
                       ...(c.praticaFiscale !== "iva10" ? [
                         `DATI PER BONIFICO PARLANTE:`,
                         `Beneficiario: ${c.cliente} ${c.cognome || ""} - CF: ${c.cf || "________"}`,
