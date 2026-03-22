@@ -50,7 +50,7 @@ import { OnboardingPanel, FirmaModalPanel } from "./OnboardingPanel";
 import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 
-function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
+function MastroERPInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
   const [theme, setTheme] = useState("chiaro");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
@@ -4450,10 +4450,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
 //  ERROR BOUNDARY WRAPPER 
-export default function MastroMisure() {
+export default function MastroERP() {
   return (
     <MastroErrorBoundary>
-      <MastroMisureInner />
+      <MastroERPInner />
     </MastroErrorBoundary>
   );
 }
