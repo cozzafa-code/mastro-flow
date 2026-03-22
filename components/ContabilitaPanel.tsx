@@ -1,6 +1,7 @@
 "use client";
 // @ts-nocheck
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico } from "./mastro-constants";
 
@@ -82,7 +83,7 @@ export default function ContabilitaPanel() {
       
       {/* TABS */}
       <div style={{ display: "flex", margin: "8px 16px", borderRadius: 8, border: "1px solid " + T.bdr, overflow: "hidden" }}>
-        {[{ id: "panoramica", l: "Panoramica" }, { id: "emesse", l: "Emesse" }, { id: "ricevute", l: "Ricevute" }, { id: "calendario", l: "Calendario" }, { id: "sdi", l: "SDI" }].map(t => (
+        {[{ id: "panoramica", l: "Panoramica" }, { id: "emesse", l: "Emesse" }, { id: "ricevute", l: "Ricevute" }, { id: "calendario", l: "Calendario" }, { id: "spese", l: "Spese" }, { id: "sdi", l: "SDI" }].map(t => (
           <div key={t.id} onClick={() => setContabTab(t.id)} style={{ flex: 1, padding: "8px 2px", textAlign: "center", fontSize: 9, fontWeight: 700, background: contabTab === t.id ? T.acc : T.card, color: contabTab === t.id ? "#fff" : T.sub, cursor: "pointer" }}>{t.l}</div>
         ))}
       </div>
@@ -464,6 +465,90 @@ export default function ContabilitaPanel() {
         </>;
       })()}
       
+      {/*  SPESE OPERATORI  */}
+      {contabTab === "spese" && (() => {
+        const [spese, setSpese] = React.useState<any[]>([]);
+        const [loadingSpese, setLoadingSpese] = React.useState(true);
+        const CATEGORIE_COLORS: Record<string, string> = {
+          carburante: "#E8A020", pranzo: "#1A9E73", materiale: "#3B7FE0",
+          attrezzatura: "#8B5CF6", trasferta: "#DC4444", telefono: "#0EA5E9", varie: "#6B7280"
+        };
+        React.useEffect(() => {
+          supabase.from("spese_operatori").select("*").order("created_at", { ascending: false }).limit(50)
+            .then(({ data }) => { setSpese(data || []); setLoadingSpese(false); });
+        }, []);
+        const inAttesa = spese.filter(s => s.stato === "in_attesa");
+        const approvate = spese.filter(s => s.stato === "approvata");
+        const totInAttesa = inAttesa.reduce((s, x) => s + (x.importo || 0), 0);
+        const totApprovate = approvate.reduce((s, x) => s + (x.importo || 0), 0);
+        const approva = async (id: string) => {
+          await supabase.from("spese_operatori").update({ stato: "approvata" }).eq("id", id);
+          setSpese(prev => prev.map(s => s.id === id ? { ...s, stato: "approvata" } : s));
+        };
+        const rifiuta = async (id: string) => {
+          await supabase.from("spese_operatori").update({ stato: "rifiutata" }).eq("id", id);
+          setSpese(prev => prev.map(s => s.id === id ? { ...s, stato: "rifiutata" } : s));
+        };
+        return <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+            <div style={{ background: "#fff3e0", borderRadius: 10, border: "1px solid #ff980030", padding: "10px 12px", textAlign: "center" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: "#E8A020", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>In attesa</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#E8A020", fontFamily: "'JetBrains Mono',monospace" }}>€{totInAttesa.toFixed(2)}</div>
+              <div style={{ fontSize: 10, color: "#E8A020" }}>{inAttesa.length} spese</div>
+            </div>
+            <div style={{ background: "#e8f5e9", borderRadius: 10, border: "1px solid #1A9E7330", padding: "10px 12px", textAlign: "center" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: "#1A9E73", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Approvate</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#1A9E73", fontFamily: "'JetBrains Mono',monospace" }}>€{totApprovate.toFixed(2)}</div>
+              <div style={{ fontSize: 10, color: "#1A9E73" }}>{approvate.length} spese</div>
+            </div>
+          </div>
+          {loadingSpese && <div style={{ textAlign: "center", padding: 24, color: T.sub, fontSize: 13 }}>Caricamento...</div>}
+          {inAttesa.length > 0 && <>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#E8A020", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>Da approvare</div>
+            {inAttesa.map(s => (
+              <div key={s.id} style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginBottom: 8, overflow: "hidden" }}>
+                {s.foto_url && <img src={s.foto_url} style={{ width: "100%", height: 80, objectFit: "cover" }} />}
+                <div style={{ padding: "10px 12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{s.operatore_nome || "Operatore"}</div>
+                      <div style={{ fontSize: 11, color: CATEGORIE_COLORS[s.categoria] || "#888", fontWeight: 600 }}>{s.categoria}</div>
+                      {s.nota && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{s.nota}</div>}
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: "#E8A020", fontFamily: "'JetBrains Mono',monospace" }}>€{(s.importo||0).toFixed(2)}</div>
+                  </div>
+                  <div style={{ fontSize: 10, color: T.sub, marginBottom: 8 }}>{new Date(s.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div onClick={() => rifiuta(s.id)} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#DC444415", color: "#DC4444", fontSize: 12, fontWeight: 700, textAlign: "center", cursor: "pointer", border: "1px solid #DC444430" }}>Rifiuta</div>
+                    <div onClick={() => approva(s.id)} style={{ flex: 2, padding: "8px", borderRadius: 8, background: "#1A9E73", color: "#fff", fontSize: 12, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>Approva</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>}
+          {approvate.length > 0 && <>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, margin: "14px 0 8px" }}>Approvate</div>
+            {approvate.slice(0, 10).map(s => (
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}`, marginBottom: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: CATEGORIE_COLORS[s.categoria] || "#888", flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{s.operatore_nome} · {s.categoria}</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>{new Date(s.created_at).toLocaleDateString("it-IT")}</div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#1A9E73", fontFamily: "'JetBrains Mono',monospace" }}>€{(s.importo||0).toFixed(2)}</div>
+              </div>
+            ))}
+          </>}
+          {!loadingSpese && spese.length === 0 && (
+            <div style={{ textAlign: "center", padding: "40px 20px", color: T.sub }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🧾</div>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>Nessuna spesa ancora</div>
+              <div style={{ fontSize: 12, marginTop: 4 }}>Gli operatori possono inviare spese dal loro profilo</div>
+            </div>
+          )}
+        </>;
+      })()}
+
       {/*  SDI  */}
       {contabTab === "sdi" && <>
         <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
