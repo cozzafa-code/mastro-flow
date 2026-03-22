@@ -2694,194 +2694,196 @@ export default function VanoDetailPanel() {
         </div>
       )}
 
-      {/* ═══ MODAL DISEGNO TECNICO LAMIERA ═══ */}
       {showLamieraDisegno && (() => {
-        const lmm = v.misure?.lCentro || 0;
-        const hmm = v.misure?.hCentro || 0;
-        const LAMIERE_STANDARD = [
-          { cod: "20x20", w: 20, h: 20 }, { cod: "30x30", w: 30, h: 30 },
-          { cod: "40x40", w: 40, h: 40 }, { cod: "40x20", w: 40, h: 20 },
-          { cod: "50x50", w: 50, h: 50 }, { cod: "60x20", w: 60, h: 20 },
-        ];
-        const lamStd = LAMIERE_STANDARD.find(l => l.cod === v.lamiera);
-        const W = lamStd?.w || 40;
-        const H_lam = lamStd?.h || 20;
+        const lmm = v.misure?.lCentro || 1200;
+        const hmm = v.misure?.hCentro || 1400;
 
-        // Calcola SVG profilo lamiera con pieghe
-        const buildProfile = () => {
-          const scale = 3;
-          let x = 20, y = 80;
-          const pts: string[] = [`${x},${y}`];
-          // Ala superiore orizzontale (larghezza vano)
-          const totalW = Math.min((lmm || 200) * 0.15, 240);
-          x += totalW; pts.push(`${x},${y}`);
-          // Piega discendente (altezza lamiera H_lam)
-          y += H_lam * scale * 0.8; pts.push(`${x},${y}`);
-          // Aggiungi pieghe custom
+        // Calcola punti SVG dal centro, scala dinamica
+        const SVG_W = 280, SVG_H = 160, PAD = 20;
+        const buildSVGPoints = () => {
+          const maxExtent = lamieraPieghe.reduce((acc, p) => {
+            if (p.dir === 'sx' || p.dir === 'dx') return acc + p.mm;
+            return acc + p.mm;
+          }, lmm + 100);
+          const scaleX = (SVG_W - PAD*2) / Math.max(lmm, maxExtent, 100);
+          const scaleY = (SVG_H - PAD*2) / Math.max(hmm * 0.1, 80);
+          const scale = Math.min(scaleX, scaleY, 0.8);
+
+          let x = PAD, y = PAD + 10;
+          const pts: [number,number][] = [[x, y]];
+          // Prima piega: larghezza foro (orizzontale)
+          x += lmm * scale;
+          pts.push([x, y]);
+          // Pieghe aggiuntive
           lamieraPieghe.forEach(p => {
-            if (p.dir === 'sx') { x -= p.mm * scale * 0.5; pts.push(`${x},${y}`); }
-            if (p.dir === 'dx') { x += p.mm * scale * 0.5; pts.push(`${x},${y}`); }
-            if (p.dir === 'su') { y -= p.mm * scale * 0.5; pts.push(`${x},${y}`); }
-            if (p.dir === 'giu') { y += p.mm * scale * 0.5; pts.push(`${x},${y}`); }
+            const d = p.mm * scale;
+            if (p.dir === 'dx') x += d;
+            else if (p.dir === 'sx') x -= d;
+            else if (p.dir === 'giu') y += d;
+            else if (p.dir === 'su') y -= d;
+            pts.push([x, y]);
           });
-          return pts.join(' ');
+          return pts.map(([px,py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join(' ');
         };
 
         return (
-          <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"flex-end" }}>
-            <div style={{ width:"100%", background:T.card, borderRadius:"16px 16px 0 0", maxHeight:"92vh", overflowY:"auto" }}>
-              
+          <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"flex-end"}}>
+            <div style={{width:"100%",background:"#fff",borderRadius:"18px 18px 0 0",maxHeight:"90vh",overflowY:"auto"}}>
+
               {/* Header */}
-              <div style={{ background:"#0F766E", padding:"14px 16px", borderRadius:"16px 16px 0 0", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{background:"#0F766E",padding:"14px 16px",borderRadius:"18px 18px 0 0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div>
-                  <div style={{ color:"#fff", fontSize:15, fontWeight:800 }}>Lamiera {v.lamiera || "personalizzata"}</div>
-                  <div style={{ color:"rgba(255,255,255,0.7)", fontSize:11, marginTop:2 }}>
-                    Foro: {lmm||"?"}×{hmm||"?"} mm
-                  </div>
+                  <div style={{color:"#fff",fontSize:16,fontWeight:800}}>Disegno lamiera</div>
+                  <div style={{color:"rgba(255,255,255,0.7)",fontSize:11,marginTop:2}}>Foro {lmm}×{hmm} mm</div>
                 </div>
-                <div onClick={() => setShowLamieraDisegno(false)} style={{ color:"rgba(255,255,255,0.7)", fontSize:22, cursor:"pointer", lineHeight:1 }}>×</div>
+                <div onClick={()=>setShowLamieraDisegno(false)} style={{color:"rgba(255,255,255,0.7)",fontSize:26,cursor:"pointer",lineHeight:1}}>×</div>
               </div>
 
-              <div style={{ padding:"16px" }}>
+              <div style={{padding:"16px 14px"}}>
 
-                {/* Lamiere standard rapide */}
-                <div style={{ marginBottom:14 }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:0.8, marginBottom:8 }}>Lamiere standard</div>
-                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                    {[
-                      {cod:"20×20",w:20,h:20}, {cod:"30×30",w:30,h:30},
-                      {cod:"40×40",w:40,h:40}, {cod:"40×20",w:40,h:20},
-                      {cod:"50×50",w:50,h:50}, {cod:"60×20",w:60,h:20},
-                      {cod:"personalizzata",w:0,h:0},
-                    ].map(lm => {
-                      const sel = v.lamiera === lm.cod;
-                      return (
-                        <div key={lm.cod}
-                          onClick={() => { updateV("lamiera", lm.cod); setLamieraPieghe([]); }}
-                          style={{ padding:"8px 12px", borderRadius:8,
-                            border:`1.5px solid ${sel?"#0F766E":T.bdr}`,
-                            background: sel?"#0F766E18":T.bg,
-                            fontSize:12, fontWeight:sel?700:500,
-                            color: sel?"#0F766E":T.text, cursor:"pointer",
-                            boxShadow: sel?"0 2px 0 #0D5C56":"0 1px 0 rgba(0,0,0,0.07)" }}>
-                          {lm.cod}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Anteprima SVG profilo */}
-                <div style={{ background:"#F8FAFC", borderRadius:12, border:"1px solid #E2E8F0", padding:"12px", marginBottom:14 }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:0.8, marginBottom:8 }}>Sezione profilo</div>
-                  <svg viewBox="0 0 300 140" width="100%" style={{ display:"block" }}>
-                    {/* Griglia */}
-                    {[0,1,2,3,4,5].map(i => (
-                      <line key={i} x1={i*50} y1="0" x2={i*50} y2="140" stroke="#E2E8F0" strokeWidth="0.5"/>
+                {/* Preview SVG — grande e visibile */}
+                <div style={{background:"#F8FAFC",borderRadius:12,border:"1px solid #E2E8F0",padding:"10px",marginBottom:16}}>
+                  <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} width="100%" style={{display:"block",minHeight:120}}>
+                    {/* Griglia leggera */}
+                    {[1,2,3,4,5].map(i=>(
+                      <line key={i} x1={i*SVG_W/6} y1="0" x2={i*SVG_W/6} y2={SVG_H} stroke="#E2E8F0" strokeWidth="0.5"/>
                     ))}
-                    {[0,1,2].map(i => (
-                      <line key={i} x1="0" y1={i*46} x2="300" y2={i*46} stroke="#E2E8F0" strokeWidth="0.5"/>
+                    {[1,2,3].map(i=>(
+                      <line key={i} x1="0" y1={i*SVG_H/4} x2={SVG_W} y2={i*SVG_H/4} stroke="#E2E8F0" strokeWidth="0.5"/>
                     ))}
-                    {/* Profilo foro di riferimento */}
-                    {lmm > 0 && <rect x="10" y="10" width="280" height="120" fill="none" stroke="#E2E8F0" strokeWidth="1.5" strokeDasharray="6,4" rx="2"/>}
-                    {/* Lamiera */}
+                    {/* Profilo lamiera */}
                     <polyline
-                      points={buildProfile()}
-                      fill="none" stroke="#0F766E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                    {/* Quote larghezza */}
-                    <line x1="20" y1="130" x2="260" y2="130" stroke="#64748B" strokeWidth="0.8"/>
-                    <line x1="20" y1="128" x2="20" y2="132" stroke="#64748B" strokeWidth="0.8"/>
-                    <line x1="260" y1="128" x2="260" y2="132" stroke="#64748B" strokeWidth="0.8"/>
-                    <text x="140" y="138" textAnchor="middle" fontSize="9" fill="#64748B">{lmm||"L foro"} mm</text>
-                    {/* Label lamiera */}
-                    <text x="150" y="70" textAnchor="middle" fontSize="11" fill="#0F766E" fontWeight="600">{v.lamiera || "—"}</text>
-                    {W > 0 && <text x="150" y="83" textAnchor="middle" fontSize="9" fill="#64748B">ala {W}×{H_lam} mm</text>}
+                      points={buildSVGPoints()}
+                      fill="none" stroke="#0F766E" strokeWidth="2.5"
+                      strokeLinecap="round" strokeLinejoin="round"/>
+                    {/* Label foro */}
+                    <text x={SVG_W/2} y={SVG_H-4} textAnchor="middle" fontSize="9" fill="#94A3B8">
+                      L foro {lmm} mm
+                    </text>
+                    {/* Punti di piega */}
+                    {(() => {
+                      const lScale = Math.min((SVG_W-40)/Math.max(lmm,100), 0.8);
+                      let x2=20, y2=30;
+                      const nodes: [number,number][] = [[x2,y2]];
+                      x2+=lmm*lScale; nodes.push([x2,y2]);
+                      lamieraPieghe.forEach(p=>{
+                        const d=p.mm*lScale;
+                        if(p.dir==='dx') x2+=d;
+                        else if(p.dir==='sx') x2-=d;
+                        else if(p.dir==='giu') y2+=d;
+                        else if(p.dir==='su') y2-=d;
+                        nodes.push([x2,y2]);
+                      });
+                      return nodes.map(([px,py],i)=>(
+                        <circle key={i} cx={px.toFixed(1)} cy={py.toFixed(1)} r="3" fill="#0F766E" opacity="0.7"/>
+                      ));
+                    })()}
                   </svg>
                 </div>
 
-                {/* Pieghe aggiuntive */}
-                <div style={{ marginBottom:14 }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:0.8, marginBottom:8 }}>Pieghe aggiuntive</div>
-                  
-                  {lamieraPieghe.length > 0 && (
-                    <div style={{ marginBottom:8, display:"flex", flexDirection:"column", gap:4 }}>
-                      {lamieraPieghe.map((p, i) => (
-                        <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px", background:T.bg, borderRadius:8, border:"1px solid "+T.bdr }}>
-                          <div style={{ width:24, height:24, borderRadius:6, background:"#0F766E18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, color:"#0F766E", fontWeight:700 }}>
-                            {p.dir==="sx"?"←":p.dir==="dx"?"→":p.dir==="su"?"↑":"↓"}
-                          </div>
-                          <div style={{ flex:1, fontSize:12, color:T.text, fontWeight:600 }}>Piega {p.dir} — {p.mm} mm</div>
-                          <div onClick={() => setLamieraPieghe(prev => prev.filter((_,j)=>j!==i))}
-                            style={{ fontSize:14, color:T.sub, cursor:"pointer" }}>×</div>
+                {/* Lista pieghe */}
+                {lamieraPieghe.length > 0 && (
+                  <div style={{marginBottom:12,display:"flex",flexDirection:"column",gap:4}}>
+                    {lamieraPieghe.map((p,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",
+                        background:"#F0FDF9",borderRadius:8,border:"1px solid #0F766E20"}}>
+                        <div style={{width:28,height:28,borderRadius:7,background:"#0F766E",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          fontSize:15,color:"#fff",fontWeight:800,flexShrink:0}}>
+                          {p.dir==="sx"?"←":p.dir==="dx"?"→":p.dir==="su"?"↑":"↓"}
                         </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Aggiunta piega */}
-                  <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                        <div style={{ display:"flex", gap:4 }}>
-                          {(["sx","dx","su","giu"] as const).map(d => (
-                            <div key={d} onClick={() => setLamieraPDir(d)}
-                              style={{ width:34, height:34, borderRadius:8,
-                                border:`1.5px solid ${lamieraPDir===d?"#0F766E":T.bdr}`,
-                                background:lamieraPDir===d?"#0F766E18":T.bg,
-                                display:"flex", alignItems:"center", justifyContent:"center",
-                                fontSize:16, cursor:"pointer",
-                                color:lamieraPDir===d?"#0F766E":T.sub }}>
-                              {d==="sx"?"←":d==="dx"?"→":d==="su"?"↑":"↓"}
-                            </div>
-                          ))}
+                        <div style={{flex:1,fontSize:13,fontWeight:700,color:"#0F172A"}}>
+                          {p.dir==="sx"?"Sinistra":p.dir==="dx"?"Destra":p.dir==="su"?"Su":"Giù"} — <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{p.mm} mm</span>
                         </div>
-                        <input inputMode="numeric" value={lamieraPMm}
-                          onChange={e => setLamieraPMm(e.target.value)}
-                          placeholder="mm"
-                          style={{ width:70, padding:"8px 10px", borderRadius:8,
-                            border:"1px solid "+T.bdr, fontSize:15,
-                            fontFamily:"'JetBrains Mono',monospace", textAlign:"center", background:T.bg }} />
-                        <div onClick={() => {
-                          if (!lamieraPMm || parseFloat(lamieraPMm) <= 0) return;
-                          setLamieraPieghe(prev => [...prev, { dir: lamieraPDir, mm: parseFloat(lamieraPMm) }]);
-                          setLamieraPMm('');
-                        }}
-                          style={{ flex:1, padding:"9px 12px", borderRadius:8,
-                            background:"#0F766E", color:"#fff",
-                            fontSize:13, fontWeight:700, textAlign:"center", cursor:"pointer",
-                            boxShadow:"0 3px 0 #0D5C56" }}>
-                          + Piega
+                        <div onClick={()=>setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i))}
+                          style={{width:28,height:28,borderRadius:7,background:"#FEE2E2",
+                            display:"flex",alignItems:"center",justifyContent:"center",
+                            fontSize:16,color:"#DC4444",cursor:"pointer",fontWeight:800}}>
+                          ×
                         </div>
                       </div>
-                </div>
-
-                {/* Note lamiera */}
-                <div style={{ marginBottom:16 }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:0.8, marginBottom:6 }}>Note lamiera</div>
-                  <textarea
-                    value={v.lamieraNote || ""}
-                    onChange={e => updateV("lamieraNote", e.target.value)}
-                    placeholder="Es: piega interna, colore speciale, verniciata..."
-                    rows={2}
-                    style={{ width:"100%", padding:"10px 12px", borderRadius:10, border:"1px solid "+T.bdr,
-                      fontSize:13, background:T.bg, resize:"none", boxSizing:"border-box" }} />
-                </div>
-
-                {/* Tasti azione */}
-                <div style={{ display:"flex", gap:8 }}>
-                  <div onClick={() => setShowLamieraDisegno(false)}
-                    style={{ flex:1, padding:"13px", borderRadius:10, textAlign:"center",
-                      fontSize:13, fontWeight:700, cursor:"pointer",
-                      background:T.bg, border:"1px solid "+T.bdr, color:T.sub }}>
-                    Chiudi
+                    ))}
                   </div>
-                  <div onClick={() => {
-                    updateV("lamieraPieghe", lamieraPieghe);
-                    setShowLamieraDisegno(false);
-                  }}
-                    style={{ flex:2, padding:"13px", borderRadius:10, textAlign:"center",
-                      fontSize:13, fontWeight:800, cursor:"pointer",
-                      background:"#0F766E", color:"#fff",
-                      boxShadow:"0 4px 0 #0D5C56" }}>
-                    ✓ Salva lamiera
+                )}
+
+                {/* Aggiungi piega — UI grande e semplice */}
+                <div style={{background:"#F8FAFC",borderRadius:12,border:"1px solid #E2E8F0",padding:"12px",marginBottom:14}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:0.8,marginBottom:10}}>
+                    Aggiungi piega
+                  </div>
+                  {/* Direzione — 4 tasti grandi */}
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:10}}>
+                    {[
+                      {d:"sx",label:"←",desc:"Sinistra"},
+                      {d:"dx",label:"→",desc:"Destra"},
+                      {d:"su",label:"↑",desc:"Su"},
+                      {d:"giu",label:"↓",desc:"Giù"},
+                    ].map(({d,label,desc})=>(
+                      <div key={d} onClick={()=>setLamieraPDir(d as any)}
+                        style={{padding:"12px 6px",borderRadius:10,textAlign:"center",cursor:"pointer",
+                          border:`2px solid ${lamieraPDir===d?"#0F766E":"#E2E8F0"}`,
+                          background:lamieraPDir===d?"#0F766E":"#fff",
+                          boxShadow:lamieraPDir===d?"0 3px 0 #0D5C56":"0 2px 0 rgba(0,0,0,0.07)",
+                          transition:"all 0.1s"}}>
+                        <div style={{fontSize:22,color:lamieraPDir===d?"#fff":"#64748B",lineHeight:1}}>{label}</div>
+                        <div style={{fontSize:9,fontWeight:600,color:lamieraPDir===d?"rgba(255,255,255,0.8)":"#94A3B8",marginTop:3}}>{desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* mm + tasto aggiunta */}
+                  <div style={{display:"flex",gap:8}}>
+                    <div style={{flex:1,position:"relative"}}>
+                      <input
+                        inputMode="decimal"
+                        value={lamieraPMm}
+                        onChange={e=>setLamieraPMm(e.target.value)}
+                        placeholder="0"
+                        style={{width:"100%",padding:"14px 40px 14px 14px",borderRadius:10,
+                          border:"1.5px solid #E2E8F0",fontSize:22,fontWeight:800,
+                          fontFamily:"'JetBrains Mono',monospace",textAlign:"center",
+                          boxSizing:"border-box",background:"#fff",color:"#0F172A"}}/>
+                      <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
+                        fontSize:12,color:"#94A3B8",fontWeight:600}}>mm</span>
+                    </div>
+                    <div onClick={()=>{
+                      if(!lamieraPMm||parseFloat(lamieraPMm)<=0) return;
+                      setLamieraPieghe(prev=>[...prev,{dir:lamieraPDir,mm:parseFloat(lamieraPMm)}]);
+                      setLamieraPMm('');
+                    }}
+                      style={{width:70,borderRadius:10,background:"#0F766E",color:"#fff",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:26,fontWeight:800,cursor:"pointer",flexShrink:0,
+                        boxShadow:"0 4px 0 #0D5C56"}}>
+                      +
+                    </div>
+                  </div>
+                </div>
+
+                {/* Note */}
+                <textarea
+                  value={v.lamieraNote||""}
+                  onChange={e=>updateV("lamieraNote",e.target.value)}
+                  placeholder="Note lamiera (colore, verniciata, speciale...)"
+                  rows={2}
+                  style={{width:"100%",padding:"10px 12px",borderRadius:10,
+                    border:"1px solid #E2E8F0",fontSize:13,background:"#fff",
+                    resize:"none",boxSizing:"border-box",marginBottom:12}}/>
+
+                {/* Salva */}
+                <div style={{display:"flex",gap:8}}>
+                  <div onClick={()=>setShowLamieraDisegno(false)}
+                    style={{flex:1,padding:"14px",borderRadius:12,textAlign:"center",
+                      fontSize:13,fontWeight:700,cursor:"pointer",
+                      background:"#F1F5F9",color:"#64748B"}}>
+                    Annulla
+                  </div>
+                  <div onClick={()=>{updateV("lamieraPieghe",lamieraPieghe);setShowLamieraDisegno(false);}}
+                    style={{flex:2,padding:"14px",borderRadius:12,textAlign:"center",
+                      fontSize:15,fontWeight:800,cursor:"pointer",
+                      background:"#0F766E",color:"#fff",
+                      boxShadow:"0 4px 0 #0D5C56",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Salva lamiera
                   </div>
                 </div>
 
