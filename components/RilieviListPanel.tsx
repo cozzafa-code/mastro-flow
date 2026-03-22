@@ -36,6 +36,7 @@ export default function RilieviListPanel() {
     apriInboxDocumento,
   } = useMastro();
   const [showGuidaFiscale, setShowGuidaFiscale] = React.useState(false);
+  const [showRilieviForm, setShowRilieviForm] = React.useState(false);
   const [selGuidaFiscale, setSelGuidaFiscale] = React.useState<string|null>(null);
 
     if (!selectedCM) return null;
@@ -1039,14 +1040,73 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                       )}
 
                       {/* ========== CURRENT STEP ACTIONS ========== */}
-                      {isCurrent && step.id === "rilievo" && (
+                      {isCurrent && step.id === "rilievo" && (() => {
+                        const oggi = new Date().toISOString().split("T")[0];
+                        const oraAdesso = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+                        return (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
-                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Crea il primo rilievo con i vani da misurare</div>
-                          <button onClick={() => setShowNuovoRilievo(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/></svg> CREA RILIEVO →
-                          </button>
+                          {!showRilieviForm ? (
+                            <div>
+                              <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Crea il primo rilievo con i vani da misurare</div>
+                              <button onClick={() => setShowRilieviForm(true)}
+                                style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                                  boxShadow: "0 4px 0 #0D7C6B", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                CREA RILIEVO
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+                              {/* Header form */}
+                              <div style={{ background: "#0F766E", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Nuovo Rilievo #{rilievi.length + 1}</div>
+                                <div onClick={() => setShowRilieviForm(false)} style={{ color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</div>
+                              </div>
+                              <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                                {/* Data + Ora */}
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Data</label>
+                                    <input type="date" value={nuovoRilData.data || oggi}
+                                      onChange={e => setNuovoRilData(d => ({...d, data: e.target.value}))}
+                                      style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 14, fontWeight: 600, boxSizing: "border-box", background: "#F8FAFC" }} />
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Ora</label>
+                                    <input type="time" value={nuovoRilData.ora || oraAdesso}
+                                      onChange={e => setNuovoRilData(d => ({...d, ora: e.target.value}))}
+                                      style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 14, fontWeight: 600, boxSizing: "border-box", background: "#F8FAFC" }} />
+                                  </div>
+                                </div>
+                                {/* Rilevatore */}
+                                <div>
+                                  <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Chi esegue</label>
+                                  <input placeholder="Nome rilevatore..." value={nuovoRilData.rilevatore || ""}
+                                    onChange={e => setNuovoRilData(d => ({...d, rilevatore: e.target.value}))}
+                                    style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 14, boxSizing: "border-box", background: "#F8FAFC" }} />
+                                </div>
+                                {/* Note */}
+                                <div>
+                                  <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Note (opz.)</label>
+                                  <textarea placeholder="Accesso cantiere, particolarità..." value={nuovoRilData.note || ""}
+                                    onChange={e => setNuovoRilData(d => ({...d, note: e.target.value}))}
+                                    rows={2}
+                                    style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 13, boxSizing: "border-box", resize: "none", background: "#F8FAFC" }} />
+                                </div>
+                                {/* CTA */}
+                                <button onClick={() => { salvaRilievo(); setShowRilieviForm(false); }}
+                                  style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer",
+                                    boxShadow: "0 3px 0 #0D7C6B", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                  Crea Rilievo #{rilievi.length + 1}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
+                        );
+                      })()}
 
                       {isCurrent && step.id === "misure" && (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
