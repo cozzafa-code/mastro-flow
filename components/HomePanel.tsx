@@ -173,6 +173,25 @@ export default function HomePanel() {
 
   return (
     <div style={{ paddingBottom: 90 }}>
+      <style>{`
+        .btn3d {
+          box-shadow: 0 4px 0 rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+          transition: all 0.1s ease;
+          transform: translateY(0px);
+        }
+        .btn3d:active {
+          box-shadow: 0 1px 0 rgba(0,0,0,0.12);
+          transform: translateY(3px);
+        }
+        .card3d {
+          box-shadow: 0 2px 0 rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+          transition: all 0.1s ease;
+        }
+        .card3d:active {
+          box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+          transform: translateY(2px);
+        }
+      `}</style>
       {/* Banner notifiche push */}
       {notifBanner && (
         <div onClick={() => { Notification.requestPermission().then(p => { if(p==="granted") setNotifBanner(false); }); }} style={{ background: "#1A1A1C", borderRadius: 12, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
@@ -229,7 +248,7 @@ export default function HomePanel() {
 
       {/* ADESSO */}
       {adesso ? (
-        <div onClick={adesso.action} style={{ margin: "16px 20px 0", padding: "16px 18px", borderRadius: 14, background: T.card, border: "1.5px solid " + adesso.color + "20", cursor: "pointer", position: "relative", overflow: "hidden" }}>
+        <div onClick={adesso.action} style={{ margin: "16px 20px 0", padding: "16px 18px", borderRadius: 14, background: T.card, border: "1.5px solid " + adesso.color + "20", cursor: "pointer", position: "relative", overflow: "hidden", boxShadow: "0 4px 0 " + adesso.color + "30, 0 6px 16px rgba(0,0,0,0.08)", transition: "all 0.1s" }}>
           <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: adesso.color, borderRadius: "14px 0 0 14px" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: 8 }}>
             <I d={ICO[adesso.icon] || ICO.alert} s={22} c={adesso.color} />
@@ -297,7 +316,7 @@ export default function HomePanel() {
             <div style={{ fontSize: 12, color: T.sub }}>{isPast ? "Nessuna attività" : "Giornata libera"}</div>
           </div>
         ) : (
-          <div style={{ borderRadius: 12, border: "1px solid " + T.bdr, overflow: "hidden", background: T.card }}>
+          <div style={{ borderRadius: 12, border: "1px solid " + T.bdr, overflow: "hidden", background: T.card, boxShadow: "0 2px 0 rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)" }}>
             {dayEvents.slice(0, 5).map((ev, i) => (
               <div key={ev.id} onClick={() => setSelectedEvent(ev)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: i < Math.min(dayEvents.length, 5) - 1 ? "1px solid " + T.bdr : "none", opacity: isPast ? 0.5 : 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, fontFamily: FM, width: 36, flexShrink: 0 }}>{ev.time || "—"}</div>
@@ -334,15 +353,15 @@ export default function HomePanel() {
 
       {/* NUMERI */}
       <div style={{ margin: "14px 20px 0", display: "flex", gap: 6 }}>
-        <div onClick={() => setTab("commesse")} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center" }}>
+        <div onClick={() => setTab("commesse")} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Preventivato</div>
           <div style={{ fontSize: 16, fontWeight: 900, color: T.text, fontFamily: FM, marginTop: 3 }}>€{totPrev > 999 ? Math.round(totPrev / 1000) + "k" : totPrev.toLocaleString("it-IT")}</div>
         </div>
-        <div onClick={() => { setFilterFase("conferma"); setTab("commesse"); }} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center" }}>
+        <div onClick={() => { setFilterFase("conferma"); setTab("commesse"); }} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Confermato</div>
           <div style={{ fontSize: 16, fontWeight: 900, color: T.grn, fontFamily: FM, marginTop: 3 }}>€{totConf > 999 ? Math.round(totConf / 1000) + "k" : totConf.toLocaleString("it-IT")}</div>
         </div>
-        {fatAtt.length > 0 && (<div onClick={() => setShowContabilita(true)} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center" }}>
+        {fatAtt.length > 0 && (<div onClick={() => setShowContabilita(true)} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Da incassare</div>
           <div style={{ fontSize: 16, fontWeight: 900, color: T.red, fontFamily: FM, marginTop: 3 }}>€{totFat > 999 ? Math.round(totFat / 1000) + "k" : totFat.toLocaleString("it-IT")}</div>
         </div>)}
@@ -350,15 +369,15 @@ export default function HomePanel() {
 
       {/* Scorciatoie */}
       <div style={{ margin: "8px 20px 0", display: "flex", gap: 8 }}>
-        <div onClick={() => setTab("contabilita")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.sub, textAlign: "center" }}>€ Contabilità</div>
-        <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#1A9E7308", border: "1px solid #1A9E7330", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1A9E73", textAlign: "center" }}>Cantieri</div>
+        <div onClick={() => setTab("contabilita")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.sub, textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>€ Contabilità</div>
+        <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#1A9E7308", border: "1px solid #1A9E7330", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1A9E73", textAlign: "center", boxShadow: "0 3px 0 rgba(26,158,115,0.20), 0 4px 10px rgba(26,158,115,0.10)", transition: "all 0.1s" }}>Cantieri</div>
       </div>
 
       {/* Quick links */}
       {(ordAtt.length > 0 || montAtt.length > 0) && (
         <div style={{ margin: "12px 20px 0", display: "flex", gap: 6 }}>
-          {ordAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer" }}><I d={ICO.package} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{ordAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Ordini attivi</div></div></div>)}
-          {montAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer" }}><I d={ICO.wrench} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{montAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Montaggi</div></div></div>)}
+          {ordAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}><I d={ICO.package} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{ordAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Ordini attivi</div></div></div>)}
+          {montAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}><I d={ICO.wrench} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{montAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Montaggi</div></div></div>)}
         </div>
       )}
     </div>
