@@ -916,115 +916,352 @@ export default function VanoDetailPanel() {
             { id:"controtelaio", icon:"◻", label:"Controtelaio",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"9\" y1=\"21\" x2=\"9\" y2=\"9\"/></svg>",
               badge: v.controtelaio?.tipo ? (v.controtelaio.tipo==="singolo"?"Singolo":v.controtelaio.tipo==="doppio"?"Doppio":"Con cassonetto") : null, filled: v.controtelaio?.tipo ? 1 : 0, total: 1,
-              body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:2}}>TIPO CONTROTELAIO</div>
-                <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                  {[{id:"",l:"Nessuno",c:T.sub},{id:"singolo",l:"Singolo",c:"#2563eb"},{id:"doppio",l:"Doppio",c:"#7c3aed"},{id:"cassonetto",l:"Con Cassonetto",c:"#b45309"}].map(ct=>(
-                    <div key={ct.id} onClick={()=>updateV("controtelaio",{...(v.controtelaio||{}),tipo:ct.id})}
-                      style={{flex:1,padding:"8px 6px",borderRadius:8,border:`1.5px solid ${v.controtelaio?.tipo===ct.id?ct.c:T.bdr}`,background:v.controtelaio?.tipo===ct.id?ct.c+"15":T.card,textAlign:"center",cursor:"pointer",minWidth:70}}>
-                      <div style={{fontSize:11,fontWeight:700,color:v.controtelaio?.tipo===ct.id?ct.c:T.sub}}>{ct.l}</div>
+              body: (() => {
+                // ── SISTEMI CONTROTELAIO ─────────────────────────────
+                const CT_SISTEMI = [
+                  // SINGOLI
+                  { id:"PROS", label:"PROS", gruppo:"Singolo", varLabels:["A — Sede infisso"], hasB:false, hasCass:false,
+                    desc:"Controtelaio singolo - ribattuta variabile" },
+                  { id:"PROI", label:"PROI", gruppo:"Singolo", varLabels:["A — Sede infisso"], hasB:false, hasCass:false,
+                    desc:"Controtelaio singolo - ribattuta std 50mm" },
+                  // FILO MURO
+                  { id:"STH5", label:"STH5", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS - spalla 60mm" },
+                  { id:"STH5I", label:"STH5I", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS - spalla 64mm" },
+                  { id:"STH6", label:"STH6", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS 325mm intonaco finito" },
+                  { id:"STH6I", label:"STH6I", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS 325mm - sede avanzata" },
+                  { id:"STF5", label:"STF5", gruppo:"Fibrocemento filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"Fibrocemento sp.44/64/84mm" },
+                  { id:"STF6", label:"STF6", gruppo:"Fibrocemento filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"Fibrocemento 325mm" },
+                  // CENTRO MURO
+                  { id:"STH3", label:"STH3", gruppo:"EPS centro muro", varLabels:["A — Sede infisso"], hasB:false, hasCass:true,
+                    desc:"EPS centro muro 325mm" },
+                  { id:"STF3", label:"STF3", gruppo:"Fibrocemento centro muro", varLabels:["A — Sede infisso"], hasB:false, hasCass:true,
+                    desc:"Fibrocemento sp.64/84mm" },
+                  { id:"PROGCP", label:"PROGCP", gruppo:"STH PRO", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"PVC - variabile+38.5mm" },
+                  { id:"PROGC", label:"PROGC", gruppo:"STH PRO", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"Alluminio - variabile+32.4mm" },
+                  { id:"CUSTOM", label:"+ Personalizzato", gruppo:"Altro", varLabels:["A","B","C"], hasB:true, hasCass:false,
+                    desc:"Sistema non in lista" },
+                ];
+
+                const ct = v.controtelaio || {};
+                const sistema = CT_SISTEMI.find(s => s.id === ct.sistema) || null;
+                const gruppi = [...new Set(CT_SISTEMI.map(s => s.gruppo))];
+
+                // Funzione SVG sagoma — diversa per tipo
+                const renderSagoma = (sis) => {
+                  if (!sis) return null;
+                  const W = 300, H = sis.hasCass ? 220 : 160;
+                  const aVal = ct.varA > 0 ? ct.varA+"mm" : "A";
+                  const bVal = ct.varB > 0 ? ct.varB+"mm" : "B";
+                  const cVal = ct.varC > 0 ? ct.varC+"mm" : "C";
+                  const isEPS = sis.gruppo.includes("EPS") || sis.gruppo.includes("STH");
+                  const matFill = isEPS ? "#EBF5FF" : sis.gruppo.includes("Fibro") ? "#F5F0EB" : "#EBF0FF";
+                  const matStroke = isEPS ? "#3B7FE0" : sis.gruppo.includes("Fibro") ? "#8B6914" : "#5B8DB8";
+
+                  if (!sis.hasCass) {
+                    // SINGOLO — sezione orizzontale
+                    return (
+                      <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:160}}>
+                        {/* Muratura sx */}
+                        <rect x={0} y={20} width={40} height={120} fill="#D9C99A" stroke="#B8A070" strokeWidth={1}/>
+                        {Array.from({length:6}).map((_,i)=><line key={i} x1={0} y1={20+i*20} x2={40} y2={20+i*20+20} stroke="#B8A070" strokeWidth={0.5} opacity={0.6}/>)}
+                        <text x={20} y={85} textAnchor="middle" fontSize={7} fill="#8B7355" transform="rotate(-90,20,85)">MURATURA</text>
+                        {/* Muratura dx */}
+                        <rect x={W-40} y={20} width={40} height={120} fill="#D9C99A" stroke="#B8A070" strokeWidth={1}/>
+                        {Array.from({length:6}).map((_,i)=><line key={i} x1={W-40} y1={20+i*20} x2={W} y2={20+i*20+20} stroke="#B8A070" strokeWidth={0.5} opacity={0.6}/>)}
+                        {/* Corpo CT */}
+                        <rect x={40} y={30} width={W-80} height={100} fill={matFill} stroke={matStroke} strokeWidth={1.5}/>
+                        {Array.from({length:9}).map((_,i)=><line key={i} x1={40+i*24} y1={30} x2={40+i*24-16} y2={130} stroke={matStroke} strokeWidth={0.5} opacity={0.4}/>)}
+                        {/* Sede infisso A */}
+                        <rect x={40} y={30} width={70} height={100} fill="white" stroke="#DC4444" strokeWidth={2} strokeDasharray="5,3"/>
+                        {/* Freccia A */}
+                        <line x1={44} y1={18} x2={106} y2={18} stroke="#DC4444" strokeWidth={1.5}/>
+                        <polygon points="44,15 44,21 40,18" fill="#DC4444"/>
+                        <polygon points="106,15 106,21 110,18" fill="#DC4444"/>
+                        <rect x={55} y={10} width={40} height={14} rx={4} fill="#DC4444"/>
+                        <text x={75} y={20} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">{aVal}</text>
+                        <text x={75} y={8} textAnchor="middle" fontSize={7} fill="#DC4444" fontWeight="700">SEDE INFISSO</text>
+                        {/* Ribattuta R */}
+                        <circle cx={108} cy={95} r={10} fill="#1A9E73" opacity={0.9}/>
+                        <text x={108} y={98} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">R</text>
+                        <text x={122} y={98} fontSize={8} fill="#1A9E73" fontWeight="700">
+                          {ct.ribattuta||30}mm
+                        </text>
+                        {/* Etichetta sistema */}
+                        <text x={W/2+20} y={85} textAnchor="middle" fontSize={11} fill={matStroke} fontWeight="800" opacity={0.6}>{sis.id}</text>
+                        {/* Freccia esterno CT */}
+                        <line x1={40} y1={140} x2={W-40} y2={140} stroke="#6B7280" strokeWidth={1}/>
+                        <text x={W/2} y={150} textAnchor="middle" fontSize={7} fill="#6B7280">ESTERNO CONTROTELAIO</text>
+                      </svg>
+                    );
+                  } else {
+                    // CON CASSONETTO — sezione verticale
+                    const cassH = ct.varC > 0 ? Math.min(ct.varC*0.22, 70) : 55;
+                    const aW = ct.varA > 0 ? Math.min(ct.varA*0.22, 65) : 50;
+                    const bW = ct.varB > 0 && sis.hasB ? Math.min(ct.varB*0.22, 65) : 50;
+                    return (
+                      <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:220}}>
+                        {/* Muratura sx */}
+                        <rect x={0} y={cassH+10} width={35} height={H-cassH-10} fill="#D9C99A" stroke="#B8A070" strokeWidth={1}/>
+                        {Array.from({length:5}).map((_,i)=><line key={i} x1={0} y1={cassH+10+i*22} x2={35} y2={cassH+10+i*22+22} stroke="#B8A070" strokeWidth={0.5} opacity={0.6}/>)}
+                        {/* Muratura dx */}
+                        <rect x={W-35} y={cassH+10} width={35} height={H-cassH-10} fill="#D9C99A" stroke="#B8A070" strokeWidth={1}/>
+                        {Array.from({length:5}).map((_,i)=><line key={i} x1={W-35} y1={cassH+10+i*22} x2={W} y2={cassH+10+i*22+22} stroke="#B8A070" strokeWidth={0.5} opacity={0.6}/>)}
+                        {/* Cassonetto */}
+                        <rect x={35} y={4} width={W-70} height={cassH} fill={matFill} stroke={matStroke} strokeWidth={1.5}/>
+                        {Array.from({length:9}).map((_,i)=><line key={i} x1={35+i*25} y1={4} x2={35+i*25-12} y2={4+cassH} stroke={matStroke} strokeWidth={0.4} opacity={0.4}/>)}
+                        {/* Corpo CT basso */}
+                        <rect x={35} y={cassH+10} width={W-70} height={H-cassH-14} fill={matFill} stroke={matStroke} strokeWidth={1.5}/>
+                        {Array.from({length:9}).map((_,i)=><line key={i} x1={35+i*25} y1={cassH+10} x2={35+i*25-12} y2={H-4} stroke={matStroke} strokeWidth={0.4} opacity={0.4}/>)}
+                        {/* Sede infisso A */}
+                        <rect x={35} y={cassH+10} width={aW} height={H-cassH-14} fill="white" stroke="#DC4444" strokeWidth={2} strokeDasharray="5,3"/>
+                        <line x1={38} y1={cassH+2} x2={35+aW-2} y2={cassH+2} stroke="#DC4444" strokeWidth={1.5}/>
+                        <polygon points={"38,"+(cassH-2)+" 38,"+(cassH+6)+" 34,"+(cassH+2)} fill="#DC4444"/>
+                        <polygon points={(35+aW-2)+","+(cassH-2)+" "+(35+aW-2)+","+(cassH+6)+" "+(35+aW+2)+","+(cassH+2)} fill="#DC4444"/>
+                        <rect x={35+aW/2-18} y={cassH-9} width={36} height={13} rx={4} fill="#DC4444"/>
+                        <text x={35+aW/2} y={cassH-1} textAnchor="middle" fontSize={8} fill="white" fontWeight="800">{aVal}</text>
+                        <text x={35+aW/2} y={cassH-12} textAnchor="middle" fontSize={6} fill="#DC4444" fontWeight="700">SEDE INFISSO</text>
+                        {/* Sede persiana B */}
+                        {sis.hasB && (
+                          <g>
+                            <rect x={W-35-bW} y={cassH+10} width={bW} height={H-cassH-14} fill="#FFFBEB" stroke="#D08008" strokeWidth={2} strokeDasharray="5,3"/>
+                            <line x1={W-35-bW+2} y1={cassH+2} x2={W-37} y2={cassH+2} stroke="#D08008" strokeWidth={1.5}/>
+                            <rect x={W-35-bW/2-18} y={cassH-9} width={36} height={13} rx={4} fill="#D08008"/>
+                            <text x={W-35-bW/2} y={cassH-1} textAnchor="middle" fontSize={8} fill="white" fontWeight="800">{bVal}</text>
+                            <text x={W-35-bW/2} y={cassH-12} textAnchor="middle" fontSize={6} fill="#D08008" fontWeight="700">SEDE PERSIANA</text>
+                          </g>
+                        )}
+                        {/* Quota C cassonetto */}
+                        <line x1={W-10} y1={4} x2={W-10} y2={4+cassH} stroke="#3B7FE0" strokeWidth={1.5}/>
+                        <polygon points={(W-7)+",4 "+(W-13)+",4 "+(W-10)+",0"} fill="#3B7FE0"/>
+                        <polygon points={(W-7)+","+(4+cassH)+" "+(W-13)+","+(4+cassH)+" "+(W-10)+","+(8+cassH)} fill="#3B7FE0"/>
+                        <rect x={W-6} y={cassH/2-6} width={6} height={12} rx={2} fill="#3B7FE0"/>
+                        <text x={W-3} y={cassH/2+2} textAnchor="middle" fontSize={7} fill="#3B7FE0" fontWeight="800"
+                          transform={"rotate(90,"+(W-3)+","+(cassH/2+2)+")"}>{cVal}</text>
+                        {/* Ribattuta R */}
+                        <circle cx={35+aW} cy={cassH+10+(H-cassH-14)/2} r={10} fill="#1A9E73" opacity={0.9}/>
+                        <text x={35+aW} y={cassH+10+(H-cassH-14)/2+3} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">R</text>
+                        {/* Label sistema */}
+                        <text x={W/2} y={cassH+10+(H-cassH-14)/2} textAnchor="middle" fontSize={10} fill={matStroke} fontWeight="800" opacity={0.5}>{sis.id}</text>
+                      </svg>
+                    );
+                  }
+                };
+
+                return (
+                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
+
+                    {/* ── SELEZIONE SISTEMA ── */}
+                    <div>
+                      <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>Sistema controtelaio</div>
+                      {gruppi.map(gruppo => (
+                        <div key={gruppo} style={{marginBottom:8}}>
+                          <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4,paddingLeft:2}}>{gruppo}</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                            {CT_SISTEMI.filter(s=>s.gruppo===gruppo).map(sis=>(
+                              <div key={sis.id}
+                                onClick={()=>updateV("controtelaio",{...(ct||{}),sistema:sis.id,varA:0,varB:0,varC:0})}
+                                style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",
+                                  border:`2px solid ${ct.sistema===sis.id?"#1A9E73":T.bdr}`,
+                                  background:ct.sistema===sis.id?"#1A9E7315":T.card,
+                                  transition:"all 0.1s"}}>
+                                <div style={{fontSize:12,fontWeight:800,color:ct.sistema===sis.id?"#1A9E73":T.text}}>{sis.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                {v.controtelaio?.tipo==="singolo" && <>
-                  <div style={{display:"flex",gap:6}}>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>LARGHEZZA</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.l||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,l:parseInt(e.target.value)||0})}/></div>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>ALTEZZA</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.h||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,h:parseInt(e.target.value)||0})}/></div>
+
+                    {/* ── SAGOMA + VARIABILI ── */}
+                    {sistema && (
+                      <div>
+                        {/* Nome sistema + desc */}
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                          <div style={{padding:"4px 12px",borderRadius:20,background:"#1A9E73",color:"white",fontSize:12,fontWeight:800}}>{sistema.id}</div>
+                          <div style={{fontSize:11,color:T.sub}}>{sistema.desc}</div>
+                        </div>
+
+                        {/* Sagoma SVG */}
+                        <div style={{background:"#F8FBFF",borderRadius:10,border:"1.5px solid #3B7FE020",padding:"10px 8px",marginBottom:12}}>
+                          {renderSagoma(sistema)}
+                        </div>
+
+                        {/* Input variabili — una riga per variabile */}
+                        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+                          {/* A — sempre presente */}
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <div style={{width:28,height:28,borderRadius:6,background:"#DC4444",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <span style={{fontSize:13,fontWeight:800,color:"white"}}>A</span>
+                            </div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:9,fontWeight:700,color:"#DC4444",marginBottom:3}}>SEDE INFISSO (mm) — variabile</div>
+                              <input type="number" inputMode="numeric" placeholder="inserisci mm"
+                                value={ct.varA||""}
+                                onChange={e=>updateV("controtelaio",{...ct,varA:parseInt(e.target.value)||0})}
+                                style={{...S.input,borderColor:"#DC444460",fontSize:18,padding:"9px 14px"}}/>
+                            </div>
+                          </div>
+
+                          {/* B — solo se sistema ha sede persiana */}
+                          {sistema.hasB && (
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:28,height:28,borderRadius:6,background:"#D08008",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                <span style={{fontSize:13,fontWeight:800,color:"white"}}>B</span>
+                              </div>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:9,fontWeight:700,color:"#D08008",marginBottom:3}}>SEDE PERSIANA (mm) — variabile</div>
+                                <input type="number" inputMode="numeric" placeholder="inserisci mm"
+                                  value={ct.varB||""}
+                                  onChange={e=>updateV("controtelaio",{...ct,varB:parseInt(e.target.value)||0})}
+                                  style={{...S.input,borderColor:"#D0800860",fontSize:18,padding:"9px 14px"}}/>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* C — profondità cassonetto */}
+                          {sistema.hasCass && (
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:28,height:28,borderRadius:6,background:"#3B7FE0",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                <span style={{fontSize:13,fontWeight:800,color:"white"}}>C</span>
+                              </div>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:9,fontWeight:700,color:"#3B7FE0",marginBottom:3}}>PROFONDITÀ INTONACO (mm) — std 325</div>
+                                <input type="number" inputMode="numeric" placeholder="325"
+                                  value={ct.varC||""}
+                                  onChange={e=>updateV("controtelaio",{...ct,varC:parseInt(e.target.value)||0})}
+                                  style={{...S.input,borderColor:"#3B7FE060",fontSize:18,padding:"9px 14px"}}/>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── MISURE TOTALI ── */}
+                        <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10}}>
+                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:8,textTransform:"uppercase"}}>Misure controtelaio</div>
+
+                          {/* Tipo riferimento */}
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+                            {[
+                              {id:"luce",l:"Luce architett."},
+                              {id:"esterno",l:"Esterno CT"},
+                              {id:"interno",l:"Interno telaio"},
+                              {id:"grezzo",l:"Muro grezzo"},
+                            ].map(tm=>(
+                              <div key={tm.id}
+                                onClick={()=>updateV("controtelaio",{...ct,tipoMisura:tm.id})}
+                                style={{padding:"5px 9px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,
+                                  border:`1.5px solid ${ct.tipoMisura===tm.id?"#3B7FE0":T.bdr}`,
+                                  background:ct.tipoMisura===tm.id?"#3B7FE015":T.card,
+                                  color:ct.tipoMisura===tm.id?"#3B7FE0":T.sub}}>
+                                {tm.l}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* L × H */}
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                            <div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>LARGHEZZA (mm)</div>
+                              <input type="number" inputMode="numeric" placeholder="L"
+                                value={ct.l||""}
+                                onChange={e=>updateV("controtelaio",{...ct,l:parseInt(e.target.value)||0})}
+                                style={{...S.input,fontSize:20,padding:"10px 14px"}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>ALTEZZA (mm)</div>
+                              <input type="number" inputMode="numeric" placeholder="H"
+                                value={ct.h||""}
+                                onChange={e=>updateV("controtelaio",{...ct,h:parseInt(e.target.value)||0})}
+                                style={{...S.input,fontSize:20,padding:"10px 14px"}}/>
+                            </div>
+                          </div>
+
+                          {/* Ribattuta */}
+                          <div style={{marginBottom:8}}>
+                            <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>RIBATTUTA R</div>
+                            <div style={{display:"flex",gap:6}}>
+                              {[30,50,70].map(r=>(
+                                <div key={r}
+                                  onClick={()=>updateV("controtelaio",{...ct,ribattuta:r})}
+                                  style={{flex:1,padding:"8px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
+                                    border:`2px solid ${ct.ribattuta===r?"#1A9E73":T.bdr}`,
+                                    background:ct.ribattuta===r?"#1A9E7315":T.card}}>
+                                  <div style={{fontSize:15,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
+                                    color:ct.ribattuta===r?"#1A9E73":T.text}}>{r}</div>
+                                  <div style={{fontSize:8,color:T.sub}}>mm</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Calcola offset infisso */}
+                          {ct.l > 0 && ct.h > 0 && ct.varA > 0 && (
+                            <div onClick={()=>{
+                              const off = ct.ribattuta || 30;
+                              const cl = ct.l - off*2;
+                              const ch = ct.h - off*2;
+                              updateMisureBatch(v.id, {lAlto:cl,lCentro:cl,lBasso:cl});
+                              updateMisura(v.id,"hSx",ch); updateMisura(v.id,"hCentro",ch); updateMisura(v.id,"hDx",ch);
+                            }}
+                              style={{padding:"10px 14px",borderRadius:10,background:"#1A9E7315",
+                                border:"1.5px solid #1A9E7340",textAlign:"center",cursor:"pointer"}}>
+                              <div style={{fontSize:12,fontWeight:800,color:"#1A9E73"}}>
+                                ⚡ Calcola misura infisso (−{ct.ribattuta||30}mm/lato)
+                              </div>
+                              <div style={{fontSize:10,color:"#1A9E7380",marginTop:2,fontFamily:"'JetBrains Mono',monospace"}}>
+                                {ct.l-(ct.ribattuta||30)*2} × {ct.h-(ct.ribattuta||30)*2} mm
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── ACCESSORI ── */}
+                        <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:10}}>
+                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase"}}>Accessori</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                            {[
+                              ["battutaPVC","Battuta PVC"],
+                              ["battutaLegno","Battuta legno"],
+                              ["smusso","Smusso 45°"],
+                              ["quartoLato","4° lato PVC"],
+                              ["tappoZanz","Tappo zanzariera"],
+                              ["sottobancale","Sottobancale EPS"],
+                              ["assemblaggio","Assemblaggio"],
+                            ].map(([k,lbl])=>(
+                              <div key={k}
+                                onClick={()=>updateV("controtelaio",{...ct,[k]:!ct[k]})}
+                                style={{padding:"5px 10px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:600,
+                                  border:`1.5px solid ${ct[k]?"#D08008":T.bdr}`,
+                                  background:ct[k]?"#D0800815":T.card,
+                                  color:ct[k]?"#D08008":T.sub}}>
+                                {ct[k]?"✓ ":""}{lbl}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
+
+                    {/* Salta */}
+                    {!sistema && (
+                      <div style={{textAlign:"center",padding:"8px 0",fontSize:12,color:T.sub,cursor:"pointer"}}
+                        onClick={()=>updateV("controtelaio",{tipo:"nessuno"})}>
+                        Nessun controtelaio → Salta
+                      </div>
+                    )}
+
                   </div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>PROFONDITÀ</div>
-                    <select style={S.select} value={v.controtelaio?.prof||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,prof:e.target.value})}>
-                      <option value="">— Seleziona —</option>
-                      {ctProfDB.map(p=><option key={p.id} value={p.code}>{p.code} mm</option>)}
-                    </select></div>
-                  {v.controtelaio?.l > 0 && v.controtelaio?.h > 0 && (
-                    <div onClick={()=>{
-                      const off = ctOffset;
-                      const cl = v.controtelaio.l - off*2;
-                      const ch = v.controtelaio.h - off*2;
-                      updateMisureBatch(v.id, { lAlto: cl, lCentro: cl, lBasso: cl });
-                      updateMisureBatch(v.id, { hSx: ch, hCentro: ch, hDx: ch });
-                    }} style={{padding:"10px",borderRadius:10,background:"#2563eb15",border:"1.5px solid #2563eb40",textAlign:"center",cursor:"pointer"}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#2563eb"}}><I d={ICO.zap} /> Calcola infisso (offset −{ctOffset}mm/lato)</div>
-                      <div style={{fontSize:10,color:"#2563eb80",marginTop:2}}>{v.controtelaio.l-ctOffset*2} × {v.controtelaio.h-ctOffset*2} mm</div>
-                    </div>
-                  )}
-                </>}
-                {v.controtelaio?.tipo==="doppio" && <>
-                  <div style={{display:"flex",gap:6}}>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>LARGHEZZA</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.l||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,l:parseInt(e.target.value)||0})}/></div>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>ALTEZZA</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.h||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,h:parseInt(e.target.value)||0})}/></div>
-                  </div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE INTERNA (infisso interno)</div>
-                    <select style={S.select} value={v.controtelaio?.sezInt||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezInt:e.target.value})}>
-                      <option value="">— Seleziona —</option>
-                      {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
-                    </select></div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE ESTERNA (infisso esterno)</div>
-                    <select style={S.select} value={v.controtelaio?.sezEst||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezEst:e.target.value})}>
-                      <option value="">— Seleziona —</option>
-                      {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
-                    </select></div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>DISTANZIALE</div>
-                    <input style={S.input} type="text" placeholder="es. 30mm" value={v.controtelaio?.distanziale||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,distanziale:e.target.value})}/></div>
-                  {v.controtelaio?.l > 0 && v.controtelaio?.h > 0 && (
-                    <div onClick={()=>{
-                      const off = ctOffset;
-                      const cl = v.controtelaio.l - off*2;
-                      const ch = v.controtelaio.h - off*2;
-                      updateMisureBatch(v.id, { lAlto: cl, lCentro: cl, lBasso: cl });
-                      updateMisureBatch(v.id, { hSx: ch, hCentro: ch, hDx: ch });
-                    }} style={{padding:"10px",borderRadius:10,background:"#7c3aed15",border:"1.5px solid #7c3aed40",textAlign:"center",cursor:"pointer"}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#7c3aed"}}><I d={ICO.zap} /> Calcola infisso (offset −{ctOffset}mm/lato)</div>
-                      <div style={{fontSize:10,color:"#7c3aed80",marginTop:2}}>{v.controtelaio.l-ctOffset*2} × {v.controtelaio.h-ctOffset*2} mm</div>
-                    </div>
-                  )}
-                </>}
-                {v.controtelaio?.tipo==="cassonetto" && <>
-                  <div style={{display:"flex",gap:6}}>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>LARGH. VANO</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.l||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,l:parseInt(e.target.value)||0})}/></div>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>ALT. MAX VANO</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.h||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,h:parseInt(e.target.value)||0})}/></div>
-                  </div>
-                  <div style={{marginTop:4,padding:"6px 0",borderTop:`1px dashed ${T.bdr}`}}>
-                    <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4}}>CASSONETTO</div>
-                  </div>
-                  <div style={{display:"flex",gap:6}}>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>H CASSONETTO</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.hCass||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,hCass:parseInt(e.target.value)||0})}/></div>
-                    <div style={{flex:1}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>P CASSONETTO</div>
-                      <input style={S.input} type="number" inputMode="numeric" placeholder="mm" value={v.controtelaio?.pCass||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,pCass:parseInt(e.target.value)||0})}/></div>
-                  </div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SEZIONE CONTROTELAIO</div>
-                    <select style={S.select} value={v.controtelaio?.sezione||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,sezione:e.target.value})}>
-                      <option value="">— Seleziona —</option>
-                      {ctSezioniDB.map(s=><option key={s.id} value={s.code}>{s.code}</option>)}
-                    </select></div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>SPALLA CONTROTELAIO</div>
-                    <input style={S.input} type="text" placeholder="es. 120mm" value={v.controtelaio?.spalla||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,spalla:e.target.value})}/></div>
-                  <div><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:2}}>MODELLO CIELINO</div>
-                    <select style={S.select} value={v.controtelaio?.cielino||""} onChange={e=>updateV("controtelaio",{...v.controtelaio,cielino:e.target.value})}>
-                      <option value="">— Seleziona —</option>
-                      {ctCieliniDB.map(c=><option key={c.id} value={c.code}>{c.code}</option>)}
-                    </select></div>
-                  {v.controtelaio?.l > 0 && v.controtelaio?.h > 0 && (
-                    <div onClick={()=>{
-                      const off = ctOffset;
-                      const cl = v.controtelaio.l - off*2;
-                      const hInf = v.controtelaio.h - (v.controtelaio.hCass||0) - off*2;
-                      updateMisureBatch(v.id, { lAlto: cl, lCentro: cl, lBasso: cl });
-                      updateMisura(v.id,"hSx",hInf); updateMisura(v.id,"hCentro",hInf); updateMisura(v.id,"hDx",hInf);
-                    }} style={{padding:"10px",borderRadius:10,background:"#b4530915",border:"1.5px solid #b4530940",textAlign:"center",cursor:"pointer"}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#b45309"}}><I d={ICO.zap} /> Calcola infisso (offset −{ctOffset}mm/lato)</div>
-                      <div style={{fontSize:10,color:"#b4530980",marginTop:2}}>L: {v.controtelaio.l-ctOffset*2} · H: {v.controtelaio.h-(v.controtelaio.hCass||0)-ctOffset*2} mm</div>
-                    </div>
-                  )}
-                </>}
-              </div>
+                );
+              })()
             },
           ];
 
