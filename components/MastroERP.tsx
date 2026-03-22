@@ -50,7 +50,7 @@ import { OnboardingPanel, FirmaModalPanel } from "./OnboardingPanel";
 import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 
-function MastroERPInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
+function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
   const [theme, setTheme] = useState("chiaro");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
@@ -1471,7 +1471,7 @@ function MastroERPInner({ user, azienda: aziendaInit }: { user?: any, azienda?: 
   /* ======= STYLES ======= */
   const fs = isDesktop ? 1.1 : isTablet ? 1.05 : 1;
   const S = {
-    app: { fontFamily: FF, background: T.bg, color: T.text, width: "100%", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased" },
+    app: { fontFamily: FF, background: T.bg, color: T.text, width: "100%", minHeight: "unset", position: "relative", WebkitFontSmoothing: "antialiased" },
     header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
     headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
     headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
@@ -3059,7 +3059,7 @@ function MastroERPInner({ user, azienda: aziendaInit }: { user?: any, azienda?: 
             </div>
           );
         })()}
-        <DraggableFAB fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} lastCM={lastOpenedCMId ? cantieri.find(c => c.id === lastOpenedCMId) : cantieri[0]} recentActions={recentActions} trackAction={trackAction} onLastCM={(cm) => { setSelectedCM(cm); setTab("commesse"); }} />
+        <DraggableFAB currentTab={tab} fabOpen={fabOpen} setFabOpen={setFabOpen} acc={T.acc} onVoice={() => setShowVoice(true)} onEvento={() => setShowNewEvent(true)} onCliente={() => setShowModal("contatto")} onCommessa={() => setShowModal("commessa")} onMessaggio={() => setShowCompose(true)} lastCM={lastOpenedCMId ? cantieri.find(c => c.id === lastOpenedCMId) : cantieri[0]} recentActions={recentActions} trackAction={trackAction} onLastCM={(cm) => { setSelectedCM(cm); setTab("commesse"); }} />
 
         {/* MESSAGE DETAIL OVERLAY */}
         {selectedMsg && (() => {
@@ -4450,10 +4450,10 @@ function MastroERPInner({ user, azienda: aziendaInit }: { user?: any, azienda?: 
 
 
 //  ERROR BOUNDARY WRAPPER 
-export default function MastroERP() {
+export default function MastroMisure() {
   return (
     <MastroErrorBoundary>
-      <MastroERPInner />
+      <MastroMisureInner />
     </MastroErrorBoundary>
   );
 }
