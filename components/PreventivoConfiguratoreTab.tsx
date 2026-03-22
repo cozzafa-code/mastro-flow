@@ -1,41 +1,20 @@
 "use client";
 // @ts-nocheck
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-// MASTRO ERP ÔÇö PreventivoConfiguratoreTab v2
-// Tab preventivo completo: misure, accessori catalogo, prezzo
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+// MASTRO ERP - PreventivoConfiguratoreTab v3 Mobile Wizard
+// Tab preventivo: wizard step-by-step per vano, inputMode numerico, encoding pulito
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
 import VanoConfiguratoreFullscreen from "./VanoConfiguratoreFullscreen";
 
-// ÔöÇÔöÇ Palette colori ÔöÇÔöÇ
 const GRN = "#1A9E73";
 const AMB = "#D08008";
 const RED = "#DC4444";
-const ACC_COLOR = "#8B5CF6"; // viola per accessori catalogo
+const ACC_COLOR = "#8B5CF6";
 const BLU = "#3B7FE0";
 
-// ÔöÇÔöÇ Helpers ÔöÇÔöÇ
-const fmt = (n: number) => n?.toFixed(2).replace(".", ",") ?? "0,00";
-const fmtInt = (n: number) => Math.round(n ?? 0).toLocaleString("it-IT");
+const fmt = (n: number) => (n ?? 0).toFixed(2).replace(".", ",");
 
-// ÔöÇÔöÇ Input numerico che mostra vuoto se 0 ÔöÇÔöÇ
-function NumInput({ value, onChange, placeholder = "0", style = {} }: any) {
-  const [local, setLocal] = useState(value > 0 ? String(value) : "");
-  useEffect(() => { setLocal(value > 0 ? String(value) : ""); }, [value]);
-  return (
-    <input
-      type="number"
-      value={local}
-      placeholder={placeholder}
-      onChange={e => { setLocal(e.target.value); onChange(e.target.value === "" ? 0 : Number(e.target.value)); }}
-      style={{ fontFamily: FM, textAlign: "right", ...style }}
-    />
-  );
-}
-
-// ÔöÇÔöÇ Label sezione ÔöÇÔöÇ
 function SectionLabel({ children }: any) {
   return (
     <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase", color: "#8e8e93", marginBottom: 6, marginTop: 2 }}>
@@ -44,195 +23,85 @@ function SectionLabel({ children }: any) {
   );
 }
 
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-// CANVAS DISEGNO LIBERO
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-function DisegnoLiberoModal({ vano, onSave, onClose, T }: any) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [tool, setTool] = useState("pen");
-  const [color, setColor] = useState("#1A1A1C");
-  const [size, setSize] = useState(2);
-  const [drawing, setDrawing] = useState(false);
-  const [paths, setPaths] = useState<any[]>([]);
-  const [undoStack, setUndoStack] = useState<any[]>([]);
-  const lastPt = useRef<any>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Griglia
-    ctx.strokeStyle = "#e5e5e5";
-    ctx.lineWidth = 0.5;
-    for (let x = 0; x < canvas.width; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
-    for (let y = 0; y < canvas.height; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
-    // Ripristina paths
-    if (vano.prevPaths) {
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0);
-      img.src = vano.prevPaths;
-    }
-  }, []);
-
-  const getPos = (e: any, canvas: HTMLCanvasElement) => {
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches?.[0] ?? e;
-    return { x: (touch.clientX - rect.left) * (canvas.width / rect.width), y: (touch.clientY - rect.top) * (canvas.height / rect.height) };
-  };
-
-  const startDraw = (e: any) => {
-    e.preventDefault();
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    const pt = getPos(e, canvas);
-    setDrawing(true);
-    lastPt.current = pt;
-    ctx.beginPath();
-    ctx.strokeStyle = tool === "eraser" ? "#fff" : color;
-    ctx.lineWidth = tool === "eraser" ? 18 : size;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.moveTo(pt.x, pt.y);
-  };
-
-  const draw = (e: any) => {
-    e.preventDefault();
-    if (!drawing) return;
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    const pt = getPos(e, canvas);
-    ctx.lineTo(pt.x, pt.y);
-    ctx.stroke();
-    lastPt.current = pt;
-  };
-
-  const endDraw = (e: any) => {
-    e.preventDefault();
-    setDrawing(false);
-    const canvas = canvasRef.current!;
-    setUndoStack(s => [...s, canvas.toDataURL()]);
-  };
-
-  const undo = () => {
-    if (undoStack.length === 0) return;
-    const prev = undoStack[undoStack.length - 2];
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    if (prev) {
-      const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = prev;
-    } else {
-      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-    setUndoStack(s => s.slice(0, -1));
-  };
-
-  const handleSave = () => {
-    const dataUrl = canvasRef.current!.toDataURL();
-    onSave(dataUrl);
-  };
-
-  const loadPhoto = (e: any) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const canvas = canvasRef.current!;
-      const ctx = canvas.getContext("2d")!;
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      img.src = ev.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const TOOLS = [
-    { id: "pen", label: "Ô£Å´©Å" }, { id: "eraser", label: "Ô¼£" },
-  ];
-  const COLORS = ["#1A1A1C", RED, GRN, AMB, BLU, "#fff"];
-  const SIZES = [1, 2, 4, 8];
-
+// Input numerico mobile-friendly: inputMode numeric = numpad nativo
+function NInput({ value, onChange, placeholder = "0", style = {}, label = "" }: any) {
+  const [local, setLocal] = useState(value > 0 ? String(value) : "");
+  useEffect(() => { setLocal(value > 0 ? String(value) : ""); }, [value]);
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end" }}>
-      <div style={{ width: "100%", maxWidth: 500, margin: "0 auto", background: T.card, borderRadius: "16px 16px 0 0", display: "flex", flexDirection: "column", maxHeight: "95vh" }}>
-        {/* Handle */}
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: T.bdr, margin: "8px auto 4px" }} />
-
-        {/* Header */}
-        <div style={{ padding: "8px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.bdr}` }}>
-          <div style={{ fontSize: 14, fontWeight: 900, color: AMB }}>Ô£Å´©Å Disegno libero ÔÇö {vano.nome}</div>
-          <div onClick={onClose} style={{ fontSize: 20, cursor: "pointer", color: T.sub }}>├ù</div>
-        </div>
-
-        {/* Toolbar */}
-        <div style={{ padding: "8px 12px", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
-          {TOOLS.map(t => (
-            <div key={t.id} onClick={() => setTool(t.id)} style={{
-              padding: "6px 10px", borderRadius: 8, cursor: "pointer", fontSize: 16,
-              background: tool === t.id ? AMB + "20" : T.bg, border: `2px solid ${tool === t.id ? AMB : T.bdr}`
-            }}>{t.label}</div>
-          ))}
-          <div style={{ width: 1, height: 24, background: T.bdr }} />
-          {COLORS.map(c => (
-            <div key={c} onClick={() => setColor(c)} style={{
-              width: 22, height: 22, borderRadius: "50%", background: c, cursor: "pointer",
-              border: `3px solid ${color === c ? AMB : T.bdr}`, boxShadow: c === "#fff" ? `inset 0 0 0 1px ${T.bdr}` : "none"
-            }} />
-          ))}
-          <div style={{ width: 1, height: 24, background: T.bdr }} />
-          {SIZES.map(s => (
-            <div key={s} onClick={() => setSize(s)} style={{
-              width: 28, height: 28, borderRadius: 6, background: size === s ? AMB + "20" : T.bg,
-              border: `2px solid ${size === s ? AMB : T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer"
-            }}>
-              <div style={{ width: s * 2.5, height: s * 2.5, borderRadius: "50%", background: color }} />
-            </div>
-          ))}
-          <div style={{ width: 1, height: 24, background: T.bdr }} />
-          <label style={{ padding: "6px 10px", borderRadius: 8, background: BLU + "15", border: `1px solid ${BLU}40`, fontSize: 11, fontWeight: 700, color: BLU, cursor: "pointer" }}>
-            ­ƒôÀ Foto
-            <input type="file" accept="image/*" style={{ display: "none" }} onChange={loadPhoto} />
-          </label>
-          <div onClick={undo} style={{ padding: "6px 10px", borderRadius: 8, background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 11, fontWeight: 700, color: T.sub, cursor: "pointer" }}>Ôå® Undo</div>
-        </div>
-
-        {/* Canvas */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
-          <canvas
-            ref={canvasRef}
-            width={460} height={320}
-            style={{ width: "100%", borderRadius: 10, border: `1px solid ${T.bdr}`, touchAction: "none", cursor: tool === "eraser" ? "cell" : "crosshair", background: "#fff" }}
-            onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
-            onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
-          />
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: "12px 16px 28px", borderTop: `1px solid ${T.bdr}`, display: "flex", gap: 8 }}>
-          <div onClick={onClose} style={{ flex: 1, padding: "12px", borderRadius: 12, textAlign: "center", background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 14, fontWeight: 700, color: T.sub, cursor: "pointer" }}>Annulla</div>
-          <div onClick={handleSave} style={{ flex: 2, padding: "12px", borderRadius: 12, textAlign: "center", background: GRN, fontSize: 14, fontWeight: 900, color: "#fff", cursor: "pointer" }}>Ô£ô Salva disegno</div>
-        </div>
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {label ? <label style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase" }}>{label}</label> : null}
+      <input
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={local}
+        placeholder={placeholder}
+        onChange={e => { setLocal(e.target.value); onChange(e.target.value === "" ? 0 : Number(e.target.value)); }}
+        style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd", fontSize: 16, fontFamily: FM, textAlign: "right", background: "#fff", color: "#1A1A1C", width: "100%", boxSizing: "border-box", ...style }}
+      />
     </div>
   );
 }
 
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-// SEZIONE ACCESSORI CATALOGO (integrata nel tab)
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+// Input testo mobile
+function TInput({ value, onChange, placeholder = "", style = {}, label = "" }: any) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {label ? <label style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase" }}>{label}</label> : null}
+      <input
+        inputMode="text"
+        value={value || ""}
+        placeholder={placeholder}
+        onChange={e => onChange(e.target.value)}
+        style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #ddd", fontSize: 15, fontFamily: "Inter", background: "#fff", color: "#1A1A1C", width: "100%", boxSizing: "border-box", ...style }}
+      />
+    </div>
+  );
+}
+
+// Toggle switch
+function Toggle({ value, onChange }: any) {
+  return (
+    <div onClick={() => onChange(!value)}
+      style={{ width: 44, height: 24, borderRadius: 12, background: value ? GRN : "#ccc", position: "relative", cursor: "pointer", transition: "background 0.2s", flexShrink: 0 }}>
+      <div style={{ position: "absolute", top: 3, left: value ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
+    </div>
+  );
+}
+
+// ============================================================
+// CATALOGO ACCESSORI
+// ============================================================
 const CATEGORIE_LABEL = [
-  { id: "maniglie", nome: "Maniglie", icon: "­ƒÜ¬" },
-  { id: "cremonesi", nome: "Cremonesi", icon: "­ƒö®" },
-  { id: "cerniere", nome: "Cerniere", icon: "­ƒôÄ" },
-  { id: "ferramenta_ar", nome: "Ferr. AR", icon: "­ƒöº" },
-  { id: "serrature", nome: "Serrature", icon: "­ƒöÉ" },
-  { id: "cilindri", nome: "Cilindri", icon: "­ƒöæ" },
-  { id: "maniglioni", nome: "Maniglioni", icon: "­ƒÜ¿" },
-  { id: "soglie", nome: "Soglie", icon: "Ôû¼" },
-  { id: "motorizzazioni", nome: "Motoriz.", icon: "ÔÜí" },
-  { id: "controtelai", nome: "Controtel.", icon: "­ƒÅù" },
-  { id: "varie", nome: "Varie", icon: "­ƒö®" },
+  { id: "maniglie", nome: "Maniglie" },
+  { id: "cremonesi", nome: "Cremonesi" },
+  { id: "cerniere", nome: "Cerniere" },
+  { id: "serrature", nome: "Serrature" },
+  { id: "cilindri", nome: "Cilindri" },
+  { id: "motorizzazioni", nome: "Motoriz." },
+  { id: "controtelai", nome: "Controtel." },
+  { id: "soglie", nome: "Soglie" },
+  { id: "varie", nome: "Varie" },
+];
+
+const CATALOGO_QUICK = [
+  { id: "MI-001", categoria: "maniglie", codice: "3060", nome: "Martellina Karma DK", fornitore: "Master Italy", prezzo: 18, unitaMisura: "pz" },
+  { id: "MI-002", categoria: "maniglie", codice: "3060K", nome: "Martellina Karma DK con chiave", fornitore: "Master Italy", prezzo: 25, unitaMisura: "pz" },
+  { id: "MI-003", categoria: "maniglie", codice: "3060R", nome: "Martellina Karma Ribassata", fornitore: "Master Italy", prezzo: 20, unitaMisura: "pz" },
+  { id: "MI-004", categoria: "maniglie", codice: "3067", nome: "Doppia Maniglia Karma", fornitore: "Master Italy", prezzo: 32, unitaMisura: "pz" },
+  { id: "CR-001", categoria: "cremonesi", codice: "6065", nome: "Cremonese Karma Apertura Esterna", fornitore: "Master Italy", prezzo: 28, unitaMisura: "pz" },
+  { id: "CR-002", categoria: "cremonesi", codice: "6060", nome: "Cremonese Karma Standard", fornitore: "Master Italy", prezzo: 22, unitaMisura: "pz" },
+  { id: "SE-001", categoria: "serrature", codice: "CISA-1", nome: "Serratura CISA Standard", fornitore: "CISA", prezzo: 45, unitaMisura: "pz" },
+  { id: "SE-002", categoria: "serrature", codice: "CISA-2", nome: "Serratura CISA Blindata", fornitore: "CISA", prezzo: 89, unitaMisura: "pz" },
+  { id: "CI-001", categoria: "cilindri", codice: "CIL-1", nome: "Cilindro europeo standard", fornitore: "Yale", prezzo: 28, unitaMisura: "pz" },
+  { id: "CI-002", categoria: "cilindri", codice: "CIL-2", nome: "Cilindro europeo alta sicurezza", fornitore: "Yale", prezzo: 65, unitaMisura: "pz" },
+  { id: "CE-001", categoria: "cerniere", codice: "CER-1", nome: "Cerniera MACO standard", fornitore: "MACO", prezzo: 12, unitaMisura: "pz" },
+  { id: "CE-002", categoria: "cerniere", codice: "CER-2", nome: "Cerniera MACO con molla", fornitore: "MACO", prezzo: 18, unitaMisura: "pz" },
+  { id: "MO-001", categoria: "motorizzazioni", codice: "MOT-1", nome: "Motorizzazione tapparella 230V", fornitore: "Generico", prezzo: 120, unitaMisura: "pz" },
+  { id: "MO-002", categoria: "motorizzazioni", codice: "MOT-2", nome: "Motorizzazione radio 433MHz", fornitore: "Generico", prezzo: 155, unitaMisura: "pz" },
+  { id: "CT-001", categoria: "controtelai", codice: "CT-STD", nome: "Controtelaio standard", fornitore: "Generico", prezzo: 35, unitaMisura: "pz" },
+  { id: "SG-001", categoria: "soglie", codice: "SOG-1", nome: "Soglia alluminio standard", fornitore: "Generico", prezzo: 22, unitaMisura: "ml" },
+  { id: "VA-001", categoria: "varie", codice: "MIN-1", nome: "Kit minuteria", fornitore: "Generico", prezzo: 8, unitaMisura: "kit" },
+  { id: "VA-002", categoria: "varie", codice: "SIG-1", nome: "Silicone neutro", fornitore: "Generico", prezzo: 5, unitaMisura: "pz" },
 ];
 
 function AccessoriCatalogoSection({ vano, updV, T }: any) {
@@ -241,31 +110,6 @@ function AccessoriCatalogoSection({ vano, updV, T }: any) {
   const [catFilter, setCatFilter] = useState("");
   const items: any[] = vano.accessoriCatalogo || [];
   const totale = items.reduce((s, a) => s + (a.prezzoUnitario || 0) * (a.quantita || 1), 0);
-
-  // Catalogo interno minimale (le voci che vediamo nelle commesse)
-  // In produzione importa da catalogo-accessori-default
-  const CATALOGO_QUICK = [
-    { id: "MI-001", categoria: "maniglie", codice: "3060", nome: "Martellina Karma DK", fornitore: "Master Italy", prezzo: 18, unitaMisura: "pz" },
-    { id: "MI-002", categoria: "maniglie", codice: "3060K", nome: "Martellina Karma DK con chiave", fornitore: "Master Italy", prezzo: 25, unitaMisura: "pz" },
-    { id: "MI-003", categoria: "maniglie", codice: "3060R", nome: "Martellina Karma Ribassata", fornitore: "Master Italy", prezzo: 20, unitaMisura: "pz" },
-    { id: "MI-004", categoria: "maniglie", codice: "3067", nome: "Doppia Maniglia Karma", fornitore: "Master Italy", prezzo: 32, unitaMisura: "pz" },
-    { id: "MI-005", categoria: "maniglie", codice: "3060MD", nome: "Martellina Karma Minimal Design", fornitore: "Master Italy", prezzo: 22, unitaMisura: "pz" },
-    { id: "CR-001", categoria: "cremonesi", codice: "6065", nome: "Cremonese Karma Apertura Esterna", fornitore: "Master Italy", prezzo: 28, unitaMisura: "pz" },
-    { id: "CR-002", categoria: "cremonesi", codice: "6060", nome: "Cremonese Karma Standard", fornitore: "Master Italy", prezzo: 22, unitaMisura: "pz" },
-    { id: "CR-003", categoria: "cremonesi", codice: "6060L", nome: "Cremonese Karma Logica", fornitore: "Master Italy", prezzo: 35, unitaMisura: "pz" },
-    { id: "SE-001", categoria: "serrature", codice: "CISA-1", nome: "Serratura CISA Standard", fornitore: "CISA", prezzo: 45, unitaMisura: "pz" },
-    { id: "SE-002", categoria: "serrature", codice: "CISA-2", nome: "Serratura CISA Blindata", fornitore: "CISA", prezzo: 89, unitaMisura: "pz" },
-    { id: "CI-001", categoria: "cilindri", codice: "CIL-1", nome: "Cilindro europeo standard", fornitore: "Yale", prezzo: 28, unitaMisura: "pz" },
-    { id: "CI-002", categoria: "cilindri", codice: "CIL-2", nome: "Cilindro europeo alta sicurezza", fornitore: "Yale", prezzo: 65, unitaMisura: "pz" },
-    { id: "CE-001", categoria: "cerniere", codice: "CER-1", nome: "Cerniera MACO standard", fornitore: "MACO", prezzo: 12, unitaMisura: "pz" },
-    { id: "CE-002", categoria: "cerniere", codice: "CER-2", nome: "Cerniera MACO con molla", fornitore: "MACO", prezzo: 18, unitaMisura: "pz" },
-    { id: "MO-001", categoria: "motorizzazioni", codice: "MOT-1", nome: "Motorizzazione tapparella 230V", fornitore: "Generico", prezzo: 120, unitaMisura: "pz" },
-    { id: "MO-002", categoria: "motorizzazioni", codice: "MOT-2", nome: "Motorizzazione radio 433MHz", fornitore: "Generico", prezzo: 155, unitaMisura: "pz" },
-    { id: "CT-001", categoria: "controtelai", codice: "CT-STD", nome: "Controtelaio standard", fornitore: "Generico", prezzo: 35, unitaMisura: "pz" },
-    { id: "SG-001", categoria: "soglie", codice: "SOG-1", nome: "Soglia alluminio standard", fornitore: "Generico", prezzo: 22, unitaMisura: "ml" },
-    { id: "VA-001", categoria: "varie", codice: "MIN-1", nome: "Kit minuteria", fornitore: "Generico", prezzo: 8, unitaMisura: "kit" },
-    { id: "VA-002", categoria: "varie", codice: "SIG-1", nome: "Silicone neutro", fornitore: "Generico", prezzo: 5, unitaMisura: "pz" },
-  ];
 
   const filtered = CATALOGO_QUICK.filter(p => {
     const qOk = !query || p.nome.toLowerCase().includes(query.toLowerCase()) || p.codice.toLowerCase().includes(query.toLowerCase());
@@ -293,93 +137,85 @@ function AccessoriCatalogoSection({ vano, updV, T }: any) {
 
   const removeItem = (catalogoId: string) => updV({ accessoriCatalogo: items.filter(a => a.catalogoId !== catalogoId) });
 
-  return (
-    <div style={{ marginTop: 12 }}>
-      <SectionLabel>­ƒÅÀ Accessori catalogo</SectionLabel>
+  const inputBase = { padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: "Inter", background: T.bg, color: T.text, boxSizing: "border-box" as const };
 
-      {/* Items aggiunti */}
+  return (
+    <div>
+      <SectionLabel>Accessori catalogo</SectionLabel>
       {items.map(a => (
-        <div key={a.catalogoId} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 10px", background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}`, marginBottom: 4 }}>
+        <div key={a.catalogoId} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}`, marginBottom: 6 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</div>
-            <div style={{ fontSize: 9, color: T.sub }}>{a.codice} ┬À {a.fornitore}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</div>
+            <div style={{ fontSize: 10, color: T.sub }}>{a.codice} · {a.fornitore}</div>
           </div>
-          {/* Quantit├á */}
           <div style={{ display: "flex", alignItems: "center", background: T.card, borderRadius: 8, border: `1px solid ${T.bdr}` }}>
-            <div onClick={() => updateQta(a.catalogoId, -1)} style={{ padding: "5px 9px", cursor: "pointer", fontSize: 14, fontWeight: 800, color: T.sub }}>ÔêÆ</div>
-            <div style={{ padding: "5px 6px", fontSize: 12, fontWeight: 800, fontFamily: FM, color: T.text, minWidth: 18, textAlign: "center" }}>{a.quantita}</div>
-            <div onClick={() => updateQta(a.catalogoId, 1)} style={{ padding: "5px 9px", cursor: "pointer", fontSize: 14, fontWeight: 800, color: ACC_COLOR }}>+</div>
+            <div onClick={() => updateQta(a.catalogoId, -1)} style={{ padding: "6px 12px", cursor: "pointer", fontSize: 16, fontWeight: 800, color: T.sub }}>-</div>
+            <div style={{ padding: "6px 8px", fontSize: 14, fontWeight: 800, fontFamily: FM, color: T.text, minWidth: 22, textAlign: "center" }}>{a.quantita}</div>
+            <div onClick={() => updateQta(a.catalogoId, 1)} style={{ padding: "6px 12px", cursor: "pointer", fontSize: 16, fontWeight: 800, color: ACC_COLOR }}>+</div>
           </div>
-          {/* Prezzo unitario editabile */}
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <span style={{ fontSize: 10, color: T.sub }}>Ôé¼</span>
+            <span style={{ fontSize: 10, color: T.sub }}>€</span>
             <input
-              type="number"
+              inputMode="numeric"
               value={a.prezzoUnitario || 0}
               onChange={e => updatePrezzo(a.catalogoId, Number(e.target.value))}
-              style={{ width: 52, padding: "5px 4px", borderRadius: 6, border: `1px solid ${T.bdr}`, fontSize: 11, fontFamily: FM, textAlign: "right", background: T.bg, color: T.text }}
+              style={{ width: 58, padding: "6px 6px", borderRadius: 6, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: FM, textAlign: "right", background: T.bg, color: T.text }}
             />
           </div>
-          {/* Subtotale */}
-          <div style={{ fontSize: 11, fontWeight: 800, color: ACC_COLOR, fontFamily: FM, minWidth: 46, textAlign: "right" }}>
-            Ôé¼{fmt((a.prezzoUnitario || 0) * (a.quantita || 1))}
+          <div style={{ fontSize: 12, fontWeight: 800, color: ACC_COLOR, fontFamily: FM, minWidth: 52, textAlign: "right" }}>
+            €{fmt((a.prezzoUnitario || 0) * (a.quantita || 1))}
           </div>
-          <div onClick={() => removeItem(a.catalogoId)} style={{ padding: "4px 6px", cursor: "pointer", fontSize: 14, color: RED, fontWeight: 800 }}>├ù</div>
+          <div onClick={() => removeItem(a.catalogoId)} style={{ padding: "6px 8px", cursor: "pointer", fontSize: 18, color: RED, fontWeight: 800 }}>×</div>
         </div>
       ))}
-
       {items.length > 0 && (
-        <div style={{ display: "flex", justifyContent: "flex-end", padding: "2px 4px 6px", fontSize: 11 }}>
-          <span style={{ fontWeight: 800, color: ACC_COLOR, fontFamily: FM }}>Totale accessori: Ôé¼{fmt(totale)}</span>
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "2px 4px 8px", fontSize: 12 }}>
+          <span style={{ fontWeight: 800, color: ACC_COLOR, fontFamily: FM }}>Totale accessori: €{fmt(totale)}</span>
         </div>
       )}
-
-      {/* Bottone aggiungi */}
       <div onClick={() => { setShowSearch(true); setQuery(""); setCatFilter(""); }}
-        style={{ padding: "10px", borderRadius: 10, textAlign: "center", cursor: "pointer", background: ACC_COLOR + "10", border: `1.5px dashed ${ACC_COLOR}40`, fontSize: 12, fontWeight: 700, color: ACC_COLOR }}>
+        style={{ padding: "12px", borderRadius: 10, textAlign: "center", cursor: "pointer", background: ACC_COLOR + "10", border: `1.5px dashed ${ACC_COLOR}40`, fontSize: 13, fontWeight: 700, color: ACC_COLOR }}>
         + Aggiungi accessorio da catalogo
       </div>
-
-      {/* Bottom sheet ricerca */}
       {showSearch && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowSearch(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, margin: "0 auto", background: T.card, borderRadius: "16px 16px 0 0", maxHeight: "82vh", display: "flex", flexDirection: "column" }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: T.bdr, margin: "8px auto 4px" }} />
             <div style={{ padding: "8px 16px 10px" }}>
-              <div style={{ fontSize: 15, fontWeight: 900, color: ACC_COLOR, marginBottom: 8 }}>­ƒÅÀ Catalogo accessori</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: ACC_COLOR, marginBottom: 8 }}>Catalogo accessori</div>
               <input value={query} onChange={e => setQuery(e.target.value)} autoFocus placeholder="Cerca nome o codice..."
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${ACC_COLOR}40`, fontSize: 13, fontFamily: "Inter", background: T.bg, boxSizing: "border-box" }} />
-              <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4, marginTop: 8 }}>
-                <div onClick={() => setCatFilter("")} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", background: !catFilter ? ACC_COLOR : T.bg, color: !catFilter ? "#fff" : T.sub, border: `1px solid ${!catFilter ? ACC_COLOR : T.bdr}` }}>Tutti</div>
+                style={{ ...inputBase, width: "100%", fontSize: 15 }} />
+              <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginTop: 8 }}>
+                <div onClick={() => setCatFilter("")} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", background: !catFilter ? ACC_COLOR : T.bg, color: !catFilter ? "#fff" : T.sub, border: `1px solid ${!catFilter ? ACC_COLOR : T.bdr}` }}>Tutti</div>
                 {CATEGORIE_LABEL.map(c => (
-                  <div key={c.id} onClick={() => setCatFilter(catFilter === c.id ? "" : c.id)} style={{ padding: "4px 10px", borderRadius: 6, fontSize: 9, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", background: catFilter === c.id ? ACC_COLOR + "15" : T.bg, color: catFilter === c.id ? ACC_COLOR : T.sub, border: `1px solid ${catFilter === c.id ? ACC_COLOR + "40" : T.bdr}` }}>
-                    {c.icon} {c.nome}
+                  <div key={c.id} onClick={() => setCatFilter(catFilter === c.id ? "" : c.id)} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", background: catFilter === c.id ? ACC_COLOR + "15" : T.bg, color: catFilter === c.id ? ACC_COLOR : T.sub, border: `1px solid ${catFilter === c.id ? ACC_COLOR + "40" : T.bdr}` }}>
+                    {c.nome}
                   </div>
                 ))}
               </div>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 80px" }}>
-              {filtered.length === 0 && <div style={{ textAlign: "center", padding: "24px 0", color: T.sub, fontSize: 11 }}>Nessun risultato</div>}
+              {filtered.length === 0 && <div style={{ textAlign: "center", padding: "24px 0", color: T.sub, fontSize: 13 }}>Nessun risultato</div>}
               {filtered.map(p => {
                 const already = items.some(a => a.catalogoId === p.id);
                 return (
-                  <div key={p.id} onClick={() => addItem(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: already ? ACC_COLOR + "06" : T.card, borderRadius: 10, border: `1px solid ${already ? ACC_COLOR + "30" : T.bdr}`, marginBottom: 4, cursor: "pointer" }}>
+                  <div key={p.id} onClick={() => addItem(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px", background: already ? ACC_COLOR + "06" : T.card, borderRadius: 10, border: `1px solid ${already ? ACC_COLOR + "30" : T.bdr}`, marginBottom: 6, cursor: "pointer" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{p.nome}</div>
-                      <div style={{ fontSize: 9, color: T.sub }}>{p.codice} ┬À {p.fornitore}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{p.nome}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>{p.codice} · {p.fornitore}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: ACC_COLOR, fontFamily: FM }}>Ôé¼{p.prezzo}</div>
-                      <div style={{ fontSize: 8, color: T.sub }}>/{p.unitaMisura}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: ACC_COLOR, fontFamily: FM }}>€{p.prezzo}</div>
+                      <div style={{ fontSize: 9, color: T.sub }}>/{p.unitaMisura}</div>
                     </div>
-                    {already && <div style={{ fontSize: 10, fontWeight: 800, color: GRN, background: GRN + "15", padding: "3px 8px", borderRadius: 6 }}>Ô£ô</div>}
+                    {already && <div style={{ fontSize: 11, fontWeight: 800, color: GRN, background: GRN + "15", padding: "4px 8px", borderRadius: 6 }}>OK</div>}
                   </div>
                 );
               })}
             </div>
             <div style={{ padding: "12px 16px 28px", background: T.card, borderTop: `1px solid ${T.bdr}` }}>
               <div onClick={() => setShowSearch(false)} style={{ padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: ACC_COLOR, color: "#fff", fontSize: 14, fontWeight: 900 }}>
-                Fatto ({items.length} selezionati ┬À Ôé¼{fmt(totale)})
+                Fatto ({items.length} selezionati · €{fmt(totale)})
               </div>
             </div>
           </div>
@@ -389,20 +225,18 @@ function AccessoriCatalogoSection({ vano, updV, T }: any) {
   );
 }
 
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-// CARD VANO ÔÇö tutto il dettaglio editabile
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any) {
-  const [open, setOpen] = useState(idx === 0);
-  const [innerTab, setInnerTab] = useState<"info"|"disegno"|"accessori">("info");
+// ============================================================
+// WIZARD VANO - fullscreen 3 step
+// ============================================================
+const STEPS = ["Misure", "Accessori", "Prezzi"] as const;
+
+function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onClose }: any) {
+  const [step, setStep] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
 
   const m = vano.misure || {};
   const pezzi = vano.pezzi || 1;
-
-  // Prezzo base dal context
   const prezzoBase = calcolaVanoPrezzo ? calcolaVanoPrezzo(vano, selectedCM) : 0;
-  // Prezzo override manuale
   const prezzoOverride = vano.prevPrezzoOverride;
   const prezzoUnitario = prezzoOverride !== undefined && prezzoOverride !== null ? prezzoOverride : prezzoBase;
   const accCat = (vano.accessoriCatalogo || []).reduce((s: number, a: any) => s + (a.prezzoUnitario || 0) * (a.quantita || 1), 0);
@@ -411,359 +245,334 @@ function VanoCard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T }: any)
   const subtotale = (prezzoUnitario * pezzi) + accCat + posaPrezzo + smontaggio;
 
   const updV = (patch: any) => updVano(vano.id, patch);
+  const updM = (key: string, val: number) => updV({ misure: { ...m, [key]: val } });
+  const updTapp = (patch: any) => updV({ accessori: { ...vano.accessori, tapparella: { ...(vano.accessori?.tapparella || {}), ...patch } } });
+  const updZanz = (patch: any) => updV({ accessori: { ...vano.accessori, zanzariera: { ...(vano.accessori?.zanzariera || {}), ...patch } } });
 
-  const inputStyle = {
-    width: "100%", padding: "8px 10px", borderRadius: 8,
-    border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "Inter",
-    background: T.bg, color: T.text, boxSizing: "border-box" as const,
+  const tapp = vano.accessori?.tapparella || {};
+  const zanz = vano.accessori?.zanzariera || {};
+
+  const inputBase = {
+    padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`,
+    fontSize: 15, fontFamily: "Inter", background: T.bg, color: T.text,
+    width: "100%", boxSizing: "border-box" as const,
   };
 
-  const labelStyle = { fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase" as const, marginBottom: 3, display: "block" };
+  if (showConfig) return (
+    <VanoConfiguratoreFullscreen
+      vano={vano}
+      onSalva={(patch: any) => { updVano(vano.id, patch); setShowConfig(false); }}
+      onChiudi={() => setShowConfig(false)}
+      T={T}
+    />
+  );
 
   return (
-    <>
-      {showConfig && (
-        <VanoConfiguratoreFullscreen
-          vano={vano}
-          onSalva={(patch: any) => { updVano(vano.id, patch); setShowConfig(false); }}
-          onChiudi={() => setShowConfig(false)}
-          T={T}
-        />
-      )}
+    <div style={{ position: "fixed", inset: 0, zIndex: 900, background: T.bg, display: "flex", flexDirection: "column" }}>
 
-      <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${open ? GRN + "40" : T.bdr}`, marginBottom: 10, overflow: "hidden" }}>
-        {/* Header vano */}
-        <div onClick={() => setOpen(!open)} style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: open ? GRN + "06" : "transparent" }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: GRN, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{idx + 1}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{vano.nome || `Vano ${idx + 1}`}
-              {vano.tipo && <span style={{ fontSize: 10, fontWeight: 600, color: T.sub, marginLeft: 6 }}>{vano.tipo}</span>}
-              {pezzi > 1 && <span style={{ fontSize: 10, fontWeight: 700, color: GRN, marginLeft: 4 }}>├ù{pezzi}</span>}
-            </div>
-            <div style={{ fontSize: 10, color: T.sub }}>
-              {m.lCentro && m.hCentro ? `${m.lCentro}├ù${m.hCentro}mm` : "Misure da inserire"}
-              {vano.coloreInt ? ` ┬À ${vano.coloreInt}` : ""}
-            </div>
-          </div>
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 900, color: GRN, fontFamily: FM }}>Ôé¼{fmt(subtotale)}</div>
-            <div style={{ fontSize: 9, color: T.sub, fontFamily: FM }}>Ôé¼{fmt(prezzoUnitario)}/pz</div>
-          </div>
-          <div style={{ fontSize: 14, color: T.sub, transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "0.2s" }}>Ôû¥</div>
+      {/* Topbar wizard */}
+      <div style={{ background: "#1A1A1C", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+        <div onClick={onClose} style={{ color: "#aaa", fontSize: 22, cursor: "pointer", lineHeight: 1 }}>←</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>{vano.nome || `Vano ${idx + 1}`}{vano.tipo ? ` · ${vano.tipo}` : ""}</div>
+          <div style={{ color: "#888", fontSize: 11 }}>{m.lCentro && m.hCentro ? `${m.lCentro}×${m.hCentro} mm` : "Misure da inserire"}</div>
         </div>
+        <div style={{ background: AMB, color: "#fff", fontSize: 15, fontWeight: 700, padding: "6px 14px", borderRadius: 20, fontFamily: FM }}>€{fmt(subtotale)}</div>
+      </div>
 
-        {open && (
-          <div style={{ padding: "0 14px 14px", borderTop: `1px solid ${T.bdr}` }}>
+      {/* Stepper */}
+      <div style={{ background: T.card, borderBottom: `1px solid ${T.bdr}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 0, flexShrink: 0 }}>
+        {STEPS.map((s, i) => (
+          <React.Fragment key={s}>
+            <div onClick={() => setStep(i)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", flex: 1 }}>
+              <div style={{ width: 30, height: 30, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, background: i < step ? GRN : i === step ? AMB : "#eee", color: i <= step ? "#fff" : "#bbb" }}>
+                {i < step ? "✓" : i + 1}
+              </div>
+              <div style={{ fontSize: 10, fontWeight: i === step ? 700 : 500, color: i === step ? AMB : i < step ? GRN : "#bbb" }}>{s}</div>
+            </div>
+            {i < STEPS.length - 1 && <div style={{ flex: 1, height: 2, background: i < step ? GRN : "#eee", marginBottom: 13 }} />}
+          </React.Fragment>
+        ))}
+      </div>
 
-            {/* ÔöÇÔöÇ TAB INTERNI ÔöÇÔöÇ */}
-            <div style={{ display: "flex", gap: 6, marginTop: 10, marginBottom: 4 }}>
-              {([
-                { id: "info", label: "­ƒôÉ Info & Prezzi" },
-                { id: "disegno", label: `­ƒôÉ Config${vano.infissoConfig?.tipo ? " Ô£ô" : ""}` },
-                { id: "accessori", label: `­ƒÅÀ Accessori${(vano.accessoriCatalogo?.length || 0) > 0 ? ` (${vano.accessoriCatalogo.length})` : ""}` },
-              ] as const).map(tab => (
-                <div
-                  key={tab.id}
-                  onClick={() => setInnerTab(tab.id)}
-                  style={{
-                    flex: 1, padding: "7px 4px", borderRadius: 10, textAlign: "center",
-                    fontSize: 11, fontWeight: innerTab === tab.id ? 800 : 600,
-                    background: innerTab === tab.id
-                      ? (tab.id === "disegno" ? AMB + "18" : tab.id === "accessori" ? ACC_COLOR + "15" : GRN + "12")
-                      : T.bg,
-                    color: innerTab === tab.id
-                      ? (tab.id === "disegno" ? AMB : tab.id === "accessori" ? ACC_COLOR : GRN)
-                      : T.sub,
-                    border: `1.5px solid ${innerTab === tab.id
-                      ? (tab.id === "disegno" ? AMB + "50" : tab.id === "accessori" ? ACC_COLOR + "40" : GRN + "40")
-                      : T.bdr}`,
-                    cursor: "pointer", transition: "all 0.15s",
-                  }}
-                >
-                  {tab.label}
+      {/* Contenuto step */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 100px" }}>
+
+        {/* ===== STEP 0: MISURE ===== */}
+        {step === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <SectionLabel>Misure vano (mm)</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <NInput label="L. Centro" value={m.lCentro || 0} onChange={v => updM("lCentro", v)} />
+                <NInput label="H. Centro" value={m.hCentro || 0} onChange={v => updM("hCentro", v)} />
+                <NInput label="L. Foro" value={m.lForo || 0} onChange={v => updM("lForo", v)} />
+                <NInput label="H. Foro" value={m.hForo || 0} onChange={v => updM("hForo", v)} />
+                <NInput label="L. Muro" value={m.lMuro || 0} onChange={v => updM("lMuro", v)} />
+                <NInput label="H. Muro" value={m.hMuro || 0} onChange={v => updM("hMuro", v)} />
+              </div>
+            </div>
+            <div>
+              <SectionLabel>Rilievo vano (mm)</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <NInput label="Dav. Prof" value={m.davProf || 0} onChange={v => updM("davProf", v)} />
+                <NInput label="Dav. Sporg" value={m.davSporg || 0} onChange={v => updM("davSporg", v)} />
+                <NInput label="Soglia" value={m.soglia || 0} onChange={v => updM("soglia", v)} />
+                <NInput label="Imbotte" value={m.imbotte || 0} onChange={v => updM("imbotte", v)} />
+              </div>
+            </div>
+            <div>
+              <SectionLabel>Info vano</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <TInput label="Tipo" value={vano.tipo || ""} onChange={v => updV({ tipo: v })} placeholder="F1A, F2B..." />
+                <NInput label="N. Pezzi" value={vano.pezzi || 1} onChange={v => updV({ pezzi: Math.max(1, v) })} />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <TInput label="Nome vano" value={vano.nome || ""} onChange={v => updV({ nome: v })} placeholder="Es. Finestra soggiorno" />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <TInput label="Colore interno" value={vano.coloreInt || ""} onChange={v => updV({ coloreInt: v })} placeholder="RAL 7016, Bianco..." />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <TInput label="Colore esterno" value={vano.coloreEst || ""} onChange={v => updV({ coloreEst: v })} placeholder="RAL 7016, Bianco..." />
+              </div>
+            </div>
+
+            {/* Tapparella */}
+            <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: tapp.attivo ? 12 : 0 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Tapparella</div>
+                  {tapp.attivo && tapp.tipo && <div style={{ fontSize: 11, color: T.sub }}>{tapp.tipo}</div>}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <select value={tapp.tipo || "Non inclusa"}
+                    onChange={e => updTapp({ tipo: e.target.value, attivo: e.target.value !== "Non inclusa" })}
+                    style={{ ...inputBase, width: "auto", fontSize: 13, padding: "6px 10px" }}>
+                    <option>Non inclusa</option>
+                    <option>Avvolgente PVC</option>
+                    <option>Avvolgente Alluminio</option>
+                    <option>Frangisole</option>
+                    <option>Veneziana</option>
+                  </select>
+                  <Toggle value={tapp.inclusa || false} onChange={v => updTapp({ inclusa: v })} />
+                </div>
+              </div>
+              {tapp.attivo && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <NInput label="Larghezza (mm)" value={tapp.larghezza || 0} onChange={v => updTapp({ larghezza: v })} />
+                    <NInput label="Altezza (mm)" value={tapp.altezza || 0} onChange={v => updTapp({ altezza: v })} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <TInput label="Colore" value={tapp.colore || ""} onChange={v => updTapp({ colore: v })} placeholder="RAL..." />
+                    <TInput label="Spessore lama" value={tapp.spessore || ""} onChange={v => updTapp({ spessore: v })} placeholder="Es. 37mm" />
+                  </div>
+                  <NInput label="Prezzo (€)" value={tapp.prezzoTapp || 0} onChange={v => updTapp({ prezzoTapp: v })} />
+                </div>
+              )}
+            </div>
+
+            {/* Zanzariera */}
+            <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: zanz.attivo ? 12 : 0 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Zanzariera</div>
+                  {zanz.attivo && zanz.tipo && <div style={{ fontSize: 11, color: T.sub }}>{zanz.tipo}</div>}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <select value={zanz.tipo || "Non inclusa"}
+                    onChange={e => updZanz({ tipo: e.target.value, attivo: e.target.value !== "Non inclusa" })}
+                    style={{ ...inputBase, width: "auto", fontSize: 13, padding: "6px 10px" }}>
+                    <option>Non inclusa</option>
+                    <option>Avvolgente</option>
+                    <option>Plisse</option>
+                    <option>Laterale</option>
+                    <option>Battente</option>
+                    <option>ZIP</option>
+                  </select>
+                  <Toggle value={zanz.inclusa || false} onChange={v => updZanz({ inclusa: v })} />
+                </div>
+              </div>
+              {zanz.attivo && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <NInput label="Larghezza (mm)" value={zanz.larghezza || 0} onChange={v => updZanz({ larghezza: v })} />
+                    <NInput label="Altezza (mm)" value={zanz.altezza || 0} onChange={v => updZanz({ altezza: v })} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <TInput label="Colore" value={zanz.colore || ""} onChange={v => updZanz({ colore: v })} placeholder="RAL..." />
+                    <TInput label="Tipo rete" value={zanz.rete || ""} onChange={v => updZanz({ rete: v })} placeholder="Standard, Anti-polline..." />
+                  </div>
+                  <NInput label="Prezzo (€)" value={zanz.prezzoZanz || 0} onChange={v => updZanz({ prezzoZanz: v })} />
+                </div>
+              )}
+            </div>
+
+            {/* Note vano */}
+            <div>
+              <SectionLabel>Note vano</SectionLabel>
+              <textarea value={vano.prevNote || ""} onChange={e => updV({ prevNote: e.target.value })}
+                placeholder="Note specifiche per questo vano..."
+                style={{ ...inputBase, minHeight: 80, resize: "vertical", lineHeight: 1.5, fontSize: 15 }} />
+            </div>
+          </div>
+        )}
+
+        {/* ===== STEP 1: ACCESSORI ===== */}
+        {step === 1 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <AccessoriCatalogoSection vano={vano} updV={updV} T={T} />
+
+            <div>
+              <SectionLabel>Voci libere vano</SectionLabel>
+              {(vano.vociLibere || []).map((vl: any, vi: number) => (
+                <div key={vi} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
+                  <input value={vl.desc || ""} placeholder="Descrizione..."
+                    onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], desc: e.target.value }; updV({ vociLibere: nl }); }}
+                    style={{ ...inputBase, flex: 2 }} />
+                  <input inputMode="numeric" value={vl.qta || ""} placeholder="Qta"
+                    onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], qta: Number(e.target.value) }; updV({ vociLibere: nl }); }}
+                    style={{ ...inputBase, width: 60 }} />
+                  <input inputMode="numeric" value={vl.prezzo || ""} placeholder="€"
+                    onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], prezzo: Number(e.target.value) }; updV({ vociLibere: nl }); }}
+                    style={{ ...inputBase, width: 80 }} />
+                  <div onClick={() => { const nl = (vano.vociLibere || []).filter((_: any, i: number) => i !== vi); updV({ vociLibere: nl }); }}
+                    style={{ padding: "6px 8px", cursor: "pointer", color: RED, fontSize: 18, fontWeight: 800 }}>×</div>
                 </div>
               ))}
-            </div>
-
-            {/* ÔòÉÔòÉ TAB: INFO & PREZZI ÔòÉÔòÉ */}
-            {innerTab === "info" && (<>
-            <div style={{ marginTop: 12 }}>
-              <SectionLabel>­ƒôÉ Misure (mm)</SectionLabel>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-                {[
-                  { k: "lCentro", label: "L. Centro" },
-                  { k: "hCentro", label: "H. Centro" },
-                  { k: "lForo", label: "L. Foro" },
-                  { k: "hForo", label: "H. Foro" },
-                  { k: "lMuro", label: "L. Muro" },
-                  { k: "hMuro", label: "H. Muro" },
-                ].map(({ k, label }) => (
-                  <div key={k}>
-                    <label style={labelStyle}>{label}</label>
-                    <input
-                      type="number"
-                      value={m[k] || ""}
-                      placeholder="0"
-                      onChange={e => updV({ misure: { ...m, [k]: Number(e.target.value) } })}
-                      style={{ ...inputStyle }}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
-                {[
-                  { k: "davProf", label: "Dav. Prof" },
-                  { k: "davSporg", label: "Dav. Sporg" },
-                  { k: "soglia", label: "Soglia" },
-                  { k: "imbotte", label: "Imbotte" },
-                ].map(({ k, label }) => (
-                  <div key={k}>
-                    <label style={labelStyle}>{label}</label>
-                    <input
-                      type="number"
-                      value={m[k] || ""}
-                      placeholder="0"
-                      onChange={e => updV({ misure: { ...m, [k]: Number(e.target.value) } })}
-                      style={{ ...inputStyle }}
-                    />
-                  </div>
-                ))}
+              <div onClick={() => updV({ vociLibere: [...(vano.vociLibere || []), { desc: "", qta: 1, prezzo: 0 }] })}
+                style={{ padding: "10px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, color: T.sub }}>
+                + Aggiungi voce
               </div>
             </div>
 
-            {/* ÔöÇÔöÇ PREZZO INFISSO ÔöÇÔöÇ */}
-            <div style={{ marginTop: 14 }}>
-              <SectionLabel>­ƒÆ░ Prezzo infisso</SectionLabel>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            {/* Config infisso */}
+            <div>
+              <SectionLabel>Configurazione infisso</SectionLabel>
+              {vano.infissoConfig?.tipo ? (
+                <div style={{ padding: 12, background: AMB + "10", borderRadius: 12, border: `1px solid ${AMB}30` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: AMB }}>{vano.infissoConfig.tipId || "Configurato"}</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{vano.misure?.lCentro || "—"}×{vano.misure?.hCentro || "—"} mm</div>
+                  <div onClick={() => setShowConfig(true)} style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: AMB, color: "#fff", fontSize: 13, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>
+                    Modifica configurazione
+                  </div>
+                </div>
+              ) : (
+                <div onClick={() => setShowConfig(true)}
+                  style={{ padding: "32px 20px", borderRadius: 14, border: `2px dashed ${AMB}50`, textAlign: "center", cursor: "pointer", background: AMB + "05" }}>
+                  <div style={{ fontSize: 30, marginBottom: 6 }}>📐</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: AMB }}>Apri configuratore infisso</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Tipologia, campiture, ferramenta</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ===== STEP 2: PREZZI ===== */}
+        {step === 2 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <SectionLabel>Prezzo infisso</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
-                  <label style={labelStyle}>Prezzo unitario (Ôé¼)</label>
+                  <label style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase", display: "block", marginBottom: 3 }}>Prezzo unitario (€)</label>
                   <input
-                    type="number"
+                    inputMode="numeric"
                     value={prezzoOverride !== undefined && prezzoOverride !== null ? prezzoOverride : (prezzoBase || "")}
-                    placeholder={prezzoBase > 0 ? `Auto: Ôé¼${fmt(prezzoBase)}` : "0"}
+                    placeholder={prezzoBase > 0 ? `Auto: €${fmt(prezzoBase)}` : "0"}
                     onChange={e => updV({ prevPrezzoOverride: e.target.value === "" ? null : Number(e.target.value) })}
-                    style={{ ...inputStyle, borderColor: prezzoOverride !== undefined && prezzoOverride !== null ? AMB : T.bdr }}
+                    style={{ padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${prezzoOverride !== undefined && prezzoOverride !== null ? AMB : T.bdr}`, fontSize: 15, fontFamily: FM, textAlign: "right", background: T.bg, color: T.text, width: "100%", boxSizing: "border-box" }}
                   />
                   {prezzoOverride !== null && prezzoOverride !== undefined && (
-                    <div onClick={() => updV({ prevPrezzoOverride: null })} style={{ fontSize: 9, color: T.sub, cursor: "pointer", marginTop: 2 }}>Ôå® Ripristina auto (Ôé¼{fmt(prezzoBase)})</div>
+                    <div onClick={() => updV({ prevPrezzoOverride: null })} style={{ fontSize: 10, color: T.sub, cursor: "pointer", marginTop: 3 }}>× Ripristina auto (€{fmt(prezzoBase)})</div>
                   )}
                 </div>
                 <div>
-                  <label style={labelStyle}>N. pezzi</label>
-                  <input
-                    type="number"
-                    value={pezzi > 1 ? pezzi : ""}
-                    placeholder="1"
-                    min={1}
-                    onChange={e => updV({ pezzi: e.target.value === "" ? 1 : Math.max(1, Number(e.target.value)) })}
-                    style={{ ...inputStyle }}
-                  />
+                  <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: GRN + "08", fontSize: 15, fontWeight: 800, fontFamily: FM, color: GRN, textAlign: "right" }}>
+                    <div style={{ fontSize: 9, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>Subtotale infisso</div>
+                    €{fmt(prezzoUnitario * pezzi)}
+                  </div>
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <SectionLabel>Posa e smontaggio</SectionLabel>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 <div>
-                  <label style={labelStyle}>Subtotale infisso</label>
-                  <div style={{ padding: "8px 10px", borderRadius: 8, background: GRN + "12", border: `1px solid ${GRN}40`, fontSize: 13, fontWeight: 900, color: GRN, fontFamily: FM }}>
-                    Ôé¼{fmt(prezzoUnitario * pezzi)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ÔöÇÔöÇ TAPPARELLA ÔöÇÔöÇ */}
-            <div style={{ marginTop: 14 }}>
-              <SectionLabel>Ô¼ç Tapparella</SectionLabel>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <select value={(vano.accessori?.tapparella?.tipo) || "Non inclusa"}
-                  onChange={e => updV({ accessori: { ...vano.accessori, tapparella: { ...(vano.accessori?.tapparella || {}), tipo: e.target.value, attivo: e.target.value !== "Non inclusa" } } })}
-                  style={{ ...inputStyle, flex: 1 }}>
-                  <option>Non inclusa</option>
-                  <option>Motorizzata</option>
-                  <option>Manuale</option>
-                  <option>Avvolgibile</option>
-                </select>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, color: T.sub }}>Inclusa</span>
-                  <div onClick={() => updV({ accessori: { ...vano.accessori, tapparella: { ...(vano.accessori?.tapparella || {}), inclusa: !vano.accessori?.tapparella?.inclusa } } })}
-                    style={{ width: 40, height: 22, borderRadius: 11, background: vano.accessori?.tapparella?.inclusa ? GRN : T.bdr, position: "relative", cursor: "pointer", transition: "0.2s" }}>
-                    <div style={{ position: "absolute", top: 2, left: vano.accessori?.tapparella?.inclusa ? 20 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "0.2s" }} />
-                  </div>
-                </div>
-              </div>
-              {vano.accessori?.tapparella?.attivo && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
-                  {[
-                    { k: "colore", label: "Colore", type: "text" },
-                    { k: "larghezza", label: "L (mm)", type: "number" },
-                    { k: "altezza", label: "H (mm)", type: "number" },
-                    { k: "spessore", label: "Spessore", type: "text" },
-                    { k: "prezzoTapp", label: "Prezzo Ôé¼", type: "number" },
-                  ].map(({ k, label, type }) => (
-                    <div key={k}>
-                      <label style={labelStyle}>{label}</label>
-                      <input type={type} value={(vano.accessori?.tapparella || {})[k] || ""}
-                        onChange={e => updV({ accessori: { ...vano.accessori, tapparella: { ...(vano.accessori?.tapparella || {}), [k]: type === "number" ? Number(e.target.value) : e.target.value } } })}
-                        style={{ ...inputStyle }} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* ÔöÇÔöÇ ZANZARIERA ÔöÇÔöÇ */}
-            <div style={{ marginTop: 14 }}>
-              <SectionLabel>­ƒò© Zanzariera</SectionLabel>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <select value={(vano.accessori?.zanzariera?.tipo) || "Non inclusa"}
-                  onChange={e => updV({ accessori: { ...vano.accessori, zanzariera: { ...(vano.accessori?.zanzariera || {}), tipo: e.target.value, attivo: e.target.value !== "Non inclusa" } } })}
-                  style={{ ...inputStyle, flex: 1 }}>
-                  <option>Non inclusa</option>
-                  <option>Avvolgente</option>
-                  <option>Pliss├®</option>
-                  <option>Laterale</option>
-                  <option>Battente</option>
-                  <option>ZIP</option>
-                </select>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, color: T.sub }}>Inclusa</span>
-                  <div onClick={() => updV({ accessori: { ...vano.accessori, zanzariera: { ...(vano.accessori?.zanzariera || {}), inclusa: !vano.accessori?.zanzariera?.inclusa } } })}
-                    style={{ width: 40, height: 22, borderRadius: 11, background: vano.accessori?.zanzariera?.inclusa ? GRN : T.bdr, position: "relative", cursor: "pointer", transition: "0.2s" }}>
-                    <div style={{ position: "absolute", top: 2, left: vano.accessori?.zanzariera?.inclusa ? 20 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "0.2s" }} />
-                  </div>
-                </div>
-              </div>
-              {vano.accessori?.zanzariera?.attivo && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 6 }}>
-                  {[
-                    { k: "colore", label: "Colore", type: "text" },
-                    { k: "larghezza", label: "L (mm)", type: "number" },
-                    { k: "altezza", label: "H (mm)", type: "number" },
-                    { k: "rete", label: "Rete", type: "text" },
-                    { k: "prezzoZanz", label: "Prezzo Ôé¼", type: "number" },
-                  ].map(({ k, label, type }) => (
-                    <div key={k}>
-                      <label style={labelStyle}>{label}</label>
-                      <input type={type} value={(vano.accessori?.zanzariera || {})[k] || ""}
-                        onChange={e => updV({ accessori: { ...vano.accessori, zanzariera: { ...(vano.accessori?.zanzariera || {}), [k]: type === "number" ? Number(e.target.value) : e.target.value } } })}
-                        style={{ ...inputStyle }} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* ÔöÇÔöÇ POSA ÔöÇÔöÇ */}
-            <div style={{ marginTop: 14 }}>
-              <SectionLabel>­ƒöº Posa e smontaggio</SectionLabel>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                <div>
-                  <label style={labelStyle}>Posa</label>
-                  <select value={vano.prevPosa || "Inclusa"} onChange={e => updV({ prevPosa: e.target.value })} style={{ ...inputStyle }}>
+                  <label style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase", display: "block", marginBottom: 3 }}>Posa</label>
+                  <select value={vano.prevPosa || "Inclusa"} onChange={e => updV({ prevPosa: e.target.value })}
+                    style={{ padding: "10px 8px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, background: T.bg, color: T.text, width: "100%" }}>
                     <option>Inclusa</option>
-                    <option>A parte</option>
-                    <option>Non prevista</option>
+                    <option>Esclusa</option>
+                    <option>Personalizzata</option>
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Smontaggio</label>
-                  <select value={vano.prevSmDes || "Non richiesto"} onChange={e => updV({ prevSmDes: e.target.value })} style={{ ...inputStyle }}>
+                  <label style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase", display: "block", marginBottom: 3 }}>Smontaggio</label>
+                  <select value={vano.prevSmontaggio || "Non richiesto"} onChange={e => updV({ prevSmontaggio: e.target.value })}
+                    style={{ padding: "10px 8px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, background: T.bg, color: T.text, width: "100%" }}>
                     <option>Non richiesto</option>
                     <option>Incluso</option>
-                    <option>A parte</option>
+                    <option>A pagamento</option>
                   </select>
                 </div>
-                <div>
-                  <label style={labelStyle}>Prezzo posa (Ôé¼)</label>
-                  <input type="number" value={posaPrezzo || ""} placeholder="0"
-                    onChange={e => updV({ prevPosaPrezzo: Number(e.target.value) })}
-                    style={{ ...inputStyle }} />
-                </div>
+                <NInput label="Prezzo posa (€)" value={vano.prevPosaPrezzo || 0} onChange={v => updV({ prevPosaPrezzo: v })} />
               </div>
             </div>
 
-            {/* chiude tab INFO */}
-            </>)}
-
-            {/* ÔòÉÔòÉ TAB: DISEGNO ÔòÉÔòÉ */}
-            {innerTab === "disegno" && (
-              <div style={{ marginTop: 12 }}>
-                {vano.infissoConfig ? (
-                  <div style={{ background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}`, padding: 10, marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 6 }}>
-                      {vano.infissoConfig.tipId || "Configurato"} ┬À {vano.misure?.lCentro || "ÔÇö"}├ù{vano.misure?.hCentro || "ÔÇö"} mm
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <div onClick={() => setShowConfig(true)}
-                        style={{ flex: 1, padding: "10px", borderRadius: 10, textAlign: "center", background: AMB + "15", border: `1px solid ${AMB}40`, fontSize: 12, fontWeight: 700, color: AMB, cursor: "pointer" }}>
-                        Ô£Å´©Å Modifica configurazione
-                      </div>
-                      <div onClick={() => updV({ infissoConfig: null })}
-                        style={{ padding: "10px 14px", borderRadius: 10, textAlign: "center", background: RED + "10", border: `1px solid ${RED}30`, fontSize: 12, fontWeight: 700, color: RED, cursor: "pointer" }}>
-                        ­ƒùæ
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div onClick={() => setShowConfig(true)}
-                    style={{ marginTop: 8, padding: "40px 20px", borderRadius: 14, border: `2px dashed ${AMB}50`, textAlign: "center", cursor: "pointer", background: AMB + "05" }}>
-                    <div style={{ fontSize: 36, marginBottom: 8 }}>­ƒôÉ</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: AMB }}>Apri configuratore infisso</div>
-                    <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Scegli tipologia, misure, campiture, accessori</div>
-                  </div>
-                )}
-                <div style={{ marginTop: 10 }}>
-                  <SectionLabel>­ƒôØ Note vano</SectionLabel>
-                  <textarea value={vano.prevNote || ""} onChange={e => updV({ prevNote: e.target.value })}
-                    placeholder="Note specifiche per questo vano..."
-                    style={{ ...inputStyle, minHeight: 70, resize: "vertical", lineHeight: 1.5 }} />
+            {/* Riepilogo vano */}
+            <div style={{ background: GRN + "08", borderRadius: 14, border: `1px solid ${GRN}25`, padding: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, marginBottom: 10 }}>RIEPILOGO VANO</div>
+              {[
+                { label: `Infisso x${pezzi}`, val: prezzoUnitario * pezzi },
+                { label: "Accessori catalogo", val: accCat },
+                { label: "Posa", val: posaPrezzo },
+              ].filter(r => r.val > 0).map((r, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13 }}>
+                  <span style={{ color: T.sub }}>{r.label}</span>
+                  <span style={{ fontWeight: 700, fontFamily: FM, color: T.text }}>€{fmt(r.val)}</span>
                 </div>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", borderTop: `1.5px solid ${GRN}30`, marginTop: 8, paddingTop: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: GRN }}>Totale vano</span>
+                <span style={{ fontSize: 20, fontWeight: 900, fontFamily: FM, color: GRN }}>€{fmt(subtotale)}</span>
               </div>
-            )}
-
-            {/* ÔòÉÔòÉ TAB: ACCESSORI ÔòÉÔòÉ */}
-            {innerTab === "accessori" && (
-              <div style={{ marginTop: 12 }}>
-                <AccessoriCatalogoSection vano={vano} updV={updV} T={T} />
-                {/* Voci libere */}
-                <div style={{ marginTop: 14 }}>
-                  <SectionLabel>Ô×ò Voci libere vano</SectionLabel>
-                  {(vano.vociLibere || []).map((vl: any, vi: number) => (
-                    <div key={vi} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                      <input value={vl.desc || ""} placeholder="Descrizione voce..."
-                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], desc: e.target.value }; updV({ vociLibere: nl }); }}
-                        style={{ ...inputStyle, flex: 2 }} />
-                      <input type="number" value={vl.qta || ""} placeholder="Qta"
-                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], qta: Number(e.target.value) }; updV({ vociLibere: nl }); }}
-                        style={{ ...inputStyle, width: 54 }} />
-                      <input type="number" value={vl.prezzo || ""} placeholder="Ôé¼"
-                        onChange={e => { const nl = [...(vano.vociLibere || [])]; nl[vi] = { ...nl[vi], prezzo: Number(e.target.value) }; updV({ vociLibere: nl }); }}
-                        style={{ ...inputStyle, width: 70 }} />
-                      <div style={{ fontSize: 11, fontWeight: 800, color: GRN, fontFamily: FM, minWidth: 50, textAlign: "right" }}>Ôé¼{fmt((vl.prezzo || 0) * (vl.qta || 1))}</div>
-                      <div onClick={() => { const nl = (vano.vociLibere || []).filter((_: any, i: number) => i !== vi); updV({ vociLibere: nl }); }}
-                        style={{ padding: "4px 6px", cursor: "pointer", color: RED, fontSize: 14, fontWeight: 800 }}>├ù</div>
-                    </div>
-                  ))}
-                  <div onClick={() => updV({ vociLibere: [...(vano.vociLibere || []), { desc: "", qta: 1, prezzo: 0 }] })}
-                    style={{ padding: "8px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 11, color: T.sub, marginTop: 2 }}>
-                    + Aggiungi voce
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ÔöÇÔöÇ SUBTOTALE VANO ÔÇö sempre visibile ÔöÇÔöÇ */}
-            <div style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: GRN + "08", border: `1px solid ${GRN}20`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>Totale vano</span>
-              <span style={{ fontSize: 16, fontWeight: 900, color: GRN, fontFamily: FM }}>Ôé¼{fmt(subtotale)}</span>
             </div>
           </div>
         )}
       </div>
-    </>
+
+      {/* Footer navigazione */}
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: T.card, borderTop: `1px solid ${T.bdr}`, padding: "12px 16px 28px", display: "flex", gap: 10, zIndex: 10 }}>
+        {step > 0 ? (
+          <div onClick={() => setStep(s => s - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 15, fontWeight: 700, color: T.sub }}>
+            Indietro
+          </div>
+        ) : (
+          <div onClick={onClose} style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 15, fontWeight: 700, color: T.sub }}>
+            Chiudi
+          </div>
+        )}
+        {step < STEPS.length - 1 ? (
+          <div onClick={() => setStep(s => s + 1)} style={{ flex: 2, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: GRN, color: "#fff", fontSize: 15, fontWeight: 800 }}>
+            Avanti — {STEPS[step + 1]}
+          </div>
+        ) : (
+          <div onClick={onClose} style={{ flex: 2, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: GRN, color: "#fff", fontSize: 15, fontWeight: 800 }}>
+            Fatto · €{fmt(subtotale)}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+// ============================================================
 // COMPONENTE PRINCIPALE
-// ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+// ============================================================
 export default function PreventivoConfiguratoreTab() {
   const {
     T, selectedCM, setSelectedCM, setCantieri,
@@ -775,17 +584,14 @@ export default function PreventivoConfiguratoreTab() {
   if (!selectedCM) return null;
   const c = selectedCM;
 
-  const [vanoInConfig, setVanoInConfig] = useState<any>(null);
+  const [vanoWizard, setVanoWizard] = useState<any>(null);
 
-  // ÔöÇÔöÇ Aggiorna commessa ÔöÇÔöÇ
   const updCM = useCallback((field: string, val: any) => {
     setCantieri((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, [field]: val } : x));
     setSelectedCM((p: any) => ({ ...p, [field]: val }));
   }, [c.id, setCantieri, setSelectedCM]);
 
-  // ÔöÇÔöÇ Aggiorna singolo vano ÔöÇÔöÇ
   const updVano = useCallback((vanoId: any, patch: any) => {
-    // FIX: scrive in rilievi[ultimo].vani — source of truth delle misure
     const rilievi = c.rilievi || [];
     if (rilievi.length > 0) {
       const lastIdx = rilievi.length - 1;
@@ -797,7 +603,6 @@ export default function PreventivoConfiguratoreTab() {
       setCantieri((cs: any[]) => cs.map(x => x.id === c.id ? { ...x, rilievi: updRilievi } : x));
       setSelectedCM((p: any) => ({ ...p, rilievi: updRilievi }));
     } else {
-      // fallback: nessun rilievo, usa c.vani
       const newVani = (c.vani || []).map((v: any) => v.id === vanoId ? { ...v, ...patch } : v);
       updCM("vani", newVani);
     }
@@ -805,7 +610,6 @@ export default function PreventivoConfiguratoreTab() {
 
   const vani = getVaniAttivi ? getVaniAttivi(c) : (c.vani || []).filter((v: any) => !v.eliminato);
 
-  // ÔöÇÔöÇ Calcolo totali ÔöÇÔöÇ
   const totVani = vani.reduce((s: number, v: any) => {
     const base = calcolaVanoPrezzo ? calcolaVanoPrezzo(v, c) : (v.prevPrezzoOverride ?? 0);
     const prezzoU = v.prevPrezzoOverride !== undefined && v.prevPrezzoOverride !== null ? v.prevPrezzoOverride : base;
@@ -826,30 +630,34 @@ export default function PreventivoConfiguratoreTab() {
   const saldo = totIva - acconto;
 
   const inputStyle = {
-    width: "100%", padding: "8px 10px", borderRadius: 8,
-    border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "Inter",
+    width: "100%", padding: "10px 12px", borderRadius: 8,
+    border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: "Inter",
     background: T.bg, color: T.text, boxSizing: "border-box" as const,
   };
 
+  // Se wizard vano aperto, mostralo fullscreen
+  if (vanoWizard) {
+    const vanoLive = vani.find((v: any) => v.id === vanoWizard.id) || vanoWizard;
+    const vanoIdx = vani.findIndex((v: any) => v.id === vanoWizard.id);
+    return (
+      <VanoWizard
+        vano={vanoLive}
+        idx={vanoIdx >= 0 ? vanoIdx : vani.length}
+        updVano={updVano}
+        calcolaVanoPrezzo={calcolaVanoPrezzo}
+        selectedCM={c}
+        T={T}
+        onClose={() => setVanoWizard(null)}
+      />
+    );
+  }
+
   return (
-    <>
-      {vanoInConfig && (
-        <VanoConfiguratoreFullscreen
-          vano={vanoInConfig}
-          onSalva={(patch: any) => {
-            // FIX: salva in rilievi[ultimo].vani
-            updVano(vanoInConfig.id, patch);
-            setVanoInConfig(null);
-          }}
-          onChiudi={() => setVanoInConfig(null)}
-          T={T}
-        />
-      )}
     <div style={{ paddingBottom: 40 }}>
 
-      {/* ÔòÉÔòÉ PRATICA FISCALE ÔòÉÔòÉ */}
+      {/* PRATICA FISCALE */}
       <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 10 }}>­ƒôï Pratica fiscale</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 10 }}>Pratica fiscale</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {[
             { id: "nessuna", label: "Nessuna" },
@@ -858,35 +666,34 @@ export default function PreventivoConfiguratoreTab() {
             { id: "75", label: "Barriere 75%" },
           ].map(opt => (
             <div key={opt.id} onClick={() => updCM("detrazione", opt.id)}
-              style={{ padding: "7px 14px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, border: `1.5px solid ${c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc : T.bdr}`, background: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc + "15" : T.bg, color: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc : T.sub }}>
+              style={{ padding: "8px 14px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 700, border: `1.5px solid ${c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc : T.bdr}`, background: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc + "15" : T.bg, color: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc : T.sub }}>
               {opt.label}
             </div>
           ))}
         </div>
       </div>
 
-      {/* ÔòÉÔòÉ IVA + SCONTO ÔòÉÔòÉ */}
+      {/* IVA + SCONTO */}
       <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: T.text }}>IVA Infissi</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>IVA Infissi</span>
           <div style={{ display: "flex", gap: 6 }}>
             {["4", "10", "22"].map(p => (
               <div key={p} onClick={() => updCM("iva", p)}
-                style={{ padding: "6px 14px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, background: String(ivaPerc) === p ? GRN : T.bg, color: String(ivaPerc) === p ? "#fff" : T.sub, border: `1.5px solid ${String(ivaPerc) === p ? GRN : T.bdr}` }}>
+                style={{ padding: "7px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 700, background: String(ivaPerc) === p ? GRN : T.bg, color: String(ivaPerc) === p ? "#fff" : T.sub, border: `1.5px solid ${String(ivaPerc) === p ? GRN : T.bdr}` }}>
                 {p}%
               </div>
             ))}
           </div>
         </div>
-        {ivaPerc === 10 && <div style={{ fontSize: 11, color: AMB, background: AMB + "12", padding: "6px 10px", borderRadius: 8, marginBottom: 10 }}>IVA 10%: manutenzione straordinaria residenziale.</div>}
-        {ivaPerc === 4 && <div style={{ fontSize: 11, color: AMB, background: AMB + "12", padding: "6px 10px", borderRadius: 8, marginBottom: 10 }}>IVA 4%: prima casa o disabilit├á ÔÇö allegare documentazione.</div>}
-
+        {ivaPerc === 10 && <div style={{ fontSize: 12, color: AMB, background: AMB + "12", padding: "7px 10px", borderRadius: 8, marginBottom: 10 }}>IVA 10%: manutenzione straordinaria residenziale.</div>}
+        {ivaPerc === 4 && <div style={{ fontSize: 12, color: AMB, background: AMB + "12", padding: "7px 10px", borderRadius: 8, marginBottom: 10 }}>IVA 4%: prima casa o disabilita — allegare documentazione.</div>}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 12, fontWeight: 800, color: T.text }}>Sconto globale</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Sconto globale</span>
           <div style={{ display: "flex", gap: 6 }}>
             {[{ v: 0, l: "No" }, { v: 5, l: "5%" }, { v: 10, l: "10%" }, { v: 15, l: "15%" }, { v: 20, l: "20%" }].map(opt => (
               <div key={opt.v} onClick={() => updCM("sconto", opt.v)}
-                style={{ padding: "6px 14px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, background: scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : T.bg, color: scontoPerc === opt.v ? "#fff" : T.sub, border: `1.5px solid ${scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : T.bdr}` }}>
+                style={{ padding: "7px 12px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, background: scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : T.bg, color: scontoPerc === opt.v ? "#fff" : T.sub, border: `1.5px solid ${scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : T.bdr}` }}>
                 {opt.l}
               </div>
             ))}
@@ -894,15 +701,47 @@ export default function PreventivoConfiguratoreTab() {
         </div>
       </div>
 
-      {/* ÔòÉÔòÉ VANI ÔòÉÔòÉ */}
-      {vani.map((v: any, i: number) => (
-        <VanoCard key={v.id} vano={v} idx={i} updVano={updVano} calcolaVanoPrezzo={calcolaVanoPrezzo} selectedCM={c} T={T} />
-      ))}
+      {/* LISTA VANI — card compatte, click apre wizard */}
+      {vani.map((v: any, i: number) => {
+        const base = calcolaVanoPrezzo ? calcolaVanoPrezzo(v, c) : (v.prevPrezzoOverride ?? 0);
+        const prezzoU = v.prevPrezzoOverride !== undefined && v.prevPrezzoOverride !== null ? v.prevPrezzoOverride : base;
+        const accCatV = (v.accessoriCatalogo || []).reduce((s: number, a: any) => s + (a.prezzoUnitario || 0) * (a.quantita || 1), 0);
+        const posaV = v.prevPosaPrezzo || 0;
+        const totV = (prezzoU * (v.pezzi || 1)) + accCatV + posaV;
+        const m = v.misure || {};
+        const hasMisure = m.lCentro && m.hCentro;
+        return (
+          <div key={v.id} onClick={() => setVanoWizard(v)}
+            style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, marginBottom: 8, padding: "14px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", activeOpacity: 0.8 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: GRN, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{i + 1}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{v.nome || `Vano ${i + 1}`}
+                {v.tipo && <span style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginLeft: 6 }}>{v.tipo}</span>}
+                {(v.pezzi || 1) > 1 && <span style={{ fontSize: 11, fontWeight: 700, color: GRN, marginLeft: 4 }}>×{v.pezzi}</span>}
+              </div>
+              <div style={{ fontSize: 12, color: hasMisure ? T.sub : AMB, marginTop: 2 }}>
+                {hasMisure ? `${m.lCentro}×${m.hCentro} mm${v.coloreInt ? ` · ${v.coloreInt}` : ""}` : "Tocca per inserire misure"}
+              </div>
+              {((v.accessoriCatalogo?.length || 0) > 0 || v.accessori?.tapparella?.attivo || v.accessori?.zanzariera?.attivo) && (
+                <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
+                  {v.accessori?.tapparella?.attivo && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: AMB + "15", color: AMB, fontWeight: 600 }}>Tapp.</span>}
+                  {v.accessori?.zanzariera?.attivo && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: BLU + "15", color: BLU, fontWeight: 600 }}>Zanz.</span>}
+                  {(v.accessoriCatalogo?.length || 0) > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: ACC_COLOR + "15", color: ACC_COLOR, fontWeight: 600 }}>{v.accessoriCatalogo.length} acc.</span>}
+                </div>
+              )}
+            </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 900, color: GRN, fontFamily: FM }}>€{fmt(totV)}</div>
+              <div style={{ fontSize: 10, color: T.sub, fontFamily: FM }}>€{fmt(prezzoU)}/pz</div>
+            </div>
+            <div style={{ color: T.sub, fontSize: 18 }}>›</div>
+          </div>
+        );
+      })}
 
       {/* Aggiungi vano */}
       <div onClick={() => {
         const newV = { id: Date.now(), nome: `Vano ${vani.length + 1}`, tipo: "F2A", pezzi: 1, misure: {}, accessori: { tapparella: { attivo: false }, zanzariera: { attivo: false } }, accessoriCatalogo: [], vociLibere: [] };
-        // FIX: aggiunge al rilievo corretto
         const rilievi = c.rilievi || [];
         if (rilievi.length > 0) {
           const lastIdx = rilievi.length - 1;
@@ -914,46 +753,46 @@ export default function PreventivoConfiguratoreTab() {
         } else {
           updCM("vani", [...(c.vani || []), newV]);
         }
-        setVanoInConfig(newV);
-      }} style={{ padding: "14px", borderRadius: 14, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.sub, marginBottom: 10, background: T.card }}>
+        setVanoWizard(newV);
+      }} style={{ padding: "16px", borderRadius: 14, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${GRN}60`, fontSize: 14, fontWeight: 700, color: GRN, marginBottom: 10, background: GRN + "05" }}>
         + Aggiungi vano
       </div>
 
-      {/* ÔòÉÔòÉ VOCI EXTRA COMMESSA ÔòÉÔòÉ */}
+      {/* VOCI EXTRA COMMESSA */}
       <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 8 }}>­ƒôÄ Voci extra</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 8 }}>Voci extra commessa</div>
         {(c.vociLibere || []).map((vl: any, vi: number) => (
-          <div key={vi} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
+          <div key={vi} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
             <input value={vl.desc || ""} placeholder="Descrizione..."
               onChange={e => { const nl = [...(c.vociLibere || [])]; nl[vi] = { ...nl[vi], desc: e.target.value }; updCM("vociLibere", nl); }}
               style={{ ...inputStyle, flex: 2 }} />
-            <input type="number" value={vl.qta || ""} placeholder="Qta"
+            <input inputMode="numeric" value={vl.qta || ""} placeholder="Qta"
               onChange={e => { const nl = [...(c.vociLibere || [])]; nl[vi] = { ...nl[vi], qta: Number(e.target.value) }; updCM("vociLibere", nl); }}
-              style={{ ...inputStyle, width: 54 }} />
-            <input type="number" value={vl.importo || ""} placeholder="Ôé¼"
+              style={{ ...inputStyle, width: 60 }} />
+            <input inputMode="numeric" value={vl.importo || ""} placeholder="€"
               onChange={e => { const nl = [...(c.vociLibere || [])]; nl[vi] = { ...nl[vi], importo: Number(e.target.value) }; updCM("vociLibere", nl); }}
-              style={{ ...inputStyle, width: 70 }} />
-            <div style={{ fontSize: 11, fontWeight: 800, color: GRN, fontFamily: FM, minWidth: 54, textAlign: "right" }}>Ôé¼{fmt((vl.importo || 0) * (vl.qta || 1))}</div>
+              style={{ ...inputStyle, width: 80 }} />
+            <div style={{ fontSize: 12, fontWeight: 800, color: GRN, fontFamily: FM, minWidth: 58, textAlign: "right" }}>€{fmt((vl.importo || 0) * (vl.qta || 1))}</div>
             <div onClick={() => { const nl = (c.vociLibere || []).filter((_: any, i: number) => i !== vi); updCM("vociLibere", nl); }}
-              style={{ padding: "4px 6px", cursor: "pointer", color: RED, fontSize: 14, fontWeight: 800 }}>├ù</div>
+              style={{ padding: "6px 8px", cursor: "pointer", color: RED, fontSize: 18, fontWeight: 800 }}>×</div>
           </div>
         ))}
         <div onClick={() => updCM("vociLibere", [...(c.vociLibere || []), { desc: "", qta: 1, importo: 0 }])}
-          style={{ padding: "8px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 11, color: T.sub }}>
+          style={{ padding: "10px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, color: T.sub }}>
           + Aggiungi voce
         </div>
       </div>
 
-      {/* ÔòÉÔòÉ NOTE PREVENTIVO ÔòÉÔòÉ */}
+      {/* NOTE PREVENTIVO */}
       <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
         <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)}
           placeholder="Note aggiuntive, condizioni speciali per questa commessa..."
           style={{ ...inputStyle, minHeight: 72, resize: "vertical", lineHeight: 1.5 }} />
       </div>
 
-      {/* ÔòÉÔòÉ TOTALI ÔòÉÔòÉ */}
+      {/* TOTALI */}
       <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "14px", marginBottom: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 10 }}>­ƒÆ│ Riepilogo economico</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 10 }}>Riepilogo economico</div>
         {[
           { label: "Totale vani", val: totVani, color: T.text },
           { label: "Voci extra", val: vociLib, color: T.text },
@@ -962,44 +801,41 @@ export default function PreventivoConfiguratoreTab() {
           { label: `IVA ${ivaPerc}%`, val: ivaVal, color: T.sub },
           { label: "TOTALE", val: totIva, color: GRN, big: true },
         ].filter(Boolean).map((row: any, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: row.big ? "8px 0" : "4px 0", borderTop: row.big ? `1.5px solid ${T.bdr}` : "none" }}>
-            <span style={{ fontSize: row.big ? 14 : 12, fontWeight: row.bold || row.big ? 800 : 600, color: row.color }}>{row.label}</span>
-            <span style={{ fontSize: row.big ? 18 : 13, fontWeight: 900, color: row.color, fontFamily: FM }}>Ôé¼{fmt(Math.abs(row.val))}</span>
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: row.big ? "8px 0" : "5px 0", borderTop: row.big ? `1.5px solid ${T.bdr}` : "none" }}>
+            <span style={{ fontSize: row.big ? 15 : 13, fontWeight: row.bold || row.big ? 800 : 600, color: row.color }}>{row.label}</span>
+            <span style={{ fontSize: row.big ? 20 : 14, fontWeight: 900, color: row.color, fontFamily: FM }}>€{fmt(Math.abs(row.val))}</span>
           </div>
         ))}
-
-        {/* Acconto */}
         <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: T.bg, border: `1px solid ${T.bdr}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>Acconto ricevuto</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.sub }}>Acconto ricevuto</span>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ fontSize: 11, color: T.sub }}>Ôé¼</span>
-              <input type="number" value={acconto || ""} placeholder="0"
+              <span style={{ fontSize: 12, color: T.sub }}>€</span>
+              <input inputMode="numeric" value={acconto || ""} placeholder="0"
                 onChange={e => updCM("accontoRicevuto", Number(e.target.value))}
-                style={{ width: 90, padding: "6px 8px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: FM, textAlign: "right", background: T.card, color: T.text }} />
+                style={{ width: 100, padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: FM, textAlign: "right", background: T.card, color: T.text }} />
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Saldo</span>
-            <span style={{ fontSize: 16, fontWeight: 900, color: saldo > 0 ? RED : GRN, fontFamily: FM }}>Ôé¼{fmt(saldo)}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: T.text }}>Saldo</span>
+            <span style={{ fontSize: 18, fontWeight: 900, color: saldo > 0 ? RED : GRN, fontFamily: FM }}>€{fmt(saldo)}</span>
           </div>
         </div>
       </div>
 
-      {/* ÔòÉÔòÉ PDF ÔòÉÔòÉ */}
-      <div style={{ display: "flex", gap: 8 }}>
+      {/* PDF */}
+      <div style={{ display: "flex", gap: 10 }}>
         <div onClick={() => generaPreventivoPDF && generaPreventivoPDF(c, aziendaInfo)}
-          style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: GRN, color: "#fff", fontSize: 14, fontWeight: 900 }}>
-          ­ƒôä Genera PDF
+          style={{ flex: 1, padding: "15px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: GRN, color: "#fff", fontSize: 15, fontWeight: 900 }}>
+          Genera PDF
         </div>
         {generaPreventivoCondivisibile && (
           <div onClick={() => generaPreventivoCondivisibile(c, aziendaInfo)}
-            style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: BLU, color: "#fff", fontSize: 14, fontWeight: 900 }}>
-            ­ƒöù Link condivisibile
+            style={{ flex: 1, padding: "15px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: BLU, color: "#fff", fontSize: 15, fontWeight: 900 }}>
+            Link condivisibile
           </div>
         )}
       </div>
     </div>
-    </>
   );
 }
