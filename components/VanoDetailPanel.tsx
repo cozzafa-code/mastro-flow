@@ -99,7 +99,7 @@ export default function VanoDetailPanel() {
   const [flashSec, setFlashSec] = useState<string|null>(null);
   const [completedSecs, setCompletedSecs] = useState<Set<string>>(new Set());
   const sectionRefs = useRef<Record<string,HTMLDivElement|null>>({});
-  const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","finiture","controtelaio"];
+  const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","coprifilo","lamiera","controtelaio"];
   const flashAndAdvance = (secId: string) => {
     console.log("FLASH:", secId);
     setCompletedSecs(prev => new Set([...prev, secId]));
@@ -757,55 +757,91 @@ export default function VanoDetailPanel() {
                 </div>}
               </div>
             },
-            { id:"finiture", icon: "", label:"Coprifilo / Lamiera",
+            { id:"coprifilo", icon:"", label:"Coprifilo",
+              iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><rect x=\"7\" y=\"7\" width=\"10\" height=\"10\"/></svg>",
+              badge: v.coprifilo||null, filled: v.coprifilo?1:0, total:1,
+              body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  <div onClick={()=>updateV("coprifilo","")}
+                    style={{padding:"7px 12px",borderRadius:8,border:"1.5px solid "+(!v.coprifilo?T.acc:T.bdr),
+                      background:!v.coprifilo?T.accLt:T.card,fontSize:12,fontWeight:600,
+                      color:!v.coprifilo?T.acc:T.sub,cursor:"pointer",
+                      boxShadow:!v.coprifilo?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
+                    Nessuno
+                  </div>
+                  {coprifiliDB.map(c=>{
+                    const sel=v.coprifilo===c.cod;
+                    return <div key={c.id}
+                      onClick={()=>{updateV("coprifilo",c.cod); setTimeout(()=>flashAndAdvance("coprifilo"),200);}}
+                      style={{padding:"7px 12px",borderRadius:8,border:"1.5px solid "+(sel?T.acc:T.bdr),
+                        background:sel?T.accLt:T.card,fontSize:12,fontWeight:600,
+                        color:sel?T.acc:T.text,cursor:"pointer",
+                        boxShadow:sel?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
+                      {c.cod}
+                    </div>;
+                  })}
+                </div>
+              </div>
+            },
+            { id:"lamiera", icon:"", label:"Lamiera",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
-              badge: (v.coprifilo||v.lamiera)?"":null, filled: [v.coprifilo, v.lamiera].filter(Boolean).length, total: 2,
-              body: <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                {/* ── COPRIFILO ── */}
-                <div>
-                  <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:"0.6px"}}>Coprifilo</div>
-                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                    <div onClick={()=>updateV("coprifilo","")} style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(!v.coprifilo?T.acc:T.bdr),background:!v.coprifilo?T.accLt:T.card,fontSize:11,fontWeight:600,color:!v.coprifilo?T.acc:T.sub,cursor:"pointer"}}>Nessuno</div>
-                    {coprifiliDB.map(c=>{
-                      const sel=v.coprifilo===c.cod;
-                      return <div key={c.id} onClick={()=>{updateV("coprifilo",c.cod); setTimeout(()=>flashAndAdvance("finiture"),200);}}
-                        style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,fontSize:11,fontWeight:600,color:sel?T.acc:T.text,cursor:"pointer",
-                          boxShadow:sel?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
-                        {c.cod}
-                      </div>;
-                    })}
+              badge: v.lamiera||null, filled: v.lamiera?1:0, total:1,
+              body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  <div onClick={()=>updateV("lamiera","")}
+                    style={{padding:"7px 12px",borderRadius:8,border:"1.5px solid "+(!v.lamiera?T.acc:T.bdr),
+                      background:!v.lamiera?T.accLt:T.card,fontSize:12,fontWeight:600,
+                      color:!v.lamiera?T.acc:T.sub,cursor:"pointer",
+                      boxShadow:!v.lamiera?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
+                    Nessuna
                   </div>
+                  {lamiereDB.map(l=>{
+                    const sel=v.lamiera===l.cod;
+                    return <div key={l.id}
+                      onClick={()=>{updateV("lamiera",l.cod); setTimeout(()=>flashAndAdvance("lamiera"),200);}}
+                      style={{padding:"7px 12px",borderRadius:8,border:"1.5px solid "+(sel?T.acc:T.bdr),
+                        background:sel?T.accLt:T.card,fontSize:12,fontWeight:600,
+                        color:sel?T.acc:T.text,cursor:"pointer",
+                        boxShadow:sel?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
+                      {l.cod}
+                    </div>;
+                  })}
                 </div>
-
-                {/* ── LAMIERA ── */}
-                <div style={{borderTop:"1px solid "+T.bdr,paddingTop:10}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                    <div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:"0.6px"}}>Lamiera</div>
-                    {v.lamiera && v.lamiera!=="" && (
-                      <div onClick={()=>setShowLamieraDisegno(true)}
-                        style={{fontSize:10,fontWeight:700,color:T.acc,background:T.accLt,padding:"3px 8px",borderRadius:6,cursor:"pointer",border:"1px solid "+T.acc+"40"}}>
-                        ✏ Disegno →
+                {v.lamiera && (
+                  <div style={{marginTop:4,padding:"10px 12px",borderRadius:10,
+                    background:"#0F766E10",border:"1px solid #0F766E30"}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:700,color:"#0F766E"}}>Lamiera {v.lamiera}</div>
+                        <div style={{fontSize:10,color:T.sub}}>
+                          L {v.misure?.lCentro||"?"}mm × H {v.misure?.hCentro||"?"}mm
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-                    <div onClick={()=>updateV("lamiera","")} style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(!v.lamiera?T.acc:T.bdr),background:!v.lamiera?T.accLt:T.card,fontSize:11,fontWeight:600,color:!v.lamiera?T.acc:T.sub,cursor:"pointer"}}>Nessuna</div>
-                    {lamiereDB.map(l=>{
-                      const sel=v.lamiera===l.cod;
-                      return <div key={l.id} onClick={()=>{updateV("lamiera",l.cod); setTimeout(()=>flashAndAdvance("finiture"),200);}}
-                        style={{padding:"6px 10px",borderRadius:8,border:"1.5px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,fontSize:11,fontWeight:600,color:sel?T.acc:T.text,cursor:"pointer",
-                          boxShadow:sel?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
-                        {l.cod}
-                      </div>;
-                    })}
-                  </div>
-                  {v.lamiera && v.lamiera!=="" && (
-                    <div style={{marginTop:8,padding:"8px 10px",borderRadius:8,background:T.accLt,border:"1px solid "+T.acc+"30",fontSize:11,color:T.acc,fontWeight:600}}>
-                      Lamiera {v.lamiera} selezionata — tocca "Disegno →" per aggiungere pieghe e misure
+                      <div onClick={()=>setShowLamieraDisegno(true)}
+                        style={{padding:"7px 14px",borderRadius:8,background:"#0F766E",color:"#fff",
+                          fontSize:12,fontWeight:700,cursor:"pointer",
+                          boxShadow:"0 3px 0 #0D5C56",display:"flex",alignItems:"center",gap:6}}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        Disegno tecnico
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>},
+                    {/* Mini anteprima SVG lamiera */}
+                    <svg viewBox="0 0 200 80" width="100%" style={{borderRadius:6,background:"#fff",border:"1px solid #E2E8F0"}}>
+                      <rect x="10" y="8" width="180" height="12" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
+                      <rect x="10" y="60" width="180" height="12" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
+                      <rect x="10" y="8" width="12" height="64" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
+                      <rect x="178" y="8" width="12" height="64" fill="#0F766E20" stroke="#0F766E" strokeWidth="1.2" rx="1"/>
+                      <line x1="22" y1="4" x2="178" y2="4" stroke="#64748B" strokeWidth="0.7"/>
+                      <line x1="22" y1="2" x2="22" y2="6" stroke="#64748B" strokeWidth="0.7"/>
+                      <line x1="178" y1="2" x2="178" y2="6" stroke="#64748B" strokeWidth="0.7"/>
+                      <text x="100" y="3" textAnchor="middle" fontSize="7" fill="#64748B">{v.misure?.lCentro||"L"} mm</text>
+                      <text x="100" y="44" textAnchor="middle" fontSize="8" fill="#0F766E" fontWeight="600">{v.lamiera}</text>
+                      <text x="100" y="54" textAnchor="middle" fontSize="7" fill="#64748B">tocca "Disegno tecnico" per pieghe e quote</text>
+                    </svg>
+                  </div>
+                )}
+              </div>
+            },
             { id:"controtelaio", icon:"◻", label:"Controtelaio",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"9\" y1=\"21\" x2=\"9\" y2=\"9\"/></svg>",
               badge: v.controtelaio?.tipo ? (v.controtelaio.tipo==="singolo"?"Singolo":v.controtelaio.tipo==="doppio"?"Doppio":"Con cassonetto") : null, filled: v.controtelaio?.tipo ? 1 : 0, total: 1,
