@@ -585,7 +585,7 @@ export default function VanoDetailPanel() {
                 </div>
               </div>
             },
-            { id:"tipologia", icon:"⊞", label:"Tipologia",
+            { id:"tipologia", icon:"□", label:"Tipologia",
               badge: v.tipo||null, filled: v.tipo ? 1 : 0, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 <div style={{display:"flex",gap:2,borderBottom:`1px solid ${T.bdr}`,paddingBottom:0,marginBottom:4}}>
@@ -596,12 +596,28 @@ export default function VanoDetailPanel() {
                     </div>
                   ))}
                 </div>
-                <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,WebkitOverflowScrolling:"touch"}}>
-                  {tipologieFiltrate.filter(t=>t.cat===tipCat).map(t=>(
-                    <div key={t.code} onClick={()=>{console.log("⊞ TIPO TAP:",t.code);updateV("tipo",t.code);flashAndAdvance("tipologia");}}
-                      style={{padding:"7px 10px",borderRadius:10,border:`1.5px solid ${v.tipo===t.code?T.acc:T.bdr}`,background:v.tipo===t.code?T.accLt:T.card,fontSize:11,fontWeight:700,color:v.tipo===t.code?T.acc:T.text,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
-                      {t.icon} {t.code}
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <select
+                    value={v.tipo || ""}
+                    onChange={e => { updateV("tipo", e.target.value); flashAndAdvance("tipologia"); }}
+                    style={{ width:"100%", padding:"10px 14px", borderRadius:10, border:`1.5px solid ${v.tipo?T.acc:T.bdr}`,
+                      fontSize:15, fontWeight:600, background:v.tipo?T.accLt:T.card, color:v.tipo?T.acc:T.sub,
+                      fontFamily:"Inter", boxSizing:"border-box", cursor:"pointer" }}>
+                    <option value="">— Seleziona tipologia —</option>
+                    {cats.map(cat => (
+                      <optgroup key={cat} label={cat}>
+                        {tipologieFiltrate.filter(t=>t.cat===cat).map(t=>(
+                          <option key={t.code} value={t.code}>{t.code}{t.label ? ` — ${t.label}` : ""}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  {v.tipo && (
+                    <div style={{fontSize:11,color:T.acc,fontWeight:600,padding:"4px 8px",background:T.accLt,borderRadius:8,display:"inline-block"}}>
+                      {TIPOLOGIE_RAPIDE.find(t=>t.code===v.tipo)?.label || v.tipo}
                     </div>
+                  )}
+                </div>
                   ))}
                 </div>
               </div>
