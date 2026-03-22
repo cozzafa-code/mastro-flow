@@ -172,7 +172,7 @@ export default function HomePanel() {
   const goToday = () => { setDayOffset(0); setWeekOffset(0); };
 
   return (
-    <div style={{ paddingBottom: "env(safe-area-inset-bottom, 70px)" }}>
+    <div style={{ paddingBottom: 90 }}>
       {/* Banner notifiche push */}
       {notifBanner && (
         <div onClick={() => { Notification.requestPermission().then(p => { if(p==="granted") setNotifBanner(false); }); }} style={{ background: "#1A1A1C", borderRadius: 12, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
