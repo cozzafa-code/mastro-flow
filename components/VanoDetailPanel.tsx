@@ -5,6 +5,7 @@
 // Estratto S4: ~1.505 righe (Dettaglio vano + misure + disegno + accessori)
 // ═══════════════════════════════════════════════════════════
 import DisegnoTecnico from "./DisegnoTecnico";
+import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
@@ -954,166 +955,13 @@ export default function VanoDetailPanel() {
                 const sistema = CT_SISTEMI.find(s => s.id === ct.sistema) || null;
                 const gruppi = [...new Set(CT_SISTEMI.map(s => s.gruppo))];
 
-                // ── CONFIGURATORE CONTROTELAIO (canvas interattivo) ────────────────
-                const [ctZone, setCtZone] = React.useState<any[]>((v.controtelaio?.zone)||[]);
-                const [ctSelZona, setCtSelZona] = React.useState<number|null>(null);
-                const CT_MAT = [
-                  { id:"eps",    label:"EPS",     color:"#C8DEF2", stroke:"#1A3A6A", eps:true   },
-                  { id:"legno",  label:"Legno",   color:"#F5A623", stroke:"#C07010", wood:true  },
-                  { id:"sede",   label:"Sede",    color:"#FFFFFF", stroke:"#DC1414", dash:true  },
-                  { id:"profilo",label:"Profilo", color:"#E0E8F0", stroke:"#1A3A6A"             },
-                ];
-                const getCTMat = (id) => CT_MAT.find(m=>m.id===id)||CT_MAT[0];
-                const CT_W=280, CT_H=150;
-                const ctTotMM = ctZone.reduce((s,z)=>s+(z.mm||50),0)||300;
-                const mm2px = (mm) => Math.max(16,(mm/ctTotMM)*(CT_W-20));
-                const getZX = (idx) => { let x=10; for(let i=0;i<idx;i++) x+=mm2px(ctZone[i]?.mm||50); return x; };
-                const ctAdd = (matId) => {
-                  const nz=[...ctZone,{id:Date.now(),mat:matId,mm:50}];
-                  setCtZone(nz); updateV("controtelaio",{...(v.controtelaio||{}),zone:nz}); setCtSelZona(nz.length-1);
-                };
-                const ctRemove = (idx) => {
-                  const nz=ctZone.filter((_,i)=>i!==idx);
-                  setCtZone(nz); updateV("controtelaio",{...(v.controtelaio||{}),zone:nz}); setCtSelZona(null);
-                };
-                const ctUpd = (idx,patch) => {
-                  const nz=ctZone.map((z,i)=>i===idx?{...z,...patch}:z);
-                  setCtZone(nz); updateV("controtelaio",{...(v.controtelaio||{}),zone:nz});
-                };
+                // ── CONFIGURATORE CONTROTELAIO ──────────────────────────────────
                 const renderSagoma = (_sis) => (
-                  <div>
-                    <svg viewBox={"0 0 "+CT_W+" "+CT_H} width="100%"
-                      style={{display:"block",border:"1.5px solid #E5E3DC",borderRadius:8,
-                        background:"#FAFAF8",cursor:"pointer",marginBottom:4}}
-                      onClick={(e)=>{
-                        const rect=(e.currentTarget as SVGSVGElement).getBoundingClientRect();
-                        const svgX=((e.clientX-rect.left)/rect.width)*CT_W;
-                        let found=null, cx=10;
-                        for(let i=0;i<ctZone.length;i++){
-                          const zw=mm2px(ctZone[i]?.mm||50);
-                          if(svgX>=cx&&svgX<cx+zw){found=i;break;}
-                          cx+=zw;
-                        }
-                        setCtSelZona(found);
-                      }}>
-                      <defs>
-                        <pattern id="cEps" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
-                          <rect width="7" height="7" fill="#C8DEF2"/>
-                          <circle cx="3.5" cy="3.5" r="2.2" fill="none" stroke="#1A3A6A" strokeWidth="0.6"/>
-                        </pattern>
-                        <pattern id="cWood" x="0" y="0" width="7" height="4" patternUnits="userSpaceOnUse">
-                          <rect width="7" height="4" fill="#F5A623"/>
-                          <line x1="0" y1="2" x2="7" y2="2" stroke="#C07010" strokeWidth="0.7"/>
-                        </pattern>
-                        <marker id="cAr" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto">
-                          <polygon points="0,0 5,2.5 0,5" fill="#DC1414"/>
-                        </marker>
-                        <marker id="cArL" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto">
-                          <polygon points="5,0 0,2.5 5,5" fill="#DC1414"/>
-                        </marker>
-                      </defs>
-                      {ctZone.length===0 && (
-                        <text x={CT_W/2} y={CT_H/2+4} textAnchor="middle" fontSize={11} fill="#AAAAAA" fontFamily="Arial">
-                          Aggiungi zone con i tasti sotto
-                        </text>
-                      )}
-                      {ctZone.map((zona,idx)=>{
-                        const mat=getCTMat(zona.mat);
-                        const zx=getZX(idx);
-                        const zw=mm2px(zona.mm||50);
-                        const isSel=ctSelZona===idx;
-                        const fill=mat.eps?"url(#cEps)":mat.wood?"url(#cWood)":mat.color;
-                        return (
-                          <g key={zona.id}>
-                            <rect x={zx} y={10} width={zw} height={CT_H-20}
-                              fill={fill} stroke={isSel?"#D08008":mat.stroke}
-                              strokeWidth={isSel?2.5:1.5}
-                              strokeDasharray={mat.dash?"6,3":undefined}/>
-                            <text x={zx+zw/2} y={CT_H/2-6} textAnchor="middle"
-                              fontSize={Math.min(10,zw*0.38)} fill={mat.dash?"#DC1414":"#1A3A6A"}
-                              fontWeight="700" fontFamily="Arial">
-                              {mat.id==="sede"?"SEDE":mat.id==="eps"?"EPS":mat.id==="legno"?"LEGNO":"PROF."}
-                            </text>
-                            <text x={zx+zw/2} y={CT_H/2+8} textAnchor="middle"
-                              fontSize={Math.min(9,zw*0.32)} fill="#555" fontFamily="Arial">
-                              {zona.mm}mm
-                            </text>
-                            {zw>28 && (
-                              <line x1={zx+3} y1={CT_H-5} x2={zx+zw-3} y2={CT_H-5}
-                                stroke="#DC1414" strokeWidth={1} markerStart="url(#cArL)" markerEnd="url(#cAr)"/>
-                            )}
-                            {isSel && (
-                              <polygon
-                                points={(zx+zw/2-5)+",3 "+(zx+zw/2+5)+",3 "+(zx+zw/2)+",9"}
-                                fill="#D08008"/>
-                            )}
-                          </g>
-                        );
-                      })}
-                      {ctZone.length>0 && (
-                        <rect x={10} y={10} width={CT_W-20} height={CT_H-20}
-                          fill="none" stroke="#1A3A6A" strokeWidth={2} rx={2}/>
-                      )}
-                    </svg>
-                    {ctZone.length>0 && (
-                      <div style={{textAlign:"center",fontSize:9,color:"#999",marginBottom:6}}>
-                        Totale: {ctTotMM}mm — tocca una zona per modificarla
-                      </div>
-                    )}
-                    <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
-                      {CT_MAT.map(m=>(
-                        <button key={m.id} onClick={()=>ctAdd(m.id)}
-                          style={{flex:1,minWidth:55,padding:"7px 4px",borderRadius:6,fontSize:10,
-                            fontWeight:700,cursor:"pointer",border:"1.5px solid "+m.stroke,
-                            background:m.dash?"white":m.color,color:m.stroke}}>
-                          + {m.label}
-                        </button>
-                      ))}
-                    </div>
-                    {ctSelZona!==null && ctZone[ctSelZona] && (()=>{
-                      const zona=ctZone[ctSelZona];
-                      const mat=getCTMat(zona.mat);
-                      return (
-                        <div style={{background:"#FFF8E8",border:"2px solid #D08008",borderRadius:8,padding:10}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                            <div style={{fontSize:11,fontWeight:800,color:"#D08008"}}>
-                              ✏️ Zona {ctSelZona+1} — {mat.label}
-                            </div>
-                            <button onClick={()=>ctRemove(ctSelZona)}
-                              style={{background:"#DC1414",color:"white",border:"none",
-                                borderRadius:4,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>
-                              🗑
-                            </button>
-                          </div>
-                          <div style={{fontSize:10,color:"#888",marginBottom:4}}>Larghezza (mm)</div>
-                          <input type="number" min={5} max={500} value={zona.mm||50}
-                            onChange={e=>ctUpd(ctSelZona,{mm:parseInt(e.target.value)||50})}
-                            style={{width:"100%",padding:"8px 10px",borderRadius:6,
-                              border:"1.5px solid #D08008",fontSize:16,fontWeight:700,
-                              background:"white",outline:"none",marginBottom:8}}/>
-                          <div style={{fontSize:10,color:"#888",marginBottom:4}}>Materiale</div>
-                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                            {CT_MAT.map(m=>(
-                              <button key={m.id} onClick={()=>ctUpd(ctSelZona,{mat:m.id})}
-                                style={{padding:"5px 8px",borderRadius:5,fontSize:10,fontWeight:700,cursor:"pointer",
-                                  background:zona.mat===m.id?m.color:"#f5f5f5",
-                                  border:"1.5px solid "+(zona.mat===m.id?m.stroke:"#ddd"),
-                                  color:zona.mat===m.id?m.stroke:"#888"}}>
-                                {m.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                    {ctZone.length>0 && (
-                      <button onClick={()=>{setCtZone([]);updateV("controtelaio",{...(v.controtelaio||{}),zone:[]});setCtSelZona(null);}}
-                        style={{marginTop:6,width:"100%",padding:"6px",borderRadius:6,
-                          border:"1px solid #ddd",background:"white",color:"#888",fontSize:10,cursor:"pointer"}}>
-                        🗑 Azzera disegno
-                      </button>
-                    )}
-                  </div>
+                  <ConfiguratoreControtelaio
+                    value={v.controtelaio?.disegno}
+                    onChange={(d)=>updateV("controtelaio",{...(v.controtelaio||{}),disegno:d})}
+                    T={T}
+                  />
                 );
                 return (
                   <div style={{display:"flex",flexDirection:"column",gap:12}}>
