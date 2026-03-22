@@ -954,315 +954,167 @@ export default function VanoDetailPanel() {
                 const sistema = CT_SISTEMI.find(s => s.id === ct.sistema) || null;
                 const gruppi = [...new Set(CT_SISTEMI.map(s => s.gruppo))];
 
-                // ── SAGOME FEDELI AI DISEGNI TECNICI SCHIPANI ────────────
-                const renderSagoma = (sis) => {
-                  if (!sis) return null;
-                  const aVal = ct.varA > 0 ? ct.varA+"" : "?";
-                  const bVal = ct.varB > 0 ? ct.varB+"" : "?";
-                  const cVal = ct.varC > 0 ? ct.varC+"" : "325";
-
-                  // Colori fedeli ai PDF
-                  const EPS_FILL = "#B8D4F0";      // blu chiaro puntinato EPS
-                  const EPS_STROKE = "#1A3A6A";     // blu scuro bordo EPS
-                  const WOOD_FILL = "#F5A623";      // arancione legno/avvolgibile
-                  const WOOD_STROKE = "#C07010";
-                  const PROFILE_STROKE = "#1A3A6A"; // blu profili alluminio
-                  const RED_DIM = "#DC1414";        // rosso quote
-                  const SEAT_DASH = "#DC1414";      // rosso tratteggio sede
-
-                  // Pattern EPS (cerchi puntinati come nei PDF)
-                  const EpsPattern = ({id}) => (
-                    <pattern id={id} x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-                      <rect width="8" height="8" fill={EPS_FILL}/>
-                      <circle cx="4" cy="4" r="2.5" fill="none" stroke={EPS_STROKE} strokeWidth="0.6"/>
-                    </pattern>
-                  );
-                  // Pattern legno (righe orizzontali arancione)
-                  const WoodPattern = ({id}) => (
-                    <pattern id={id} x="0" y="0" width="8" height="5" patternUnits="userSpaceOnUse">
-                      <rect width="8" height="5" fill={WOOD_FILL}/>
-                      <line x1="0" y1="2.5" x2="8" y2="2.5" stroke={WOOD_STROKE} strokeWidth="0.6"/>
-                    </pattern>
-                  );
-
-                  // SINGOLI: PROS / PROI — sezione verticale (vista laterale)
-                  // Struttura: profilo a L con isolamento e ribattuta
-                  if (sis.id === "PROS" || sis.id === "PROI") {
-                    const W = 280, H = 200;
-                    const ribStd = sis.id === "PROI" ? 50 : (ct.ribattuta||30);
-                    return (
-                      <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:200}}>
-                        <defs>
-                          <EpsPattern id="ep1"/>
-                          <WoodPattern id="wp1"/>
-                        </defs>
-                        {/* Muratura sopra */}
-                        <rect x={0} y={0} width={W} height={30} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-                        {Array.from({length:14}).map((_,i)=><line key={i} x1={i*20} y1={0} x2={i*20+20} y2={30} stroke="#B8A870" strokeWidth={0.5} opacity={0.5}/>)}
-                        <text x={W/2} y={20} textAnchor="middle" fontSize={8} fill="#8B7040" fontWeight="600">MURATURA</text>
-                        {/* Muratura sotto */}
-                        <rect x={0} y={H-30} width={W} height={30} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-                        {Array.from({length:14}).map((_,i)=><line key={i} x1={i*20} y1={H-30} x2={i*20+20} y2={H} stroke="#B8A870" strokeWidth={0.5} opacity={0.5}/>)}
-                        {/* Corpo controtelaio — isolamento EPS */}
-                        <rect x={30} y={30} width={W-60} height={H-60} fill="url(#ep1)" stroke={EPS_STROKE} strokeWidth={1.5}/>
-                        {/* Strato legno (avvolgibile) — fascia orizzontale centrale */}
-                        <rect x={30} y={H/2-18} width={W-60} height={36} fill="url(#wp1)" stroke={WOOD_STROKE} strokeWidth={1}/>
-                        {/* Profilo sx (sede infisso A) — rettangolo a L */}
-                        <rect x={30} y={30} width={22} height={H-60} fill="white" stroke={PROFILE_STROKE} strokeWidth={2}/>
-                        <rect x={30} y={30} width={22} height={22} fill={EPS_FILL} stroke={PROFILE_STROKE} strokeWidth={1.5}/>
-                        {/* Ribattuta R */}
-                        <rect x={48} y={H/2-10} width={ribStd > 30 ? 16 : 10} height={20} fill="#1A9E73" rx={2}/>
-                        <circle cx={54} cy={H/2} r={11} fill="#1A9E73"/>
-                        <text x={54} y={H/2+4} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">R</text>
-                        <text x={72} y={H/2+4} fontSize={8} fill="#1A9E73" fontWeight="700">{ribStd}mm</text>
-                        {/* Quota A */}
-                        <line x1={30} y1={18} x2={100} y2={18} stroke={RED_DIM} strokeWidth={1.5}/>
-                        <polygon points={"30,15 30,21 26,18"} fill={RED_DIM}/>
-                        <polygon points={"100,15 100,21 104,18"} fill={RED_DIM}/>
-                        <circle cx={20} cy={18} r={10} fill={RED_DIM}/>
-                        <text x={20} y={22} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">A</text>
-                        <text x={65} y={13} textAnchor="middle" fontSize={8} fill={RED_DIM} fontWeight="700">VARIABILE → {aVal}mm</text>
-                        {/* Label sistema */}
-                        <rect x={W-60} y={35} width={50} height={20} rx={4} fill={sis.id==="PROI"?"#1A3A6A":"#2E5A8E"}/>
-                        <text x={W-35} y={49} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">{sis.id}</text>
-                        {sis.id === "PROI" && (
-                          <text x={W-35} y={62} textAnchor="middle" fontSize={7} fill={RED_DIM}>R std 50mm</text>
-                        )}
-                      </svg>
-                    );
-                  }
-
-                  // STH5 / STH6 — EPS filo muro, sezione orizzontale
-                  // Struttura: sede A sinistra | corpo EPS | sede B destra | altezza 60mm
-                  if (sis.id === "STH5" || sis.id === "STH6" || sis.id === "STH5I" || sis.id === "STH6I") {
-                    const W = 300, H = 140;
-                    const isI = sis.id.endsWith("I"); // variante con gradino
-                    const altMM = 60 + (isI ? 24 : 0); // STH5I/6I = 84mm
-                    const aW = 40, bW = 40, midW = W - aW - bW - 20; // 20 = muratura
-                    const bodyY = isI ? 30 : 40;
-                    const bodyH = isI ? 80 : 60;
-                    return (
-                      <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:140}}>
-                        <defs><EpsPattern id="ep2"/><WoodPattern id="wp2"/></defs>
-                        {/* Muratura sx */}
-                        <rect x={0} y={bodyY} width={15} height={bodyH} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-                        {/* Muratura dx */}
-                        <rect x={W-15} y={bodyY} width={15} height={bodyH} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-
-                        {/* Corpo EPS principale */}
-                        <rect x={15+aW} y={bodyY} width={midW} height={bodyH} fill="url(#ep2)" stroke={EPS_STROKE} strokeWidth={1.5}/>
-                        {/* Legno sotto */}
-                        <rect x={15} y={bodyY+bodyH*0.5} width={W-30} height={bodyH*0.35} fill="url(#wp2)" stroke={WOOD_STROKE} strokeWidth={1}/>
-
-                        {/* Sede infisso A — tratteggio rosso */}
-                        <rect x={15} y={bodyY} width={aW} height={bodyH} fill="white" stroke={SEAT_DASH} strokeWidth={1.5} strokeDasharray="6,3"/>
-                        {/* Linea verticale EPS che scende nella sede A (STH5I gradino) */}
-                        {isI && <rect x={15+aW-2} y={bodyY+25} width={4} height={bodyH-25} fill={EPS_FILL} stroke={EPS_STROKE} strokeWidth={1}/>}
-
-                        {/* Sede persiana B — tratteggio rosso */}
-                        <rect x={W-15-bW} y={bodyY} width={bW} height={bodyH} fill="white" stroke={SEAT_DASH} strokeWidth={1.5} strokeDasharray="6,3"/>
-
-                        {/* Quota altezza */}
-                        <line x1={W-8} y1={bodyY} x2={W-8} y2={bodyY+bodyH} stroke={RED_DIM} strokeWidth={1.5}/>
-                        <polygon points={(W-5)+","+bodyY+" "+(W-11)+","+bodyY+" "+(W-8)+","+(bodyY-4)} fill={RED_DIM}/>
-                        <polygon points={(W-5)+","+(bodyY+bodyH)+" "+(W-11)+","+(bodyY+bodyH)+" "+(W-8)+","+(bodyY+bodyH+4)} fill={RED_DIM}/>
-                        <text x={W-3} y={bodyY+bodyH/2+3} fontSize={9} fill={RED_DIM} fontWeight="700"
-                          transform={"rotate(90,"+(W-3)+","+(bodyY+bodyH/2+3)+")"}>
-                          {altMM}
-                        </text>
-
-                        {/* Frecce A */}
-                        <line x1={18} y1={bodyY-8} x2={15+aW-2} y2={bodyY-8} stroke={RED_DIM} strokeWidth={1.2}/>
-                        <polygon points={"18,"+(bodyY-11)+" 18,"+(bodyY-5)+" 14,"+(bodyY-8)} fill={RED_DIM}/>
-                        <polygon points={(15+aW-2)+","+(bodyY-11)+" "+(15+aW-2)+","+(bodyY-5)+" "+(15+aW+2)+","+(bodyY-8)} fill={RED_DIM}/>
-                        <text x={15+aW/2} y={bodyY-14} textAnchor="middle" fontSize={7} fill={RED_DIM} fontWeight="700">SEDE INFISSO</text>
-                        <text x={15+aW/2} y={bodyY-6} textAnchor="middle" fontSize={8} fill={RED_DIM} fontWeight="800">A={aVal}mm</text>
-
-                        {/* Frecce B */}
-                        <line x1={W-15-bW+2} y1={bodyY-8} x2={W-17} y2={bodyY-8} stroke={RED_DIM} strokeWidth={1.2}/>
-                        <text x={W-15-bW/2} y={bodyY-14} textAnchor="middle" fontSize={7} fill={RED_DIM} fontWeight="700">SEDE PERSIANA</text>
-                        <text x={W-15-bW/2} y={bodyY-6} textAnchor="middle" fontSize={8} fill={RED_DIM} fontWeight="800">B={bVal}mm</text>
-
-                        {/* Quota 325mm intonaco (STH6/6I) */}
-                        {(sis.id==="STH6"||sis.id==="STH6I") && (
-                          <g>
-                            <line x1={15} y1={H-8} x2={W-15} y2={H-8} stroke={RED_DIM} strokeWidth={1}/>
-                            <text x={W/2} y={H-2} textAnchor="middle" fontSize={7} fill={RED_DIM} fontWeight="600">
-                              325 MM INTONACO FINITO P (PROF.STANDARD)
-                            </text>
-                          </g>
-                        )}
-
-                        {/* Label sistema */}
-                        <rect x={15} y={bodyY+3} width={42} height={16} rx={3} fill="#1A3A6A"/>
-                        <text x={36} y={bodyY+14} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">{sis.id}</text>
-                      </svg>
-                    );
-                  }
-
-                  // STF5 / STF6 — Fibrocemento filo muro
-                  if (sis.id === "STF5" || sis.id === "STF6" || sis.id === "STF5I" || sis.id === "STF6I") {
-                    const W = 300, H = 140;
-                    const isI = sis.id.endsWith("I");
-                    const bodyY = isI ? 25 : 35;
-                    const bodyH = isI ? 95 : 70;
-                    const aW = 38, bW = 38;
-                    // Fibrocemento: pattern diverso (righe più fitte, grigio)
-                    return (
-                      <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:140}}>
-                        <defs>
-                          <WoodPattern id="wp3"/>
-                          <pattern id="fibro" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
-                            <rect width="6" height="6" fill="#D8E8F0"/>
-                            <line x1="0" y1="3" x2="6" y2="3" stroke="#8AAABB" strokeWidth="0.5"/>
-                            <line x1="3" y1="0" x2="3" y2="6" stroke="#8AAABB" strokeWidth="0.5"/>
-                          </pattern>
-                        </defs>
-                        {/* Muratura */}
-                        <rect x={0} y={bodyY} width={15} height={bodyH} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-                        <rect x={W-15} y={bodyY} width={15} height={bodyH} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-                        {/* Corpo fibrocemento */}
-                        <rect x={15+aW} y={bodyY} width={W-30-aW-bW} height={bodyH} fill="url(#fibro)" stroke="#556677" strokeWidth={1.5}/>
-                        {/* Legno */}
-                        <rect x={15} y={bodyY+bodyH*0.5} width={W-30} height={bodyH*0.3} fill="url(#wp3)" stroke={WOOD_STROKE} strokeWidth={1}/>
-                        {/* Spalletta (linea verticale a sinistra, 44mm std) */}
-                        <rect x={15+aW-2} y={bodyY} width={6} height={bodyH} fill="#556677" stroke="#334455" strokeWidth={1}/>
-                        {/* Sede A */}
-                        <rect x={15} y={bodyY} width={aW} height={bodyH} fill="white" stroke={SEAT_DASH} strokeWidth={1.5} strokeDasharray="6,3"/>
-                        {/* Sede B */}
-                        <rect x={W-15-bW} y={bodyY} width={bW} height={bodyH} fill="white" stroke={SEAT_DASH} strokeWidth={1.5} strokeDasharray="6,3"/>
-                        {/* Quota altezza */}
-                        <line x1={W-8} y1={bodyY} x2={W-8} y2={bodyY+bodyH} stroke={RED_DIM} strokeWidth={1.5}/>
-                        <text x={W-3} y={bodyY+bodyH/2+3} fontSize={9} fill={RED_DIM} fontWeight="700"
-                          transform={"rotate(90,"+(W-3)+","+(bodyY+bodyH/2+3)+")"}>{isI?"84":"44"}</text>
-                        {/* Quote A B */}
-                        <text x={15+aW/2} y={bodyY-6} textAnchor="middle" fontSize={8} fill={RED_DIM} fontWeight="800">A={aVal}mm</text>
-                        <text x={W-15-bW/2} y={bodyY-6} textAnchor="middle" fontSize={8} fill={RED_DIM} fontWeight="800">B={bVal}mm</text>
-                        {/* Spessore spalletta */}
-                        <text x={15+aW+10} y={bodyY+12} fontSize={7} fill="#334455" fontWeight="700">SP.{ct.spalletta||44}mm</text>
-                        {/* 325mm */}
-                        <line x1={15} y1={H-8} x2={W-15} y2={H-8} stroke={RED_DIM} strokeWidth={0.8}/>
-                        <text x={W/2} y={H-2} textAnchor="middle" fontSize={7} fill={RED_DIM}>325 MM INTONACO FINITO</text>
-                        {/* Label */}
-                        <rect x={15} y={bodyY+3} width={42} height={16} rx={3} fill="#334455"/>
-                        <text x={36} y={bodyY+14} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">{sis.id}</text>
-                      </svg>
-                    );
-                  }
-
-                  // STH3 / STH3I / STF3 / STF3I — Centro muro, sezione orizzontale
-                  // Struttura: A=30mm sx | corpo largo EPS/Fibro | 325mm totale
-                  if (sis.id.includes("STH3") || sis.id.includes("STF3")) {
-                    const W = 300, H = 120;
-                    const isFibro = sis.id.startsWith("STF");
-                    const isI = sis.id.endsWith("I");
-                    const bodyY = 20, bodyH = 70;
-                    const aW = 35; // A fisso 30mm circa
-                    return (
-                      <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:120}}>
-                        <defs>
-                          <EpsPattern id="ep3"/>
-                          <WoodPattern id="wp4"/>
-                          <pattern id="fibro2" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
-                            <rect width="6" height="6" fill="#D8E8F0"/>
-                            <line x1="0" y1="3" x2="6" y2="3" stroke="#8AAABB" strokeWidth="0.5"/>
-                          </pattern>
-                        </defs>
-                        {/* Corpo principale EPS o Fibro */}
-                        <rect x={aW} y={bodyY} width={W-aW-10} height={bodyH}
-                          fill={isFibro?"url(#fibro2)":"url(#ep3)"} stroke={isFibro?"#556677":EPS_STROKE} strokeWidth={1.5}/>
-                        {/* Legno/avvolgibile a sx */}
-                        <rect x={aW} y={bodyY+bodyH*0.4} width={W*0.28} height={bodyH*0.4} fill="url(#wp4)" stroke={WOOD_STROKE} strokeWidth={1}/>
-                        {/* Legno/avvolgibile a dx (STH3I con slot centrale) */}
-                        {isI && <rect x={aW + (W-aW-10)*0.5} y={bodyY+bodyH*0.4} width={(W-aW-10)*0.28} height={bodyH*0.4} fill="url(#wp4)" stroke={WOOD_STROKE} strokeWidth={1}/>}
-                        {/* Sede A — sempre 30mm */}
-                        <rect x={0} y={bodyY} width={aW} height={bodyH} fill="white" stroke={SEAT_DASH} strokeWidth={1.5} strokeDasharray="5,3"/>
-                        {/* Linea verticale sede (profilo blu STH3I) */}
-                        {isI && <rect x={aW-2} y={bodyY} width={4} height={bodyH} fill="#1A3A6A" stroke="#0A2050" strokeWidth={1}/>}
-                        {/* Badge A */}
-                        <circle cx={18} cy={bodyY+bodyH/2} r={13} fill={RED_DIM}/>
-                        <text x={18} y={bodyY+bodyH/2+4} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">A</text>
-                        {/* Quota A */}
-                        <line x1={2} y1={bodyY-8} x2={aW-2} y2={bodyY-8} stroke={RED_DIM} strokeWidth={1.2}/>
-                        <text x={aW/2} y={bodyY-10} textAnchor="middle" fontSize={8} fill={RED_DIM} fontWeight="800">{aVal!="?"?aVal:"30"}mm</text>
-                        {/* 325mm */}
-                        <line x1={aW} y1={H-8} x2={W-10} y2={H-8} stroke={RED_DIM} strokeWidth={1}/>
-                        <polygon points={aW+","+(H-5)+" "+aW+","+(H-11)+" "+(aW-4)+","+(H-8)} fill={RED_DIM}/>
-                        <polygon points={(W-10)+","+(H-5)+" "+(W-10)+","+(H-11)+" "+(W-6)+","+(H-8)} fill={RED_DIM}/>
-                        <text x={(aW+W-10)/2} y={H-2} textAnchor="middle" fontSize={7} fill={RED_DIM} fontWeight="600">325 mm profondità intonaco finito</text>
-                        {/* Altezza */}
-                        <text x={W-6} y={bodyY+bodyH/2+3} fontSize={8} fill={RED_DIM} fontWeight="700"
-                          transform={"rotate(90,"+(W-6)+","+(bodyY+bodyH/2+3)+")"}>{isI?"85":"80"}</text>
-                        {/* Label */}
-                        <rect x={aW+8} y={bodyY+5} width={42} height={16} rx={3} fill={isFibro?"#334455":"#1A3A6A"}/>
-                        <text x={aW+29} y={bodyY+16} textAnchor="middle" fontSize={9} fill="white" fontWeight="800">{sis.id}</text>
-                      </svg>
-                    );
-                  }
-
-                  // PROGCP / PROGC / PROIG / PROG — STH PRO, sezioni verticali con profili complessi
-                  if (["PROGCP","PROGC","PROIG","PROG"].includes(sis.id)) {
-                    const W = 280, H = 200;
-                    const isCassonetto = sis.id === "PROGCP" || sis.id === "PROGC";
-                    const fixedDim = sis.id==="PROGCP"?"38.5":sis.id==="PROGC"?"32.4":sis.id==="PROIG"?"92":"32.4";
-                    return (
-                      <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:200}}>
-                        <defs><EpsPattern id="ep4"/><WoodPattern id="wp5"/></defs>
-                        {/* Muratura */}
-                        <rect x={0} y={0} width={W} height={25} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-                        {Array.from({length:14}).map((_,i)=><line key={i} x1={i*20} y1={0} x2={i*20+20} y2={25} stroke="#B8A870" strokeWidth={0.4} opacity={0.5}/>)}
-                        <rect x={0} y={H-25} width={W} height={25} fill="#E8E0C8" stroke="#B8A870" strokeWidth={1}/>
-                        {/* EPS corpo */}
-                        <rect x={25} y={25} width={W-50} height={H-50} fill="url(#ep4)" stroke={EPS_STROKE} strokeWidth={1.5}/>
-                        {/* Legno avvolgibile (cassonetto in alto se PROGCP/PROGC) */}
-                        {isCassonetto
-                          ? <rect x={25} y={25} width={W-50} height={50} fill="url(#wp5)" stroke={WOOD_STROKE} strokeWidth={1}/>
-                          : <rect x={25} y={H/2-18} width={W-50} height={36} fill="url(#wp5)" stroke={WOOD_STROKE} strokeWidth={1}/>
-                        }
-                        {/* Profili (semplificati, linee blu che simulano i profili estrusi) */}
-                        <rect x={25} y={25} width={18} height={H-50} fill="white" stroke={PROFILE_STROKE} strokeWidth={2}/>
-                        <rect x={25} y={25} width={18} height={18} fill="#DDEEFF" stroke={PROFILE_STROKE} strokeWidth={1.5}/>
-                        {isCassonetto && <>
-                          <rect x={W-43} y={25} width={18} height={50} fill="#DDEEFF" stroke={PROFILE_STROKE} strokeWidth={1.5}/>
-                          <rect x={25} y={70} width={W-50} height={8} fill="#DDEEFF" stroke={PROFILE_STROKE} strokeWidth={1}/>
-                        </>}
-                        {/* Ribattuta R */}
-                        <circle cx={50} cy={H/2} r={11} fill="#1A9E73"/>
-                        <text x={50} y={H/2+4} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">R</text>
-                        {/* Quote */}
-                        <line x1={25} y1={15} x2={100} y2={15} stroke={RED_DIM} strokeWidth={1.5}/>
-                        <polygon points={"25,12 25,18 21,15"} fill={RED_DIM}/>
-                        <circle cx={16} cy={15} r={10} fill={RED_DIM}/>
-                        <text x={16} y={19} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">A</text>
-                        <text x={62} y={10} textAnchor="middle" fontSize={7} fill={RED_DIM} fontWeight="700">VARIABILE → {aVal}mm</text>
-                        {/* Dimensione fissa */}
-                        <text x={W-70} y={H/2} fontSize={7} fill="#1A3A6A" fontWeight="700">{fixedDim}mm</text>
-                        {/* Label */}
-                        <rect x={W-65} y={28} width={55} height={18} rx={4} fill="#1A3A6A"opacity={0.9}/>
-                        <text x={W-38} y={40} textAnchor="middle" fontSize={10} fill="white" fontWeight="800">{sis.id}</text>
-                      </svg>
-                    );
-                  }
-
-                  // CUSTOM — forma generica con A/B/C
-                  const W = 280, H = 160;
-                  return (
-                    <svg viewBox={"0 0 "+W+" "+H} width="100%" style={{display:"block",maxHeight:160}}>
-                      <defs><EpsPattern id="ep5"/></defs>
-                      <rect x={30} y={20} width={W-60} height={H-40} fill="url(#ep5)" stroke="#555" strokeWidth={1.5} strokeDasharray="6,3"/>
-                      <circle cx={22} cy={H/2} r={12} fill={RED_DIM}/>
-                      <text x={22} y={H/2+4} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">A</text>
-                      <text x={22} y={H/2-18} textAnchor="middle" fontSize={8} fill={RED_DIM}>{aVal}mm</text>
-                      <circle cx={W-22} cy={H/2} r={12} fill="#D08008"/>
-                      <text x={W-22} y={H/2+4} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">B</text>
-                      <text x={W-22} y={H/2-18} textAnchor="middle" fontSize={8} fill="#D08008">{bVal}mm</text>
-                      <circle cx={W/2} cy={20} r={12} fill="#3B7FE0"/>
-                      <text x={W/2} y={24} textAnchor="middle" fontSize={11} fill="white" fontWeight="800">C</text>
-                      <text x={W/2} y={8} textAnchor="middle" fontSize={8} fill="#3B7FE0">{cVal}mm</text>
-                      <text x={W/2} y={H/2+4} textAnchor="middle" fontSize={12} fill="#888" fontWeight="600">SISTEMA PERSONALIZZATO</text>
-                    </svg>
-                  );
+                // ── CONFIGURATORE CONTROTELAIO (canvas interattivo) ────────────────
+                const [ctZone, setCtZone] = React.useState<any[]>((v.controtelaio?.zone)||[]);
+                const [ctSelZona, setCtSelZona] = React.useState<number|null>(null);
+                const CT_MAT = [
+                  { id:"eps",    label:"EPS",     color:"#C8DEF2", stroke:"#1A3A6A", eps:true   },
+                  { id:"legno",  label:"Legno",   color:"#F5A623", stroke:"#C07010", wood:true  },
+                  { id:"sede",   label:"Sede",    color:"#FFFFFF", stroke:"#DC1414", dash:true  },
+                  { id:"profilo",label:"Profilo", color:"#E0E8F0", stroke:"#1A3A6A"             },
+                ];
+                const getCTMat = (id) => CT_MAT.find(m=>m.id===id)||CT_MAT[0];
+                const CT_W=280, CT_H=150;
+                const ctTotMM = ctZone.reduce((s,z)=>s+(z.mm||50),0)||300;
+                const mm2px = (mm) => Math.max(16,(mm/ctTotMM)*(CT_W-20));
+                const getZX = (idx) => { let x=10; for(let i=0;i<idx;i++) x+=mm2px(ctZone[i]?.mm||50); return x; };
+                const ctAdd = (matId) => {
+                  const nz=[...ctZone,{id:Date.now(),mat:matId,mm:50}];
+                  setCtZone(nz); updateV("controtelaio",{...(v.controtelaio||{}),zone:nz}); setCtSelZona(nz.length-1);
                 };
+                const ctRemove = (idx) => {
+                  const nz=ctZone.filter((_,i)=>i!==idx);
+                  setCtZone(nz); updateV("controtelaio",{...(v.controtelaio||{}),zone:nz}); setCtSelZona(null);
+                };
+                const ctUpd = (idx,patch) => {
+                  const nz=ctZone.map((z,i)=>i===idx?{...z,...patch}:z);
+                  setCtZone(nz); updateV("controtelaio",{...(v.controtelaio||{}),zone:nz});
+                };
+                const renderSagoma = (_sis) => (
+                  <div>
+                    <svg viewBox={"0 0 "+CT_W+" "+CT_H} width="100%"
+                      style={{display:"block",border:"1.5px solid #E5E3DC",borderRadius:8,
+                        background:"#FAFAF8",cursor:"pointer",marginBottom:4}}
+                      onClick={(e)=>{
+                        const rect=(e.currentTarget as SVGSVGElement).getBoundingClientRect();
+                        const svgX=((e.clientX-rect.left)/rect.width)*CT_W;
+                        let found=null, cx=10;
+                        for(let i=0;i<ctZone.length;i++){
+                          const zw=mm2px(ctZone[i]?.mm||50);
+                          if(svgX>=cx&&svgX<cx+zw){found=i;break;}
+                          cx+=zw;
+                        }
+                        setCtSelZona(found);
+                      }}>
+                      <defs>
+                        <pattern id="cEps" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+                          <rect width="7" height="7" fill="#C8DEF2"/>
+                          <circle cx="3.5" cy="3.5" r="2.2" fill="none" stroke="#1A3A6A" strokeWidth="0.6"/>
+                        </pattern>
+                        <pattern id="cWood" x="0" y="0" width="7" height="4" patternUnits="userSpaceOnUse">
+                          <rect width="7" height="4" fill="#F5A623"/>
+                          <line x1="0" y1="2" x2="7" y2="2" stroke="#C07010" strokeWidth="0.7"/>
+                        </pattern>
+                        <marker id="cAr" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto">
+                          <polygon points="0,0 5,2.5 0,5" fill="#DC1414"/>
+                        </marker>
+                        <marker id="cArL" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto">
+                          <polygon points="5,0 0,2.5 5,5" fill="#DC1414"/>
+                        </marker>
+                      </defs>
+                      {ctZone.length===0 && (
+                        <text x={CT_W/2} y={CT_H/2+4} textAnchor="middle" fontSize={11} fill="#AAAAAA" fontFamily="Arial">
+                          Aggiungi zone con i tasti sotto
+                        </text>
+                      )}
+                      {ctZone.map((zona,idx)=>{
+                        const mat=getCTMat(zona.mat);
+                        const zx=getZX(idx);
+                        const zw=mm2px(zona.mm||50);
+                        const isSel=ctSelZona===idx;
+                        const fill=mat.eps?"url(#cEps)":mat.wood?"url(#cWood)":mat.color;
+                        return (
+                          <g key={zona.id}>
+                            <rect x={zx} y={10} width={zw} height={CT_H-20}
+                              fill={fill} stroke={isSel?"#D08008":mat.stroke}
+                              strokeWidth={isSel?2.5:1.5}
+                              strokeDasharray={mat.dash?"6,3":undefined}/>
+                            <text x={zx+zw/2} y={CT_H/2-6} textAnchor="middle"
+                              fontSize={Math.min(10,zw*0.38)} fill={mat.dash?"#DC1414":"#1A3A6A"}
+                              fontWeight="700" fontFamily="Arial">
+                              {mat.id==="sede"?"SEDE":mat.id==="eps"?"EPS":mat.id==="legno"?"LEGNO":"PROF."}
+                            </text>
+                            <text x={zx+zw/2} y={CT_H/2+8} textAnchor="middle"
+                              fontSize={Math.min(9,zw*0.32)} fill="#555" fontFamily="Arial">
+                              {zona.mm}mm
+                            </text>
+                            {zw>28 && (
+                              <line x1={zx+3} y1={CT_H-5} x2={zx+zw-3} y2={CT_H-5}
+                                stroke="#DC1414" strokeWidth={1} markerStart="url(#cArL)" markerEnd="url(#cAr)"/>
+                            )}
+                            {isSel && (
+                              <polygon
+                                points={(zx+zw/2-5)+",3 "+(zx+zw/2+5)+",3 "+(zx+zw/2)+",9"}
+                                fill="#D08008"/>
+                            )}
+                          </g>
+                        );
+                      })}
+                      {ctZone.length>0 && (
+                        <rect x={10} y={10} width={CT_W-20} height={CT_H-20}
+                          fill="none" stroke="#1A3A6A" strokeWidth={2} rx={2}/>
+                      )}
+                    </svg>
+                    {ctZone.length>0 && (
+                      <div style={{textAlign:"center",fontSize:9,color:"#999",marginBottom:6}}>
+                        Totale: {ctTotMM}mm — tocca una zona per modificarla
+                      </div>
+                    )}
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
+                      {CT_MAT.map(m=>(
+                        <button key={m.id} onClick={()=>ctAdd(m.id)}
+                          style={{flex:1,minWidth:55,padding:"7px 4px",borderRadius:6,fontSize:10,
+                            fontWeight:700,cursor:"pointer",border:"1.5px solid "+m.stroke,
+                            background:m.dash?"white":m.color,color:m.stroke}}>
+                          + {m.label}
+                        </button>
+                      ))}
+                    </div>
+                    {ctSelZona!==null && ctZone[ctSelZona] && (()=>{
+                      const zona=ctZone[ctSelZona];
+                      const mat=getCTMat(zona.mat);
+                      return (
+                        <div style={{background:"#FFF8E8",border:"2px solid #D08008",borderRadius:8,padding:10}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                            <div style={{fontSize:11,fontWeight:800,color:"#D08008"}}>
+                              ✏️ Zona {ctSelZona+1} — {mat.label}
+                            </div>
+                            <button onClick={()=>ctRemove(ctSelZona)}
+                              style={{background:"#DC1414",color:"white",border:"none",
+                                borderRadius:4,padding:"3px 8px",fontSize:10,cursor:"pointer"}}>
+                              🗑
+                            </button>
+                          </div>
+                          <div style={{fontSize:10,color:"#888",marginBottom:4}}>Larghezza (mm)</div>
+                          <input type="number" min={5} max={500} value={zona.mm||50}
+                            onChange={e=>ctUpd(ctSelZona,{mm:parseInt(e.target.value)||50})}
+                            style={{width:"100%",padding:"8px 10px",borderRadius:6,
+                              border:"1.5px solid #D08008",fontSize:16,fontWeight:700,
+                              background:"white",outline:"none",marginBottom:8}}/>
+                          <div style={{fontSize:10,color:"#888",marginBottom:4}}>Materiale</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                            {CT_MAT.map(m=>(
+                              <button key={m.id} onClick={()=>ctUpd(ctSelZona,{mat:m.id})}
+                                style={{padding:"5px 8px",borderRadius:5,fontSize:10,fontWeight:700,cursor:"pointer",
+                                  background:zona.mat===m.id?m.color:"#f5f5f5",
+                                  border:"1.5px solid "+(zona.mat===m.id?m.stroke:"#ddd"),
+                                  color:zona.mat===m.id?m.stroke:"#888"}}>
+                                {m.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    {ctZone.length>0 && (
+                      <button onClick={()=>{setCtZone([]);updateV("controtelaio",{...(v.controtelaio||{}),zone:[]});setCtSelZona(null);}}
+                        style={{marginTop:6,width:"100%",padding:"6px",borderRadius:6,
+                          border:"1px solid #ddd",background:"white",color:"#888",fontSize:10,cursor:"pointer"}}>
+                        🗑 Azzera disegno
+                      </button>
+                    )}
+                  </div>
+                );
                 return (
                   <div style={{display:"flex",flexDirection:"column",gap:12}}>
 
