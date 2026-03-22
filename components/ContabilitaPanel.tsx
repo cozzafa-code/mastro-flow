@@ -19,6 +19,11 @@ export default function ContabilitaPanel() {
     const [spese, setSpese] = React.useState<any[]>([]);
     const [loadingSpese, setLoadingSpese] = React.useState(true);
     const [speseLoaded, setSpeseLoaded] = React.useState(false);
+    const [showNuovaSpesaForm, setShowNuovaSpesaForm] = React.useState(false);
+    const [showSpesaQuick, setShowSpesaQuick] = React.useState(false);
+    const [nuovaSpesaNota, setNuovaSpesaNota] = React.useState("");
+    const [nuovaSpesaImporto, setNuovaSpesaImporto] = React.useState("");
+    const [nuovaSpesaCat, setNuovaSpesaCat] = React.useState("varie");
     const [cY, cM] = contabMese.split("-").map(Number);
     const daysInMonth = new Date(cY, cM, 0).getDate();
     const firstDow = (new Date(cY, cM - 1, 1).getDay() + 6) % 7; // Mon=0
@@ -470,17 +475,21 @@ export default function ContabilitaPanel() {
       
       {/*  SPESE OPERATORI  */}
       {contabTab === "spese" && (() => {
-        // useState dichiarati nel componente padre
-        // Carica spese quando si apre il tab
-        const CATEGORIE_COLORS: Record<string, string> = {
-          carburante: "#E8A020", pranzo: "#1A9E73", materiale: "#3B7FE0",
-          attrezzatura: "#8B5CF6", trasferta: "#DC4444", telefono: "#0EA5E9", varie: "#6B7280"
-        };
+        const CATEGORIE = [
+          { id: "carburante", label: "Carburante", color: "#E8A020" },
+          { id: "pranzo", label: "Pranzo", color: "#1A9E73" },
+          { id: "materiale", label: "Materiale", color: "#3B7FE0" },
+          { id: "attrezzatura", label: "Attrezzatura", color: "#8B5CF6" },
+          { id: "trasferta", label: "Trasferta", color: "#DC4444" },
+          { id: "telefono", label: "Telefono", color: "#0EA5E9" },
+          { id: "varie", label: "Varie", color: "#6B7280" },
+        ];
+        const CATEGORIE_COLORS: Record<string, string> = Object.fromEntries(CATEGORIE.map(c => [c.id, c.color]));
         if (!speseLoaded) {
           setSpeseLoaded(true);
           supabase.from("spese_operatori").select("*").order("created_at", { ascending: false }).limit(50)
             .then(({ data }) => { setSpese(data || []); setLoadingSpese(false); })
-            .catch(() => setLoadingSpese(false));
+            .catch(() => { setLoadingSpese(false); });
         }
         const inAttesa = spese.filter(s => s.stato === "in_attesa");
         const approvate = spese.filter(s => s.stato === "approvata");
@@ -494,65 +503,171 @@ export default function ContabilitaPanel() {
           await supabase.from("spese_operatori").update({ stato: "rifiutata" }).eq("id", id);
           setSpese(prev => prev.map(s => s.id === id ? { ...s, stato: "rifiutata" } : s));
         };
+        const tutteSpese = spese;
+        const inAttesa = tutteSpese.filter(s => s.stato === "in_attesa");
+        const approvate = tutteSpese.filter(s => s.stato === "approvata");
+        const rifiutate = tutteSpese.filter(s => s.stato === "rifiutata");
+        const totMese = approvate.reduce((s, x) => s + (x.importo || 0), 0);
+        const totAttesa = inAttesa.reduce((s, x) => s + (x.importo || 0), 0);
+
+        const aggiuntaLocale = (spesa: any) => {
+          setSpese(prev => [spesa, ...prev]);
+        };
+
         return <>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-            <div style={{ background: "#fff3e0", borderRadius: 10, border: "1px solid #ff980030", padding: "10px 12px", textAlign: "center" }}>
-              <div style={{ fontSize: 8, fontWeight: 700, color: "#E8A020", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>In attesa</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#E8A020", fontFamily: "'JetBrains Mono',monospace" }}>€{totInAttesa.toFixed(2)}</div>
-              <div style={{ fontSize: 10, color: "#E8A020" }}>{inAttesa.length} spese</div>
-            </div>
-            <div style={{ background: "#e8f5e9", borderRadius: 10, border: "1px solid #1A9E7330", padding: "10px 12px", textAlign: "center" }}>
-              <div style={{ fontSize: 8, fontWeight: 700, color: "#1A9E73", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Approvate</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#1A9E73", fontFamily: "'JetBrains Mono',monospace" }}>€{totApprovate.toFixed(2)}</div>
-              <div style={{ fontSize: 10, color: "#1A9E73" }}>{approvate.length} spese</div>
+          {/* Header con bottone + Nuova spesa */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Gestione spese</div>
+            <div onClick={() => setShowNuovaSpesaForm(f => !f)}
+              style={{ padding: "8px 14px", borderRadius: 10, background: "#1A9E73", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                boxShadow: "0 3px 0 #0D7C6B", display: "flex", alignItems: "center", gap: 6 }}>
+              + Nuova spesa
             </div>
           </div>
+
+          {/* KPI */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+            <div style={{ background: "#fff3e0", borderRadius: 10, border: "1px solid #ff980030", padding: "10px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: "#E8A020", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Attesa</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: "#E8A020", fontFamily: "'JetBrains Mono',monospace" }}>€{totAttesa.toFixed(0)}</div>
+              <div style={{ fontSize: 10, color: "#E8A020" }}>{inAttesa.length} spese</div>
+            </div>
+            <div style={{ background: "#e8f5e9", borderRadius: 10, border: "1px solid #1A9E7330", padding: "10px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: "#1A9E73", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Approvate</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: "#1A9E73", fontFamily: "'JetBrains Mono',monospace" }}>€{totMese.toFixed(0)}</div>
+              <div style={{ fontSize: 10, color: "#1A9E73" }}>{approvate.length} spese</div>
+            </div>
+            <div style={{ background: "#fce4ec", borderRadius: 10, border: "1px solid #DC444430", padding: "10px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: "#DC4444", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Rifiutate</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: "#DC4444", fontFamily: "'JetBrains Mono',monospace" }}>€{rifiutate.reduce((s,x)=>s+(x.importo||0),0).toFixed(0)}</div>
+              <div style={{ fontSize: 10, color: "#DC4444" }}>{rifiutate.length} spese</div>
+            </div>
+          </div>
+
+          {/* Form aggiunta rapida spesa manuale */}
+          {showNuovaSpesaForm && (
+            <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: 14, marginBottom: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 12 }}>Nuova spesa manuale</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
+                  <div>
+                    <label style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 4 }}>Descrizione</label>
+                    <input value={nuovaSpesaNota} onChange={e => setNuovaSpesaNota(e.target.value)}
+                      placeholder="Es. Pranzo cantiere Rossi..."
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, fontFamily: "Inter", background: T.bg, color: T.text, boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 4 }}>Importo €</label>
+                    <input inputMode="decimal" value={nuovaSpesaImporto} onChange={e => setNuovaSpesaImporto(e.target.value)}
+                      placeholder="0.00"
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 16, fontFamily: "'JetBrains Mono',monospace", textAlign: "right", background: T.bg, color: T.text, boxSizing: "border-box" }} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 6 }}>Categoria</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {CATEGORIE.map(cat => (
+                      <div key={cat.id} onClick={() => setNuovaSpesaCat(cat.id)}
+                        style={{ padding: "6px 12px", borderRadius: 20, border: `1.5px solid ${nuovaSpesaCat === cat.id ? cat.color : T.bdr}`,
+                          background: nuovaSpesaCat === cat.id ? cat.color + "18" : T.bg, fontSize: 12, fontWeight: 600,
+                          color: nuovaSpesaCat === cat.id ? cat.color : T.sub, cursor: "pointer",
+                          boxShadow: nuovaSpesaCat === cat.id ? `0 2px 0 ${cat.color}40` : "none" }}>
+                        {cat.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div onClick={() => { setShowNuovaSpesaForm(false); setNuovaSpesaNota(""); setNuovaSpesaImporto(""); setNuovaSpesaCat("varie"); }}
+                    style={{ flex: 1, padding: "10px", borderRadius: 10, textAlign: "center", fontSize: 13, fontWeight: 600, cursor: "pointer", background: T.bg, border: `1px solid ${T.bdr}`, color: T.sub }}>
+                    Annulla
+                  </div>
+                  <div onClick={async () => {
+                    if (!nuovaSpesaImporto || parseFloat(nuovaSpesaImporto) <= 0) return;
+                    const nuova = { operatore_id: "titolare", operatore_nome: "Titolare", importo: parseFloat(nuovaSpesaImporto), categoria: nuovaSpesaCat, nota: nuovaSpesaNota, stato: "approvata", created_at: new Date().toISOString(), azienda_id: "local" };
+                    const { data } = await supabase.from("spese_operatori").insert(nuova).select().single().catch(() => ({ data: { ...nuova, id: Date.now().toString() } }));
+                    setSpese(prev => [data || nuova, ...prev]);
+                    setShowNuovaSpesaForm(false); setNuovaSpesaNota(""); setNuovaSpesaImporto(""); setNuovaSpesaCat("varie");
+                  }}
+                    style={{ flex: 2, padding: "10px", borderRadius: 10, textAlign: "center", fontSize: 13, fontWeight: 800, cursor: "pointer", background: "#1A9E73", color: "#fff",
+                      boxShadow: "0 3px 0 #0D7C6B" }}>
+                    Salva spesa approvata
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {loadingSpese && <div style={{ textAlign: "center", padding: 24, color: T.sub, fontSize: 13 }}>Caricamento...</div>}
+
+          {/* Da approvare */}
           {inAttesa.length > 0 && <>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#E8A020", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>Da approvare</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#E8A020", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>Da approvare ({inAttesa.length})</div>
             {inAttesa.map(s => (
-              <div key={s.id} style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginBottom: 8, overflow: "hidden" }}>
-                {s.foto_url && <img src={s.foto_url} style={{ width: "100%", height: 80, objectFit: "cover" }} />}
-                <div style={{ padding: "10px 12px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div key={s.id} style={{ background: T.card, borderRadius: 12, border: `1.5px solid #E8A02030`, marginBottom: 8, overflow: "hidden",
+                boxShadow: "0 3px 0 #E8A02020" }}>
+                {s.foto_url && <img src={s.foto_url} style={{ width: "100%", maxHeight: 120, objectFit: "cover" }} />}
+                <div style={{ padding: "12px 14px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{s.operatore_nome || "Operatore"}</div>
-                      <div style={{ fontSize: 11, color: CATEGORIE_COLORS[s.categoria] || "#888", fontWeight: 600 }}>{s.categoria}</div>
-                      {s.nota && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{s.nota}</div>}
+                      <div style={{ display: "flex", gap: 6, marginTop: 3, alignItems: "center" }}>
+                        <span style={{ fontSize: 11, color: CATEGORIE_COLORS[s.categoria] || "#888", fontWeight: 600, padding: "2px 8px", borderRadius: 10, background: (CATEGORIE_COLORS[s.categoria] || "#888") + "15" }}>{s.categoria}</span>
+                        <span style={{ fontSize: 10, color: T.sub }}>{new Date(s.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                      {s.nota && <div style={{ fontSize: 12, color: T.sub, marginTop: 4, fontStyle: "italic" }}>{s.nota}</div>}
+                      {s.cm_id && <div style={{ fontSize: 10, color: "#3B7FE0", marginTop: 2 }}>Commessa collegata</div>}
                     </div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: "#E8A020", fontFamily: "'JetBrains Mono',monospace" }}>€{(s.importo||0).toFixed(2)}</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: "#E8A020", fontFamily: "'JetBrains Mono',monospace" }}>€{(s.importo||0).toFixed(2)}</div>
                   </div>
-                  <div style={{ fontSize: 10, color: T.sub, marginBottom: 8 }}>{new Date(s.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <div onClick={() => rifiuta(s.id)} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#DC444415", color: "#DC4444", fontSize: 12, fontWeight: 700, textAlign: "center", cursor: "pointer", border: "1px solid #DC444430" }}>Rifiuta</div>
-                    <div onClick={() => approva(s.id)} style={{ flex: 2, padding: "8px", borderRadius: 8, background: "#1A9E73", color: "#fff", fontSize: 12, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>Approva</div>
+                    <div onClick={async () => { await supabase.from("spese_operatori").update({ stato: "rifiutata" }).eq("id", s.id); setSpese(prev => prev.map(x => x.id === s.id ? { ...x, stato: "rifiutata" } : x)); }}
+                      style={{ flex: 1, padding: "10px", borderRadius: 10, background: "#DC444415", color: "#DC4444", fontSize: 13, fontWeight: 700, textAlign: "center", cursor: "pointer", border: "1px solid #DC444430",
+                        boxShadow: "0 2px 0 #DC444430" }}>
+                      Rifiuta
+                    </div>
+                    <div onClick={async () => { await supabase.from("spese_operatori").update({ stato: "approvata" }).eq("id", s.id); setSpese(prev => prev.map(x => x.id === s.id ? { ...x, stato: "approvata" } : x)); }}
+                      style={{ flex: 2, padding: "10px", borderRadius: 10, background: "#1A9E73", color: "#fff", fontSize: 13, fontWeight: 800, textAlign: "center", cursor: "pointer",
+                        boxShadow: "0 3px 0 #0D7C6B" }}>
+                      ✓ Approva
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </>}
+
+          {/* Approvate */}
           {approvate.length > 0 && <>
-            <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, margin: "14px 0 8px" }}>Approvate</div>
-            {approvate.slice(0, 10).map(s => (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}`, marginBottom: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: CATEGORIE_COLORS[s.categoria] || "#888", flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{s.operatore_nome} · {s.categoria}</div>
-                  <div style={{ fontSize: 10, color: T.sub }}>{new Date(s.created_at).toLocaleDateString("it-IT")}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, margin: "16px 0 8px" }}>Approvate ({approvate.length})</div>
+            {approvate.map(s => (
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}`, marginBottom: 6,
+                boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+                <div style={{ width: 10, height: 10, borderRadius: "50%", background: CATEGORIE_COLORS[s.categoria] || "#888", flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{s.operatore_nome || "Titolare"}</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>{s.categoria} · {new Date(s.created_at).toLocaleDateString("it-IT")}</div>
+                  {s.nota && <div style={{ fontSize: 11, color: T.sub, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.nota}</div>}
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "#1A9E73", fontFamily: "'JetBrains Mono',monospace" }}>€{(s.importo||0).toFixed(2)}</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: "#1A9E73", fontFamily: "'JetBrains Mono',monospace" }}>€{(s.importo||0).toFixed(2)}</div>
               </div>
             ))}
           </>}
+
           {!loadingSpese && spese.length === 0 && (
             <div style={{ textAlign: "center", padding: "40px 20px", color: T.sub }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🧾</div>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>Nessuna spesa ancora</div>
-              <div style={{ fontSize: 12, marginTop: 4 }}>Gli operatori possono inviare spese dal loro profilo</div>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>🧾</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Nessuna spesa ancora</div>
+              <div style={{ fontSize: 12, marginTop: 4 }}>Aggiungi la prima spesa con il tasto qui sopra</div>
+              <div onClick={() => setShowNuovaSpesaForm(true)}
+                style={{ marginTop: 16, padding: "12px 24px", borderRadius: 12, background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "inline-block",
+                  boxShadow: "0 3px 0 #0D7C6B" }}>
+                + Aggiungi prima spesa
+              </div>
             </div>
           )}
         </>;
-      })()}
+      })}
 
       {/*  SDI  */}
       {contabTab === "sdi" && <>
