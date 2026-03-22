@@ -392,8 +392,8 @@ export default function ClientiPanel() {
                   <div onClick={() => { setNewCM(prev => ({ ...prev, cliente: savedCliente.nome, cognome: savedCliente.cognome || "", telefono: savedCliente.telefono || "", indirizzo: savedCliente.indirizzo || "" })); setTab("commesse"); setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: T.acc, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
                     <I d={ICO.folder} s={18} c="#fff" /> Crea commessa per {savedCliente.nome}
                   </div>
-                  <div onClick={() => { setTab("messaggi"); setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: T.blue, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
-                    <I d={ICO.check} s={18} c="#fff" /> Aggiungi task / promemoria
+                  <div onClick={() => { setTab("agenda"); setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: T.blue, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+                    <I d={ICO.check} s={18} c="#fff" /> Aggiungi task / appuntamento
                   </div>
                   <div onClick={() => { setTab("agenda"); setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: "#5856d6", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
                     <I d={ICO.calendar} s={18} c="#fff" /> Crea appuntamento
@@ -404,15 +404,28 @@ export default function ClientiPanel() {
                 </div>
               </div>
             ) : (
-              <button onClick={() => {
-                if (!newCliente.nome.trim()) return;
-                const nuovoC = { id: "CT-" + Date.now(), ...newCliente, preferito: false, diario: [] };
-                setContatti(prev => [...prev, nuovoC]);
-                setSavedCliente(nuovoC);
-                setNewCliente({ nome: "", cognome: "", tipo: "cliente", telefono: "", email: "", indirizzo: "", piva: "", note: "" });
-              }} style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                <I d={ICO.checkCircle} s={14} c="#fff" /> Salva contatto
-              </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button onClick={() => {
+                  if (!newCliente.nome.trim()) return;
+                  const nuovoC = { id: "CT-" + Date.now(), ...newCliente, preferito: false, diario: [] };
+                  setContatti(prev => [...prev, nuovoC]);
+                  setSavedCliente(nuovoC);
+                  setNewCliente({ nome: "", cognome: "", tipo: "cliente", telefono: "", email: "", indirizzo: "", piva: "", note: "" });
+                }} style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <I d={ICO.checkCircle} s={16} c="#fff" /> Salva contatto
+                </button>
+                <button onClick={() => {
+                  if (!newCliente.nome.trim()) return;
+                  const nuovoC = { id: "CT-" + Date.now(), ...newCliente, preferito: false, diario: [] };
+                  setContatti(prev => [...prev, nuovoC]);
+                  setNewCM(prev => ({ ...prev, cliente: nuovoC.nome, cognome: nuovoC.cognome || "", telefono: nuovoC.telefono || "", indirizzo: nuovoC.indirizzo || "", clienteId: nuovoC.id }));
+                  setTab("commesse");
+                  setShowNewCliente(false);
+                  setNewCliente({ nome: "", cognome: "", tipo: "cliente", telefono: "", email: "", indirizzo: "", piva: "", note: "" });
+                }} style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", background: "#D08008", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  <I d={ICO.folder} s={16} c="#fff" /> Salva e crea commessa
+                </button>
+              </div>
             )}
           </div>
         </div>

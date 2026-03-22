@@ -13,6 +13,8 @@ export default function ContabilitaPanel() {
   } = useMastro();
 
     const today = new Date();
+    const [calFiltro, setCalFiltro] = React.useState<"settimana"|"mese"|"trimestre"|"anno">("mese");
+    const [calGiornoSel, setCalGiornoSel] = React.useState<string>("");
     const [cY, cM] = contabMese.split("-").map(Number);
     const daysInMonth = new Date(cY, cM, 0).getDate();
     const firstDow = (new Date(cY, cM - 1, 1).getDay() + 6) % 7; // Mon=0
@@ -73,7 +75,7 @@ export default function ContabilitaPanel() {
     <div style={{ position: "fixed", inset: 0, zIndex: 10002, background: T.bg, overflow: "auto" }}>
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", background: T.card, borderBottom: "1px solid " + T.bdr, position: "sticky", top: 0, zIndex: 10 }}>
-        <div onClick={() => setTab("home")} style={{ cursor: "pointer", color: T.acc, fontWeight: 700, fontSize: 14 }}>ÔåÉ Indietro</div>
+        <div onClick={() => setTab("home")} style={{ cursor: "pointer", color: T.acc, fontWeight: 700, fontSize: 14 }}>← Indietro</div>
         <div style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: 800, color: T.text }}> Contabilitá</div>
         <div style={{ width: 60 }} />
       </div>
@@ -85,7 +87,7 @@ export default function ContabilitaPanel() {
         ))}
       </div>
       
-      <div style={{ padding: "0 16px 100px" }}>
+      <div style={{ padding: "0 16px 100px", minHeight: "calc(100vh - 120px)" }}>
       
       {/*  PANORAMICA  */}
       {contabTab === "panoramica" && <>
@@ -171,7 +173,7 @@ export default function ContabilitaPanel() {
         {/* RIEPILOGO MESE */}
         <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>‹</div>
+            <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>&lt;</div>
             <div style={{ fontSize: 13, fontWeight: 800, color: T.text, textTransform: "capitalize" as const }}>{meseLbl}</div>
             <div onClick={nextMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>›</div>
           </div>
@@ -285,7 +287,7 @@ export default function ContabilitaPanel() {
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <button onClick={() => setShowFatturaPassiva(false)} style={{ flex: 1, padding: 12, borderRadius: 10, border: "1px solid " + T.bdr, background: T.bg, color: T.sub, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                <button onClick={creaFatturaPassiva} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>¥ Registra</button>
+                <button onClick={creaFatturaPassiva} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Registra</button>
               </div>
             </div>
           </div>
@@ -312,7 +314,7 @@ export default function ContabilitaPanel() {
           const d = parseInt(m.data.split("-")[2]);
           const cm = cantieri.find(c => c.id === m.cmId);
           const sq = (squadreDB || []).find(s => s.id === m.squadraId);
-          addCal(d, { tipo: "montaggio", ico: "º", col: "#007aff", label: cm?.cliente || "Montaggio", detail: sq?.nome || "" });
+          addCal(d, { tipo: "montaggio", ico: "🔧", col: "#007aff", label: cm?.cliente || "Montaggio", detail: sq?.nome || "" });
         });
         // Consegne previste ordini
         (ordiniFornDB || []).filter(o => o.consegna?.prevista && o.consegna.prevista.startsWith(contabMese) && o.stato !== "consegnato").forEach(o => {
@@ -322,15 +324,71 @@ export default function ContabilitaPanel() {
         // Events/appuntamenti
         (events || []).filter(ev => ev.date && ev.date.startsWith(contabMese)).forEach(ev => {
           const d = parseInt(ev.date.split("-")[2]);
-          const tipoIco: Record<string,string> = { sopralluogo: "", posa: "º", controllo: "", consegna: "", misure: "", altro: "" };
+          const tipoIco: Record<string,string> = { sopralluogo: "", posa: "🔧", controllo: "", consegna: "", misure: "", altro: "" };
           const tipoCol: Record<string,string> = { sopralluogo: "#007aff", posa: "#34c759", controllo: "#ff9500", consegna: "#af52de", misure: "#5856d6", altro: "#86868b" };
           addCal(d, { tipo: ev.tipo || "altro", ico: tipoIco[ev.tipo] || "", col: tipoCol[ev.tipo] || "#86868b", label: ev.persona || ev.text?.slice(0, 20) || "Evento", detail: ev.time || "" });
         });
         
         return <>
+        {/* Filtri periodo */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+          {([["giorno","Oggi"],["settimana","Sett."],["mese","Mese"],["trimestre","Trim."],["anno","Anno"]] as const).map(([id,lbl]) => (
+            <div key={id} onClick={() => setCalFiltro(id as any)}
+              style={{ flex: 1, padding: "8px 4px", borderRadius: 20, textAlign: "center", fontSize: 11, fontWeight: 700, cursor: "pointer",
+                background: calFiltro === id ? T.acc : T.card,
+                color: calFiltro === id ? "#fff" : T.sub,
+                border: `1px solid ${calFiltro === id ? T.acc : T.bdr}` }}>
+              {lbl}
+            </div>
+          ))}
+        </div>
+        {/* Riepilogo periodo selezionato */}
+        {(() => {
+          const now = new Date();
+          let emPeriodo = 0, ricPeriodo = 0;
+          if (calFiltro === "giorno") {
+            const todayStr = now.toISOString().split("T")[0];
+            emPeriodo = allEmesse.filter(f => (f.dataISO||"").startsWith(todayStr)).reduce((s,f)=>s+(f.importo||0),0);
+            ricPeriodo = allRicevute.filter(f => (f.dataISO||f.data||"").startsWith(todayStr)).reduce((s,f)=>s+(f.importo||0),0);
+          } else if (calFiltro === "settimana") {
+            const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay()+6)%7));
+            const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+            const monStr = mon.toISOString().split("T")[0]; const sunStr = sun.toISOString().split("T")[0];
+            emPeriodo = allEmesse.filter(f => (f.dataISO||"") >= monStr && (f.dataISO||"") <= sunStr).reduce((s,f)=>s+(f.importo||0),0);
+            ricPeriodo = allRicevute.filter(f => { const d=(f.dataISO||f.data||""); return d>=monStr&&d<=sunStr; }).reduce((s,f)=>s+(f.importo||0),0);
+          } else if (calFiltro === "mese") {
+            emPeriodo = meseEmTot; ricPeriodo = meseRicTot;
+          } else if (calFiltro === "trimestre") {
+            const q = Math.floor((now.getMonth())/3); const y = now.getFullYear();
+            const months = [q*3, q*3+1, q*3+2].map(m => `${y}-${String(m+1).padStart(2,"0")}`);
+            emPeriodo = allEmesse.filter(f => months.some(m=>(f.dataISO||"").startsWith(m))).reduce((s,f)=>s+(f.importo||0),0);
+            ricPeriodo = allRicevute.filter(f => months.some(m=>(f.dataISO||f.data||"").startsWith(m))).reduce((s,f)=>s+(f.importo||0),0);
+          } else {
+            const y = String(now.getFullYear());
+            emPeriodo = allEmesse.filter(f=>(f.dataISO||"").startsWith(y)).reduce((s,f)=>s+(f.importo||0),0);
+            ricPeriodo = allRicevute.filter(f=>(f.dataISO||f.data||"").startsWith(y)).reduce((s,f)=>s+(f.importo||0),0);
+          }
+          const margPeriodo = emPeriodo - ricPeriodo;
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+              <div style={{ background: T.grnLt, borderRadius: 10, border: `1px solid ${T.grn}30`, padding: "10px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: T.grn, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Entrate</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: T.grn, fontFamily: FM }}>{fmt(emPeriodo)}</div>
+              </div>
+              <div style={{ background: "#fff3e0", borderRadius: 10, border: "1px solid #ff980030", padding: "10px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: T.orange, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Uscite</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: T.orange, fontFamily: FM }}>{fmt(ricPeriodo)}</div>
+              </div>
+              <div style={{ background: margPeriodo >= 0 ? T.grnLt : T.redLt, borderRadius: 10, border: `1px solid ${margPeriodo >= 0 ? T.grn : T.red}30`, padding: "10px 8px", textAlign: "center" }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: margPeriodo >= 0 ? T.grn : T.red, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>Margine</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: margPeriodo >= 0 ? T.grn : T.red, fontFamily: FM }}>{fmt(margPeriodo)}</div>
+              </div>
+            </div>
+          );
+        })()}
         {/* Month nav */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: "10px 16px" }}>
-          <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 18, color: T.acc, fontWeight: 700 }}>‹</div>
+          <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 18, color: T.acc, fontWeight: 700 }}>&lt;</div>
           <div style={{ fontSize: 15, fontWeight: 800, color: T.text, textTransform: "capitalize" as const }}>{meseLbl}</div>
           <div onClick={nextMese} style={{ cursor: "pointer", fontSize: 18, color: T.acc, fontWeight: 700 }}>›</div>
         </div>
