@@ -188,8 +188,8 @@ export default function RilieviListPanel() {
           {/* CTA */}
           <button 
             onClick={() => { if (autoTipo === "modifica" && !nuovoRilData.motivoModifica) { alert("Inserisci il motivo della modifica"); return; } salvaRilievo(); }}
-            style={{ ...S.btn, width: "100%", marginTop: 20, padding: "16px", fontSize: 15, background: autoTipo === "modifica" ? "#ff9500" : T.grn }}>
-            {autoTipo === "modifica" ? "Crea Rilievo Modifica →" : `Crea Rilievo #${rilievi.length + 1} →`}
+            style={{ ...S.btn, width: "100%", marginTop: 20, padding: "16px", fontSize: 15, background: autoTipo === "modifica" ? "#ff9500" : "#1A9E73", boxShadow: autoTipo === "modifica" ? "0 4px 0 #c07000" : "0 4px 0 #0D7C6B", transition: "all 0.1s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {autoTipo === "modifica" ? "Crea Rilievo Modifica" : `Crea Rilievo #${rilievi.length + 1}`} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginLeft:6}}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
         </div>
       </div>
