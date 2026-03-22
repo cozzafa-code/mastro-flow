@@ -655,7 +655,7 @@ export default function ContabilitaPanel() {
             </div>
           )}
         </>;
-      })}
+      })()}
 
       {/*  SDI  */}
       {contabTab === "sdi" && <>
