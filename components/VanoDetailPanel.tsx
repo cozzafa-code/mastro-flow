@@ -383,6 +383,8 @@ export default function VanoDetailPanel() {
   // Cleanup on unmount
   useEffect(() => () => { if (recognitionRef.current) try { recognitionRef.current.stop(); } catch(e) {} }, []);
 
+  // ── RENDER BODY ──────────────────────────────────────
+  const renderBody = () => {
     if (!selectedVano || !selectedCM) return null;
     const v = selectedVano;
     const m = v.misure || {};
@@ -3290,5 +3292,7 @@ export default function VanoDetailPanel() {
 </div>
 
     );
+  }; // end renderBody
 
+  return renderBody();
 }
