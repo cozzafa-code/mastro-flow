@@ -209,7 +209,6 @@ export default function RilieviListPanel() {
       </div>
     );
     }
-    }
 
     // == REPORT DIFFERENZE ==
     const renderReportDiff = () => {
