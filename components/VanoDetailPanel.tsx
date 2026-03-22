@@ -2755,31 +2755,38 @@ export default function VanoDetailPanel() {
       {/* ═══ FULLSCREEN DISEGNO LAMIERA ═══ */}
       {showLamieraDisegno && (() => {
         const allSegs = lamieraPieghe;
-        const angGradi = parseFloat(lamieraAngolo) || 90;
-        const angRad = (angGradi * Math.PI) / 180;
 
-        // Build SVG path con angoli
+        // Build nodes in mm, poi scala per fit
         const buildNodes = () => {
-          let cx = 60, cy = 60;
-          const nodes: {x:number,y:number}[] = [{x:cx,y:cy}];
-          const MAX = 500;
+          let cx = 0, cy = 0;
+          const raw: {x:number,y:number}[] = [{x:0,y:0}];
           allSegs.forEach(s => {
-            const d = Math.min(s.mm * 0.6, MAX);
             const a = s.angolo || 90;
             const ar = (a * Math.PI) / 180;
-            if (s.dir==='dx') { cx += d * Math.cos(ar < Math.PI/2 ? 0 : ar); cy += d * Math.sin(ar < Math.PI/2 ? 0 : ar); }
-            else if (s.dir==='sx') { cx -= d; }
-            else if (s.dir==='giu') { cy += d; }
-            else if (s.dir==='su') { cy -= d; }
-            nodes.push({x:Math.max(10,Math.min(cx,750)),y:Math.max(10,Math.min(cy,550))});
+            if (s.dir==='dx') { cx += s.mm * Math.cos(ar < Math.PI/2 ? 0 : ar); cy += s.mm * Math.sin(ar < Math.PI/2 ? 0 : ar); }
+            else if (s.dir==='sx') { cx -= s.mm; }
+            else if (s.dir==='giu') { cy += s.mm; }
+            else if (s.dir==='su') { cy -= s.mm; }
+            raw.push({x:cx, y:cy});
           });
-          return nodes;
+          // Fit in viewBox 700x460 con padding 60
+          const PAD = 70;
+          const VW = 700, VH = 460;
+          const xs = raw.map(n=>n.x), ys = raw.map(n=>n.y);
+          const minX = Math.min(...xs), maxX = Math.max(...xs);
+          const minY = Math.min(...ys), maxY = Math.max(...ys);
+          const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+          const scale = Math.min((VW - PAD*2) / rangeX, (VH - PAD*2) / rangeY);
+          const offX = PAD + ((VW - PAD*2) - rangeX * scale) / 2 - minX * scale;
+          const offY = PAD + ((VH - PAD*2) - rangeY * scale) / 2 - minY * scale;
+          return raw.map(n => ({ x: n.x * scale + offX, y: n.y * scale + offY, mm: n }));
         };
 
         const nodes = buildNodes();
         const pts = nodes.map(n=>`${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
-        // Lunghezza sviluppata totale
         const sviluppata = allSegs.reduce((a,s)=>a+s.mm, 0);
+        // Lunghezza = prima dimensione principale (il tratto più lungo)
+        const lunghezzaPrincipale = allSegs.length > 0 ? Math.max(...allSegs.map(s=>s.mm)) : 0;
 
         const DIRS = [
           {d:'dx',label:'→',name:'Destra'},
@@ -2793,12 +2800,21 @@ export default function VanoDetailPanel() {
             
             {/* Header fullscreen */}
             <div style={{background:'#0F766E',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
-              <div>
-                <div style={{color:'#fff',fontSize:16,fontWeight:800}}>Disegno lamiera {v.lamiera||''}</div>
-                <div style={{color:'rgba(255,255,255,0.75)',fontSize:11,marginTop:1}}>
-                  {allSegs.length===0?'Aggiungi segmenti dal basso':`${allSegs.length} seg · sviluppata ${sviluppata}mm`}
-                  {sviluppata>0 && <span style={{marginLeft:8,background:'rgba(255,255,255,0.2)',padding:'1px 6px',borderRadius:4,fontSize:10}}>{sviluppata} mm totale</span>}
-                </div>
+              <div style={{flex:1}}>
+                <div style={{color:'#fff',fontSize:15,fontWeight:800}}>Disegno lamiera {v.lamiera||''}</div>
+                {allSegs.length===0
+                  ? <div style={{color:'rgba(255,255,255,0.7)',fontSize:11,marginTop:1}}>Aggiungi segmenti dal basso</div>
+                  : <div style={{display:'flex',gap:10,marginTop:4,flexWrap:'wrap'}}>
+                      <div style={{background:'rgba(255,255,255,0.18)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700}}>
+                        📏 Sviluppata: <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sviluppata}</span> mm
+                      </div>
+                      {lunghezzaPrincipale>0 && (
+                        <div style={{background:'rgba(255,255,255,0.18)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700}}>
+                          ↔ Luce: <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{lunghezzaPrincipale}</span> mm
+                        </div>
+                      )}
+                    </div>
+                }
               </div>
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
                 {/* Lato buono */}
@@ -2883,71 +2899,91 @@ export default function VanoDetailPanel() {
                   ))}
                 </div>
               )}
-              <svg ref={lamieraSvgRef} width="100%" height="100%" viewBox="0 0 800 600"
+              <svg ref={lamieraSvgRef} width="100%" height="100%" viewBox="0 0 700 460"
                 preserveAspectRatio="xMidYMid meet"
                 style={{transformOrigin:'center center',transition:'transform 0.05s'}}>
                 {/* Griglia */}
-                {Array.from({length:16}).map((_,i)=>(
-                  <line key={'gv'+i} x1={i*50} y1="0" x2={i*50} y2="600" stroke="#E2E8F0" strokeWidth="0.5"/>
+                {Array.from({length:15}).map((_,i)=>(
+                  <line key={'gv'+i} x1={i*50} y1="0" x2={i*50} y2="460" stroke="#E2E8F0" strokeWidth="0.5"/>
                 ))}
-                {Array.from({length:12}).map((_,i)=>(
-                  <line key={'gh'+i} x1="0" y1={i*50} x2="800" y2={i*50} stroke="#E2E8F0" strokeWidth="0.5"/>
+                {Array.from({length:10}).map((_,i)=>(
+                  <line key={'gh'+i} x1="0" y1={i*50} x2="700" y2={i*50} stroke="#E2E8F0" strokeWidth="0.5"/>
                 ))}
-                {/* Punto 0 */}
-                <circle cx={nodes[0].x} cy={nodes[0].y} r="5" fill="#0F766E"/>
-                <text x={nodes[0].x+10} y={nodes[0].y-8} fontSize="10" fill="#0F766E" fontWeight="700">0</text>
-                {/* Profilo */}
-                {allSegs.length > 0 && (
-                  <polyline points={pts} fill="none" stroke="#0F766E"
-                    strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-                )}
-                {/* LATO BUONO — freccia + badge visuale sul segmento */}
+
                 {allSegs.length > 0 && (() => {
-                  const isEst = lamieraLatoBuono==='esterno';
-                  // Midpoint del profilo totale
-                  const mid = nodes[Math.floor(nodes.length/2)];
-                  const perp = lamieraPieghe[0]?.dir==='dx'||lamieraPieghe[0]?.dir==='sx' ? 'v' : 'h';
-                  const arrowDx = perp==='v' ? 0 : (isEst ? 0 : 0);
-                  const arrowDy = isEst ? -30 : 30;
+                  const isEst = lamieraLatoBuono === 'esterno';
+                  const CLR = isEst ? '#3B7FE0' : '#D08008';
+
+                  // Calcola direzione perpendicolare al primo segmento per lato buono
+                  const firstDir = allSegs[0]?.dir;
+                  const perpX = (firstDir==='su'||firstDir==='giu') ? 40 : 0;
+                  const perpY = (firstDir==='dx'||firstDir==='sx') ? -40 : 0;
+                  const midIdx = Math.floor(nodes.length/2);
+                  const midNode = nodes[midIdx];
+                  const arrowTipX = midNode.x + perpX;
+                  const arrowTipY = midNode.y + perpY;
+
                   return (
                     <g>
-                      {/* Freccia lato buono */}
-                      <line x1={mid.x} y1={mid.y} x2={mid.x+arrowDx} y2={mid.y+arrowDy}
-                        stroke={isEst?"#3B7FE0":"#D08008"} strokeWidth="2.5" strokeDasharray="4,3"/>
+                      {/* Profilo principale */}
+                      <polyline points={pts} fill="none" stroke="#0F766E"
+                        strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+
+                      {/* Punto START con label */}
+                      <circle cx={nodes[0].x} cy={nodes[0].y} r="7" fill="#0F766E"/>
+                      <text x={nodes[0].x-14} y={nodes[0].y-10} fontSize="11" fill="#0F766E" fontWeight="800">START</text>
+
+                      {/* Punto END */}
+                      <circle cx={nodes[nodes.length-1].x} cy={nodes[nodes.length-1].y} r="6"
+                        fill="#fff" stroke="#0F766E" strokeWidth="3"/>
+
+                      {/* Quote su ogni segmento */}
+                      {nodes.slice(1).map((n,i)=>{
+                        const prev = nodes[i];
+                        const seg = allSegs[i];
+                        const mx = (prev.x+n.x)/2, my = (prev.y+n.y)/2;
+                        const isH = Math.abs(n.y-prev.y) < Math.abs(n.x-prev.x);
+                        // offset quota fuori dal profilo
+                        const qx = mx + (isH ? 0 : -30);
+                        const qy = my + (isH ? -16 : 0);
+                        return (
+                          <g key={i}>
+                            <circle cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="4"
+                              fill="#fff" stroke="#0F766E" strokeWidth="2"/>
+                            {/* sfondo quota */}
+                            <rect x={qx-22} y={qy-10} width="44" height="14" rx="4"
+                              fill="rgba(255,255,255,0.85)"/>
+                            <text x={qx} y={qy} textAnchor="middle" fontSize="12" fill="#0F172A" fontWeight="800">
+                              {seg.mm}
+                            </text>
+                            {seg.angolo && seg.angolo !== 90 && (
+                              <text x={n.x.toFixed(1)} y={(n.y+16).toFixed(1)}
+                                textAnchor="middle" fontSize="10" fill="#D08008" fontWeight="700">{seg.angolo}°</text>
+                            )}
+                          </g>
+                        );
+                      })}
+
+                      {/* LATO BUONO — freccia perpendicolare al profilo */}
+                      <line x1={midNode.x} y1={midNode.y} x2={arrowTipX} y2={arrowTipY}
+                        stroke={CLR} strokeWidth="2.5" strokeDasharray="5,4"/>
                       <polygon
-                        points={`${mid.x+arrowDx},${mid.y+arrowDy} ${mid.x+arrowDx-5},${mid.y+arrowDy+(isEst?-10:10)} ${mid.x+arrowDx+5},${mid.y+arrowDy+(isEst?-10:10)}`}
-                        fill={isEst?"#3B7FE0":"#D08008"}/>
-                      {/* Badge */}
-                      <rect x={mid.x-30} y={mid.y+arrowDy+(isEst?-30:12)} width="60" height="16" rx="6"
-                        fill={isEst?"#3B7FE0":"#D08008"} opacity="0.9"/>
-                      <text x={mid.x} y={mid.y+arrowDy+(isEst?-19:23)}
-                        textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">
+                        points={`${arrowTipX},${arrowTipY} ${arrowTipX+(perpX?-7:perpY>0?-7:7)},${arrowTipY+(perpY?-7:8)} ${arrowTipX+(perpX?7:perpY>0?7:-7)},${arrowTipY+(perpY?-7:8)}`}
+                        fill={CLR}/>
+                      <rect x={arrowTipX-32} y={arrowTipY+(perpY<0?-22:6)} width="64" height="16" rx="6"
+                        fill={CLR}/>
+                      <text x={arrowTipX} y={arrowTipY+(perpY<0?-10:18)}
+                        textAnchor="middle" fontSize="10" fill="#fff" fontWeight="800">
                         ◐ {isEst?'ESTERNO':'INTERNO'}
                       </text>
                     </g>
                   );
                 })()}
-                {/* Nodi con quote */}
-                {nodes.slice(1).map((n,i)=>{
-                  const prev = nodes[i];
-                  const seg = allSegs[i];
-                  const mx = (prev.x+n.x)/2, my = (prev.y+n.y)/2;
-                  const isH = Math.abs(n.y-prev.y)<Math.abs(n.x-prev.x);
-                  return (
-                    <g key={i}>
-                      <circle cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="5"
-                        fill="#fff" stroke="#0F766E" strokeWidth="2"/>
-                      <text x={mx+(isH?0:-20)} y={my+(isH?-10:5)}
-                        textAnchor="middle" fontSize="11" fill="#0F172A" fontWeight="700">
-                        {seg.mm}mm
-                      </text>
-                      {seg.angolo && seg.angolo !== 90 && (
-                        <text x={n.x.toFixed(1)} y={(n.y+14).toFixed(1)}
-                          textAnchor="middle" fontSize="9" fill="#D08008">{seg.angolo}°</text>
-                      )}
-                    </g>
-                  );
-                })}
+
+                {/* Stato vuoto — solo START dot */}
+                {allSegs.length === 0 && (
+                  <circle cx="350" cy="230" r="7" fill="#0F766E" opacity="0.4"/>
+                )}
               </svg>
             </div>
 
