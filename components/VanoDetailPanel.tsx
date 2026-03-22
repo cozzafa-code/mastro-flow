@@ -2914,12 +2914,19 @@ export default function VanoDetailPanel() {
                   const isEst = lamieraLatoBuono === 'esterno';
                   const CLR = isEst ? '#3B7FE0' : '#D08008';
 
-                  // Calcola direzione perpendicolare al primo segmento per lato buono
-                  const firstDir = allSegs[0]?.dir;
-                  const perpX = (firstDir==='su'||firstDir==='giu') ? 40 : 0;
-                  const perpY = (firstDir==='dx'||firstDir==='sx') ? -40 : 0;
-                  const midIdx = Math.floor(nodes.length/2);
-                  const midNode = nodes[midIdx];
+                  // Segmento più lungo = direzione principale del profilo
+                  const longestSeg = allSegs.reduce((a,b)=>b.mm>a.mm?b:a, allSegs[0]);
+                  const mainDir = longestSeg.dir;
+                  // Perpendicolare: se profilo è verticale (su/giu) → freccia va a destra
+                  //                 se profilo è orizzontale (dx/sx) → freccia va in su
+                  const perpX = (mainDir==='su'||mainDir==='giu') ? 50 : 0;
+                  const perpY = (mainDir==='dx'||mainDir==='sx') ? -50 : 0;
+                  // Punto medio del segmento più lungo
+                  const longestIdx = allSegs.indexOf(longestSeg);
+                  const midNode = {
+                    x: (nodes[longestIdx].x + nodes[longestIdx+1].x) / 2,
+                    y: (nodes[longestIdx].y + nodes[longestIdx+1].y) / 2,
+                  };
                   const arrowTipX = midNode.x + perpX;
                   const arrowTipY = midNode.y + perpY;
 
@@ -2968,11 +2975,21 @@ export default function VanoDetailPanel() {
                       <line x1={midNode.x} y1={midNode.y} x2={arrowTipX} y2={arrowTipY}
                         stroke={CLR} strokeWidth="2.5" strokeDasharray="5,4"/>
                       <polygon
-                        points={`${arrowTipX},${arrowTipY} ${arrowTipX+(perpX?-7:perpY>0?-7:7)},${arrowTipY+(perpY?-7:8)} ${arrowTipX+(perpX?7:perpY>0?7:-7)},${arrowTipY+(perpY?-7:8)}`}
+                        points={(() => {
+                          // Punta freccia verso la direzione della freccia
+                          if(perpX > 0) return `${arrowTipX},${arrowTipY} ${arrowTipX-8},${arrowTipY-6} ${arrowTipX-8},${arrowTipY+6}`;
+                          if(perpX < 0) return `${arrowTipX},${arrowTipY} ${arrowTipX+8},${arrowTipY-6} ${arrowTipX+8},${arrowTipY+6}`;
+                          if(perpY < 0) return `${arrowTipX},${arrowTipY} ${arrowTipX-6},${arrowTipY+8} ${arrowTipX+6},${arrowTipY+8}`;
+                          return `${arrowTipX},${arrowTipY} ${arrowTipX-6},${arrowTipY-8} ${arrowTipX+6},${arrowTipY-8}`;
+                        })()}
                         fill={CLR}/>
-                      <rect x={arrowTipX-32} y={arrowTipY+(perpY<0?-22:6)} width="64" height="16" rx="6"
-                        fill={CLR}/>
-                      <text x={arrowTipX} y={arrowTipY+(perpY<0?-10:18)}
+                      <rect
+                        x={perpX>0 ? arrowTipX+4 : perpX<0 ? arrowTipX-68 : arrowTipX-32}
+                        y={perpY<0 ? arrowTipY-22 : perpY>0 ? arrowTipY+6 : arrowTipY-8}
+                        width="64" height="16" rx="6" fill={CLR}/>
+                      <text
+                        x={perpX>0 ? arrowTipX+36 : perpX<0 ? arrowTipX-36 : arrowTipX}
+                        y={perpY<0 ? arrowTipY-10 : perpY>0 ? arrowTipY+18 : arrowTipY+4}
                         textAnchor="middle" fontSize="10" fill="#fff" fontWeight="800">
                         ◐ {isEst?'ESTERNO':'INTERNO'}
                       </text>
