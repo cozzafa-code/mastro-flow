@@ -130,6 +130,11 @@ export default function VanoDetailPanel() {
   const [lamieraAngoloInput, setLamieraAngoloInput] = useState(false);
   const [lamieraAngolo, setLamieraAngolo] = useState('90');
   const [lastDirTap, setLastDirTap] = useState<string>('');
+  // ── LAMIERA ZOOM/PAN refs ────────────────────────────────
+  const lamieraZoom = React.useRef(1);
+  const lamieraPan = React.useRef({x:0,y:0});
+  const lamieraTouches = React.useRef<any[]>([]);
+  const lamieraSvgRef = React.useRef<SVGSVGElement>(null);
   // ── NUMPAD NATIVO ────────────────────────────────────────
   const [numpadField, setNumpadField] = useState<string|null>(null);
   const [numpadVal, setNumpadVal] = useState("");
