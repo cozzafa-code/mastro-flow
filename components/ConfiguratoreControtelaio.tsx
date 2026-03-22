@@ -1,10 +1,5 @@
 "use client";
 // @ts-nocheck
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — ConfiguratoreControtelaio
-// Engine identico alle lamiere: segmenti direzionali
-// + fill zone chiuse con materiali (EPS / Legno / Sede / Profilo)
-// ═══════════════════════════════════════════════════════════
 import React, { useState, useRef, useEffect } from "react";
 
 const FMono = "'JetBrains Mono','SF Mono',monospace";
@@ -14,7 +9,7 @@ const CT_MAT = [
   { id:"legno",  label:"Legno",   color:"#F5A623", stroke:"#C07010" },
   { id:"sede",   label:"Sede",    color:"#FFFFFF", stroke:"#DC1414", dash:true },
   { id:"profilo",label:"Profilo", color:"#E0E8F0", stroke:"#334455" },
-  { id:"vuoto",  label:"Vuoto",   color:"#F8F8F8", stroke:"#CCCCCC" },
+  { id:"vuoto",  label:"Vuoto",   color:"transparent", stroke:"none" },
 ];
 
 const DIRS = [
@@ -25,14 +20,14 @@ const DIRS = [
 ];
 
 const CT_PRESETS = [
-  { n:"STH5",   segs:[{dir:"dx",mm:350},{dir:"giu",mm:60}] },
-  { n:"PROS",   segs:[{dir:"dx",mm:280},{dir:"giu",mm:80},{dir:"sx",mm:60},{dir:"su",mm:40}] },
-  { n:"PROGCP", segs:[{dir:"dx",mm:280},{dir:"giu",mm:60},{dir:"sx",mm:50},{dir:"giu",mm:110},{dir:"sx",mm:230}] },
-  { n:"STH3",   segs:[{dir:"dx",mm:325},{dir:"giu",mm:80}] },
-  { n:"Libero", segs:[] },
+  { n:"STH5",   segs:[{dir:"dx",mm:350},{dir:"giu",mm:60}],   divs:[] },
+  { n:"PROS",   segs:[{dir:"dx",mm:280},{dir:"giu",mm:80},{dir:"sx",mm:60},{dir:"su",mm:40}], divs:[] },
+  { n:"PROGCP", segs:[{dir:"dx",mm:280},{dir:"giu",mm:60},{dir:"sx",mm:50},{dir:"giu",mm:110},{dir:"sx",mm:230}], divs:[] },
+  { n:"STH3",   segs:[{dir:"dx",mm:325},{dir:"giu",mm:80}],   divs:[] },
+  { n:"Libero", segs:[], divs:[] },
 ];
 
-function buildNodes(segs, VW=640, VH=340, PAD=50) {
+function buildNodes(segs, VW=640, VH=300, PAD=48) {
   let cx=0, cy=0;
   const raw = [{x:0,y:0}];
   segs.forEach(s => {
@@ -42,7 +37,7 @@ function buildNodes(segs, VW=640, VH=340, PAD=50) {
     if(s.dir==="giu") cy += s.mm;
     raw.push({x:cx, y:cy});
   });
-  if(raw.length<2) return raw.map(n=>({...n, sx:VW/2, sy:VH/2, scale:1, offX:0, offY:0}));
+  if(raw.length<2) return {nodes:raw.map(n=>({...n,sx:VW/2,sy:VH/2})), scale:1, offX:0, offY:0};
   const xs=raw.map(n=>n.x), ys=raw.map(n=>n.y);
   const minX=Math.min(...xs), maxX=Math.max(...xs);
   const minY=Math.min(...ys), maxY=Math.max(...ys);
@@ -50,30 +45,22 @@ function buildNodes(segs, VW=640, VH=340, PAD=50) {
   const scale=Math.min((VW-PAD*2)/rangeX,(VH-PAD*2)/rangeY);
   const offX=PAD+((VW-PAD*2)-rangeX*scale)/2-minX*scale;
   const offY=PAD+((VH-PAD*2)-rangeY*scale)/2-minY*scale;
-  return raw.map(n=>({...n, sx:n.x*scale+offX, sy:n.y*scale+offY, scale, offX, offY}));
+  const nodes = raw.map(n=>({...n, sx:n.x*scale+offX, sy:n.y*scale+offY}));
+  return {nodes, scale, offX, offY};
 }
 
-// Rileva zone rettangolari nella sagoma
-function detectZones(nodes) {
-  if(nodes.length<3) return [];
-  const xs=[...new Set(nodes.map(n=>n.x))].sort((a,b)=>a-b);
-  const ys=[...new Set(nodes.map(n=>n.y))].sort((a,b)=>a-b);
-  if(xs.length<2||ys.length<2) return [];
-  const zones = [];
-  for(let xi=0;xi<xs.length-1;xi++) {
-    for(let yi=0;yi<ys.length-1;yi++) {
-      const mx=(xs[xi]+xs[xi+1])/2, my=(ys[yi]+ys[yi+1])/2;
-      // Verifica che il centro sia dentro la sagoma (ray casting semplificato)
-      const pts=nodes.map(n=>({x:n.x,y:n.y}));
-      let inside=false;
-      for(let i=0,j=pts.length-1;i<pts.length;j=i++){
-        const xi2=pts[i].x, yi2=pts[i].y, xj=pts[j].x, yj=pts[j].y;
-        if(((yi2>my)!=(yj>my))&&(mx<(xj-xi2)*(my-yi2)/(yj-yi2)+xi2)) inside=!inside;
-      }
-      if(inside) zones.push({id:`${xi}_${yi}`,x1:xs[xi],y1:ys[yi],x2:xs[xi+1],y2:ys[yi+1]});
-    }
-  }
-  return zones;
+// Calcola bounding box della sagoma in mm
+function getBBox(segs) {
+  let cx=0,cy=0,minX=0,maxX=0,minY=0,maxY=0;
+  segs.forEach(s=>{
+    if(s.dir==="dx")  cx+=s.mm;
+    if(s.dir==="sx")  cx-=s.mm;
+    if(s.dir==="su")  cy-=s.mm;
+    if(s.dir==="giu") cy+=s.mm;
+    minX=Math.min(minX,cx);maxX=Math.max(maxX,cx);
+    minY=Math.min(minY,cy);maxY=Math.max(maxY,cy);
+  });
+  return {minX,maxX,minY,maxY,w:maxX-minX,h:maxY-minY};
 }
 
 export default function ConfiguratoreControtelaio({ value, onChange, T }) {
@@ -82,26 +69,25 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
 
   const init = value||{};
   const [segs,    setSegs]    = useState(init.segs    || []);
-  const [zones,   setZones]   = useState(init.zones   || {});
+  const [divs,    setDivs]    = useState(init.divs    || []); // {axis:"v"|"h", pos:mm, id}
+  const [zoneMat, setZoneMat] = useState(init.zoneMat || {}); // "r_c" → matId
   const [pDir,    setPDir]    = useState("dx");
   const [pMm,     setPMm]     = useState("");
   const [selIdx,  setSelIdx]  = useState(null);
   const [selZone, setSelZone] = useState(null);
-  const [misuraL, setMisuraL] = useState(init.misuraL || "");
-  const [misuraH, setMisuraH] = useState(init.misuraH || "");
+  const [misuraL, setMisuraL] = useState(init.misuraL||"");
+  const [misuraH, setMisuraH] = useState(init.misuraH||"");
   const touches = useRef([]);
   const zoomRef = useRef(1);
   const panRef  = useRef({x:0,y:0});
   const svgRef  = useRef(null);
 
   const VW=640, VH=300, PAD=48;
-  const nodes = buildNodes(segs,VW,VH,PAD);
+  const {nodes,scale,offX,offY} = buildNodes(segs,VW,VH,PAD);
+  const bbox = segs.length ? getBBox(segs) : {minX:0,maxX:300,minY:0,maxY:100,w:300,h:100};
   const sviluppata = segs.reduce((a,s)=>a+s.mm,0);
-  const detZones = detectZones(nodes);
 
-  useEffect(()=>{
-    onChange?.({segs,zones,misuraL,misuraH});
-  },[segs,zones,misuraL,misuraH]);
+  useEffect(()=>{ onChange?.({segs,divs,zoneMat,misuraL,misuraH}); },[segs,divs,zoneMat,misuraL,misuraH]);
 
   const addSeg = () => {
     const mm=parseFloat(pMm); if(!mm||mm<=0) return;
@@ -114,13 +100,24 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
     setPMm("");
   };
 
-  const pathPts = nodes.map(n=>n.sx.toFixed(1)+","+n.sy.toFixed(1)).join(" ");
+  // mm → svg px
+  const mToSx = (mx) => mx*scale+offX;
+  const mToSy = (my) => my*scale+offY;
 
-  // Converti mm → svg px
-  const mToS = (mx,my) => {
-    if(!nodes.length||!nodes[0].scale) return {sx:mx,sy:my};
-    const {scale,offX,offY} = nodes[0];
-    return {sx:mx*scale+offX, sy:my*scale+offY};
+  // Calcola celle dalla griglia divisori (in mm)
+  const vBreaks = [bbox.minX, ...[...new Set(divs.filter(d=>d.axis==="v").map(d=>d.pos))].sort((a,b)=>a-b), bbox.maxX];
+  const hBreaks = [bbox.minY, ...[...new Set(divs.filter(d=>d.axis==="h").map(d=>d.pos))].sort((a,b)=>a-b), bbox.maxY];
+
+  // Calcola SVG path della sagoma (per clipPath)
+  const pathPts = nodes.map(n=>n.sx.toFixed(1)+","+n.sy.toFixed(1)).join(" ");
+  const pathD   = nodes.map((n,i)=>(i===0?"M":"L")+n.sx.toFixed(1)+","+n.sy.toFixed(1)).join(" ")+" Z";
+
+  // Gestione click su zona
+  const handleZoneClick = (ri,ci,e) => {
+    e.stopPropagation();
+    const key=`${ri}_${ci}`;
+    setSelZone(selZone===key?null:key);
+    setSelIdx(null);
   };
 
   const applyTransform = () => {
@@ -136,7 +133,7 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
       <div style={{display:"flex",gap:4,padding:"6px 8px",overflowX:"auto",
         borderBottom:"1px solid "+Tc.bdr,background:Tc.bg}}>
         {CT_PRESETS.map(p=>(
-          <button key={p.n} onClick={()=>{setSegs(p.segs);setZones({});setSelIdx(null);setSelZone(null);}}
+          <button key={p.n} onClick={()=>{setSegs(p.segs);setDivs(p.divs||[]);setZoneMat({});setSelIdx(null);setSelZone(null);}}
             style={{padding:"4px 10px",borderRadius:6,border:"1.5px solid "+Tc.bdr,
               background:Tc.card,fontSize:10,fontWeight:700,cursor:"pointer",
               color:Tc.text,whiteSpace:"nowrap"}}>
@@ -165,18 +162,17 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
         }}
         onTouchEnd={e=>{touches.current=Array.from(e.touches);}}>
 
+        {/* Zoom buttons */}
         {segs.length>0&&(
-          <div style={{position:"absolute",top:6,right:6,zIndex:10,
-            display:"flex",flexDirection:"column",gap:3}}>
+          <div style={{position:"absolute",top:6,right:6,zIndex:10,display:"flex",flexDirection:"column",gap:3}}>
             {[{l:"+",d:1.3},{l:"−",d:0.77},{l:"↺",d:0}].map(btn=>(
               <div key={btn.l} onClick={()=>{
                 if(!btn.d){zoomRef.current=1;panRef.current={x:0,y:0};}
                 else zoomRef.current=Math.min(5,Math.max(0.3,zoomRef.current*btn.d));
                 applyTransform();
               }} style={{width:28,height:28,borderRadius:5,background:"rgba(255,255,255,0.9)",
-                border:"1px solid "+Tc.bdr,display:"flex",alignItems:"center",
-                justifyContent:"center",fontSize:btn.l==="↺"?13:17,fontWeight:800,
-                cursor:"pointer",color:Tc.acc}}>
+                border:"1px solid "+Tc.bdr,display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:btn.l==="↺"?13:17,fontWeight:800,cursor:"pointer",color:Tc.acc}}>
                 {btn.l}
               </div>
             ))}
@@ -185,20 +181,17 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
 
         {!segs.length&&(
           <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",
-            justifyContent:"center",flexDirection:"column",gap:6,color:"#94A3B8",
-            pointerEvents:"none",padding:20}}>
+            justifyContent:"center",flexDirection:"column",gap:6,color:"#94A3B8",pointerEvents:"none",padding:20}}>
             <div style={{fontSize:28}}>✏️</div>
             <div style={{fontSize:13,fontWeight:600}}>Disegna la sagoma del controtelaio</div>
-            <div style={{fontSize:10,textAlign:"center"}}>
-              Scegli una direzione, inserisci i mm e premi +<br/>
-              Poi tocca una zona per riempirla
-            </div>
+            <div style={{fontSize:10,textAlign:"center"}}>Scegli direzione → inserisci mm → premi +</div>
           </div>
         )}
 
         <svg ref={svgRef} width="100%" viewBox={"0 0 "+VW+" "+VH}
           style={{display:"block",transformOrigin:"center",transition:"transform 0.05s",
-            minHeight:160,maxHeight:260}}>
+            minHeight:160,maxHeight:280}}>
+
           <defs>
             <pattern id="ctE" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
               <rect width="8" height="8" fill="#C8DEF2"/>
@@ -212,43 +205,84 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
             <pattern id="ctG" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ECEEF3" strokeWidth="0.5"/>
             </pattern>
+            {/* ClipPath della sagoma — taglia i riempimenti */}
+            {segs.length>1&&(
+              <clipPath id="sagoma_clip">
+                <polygon points={pathPts}/>
+              </clipPath>
+            )}
           </defs>
+
           <rect width={VW} height={VH} fill="url(#ctG)"/>
 
-          {/* Zone riempite */}
-          {segs.length>=2&&detZones.map(z=>{
-            const matId=zones[z.id]||"vuoto";
-            const mat=CT_MAT.find(m=>m.id===matId)||CT_MAT[4];
-            const p1=mToS(z.x1,z.y1), p2=mToS(z.x2,z.y2);
-            const zx=Math.min(p1.sx,p2.sx), zy=Math.min(p1.sy,p2.sy);
-            const zw=Math.abs(p2.sx-p1.sx), zh=Math.abs(p2.sy-p1.sy);
-            const isSel=selZone===z.id;
-            const fill=mat.id==="eps"?"url(#ctE)":mat.id==="legno"?"url(#ctW)":mat.color;
-            return (
-              <g key={z.id} style={{cursor:"pointer"}}
-                onClick={()=>setSelZone(isSel?null:z.id)}>
-                <rect x={zx} y={zy} width={zw} height={zh} fill={fill}
-                  stroke={isSel?"#D08008":mat.stroke} strokeWidth={isSel?2.5:0.8}
-                  strokeDasharray={mat.dash?"6,3":undefined}/>
-                {zw>28&&zh>14&&(
-                  <text x={zx+zw/2} y={zy+zh/2+4} textAnchor="middle"
-                    fontSize={Math.min(10,zw*0.2,zh*0.5)} fontWeight="700"
-                    fontFamily={FMono} fill={mat.dash?"#DC1414":"#1A3A6A"}>
-                    {mat.id==="vuoto"?"":mat.label}
-                  </text>
-                )}
-                {isSel&&<polygon
-                  points={(zx+zw/2-5)+","+(zy-2)+" "+(zx+zw/2+5)+","+(zy-2)+" "+(zx+zw/2)+","+(zy+5)}
-                  fill="#D08008"/>}
-              </g>
-            );
-          })}
-
-          {/* Sagoma */}
-          {segs.length>0&&(
-            <polyline points={pathPts} fill="none" stroke="#1A3A6A"
-              strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+          {/* ── RIEMPIMENTI ZONE (ritagliati dalla sagoma) ── */}
+          {segs.length>1&&(
+            <g clipPath="url(#sagoma_clip)">
+              {hBreaks.slice(0,-1).map((y1,ri)=>
+                vBreaks.slice(0,-1).map((x1,ci)=>{
+                  const x2=vBreaks[ci+1], y2=hBreaks[ri+1];
+                  const key=`${ri}_${ci}`;
+                  const matId=zoneMat[key]||"vuoto";
+                  const mat=CT_MAT.find(m=>m.id===matId)||CT_MAT[4];
+                  const sx=mToSx(x1), sy=mToSy(y1);
+                  const sw=(x2-x1)*scale, sh=(y2-y1)*scale;
+                  const isSel=selZone===key;
+                  const fill=mat.id==="eps"?"url(#ctE)":mat.id==="legno"?"url(#ctW)":mat.color;
+                  return (
+                    <g key={key} style={{cursor:"pointer"}}
+                      onClick={e=>handleZoneClick(ri,ci,e)}>
+                      <rect x={sx} y={sy} width={sw} height={sh}
+                        fill={fill}
+                        stroke={isSel?"#D08008":mat.id==="sede"?"#DC1414":"none"}
+                        strokeWidth={isSel?2.5:mat.id==="sede"?1:0}
+                        strokeDasharray={mat.dash&&!isSel?"6,3":undefined}/>
+                      {isSel&&(
+                        <rect x={sx+1} y={sy+1} width={sw-2} height={sh-2}
+                          fill="none" stroke="#D08008" strokeWidth={2.5}
+                          strokeDasharray="6,3"/>
+                      )}
+                      {/* Label materiale */}
+                      {sw>30&&sh>16&&mat.id!=="vuoto"&&(
+                        <text x={sx+sw/2} y={sy+sh/2+4} textAnchor="middle"
+                          fontSize={Math.min(11,sw*0.18,sh*0.45)} fontWeight="800"
+                          fontFamily={FMono}
+                          fill={mat.id==="sede"?"#DC1414":mat.id==="eps"?"#1A3A6A":"#774400"}>
+                          {mat.label}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })
+              )}
+            </g>
           )}
+
+          {/* ── PROFILO SAGOMA (sopra i riempimenti) ── */}
+          {segs.length>0&&(
+            <polygon points={pathPts} fill="none" stroke="#1A3A6A"
+              strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          )}
+
+          {/* Divisori */}
+          {segs.length>1&&divs.map(d=>{
+            if(d.axis==="v"){
+              const sx=mToSx(d.pos);
+              return (
+                <g key={d.id}>
+                  <line x1={sx} y1={mToSy(bbox.minY)} x2={sx} y2={mToSy(bbox.maxY)}
+                    stroke="#8B5CF6" strokeWidth={1.5} strokeDasharray="4,3"/>
+                </g>
+              );
+            } else {
+              const sy=mToSy(d.pos);
+              return (
+                <g key={d.id}>
+                  <line x1={mToSx(bbox.minX)} y1={sy} x2={mToSx(bbox.maxX)} y2={sy}
+                    stroke="#0D9488" strokeWidth={1.5} strokeDasharray="4,3"/>
+                </g>
+              );
+            }
+          })}
 
           {/* Segmento selezionato highlight */}
           {selIdx!==null&&selIdx<nodes.length-1&&(
@@ -276,8 +310,7 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
             const qx=mx+(isH?0:-28), qy=my+(isH?-18:0);
             return (
               <g key={i}>
-                <rect x={qx-20} y={qy-9} width={40} height={14} rx={4}
-                  fill="rgba(255,255,255,0.9)"/>
+                <rect x={qx-20} y={qy-9} width={40} height={14} rx={4} fill="rgba(255,255,255,0.92)"/>
                 <text x={qx} y={qy+1} textAnchor="middle" fontSize={11}
                   fill="#0F172A" fontWeight="800" fontFamily={FMono}>{seg.mm}</text>
               </g>
@@ -315,9 +348,7 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
             );
           })}
           <span style={{padding:"3px 8px",background:"#F1F5F9",borderRadius:6,
-            fontSize:10,fontWeight:600,color:"#64748B"}}>
-            📏 {sviluppata}mm
-          </span>
+            fontSize:10,fontWeight:600,color:"#64748B"}}>📏 {sviluppata}mm</span>
         </div>
       )}
 
@@ -331,10 +362,10 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:4}}>
             {CT_MAT.map(mat=>{
-              const isAct=(zones[selZone]||"vuoto")===mat.id;
+              const isAct=(zoneMat[selZone]||"vuoto")===mat.id;
               return (
                 <div key={mat.id}
-                  onClick={()=>setZones({...zones,[selZone]:mat.id})}
+                  onClick={()=>setZoneMat({...zoneMat,[selZone]:mat.id})}
                   style={{padding:"5px 2px",borderRadius:6,textAlign:"center",
                     cursor:"pointer",border:"1.5px solid "+(isAct?mat.stroke:Tc.bdr),
                     background:isAct?mat.color:"#fff"}}>
@@ -361,6 +392,37 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Divisori */}
+      {segs.length>1&&(
+        <div style={{display:"flex",gap:4,padding:"5px 8px",
+          borderTop:"1px solid "+Tc.bdr,alignItems:"center",flexWrap:"wrap",background:Tc.bg}}>
+          <span style={{fontSize:9,fontWeight:700,color:Tc.sub}}>DIVIDI:</span>
+          <button onClick={()=>setDivs(d=>[...d,{axis:"v",pos:Math.round(bbox.w/2)+bbox.minX,id:Date.now()}])}
+            style={{padding:"3px 8px",borderRadius:5,background:"#8B5CF612",
+              border:"1px solid #8B5CF630",cursor:"pointer",fontSize:9,fontWeight:700,color:"#8B5CF6"}}>
+            +│ Verticale
+          </button>
+          <button onClick={()=>setDivs(d=>[...d,{axis:"h",pos:Math.round(bbox.h/2)+bbox.minY,id:Date.now()}])}
+            style={{padding:"3px 8px",borderRadius:5,background:"#0D948812",
+              border:"1px solid #0D948830",cursor:"pointer",fontSize:9,fontWeight:700,color:"#0D9488"}}>
+            +─ Orizzontale
+          </button>
+          {divs.map(d=>(
+            <div key={d.id} style={{display:"flex",alignItems:"center",gap:2,
+              padding:"2px 5px",borderRadius:4,
+              background:(d.axis==="v"?"#8B5CF6":"#0D9488")+"10"}}>
+              <input type="number" value={d.pos}
+                onChange={e=>setDivs(divs.map(x=>x.id===d.id?{...x,pos:parseInt(e.target.value)||0}:x))}
+                style={{width:40,padding:"1px",border:"none",borderRadius:3,
+                  fontSize:9,fontWeight:700,fontFamily:FMono,textAlign:"center",
+                  background:"transparent",color:d.axis==="v"?"#8B5CF6":"#0D9488"}}/>
+              <span onClick={()=>setDivs(divs.filter(x=>x.id!==d.id))}
+                style={{fontSize:10,color:Tc.red,cursor:"pointer",fontWeight:700}}>×</span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -395,15 +457,12 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
             padding:"7px 10px",borderRadius:8,background:"#FFF8EC",
             border:"1.5px solid "+Tc.acc,marginBottom:8}}>
-            <span style={{fontSize:11,fontWeight:700,color:Tc.acc}}>
-              ✏️ Modifica segmento {selIdx+1}
-            </span>
+            <span style={{fontSize:11,fontWeight:700,color:Tc.acc}}>✏️ Modifica segmento {selIdx+1}</span>
             <span onClick={()=>{setSelIdx(null);setPMm("");}}
               style={{fontSize:16,color:Tc.acc,cursor:"pointer",fontWeight:800}}>✕</span>
           </div>
         )}
 
-        {/* Direzioni */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:8}}>
           {DIRS.map(({d,label,name})=>(
             <div key={d} onClick={()=>setPDir(d)}
@@ -419,7 +478,6 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
           ))}
         </div>
 
-        {/* mm + pulsante */}
         <div style={{display:"flex",gap:8}}>
           <div style={{flex:1,position:"relative"}}>
             <input inputMode="decimal" value={pMm}
@@ -438,14 +496,13 @@ export default function ConfiguratoreControtelaio({ value, onChange, T }) {
               background:selIdx!==null?Tc.acc:"#1A9E73",color:"#fff",
               display:"flex",alignItems:"center",justifyContent:"center",
               fontSize:selIdx!==null?12:30,fontWeight:800,cursor:"pointer",
-              boxShadow:"0 4px 0 "+(selIdx!==null?"#A06006":"#157A56"),
-              flexShrink:0}}>
+              boxShadow:"0 4px 0 "+(selIdx!==null?"#A06006":"#157A56"),flexShrink:0}}>
             {selIdx!==null?"✓":"＋"}
           </div>
         </div>
 
         {segs.length>0&&(
-          <button onClick={()=>{setSegs([]);setZones({});setSelIdx(null);setSelZone(null);}}
+          <button onClick={()=>{setSegs([]);setDivs([]);setZoneMat({});setSelIdx(null);setSelZone(null);}}
             style={{marginTop:8,width:"100%",padding:"6px",borderRadius:8,
               border:"1px solid "+Tc.bdr,background:"white",
               color:Tc.sub,fontSize:10,cursor:"pointer",fontWeight:600}}>
