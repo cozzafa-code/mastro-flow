@@ -381,14 +381,39 @@ export default function ClientiPanel() {
               <textarea value={newCliente.note} onChange={e => setNewCliente(prev => ({...prev, note: e.target.value}))}
                 placeholder="Note aggiuntive..." rows={3} style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 13, color: T.text, fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
             </div>
-            <button onClick={() => {
-              if (!newCliente.nome.trim()) return;
-              setContatti(prev => [...prev, { id: "CT-" + Date.now(), ...newCliente, preferito: false, diario: [] }]);
-              setNewCliente({ nome: "", cognome: "", tipo: "cliente", telefono: "", email: "", indirizzo: "", piva: "", note: "" });
-              setShowNewCliente(false);
-            }} style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Salva contatto
-            </button>
+            {savedCliente ? (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ textAlign: "center", padding: "12px 0 16px" }}>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}><I d={ICO.checkCircle} s={28} c={T.grn} /></div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>{savedCliente.nome} {savedCliente.cognome || ""} salvato!</div>
+                  <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>Cosa vuoi fare adesso?</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div onClick={() => { setNewCM(prev => ({ ...prev, cliente: savedCliente.nome, cognome: savedCliente.cognome || "", telefono: savedCliente.telefono || "", indirizzo: savedCliente.indirizzo || "" })); setTab("commesse"); setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: T.acc, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+                    <I d={ICO.folder} s={18} c="#fff" /> Crea commessa per {savedCliente.nome}
+                  </div>
+                  <div onClick={() => { setTab("messaggi"); setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: T.blue, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+                    <I d={ICO.check} s={18} c="#fff" /> Aggiungi task / promemoria
+                  </div>
+                  <div onClick={() => { setTab("agenda"); setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: "#5856d6", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
+                    <I d={ICO.calendar} s={18} c="#fff" /> Crea appuntamento
+                  </div>
+                  <div onClick={() => { setShowNewCliente(false); setSavedCliente(null); }} style={{ padding: "14px 16px", borderRadius: 12, background: T.bg, color: T.sub, fontSize: 14, fontWeight: 600, cursor: "pointer", textAlign: "center", border: `1px solid ${T.bdr}` }}>
+                    Chiudi
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => {
+                if (!newCliente.nome.trim()) return;
+                const nuovoC = { id: "CT-" + Date.now(), ...newCliente, preferito: false, diario: [] };
+                setContatti(prev => [...prev, nuovoC]);
+                setSavedCliente(nuovoC);
+                setNewCliente({ nome: "", cognome: "", tipo: "cliente", telefono: "", email: "", indirizzo: "", piva: "", note: "" });
+              }} style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                <I d={ICO.checkCircle} s={14} c="#fff" /> Salva contatto
+              </button>
+            )}
           </div>
         </div>
       );
