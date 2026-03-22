@@ -814,12 +814,13 @@ export default function VanoDetailPanel() {
                     </div>;
                   })}
                 </div>
-                {v.lamiera && (
-                  <div style={{marginTop:4,padding:"10px 12px",borderRadius:10,
+                <div style={{marginTop:4,padding:"10px 12px",borderRadius:10,
                     background:"#0F766E10",border:"1px solid #0F766E30"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
                       <div>
-                        <div style={{fontSize:12,fontWeight:700,color:"#0F766E"}}>Lamiera {v.lamiera}</div>
+                        <div style={{fontSize:12,fontWeight:700,color:"#0F766E"}}>
+                          {v.lamiera ? `Lamiera ${v.lamiera}` : "Disegno lamiera"}
+                        </div>
                         <div style={{fontSize:10,color:T.sub}}>
                           L {v.misure?.lCentro||"?"}mm × H {v.misure?.hCentro||"?"}mm
                         </div>
@@ -894,7 +895,6 @@ export default function VanoDetailPanel() {
                       );
                     })()}
                   </div>
-                )}
               </div>
             },
             { id:"controtelaio", icon:"◻", label:"Controtelaio",
