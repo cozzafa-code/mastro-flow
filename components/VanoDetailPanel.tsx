@@ -130,6 +130,8 @@ export default function VanoDetailPanel() {
   const [lamieraAngoloInput, setLamieraAngoloInput] = useState(false);
   const [lamieraAngolo, setLamieraAngolo] = useState('90');
   const [lastDirTap, setLastDirTap] = useState<string>('');
+  const [lamieraLatoInfisso, setLamieraLatoInfisso] = useState<'alto'|'basso'|'sx'|'dx'|''>('');
+  const [lamieraLunghezza, setLamieraLunghezza] = useState('');
   // ── LAMIERA ZOOM/PAN refs ────────────────────────────────
   const lamieraZoom = React.useRef(1);
   const lamieraPan = React.useRef({x:0,y:0});
@@ -833,6 +835,9 @@ export default function VanoDetailPanel() {
                       <div onClick={e=>{e.stopPropagation();
                         if(v.lamieraPieghe) setLamieraPieghe(v.lamieraPieghe as any);
                         if(v.lamieraLatoBuono) setLamieraLatoBuono(v.lamieraLatoBuono as any);
+                        if(v.lamieraLatoInfisso) setLamieraLatoInfisso(v.lamieraLatoInfisso as any);
+                        if(v.lamieraLunghezza) setLamieraLunghezza(v.lamieraLunghezza||'');
+                        lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
                         setShowLamieraDisegno(true);}}
                         style={{padding:"7px 14px",borderRadius:8,background:"#0F766E",color:"#fff",
                           fontSize:12,fontWeight:700,cursor:"pointer",
@@ -2757,16 +2762,25 @@ export default function VanoDetailPanel() {
         const allSegs = lamieraPieghe;
 
         // Build nodes in mm, poi scala per fit
+        // angolo = angolo effettivo del tratto in gradi (0=destra, 90=su, 180=sinistra, 270=giu)
+        // dir + angolo: dir indica quadrante di partenza, angolo devia dalla direzione base
         const buildNodes = () => {
           let cx = 0, cy = 0;
           const raw: {x:number,y:number}[] = [{x:0,y:0}];
           allSegs.forEach(s => {
-            const a = s.angolo || 90;
-            const ar = (a * Math.PI) / 180;
-            if (s.dir==='dx') { cx += s.mm * Math.cos(ar < Math.PI/2 ? 0 : ar); cy += s.mm * Math.sin(ar < Math.PI/2 ? 0 : ar); }
-            else if (s.dir==='sx') { cx -= s.mm; }
-            else if (s.dir==='giu') { cy += s.mm; }
-            else if (s.dir==='su') { cy -= s.mm; }
+            const ang = s.angolo != null ? s.angolo : 90;
+            const ar = (ang * Math.PI) / 180;
+            // Direzione base: dx=0°, su=90°, sx=180°, giu=270°
+            let baseAngle = 0;
+            if(s.dir==='su')  baseAngle = Math.PI/2;
+            if(s.dir==='sx')  baseAngle = Math.PI;
+            if(s.dir==='giu') baseAngle = 3*Math.PI/2;
+            // Se angolo è diverso da 90 (default), applica rotazione relativa
+            // angolo < 90 = piega verso destra della direzione, > 90 = verso sinistra
+            const devRad = (ang - 90) * Math.PI / 180;
+            const finalAngle = baseAngle - devRad;
+            cx += s.mm * Math.cos(finalAngle);
+            cy -= s.mm * Math.sin(finalAngle); // SVG y-down
             raw.push({x:cx, y:cy});
           });
           // Fit in viewBox 700x460 con padding 60
@@ -2802,19 +2816,26 @@ export default function VanoDetailPanel() {
             <div style={{background:'#0F766E',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
               <div style={{flex:1}}>
                 <div style={{color:'#fff',fontSize:15,fontWeight:800}}>Disegno lamiera {v.lamiera||''}</div>
-                {allSegs.length===0
-                  ? <div style={{color:'rgba(255,255,255,0.7)',fontSize:11,marginTop:1}}>Aggiungi segmenti dal basso</div>
-                  : <div style={{display:'flex',gap:10,marginTop:4,flexWrap:'wrap'}}>
-                      <div style={{background:'rgba(255,255,255,0.18)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700}}>
-                        📏 Sviluppata: <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sviluppata}</span> mm
-                      </div>
-                      {lunghezzaPrincipale>0 && (
-                        <div style={{background:'rgba(255,255,255,0.18)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700}}>
-                          ↔ Luce: <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{lunghezzaPrincipale}</span> mm
-                        </div>
-                      )}
-                    </div>
-                }
+                <div style={{display:'flex',gap:6,marginTop:3,flexWrap:'wrap',alignItems:'center'}}>
+                  {allSegs.length===0
+                    ? <span style={{color:'rgba(255,255,255,0.7)',fontSize:11}}>Aggiungi segmenti dal basso</span>
+                    : <>
+                        <span style={{background:'rgba(255,255,255,0.18)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700}}>
+                          📏 {sviluppata}mm
+                        </span>
+                        {lamieraLunghezza && (
+                          <span style={{background:'rgba(255,255,255,0.18)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:700}}>
+                            ↔ L:{lamieraLunghezza}mm
+                          </span>
+                        )}
+                        {lamieraLatoInfisso && (
+                          <span style={{background:'rgba(255,255,255,0.25)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:800}}>
+                            {lamieraLatoInfisso==='alto'?'↑ ALTO':lamieraLatoInfisso==='basso'?'↓ BASSO':lamieraLatoInfisso==='sx'?'← SX':'→ DX'}
+                          </span>
+                        )}
+                      </>
+                  }
+                </div>
               </div>
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
                 {/* Lato buono */}
@@ -3028,7 +3049,44 @@ export default function VanoDetailPanel() {
 
             {/* Pannello aggiunta — in basso */}
             <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'10px 14px 24px',flexShrink:0}}>
-              
+
+              {/* Lato infisso + Lunghezza */}
+              <div style={{display:'flex',gap:8,marginBottom:10}}>
+                {/* Lato infisso */}
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,fontWeight:800,color:'#64748B',marginBottom:4,textTransform:'uppercase'}}>Lato infisso</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
+                    {([['alto','↑ Alto'],['basso','↓ Basso'],['sx','← Sx'],['dx','→ Dx']] as const).map(([val,lbl])=>(
+                      <div key={val}
+                        onClick={()=>setLamieraLatoInfisso(lamieraLatoInfisso===val?'':val)}
+                        style={{padding:'6px 4px',borderRadius:7,textAlign:'center',cursor:'pointer',
+                          border:`1.5px solid ${lamieraLatoInfisso===val?'#0F766E':'#E2E8F0'}`,
+                          background:lamieraLatoInfisso===val?'#0F766E15':'#fff',
+                          fontSize:11,fontWeight:700,
+                          color:lamieraLatoInfisso===val?'#0F766E':'#64748B'}}>
+                        {lbl}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Lunghezza */}
+                <div style={{flex:1}}>
+                  <div style={{fontSize:9,fontWeight:800,color:'#64748B',marginBottom:4,textTransform:'uppercase'}}>Lunghezza (mm)</div>
+                  <input
+                    inputMode="decimal"
+                    value={lamieraLunghezza}
+                    onChange={e=>setLamieraLunghezza(e.target.value)}
+                    placeholder="es. 1200"
+                    style={{width:'100%',padding:'10px 12px',borderRadius:10,boxSizing:'border-box',
+                      border:'1.5px solid #E2E8F0',fontSize:20,fontWeight:800,
+                      fontFamily:"'JetBrains Mono',monospace",textAlign:'center',
+                      background:'#fff',color:'#0F172A'}}/>
+                  <div style={{fontSize:9,color:'#94A3B8',marginTop:3,textAlign:'center'}}>
+                    Sviluppata: <b style={{color:'#0F766E'}}>{allSegs.reduce((a,s)=>a+s.mm,0)}mm</b>
+                  </div>
+                </div>
+              </div>
+
               {/* Angolo personalizzato — appare solo se lamieraAngoloInput */}
               {lamieraAngoloInput && (
                 <div style={{marginBottom:8,display:'flex',alignItems:'center',gap:8,
@@ -3124,6 +3182,8 @@ export default function VanoDetailPanel() {
                 <div onClick={()=>{
                   updateV('lamieraPieghe',lamieraPieghe);
                   updateV('lamieraLatoBuono',lamieraLatoBuono);
+                  updateV('lamieraLatoInfisso',lamieraLatoInfisso);
+                  updateV('lamieraLunghezza',lamieraLunghezza);
                   setShowLamieraDisegno(false);
                 }}
                   style={{flex:2,padding:'13px',borderRadius:12,textAlign:'center',
