@@ -627,9 +627,7 @@ export default function SettingsPanel() {
         background: "#fff", borderRight: isDesktop ? "1px solid #E5E3DC" : "none",
         borderBottom: isDesktop ? "none" : "1px solid #E5E3DC",
         overflowY: isDesktop ? "auto" : "hidden",
-        overflowX: isDesktop ? "hidden" : "auto",
         display: "flex", flexDirection: "column",
-        maxHeight: isDesktop ? undefined : 200,
       }}>
         {/* Sidebar header */}
         <div style={{ padding: "16px 16px 8px", borderBottom: "1px solid #E5E3DC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -641,7 +639,20 @@ export default function SettingsPanel() {
         </div>
 
         {/* Nav groups */}
-        <div style={{ padding: "8px 0", flex: 1 }}>
+        {!isDesktop && (
+          <div style={{ padding: "8px 12px" }}>
+            <select
+              value={settingsTab}
+              onChange={e => setSettingsTab(e.target.value)}
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #E5E3DC", background: "#fff", fontSize: 14, fontWeight: 600, color: "#1A1A1C", fontFamily: "inherit" }}
+            >
+              {sidebarGroups.flatMap(g => g.items).map(item => (
+                <option key={item.id} value={item.id}>{item.l}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div style={{ padding: "8px 0", flex: 1, display: isDesktop ? "block" : "none" }}>
           {sidebarGroups.map(group => (
             <div key={group.label}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 16px 4px" }}>
