@@ -19,6 +19,7 @@ export default function CommessePanel() {
   } = useMastro();
 
   const TODAY = new Date().toISOString().split("T")[0];
+  const [sortBy, setSortBy] = React.useState("default"); // "default" | "nome" | "data" | "euro"
   const fmtEuro = (n: number) => n > 0 ? "€" + n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) : "";
   const fmtData = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "";
   const initials = (c: any) => ((c.cliente || "?").charAt(0) + (c.cognome || "").charAt(0)).toUpperCase();
@@ -165,6 +166,17 @@ export default function CommessePanel() {
 
   const fermeCount = cantieri.filter(c => isFerma(c)).length;
 
+  // Totale euro commesse filtrate
+  const totaleEuro = filtered.reduce((sum, c) => sum + (c.euro ? parseFloat(c.euro) : 0), 0);
+
+  // Sort
+  const filteredSorted = [...filtered].sort((a, b) => {
+    if (sortBy === "nome") return (a.cliente || "").localeCompare(b.cliente || "");
+    if (sortBy === "euro") return (parseFloat(b.euro) || 0) - (parseFloat(a.euro) || 0);
+    if (sortBy === "data") return (b.aggiornato || "").localeCompare(a.aggiornato || "");
+    return 0;
+  });
+
   return (
     <div style={{ paddingBottom: 80 }}>
 
@@ -222,6 +234,25 @@ export default function CommessePanel() {
         })}
       </div>
 
+      {/* Sort + Totale */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 10px" }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          {[["default","Recenti"],["nome","Nome"],["euro","€"],["data","Data"]].map(([v,l]) => (
+            <div key={v} onClick={() => setSortBy(v)} style={{
+              padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer",
+              background: sortBy === v ? T.acc : T.bg,
+              color: sortBy === v ? "#fff" : T.sub,
+              border: `1px solid ${sortBy === v ? T.acc : T.bdr}`
+            }}>{l}</div>
+          ))}
+        </div>
+        {totaleEuro > 0 && (
+          <div style={{ fontSize: 12, fontWeight: 800, color: T.text, fontFamily: FM }}>
+            Tot: €{totaleEuro.toLocaleString("it-IT", { maximumFractionDigits: 0 })}
+          </div>
+        )}
+      </div>
+
       {/* Content */}
       {filtered.length === 0 ? (
         <div style={{ padding: "60px 20px", textAlign: "center" }}>
@@ -232,7 +263,7 @@ export default function CommessePanel() {
         </div>
       ) : cmView === "list" ? (
         <div style={{ margin: "0 20px", borderRadius: 14, border: `1px solid ${T.bdr}`, overflow: "hidden", background: T.card }}>
-          {filtered.map(c => renderRow(c))}
+          {filteredSorted.map(c => renderRow(c))}
         </div>
       ) : (
         <div style={{
@@ -240,7 +271,7 @@ export default function CommessePanel() {
           gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr 1fr",
           gap: 10, padding: "0 20px"
         }}>
-          {filtered.map(c => renderCard(c))}
+          {filteredSorted.map(c => renderCard(c))}
         </div>
       )}
     </div>
