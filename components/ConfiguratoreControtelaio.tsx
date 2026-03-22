@@ -263,7 +263,7 @@ export default function ConfiguratoreControtelaio({value, sistemaId, onChange, T
           <defs>
             <clipPath id={`sgClip${i}`}>
               {/* Usa tutte le linee per costruire un path di clip approssimativo */}
-              <polygon points={getOutlinePoints(lines,f.x,f.y)}/>
+              <polygon points={getOutlinePoints(lines)}/>
             </clipPath>
           </defs>
           <circle cx={sx} cy={sy} r={R*S.sc} fill={fill} opacity={0.9}/>
@@ -279,36 +279,44 @@ export default function ConfiguratoreControtelaio({value, sistemaId, onChange, T
 
   // Costruisce i punti del contorno della zona che contiene il punto (x,y)
   // Approccio semplificato: usa tutte le linee come poligono
-  function getOutlinePoints(lines, px, py) {
-    // Raccoglie tutti i punti unici e li ordina per formare il contorno
-    const pts=[];
-    const visited=new Set();
-    lines.forEach(l=>{
-      const k1=`${Math.round(l.x1)},${Math.round(l.y1)}`;
-      const k2=`${Math.round(l.x2)},${Math.round(l.y2)}`;
-      if(!visited.has(k1)){visited.add(k1);pts.push({x:l.x1,y:l.y1});}
-      if(!visited.has(k2)){visited.add(k2);pts.push({x:l.x2,y:l.y2});}
+  // Ricostruisce il contorno seguendo le linee connesse in ordine
+  // Funziona per qualsiasi forma, anche non convessa (L, U, T ecc.)
+  function buildContour(lines) {
+    if(!lines||lines.length<2) return "";
+    // Costruisce adiacenza: ogni punto → linee connesse
+    const snap = (x,y) => `${Math.round(x*2)/2},${Math.round(y*2)/2}`;
+    const adj = {};
+    lines.forEach((l,i)=>{
+      const k1=snap(l.x1,l.y1), k2=snap(l.x2,l.y2);
+      if(!adj[k1]) adj[k1]={pt:{x:l.x1,y:l.y1},next:[]};
+      if(!adj[k2]) adj[k2]={pt:{x:l.x2,y:l.y2},next:[]};
+      adj[k1].next.push(k2);
+      adj[k2].next.push(k1);
     });
-    // Ordina per angolo dal centroide
-    const cx=pts.reduce((s,p)=>s+p.x,0)/pts.length;
-    const cy=pts.reduce((s,p)=>s+p.y,0)/pts.length;
-    pts.sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));
-    return pts.map(p=>{const s=S.toSvg(p.x,p.y);return s.sx.toFixed(1)+","+s.sy.toFixed(1);}).join(" ");
+    // Trova un punto di partenza (preferibilmente angolo top-left)
+    const keys=Object.keys(adj);
+    let start=keys[0];
+    let minScore=Infinity;
+    keys.forEach(k=>{const p=adj[k].pt; const s=p.x+p.y; if(s<minScore){minScore=s;start=k;}});
+    // Percorri il contorno
+    const path=[];
+    const visited=new Set();
+    let cur=start, prev=null;
+    for(let i=0;i<keys.length+1;i++){
+      path.push(adj[cur].pt);
+      visited.add(cur);
+      const neighbors=adj[cur].next.filter(n=>n!==prev&&!visited.has(n));
+      if(!neighbors.length) break;
+      prev=cur; cur=neighbors[0];
+    }
+    return path.map(p=>{const s=S.toSvg(p.x,p.y);return s.sx.toFixed(1)+","+s.sy.toFixed(1);}).join(" ");
   }
 
-  const polyContour = lines.length>2 ? (() => {
-    const pts=[];const visited=new Set();
-    lines.forEach(l=>{
-      const k1=`${Math.round(l.x1)},${Math.round(l.y1)}`;
-      const k2=`${Math.round(l.x2)},${Math.round(l.y2)}`;
-      if(!visited.has(k1)){visited.add(k1);pts.push({x:l.x1,y:l.y1});}
-      if(!visited.has(k2)){visited.add(k2);pts.push({x:l.x2,y:l.y2});}
-    });
-    const cx=pts.reduce((s,p)=>s+p.x,0)/pts.length;
-    const cy=pts.reduce((s,p)=>s+p.y,0)/pts.length;
-    pts.sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));
-    return pts.map(p=>{const s=S.toSvg(p.x,p.y);return s.sx.toFixed(1)+","+s.sy.toFixed(1);}).join(" ");
-  })() : "";
+  function getOutlinePoints(lines) {
+    return buildContour(lines);
+  }
+
+  const polyContour = lines.length>=2 ? buildContour(lines) : "";
 
   const curSvg = cursor&&pending ? S.toSvg(cursor.x,cursor.y) : null;
   const pendSvg = pending ? S.toSvg(pending.x1,pending.y1) : null;
