@@ -1,209 +1,327 @@
 "use client";
 // @ts-nocheck
+// ConfiguratoreControtelaio — motore freeLine identico a DisegnoTecnico
+// Disegni segmenti liberi con snap H/V, poi riempi le zone chiuse
 import React, { useState, useRef, useEffect, useCallback } from "react";
 
 const FMono = "'JetBrains Mono','SF Mono',monospace";
+const SNAP_PX = 12; // pixel di snap a punti esistenti
 
 const CT_MAT = [
-  { id:"eps",    label:"EPS",     color:"#C8DEF2", stroke:"#1A3A6A" },
-  { id:"legno",  label:"Legno",   color:"#F5A623", stroke:"#C07010" },
-  { id:"sede",   label:"Sede",    color:"#FFFFFF", stroke:"#DC1414", dash:true },
-  { id:"profilo",label:"Profilo", color:"#E0E8F0", stroke:"#334455" },
+  { id:"eps",    label:"EPS",    color:"#C8DEF2", stroke:"#1A3A6A" },
+  { id:"legno",  label:"Legno",  color:"#F5A623", stroke:"#C07010" },
+  { id:"sede",   label:"Sede",   color:"#FFFFFF", stroke:"#DC1414", dash:true },
+  { id:"profilo",label:"Profilo",color:"#E0E8F0", stroke:"#334455" },
 ];
 
-const DIRS = [
-  { d:"dx", label:"→", name:"Destra"   },
-  { d:"su", label:"↑", name:"Su"       },
-  { d:"sx", label:"←", name:"Sinistra" },
-  { d:"giu",label:"↓", name:"Giù"     },
-];
-
+// Preset — linee già disegnate in coordinate mm (origine 0,0 = angolo alto-sx)
 const CT_PRESETS = [
-  { n:"STH5",  ids:["STH5","STH6","STH5I","STH6I"],
-    segs:[{dir:"dx",mm:350},{dir:"giu",mm:60}],
-    divs:[{axis:"v",pos:50,id:1},{axis:"v",pos:300,id:2}],
-    mat:{"0_0":"sede","0_1":"eps","0_2":"sede"} },
-  { n:"PROS",  ids:["PROS","PROI"],
-    segs:[{dir:"dx",mm:280},{dir:"giu",mm:80},{dir:"sx",mm:60},{dir:"su",mm:40}],
-    divs:[], mat:{"0_0":"eps"} },
-  { n:"PROGCP",ids:["PROGCP","PROGC","PROIG","PROG"],
-    segs:[{dir:"dx",mm:280},{dir:"giu",mm:60},{dir:"sx",mm:50},{dir:"giu",mm:110},{dir:"sx",mm:230}],
-    divs:[], mat:{"0_0":"legno"} },
-  { n:"STH3",  ids:["STH3","STH3I"],
-    segs:[{dir:"dx",mm:325},{dir:"giu",mm:80}],
-    divs:[{axis:"v",pos:50,id:3}], mat:{"0_0":"sede","0_1":"eps"} },
-  { n:"STF5",  ids:["STF5","STF6","STF5I","STF6I","STF3","STF3I"],
-    segs:[{dir:"dx",mm:350},{dir:"giu",mm:44}],
-    divs:[{axis:"v",pos:50,id:4},{axis:"v",pos:300,id:5}],
-    mat:{"0_0":"sede","0_1":"profilo","0_2":"sede"} },
+  { n:"STH5", ids:["STH5","STH6","STH5I","STH6I"],
+    lines:[
+      {x1:0,y1:0,x2:350,y2:0},
+      {x1:350,y1:0,x2:350,y2:60},
+      {x1:350,y1:60,x2:0,y2:60},
+      {x1:0,y1:60,x2:0,y2:0},
+      {x1:50,y1:0,x2:50,y2:60},
+      {x1:300,y1:0,x2:300,y2:60},
+    ],
+    fills:[{x:25,y:30,mat:"sede"},{x:175,y:30,mat:"eps"},{x:325,y:30,mat:"sede"}],
+  },
+  { n:"PROS", ids:["PROS","PROI"],
+    lines:[
+      {x1:0,y1:0,x2:280,y2:0},
+      {x1:280,y1:0,x2:280,y2:80},
+      {x1:280,y1:80,x2:220,y2:80},
+      {x1:220,y1:80,x2:220,y2:40},
+      {x1:220,y1:40,x2:0,y2:40},
+      {x1:0,y1:40,x2:0,y2:0},
+    ],
+    fills:[{x:140,y:20,mat:"eps"}],
+  },
+  { n:"PROGCP", ids:["PROGCP","PROGC","PROIG","PROG"],
+    lines:[
+      {x1:0,y1:0,x2:280,y2:0},
+      {x1:280,y1:0,x2:280,y2:170},
+      {x1:280,y1:170,x2:0,y2:170},
+      {x1:0,y1:170,x2:0,y2:0},
+      {x1:0,y1:60,x2:230,y2:60},
+      {x1:230,y1:0,x2:230,y2:60},
+    ],
+    fills:[{x:115,y:30,mat:"legno"},{x:140,y:115,mat:"eps"}],
+  },
+  { n:"STH3", ids:["STH3","STH3I"],
+    lines:[
+      {x1:0,y1:0,x2:325,y2:0},
+      {x1:325,y1:0,x2:325,y2:80},
+      {x1:325,y1:80,x2:0,y2:80},
+      {x1:0,y1:80,x2:0,y2:0},
+      {x1:50,y1:0,x2:50,y2:80},
+    ],
+    fills:[{x:25,y:40,mat:"sede"},{x:187,y:40,mat:"eps"}],
+  },
+  { n:"STF5", ids:["STF5","STF6","STF5I","STF6I","STF3","STF3I"],
+    lines:[
+      {x1:0,y1:0,x2:350,y2:0},
+      {x1:350,y1:0,x2:350,y2:44},
+      {x1:350,y1:44,x2:0,y2:44},
+      {x1:0,y1:44,x2:0,y2:0},
+      {x1:50,y1:0,x2:50,y2:44},
+      {x1:300,y1:0,x2:300,y2:44},
+    ],
+    fills:[{x:25,y:22,mat:"sede"},{x:175,y:22,mat:"profilo"},{x:325,y:22,mat:"sede"}],
+  },
 ];
 
-function buildNodes(segs) {
-  let cx=0,cy=0;
-  const raw=[{x:0,y:0}];
-  (segs||[]).forEach(s=>{
-    if(s.dir==="dx") cx+=s.mm;
-    if(s.dir==="sx") cx-=s.mm;
-    if(s.dir==="su") cy-=s.mm;
-    if(s.dir==="giu") cy+=s.mm;
-    raw.push({x:cx,y:cy});
+// Flood-fill: trova quali linee circondano il punto P (in mm)
+// Restituisce true se il punto è "dentro" una regione chiusa
+function pointInPolygon(px, py, lines) {
+  // Ray casting semplice lungo asse X
+  let crosses = 0;
+  lines.forEach(l => {
+    const {x1,y1,x2,y2} = l;
+    if ((y1 > py) !== (y2 > py)) {
+      const xIntersect = x1 + (py - y1) * (x2 - x1) / (y2 - y1);
+      if (px < xIntersect) crosses++;
+    }
   });
-  return raw;
+  return crosses % 2 === 1;
 }
 
-function getBBox(pts) {
-  if(!pts||!pts.length) return {minX:0,maxX:300,minY:0,maxY:100,w:300,h:100};
-  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+function getBBox(lines) {
+  if(!lines||!lines.length) return {minX:0,maxX:300,minY:0,maxY:100,w:300,h:100};
+  const xs=[...lines.map(l=>l.x1),...lines.map(l=>l.x2)];
+  const ys=[...lines.map(l=>l.y1),...lines.map(l=>l.y2)];
   const minX=Math.min(...xs),maxX=Math.max(...xs);
   const minY=Math.min(...ys),maxY=Math.max(...ys);
   return {minX,maxX,minY,maxY,w:(maxX-minX)||1,h:(maxY-minY)||1};
 }
 
-function scaleFor(pts,VW,VH,PAD) {
-  const bb=getBBox(pts);
-  const sc=Math.min((VW-PAD*2)/bb.w,(VH-PAD*2)/bb.h);
-  const offX=PAD+((VW-PAD*2)-bb.w*sc)/2-bb.minX*sc;
-  const offY=PAD+((VH-PAD*2)-bb.h*sc)/2-bb.minY*sc;
-  return {sc,offX,offY,bb,
-    toSvg:(p)=>({sx:p.x*sc+offX,sy:p.y*sc+offY}),
-    toWorld:(sx,sy)=>({x:(sx-offX)/sc,y:(sy-offY)/sc})};
+function scaleFor(lines, VW, VH, PAD) {
+  const bb = getBBox(lines);
+  const sc = Math.min((VW-PAD*2)/bb.w, (VH-PAD*2)/bb.h);
+  const offX = PAD + ((VW-PAD*2) - bb.w*sc)/2 - bb.minX*sc;
+  const offY = PAD + ((VH-PAD*2) - bb.h*sc)/2 - bb.minY*sc;
+  return { sc, offX, offY, bb,
+    toSvg: (x,y) => ({sx: x*sc+offX, sy: y*sc+offY}),
+    toWorld: (sx,sy) => ({x:(sx-offX)/sc, y:(sy-offY)/sc})
+  };
 }
 
-export default function ConfiguratoreControtelaio({value,sistemaId,onChange,T}) {
-  const Tc=T||{bg:"#F2F1EC",card:"#FFFFFF",bdr:"#E5E3DC",text:"#1A1A1C",
+export default function ConfiguratoreControtelaio({value, sistemaId, onChange, T}) {
+  const Tc = T||{bg:"#F2F1EC",card:"#FFFFFF",bdr:"#E5E3DC",text:"#1A1A1C",
     sub:"#8E8E93",acc:"#D08008",grn:"#1A9E73",red:"#DC4444",blue:"#3B7FE0"};
 
-  const getPreset=(sid)=>CT_PRESETS.find(p=>p.ids?.includes(sid))||null;
+  const getPreset = (sid) => CT_PRESETS.find(p=>p.ids?.includes(sid))||null;
+  const init = value||{};
+  const initP = (!init.lines?.length && sistemaId) ? getPreset(sistemaId) : null;
 
-  const init=value||{};
-  const initP=(!init.segs?.length&&sistemaId)?getPreset(sistemaId):null;
-
-  const [segs,    setSegs]    = useState(initP?.segs||init.segs||[]);
-  const [divs,    setDivs]    = useState(initP?.divs||init.divs||[]);
-  const [zoneMat, setZoneMat] = useState(initP?.mat||init.zoneMat||{"0_0":"eps"});
-  const [pDir,    setPDir]    = useState("dx");
-  const [pMm,     setPMm]     = useState("");
-  const [selIdx,  setSelIdx]  = useState(null);
-  const [selZone, setSelZone] = useState("0_0");
+  const [lines,   setLines]   = useState(initP?.lines  || init.lines  || []);
+  const [fills,   setFills]   = useState(initP?.fills  || init.fills  || []);
+  const [pending, setPending] = useState(null); // {x1,y1} punto iniziale linea in corso
+  const [selMat,  setSelMat]  = useState("eps");
+  const [drawMode,setDrawMode]= useState(true); // true=disegna, false=seleziona/cancella
   const [misuraL, setMisuraL] = useState(init.misuraL||"");
   const [misuraH, setMisuraH] = useState(init.misuraH||"");
+  const [cursor,  setCursor]  = useState(null); // posizione cursore in mm mentre disegna
   const [zoom,    setZoom]    = useState(1);
   const [panX,    setPanX]    = useState(0);
   const [panY,    setPanY]    = useState(0);
-  const [dragIdx, setDragIdx] = useState(null);
-  const [ptsOvr,  setPtsOvr]  = useState(null);
-  const svgRef=useRef(null);
-  const tRef=useRef([]);
-  const pinchRef=useRef(null);
-  const prevSis=useRef(sistemaId);
+  const svgRef = useRef(null);
+  const tRef   = useRef([]);
+  const pinchRef = useRef(null);
+  const prevSis = useRef(sistemaId);
 
-  // pts = buildNodes(segs) oppure override da drag
-  const pts = ptsOvr || buildNodes(segs);
-  const sviluppata=segs.reduce((a,s)=>a+s.mm,0);
+  useEffect(()=>{onChange?.({lines,fills,misuraL,misuraH});},[lines,fills,misuraL,misuraH]);
 
-  useEffect(()=>{setPtsOvr(null);setZoom(1);setPanX(0);setPanY(0);},[segs]);
-  useEffect(()=>{onChange?.({segs,divs,zoneMat,misuraL,misuraH});},[segs,divs,zoneMat,misuraL,misuraH]);
-
-  // Auto-load quando sistemaId cambia
   useEffect(()=>{
-    if(sistemaId&&sistemaId!==prevSis.current){
+    if(sistemaId && sistemaId!==prevSis.current){
       prevSis.current=sistemaId;
       const p=getPreset(sistemaId);
-      if(p){setSegs(p.segs||[]);setDivs(p.divs||[]);setZoneMat(p.mat||{"0_0":"eps"});
-        setPtsOvr(null);setSelZone("0_0");setZoom(1);setPanX(0);setPanY(0);}
+      if(p){setLines(p.lines||[]);setFills(p.fills||[]);
+        setPending(null);setZoom(1);setPanX(0);setPanY(0);}
     }
   },[sistemaId]);
 
-  const resetView=()=>{setZoom(1);setPanX(0);setPanY(0);};
+  const resetView = () => {setZoom(1);setPanX(0);setPanY(0);};
 
-  const addSeg=()=>{
-    const mm=parseFloat(pMm);if(!mm||mm<=0)return;
-    if(selIdx!==null){setSegs(s=>s.map((x,i)=>i===selIdx?{dir:pDir,mm}:x));setSelIdx(null);}
-    else setSegs(s=>[...s,{dir:pDir,mm}]);
-    setPMm("");
+  const loadPreset = (p) => {
+    setLines(p.lines||[]);setFills(p.fills||[]);
+    setPending(null);setZoom(1);setPanX(0);setPanY(0);
   };
 
-  const loadPreset=(p)=>{
-    setSegs(p.segs||[]);setDivs(p.divs||[]);setZoneMat(p.mat||{"0_0":"eps"});
-    setPtsOvr(null);setSelIdx(null);setSelZone("0_0");resetView();
-  };
+  // Canvas dimensions
+  const VW = typeof window!=="undefined" ? Math.min(window.innerWidth-32,520) : 400;
+  const PAD = 50;
+  const bb = getBBox(lines.length ? lines : [{x1:0,y1:0,x2:300,y2:100}]);
+  const VH = Math.min(340, Math.max(180, VW * (bb.h/bb.w) + PAD*2));
+  const S = scaleFor(lines.length?lines:[{x1:0,y1:0,x2:300,y2:100}], VW, VH, PAD);
 
-  // Canvas dimensions — GRANDE
-  const VW=typeof window!=="undefined"?Math.min(window.innerWidth-32,520):400;
-  const VH=Math.max(260, VW*0.55);
-  const PAD=50;
-  const S=scaleFor(pts,VW,VH,PAD);
   const vbW=VW/zoom, vbH=VH/zoom;
   const vbX=panX+(VW-vbW)/2, vbY=panY+(VH-vbH)/2;
 
-  const clientToWorld=useCallback((cx,cy)=>{
-    const svg=svgRef.current;if(!svg)return{x:0,y:0};
+  // Converti evento → coordinate mondo mm
+  const evToWorld = useCallback((e) => {
+    const svg=svgRef.current; if(!svg) return {x:0,y:0};
     const r=svg.getBoundingClientRect();
-    const sx=vbX+(cx-r.left)/r.width*vbW;
-    const sy=vbY+(cy-r.top)/r.height*vbH;
+    const cl=e.touches?.[0]||e;
+    const sx=vbX+(cl.clientX-r.left)/r.width*vbW;
+    const sy=vbY+(cl.clientY-r.top)/r.height*vbH;
     return S.toWorld(sx,sy);
   },[vbX,vbY,vbW,vbH,S]);
 
-  const onPtrDown=useCallback((e,idx)=>{
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setDragIdx(idx);
-  },[]);
+  // Snap a punti esistenti o a linee H/V
+  const snapPoint = useCallback((wx,wy) => {
+    // Snap a punti esistenti
+    const pts=[...lines.flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}])];
+    for(const p of pts){
+      const d=Math.hypot((wx-p.x)*S.sc,(wy-p.y)*S.sc);
+      if(d<SNAP_PX) return {x:p.x,y:p.y,snapped:true};
+    }
+    // Snap orizzontale/verticale al punto iniziale della linea corrente
+    if(pending){
+      const adx=Math.abs(wx-pending.x1)*S.sc;
+      const ady=Math.abs(wy-pending.y1)*S.sc;
+      if(adx<SNAP_PX) return {x:pending.x1,y:wy,snapped:false};
+      if(ady<SNAP_PX) return {x:wx,y:pending.y1,snapped:false};
+    }
+    return {x:Math.round(wx/5)*5,y:Math.round(wy/5)*5,snapped:false};
+  },[lines,pending,S.sc]);
 
-  const onPtrMove=useCallback((e)=>{
-    if(dragIdx===null)return;
-    const w=clientToWorld(e.clientX,e.clientY);
-    const snap=5;
-    setPtsOvr(prev=>(prev||buildNodes(segs)).map((p,i)=>
-      i===dragIdx?{x:Math.round(w.x/snap)*snap,y:Math.round(w.y/snap)*snap}:p));
-  },[dragIdx,clientToWorld,segs]);
+  // Click sul canvas: disegna una linea
+  const handleCanvasClick = useCallback((e) => {
+    if(!drawMode) return;
+    const raw=evToWorld(e);
+    const {x,y}=snapPoint(raw.x,raw.y);
+    if(!pending){
+      setPending({x1:x,y1:y});
+    } else {
+      if(x===pending.x1&&y===pending.y1){setPending({x1:x,y1:y});return;}
+      setLines(prev=>[...prev,{id:Date.now(),x1:pending.x1,y1:pending.y1,x2:x,y2:y}]);
+      setPending({x1:x,y1:y}); // continua dal nuovo punto
+    }
+  },[drawMode,pending,evToWorld,snapPoint]);
 
-  const onPtrUp=useCallback(()=>setDragIdx(null),[]);
+  // Mouse move: mostra preview linea
+  const handleCanvasMove = useCallback((e) => {
+    if(!drawMode||!pending) return;
+    const raw=evToWorld(e);
+    const {x,y}=snapPoint(raw.x,raw.y);
+    setCursor({x,y});
+  },[drawMode,pending,evToWorld,snapPoint]);
 
-  const onTouchStart=useCallback((e)=>{
-    tRef.current=Array.from(e.touches);
-    pinchRef.current=null;
-  },[]);
+  // Click su zona: riempi con materiale selezionato
+  const handleFillClick = useCallback((e) => {
+    if(drawMode) return;
+    const raw=evToWorld(e);
+    const wx=raw.x, wy=raw.y;
+    // Aggiorna fill esistente vicino al tap, oppure aggiunge nuovo
+    // NON controlla se la forma è chiusa — funziona anche su forme aperte
+    const existing=fills.findIndex(f=>Math.hypot(f.x-wx,f.y-wy)*S.sc<28);
+    if(existing>=0){
+      setFills(f=>f.map((x,i)=>i===existing?{...x,mat:selMat}:x));
+    } else {
+      setFills(f=>[...f,{x:wx,y:wy,mat:selMat}]);
+    }
+  },[drawMode,lines,fills,selMat,evToWorld,S.sc]);
 
-  const onTouchMove=useCallback((e)=>{
+  const handleClick = useCallback((e) => {
+    e.preventDefault();
+    if(drawMode) handleCanvasClick(e);
+    else handleFillClick(e);
+  },[drawMode,handleCanvasClick,handleFillClick]);
+
+  // Touch handlers zoom/pan
+  const onTS=useCallback((e)=>{tRef.current=Array.from(e.touches);pinchRef.current=null;},[]);
+  const onTM=useCallback((e)=>{
     e.preventDefault();
     const ts=Array.from(e.touches);
-    if(ts.length===1&&dragIdx===null&&tRef.current[0]){
-      const dx=(ts[0].clientX-tRef.current[0].clientX)/zoom;
-      const dy=(ts[0].clientY-tRef.current[0].clientY)/zoom;
-      setPanX(x=>x-dx);setPanY(y=>y-dy);
-    }else if(ts.length===2&&tRef.current.length===2){
+    if(ts.length===1&&tRef.current[0]){
+      setPanX(x=>x-(ts[0].clientX-tRef.current[0].clientX)/zoom);
+      setPanY(y=>y-(ts[0].clientY-tRef.current[0].clientY)/zoom);
+    } else if(ts.length===2&&tRef.current.length===2){
       const d=Math.hypot(ts[0].clientX-ts[1].clientX,ts[0].clientY-ts[1].clientY);
-      if(pinchRef.current)setZoom(z=>Math.min(8,Math.max(0.3,z*d/pinchRef.current)));
+      if(pinchRef.current) setZoom(z=>Math.min(8,Math.max(0.3,z*d/pinchRef.current)));
       pinchRef.current=d;
     }
     tRef.current=ts;
-  },[dragIdx,zoom]);
+  },[zoom]);
+  const onTE=useCallback((e)=>{tRef.current=Array.from(e.touches);pinchRef.current=null;},[]);
 
-  const onTouchEnd=useCallback((e)=>{
-    tRef.current=Array.from(e.touches);
-    pinchRef.current=null;
-  },[]);
+  // Genera path SVG per il fill flood (grid di campionamento)
+  // Per ogni fill, disegna un cerchio di riempimento con clipPath del poligono
+  const renderFills = () => {
+    if(!lines.length) return null;
+    // Costruisce il path SVG del contorno (tutte le linee)
+    return fills.map((f,i)=>{
+      const mat=CT_MAT.find(m=>m.id===f.mat)||CT_MAT[0];
+      const {sx,sy}=S.toSvg(f.x,f.y);
+      const fill=mat.id==="eps"?"url(#ctE)":mat.id==="legno"?"url(#ctW)":mat.color;
+      // Usa un cerchio grande come fill — viene ritagliato dal clipPath della sagoma
+      const R=500; // raggio enorme — ritagliato dalla sagoma
+      return (
+        <g key={i} clipPath={`url(#sgClip${i})`}>
+          <defs>
+            <clipPath id={`sgClip${i}`}>
+              {/* Usa tutte le linee per costruire un path di clip approssimativo */}
+              <polygon points={getOutlinePoints(lines,f.x,f.y)}/>
+            </clipPath>
+          </defs>
+          <circle cx={sx} cy={sy} r={R*S.sc} fill={fill} opacity={0.9}/>
+          <text x={sx} y={sy+4} textAnchor="middle" fontSize={11}
+            fontWeight="800" fontFamily={FMono}
+            fill={mat.id==="eps"?"#1A3A6A":mat.id==="legno"?"#774400":"#334455"}>
+            {mat.id!=="sede"?mat.label:""}
+          </text>
+        </g>
+      );
+    });
+  };
 
-  const bbox=S.bb;
-  const mToSx=(mx)=>mx*S.sc+S.offX;
-  const mToSy=(my)=>my*S.sc+S.offY;
+  // Costruisce i punti del contorno della zona che contiene il punto (x,y)
+  // Approccio semplificato: usa tutte le linee come poligono
+  function getOutlinePoints(lines, px, py) {
+    // Raccoglie tutti i punti unici e li ordina per formare il contorno
+    const pts=[];
+    const visited=new Set();
+    lines.forEach(l=>{
+      const k1=`${Math.round(l.x1)},${Math.round(l.y1)}`;
+      const k2=`${Math.round(l.x2)},${Math.round(l.y2)}`;
+      if(!visited.has(k1)){visited.add(k1);pts.push({x:l.x1,y:l.y1});}
+      if(!visited.has(k2)){visited.add(k2);pts.push({x:l.x2,y:l.y2});}
+    });
+    // Ordina per angolo dal centroide
+    const cx=pts.reduce((s,p)=>s+p.x,0)/pts.length;
+    const cy=pts.reduce((s,p)=>s+p.y,0)/pts.length;
+    pts.sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));
+    return pts.map(p=>{const s=S.toSvg(p.x,p.y);return s.sx.toFixed(1)+","+s.sy.toFixed(1);}).join(" ");
+  }
 
-  const vBreaks=[bbox.minX,...[...new Set(divs.filter(d=>d.axis==="v").map(d=>d.pos))].sort((a,b)=>a-b),bbox.maxX];
-  const hBreaks=[bbox.minY,...[...new Set(divs.filter(d=>d.axis==="h").map(d=>d.pos))].sort((a,b)=>a-b),bbox.maxY];
-  const pathPts=pts.map(p=>{const s=S.toSvg(p);return s.sx.toFixed(1)+","+s.sy.toFixed(1);}).join(" ");
+  const polyContour = lines.length>2 ? (() => {
+    const pts=[];const visited=new Set();
+    lines.forEach(l=>{
+      const k1=`${Math.round(l.x1)},${Math.round(l.y1)}`;
+      const k2=`${Math.round(l.x2)},${Math.round(l.y2)}`;
+      if(!visited.has(k1)){visited.add(k1);pts.push({x:l.x1,y:l.y1});}
+      if(!visited.has(k2)){visited.add(k2);pts.push({x:l.x2,y:l.y2});}
+    });
+    const cx=pts.reduce((s,p)=>s+p.x,0)/pts.length;
+    const cy=pts.reduce((s,p)=>s+p.y,0)/pts.length;
+    pts.sort((a,b)=>Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx));
+    return pts.map(p=>{const s=S.toSvg(p.x,p.y);return s.sx.toFixed(1)+","+s.sy.toFixed(1);}).join(" ");
+  })() : "";
 
-  const currentMat=CT_MAT.find(m=>m.id===(zoneMat[selZone||"0_0"]||"eps"))||CT_MAT[0];
+  const curSvg = cursor&&pending ? S.toSvg(cursor.x,cursor.y) : null;
+  const pendSvg = pending ? S.toSvg(pending.x1,pending.y1) : null;
 
   return (
     <div style={{borderRadius:8,overflow:"hidden",border:"1px solid "+Tc.bdr,background:Tc.card}}>
 
-      {/* ── PRESET — solo nome, compatto ── */}
+      {/* Preset */}
       <div style={{display:"flex",gap:4,padding:"6px 8px",overflowX:"auto",
-        borderBottom:"1px solid "+Tc.bdr,background:Tc.bg,flexShrink:0}}>
+        borderBottom:"1px solid "+Tc.bdr,background:Tc.bg}}>
         {CT_PRESETS.map(p=>{
           const isActive=p.ids?.includes(sistemaId);
-          return (
+          return(
             <button key={p.n} onClick={()=>loadPreset(p)}
               style={{padding:"4px 10px",borderRadius:6,whiteSpace:"nowrap",
                 border:"1.5px solid "+(isActive?"#1A9E73":Tc.bdr),
@@ -214,54 +332,74 @@ export default function ConfiguratoreControtelaio({value,sistemaId,onChange,T}) 
             </button>
           );
         })}
-        <button onClick={()=>{setSegs([]);setDivs([]);setZoneMat({"0_0":"eps"});
-          setPtsOvr(null);setSelIdx(null);setSelZone("0_0");resetView();}}
+        <button onClick={()=>{setLines([]);setFills([]);setPending(null);resetView();}}
           style={{padding:"4px 8px",borderRadius:6,border:"1px solid "+Tc.bdr,
             background:"white",fontSize:10,cursor:"pointer",color:Tc.sub,marginLeft:"auto"}}>
           🗑
         </button>
       </div>
 
-      {/* ── CANVAS SVG ── */}
-      <div style={{position:"relative",background:"#F0FDF9",
-        height:VH,overflow:"hidden",touchAction:"none"}}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}>
+      {/* Mode switch */}
+      <div style={{display:"flex",gap:0,borderBottom:"1px solid "+Tc.bdr}}>
+        <div onClick={()=>{setDrawMode(true);setPending(null);}}
+          style={{flex:1,padding:"7px",textAlign:"center",cursor:"pointer",fontSize:10,
+            fontWeight:drawMode?800:500,
+            color:drawMode?"#0F766E":Tc.sub,
+            background:drawMode?"#F0FDF9":"white",
+            borderBottom:drawMode?"2px solid #0F766E":"2px solid transparent"}}>
+          ✏️ Disegna linee
+        </div>
+        <div onClick={()=>setDrawMode(false)}
+          style={{flex:1,padding:"7px",textAlign:"center",cursor:"pointer",fontSize:10,
+            fontWeight:!drawMode?800:500,
+            color:!drawMode?Tc.acc:Tc.sub,
+            background:!drawMode?"#FFF8E8":"white",
+            borderBottom:!drawMode?"2px solid "+Tc.acc:"2px solid transparent"}}>
+          🎨 Riempi zona
+        </div>
+      </div>
 
-        {/* Zoom buttons */}
+      {/* Canvas */}
+      <div style={{position:"relative",background:"#F0FDF9",height:VH,
+        overflow:"hidden",touchAction:"none"}}
+        onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}>
+
         <div style={{position:"absolute",top:8,right:8,zIndex:20,
           display:"flex",flexDirection:"column",gap:4}}>
           {[{l:"+",fn:()=>setZoom(z=>Math.min(8,z*1.35))},
             {l:"−",fn:()=>setZoom(z=>Math.max(0.3,z*0.74))},
             {l:"↺",fn:resetView}].map(b=>(
             <div key={b.l} onClick={b.fn}
-              style={{width:32,height:32,borderRadius:7,background:"rgba(255,255,255,0.92)",
+              style={{width:30,height:30,borderRadius:7,background:"rgba(255,255,255,0.92)",
                 border:"1px solid "+Tc.bdr,display:"flex",alignItems:"center",
-                justifyContent:"center",fontSize:b.l==="↺"?15:20,fontWeight:800,
-                cursor:"pointer",color:"#0F766E",boxShadow:"0 1px 4px rgba(0,0,0,0.1)"}}>
+                justifyContent:"center",fontSize:b.l==="↺"?14:18,fontWeight:800,
+                cursor:"pointer",color:"#0F766E"}}>
               {b.l}
             </div>
           ))}
         </div>
 
-        {!pts.length&&(
+        {/* Hint */}
+        {!lines.length&&(
           <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",
             justifyContent:"center",flexDirection:"column",gap:6,color:"#94A3B8",
             pointerEvents:"none"}}>
             <div style={{fontSize:28}}>✏️</div>
-            <div style={{fontSize:13,fontWeight:600}}>Disegna la sagoma</div>
-            <div style={{fontSize:10}}>Direzione + mm + ＋</div>
+            <div style={{fontSize:13,fontWeight:600}}>
+              {drawMode?"Tocca per iniziare a disegnare":"Seleziona prima un preset"}
+            </div>
+            <div style={{fontSize:10,textAlign:"center"}}>
+              Ogni tap crea un punto — i segmenti si uniscono automaticamente
+            </div>
           </div>
         )}
 
         <svg ref={svgRef} width="100%" height="100%"
           viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
           preserveAspectRatio="xMidYMid meet"
-          style={{display:"block",touchAction:"none"}}
-          onPointerMove={onPtrMove}
-          onPointerUp={onPtrUp}
-          onPointerLeave={onPtrUp}>
+          style={{display:"block",cursor:drawMode?"crosshair":"pointer"}}
+          onClick={handleClick}
+          onMouseMove={handleCanvasMove}>
 
           <defs>
             <pattern id="ctE" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
@@ -276,211 +414,158 @@ export default function ConfiguratoreControtelaio({value,sistemaId,onChange,T}) 
             <pattern id="ctG" width="25" height="25" patternUnits="userSpaceOnUse">
               <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#E8EEF5" strokeWidth="0.5"/>
             </pattern>
-            {pts.length>1&&<clipPath id="sgClip"><polygon points={pathPts}/></clipPath>}
+            {polyContour&&<clipPath id="mainClip"><polygon points={polyContour}/></clipPath>}
           </defs>
 
           <rect x={vbX} y={vbY} width={vbW} height={vbH} fill="url(#ctG)"/>
 
           {/* Riempimenti */}
-          {pts.length>1&&(
-            <g clipPath="url(#sgClip)">
-              {hBreaks.slice(0,-1).map((_,ri)=>
-                vBreaks.slice(0,-1).map((_,ci)=>{
-                  const x1=vBreaks[ci],y1=hBreaks[ri],x2=vBreaks[ci+1],y2=hBreaks[ri+1];
-                  const key=`${ri}_${ci}`;
-                  const mat=CT_MAT.find(m=>m.id===(zoneMat[key]||"eps"))||CT_MAT[0];
-                  const sx=mToSx(x1),sy=mToSy(y1);
-                  const sw=(x2-x1)*S.sc,sh=(y2-y1)*S.sc;
-                  const isSel=selZone===key;
-                  const fill=mat.id==="eps"?"url(#ctE)":mat.id==="legno"?"url(#ctW)":mat.color;
-                  return (
-                    <g key={key} style={{cursor:"pointer"}}
-                      onClick={e=>{e.stopPropagation();setSelZone(key);}}>
-                      <rect x={sx} y={sy} width={sw} height={sh} fill={fill}/>
-                      {isSel&&<rect x={sx+1} y={sy+1} width={sw-2} height={sh-2}
-                        fill="none" stroke="#D08008" strokeWidth={2} strokeDasharray="5,3"/>}
-                      {sw>40&&sh>18&&mat.id!=="sede"&&(
-                        <text x={sx+sw/2} y={sy+sh/2+4} textAnchor="middle"
-                          fontSize={Math.min(12,sw*0.13,sh*0.35)} fontWeight="800"
-                          fontFamily={FMono}
-                          fill={mat.id==="eps"?"#1A3A6A":mat.id==="legno"?"#774400":"#334455"}>
-                          {mat.label}
-                        </text>
-                      )}
-                    </g>
-                  );
-                })
-              )}
-            </g>
-          )}
-
-          {/* Bordo */}
-          {pts.length>1&&<polygon points={pathPts} fill="none" stroke="#1A3A6A"
-            strokeWidth="2.5" strokeLinejoin="round"/>}
-
-          {/* Divisori */}
-          {divs.map(d=>d.axis==="v"
-            ?<line key={d.id} x1={mToSx(d.pos)} y1={mToSy(bbox.minY)}
-                x2={mToSx(d.pos)} y2={mToSy(bbox.maxY)}
-                stroke="#8B5CF6" strokeWidth={1.5} strokeDasharray="4,3"/>
-            :<line key={d.id} x1={mToSx(bbox.minX)} y1={mToSy(d.pos)}
-                x2={mToSx(bbox.maxX)} y2={mToSy(d.pos)}
-                stroke="#0D9488" strokeWidth={1.5} strokeDasharray="4,3"/>
-          )}
-
-          {/* Highlight segmento in edit */}
-          {selIdx!==null&&selIdx<pts.length-1&&(
-            <line x1={S.toSvg(pts[selIdx]).sx} y1={S.toSvg(pts[selIdx]).sy}
-              x2={S.toSvg(pts[selIdx+1]).sx} y2={S.toSvg(pts[selIdx+1]).sy}
-              stroke="#D08008" strokeWidth={5} strokeLinecap="round" opacity={0.7}/>
-          )}
-
-          {/* Quote */}
-          {pts.slice(1).map((p,i)=>{
-            const prev=S.toSvg(pts[i]),cur=S.toSvg(p),seg=segs[i];if(!seg)return null;
-            const mx=(prev.sx+cur.sx)/2,my=(prev.sy+cur.sy)/2;
-            const isH=Math.abs(cur.sy-prev.sy)<Math.abs(cur.sx-prev.sx);
-            const qx=mx+(isH?0:-24),qy=my+(isH?-16:0);
+          {fills.map((f,i)=>{
+            const mat=CT_MAT.find(m=>m.id===f.mat)||CT_MAT[0];
+            const {sx,sy}=S.toSvg(f.x,f.y);
+            const fill=mat.id==="eps"?"url(#ctE)":mat.id==="legno"?"url(#ctW)":mat.color;
             return(
-              <g key={i}>
-                <rect x={qx-18} y={qy-8} width={36} height={13} rx={3} fill="rgba(255,255,255,0.93)"/>
-                <text x={qx} y={qy+2} textAnchor="middle" fontSize={11}
-                  fill="#0F172A" fontWeight="800" fontFamily={FMono}>{seg.mm}</text>
+              <g key={i} clipPath="url(#mainClip)">
+                <circle cx={sx} cy={sy} r={500} fill={fill} opacity={0.88}/>
+                <text x={sx} y={sy+4} textAnchor="middle" fontSize={11}
+                  fontWeight="800" fontFamily={FMono}
+                  fill={mat.id==="eps"?"#1A3A6A":mat.id==="legno"?"#774400":"#334455"}>
+                  {mat.id!=="sede"&&mat.id!=="vuoto"?mat.label:""}
+                </text>
               </g>
             );
           })}
 
-          {/* Vertici trascinabili */}
-          {pts.map((p,i)=>{
-            const s=S.toSvg(p);
-            return(
-              <g key={i} style={{cursor:"grab"}}>
-                <circle cx={s.sx} cy={s.sy} r={16} fill="transparent"
-                  onPointerDown={e=>onPtrDown(e,i)}/>
-                <circle cx={s.sx} cy={s.sy} r={i===0?9:6}
-                  fill={i===0?"#1A9E73":dragIdx===i?"#D08008":"#1A3A6A"}
-                  stroke="#fff" strokeWidth={2}/>
-                {i===0&&<text x={s.sx} y={s.sy-13} textAnchor="middle"
-                  fontSize={9} fill="#1A9E73" fontWeight="800">S</text>}
-                {dragIdx===i&&<text x={s.sx} y={s.sy-14} textAnchor="middle"
-                  fontSize={8} fill="#D08008" fontWeight="800">
-                  {Math.round(p.x)},{Math.round(p.y)}</text>}
+          {/* Linee disegnate */}
+          {lines.map((l,i)=>{
+            const a=S.toSvg(l.x1,l.y1), b=S.toSvg(l.x2,l.y2);
+            const mm=Math.round(Math.hypot(l.x2-l.x1,l.y2-l.y1));
+            const mx=(a.sx+b.sx)/2, my=(a.sy+b.sy)/2;
+            const isH=Math.abs(b.sy-a.sy)<Math.abs(b.sx-a.sx);
+            const qx=mx+(isH?0:-22), qy=my+(isH?-14:0);
+            return (
+              <g key={l.id||i}
+                onClick={e=>{if(!drawMode){e.stopPropagation();
+                  setLines(prev=>prev.filter((_,j)=>j!==i));
+                  setFills(f=>f); // mantieni fills
+                }}}
+                style={{cursor:drawMode?"crosshair":"pointer"}}>
+                {/* Hit area trasparente larga */}
+                <line x1={a.sx} y1={a.sy} x2={b.sx} y2={b.sy}
+                  stroke={drawMode?"transparent":"#DC444420"} strokeWidth={16}/>
+                {/* Linea visibile */}
+                <line x1={a.sx} y1={a.sy} x2={b.sx} y2={b.sy}
+                  stroke="#1A3A6A" strokeWidth={2.5} strokeLinecap="round"/>
+                {/* Icona cestino in modalità cancella */}
+                {!drawMode&&(
+                  <g>
+                    <circle cx={mx} cy={my} r={10} fill="white"
+                      stroke="#DC4444" strokeWidth={1.5} opacity={0.9}/>
+                    <text x={mx} y={my+4} textAnchor="middle" fontSize={12}
+                      fill="#DC4444" fontWeight="900">×</text>
+                  </g>
+                )}
+                {/* Quota */}
+                {drawMode&&(
+                  <g>
+                    <rect x={qx-16} y={qy-8} width={32} height={12} rx={3} fill="rgba(255,255,255,0.93)"/>
+                    <text x={qx} y={qy+2} textAnchor="middle" fontSize={10}
+                      fill="#0F172A" fontWeight="800" fontFamily={FMono}>{mm}</text>
+                  </g>
+                )}
               </g>
             );
           })}
+
+          {/* Preview linea in corso */}
+          {drawMode&&pending&&curSvg&&pendSvg&&(
+            <line x1={pendSvg.sx} y1={pendSvg.sy} x2={curSvg.sx} y2={curSvg.sy}
+              stroke="#0F766E" strokeWidth={2} strokeDasharray="6,4" opacity={0.7}/>
+          )}
+
+          {/* Punto iniziale linea corrente */}
+          {pending&&pendSvg&&(
+            <circle cx={pendSvg.sx} cy={pendSvg.sy} r={6}
+              fill="#1A9E73" stroke="#fff" strokeWidth={2}/>
+          )}
+
+          {/* Punti di snap */}
+          {drawMode&&lines.map((l,i)=>[
+            S.toSvg(l.x1,l.y1),
+            S.toSvg(l.x2,l.y2)
+          ].map((s,j)=>(
+            <circle key={`${i}_${j}`} cx={s.sx} cy={s.sy} r={4}
+              fill="#1A3A6A" stroke="#fff" strokeWidth={1.5} opacity={0.6}/>
+          )))}
         </svg>
       </div>
 
-      {/* ── CHIPS segmenti ── */}
-      {segs.length>0&&(
+      {/* Contatore linee */}
+      {lines.length>0&&(
         <div style={{padding:"4px 8px",borderTop:"1px solid "+Tc.bdr,
-          display:"flex",gap:3,flexWrap:"wrap",alignItems:"center",background:"#fff"}}>
-          {segs.map((s,i)=>{
-            const isSel=selIdx===i;
-            const sym=s.dir==="dx"?"→":s.dir==="sx"?"←":s.dir==="giu"?"↓":"↑";
+          display:"flex",gap:6,alignItems:"center",background:"#fff",fontSize:10,color:Tc.sub}}>
+          <span>{lines.length} linee</span>
+          {pending&&<span style={{color:"#0F766E",fontWeight:700}}>• In corso — tap per chiudere</span>}
+          {!drawMode&&<span style={{color:Tc.acc,fontWeight:700}}>
+            Tocca una zona per riempirla · Tocca una linea per cancellarla
+          </span>}
+          <button onClick={()=>{setPending(null);}}
+            style={{marginLeft:"auto",padding:"2px 7px",borderRadius:5,
+              border:"1px solid "+Tc.bdr,background:"white",fontSize:9,cursor:"pointer",color:Tc.sub}}>
+            Annulla linea
+          </button>
+        </div>
+      )}
+
+      {/* MATERIALI */}
+      <div style={{padding:"10px 10px 8px",borderTop:"2px solid "+Tc.bdr,background:Tc.bg}}>
+        <div style={{fontSize:10,fontWeight:800,color:Tc.sub,textTransform:"uppercase",
+          letterSpacing:0.5,marginBottom:8}}>
+          Materiale selezionato
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+          {CT_MAT.map(mat=>{
+            const isAct=selMat===mat.id;
             return(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:2,padding:"3px 5px",
-                borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:700,
-                color:isSel?"#fff":Tc.acc,background:isSel?Tc.acc:"#FFF8E8",
-                border:"1.5px solid "+(isSel?Tc.acc:"#D0800840")}}>
-                <span onClick={()=>{
-                  if(isSel){setSelIdx(null);setPMm("");}
-                  else{setSelIdx(i);setPDir(s.dir);setPMm(String(s.mm));}
-                }} style={{display:"flex",alignItems:"center",gap:2}}>
-                  <span>{sym}</span>
-                  <span style={{fontFamily:FMono}}>{s.mm}</span>
-                </span>
-                <span onClick={e=>{e.stopPropagation();
-                  setSegs(p=>p.filter((_,j)=>j!==i));if(selIdx===i)setSelIdx(null);}}
-                  style={{fontSize:10,color:isSel?"rgba(255,255,255,0.7)":"#DC4444",fontWeight:900,marginLeft:1}}>×</span>
+              <div key={mat.id} onClick={()=>setSelMat(mat.id)}
+                style={{padding:"8px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
+                  border:"2px solid "+(isAct?mat.stroke:Tc.bdr),
+                  background:isAct?mat.color:"#fff",
+                  boxShadow:isAct?"0 2px 8px "+mat.stroke+"35":"none",
+                  transition:"all 0.12s"}}>
+                <svg width={42} height={26} style={{display:"block",margin:"0 auto 4px",
+                  borderRadius:4,overflow:"hidden"}}>
+                  <defs>
+                    <pattern id={"pE"+mat.id} x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+                      <rect width="7" height="7" fill="#C8DEF2"/>
+                      <circle cx="3.5" cy="3.5" r="2.2" fill="none" stroke="#1A3A6A" strokeWidth="0.6"/>
+                    </pattern>
+                    <pattern id={"pW"+mat.id} x="0" y="0" width="7" height="4" patternUnits="userSpaceOnUse">
+                      <rect width="7" height="4" fill="#F5A623"/>
+                      <line x1="0" y1="2" x2="7" y2="2" stroke="#C07010" strokeWidth="0.7"/>
+                    </pattern>
+                  </defs>
+                  <rect width={42} height={26} rx={3}
+                    fill={mat.id==="eps"?"url(#pE"+mat.id+")":mat.id==="legno"?"url(#pW"+mat.id+")":mat.color}
+                    stroke={mat.stroke} strokeWidth={1.2}
+                    strokeDasharray={mat.dash?"4,2":undefined}/>
+                </svg>
+                <div style={{fontSize:10,fontWeight:isAct?800:600,
+                  color:isAct?mat.stroke:Tc.sub,lineHeight:1}}>
+                  {mat.label}
+                </div>
               </div>
             );
           })}
-          <span style={{fontSize:9,color:Tc.sub,fontFamily:FMono}}>📏{sviluppata}mm</span>
         </div>
-      )}
+        {!drawMode&&<div style={{marginTop:6,fontSize:9,color:Tc.sub,textAlign:"center"}}>
+          Seleziona materiale → tocca la zona nel disegno
+        </div>}
+      </div>
 
-      {/* ── MATERIALI — sempre visibili quando c'è la sagoma ── */}
-      {segs.length>0&&(
-        <div style={{padding:"10px 10px 8px",borderTop:"2px solid "+Tc.bdr,background:Tc.bg}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-            <div style={{fontSize:10,fontWeight:800,color:Tc.sub,textTransform:"uppercase",letterSpacing:0.5}}>
-              Riempimento zona
-              {divs.length>0&&<span style={{color:currentMat.stroke,marginLeft:4}}>— {currentMat.label}</span>}
-            </div>
-            <div style={{display:"flex",gap:4,alignItems:"center"}}>
-              <button onClick={()=>setDivs(d=>[...d,{axis:"v",pos:Math.round(bbox.w/2)+bbox.minX,id:Date.now()}])}
-                style={{padding:"3px 7px",borderRadius:5,background:"#8B5CF612",
-                  border:"1px solid #8B5CF640",fontSize:9,fontWeight:700,color:"#8B5CF6",cursor:"pointer"}}>
-                +│ Div.V
-              </button>
-              <button onClick={()=>setDivs(d=>[...d,{axis:"h",pos:Math.round(bbox.h/2)+bbox.minY,id:Date.now()}])}
-                style={{padding:"3px 7px",borderRadius:5,background:"#0D948812",
-                  border:"1px solid #0D948840",fontSize:9,fontWeight:700,color:"#0D9488",cursor:"pointer"}}>
-                +─ Div.O
-              </button>
-              {divs.map(d=>(
-                <div key={d.id} style={{display:"flex",alignItems:"center",gap:1,
-                  padding:"2px 4px",borderRadius:4,background:(d.axis==="v"?"#8B5CF6":"#0D9488")+"15"}}>
-                  <input type="number" value={d.pos}
-                    onChange={e=>setDivs(divs.map(x=>x.id===d.id?{...x,pos:parseInt(e.target.value)||0}:x))}
-                    style={{width:34,border:"none",fontSize:9,fontWeight:700,fontFamily:FMono,
-                      textAlign:"center",background:"transparent",
-                      color:d.axis==="v"?"#8B5CF6":"#0D9488"}}/>
-                  <span onClick={()=>setDivs(divs.filter(x=>x.id!==d.id))}
-                    style={{fontSize:10,color:Tc.red,cursor:"pointer",fontWeight:700}}>×</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* 4 bottoni materiale — GRANDI */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
-            {CT_MAT.map(mat=>{
-              const isAct=(zoneMat[selZone||"0_0"]||"eps")===mat.id;
-              return(
-                <div key={mat.id}
-                  onClick={()=>setZoneMat({...zoneMat,[selZone||"0_0"]:mat.id})}
-                  style={{padding:"8px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
-                    border:"2px solid "+(isAct?mat.stroke:Tc.bdr),
-                    background:isAct?mat.color:"#fff",
-                    boxShadow:isAct?"0 2px 8px "+mat.stroke+"35":"none",
-                    transition:"all 0.12s"}}>
-                  <svg width={42} height={26} style={{display:"block",margin:"0 auto 4px",
-                    borderRadius:4,overflow:"hidden"}}>
-                    <defs>
-                      <pattern id={"pE"+mat.id} x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
-                        <rect width="7" height="7" fill="#C8DEF2"/>
-                        <circle cx="3.5" cy="3.5" r="2.2" fill="none" stroke="#1A3A6A" strokeWidth="0.6"/>
-                      </pattern>
-                      <pattern id={"pW"+mat.id} x="0" y="0" width="7" height="4" patternUnits="userSpaceOnUse">
-                        <rect width="7" height="4" fill="#F5A623"/>
-                        <line x1="0" y1="2" x2="7" y2="2" stroke="#C07010" strokeWidth="0.7"/>
-                      </pattern>
-                    </defs>
-                    <rect width={42} height={26} rx={3}
-                      fill={mat.id==="eps"?"url(#pE"+mat.id+")":mat.id==="legno"?"url(#pW"+mat.id+")":mat.color}
-                      stroke={mat.stroke} strokeWidth={1.2}
-                      strokeDasharray={mat.dash?"4,2":undefined}/>
-                  </svg>
-                  <div style={{fontSize:10,fontWeight:isAct?800:600,
-                    color:isAct?mat.stroke:Tc.sub,lineHeight:1}}>
-                    {mat.label}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {divs.length===0&&segs.length>0&&(
-            <div style={{marginTop:6,fontSize:9,color:Tc.sub,textAlign:"center"}}>
-              Tocca la sagoma per selezionare una zona · Aggiungi divisori per zone multiple
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── TOOLBAR aggiunta segmenti ── */}
+      {/* Misure telaio */}
       <div style={{background:Tc.card,borderTop:"1px solid "+Tc.bdr,padding:"10px 12px 14px"}}>
-        <div style={{display:"flex",gap:8,marginBottom:10}}>
+        <div style={{display:"flex",gap:8}}>
           <div style={{flex:1}}>
             <div style={{fontSize:9,fontWeight:800,color:Tc.sub,marginBottom:3,textTransform:"uppercase"}}>Telaio L</div>
             <input inputMode="decimal" value={misuraL} onChange={e=>setMisuraL(e.target.value)}
@@ -494,55 +579,6 @@ export default function ConfiguratoreControtelaio({value,sistemaId,onChange,T}) 
               placeholder="mm" style={{width:"100%",padding:"8px 10px",borderRadius:7,
                 boxSizing:"border-box",border:"1.5px solid "+Tc.bdr,fontSize:18,fontWeight:800,
                 fontFamily:FMono,textAlign:"center",background:"#fff",outline:"none"}}/>
-          </div>
-        </div>
-
-        {selIdx!==null&&(
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-            padding:"6px 10px",borderRadius:8,background:"#FFF8EC",
-            border:"1.5px solid "+Tc.acc,marginBottom:8}}>
-            <span style={{fontSize:11,fontWeight:700,color:Tc.acc}}>✏️ Seg. {selIdx+1}</span>
-            <span onClick={()=>{setSelIdx(null);setPMm("");}}
-              style={{fontSize:16,color:Tc.acc,cursor:"pointer",fontWeight:800}}>✕</span>
-          </div>
-        )}
-
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:5,marginBottom:8}}>
-          {DIRS.map(({d,label,name})=>(
-            <div key={d} onClick={()=>setPDir(d)}
-              style={{padding:"9px 4px",borderRadius:9,textAlign:"center",cursor:"pointer",
-                border:"2px solid "+(pDir===d?Tc.acc:Tc.bdr),
-                background:pDir===d?Tc.acc:"#fff",
-                boxShadow:pDir===d?"0 3px 0 "+Tc.acc+"88":"0 2px 0 rgba(0,0,0,0.05)",
-                transition:"all 0.1s"}}>
-              <div style={{fontSize:20,color:pDir===d?"#fff":"#94A3B8",lineHeight:1}}>{label}</div>
-              <div style={{fontSize:9,fontWeight:600,color:pDir===d?"rgba(255,255,255,0.8)":"#CBD5E1",marginTop:2}}>
-                {name}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{display:"flex",gap:7}}>
-          <div style={{flex:1,position:"relative"}}>
-            <input inputMode="decimal" value={pMm}
-              onChange={e=>setPMm(e.target.value)}
-              onKeyDown={e=>{if(e.key==="Enter")addSeg();}}
-              placeholder="mm"
-              style={{width:"100%",padding:"12px 40px 12px 14px",borderRadius:9,
-                border:"1.5px solid "+Tc.bdr,fontSize:24,fontWeight:800,
-                fontFamily:FMono,textAlign:"center",boxSizing:"border-box",
-                background:"#fff",color:"#0F172A",outline:"none"}}/>
-            <span style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",
-              fontSize:12,color:"#94A3B8",fontWeight:600}}>mm</span>
-          </div>
-          <div onClick={addSeg}
-            style={{width:54,borderRadius:9,
-              background:selIdx!==null?Tc.acc:"#1A9E73",color:"#fff",
-              display:"flex",alignItems:"center",justifyContent:"center",
-              fontSize:selIdx!==null?12:28,fontWeight:800,cursor:"pointer",
-              boxShadow:"0 4px 0 "+(selIdx!==null?"#A06006":"#157A56"),flexShrink:0}}>
-            {selIdx!==null?"✓":"＋"}
           </div>
         </div>
       </div>
