@@ -379,7 +379,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const panX = dw._panX || 0, panY = dw._panY || 0;
                             const canvasW = Math.min(window.innerWidth - 32, 500);
                             const GRID = 10;
-                            const SNAP_R = 18;
+                            const SNAP_R = 10;
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
