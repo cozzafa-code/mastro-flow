@@ -1540,25 +1540,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {/* Angle + length label */}
                                         {/* Badge — si adatta per restare visibile */}
                                         {(() => {
-                                          const bw = 100, bh = 30;
+                                          const bw = 110, bh = 66;
                                           const bx = gx + 16 + bw > canvasW ? gx - bw - 16 : gx + 16;
                                           const by = gy - bh - 8 < 0 ? gy + 8 : gy - bh - 8;
                                           const isH = gy === p.y1, isV = gx === p.x1;
+                                          const line2 = isV ? "\u2195 VERT" : isH ? "\u2194 ORIZ" : dw._guideDeg != null ? `${dw._guideDeg}\u00b0` : "";
                                           return <>
-                                            <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.95}/>
-                                            <text x={bx+bw/2} y={by+18} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
-                                              {dw._guideLen != null ? `${dw._guideLen} mm` : ""}
+                                            <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.96}/>
+                                            <text x={bx+bw/2} y={by+22} textAnchor="middle" fontSize={16} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
+                                              {`${dw._guideLen ?? ""} mm`}
                                             </text>
-                                            {dw._guideDeg != null && (
-                                              <text x={bx+bw/2} y={by+55} textAnchor="middle" fontSize={13} fontWeight={700} fill="rgba(255,255,255,0.65)" fontFamily="'JetBrains Mono',monospace">
-                                                {`${dw._guideDeg}°`}
-                                              </text>
-                                            )}
-                                            {(isH || isV) && (
-                                              <text x={bx+bw/2} y={by+36} textAnchor="middle" fontSize={11} fontWeight={800} fill="#1A9E73" fontFamily="monospace">
-                                                {isV ? "VERT" : "ORIZ"}
-                                              </text>
-                                            )}
+                                            <text x={bx+bw/2} y={by+50} textAnchor="middle" fontSize={14} fontWeight={700} fill={isH||isV ? "#1A9E73" : "rgba(255,255,255,0.8)"} fontFamily="'JetBrains Mono',monospace">
+                                              {line2}
+                                            </text>
                                           </>;
                                         })()}
                                       </>}
