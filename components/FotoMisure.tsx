@@ -293,7 +293,7 @@ export default function FotoMisure({ imageUrl, onSave, onClose, T }) {
           </div>
           <div style={{ display:"flex", gap:8 }}>
             <div onClick={()=>{setMeasureModal(null);setMeasureVal("");}} style={{ flex:1, padding:"12px 0", borderRadius:10, background:"rgba(255,255,255,0.05)", color:"#555", textAlign:"center", fontSize:13, fontWeight:700, cursor:"pointer" }}>Solo linea</div>
-            <div onClick={confirmMeasure} style={{ flex:2, padding:"12px 0", borderRadius:10, background:color, color:"#fff", textAlign:"center", fontSize:14, fontWeight:800, cursor:"pointer" }}>Conferma {measureVal?`"${measureVal}":""}`}</div>
+            <div onClick={confirmMeasure} style={{ flex:2, padding:"12px 0", borderRadius:10, background:color, color:"#fff", textAlign:"center", fontSize:14, fontWeight:800, cursor:"pointer" }}>Conferma {measureVal ? `"${measureVal}"` : ""}</div>
           </div>
         </div>
       )}
