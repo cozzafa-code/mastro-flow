@@ -1255,7 +1255,7 @@ export default function VanoDetailPanel() {
                               ["tappoZanz","Tappo zanzariera"],
                               ["sottobancale","Sottobancale EPS"],
                               ["assemblaggio","Assemblaggio CT"],
-                              ...(sistema?.hasCass?[["avvMontaggio","Montaggio avvolgibile"]]:([]:any)),
+                              ...(sistema?.hasCass?[["avvMontaggio","Montaggio avvolgibile"]]:[]),
                             ].map(([k,lbl])=>(
                               <div key={k}
                                 onClick={()=>updateV("controtelaio",{...ct,[k]:!ct[k]})}
