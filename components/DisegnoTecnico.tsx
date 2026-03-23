@@ -966,6 +966,53 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                             const cursorMode = drawMode === "line" || drawMode === "apertura" ? "crosshair" : drawMode ? "pointer" : "default";
 
+                            // ══ Apply dim change con propagazione catena ══
+                            const applyDimChange = (elId, valStr) => {
+                              const newMM = parseInt(valStr);
+                              if (isNaN(newMM) || newMM <= 0) return;
+                              const el2 = els.find(x => x.id === elId);
+                              if (!el2 || el2.type !== "freeLine") return;
+                              const dx2 = el2.x2 - el2.x1, dy2 = el2.y2 - el2.y1;
+                              const len2 = Math.hypot(dx2, dy2) || 1;
+                              const refLen2 = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
+                              const refReal2 = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
+                              const curMM = el2._mmOverride != null ? el2._mmOverride : Math.round(len2 / refLen2 * refReal2);
+                              if (curMM === newMM) return;
+                              const scale = newMM / curMM;
+                              const newLen2 = len2 * scale;
+                              const ux = dx2 / len2, uy = dy2 / len2;
+                              const newX2 = Math.round(el2.x1 + ux * newLen2);
+                              const newY2 = Math.round(el2.y1 + uy * newLen2);
+                              const ddx = newX2 - el2.x2, ddy = newY2 - el2.y2;
+                              const CONN = 15;
+                              // Propaga delta a tutti i segmenti connessi a valle (catena)
+                              const freeLines = els.filter(e => e.type === "freeLine");
+                              const propagated = new Set();
+                              propagated.add(elId);
+                              const toPropagate = [{ x: el2.x2, y: el2.y2 }];
+                              while (toPropagate.length > 0) {
+                                const pt = toPropagate.pop();
+                                freeLines.forEach(l => {
+                                  if (propagated.has(l.id)) return;
+                                  if (Math.hypot(l.x1 - pt.x, l.y1 - pt.y) < CONN) {
+                                    propagated.add(l.id);
+                                    toPropagate.push({ x: l.x2, y: l.y2 });
+                                  } else if (Math.hypot(l.x2 - pt.x, l.y2 - pt.y) < CONN) {
+                                    propagated.add(l.id);
+                                    toPropagate.push({ x: l.x1, y: l.y1 });
+                                  }
+                                });
+                              }
+                              const updEls = els.map(x => {
+                                if (x.id === elId) return { ...x, x2: newX2, y2: newY2, _mmOverride: newMM };
+                                if (x.type !== "freeLine" || !propagated.has(x.id)) return x;
+                                const el2x2 = el2.x2, el2y2 = el2.y2;
+                                const connStart = Math.hypot(x.x1 - el2x2, x.y1 - el2y2) < CONN;
+                                return { ...x, x1: Math.round(x.x1 + ddx), y1: Math.round(x.y1 + ddy), x2: Math.round(x.x2 + ddx), y2: Math.round(x.y2 + ddy) };
+                              });
+                              setDW(updEls);
+                            };
+
                             return (
                               <>
                               <div style={{ marginTop: 8, background: T.card, borderRadius: 12, border: `1.5px solid ${T.purple}`, overflow: "hidden" }}>
@@ -1766,21 +1813,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onChange={e => setDimEdit({ ...dimEdit, val: e.target.value })}
                                       onKeyDown={e => {
                                         if (e.key === "Enter") {
-                                          const newMM = parseInt(dimEdit.val);
-                                          if (!isNaN(newMM) && newMM > 0) {
-                                            const el2 = els.find(x => x.id === dimEdit.id);
-                                            if (el2) {
-                                              const dx2 = el2.x2 - el2.x1, dy2 = el2.y2 - el2.y1;
-                                              const len2 = Math.hypot(dx2, dy2) || 1;
-                                              const refLen2 = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
-                                              const refReal2 = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
-                                              const curMM = el2._mmOverride != null ? el2._mmOverride : Math.round(len2 / refLen2 * refReal2);
-                                              const scale = newMM / curMM;
-                                              const newLen2 = len2 * scale;
-                                              const ux = dx2 / len2, uy = dy2 / len2;
-                                              setDW(els.map(x => x.id === dimEdit.id ? { ...x, x2: Math.round(el2.x1 + ux * newLen2), y2: Math.round(el2.y1 + uy * newLen2), _mmOverride: newMM } : x));
-                                            }
-                                          }
+                                          applyDimChange(dimEdit.id, dimEdit.val);
                                           setDimEdit(null);
                                         }
                                         if (e.key === "Escape") setDimEdit(null);
@@ -1790,21 +1823,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <div style={{ display: "flex", gap: 8 }}>
                                       <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
                                       <div onClick={() => {
-                                        const newMM = parseInt(dimEdit.val);
-                                        if (!isNaN(newMM) && newMM > 0) {
-                                          const el2 = els.find(x => x.id === dimEdit.id);
-                                          if (el2) {
-                                            const dx2 = el2.x2 - el2.x1, dy2 = el2.y2 - el2.y1;
-                                            const len2 = Math.hypot(dx2, dy2) || 1;
-                                            const refLen2 = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
-                                            const refReal2 = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
-                                            const curMM = el2._mmOverride != null ? el2._mmOverride : Math.round(len2 / refLen2 * refReal2);
-                                            const scale = newMM / curMM;
-                                            const newLen2 = len2 * scale;
-                                            const ux = dx2 / len2, uy = dy2 / len2;
-                                            setDW(els.map(x => x.id === dimEdit.id ? { ...x, x2: Math.round(el2.x1 + ux * newLen2), y2: Math.round(el2.y1 + uy * newLen2), _mmOverride: newMM } : x));
-                                          }
-                                        }
+                                        applyDimChange(dimEdit.id, dimEdit.val);
                                         setDimEdit(null);
                                       }} style={{ flex: 1, padding: "9px", borderRadius: 8, background: T.purple || "#8B5CF6", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>✓ Conferma</div>
                                     </div>
