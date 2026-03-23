@@ -536,11 +536,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
                             const findSnap = (mx, my) => {
                               const pts = getSnapPoints();
-                              const pend = dw._pendingLine;
+                              const chainStart = dw._chainStart;
                               let best = null, bestD = SNAP_R;
                               pts.forEach(p => {
-                                // Escludi punto iniziale della catena corrente — no chiusura automatica
-                                if (pend && Math.hypot(p.x - pend.x1, p.y - pend.y1) < 3) return;
+                                // Escludi il primo punto della catena — impedisce chiusura automatica
+                                if (chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 3) return;
                                 const d = Math.hypot(p.x - mx, p.y - my);
                                 if (d < bestD) { bestD = d; best = p; }
                               });
@@ -895,7 +895,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (ady < 8 && adx > 8) py = pending.y1; // horizontal snap
                                 }
                                 if (!pending) {
-                                  setMode({ _pendingLine: { x1: px, y1: py } });
+                                  setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: { x: px, y: py } });
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
