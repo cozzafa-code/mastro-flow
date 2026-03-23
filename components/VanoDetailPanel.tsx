@@ -1446,15 +1446,15 @@ export default function VanoDetailPanel() {
           </div>
 
           {/* FOTO + MISURE RAPIDA */}
-          <div onClick={() => setShowFotoMisure(true)} style={{ padding: "12px 16px", borderRadius: 14, background: "linear-gradient(135deg, #DC4444, #B83030)", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 0, boxShadow: "0 3px 12px rgba(220,68,68,0.3)" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div onClick={() => setShowFotoMisure(true)} style={{ padding: "12px 16px", borderRadius: 14, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 0, border: `1.5px solid ${T.bdr}` }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: T.acc+"18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>Foto + Misure</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>Scatta foto e annota misure sopra</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>Foto + Misure</div>
+              <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>Scatta foto e annota misure sopra</div>
             </div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           {/* GALLERY FOTO MISURE — sotto il bottone */}
           {(() => {
@@ -2614,8 +2614,8 @@ export default function VanoDetailPanel() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.blue }}><I d={ICO.camera} /> FOTO ({(v.foto && Object.keys(v.foto).length) || 0})</div>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: "#DC4444", color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
-                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: "#DC4444", color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
+                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: T.acc+"15", color: T.acc, border: `1px solid ${T.acc}40`, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
+                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: T.acc+"15", color: T.acc, border: `1px solid ${T.acc}40`, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
                     <button onClick={() => openCamera("foto", null)}
                       style={{ padding: "4px 10px", borderRadius: 6, background: T.acc, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.camera} /> Foto</button>
                     <button onClick={() => openCamera("video", null)}
