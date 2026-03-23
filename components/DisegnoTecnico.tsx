@@ -412,7 +412,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGON from freeLines ══
-                            const getPolygon = () => {
+                            const getPolygon = () => { return null; // disabilitato - linee indipendenti
                               const lines = els.filter(e => e.type === "freeLine");
                               if (lines.length < 4) return null;
                               const pts = [];
