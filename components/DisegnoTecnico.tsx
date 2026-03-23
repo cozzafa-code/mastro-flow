@@ -899,7 +899,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
-                                  setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py }], { _pendingLine: { x1: px, y1: py } });
+                                  setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py }], { _pendingLine: null });
                                 }
                                 return;
                               }
