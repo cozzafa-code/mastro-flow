@@ -538,8 +538,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
                             const findSnap = (mx, my) => {
                               const pts = getSnapPoints();
+                              const pend = dw._pendingLine;
                               let best = null, bestD = SNAP_R;
-                              pts.forEach(p => { const d = Math.hypot(p.x - mx, p.y - my); if (d < bestD) { bestD = d; best = p; } });
+                              pts.forEach(p => {
+                                // Escludi punto iniziale della catena corrente — no chiusura automatica
+                                if (pend && Math.hypot(p.x - pend.x1, p.y - pend.y1) < 3) return;
+                                const d = Math.hypot(p.x - mx, p.y - my);
+                                if (d < bestD) { bestD = d; best = p; }
+                              });
                               return best;
                             };
 
