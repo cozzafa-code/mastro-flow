@@ -1302,21 +1302,62 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
                                   ))}
 
-                                  {/* ══ CLOSED POLYGON PROFILE — SVG stroke nativo, angoli perfetti ══ */}
+                                  {/* ══ CLOSED POLYGON PROFILE — offset geometrico esatto ══ */}
                                   {poly && poly.length >= 3 && (() => {
-                                    const pts2 = [...poly, poly[0]]; // chiudi il path
-                                    const pointsStr = pts2.map(p => p.join(",")).join(" ");
-                                    const TK = TK_FRAME * 2; // spessore totale profilo
+                                    const n = poly.length;
+                                    const TK = TK_FRAME; // half-thickness per lato
+
+                                    // Calcola poligono offset: sposta ogni lato di +d o -d lungo la normale,
+                                    // poi trova l'intersezione delle rette adiacenti (miter esatto, nessuna distorsione)
+                                    const offsetPoly = (pts, d) => {
+                                      // Per ogni lato calcola retta offset
+                                      const lines = [];
+                                      for (let i = 0; i < pts.length; i++) {
+                                        const a = pts[i], b = pts[(i + 1) % pts.length];
+                                        const dx = b[0] - a[0], dy = b[1] - a[1];
+                                        const len = Math.hypot(dx, dy) || 1;
+                                        // Normale perpendicolare (ruota 90° CCW)
+                                        const nx = -dy / len, ny = dx / len;
+                                        // Punti del lato offset
+                                        const p1 = [a[0] + nx * d, a[1] + ny * d];
+                                        const p2 = [b[0] + nx * d, b[1] + ny * d];
+                                        lines.push({ p1, p2, dx, dy });
+                                      }
+                                      // Intersezione di ogni coppia di lati adiacenti
+                                      const result = [];
+                                      for (let i = 0; i < lines.length; i++) {
+                                        const l1 = lines[i], l2 = lines[(i + 1) % lines.length];
+                                        // Intersezione rette: l1.p1 + t*(l1.p2-l1.p1) = l2.p1 + s*(l2.p2-l2.p1)
+                                        const d1x = l1.p2[0] - l1.p1[0], d1y = l1.p2[1] - l1.p1[1];
+                                        const d2x = l2.p2[0] - l2.p1[0], d2y = l2.p2[1] - l2.p1[1];
+                                        const denom = d1x * d2y - d1y * d2x;
+                                        if (Math.abs(denom) < 0.001) {
+                                          // Parallele — usa punto medio
+                                          result.push([(l1.p2[0] + l2.p1[0]) / 2, (l1.p2[1] + l2.p1[1]) / 2]);
+                                        } else {
+                                          const dx0 = l2.p1[0] - l1.p1[0], dy0 = l2.p1[1] - l1.p1[1];
+                                          const t = (dx0 * d2y - dy0 * d2x) / denom;
+                                          result.push([l1.p1[0] + t * d1x, l1.p1[1] + t * d1y]);
+                                        }
+                                      }
+                                      return result;
+                                    };
+
+                                    const outer = offsetPoly(poly, TK);
+                                    const inner = offsetPoly(poly, -TK);
+                                    const outerStr = outer.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
+                                    const innerStr = inner.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
+
                                     return (
                                       <g>
-                                        {/* Profilo: polyline con stroke spesso, fill none — SVG gestisce miter nativamente */}
-                                        <polyline points={pointsStr} fill="none" stroke="#e8e6de" strokeWidth={TK} strokeLinejoin="miter" strokeMiterlimit="10" />
-                                        {/* Bordo esterno */}
-                                        <polyline points={pointsStr} fill="none" stroke="#1A1A1C" strokeWidth={1.5} strokeLinejoin="miter" strokeMiterlimit="10" />
-                                        {/* Bordo interno (offset visivo) */}
-                                        <polygon points={poly.map(p => p.join(",")).join(" ")} fill="#fff" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit="10" />
-                                        {/* Corner dots sui vertici reali */}
-                                        {poly.map((p, pi) => <circle key={`pc${pi}`} cx={p[0]} cy={p[1]} r={3.5} fill="#333" />)}
+                                        {/* Fill profilo tra outer e inner */}
+                                        <polygon points={outerStr} fill="#eceae0" stroke="none" />
+                                        <polygon points={innerStr} fill="#fff" stroke="none" />
+                                        {/* Bordi */}
+                                        <polygon points={outerStr} fill="none" stroke="#1A1A1C" strokeWidth={1.2} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        <polygon points={innerStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        {/* Corner dots */}
+                                        {poly.map((p, pi) => <circle key={`pc${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>
                                     );
                                   })()}
