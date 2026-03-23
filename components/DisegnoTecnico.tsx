@@ -1550,7 +1550,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               {dw._guideLen != null ? `${dw._guideLen} mm` : ""}
                                             </text>
                                             {dw._guideDeg != null && (
-                                              <text x={bx+bw/2} y={by+48} textAnchor="middle" fontSize={13} fontWeight={700} fill="rgba(255,255,255,0.65)" fontFamily="'JetBrains Mono',monospace">
+                                              <text x={bx+bw/2} y={by+55} textAnchor="middle" fontSize={13} fontWeight={700} fill="rgba(255,255,255,0.65)" fontFamily="'JetBrains Mono',monospace">
                                                 {`${dw._guideDeg}°`}
                                               </text>
                                             )}
