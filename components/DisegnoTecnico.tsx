@@ -901,7 +901,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     px = lastFL.x2; py = lastFL.y2;
                                   }
                                   setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py } });
-                                }
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
                                   // Blocca chiusura automatica: se il punto finale è vicino al chainStart, ignora
