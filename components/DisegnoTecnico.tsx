@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
