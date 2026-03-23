@@ -412,9 +412,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGON from freeLines ══
-                            const getPolygon = () => { return null; // disabilitato - linee indipendenti
+                            const getPolygon = () => {
                               const lines = els.filter(e => e.type === "freeLine");
-                              if (lines.length < 4) return null;
+                              if (lines.length < 3) return null;
+                              const CONN = 15;
                               const pts = [];
                               const used = new Set();
                               const addP = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
@@ -424,11 +425,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 for (let li = 0; li < lines.length; li++) {
                                   if (used.has(li)) continue;
                                   const l = lines[li];
-                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 2) { addP(l.x2, l.y2); used.add(li); break; }
-                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 2) { addP(l.x1, l.y1); used.add(li); break; }
+                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < CONN) { addP(l.x2, l.y2); used.add(li); break; }
+                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < CONN) { addP(l.x1, l.y1); used.add(li); break; }
                                 }
                               }
-                              return pts.length >= 4 ? pts : null;
+                              if (pts.length < 3) return null;
+                              const first = pts[0], lastPt = pts[pts.length - 1];
+                              return Math.hypot(first[0] - lastPt[0], first[1] - lastPt[1]) < CONN ? pts : null;
                             };
                             const poly = !frame ? getPolygon() : null;
 
@@ -921,7 +924,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Snap esatto al chainStart se vicino (chiusura forma intenzionale)
                                   const cs = dw._chainStart;
                                   const freeLines = els.filter(e => e.type === "freeLine");
-                                  if (cs && freeLines.length >= 3 && Math.hypot(px - cs.x, py - cs.y) < SNAP_R + 6) {
+                                  if (cs && freeLines.length >= 2 && Math.hypot(px - cs.x, py - cs.y) < SNAP_R + 6) {
                                     px = cs.x; py = cs.y;
                                   }
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
