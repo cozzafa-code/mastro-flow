@@ -1106,6 +1106,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
                                     }
                                   }}
+                                  onTouchMove={(e2) => {
+                                    e2.preventDefault();
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
+                                    const svg = e2.currentTarget;
+                                    const t = e2.touches[0];
+                                    const rect = svg.getBoundingClientRect();
+                                    const vb = svg.viewBox?.baseVal;
+                                    const sx = vb ? vb.width / rect.width : 1;
+                                    const sy2 = vb ? vb.height / rect.height : 1;
+                                    const gmx = (t.clientX - rect.left) * sx;
+                                    const gmy = (t.clientY - rect.top) * sy2;
+                                    let gx = snap(gmx), gy = snap(gmy);
+                                    const pp = dw._pendingLine;
+                                    if (Math.abs(gx - pp.x1) < 8 && Math.abs(gy - pp.y1) > 8) gx = pp.x1;
+                                    if (Math.abs(gy - pp.y1) < 8 && Math.abs(gx - pp.x1) > 8) gy = pp.y1;
+                                    const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
+                                    const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
+                                    if (dw._guideX !== gx || dw._guideY !== gy) {
+                                      onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                    }
+                                  }}
                                   onMouseLeave={() => { if (dw._guideX != null) onUpdate({ ...dw, _guideX: null, _guideY: null }); }}>
                                   <defs>
                                     <pattern id={`dg-${vanoId}`} width={GRID} height={GRID} patternUnits="userSpaceOnUse">
