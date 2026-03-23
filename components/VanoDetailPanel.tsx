@@ -920,307 +920,333 @@ export default function VanoDetailPanel() {
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"3\" y1=\"9\" x2=\"21\" y2=\"9\"/><line x1=\"9\" y1=\"21\" x2=\"9\" y2=\"9\"/></svg>",
               badge: v.controtelaio?.tipo ? (v.controtelaio.tipo==="singolo"?"Singolo":v.controtelaio.tipo==="doppio"?"Doppio":"Con cassonetto") : null, filled: v.controtelaio?.tipo ? 1 : 0, total: 1,
               body: (() => {
+                // ── SISTEMI CONTROTELAIO ─────────────────────────────
                 const CT_SISTEMI = [
-                  { id:"PROS",   label:"PROS",   gruppo:"Singolo",                varLabels:["A"], hasB:false, hasCass:false, desc:"Singolo - ribattuta variabile" },
-                  { id:"PROI",   label:"PROI",   gruppo:"Singolo",                varLabels:["A"], hasB:false, hasCass:false, desc:"Singolo - ribattuta std 50mm" },
-                  { id:"STH5",   label:"STH5",   gruppo:"EPS filo muro",          varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"EPS sp.60mm" },
-                  { id:"STH5I",  label:"STH5I",  gruppo:"EPS filo muro",          varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"EPS sp.64mm" },
-                  { id:"STH6",   label:"STH6",   gruppo:"EPS filo muro",          varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"EPS 325mm" },
-                  { id:"STH6I",  label:"STH6I",  gruppo:"EPS filo muro",          varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"EPS 325mm avanzato" },
-                  { id:"STF5",   label:"STF5",   gruppo:"Fibrocemento filo muro", varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"Fibro sp.44/64/84mm" },
-                  { id:"STF6",   label:"STF6",   gruppo:"Fibrocemento filo muro", varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"Fibro 325mm" },
-                  { id:"STH3",   label:"STH3",   gruppo:"EPS centro muro",        varLabels:["A"], hasB:false, hasCass:true,  desc:"EPS centro muro 325mm" },
-                  { id:"STF3",   label:"STF3",   gruppo:"Fibrocemento centro muro",varLabels:["A"], hasB:false, hasCass:true,  desc:"Fibro sp.64/84mm" },
-                  { id:"PROGCP", label:"PROGCP", gruppo:"STH PRO",                varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"PVC variabile+38.5mm" },
-                  { id:"PROGC",  label:"PROGC",  gruppo:"STH PRO",                varLabels:["A","B"], hasB:true,  hasCass:true,  desc:"Alluminio variabile+32.4mm" },
-                  { id:"CUSTOM", label:"+ Personalizzato", gruppo:"Altro",        varLabels:["A","B","C"], hasB:true, hasCass:false, desc:"Sistema non in lista" },
+                  // SINGOLI
+                  { id:"PROS", label:"PROS", gruppo:"Singolo", varLabels:["A — Sede infisso"], hasB:false, hasCass:false,
+                    desc:"Controtelaio singolo - ribattuta variabile" },
+                  { id:"PROI", label:"PROI", gruppo:"Singolo", varLabels:["A — Sede infisso"], hasB:false, hasCass:false,
+                    desc:"Controtelaio singolo - ribattuta std 50mm" },
+                  // FILO MURO
+                  { id:"STH5", label:"STH5", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS - spalla 60mm" },
+                  { id:"STH5I", label:"STH5I", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS - spalla 64mm" },
+                  { id:"STH6", label:"STH6", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS 325mm intonaco finito" },
+                  { id:"STH6I", label:"STH6I", gruppo:"EPS filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"EPS 325mm - sede avanzata" },
+                  { id:"STF5", label:"STF5", gruppo:"Fibrocemento filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"Fibrocemento sp.44/64/84mm" },
+                  { id:"STF6", label:"STF6", gruppo:"Fibrocemento filo muro", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"Fibrocemento 325mm" },
+                  // CENTRO MURO
+                  { id:"STH3", label:"STH3", gruppo:"EPS centro muro", varLabels:["A — Sede infisso"], hasB:false, hasCass:true,
+                    desc:"EPS centro muro 325mm" },
+                  { id:"STF3", label:"STF3", gruppo:"Fibrocemento centro muro", varLabels:["A — Sede infisso"], hasB:false, hasCass:true,
+                    desc:"Fibrocemento sp.64/84mm" },
+                  { id:"PROGCP", label:"PROGCP", gruppo:"STH PRO", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"PVC - variabile+38.5mm" },
+                  { id:"PROGC", label:"PROGC", gruppo:"STH PRO", varLabels:["A — Sede infisso","B — Sede persiana"], hasB:true, hasCass:true,
+                    desc:"Alluminio - variabile+32.4mm" },
+                  { id:"CUSTOM", label:"+ Personalizzato", gruppo:"Altro", varLabels:["A","B","C"], hasB:true, hasCass:false,
+                    desc:"Sistema non in lista" },
                 ];
+
                 const ct = v.controtelaio || {};
-                const sis = CT_SISTEMI.find(s => s.id === ct.sistema) || null;
-                const upCT = (patch) => updateV("controtelaio", {...ct, ...patch});
-
-                // Step completamento
-                const s1ok = !!ct.sistema;
-                const s2ok = s1ok && ct.l > 0 && ct.h > 0;
-                const s3ok = s2ok && ct.varA > 0;
-                const s4ok = s3ok && (!sis?.hasCass || ct.avvLato);
-                const allOk = sis?.hasCass ? s4ok : s3ok;
-
-                const FM = "'JetBrains Mono',monospace";
+                const sistema = CT_SISTEMI.find(s => s.id === ct.sistema) || null;
                 const gruppi = [...new Set(CT_SISTEMI.map(s => s.gruppo))];
 
-                // Step header component
-                const StepHdr = ({n, label, done, active, onClick}) => (
-                  <div onClick={done&&!active?onClick:undefined}
-                    style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",
-                      borderRadius:10,cursor:done&&!active?"pointer":"default",
-                      background:active?"#F0FDF9":done?"#F8FFF8":"#F8FAFC",
-                      border:`1.5px solid ${active?"#1A9E73":done?"#1A9E7340":T.bdr}`,
-                      marginBottom:active?0:6}}>
-                    <div style={{width:24,height:24,borderRadius:12,flexShrink:0,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      background:active?"#1A9E73":done?"#1A9E7320":"#E2E8F0",
-                      border:`2px solid ${active?"#1A9E73":done?"#1A9E7360":"#CBD5E1"}`}}>
-                      {done&&!active
-                        ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A9E73" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        : <span style={{fontSize:11,fontWeight:800,color:active?"#fff":"#94A3B8"}}>{n}</span>
-                      }
-                    </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:12,fontWeight:700,color:active?"#1A9E73":done?"#1A9E73":"#94A3B8"}}>{label}</div>
-                    </div>
-                    {done&&!active&&<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>}
-                  </div>
+                // ── CONFIGURATORE CONTROTELAIO ──────────────────────────────────
+                const renderSagoma = (sis) => (
+                  <ConfiguratoreControtelaio
+                    value={v.controtelaio?.disegno}
+                    sistemaId={sis?.id || null}
+                    onChange={(d) => updateV("controtelaio", { ...(v.controtelaio || {}), disegno: d })}
+                    T={T}
+                  />
                 );
-
                 return (
-                  <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:12}}>
 
-                    {/* ── STEP 1 — SISTEMA ── */}
-                    <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${s1ok&&ct._openStep!==1?"#1A9E7340":T.bdr}`}}>
-                      <StepHdr n="1" label={s1ok?`Sistema: ${ct.sistema}`:"Scegli il sistema"} done={s1ok} active={!s1ok||ct._openStep===1}
-                        onClick={()=>upCT({_openStep:1})}/>
-                      {(!s1ok||ct._openStep===1)&&(
-                        <div style={{padding:"0 10px 12px",background:"#fff"}}>
-                          {gruppi.map(gruppo=>(
-                            <div key={gruppo} style={{marginBottom:8}}>
-                              <div style={{fontSize:9,fontWeight:700,color:T.sub,
-                                padding:"6px 2px 3px",textTransform:"uppercase",letterSpacing:0.5}}>{gruppo}</div>
-                              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                                {CT_SISTEMI.filter(s=>s.gruppo===gruppo).map(s=>(
-                                  <div key={s.id}
-                                    onClick={()=>upCT({sistema:s.id,varA:0,varB:0,varC:0,_openStep:2})}
-                                    style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",
-                                      border:`2px solid ${ct.sistema===s.id?"#1A9E73":T.bdr}`,
-                                      background:ct.sistema===s.id?"#1A9E7315":T.card}}>
-                                    <div style={{fontSize:12,fontWeight:800,
-                                      color:ct.sistema===s.id?"#1A9E73":T.text}}>{s.label}</div>
-                                  </div>
-                                ))}
+                    {/* ── SELEZIONE SISTEMA ── */}
+                    <div>
+                      <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>Sistema controtelaio</div>
+                      {gruppi.map(gruppo => (
+                        <div key={gruppo} style={{marginBottom:8}}>
+                          <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4,paddingLeft:2}}>{gruppo}</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                            {CT_SISTEMI.filter(s=>s.gruppo===gruppo).map(sis=>(
+                              <div key={sis.id}
+                                onClick={()=>updateV("controtelaio",{...(ct||{}),sistema:sis.id,varA:0,varB:0,varC:0})}
+                                style={{padding:"7px 12px",borderRadius:8,cursor:"pointer",
+                                  border:`2px solid ${ct.sistema===sis.id?"#1A9E73":T.bdr}`,
+                                  background:ct.sistema===sis.id?"#1A9E7315":T.card,
+                                  transition:"all 0.1s"}}>
+                                <div style={{fontSize:12,fontWeight:800,color:ct.sistema===sis.id?"#1A9E73":T.text}}>{sis.label}</div>
                               </div>
-                            </div>
-                          ))}
-                          <div style={{textAlign:"center",paddingTop:4}}>
-                            <span style={{fontSize:11,color:T.sub,cursor:"pointer"}}
-                              onClick={()=>updateV("controtelaio",{tipo:"nessuno"})}>
-                              Nessun controtelaio → Salta
-                            </span>
+                            ))}
                           </div>
                         </div>
-                      )}
+                      ))}
                     </div>
 
-                    {/* ── STEP 2 — MISURE ── */}
-                    {s1ok&&(
-                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${s2ok&&ct._openStep!==2?"#1A9E7340":T.bdr}`}}>
-                        <StepHdr n="2" label={s2ok?`${ct.l} × ${ct.h} mm · ${ct.tipoMisura||"luce arch."}`:"Misure L × H"}
-                          done={s2ok} active={!s2ok||ct._openStep===2}
-                          onClick={()=>upCT({_openStep:2})}/>
-                        {(!s2ok||ct._openStep===2)&&(
-                          <div style={{padding:"0 12px 14px",background:"#fff"}}>
-                            {/* Tipo misura */}
-                            <div style={{fontSize:9,fontWeight:700,color:T.sub,
-                              padding:"10px 0 5px",textTransform:"uppercase"}}>Tipo di misura</div>
-                            <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
-                              {[{id:"luce",l:"Luce architett."},{id:"esterno",l:"Esterno CT"},
-                                {id:"interno",l:"Interno telaio"},{id:"grezzo",l:"Muro grezzo"}].map(tm=>(
-                                <div key={tm.id} onClick={()=>upCT({tipoMisura:tm.id})}
-                                  style={{padding:"6px 10px",borderRadius:6,cursor:"pointer",
-                                    fontSize:10,fontWeight:700,
-                                    border:`1.5px solid ${ct.tipoMisura===tm.id?"#3B7FE0":T.bdr}`,
-                                    background:ct.tipoMisura===tm.id?"#3B7FE015":T.card,
-                                    color:ct.tipoMisura===tm.id?"#3B7FE0":T.sub}}>
-                                  {tm.l}
-                                </div>
-                              ))}
+                    {/* ── SAGOMA + VARIABILI ── */}
+                    {sistema && (
+                      <div>
+                        {/* Nome sistema + desc */}
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                          <div style={{padding:"4px 12px",borderRadius:20,background:"#1A9E73",color:"white",fontSize:12,fontWeight:800}}>{sistema.id}</div>
+                          <div style={{fontSize:11,color:T.sub}}>{sistema.desc}</div>
+                        </div>
+
+                        {/* Sagoma SVG */}
+                        <div style={{background:"#F8FBFF",borderRadius:10,border:"1.5px solid #3B7FE020",padding:"10px 8px",marginBottom:12}}>
+                          {renderSagoma(sistema)}
+                        </div>
+
+                        {/* Input variabili — una riga per variabile */}
+                        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
+                          {/* A — sempre presente */}
+                          <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            <div style={{width:28,height:28,borderRadius:6,background:"#DC4444",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                              <span style={{fontSize:13,fontWeight:800,color:"white"}}>A</span>
                             </div>
-                            {/* L × H */}
-                            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
-                              {[["l","L — Larghezza"],["h","H — Altezza"]].map(([fld,lbl])=>(
-                                <div key={fld}>
-                                  <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>{lbl} (mm)</div>
-                                  <input type="number" inputMode="numeric" placeholder="—"
-                                    value={ct[fld]||""}
-                                    onChange={e=>upCT({[fld]:parseInt(e.target.value)||0})}
-                                    style={{...S.input,fontSize:22,fontWeight:800,
-                                      fontFamily:FM,textAlign:"center",padding:"10px 8px"}}/>
-                                </div>
-                              ))}
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:9,fontWeight:700,color:"#DC4444",marginBottom:3}}>SEDE INFISSO (mm) — variabile</div>
+                              <input type="number" inputMode="numeric" placeholder="inserisci mm"
+                                value={ct.varA||""}
+                                onChange={e=>updateV("controtelaio",{...ct,varA:parseInt(e.target.value)||0})}
+                                style={{...S.input,borderColor:"#DC444460",fontSize:18,padding:"9px 14px"}}/>
                             </div>
-                            {/* Ribattuta */}
-                            <div style={{fontSize:9,fontWeight:700,color:T.sub,
-                              marginBottom:5,textTransform:"uppercase"}}>Ribattuta R</div>
-                            <div style={{display:"flex",gap:6,marginBottom:12}}>
-                              {(sis?.id==="PROI"?[50]:[30,50,70]).map(r=>(
-                                <div key={r} onClick={()=>upCT({ribattuta:r})}
-                                  style={{flex:1,padding:"8px 4px",borderRadius:8,textAlign:"center",
-                                    cursor:"pointer",
+                          </div>
+
+                          {/* B — solo se sistema ha sede persiana */}
+                          {sistema.hasB && (
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:28,height:28,borderRadius:6,background:"#D08008",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                <span style={{fontSize:13,fontWeight:800,color:"white"}}>B</span>
+                              </div>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:9,fontWeight:700,color:"#D08008",marginBottom:3}}>SEDE PERSIANA (mm) — variabile</div>
+                                <input type="number" inputMode="numeric" placeholder="inserisci mm"
+                                  value={ct.varB||""}
+                                  onChange={e=>updateV("controtelaio",{...ct,varB:parseInt(e.target.value)||0})}
+                                  style={{...S.input,borderColor:"#D0800860",fontSize:18,padding:"9px 14px"}}/>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* C — profondità cassonetto */}
+                          {sistema.hasCass && (
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <div style={{width:28,height:28,borderRadius:6,background:"#3B7FE0",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                                <span style={{fontSize:13,fontWeight:800,color:"white"}}>C</span>
+                              </div>
+                              <div style={{flex:1}}>
+                                <div style={{fontSize:9,fontWeight:700,color:"#3B7FE0",marginBottom:3}}>PROFONDITÀ INTONACO (mm) — std 325</div>
+                                <input type="number" inputMode="numeric" placeholder="325"
+                                  value={ct.varC||""}
+                                  onChange={e=>updateV("controtelaio",{...ct,varC:parseInt(e.target.value)||0})}
+                                  style={{...S.input,borderColor:"#3B7FE060",fontSize:18,padding:"9px 14px"}}/>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── MISURE CONTROTELAIO ── */}
+                        <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10}}>
+                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>
+                            Misure controtelaio
+                          </div>
+
+                          {/* Schema visivo riferimento misura */}
+                          <div style={{background:"#F0F4FF",borderRadius:8,padding:"8px 10px",marginBottom:8,
+                            border:"1px solid #3B7FE020",display:"flex",gap:10,alignItems:"center"}}>
+                            <svg width={60} height={44} viewBox="0 0 60 44">
+                              {/* muro */}
+                              <rect x={0} y={0} width={60} height={44} fill="#E8EEF5"/>
+                              {/* controtelaio */}
+                              <rect x={8} y={6} width={44} height={32} fill="#fff" stroke="#3B7FE0" strokeWidth={1.5}/>
+                              {/* infisso */}
+                              <rect x={14} y={11} width={32} height={22} fill="#E0F2FE" stroke="#0284C7" strokeWidth={1}/>
+                              {/* freccia luce */}
+                              <line x1={14} y1={38} x2={46} y2={38} stroke="#DC4444" strokeWidth={1}/>
+                              <polygon points="14,36 14,40 10,38" fill="#DC4444"/>
+                              <polygon points="46,36 46,40 50,38" fill="#DC4444"/>
+                              <text x={30} y={43} textAnchor="middle" fontSize={5} fill="#DC4444" fontWeight="800">LUCE ARCH.</text>
+                              {/* label A */}
+                              <text x={4} y={24} textAnchor="middle" fontSize={5} fill="#DC4444" fontWeight="800">A</text>
+                            </svg>
+                            <div style={{fontSize:10,color:"#3B7FE0",lineHeight:1.5}}>
+                              <div style={{fontWeight:800,marginBottom:2}}>Come misurare</div>
+                              <div style={{color:"#64748B"}}>
+                                {ct.tipoMisura==="luce"&&"Luce architettonica = larghezza netta del vano nel muro"}
+                                {ct.tipoMisura==="esterno"&&"Esterno CT = dimensione esterna del controtelaio montato"}
+                                {ct.tipoMisura==="interno"&&"Interno telaio = luce interna dell'infisso"}
+                                {ct.tipoMisura==="grezzo"&&"Muro grezzo = apertura prima dell'intonaco"}
+                                {!ct.tipoMisura&&"Seleziona il tipo di misura →"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Tipo riferimento */}
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
+                            {[
+                              {id:"luce",l:"Luce architett."},
+                              {id:"esterno",l:"Esterno CT"},
+                              {id:"interno",l:"Interno telaio"},
+                              {id:"grezzo",l:"Muro grezzo"},
+                            ].map(tm=>(
+                              <div key={tm.id}
+                                onClick={()=>updateV("controtelaio",{...ct,tipoMisura:tm.id})}
+                                style={{padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,
+                                  border:`1.5px solid ${ct.tipoMisura===tm.id?"#3B7FE0":T.bdr}`,
+                                  background:ct.tipoMisura===tm.id?"#3B7FE015":T.card,
+                                  color:ct.tipoMisura===tm.id?"#3B7FE0":T.sub}}>
+                                {tm.l}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* L × H */}
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                            <div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>LARGHEZZA L (mm)</div>
+                              <input type="number" inputMode="numeric" placeholder="L"
+                                value={ct.l||""}
+                                onChange={e=>updateV("controtelaio",{...ct,l:parseInt(e.target.value)||0})}
+                                style={{...S.input,fontSize:20,padding:"10px 14px"}}/>
+                            </div>
+                            <div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>ALTEZZA H (mm)</div>
+                              <input type="number" inputMode="numeric" placeholder="H"
+                                value={ct.h||""}
+                                onChange={e=>updateV("controtelaio",{...ct,h:parseInt(e.target.value)||0})}
+                                style={{...S.input,fontSize:20,padding:"10px 14px"}}/>
+                            </div>
+                          </div>
+
+                          {/* Ribattuta */}
+                          <div style={{marginBottom:10}}>
+                            <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>RIBATTUTA R</div>
+                            <div style={{display:"flex",gap:6}}>
+                              {(sistema?.id==="PROI"?[50]:[30,50,70]).map(r=>(
+                                <div key={r}
+                                  onClick={()=>updateV("controtelaio",{...ct,ribattuta:r})}
+                                  style={{flex:1,padding:"8px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
                                     border:`2px solid ${ct.ribattuta===r?"#1A9E73":T.bdr}`,
                                     background:ct.ribattuta===r?"#1A9E7315":T.card}}>
-                                  <div style={{fontSize:16,fontWeight:800,fontFamily:FM,
+                                  <div style={{fontSize:15,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
                                     color:ct.ribattuta===r?"#1A9E73":T.text}}>{r}</div>
                                   <div style={{fontSize:8,color:T.sub}}>mm</div>
                                 </div>
                               ))}
-                              {sis?.id==="PROI"&&(
-                                <div style={{flex:2,padding:"8px",borderRadius:8,
-                                  background:"#1A9E7310",border:"1px dashed #1A9E7340",
-                                  display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                  <span style={{fontSize:9,color:"#1A9E73",fontWeight:600}}>
-                                    PROI — std 50mm
-                                  </span>
+                              {sistema?.id==="PROI"&&(
+                                <div style={{flex:2,padding:"8px",borderRadius:8,background:"#1A9E7310",
+                                  border:"1px dashed #1A9E7340",display:"flex",alignItems:"center"}}>
+                                  <div style={{fontSize:9,color:"#1A9E73",fontWeight:600}}>PROI — ribattuta standard 50mm</div>
                                 </div>
                               )}
                             </div>
-                            {/* CTA avanti */}
-                            {ct.l>0&&ct.h>0&&(
-                              <div onClick={()=>upCT({_openStep:3})}
-                                style={{padding:"11px",borderRadius:10,textAlign:"center",
-                                  background:"#1A9E73",color:"#fff",fontSize:13,
-                                  fontWeight:800,cursor:"pointer"}}>
-                                Avanti →
+                          </div>
+
+                          {/* Calcola offset infisso */}
+                          {ct.l > 0 && ct.h > 0 && (
+                            <div onClick={()=>{
+                              const off = ct.ribattuta || 30;
+                              const cl = ct.l - off*2;
+                              const ch = ct.h - off*2;
+                              updateMisureBatch(v.id, {lAlto:cl,lCentro:cl,lBasso:cl});
+                              updateMisura(v.id,"hSx",ch); updateMisura(v.id,"hCentro",ch); updateMisura(v.id,"hDx",ch);
+                            }}
+                              style={{padding:"10px 14px",borderRadius:10,background:"#1A9E7315",
+                                border:"1.5px solid #1A9E7340",textAlign:"center",cursor:"pointer",marginBottom:4}}>
+                              <div style={{fontSize:12,fontWeight:800,color:"#1A9E73"}}>
+                                Calcola misura infisso (−{ct.ribattuta||30}mm/lato)
                               </div>
-                            )}
+                              <div style={{fontSize:10,color:"#1A9E7380",marginTop:2,fontFamily:"'JetBrains Mono',monospace"}}>
+                                {(ct.l||0)-(ct.ribattuta||30)*2} × {(ct.h||0)-(ct.ribattuta||30)*2} mm
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ── CASSONETTO / AVVOLGIBILE (solo sistemi hasCass) ── */}
+                        {sistema?.hasCass && (
+                          <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:4}}>
+                            <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:8,
+                              textTransform:"uppercase",letterSpacing:0.5}}>
+                              Avvolgibile / Cassonetto
+                            </div>
+
+                            {/* Motore o cinghia */}
+                            <div style={{marginBottom:8}}>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>COMANDO</div>
+                              <div style={{display:"flex",gap:6}}>
+                                {[["cinghia","Cinghia"],["motore","Motore"],["nessuno","Nessuno"]].map(([val,lbl])=>(
+                                  <div key={val}
+                                    onClick={()=>updateV("controtelaio",{...ct,comando:val})}
+                                    style={{flex:1,padding:"7px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
+                                      border:`2px solid ${ct.comando===val?"#D08008":T.bdr}`,
+                                      background:ct.comando===val?"#D0800815":T.card}}>
+                                    <div style={{fontSize:11,fontWeight:700,
+                                      color:ct.comando===val?"#D08008":T.sub}}>{lbl}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* DX / SX */}
+                            <div style={{marginBottom:8}}>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>AVVOLGIMENTO</div>
+                              <div style={{display:"flex",gap:6}}>
+                                {[["dx","DX"],["sx","SX"]].map(([val,lbl])=>(
+                                  <div key={val}
+                                    onClick={()=>updateV("controtelaio",{...ct,avvLato:val})}
+                                    style={{flex:1,padding:"9px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
+                                      border:`2px solid ${ct.avvLato===val?"#3B7FE0":T.bdr}`,
+                                      background:ct.avvLato===val?"#3B7FE015":T.card}}>
+                                    <div style={{fontSize:14,fontWeight:800,
+                                      color:ct.avvLato===val?"#3B7FE0":T.sub}}>{lbl}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Tipologia avvolgibile */}
+                            <div style={{marginBottom:8}}>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>TIPOLOGIA AVVOLGIBILE</div>
+                              <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                                {["Tapparella PVC","Tapparella alluminio","Tapparella legno","Persiana legno","Persiana alluminio","Veneziana"].map(tip=>(
+                                  <div key={tip}
+                                    onClick={()=>updateV("controtelaio",{...ct,avvTipologia:tip})}
+                                    style={{padding:"5px 9px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:600,
+                                      border:`1.5px solid ${ct.avvTipologia===tip?"#D08008":T.bdr}`,
+                                      background:ct.avvTipologia===tip?"#D0800815":T.card,
+                                      color:ct.avvTipologia===tip?"#D08008":T.sub}}>
+                                    {tip}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Colore avvolgibile */}
+                            <div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>COLORE AVVOLGIBILE</div>
+                              <input type="text" placeholder="es. Bianco RAL 9010, Noce, Argento..."
+                                value={ct.avvColore||""}
+                                onChange={e=>updateV("controtelaio",{...ct,avvColore:e.target.value})}
+                                style={{...S.input,fontSize:13,padding:"9px 12px"}}/>
+                            </div>
                           </div>
                         )}
-                      </div>
-                    )}
 
-                    {/* ── STEP 3 — SEDE INFISSO (A/B/C) ── */}
-                    {s2ok&&(
-                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${s3ok&&ct._openStep!==3?"#1A9E7340":T.bdr}`}}>
-                        <StepHdr n="3" label={s3ok?`A=${ct.varA}mm${ct.varB?` · B=${ct.varB}mm`:""}${ct.varC?` · C=${ct.varC}mm`:""}`:"Sede infisso"}
-                          done={s3ok} active={!s3ok||ct._openStep===3}
-                          onClick={()=>upCT({_openStep:3})}/>
-                        {(!s3ok||ct._openStep===3)&&(
-                          <div style={{padding:"0 12px 14px",background:"#fff"}}>
-                            {/* Sagoma */}
-                            <div style={{background:"#F8FBFF",borderRadius:8,
-                              border:"1px solid #3B7FE015",padding:"8px",margin:"10px 0 12px"}}>
-                              <ConfiguratoreControtelaio
-                                value={v.controtelaio?.disegno}
-                                sistemaId={sis?.id||null}
-                                onChange={(d)=>updateV("controtelaio",{...(v.controtelaio||{}),disegno:d})}
-                                T={T}/>
-                            </div>
-                            {/* Input A */}
-                            {[
-                              {key:"varA",label:"A — Sede infisso",color:"#DC4444",always:true},
-                              {key:"varB",label:"B — Sede persiana",color:"#D08008",always:false},
-                              {key:"varC",label:"C — Profondità intonaco (std 325)",color:"#3B7FE0",always:false},
-                            ].filter(f=>f.always||sis?.[f.key==="varB"?"hasB":f.key==="varC"?"hasCass":""]).map(f=>(
-                              <div key={f.key} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                                <div style={{width:28,height:28,borderRadius:6,flexShrink:0,
-                                  background:f.color,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                  <span style={{fontSize:13,fontWeight:800,color:"#fff"}}>
-                                    {f.key==="varA"?"A":f.key==="varB"?"B":"C"}
-                                  </span>
-                                </div>
-                                <div style={{flex:1}}>
-                                  <div style={{fontSize:9,fontWeight:700,color:f.color,marginBottom:3}}>{f.label} (mm)</div>
-                                  <input type="number" inputMode="numeric"
-                                    placeholder={f.key==="varC"?"325":"inserisci mm"}
-                                    value={ct[f.key]||""}
-                                    onChange={e=>upCT({[f.key]:parseInt(e.target.value)||0})}
-                                    style={{...S.input,borderColor:f.color+"60",
-                                      fontSize:20,padding:"9px 14px",fontFamily:FM}}/>
-                                </div>
-                              </div>
-                            ))}
-                            {ct.varA>0&&(
-                              <div onClick={()=>upCT({_openStep:sis?.hasCass?4:5})}
-                                style={{padding:"11px",borderRadius:10,textAlign:"center",
-                                  background:"#1A9E73",color:"#fff",fontSize:13,
-                                  fontWeight:800,cursor:"pointer",marginTop:8}}>
-                                Avanti →
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ── STEP 4 — AVVOLGIBILE (solo hasCass) ── */}
-                    {s3ok&&sis?.hasCass&&(
-                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${s4ok&&ct._openStep!==4?"#1A9E7340":T.bdr}`}}>
-                        <StepHdr n="4" label={s4ok?`${ct.avvTipologia||"Avvolgibile"} · ${ct.avvLato?.toUpperCase()||""}${ct.avvColore?" · "+ct.avvColore:""}`:"Avvolgibile / cassonetto"}
-                          done={s4ok} active={!s4ok||ct._openStep===4}
-                          onClick={()=>upCT({_openStep:4})}/>
-                        {(!s4ok||ct._openStep===4)&&(
-                          <div style={{padding:"0 12px 14px",background:"#fff"}}>
-                            {/* DX/SX */}
-                            <div style={{fontSize:9,fontWeight:700,color:T.sub,
-                              padding:"10px 0 5px",textTransform:"uppercase"}}>Avvolgimento</div>
-                            <div style={{display:"flex",gap:8,marginBottom:12}}>
-                              {[["dx","DX"],["sx","SX"]].map(([val,lbl])=>(
-                                <div key={val} onClick={()=>upCT({avvLato:val})}
-                                  style={{flex:1,padding:"12px 4px",borderRadius:10,
-                                    textAlign:"center",cursor:"pointer",
-                                    border:`2px solid ${ct.avvLato===val?"#3B7FE0":T.bdr}`,
-                                    background:ct.avvLato===val?"#3B7FE015":T.card}}>
-                                  <div style={{fontSize:18,fontWeight:800,
-                                    color:ct.avvLato===val?"#3B7FE0":T.sub}}>{lbl}</div>
-                                </div>
-                              ))}
-                            </div>
-                            {/* Comando */}
-                            <div style={{fontSize:9,fontWeight:700,color:T.sub,
-                              marginBottom:5,textTransform:"uppercase"}}>Comando</div>
-                            <div style={{display:"flex",gap:6,marginBottom:12}}>
-                              {[["cinghia","Cinghia"],["motore","Motore"],["nessuno","Nessuno"]].map(([val,lbl])=>(
-                                <div key={val} onClick={()=>upCT({comando:val})}
-                                  style={{flex:1,padding:"8px 4px",borderRadius:8,
-                                    textAlign:"center",cursor:"pointer",
-                                    border:`1.5px solid ${ct.comando===val?"#D08008":T.bdr}`,
-                                    background:ct.comando===val?"#D0800815":T.card}}>
-                                  <div style={{fontSize:11,fontWeight:700,
-                                    color:ct.comando===val?"#D08008":T.sub}}>{lbl}</div>
-                                </div>
-                              ))}
-                            </div>
-                            {/* Tipologia */}
-                            <div style={{fontSize:9,fontWeight:700,color:T.sub,
-                              marginBottom:5,textTransform:"uppercase"}}>Tipologia</div>
-                            <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:12}}>
-                              {["Tapparella PVC","Tapparella alluminio","Tapparella legno",
-                                "Persiana legno","Persiana alluminio","Veneziana"].map(tip=>(
-                                <div key={tip} onClick={()=>upCT({avvTipologia:tip})}
-                                  style={{padding:"5px 9px",borderRadius:6,cursor:"pointer",
-                                    fontSize:10,fontWeight:600,
-                                    border:`1.5px solid ${ct.avvTipologia===tip?"#D08008":T.bdr}`,
-                                    background:ct.avvTipologia===tip?"#D0800815":T.card,
-                                    color:ct.avvTipologia===tip?"#D08008":T.sub}}>
-                                  {tip}
-                                </div>
-                              ))}
-                            </div>
-                            {/* Colore */}
-                            <div style={{fontSize:9,fontWeight:700,color:T.sub,
-                              marginBottom:5,textTransform:"uppercase"}}>Colore avvolgibile</div>
-                            <input type="text" placeholder="es. Bianco 9010, Noce, Argento..."
-                              value={ct.avvColore||""}
-                              onChange={e=>upCT({avvColore:e.target.value})}
-                              style={{...S.input,fontSize:13,padding:"9px 12px",marginBottom:12}}/>
-                            {ct.avvLato&&(
-                              <div onClick={()=>upCT({_openStep:5})}
-                                style={{padding:"11px",borderRadius:10,textAlign:"center",
-                                  background:"#1A9E73",color:"#fff",fontSize:13,
-                                  fontWeight:800,cursor:"pointer"}}>
-                                Avanti →
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ── STEP 5 — ACCESSORI ── */}
-                    {(s3ok&&!sis?.hasCass)||(s4ok&&sis?.hasCass)?(
-                      <div style={{borderRadius:10,overflow:"hidden",border:`1.5px solid ${T.bdr}`}}>
-                        <StepHdr n={sis?.hasCass?"5":"4"} label="Accessori" done={false} active={ct._openStep===5||ct._openStep===4&&!sis?.hasCass}
-                          onClick={()=>{}}/>
-                        <div style={{padding:"0 12px 14px",background:"#fff"}}>
-                          <div style={{display:"flex",gap:5,flexWrap:"wrap",paddingTop:8}}>
+                        {/* ── ACCESSORI ── */}
+                        <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:10}}>
+                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,
+                            textTransform:"uppercase",letterSpacing:0.5}}>Accessori</div>
+                          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                             {[
                               ["battutaPVC","Battuta PVC"],
                               ["battutaLegno","Battuta legno"],
@@ -1229,11 +1255,11 @@ export default function VanoDetailPanel() {
                               ["tappoZanz","Tappo zanzariera"],
                               ["sottobancale","Sottobancale EPS"],
                               ["assemblaggio","Assemblaggio CT"],
-                              ...(sis?.hasCass?[["avvMontaggio","Montaggio avvolgibile"]]:[]),
+                              ...(sistema?.hasCass?[["avvMontaggio","Montaggio avvolgibile"]]:[]),
                             ].map(([k,lbl])=>(
-                              <div key={k} onClick={()=>upCT({[k]:!ct[k]})}
-                                style={{padding:"6px 11px",borderRadius:7,cursor:"pointer",
-                                  fontSize:11,fontWeight:600,
+                              <div key={k}
+                                onClick={()=>updateV("controtelaio",{...ct,[k]:!ct[k]})}
+                                style={{padding:"6px 11px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:600,
                                   border:`1.5px solid ${ct[k]?"#D08008":T.bdr}`,
                                   background:ct[k]?"#D0800815":T.card,
                                   color:ct[k]?"#D08008":T.sub}}>
@@ -1242,28 +1268,58 @@ export default function VanoDetailPanel() {
                             ))}
                           </div>
                         </div>
-                      </div>
-                    ):null}
 
-                    {/* ── ANTEPRIMA ORDINE ── */}
-                    {allOk&&(
-                      <div style={{borderRadius:10,background:"#1A1A1C",padding:"12px 14px"}}>
-                        <div style={{fontSize:9,fontWeight:800,
-                          color:"rgba(255,255,255,0.4)",textTransform:"uppercase",
-                          letterSpacing:0.5,marginBottom:6}}>Riga ordine</div>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                          <span style={{fontFamily:FM,fontSize:12,background:"#1A9E73",
-                            color:"#fff",borderRadius:4,padding:"2px 8px",fontWeight:800}}>
-                            {ct.sistema}
-                          </span>
-                          <span style={{fontFamily:FM,fontSize:13,color:"#fff",fontWeight:800}}>
-                            {ct.l} × {ct.h} mm
-                          </span>
-                          {ct.ribattuta&&<span style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>R={ct.ribattuta}</span>}
-                          {ct.varA>0&&<span style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>A={ct.varA}{ct.varB>0?` B=${ct.varB}`:""}</span>}
-                          {ct.avvLato&&<span style={{fontSize:11,background:"#3B7FE0",color:"#fff",borderRadius:4,padding:"1px 6px",fontWeight:700}}>{ct.avvLato.toUpperCase()}</span>}
-                          {ct.avvTipologia&&<span style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>{ct.avvTipologia}</span>}
-                        </div>
+                        {/* ── RIEPILOGO ORDINE ── */}
+                        {ct.l > 0 && ct.h > 0 && ct.sistema && (
+                          <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:10}}>
+                            <div style={{background:"#1A1A1C",borderRadius:10,padding:"12px 14px"}}>
+                              <div style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.5)",
+                                textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>
+                                Anteprima riga ordine
+                              </div>
+                              <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,
+                                  background:"#1A9E73",color:"#fff",borderRadius:4,padding:"2px 8px",fontWeight:700}}>
+                                  {ct.sistema}
+                                </span>
+                                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,
+                                  color:"#fff",fontWeight:700}}>
+                                  {ct.l} × {ct.h} mm
+                                </span>
+                                {ct.ribattuta&&(
+                                  <span style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>
+                                    bat. {ct.ribattuta}mm
+                                  </span>
+                                )}
+                                {ct.varA>0&&(
+                                  <span style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>
+                                    A={ct.varA}mm{ct.varB>0?` B=${ct.varB}mm`:""}
+                                  </span>
+                                )}
+                                {ct.avvLato&&(
+                                  <span style={{fontSize:10,background:"#3B7FE0",color:"#fff",
+                                    borderRadius:4,padding:"1px 6px",fontWeight:700}}>
+                                    {ct.avvLato.toUpperCase()}
+                                  </span>
+                                )}
+                                {ct.avvTipologia&&(
+                                  <span style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>
+                                    {ct.avvTipologia}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                      </div>
+                    )}
+
+                    {/* Salta */}
+                    {!sistema && (
+                      <div style={{textAlign:"center",padding:"8px 0",fontSize:12,color:T.sub,cursor:"pointer"}}
+                        onClick={()=>updateV("controtelaio",{tipo:"nessuno"})}>
+                        Nessun controtelaio → Salta
                       </div>
                     )}
 
@@ -1390,15 +1446,22 @@ export default function VanoDetailPanel() {
           </div>
 
           {/* FOTO + MISURE RAPIDA */}
-          <div onClick={() => setShowFotoMisure(true)} style={{ padding: "12px 16px", borderRadius: 14, background: "linear-gradient(135deg, #DC4444, #B83030)", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 0, boxShadow: "0 3px 12px rgba(220,68,68,0.3)" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div onClick={() => setShowFotoMisure(true)} style={{ padding: "12px 16px", borderRadius: 14,
+            background: T.card, cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
+            marginBottom: 0, border: "1.5px solid " + T.bdr,
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: T.acc + "15",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>Foto + Misure</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>Scatta foto e annota misure sopra</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>Foto + Misure</div>
+              <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>Scatta foto e annota misure sopra</div>
             </div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           {/* GALLERY FOTO MISURE — sotto il bottone */}
           {(() => {
@@ -2497,8 +2560,8 @@ export default function VanoDetailPanel() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.blue }}><I d={ICO.camera} /> FOTO ({(v.foto && Object.keys(v.foto).length) || 0})</div>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: "#DC4444", color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
-                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: "#DC4444", color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
+                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: T.acc+"15", color: T.acc, border: "1px solid "+T.acc+"40", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
+                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: T.acc+"15", color: T.acc, border: "1px solid "+T.acc+"40", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
                     <button onClick={() => openCamera("foto", null)}
                       style={{ padding: "4px 10px", borderRadius: 6, background: T.acc, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.camera} /> Foto</button>
                     <button onClick={() => openCamera("video", null)}

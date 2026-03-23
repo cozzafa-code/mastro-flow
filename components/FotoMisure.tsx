@@ -14,10 +14,15 @@ const COLORS = [
   { c: "#fff",    l: "Bianco" },
 ];
 
+const TOOL_SVGS: Record<string, any> = {
+  line:  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="3" y1="21" x2="21" y2="3"/><path d="M3 9V3h6"/><path d="M21 15v6h-6"/></svg>,
+  point: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="10" r="4"/><line x1="12" y1="14" x2="12" y2="21"/></svg>,
+  text:  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>,
+};
 const TOOLS = [
-  { id: "line",  icon: "📏", label: "Misura" },
-  { id: "point", icon: "📍", label: "Punto" },
-  { id: "text",  icon: "✏️", label: "Nota" },
+  { id: "line",  label: "Misura" },
+  { id: "point", label: "Punto" },
+  { id: "text",  label: "Nota" },
 ];
 
 export default function FotoMisure({ imageUrl, onSave, onClose, T }) {
@@ -400,7 +405,7 @@ export default function FotoMisure({ imageUrl, onSave, onClose, T }) {
                     background: tool===t.id ? color+"25" : "rgba(255,255,255,0.06)",
                     border:`1.5px solid ${tool===t.id ? color : "#2a2a2a"}`,
                     minWidth:52 }}>
-                  <span style={{ fontSize:16 }}>{t.icon}</span>
+                  <span style={{ display:"flex", color: tool===t.id ? color : "#666" }}>{TOOL_SVGS[t.id]}</span>
                   <span style={{ fontSize:9, fontWeight:700,
                     color: tool===t.id ? color : "#666" }}>{t.label}</span>
                 </div>
