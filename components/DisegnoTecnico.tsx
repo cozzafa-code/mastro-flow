@@ -537,13 +537,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const findSnap = (mx, my) => {
                               const pts = getSnapPoints();
                               const chainStart = dw._chainStart;
+                              const freeLines = els.filter(e => e.type === "freeLine");
+                              const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
+                              // Snap ai punti frame/celle (escludi chainStart se non possiamo ancora chiudere)
                               pts.forEach(p => {
-                                // Escludi il primo punto della catena — impedisce chiusura automatica
-                                if (chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
+                                if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
                                 const d = Math.hypot(p.x - mx, p.y - my);
                                 if (d < bestD) { bestD = d; best = p; }
                               });
+                              // Snap ai punti delle freeLine esistenti (angoli già disegnati)
+                              freeLines.forEach(l => {
+                                [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}].forEach(p => {
+                                  if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
+                                  const d = Math.hypot(p.x - mx, p.y - my);
+                                  if (d < bestD) { bestD = d; best = p; }
+                                });
+                              });
+                              // Snap al chainStart (chiusura forma) solo se ≥3 segmenti
+                              if (canClose && chainStart) {
+                                const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
+                                if (d < bestD + 4) { best = chainStart; }
+                              }
                               return best;
                             };
 
@@ -903,9 +918,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py } });
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
-                                  // Blocca chiusura automatica: se il punto finale è vicino al chainStart, ignora
+                                  // Snap esatto al chainStart se vicino (chiusura forma intenzionale)
                                   const cs = dw._chainStart;
-                                  if (cs && Math.hypot(px - cs.x, py - cs.y) < SNAP_R + 4) return;
+                                  const freeLines = els.filter(e => e.type === "freeLine");
+                                  if (cs && freeLines.length >= 3 && Math.hypot(px - cs.x, py - cs.y) < SNAP_R + 6) {
+                                    px = cs.x; py = cs.y;
+                                  }
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
                                   setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py }], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart });
                                 }
