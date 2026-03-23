@@ -1751,9 +1751,10 @@ export default function VanoDetailPanel() {
                 const canvasEl = (
                   <canvas ref={canvasRef} width={W} height={H}
                     style={{ width: "100%", height: drawFullscreen ? "calc(100vh - 120px)" : 340,
-                      background: "#fff", touchAction: "none",
+                      background: "#fff", touchAction: "none", display: "block",
                       cursor: drawTool === "eraser" ? "cell" : "crosshair" }}
                     onPointerDown={e => {
+                      e.preventDefault();
                       canvasRef.current?.setPointerCapture(e.pointerId); setIsDrawing(true);
                       const cv = canvasRef.current; const ctx = cv?.getContext("2d");
                       if (ctx && cv) {
@@ -1765,12 +1766,15 @@ export default function VanoDetailPanel() {
                       }
                     }}
                     onPointerMove={e => {
+                      e.preventDefault();
                       if (!isDrawing) return;
                       const cv = canvasRef.current; const ctx = cv?.getContext("2d");
                       if (ctx && cv) { const r = cv.getBoundingClientRect(); const sx = cv.width/r.width, sy = cv.height/r.height; ctx.lineTo((e.clientX-r.left)*sx, (e.clientY-r.top)*sy); ctx.stroke(); }
                     }}
-                    onPointerUp={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if(ctx) ctx.globalCompositeOperation = "source-over"; }}
+                    onPointerUp={e => { e.preventDefault(); setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if(ctx) ctx.globalCompositeOperation = "source-over"; }}
                     onPointerLeave={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if(ctx) ctx.globalCompositeOperation = "source-over"; }}
+                    onTouchStart={e => { e.preventDefault(); }}
+                    onTouchMove={e => { e.preventDefault(); }}
                   />
                 );
                 const toolbar = (
@@ -1831,7 +1835,10 @@ export default function VanoDetailPanel() {
                       </div>
                     </div>
                     {toolbar}
-                    <div style={{ flex: 1, overflow: "hidden" }}>{canvasEl}</div>
+                    <div style={{ flex: 1, overflow: "hidden", position: "relative" }}
+                      ref={el => { if(el && drawFullscreen) { setTimeout(() => loadPageData(drawPageIdx), 50); } }}>
+                      {canvasEl}
+                    </div>
                     {pageStrip}
                   </div>
                 );
@@ -2588,7 +2595,10 @@ export default function VanoDetailPanel() {
                         <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Chiudi</button>
                       </div>
                     </div>
-                    <div style={{ flex: 1, overflow: "hidden" }}>{canvasEl}</div>
+                    <div style={{ flex: 1, overflow: "hidden", position: "relative" }}
+                      ref={el => { if(el && drawFullscreen) { setTimeout(() => loadPageData(drawPageIdx), 50); } }}>
+                      {canvasEl}
+                    </div>
                     {toolbar}
                     {pageStrip}
                   </div>
