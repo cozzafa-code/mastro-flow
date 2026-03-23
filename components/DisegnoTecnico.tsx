@@ -903,25 +903,69 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py } });
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
-                                  // Blocca chiusura automatica
+                                  // Blocca chiusura automatica: se il punto finale è vicino al chainStart, ignora
                                   const cs = dw._chainStart;
                                   if (cs && Math.hypot(px - cs.x, py - cs.y) < SNAP_R + 4) return;
-                                  // Snap esatto: forza punto finale al punto più vicino delle freeLine esistenti
-                                  const snapR2 = 20;
-                                  let finalX = px, finalY = py;
-                                  els.filter(e => e.type === "freeLine").forEach(l => {
-                                    if (Math.hypot(finalX - l.x1, finalY - l.y1) < snapR2) { finalX = l.x1; finalY = l.y1; }
-                                    if (Math.hypot(finalX - l.x2, finalY - l.y2) < snapR2) { finalX = l.x2; finalY = l.y2; }
-                                  });
-                                  // Snap esatto: forza punto iniziale al punto più vicino delle freeLine esistenti
-                                  let startX = pending.x1, startY = pending.y1;
-                                  els.filter(e => e.type === "freeLine").forEach(l => {
-                                    if (Math.hypot(startX - l.x1, startY - l.y1) < snapR2) { startX = l.x1; startY = l.y1; }
-                                    if (Math.hypot(startX - l.x2, startY - l.y2) < snapR2) { startX = l.x2; startY = l.y2; }
-                                  });
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
-                                  setDW([...els, { id: Date.now(), type: lineType, x1: startX, y1: startY, x2: finalX, y2: finalY }], { _pendingLine: { x1: finalX, y1: finalY }, _chainStart: dw._chainStart });
-                                } else {
+                                  setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py }], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart });
+                                }
+                                return;
+                              }
+
+                              // Default — deselect
+                              setMode({ selectedId: null });
+                            };
+
+                            // ══ Styles ══
+                            const bs = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.purple : T.bdr}`, background: active ? `${T.purple}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? T.purple : T.text });
+                            const bAp = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
+                            const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
+
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" ? "crosshair" : drawMode ? "pointer" : "default";
+
+                            return (
+                              <div style={{ marginTop: 8, background: T.card, borderRadius: 12, border: `1.5px solid ${T.purple}`, overflow: "hidden" }}>
+                                {/* Header */}
+                                <div style={{ padding: "8px 12px", background: `${T.purple}10`, display: "flex", alignItems: "center", gap: 8 }}>
+                                  <span style={{ fontSize: 14 }}>✏️</span>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: T.purple, flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
+                                  <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
+                                </div>
+
+                                {/* ═══ TAB BAR ═══ */}
+                                <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
+                                  {[{ id: "disegno", l: "✏️ Disegno", c: T.purple }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }].map(tab => (
+                                    <div key={tab.id} onClick={() => setViewTab(tab.id)}
+                                      style={{ flex: 1, padding: "7px 0", textAlign: "center", fontSize: 11, fontWeight: viewTab === tab.id ? 800 : 500, color: viewTab === tab.id ? tab.c : T.sub, borderBottom: viewTab === tab.id ? `2.5px solid ${tab.c}` : "2.5px solid transparent", cursor: "pointer", transition: "all 0.15s" }}>
+                                      {tab.l}
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* ═══ TAB: FORMA ═══ */}
+                                {viewTab === "forma" && <FormaEditor T={T} realW={realW} realH={realH} />}
+
+                                {/* ═══ TAB: 3D ═══ */}
+                                {viewTab === "3d" && <View3D T={T} realW={realW} realH={realH} vanoDisegno={vanoDisegno} onUpdate={onUpdate} />}
+
+                                {/* ═══ TAB: DISEGNO (originale) ═══ */}
+                                {viewTab === "disegno" && <>
+                                {/* Mode indicators */}
+                                <div style={{ padding: "4px 8px 0", display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                  {drawMode === "line" && <span style={{ fontSize: 9, background: "#333", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>╱ STRUTTURA</span>}
+                                  {drawMode === "apertura" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>↗ APERTURA</span>}
+                                  {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") && <span style={{ fontSize: 9, background: T.grn, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 CLICK su cella</span>}
+                                  {(drawMode === "place-mont" || drawMode === "place-trav") && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {drawMode === "place-mont" ? "MONTANTE" : "TRAVERSO"} — click cella</span>}
+                                  {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
+                                </div>
+
+                                {/* Row 1: Struttura */}
+                                <div style={{ display: "flex", gap: 3, padding: "5px 8px", overflowX: "auto" }}>
+                                  <div onClick={() => {
+                                    if (frames.length === 0) {
+                                      // First telaio: fill canvas
+                                      setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
+                                    } else {
                                       // Additional telaio (zoppo): add offset
                                       const lastF = frames[frames.length - 1];
                                       const nw = lastF.w * 0.6, nh = lastF.h * 0.5;
