@@ -1003,11 +1003,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                 });
                               }
+                              // In forma chiusa: non spostare il segmento che è connesso all'x1/y1 del segmento modificato
+                              // (evita di spostare tutto il poligono)
+                              const startPtConnected = new Set();
+                              freeLines.forEach(l => {
+                                if (l.id === elId) return;
+                                if (Math.hypot(l.x2 - el2.x1, l.y2 - el2.y1) < CONN ||
+                                    Math.hypot(l.x1 - el2.x1, l.y1 - el2.y1) < CONN) {
+                                  startPtConnected.add(l.id);
+                                }
+                              });
                               const updEls = els.map(x => {
                                 if (x.id === elId) return { ...x, x2: newX2, y2: newY2, _mmOverride: newMM };
                                 if (x.type !== "freeLine" || !propagated.has(x.id)) return x;
-                                const el2x2 = el2.x2, el2y2 = el2.y2;
-                                const connStart = Math.hypot(x.x1 - el2x2, x.y1 - el2y2) < CONN;
+                                if (startPtConnected.has(x.id)) return x; // non spostare chi è connesso all'inizio
                                 return { ...x, x1: Math.round(x.x1 + ddx), y1: Math.round(x.y1 + ddy), x2: Math.round(x.x2 + ddx), y2: Math.round(x.y2 + ddy) };
                               });
                               setDW(updEls);
@@ -1370,43 +1379,37 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
                                   ))}
 
-                                  {/* ══ CLOSED POLYGON PROFILES — clipPath approach, sempre esterno ══ */}
+                                  {/* ══ CLOSED POLYGON PROFILES — doppio stroke con mask ══ */}
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
-                                    const TK = TK_FRAME * 2.5; // spessore stroke totale
+                                    const TK = TK_FRAME; // half-thickness
+                                    const SW = TK * 2;   // stroke width totale
                                     const ptStr = polyPts.map(p => `${p[0]},${p[1]}`).join(" ");
-                                    const clipId = `polyOuter-${vanoId}-${polyIdx}`;
-                                    // Espandi leggermente il clipPath verso l'esterno usando il centroide
-                                    const cx = polyPts.reduce((s,p)=>s+p[0],0)/polyPts.length;
-                                    const cy2 = polyPts.reduce((s,p)=>s+p[1],0)/polyPts.length;
-                                    const expandPts = polyPts.map(p => {
-                                      const dx=p[0]-cx, dy=p[1]-cy2;
-                                      const len=Math.hypot(dx,dy)||1;
-                                      return `${(p[0]+dx/len*TK).toFixed(1)},${(p[1]+dy/len*TK).toFixed(1)}`;
-                                    }).join(" ");
+                                    const filtId = `dilate-${vanoId}-${polyIdx}`;
+                                    const maskId = `pmask-${vanoId}-${polyIdx}`;
                                     return (
                                       <g key={`pp${polyIdx}`}>
                                         <defs>
-                                          {/* ClipPath = poligono espanso verso esterno — taglia lo stroke lasciando solo la parte esterna */}
-                                          <clipPath id={clipId}>
-                                            <polygon points={expandPts} />
-                                          </clipPath>
+                                          {/* Filter dilate: espande la forma di TK px uniformemente */}
+                                          <filter id={filtId} x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+                                            <feMorphology operator="dilate" radius={TK} in="SourceGraphic" result="expanded" />
+                                          </filter>
+                                          {/* Mask: mostra solo l'anello esterno (expanded - originale) */}
+                                          <mask id={maskId}>
+                                            {/* Bianco = zona visibile = expanded */}
+                                            <polygon points={ptStr} fill="white" filter={`url(#${filtId})`} />
+                                            {/* Nero = zona nascosta = interno originale */}
+                                            <polygon points={ptStr} fill="black" />
+                                          </mask>
                                         </defs>
-                                        {/* Stroke spesso sulla polygon — clipPath taglia la parte interna */}
-                                        <g clipPath={`url(#${clipId})`}>
-                                          <polygon points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK * 2} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                          <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={TK * 2 + 0.5} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        </g>
-                                        {/* Riempi l'interno di bianco */}
+                                        {/* Profilo beige nell'anello esterno */}
+                                        <polygon points={ptStr} fill="#eceae0" filter={`url(#${filtId})`} mask={`url(#${maskId})`} />
+                                        {/* Bordo esterno nero */}
+                                        <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={1.5} filter={`url(#${filtId})`} mask={`url(#${maskId})`} />
+                                        {/* Fill bianco interno */}
                                         <polygon points={ptStr} fill="#fff" stroke="none" />
-                                        {/* Stroke interno sottile */}
-                                        <polygon points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK * 2} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        {/* Bordo interno */}
-                                        <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        {/* Bordo esterno netto */}
-                                        <g clipPath={`url(#${clipId})`}>
-                                          <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={1.5} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        </g>
+                                        {/* Bordo interno nero */}
+                                        <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" />
                                         {/* Corner dots */}
                                         {polyPts.map((p,pi)=><circle key={`pc${polyIdx}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>
