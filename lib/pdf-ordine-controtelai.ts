@@ -130,8 +130,8 @@ export async function generaOrdineControtelaiPDF(params: PdfOrdineParams): Promi
   y += 26;
 
   // ── Tabella vani ──────────────────────────────────────────────
-  const headers = ["POS", "PZ", "L (mm)", "H (mm)", "BAT. (mm)", "SISTEMA", "VAR A", "VAR B", "TIPO MISURA", "ACCESSORI", "NOTE"];
-  const colWs   = [10,    10,    20,        20,        18,           28,        18,      18,      32,             50,           0]; // 0 = fill
+  const headers = ["POS", "PZ", "L (mm)", "H (mm)", "BAT.", "SISTEMA", "AVV / DX-SX", "ACCESSORI", "NOTE"];
+  const colWs   = [10,    10,    20,        20,        16,      28,        38,             52,           0]; // 0 = fill
   const totalFixed = colWs.reduce((a, b) => a + b, 0);
   const noteW = W - margin * 2 - totalFixed;
   colWs[colWs.length - 1] = noteW;
@@ -166,16 +166,21 @@ export async function generaOrdineControtelaiPDF(params: PdfOrdineParams): Promi
       vano.piano ? `· ${vano.piano}` : "",
     ].filter(Boolean).join(" ");
 
+    const avvCell = [
+      ct.avvTipologia || "",
+      ct.avvLato ? ct.avvLato.toUpperCase() : "",
+      ct.avvColore || "",
+      ct.comando && ct.comando !== "nessuno" ? ct.comando : "",
+    ].filter(Boolean).join(" / ") || "—";
+
     const cells = [
       String(idx + 1),
       "1",
       L > 0 ? String(L) : "—",
       H > 0 ? String(H) : "—",
       ct.ribattuta ? String(ct.ribattuta) : "—",
-      ct.sistema || "—",
-      ct.varA ? String(ct.varA) : "—",
-      ct.varB ? String(ct.varB) : "—",
-      TIPO_MISURA_LABELS[ct.tipoMisura || ""] || "—",
+      [ct.sistema || "—", ct.varA ? `A=${ct.varA}` : "", ct.varB ? `B=${ct.varB}` : ""].filter(Boolean).join(" "),
+      avvCell,
       accAttivi || "—",
       noteVano || "",
     ];

@@ -1054,12 +1054,44 @@ export default function VanoDetailPanel() {
                           )}
                         </div>
 
-                        {/* ── MISURE TOTALI ── */}
+                        {/* ── MISURE CONTROTELAIO ── */}
                         <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10}}>
-                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:8,textTransform:"uppercase"}}>Misure controtelaio</div>
+                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase",letterSpacing:0.5}}>
+                            Misure controtelaio
+                          </div>
+
+                          {/* Schema visivo riferimento misura */}
+                          <div style={{background:"#F0F4FF",borderRadius:8,padding:"8px 10px",marginBottom:8,
+                            border:"1px solid #3B7FE020",display:"flex",gap:10,alignItems:"center"}}>
+                            <svg width={60} height={44} viewBox="0 0 60 44">
+                              {/* muro */}
+                              <rect x={0} y={0} width={60} height={44} fill="#E8EEF5"/>
+                              {/* controtelaio */}
+                              <rect x={8} y={6} width={44} height={32} fill="#fff" stroke="#3B7FE0" strokeWidth={1.5}/>
+                              {/* infisso */}
+                              <rect x={14} y={11} width={32} height={22} fill="#E0F2FE" stroke="#0284C7" strokeWidth={1}/>
+                              {/* freccia luce */}
+                              <line x1={14} y1={38} x2={46} y2={38} stroke="#DC4444" strokeWidth={1}/>
+                              <polygon points="14,36 14,40 10,38" fill="#DC4444"/>
+                              <polygon points="46,36 46,40 50,38" fill="#DC4444"/>
+                              <text x={30} y={43} textAnchor="middle" fontSize={5} fill="#DC4444" fontWeight="800">LUCE ARCH.</text>
+                              {/* label A */}
+                              <text x={4} y={24} textAnchor="middle" fontSize={5} fill="#DC4444" fontWeight="800">A</text>
+                            </svg>
+                            <div style={{fontSize:10,color:"#3B7FE0",lineHeight:1.5}}>
+                              <div style={{fontWeight:800,marginBottom:2}}>Come misurare</div>
+                              <div style={{color:"#64748B"}}>
+                                {ct.tipoMisura==="luce"&&"Luce architettonica = larghezza netta del vano nel muro"}
+                                {ct.tipoMisura==="esterno"&&"Esterno CT = dimensione esterna del controtelaio montato"}
+                                {ct.tipoMisura==="interno"&&"Interno telaio = luce interna dell'infisso"}
+                                {ct.tipoMisura==="grezzo"&&"Muro grezzo = apertura prima dell'intonaco"}
+                                {!ct.tipoMisura&&"Seleziona il tipo di misura →"}
+                              </div>
+                            </div>
+                          </div>
 
                           {/* Tipo riferimento */}
-                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+                          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>
                             {[
                               {id:"luce",l:"Luce architett."},
                               {id:"esterno",l:"Esterno CT"},
@@ -1068,7 +1100,7 @@ export default function VanoDetailPanel() {
                             ].map(tm=>(
                               <div key={tm.id}
                                 onClick={()=>updateV("controtelaio",{...ct,tipoMisura:tm.id})}
-                                style={{padding:"5px 9px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,
+                                style={{padding:"6px 10px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:700,
                                   border:`1.5px solid ${ct.tipoMisura===tm.id?"#3B7FE0":T.bdr}`,
                                   background:ct.tipoMisura===tm.id?"#3B7FE015":T.card,
                                   color:ct.tipoMisura===tm.id?"#3B7FE0":T.sub}}>
@@ -1080,14 +1112,14 @@ export default function VanoDetailPanel() {
                           {/* L × H */}
                           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                             <div>
-                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>LARGHEZZA (mm)</div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>LARGHEZZA L (mm)</div>
                               <input type="number" inputMode="numeric" placeholder="L"
                                 value={ct.l||""}
                                 onChange={e=>updateV("controtelaio",{...ct,l:parseInt(e.target.value)||0})}
                                 style={{...S.input,fontSize:20,padding:"10px 14px"}}/>
                             </div>
                             <div>
-                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>ALTEZZA (mm)</div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:3}}>ALTEZZA H (mm)</div>
                               <input type="number" inputMode="numeric" placeholder="H"
                                 value={ct.h||""}
                                 onChange={e=>updateV("controtelaio",{...ct,h:parseInt(e.target.value)||0})}
@@ -1096,10 +1128,10 @@ export default function VanoDetailPanel() {
                           </div>
 
                           {/* Ribattuta */}
-                          <div style={{marginBottom:8}}>
+                          <div style={{marginBottom:10}}>
                             <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>RIBATTUTA R</div>
                             <div style={{display:"flex",gap:6}}>
-                              {[30,50,70].map(r=>(
+                              {(sistema?.id==="PROI"?[50]:[30,50,70]).map(r=>(
                                 <div key={r}
                                   onClick={()=>updateV("controtelaio",{...ct,ribattuta:r})}
                                   style={{flex:1,padding:"8px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
@@ -1110,11 +1142,17 @@ export default function VanoDetailPanel() {
                                   <div style={{fontSize:8,color:T.sub}}>mm</div>
                                 </div>
                               ))}
+                              {sistema?.id==="PROI"&&(
+                                <div style={{flex:2,padding:"8px",borderRadius:8,background:"#1A9E7310",
+                                  border:"1px dashed #1A9E7340",display:"flex",alignItems:"center"}}>
+                                  <div style={{fontSize:9,color:"#1A9E73",fontWeight:600}}>PROI — ribattuta standard 50mm</div>
+                                </div>
+                              )}
                             </div>
                           </div>
 
                           {/* Calcola offset infisso */}
-                          {ct.l > 0 && ct.h > 0 && ct.varA > 0 && (
+                          {ct.l > 0 && ct.h > 0 && (
                             <div onClick={()=>{
                               const off = ct.ribattuta || 30;
                               const cl = ct.l - off*2;
@@ -1123,20 +1161,91 @@ export default function VanoDetailPanel() {
                               updateMisura(v.id,"hSx",ch); updateMisura(v.id,"hCentro",ch); updateMisura(v.id,"hDx",ch);
                             }}
                               style={{padding:"10px 14px",borderRadius:10,background:"#1A9E7315",
-                                border:"1.5px solid #1A9E7340",textAlign:"center",cursor:"pointer"}}>
+                                border:"1.5px solid #1A9E7340",textAlign:"center",cursor:"pointer",marginBottom:4}}>
                               <div style={{fontSize:12,fontWeight:800,color:"#1A9E73"}}>
-                                ⚡ Calcola misura infisso (−{ct.ribattuta||30}mm/lato)
+                                Calcola misura infisso (−{ct.ribattuta||30}mm/lato)
                               </div>
                               <div style={{fontSize:10,color:"#1A9E7380",marginTop:2,fontFamily:"'JetBrains Mono',monospace"}}>
-                                {ct.l-(ct.ribattuta||30)*2} × {ct.h-(ct.ribattuta||30)*2} mm
+                                {(ct.l||0)-(ct.ribattuta||30)*2} × {(ct.h||0)-(ct.ribattuta||30)*2} mm
                               </div>
                             </div>
                           )}
                         </div>
 
+                        {/* ── CASSONETTO / AVVOLGIBILE (solo sistemi hasCass) ── */}
+                        {sistema?.hasCass && (
+                          <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:4}}>
+                            <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:8,
+                              textTransform:"uppercase",letterSpacing:0.5}}>
+                              Avvolgibile / Cassonetto
+                            </div>
+
+                            {/* Motore o cinghia */}
+                            <div style={{marginBottom:8}}>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>COMANDO</div>
+                              <div style={{display:"flex",gap:6}}>
+                                {[["cinghia","Cinghia"],["motore","Motore"],["nessuno","Nessuno"]].map(([val,lbl])=>(
+                                  <div key={val}
+                                    onClick={()=>updateV("controtelaio",{...ct,comando:val})}
+                                    style={{flex:1,padding:"7px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
+                                      border:`2px solid ${ct.comando===val?"#D08008":T.bdr}`,
+                                      background:ct.comando===val?"#D0800815":T.card}}>
+                                    <div style={{fontSize:11,fontWeight:700,
+                                      color:ct.comando===val?"#D08008":T.sub}}>{lbl}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* DX / SX */}
+                            <div style={{marginBottom:8}}>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>AVVOLGIMENTO</div>
+                              <div style={{display:"flex",gap:6}}>
+                                {[["dx","DX"],["sx","SX"]].map(([val,lbl])=>(
+                                  <div key={val}
+                                    onClick={()=>updateV("controtelaio",{...ct,avvLato:val})}
+                                    style={{flex:1,padding:"9px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
+                                      border:`2px solid ${ct.avvLato===val?"#3B7FE0":T.bdr}`,
+                                      background:ct.avvLato===val?"#3B7FE015":T.card}}>
+                                    <div style={{fontSize:14,fontWeight:800,
+                                      color:ct.avvLato===val?"#3B7FE0":T.sub}}>{lbl}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Tipologia avvolgibile */}
+                            <div style={{marginBottom:8}}>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>TIPOLOGIA AVVOLGIBILE</div>
+                              <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                                {["Tapparella PVC","Tapparella alluminio","Tapparella legno","Persiana legno","Persiana alluminio","Veneziana"].map(tip=>(
+                                  <div key={tip}
+                                    onClick={()=>updateV("controtelaio",{...ct,avvTipologia:tip})}
+                                    style={{padding:"5px 9px",borderRadius:6,cursor:"pointer",fontSize:10,fontWeight:600,
+                                      border:`1.5px solid ${ct.avvTipologia===tip?"#D08008":T.bdr}`,
+                                      background:ct.avvTipologia===tip?"#D0800815":T.card,
+                                      color:ct.avvTipologia===tip?"#D08008":T.sub}}>
+                                    {tip}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Colore avvolgibile */}
+                            <div>
+                              <div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4}}>COLORE AVVOLGIBILE</div>
+                              <input type="text" placeholder="es. Bianco RAL 9010, Noce, Argento..."
+                                value={ct.avvColore||""}
+                                onChange={e=>updateV("controtelaio",{...ct,avvColore:e.target.value})}
+                                style={{...S.input,fontSize:13,padding:"9px 12px"}}/>
+                            </div>
+                          </div>
+                        )}
+
                         {/* ── ACCESSORI ── */}
                         <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:10}}>
-                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,textTransform:"uppercase"}}>Accessori</div>
+                          <div style={{fontSize:10,fontWeight:800,color:T.sub,marginBottom:6,
+                            textTransform:"uppercase",letterSpacing:0.5}}>Accessori</div>
                           <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                             {[
                               ["battutaPVC","Battuta PVC"],
@@ -1145,11 +1254,12 @@ export default function VanoDetailPanel() {
                               ["quartoLato","4° lato PVC"],
                               ["tappoZanz","Tappo zanzariera"],
                               ["sottobancale","Sottobancale EPS"],
-                              ["assemblaggio","Assemblaggio"],
+                              ["assemblaggio","Assemblaggio CT"],
+                              ...(sistema?.hasCass?[["avvMontaggio","Montaggio avvolgibile"]]:([]:any)),
                             ].map(([k,lbl])=>(
                               <div key={k}
                                 onClick={()=>updateV("controtelaio",{...ct,[k]:!ct[k]})}
-                                style={{padding:"5px 10px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:600,
+                                style={{padding:"6px 11px",borderRadius:7,cursor:"pointer",fontSize:11,fontWeight:600,
                                   border:`1.5px solid ${ct[k]?"#D08008":T.bdr}`,
                                   background:ct[k]?"#D0800815":T.card,
                                   color:ct[k]?"#D08008":T.sub}}>
@@ -1158,6 +1268,49 @@ export default function VanoDetailPanel() {
                             ))}
                           </div>
                         </div>
+
+                        {/* ── RIEPILOGO ORDINE ── */}
+                        {ct.l > 0 && ct.h > 0 && ct.sistema && (
+                          <div style={{borderTop:`1px solid ${T.bdr}`,paddingTop:10,marginTop:10}}>
+                            <div style={{background:"#1A1A1C",borderRadius:10,padding:"12px 14px"}}>
+                              <div style={{fontSize:9,fontWeight:800,color:"rgba(255,255,255,0.5)",
+                                textTransform:"uppercase",letterSpacing:0.5,marginBottom:6}}>
+                                Anteprima riga ordine
+                              </div>
+                              <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,
+                                  background:"#1A9E73",color:"#fff",borderRadius:4,padding:"2px 8px",fontWeight:700}}>
+                                  {ct.sistema}
+                                </span>
+                                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,
+                                  color:"#fff",fontWeight:700}}>
+                                  {ct.l} × {ct.h} mm
+                                </span>
+                                {ct.ribattuta&&(
+                                  <span style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>
+                                    bat. {ct.ribattuta}mm
+                                  </span>
+                                )}
+                                {ct.varA>0&&(
+                                  <span style={{fontSize:10,color:"rgba(255,255,255,0.5)"}}>
+                                    A={ct.varA}mm{ct.varB>0?` B=${ct.varB}mm`:""}
+                                  </span>
+                                )}
+                                {ct.avvLato&&(
+                                  <span style={{fontSize:10,background:"#3B7FE0",color:"#fff",
+                                    borderRadius:4,padding:"1px 6px",fontWeight:700}}>
+                                    {ct.avvLato.toUpperCase()}
+                                  </span>
+                                )}
+                                {ct.avvTipologia&&(
+                                  <span style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>
+                                    {ct.avvTipologia}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                       </div>
                     )}

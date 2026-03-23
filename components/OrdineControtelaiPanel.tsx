@@ -14,8 +14,8 @@ const ACC_LABELS = {
   quartoLato:    "4° lato PVC",
   tappoZanz:     "Tappo zanzariera",
   sottobancale:  "Sottobancale EPS",
-  assemblaggio:  "Assemblaggio",
-  avvolgibile:   "Montaggio avvolgibile",
+  assemblaggio:  "Assemblaggio CT",
+  avvMontaggio:  "Montaggio avvolgibile",
 };
 
 const TIPO_MISURA_LABELS = {
@@ -67,6 +67,27 @@ function RigaVano({ vano, pos, T }) {
             <div style={{ fontSize: 9, color: T.sub }}>
               {TIPO_MISURA_LABELS[ct.tipoMisura] || ct.tipoMisura}
             </div>
+          )}
+        </div>
+      </td>
+      <td style={{ padding: "8px 6px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {ct.avvTipologia && (
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{ct.avvTipologia}</div>
+          )}
+          {ct.avvLato && (
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#3B7FE0",
+              background: "#3B7FE015", borderRadius: 4, padding: "1px 6px",
+              display: "inline-block" }}>{ct.avvLato.toUpperCase()}</div>
+          )}
+          {ct.comando && ct.comando !== "nessuno" && (
+            <div style={{ fontSize: 10, color: T.sub }}>{ct.comando}</div>
+          )}
+          {ct.avvColore && (
+            <div style={{ fontSize: 9, color: T.sub }}>{ct.avvColore}</div>
+          )}
+          {!ct.avvTipologia && !ct.avvLato && (
+            <span style={{ color: "#CBD5E1", fontSize: 11 }}>—</span>
           )}
         </div>
       </td>
@@ -191,7 +212,7 @@ export default function OrdineControtelaiPanel({
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
                 <thead>
                   <tr style={{ background: Tc.bg }}>
-                    {["POS", "PZ", "L (mm)", "H (mm)", "BAT.", "SISTEMA", "ACCESSORI", "NOTE"].map(h => (
+                    {["POS", "PZ", "L (mm)", "H (mm)", "BAT.", "SISTEMA", "AVVOLGIBILE", "ACCESSORI", "NOTE"].map(h => (
                       <th key={h} style={{
                         padding: "8px 6px", fontSize: 9, fontWeight: 800,
                         color: Tc.sub, textTransform: "uppercase", letterSpacing: 0.5,
