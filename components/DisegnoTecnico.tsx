@@ -898,6 +898,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: { x: px, y: py } });
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
+                                  // Blocca chiusura automatica: se il punto finale è vicino al chainStart, ignora
+                                  const cs = dw._chainStart;
+                                  if (cs && Math.hypot(px - cs.x, py - cs.y) < SNAP_R + 4) return;
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
                                   setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py }], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart });
                                 }
