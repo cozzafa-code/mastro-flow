@@ -412,25 +412,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const TK_FRAME = 6, TK_MONT = 4, TK_ANTA = 4, TK_PORTA = 7;
                             const HM = TK_MONT / 2;
 
-                            // ══ POLYGON from freeLines — trova tutte le catene chiuse ══
+                            // ══ POLYGONS from freeLines — tutte le catene chiuse ══
                             const getPolygons = () => {
                               const lines = els.filter(e => e.type === "freeLine");
                               if (lines.length < 3) return [];
                               const CONN = 15;
-                              const usedGlobal = new Set<number>();
-                              const result: [number,number][][] = [];
-
-                              // Funzione per costruire una catena partendo da una linea
-                              const buildChain = (startIdx: number): [number,number][] | null => {
-                                const used = new Set<number>();
-                                const pts: [number,number][] = [];
-                                const addP = (x: number, y: number) => {
-                                  const k = `${Math.round(x)},${Math.round(y)}`;
-                                  if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x,y]);
-                                };
+                              const usedGlobal = new Set();
+                              const result = [];
+                              const buildChain = (startIdx) => {
+                                const used = new Set();
+                                const pts = [];
+                                const addP = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
                                 const fl = lines[startIdx];
-                                addP(fl.x1, fl.y1); addP(fl.x2, fl.y2);
-                                used.add(startIdx);
+                                addP(fl.x1, fl.y1); addP(fl.x2, fl.y2); used.add(startIdx);
                                 for (let it = 0; it < lines.length; it++) {
                                   const last = pts[pts.length-1];
                                   let found = false;
@@ -445,14 +439,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (pts.length < 3) return null;
                                 const first = pts[0], lastPt = pts[pts.length-1];
                                 if (Math.hypot(first[0]-lastPt[0],first[1]-lastPt[1]) < CONN) {
-                                  // Catena chiusa — marca tutte le linee usate come globalmente usate
                                   used.forEach(i => usedGlobal.add(i));
                                   return pts;
                                 }
                                 return null;
                               };
-
-                              // Prova ogni linea come punto di partenza
                               for (let i = 0; i < lines.length; i++) {
                                 if (usedGlobal.has(i)) continue;
                                 const chain = buildChain(i);
@@ -462,8 +453,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
                             const polys = !frame ? getPolygons() : [];
                             const poly = polys.length > 0 ? polys.reduce((a,b) => {
-                              // poly principale = forma con area maggiore
-                              const area = (p: [number,number][]) => Math.abs(p.reduce((s,pt,i)=>{ const q=p[(i+1)%p.length]; return s+(pt[0]*q[1]-q[0]*pt[1]); },0)/2);
+                              const area = (p) => Math.abs(p.reduce((s,pt,i)=>{ const q=p[(i+1)%p.length]; return s+(pt[0]*q[1]-q[0]*pt[1]); },0)/2);
                               return area(a) >= area(b) ? a : b;
                             }) : null;
 
@@ -1333,58 +1323,43 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
                                   ))}
 
-                                  {/* ══ CLOSED POLYGON PROFILES — tutte le forme chiuse ══ */}
+                                  {/* ══ CLOSED POLYGON PROFILES — tutte le forme, area-based outer/inner ══ */}
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
                                     const TK = TK_FRAME;
                                     const MITER_LIMIT = TK * 8;
-
-                                    const signedArea = polyPts.reduce((s, p, i) => {
-                                      const q = polyPts[(i+1)%polyPts.length];
-                                      return s + (p[0]*q[1] - q[0]*p[1]);
-                                    }, 0);
-                                    const sign = signedArea >= 0 ? 1 : -1;
-
+                                    const calcArea = (pts) => Math.abs(pts.reduce((s,p,i)=>{ const q=pts[(i+1)%pts.length]; return s+(p[0]*q[1]-q[0]*p[1]); },0)/2);
                                     const offsetPoly = (pts, d) => {
-                                      const nd = d * sign;
                                       const n2 = pts.length;
-                                      const normals = pts.map((a, i) => {
-                                        const b = pts[(i+1)%n2];
-                                        const dx = b[0]-a[0], dy = b[1]-a[1];
-                                        const len = Math.hypot(dx,dy)||1;
-                                        return [-dy/len*nd, dx/len*nd];
-                                      });
+                                      const normals = pts.map((a,i)=>{ const b=pts[(i+1)%n2]; const dx=b[0]-a[0],dy=b[1]-a[1]; const len=Math.hypot(dx,dy)||1; return [-dy/len*d, dx/len*d]; });
                                       const result = [];
                                       for (let i = 0; i < n2; i++) {
-                                        const prev = (i-1+n2)%n2;
-                                        const a1 = [pts[prev][0]+normals[prev][0], pts[prev][1]+normals[prev][1]];
-                                        const b1 = [pts[i][0]+normals[prev][0], pts[i][1]+normals[prev][1]];
-                                        const a2 = [pts[i][0]+normals[i][0], pts[i][1]+normals[i][1]];
-                                        const b2 = [pts[(i+1)%n2][0]+normals[i][0], pts[(i+1)%n2][1]+normals[i][1]];
-                                        const d1x=b1[0]-a1[0], d1y=b1[1]-a1[1];
-                                        const d2x=b2[0]-a2[0], d2y=b2[1]-a2[1];
+                                        const prev=(i-1+n2)%n2;
+                                        const a1=[pts[prev][0]+normals[prev][0],pts[prev][1]+normals[prev][1]];
+                                        const b1=[pts[i][0]+normals[prev][0],pts[i][1]+normals[prev][1]];
+                                        const a2=[pts[i][0]+normals[i][0],pts[i][1]+normals[i][1]];
+                                        const b2=[pts[(i+1)%n2][0]+normals[i][0],pts[(i+1)%n2][1]+normals[i][1]];
+                                        const d1x=b1[0]-a1[0],d1y=b1[1]-a1[1],d2x=b2[0]-a2[0],d2y=b2[1]-a2[1];
                                         const denom=d1x*d2y-d1y*d2x;
                                         if (Math.abs(denom)<0.001) { result.push(b1); continue; }
-                                        const dx0=a2[0]-a1[0], dy0=a2[1]-a1[1];
-                                        const t=(dx0*d2y-dy0*d2x)/denom;
-                                        const ix=a1[0]+t*d1x, iy=a1[1]+t*d1y;
-                                        const dist=Math.hypot(ix-pts[i][0], iy-pts[i][1]);
-                                        if (dist>MITER_LIMIT) { result.push(b1); result.push(a2); }
+                                        const t=((a2[0]-a1[0])*d2y-(a2[1]-a1[1])*d2x)/denom;
+                                        const ix=a1[0]+t*d1x,iy=a1[1]+t*d1y;
+                                        if (Math.hypot(ix-pts[i][0],iy-pts[i][1])>MITER_LIMIT) { result.push(b1); result.push(a2); }
                                         else { result.push([ix,iy]); }
                                       }
                                       return result;
                                     };
-
-                                    const outer = offsetPoly(polyPts, TK);
-                                    const inner = offsetPoly(polyPts, -TK);
-                                    const toStr = (arr) => arr.map(p => `${(+p[0]).toFixed(1)},${(+p[1]).toFixed(1)}`).join(" ");
+                                    const p1=offsetPoly(polyPts,TK), p2=offsetPoly(polyPts,-TK);
+                                    const outer=calcArea(p1)>=calcArea(p2)?p1:p2;
+                                    const inner=calcArea(p1)>=calcArea(p2)?p2:p1;
+                                    const toStr=(arr)=>arr.map(p=>`${(+p[0]).toFixed(1)},${(+p[1]).toFixed(1)}`).join(" ");
                                     return (
                                       <g key={`pp${polyIdx}`}>
                                         <polygon points={toStr(outer)} fill="#eceae0" stroke="none" />
                                         <polygon points={toStr(inner)} fill="#fff" stroke="none" />
                                         <polygon points={toStr(outer)} fill="none" stroke="#1A1A1C" strokeWidth={1.2} strokeLinejoin="round" />
                                         <polygon points={toStr(inner)} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="round" />
-                                        {polyPts.map((p, pi) => <circle key={`pc${polyIdx}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
+                                        {polyPts.map((p,pi)=><circle key={`pc${polyIdx}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>
                                     );
                                   })}
