@@ -367,7 +367,8 @@ function FormaEditor({ T, realW, realH }: any) {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
-  const [viewTab, setViewTab] = React.useState("disegno"); // "disegno" | "forma" | "3d"
+  const [viewTab, setViewTab] = React.useState("disegno");
+  const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
                             const dw = vanoDisegno || { elements: [], selectedId: null, drawMode: null, history: [] };
@@ -1300,60 +1301,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
                                   ))}
 
-                                  {/* ══ CLOSED POLYGON PROFILE (proper mitered corners) ══ */}
-                                  {poly && poly.length >= 4 && (() => {
-                                    const n = poly.length;
-                                    const halfT = TK_FRAME;
-                                    // Compute centroid for inner/outer direction
-                                    const cx = poly.reduce((s, p) => s + p[0], 0) / n;
-                                    const cy = poly.reduce((s, p) => s + p[1], 0) / n;
-                                    // Offset each vertex outward and inward
-                                    const outerPts = [];
-                                    const innerPts = [];
-                                    for (let i = 0; i < n; i++) {
-                                      const prev = poly[(i - 1 + n) % n];
-                                      const curr = poly[i];
-                                      const next = poly[(i + 1) % n];
-                                      // Edge normals (pointing outward from centroid)
-                                      const d1x = curr[0] - prev[0], d1y = curr[1] - prev[1];
-                                      const d2x = next[0] - curr[0], d2y = next[1] - curr[1];
-                                      const len1 = Math.hypot(d1x, d1y) || 1;
-                                      const len2 = Math.hypot(d2x, d2y) || 1;
-                                      let n1x = -d1y / len1, n1y = d1x / len1;
-                                      let n2x = -d2y / len2, n2y = d2x / len2;
-                                      // Ensure normals point outward (away from centroid)
-                                      const midE1x = (prev[0] + curr[0]) / 2, midE1y = (prev[1] + curr[1]) / 2;
-                                      if ((midE1x + n1x - cx) * (midE1x + n1x - cx) + (midE1y + n1y - cy) * (midE1y + n1y - cy) <
-                                          (midE1x - n1x - cx) * (midE1x - n1x - cx) + (midE1y - n1y - cy) * (midE1y - n1y - cy)) {
-                                        n1x = -n1x; n1y = -n1y;
-                                      }
-                                      const midE2x = (curr[0] + next[0]) / 2, midE2y = (curr[1] + next[1]) / 2;
-                                      if ((midE2x + n2x - cx) * (midE2x + n2x - cx) + (midE2y + n2y - cy) * (midE2y + n2y - cy) <
-                                          (midE2x - n2x - cx) * (midE2x - n2x - cx) + (midE2y - n2y - cy) * (midE2y - n2y - cy)) {
-                                        n2x = -n2x; n2y = -n2y;
-                                      }
-                                      // Average normal at vertex (bisector)
-                                      let bx = n1x + n2x, by = n1y + n2y;
-                                      const bLen = Math.hypot(bx, by) || 1;
-                                      bx /= bLen; by /= bLen;
-                                      // Miter length — cap a 2.5x halfT per angoli acuti (no distorsione)
-                                      const dot = n1x * bx + n1y * by;
-                                      const miter = Math.min(dot > 0.15 ? halfT / dot : halfT * 2.5, halfT * 2.5);
-                                      outerPts.push([curr[0] + bx * miter, curr[1] + by * miter]);
-                                      innerPts.push([curr[0] - bx * miter, curr[1] - by * miter]);
-                                    }
-                                    const outerStr = outerPts.map(p => p.join(",")).join(" ");
-                                    const innerStr = innerPts.map(p => p.join(",")).join(" ");
+                                  {/* ══ CLOSED POLYGON PROFILE — SVG stroke nativo, angoli perfetti ══ */}
+                                  {poly && poly.length >= 3 && (() => {
+                                    const pts2 = [...poly, poly[0]]; // chiudi il path
+                                    const pointsStr = pts2.map(p => p.join(",")).join(" ");
+                                    const TK = TK_FRAME * 2; // spessore totale profilo
                                     return (
                                       <g>
-                                        {/* Fill between outer and inner */}
-                                        <polygon points={outerStr} fill="#f0efe8" stroke="none" />
-                                        <polygon points={innerStr} fill="#fff" stroke="none" />
-                                        {/* Outer stroke */}
-                                        <polygon points={outerStr} fill="none" stroke="#1A1A1C" strokeWidth={1.5} strokeLinejoin="miter" />
-                                        {/* Inner stroke */}
-                                        <polygon points={innerStr} fill="none" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />
-                                        {/* Corner dots */}
+                                        {/* Profilo: polyline con stroke spesso, fill none — SVG gestisce miter nativamente */}
+                                        <polyline points={pointsStr} fill="none" stroke="#e8e6de" strokeWidth={TK} strokeLinejoin="miter" strokeMiterlimit="10" />
+                                        {/* Bordo esterno */}
+                                        <polyline points={pointsStr} fill="none" stroke="#1A1A1C" strokeWidth={1.5} strokeLinejoin="miter" strokeMiterlimit="10" />
+                                        {/* Bordo interno (offset visivo) */}
+                                        <polygon points={poly.map(p => p.join(",")).join(" ")} fill="#fff" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit="10" />
+                                        {/* Corner dots sui vertici reali */}
                                         {poly.map((p, pi) => <circle key={`pc${pi}`} cx={p[0]} cy={p[1]} r={3.5} fill="#333" />)}
                                       </g>
                                     );
@@ -1543,18 +1504,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             onClick={(e3) => {
                                               e3.stopPropagation();
                                               if (drawMode) return;
-                                              const nv = prompt(`Misura lato (mm) [attuale: ${mmLen}]:`, String(mmLen));
-                                              if (!nv || isNaN(parseInt(nv))) return;
-                                              const newMM = parseInt(nv);
-                                              if (newMM <= 0) return;
-                                              const scale = newMM / mmLen;
-                                              const newLen = len * scale;
-                                              const ux = dx2 / len, uy = dy2 / len;
-                                              setDW(els.map(x => x.id === el.id ? { ...x, x2: Math.round(el.x1 + ux * newLen), y2: Math.round(el.y1 + uy * newLen), _mmOverride: newMM } : x));
+                                              // Calcola posizione schermo del badge
+                                              const svgEl = e3.currentTarget.closest("svg");
+                                              const r = svgEl?.getBoundingClientRect();
+                                              const sx2 = r ? r.left + (lx - panX) * zoom / (canvasW / zoom) * (canvasW / zoom) / canvasW * r.width : lx;
+                                              const sy2 = r ? r.top + (ly - panY) * zoom / (canvasH / zoom) * (canvasH / zoom) / canvasH * r.height : ly;
+                                              setDimEdit({ id: el.id, val: String(mmLen), x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 });
                                             }}
                                             style={{ cursor: "pointer" }}>
-                                            <rect x={lx - 18} y={ly - 7} width={36} height={14} fill="#fff" rx={3} stroke={T.acc} strokeWidth={0.6} opacity={0.9} />
-                                            <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={T.acc} fontFamily="monospace">{mmLen}</text>
+                                            <rect x={lx - 18} y={ly - 7} width={36} height={14} fill={dimEdit?.id === el.id ? T.purple : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? T.purple : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
+                                            <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
                                           </g>
                                           {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={T.purple} /><circle cx={el.x2} cy={el.y2} r={5} fill={T.purple} /></>}
                                         </g>
@@ -1745,6 +1704,67 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
                                 </>}
                               </div>
+
+                              {/* ══ OVERLAY MODIFICA MISURA ══ */}
+                              {dimEdit && (
+                                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.35)" }}
+                                  onClick={() => setDimEdit(null)}>
+                                  <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 240, display: "flex", flexDirection: "column", gap: 12 }}
+                                    onClick={e => e.stopPropagation()}>
+                                    <div style={{ fontSize: 13, fontWeight: 800, color: "#1A1A1C" }}>✏️ Modifica misura lato</div>
+                                    <div style={{ fontSize: 11, color: "#888" }}>Inserisci la misura reale in mm</div>
+                                    <input
+                                      autoFocus
+                                      type="number"
+                                      value={dimEdit.val}
+                                      onChange={e => setDimEdit({ ...dimEdit, val: e.target.value })}
+                                      onKeyDown={e => {
+                                        if (e.key === "Enter") {
+                                          const newMM = parseInt(dimEdit.val);
+                                          if (!isNaN(newMM) && newMM > 0) {
+                                            const el2 = els.find(x => x.id === dimEdit.id);
+                                            if (el2) {
+                                              const dx2 = el2.x2 - el2.x1, dy2 = el2.y2 - el2.y1;
+                                              const len2 = Math.hypot(dx2, dy2) || 1;
+                                              const refLen2 = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
+                                              const refReal2 = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
+                                              const curMM = el2._mmOverride != null ? el2._mmOverride : Math.round(len2 / refLen2 * refReal2);
+                                              const scale = newMM / curMM;
+                                              const newLen2 = len2 * scale;
+                                              const ux = dx2 / len2, uy = dy2 / len2;
+                                              setDW(els.map(x => x.id === dimEdit.id ? { ...x, x2: Math.round(el2.x1 + ux * newLen2), y2: Math.round(el2.y1 + uy * newLen2), _mmOverride: newMM } : x));
+                                            }
+                                          }
+                                          setDimEdit(null);
+                                        }
+                                        if (e.key === "Escape") setDimEdit(null);
+                                      }}
+                                      style={{ padding: "10px 14px", border: `2px solid ${T.purple || "#8B5CF6"}`, borderRadius: 8, fontSize: 18, fontWeight: 800, fontFamily: "monospace", textAlign: "center", outline: "none", color: "#1A1A1C", width: "100%" }}
+                                    />
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                      <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
+                                      <div onClick={() => {
+                                        const newMM = parseInt(dimEdit.val);
+                                        if (!isNaN(newMM) && newMM > 0) {
+                                          const el2 = els.find(x => x.id === dimEdit.id);
+                                          if (el2) {
+                                            const dx2 = el2.x2 - el2.x1, dy2 = el2.y2 - el2.y1;
+                                            const len2 = Math.hypot(dx2, dy2) || 1;
+                                            const refLen2 = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
+                                            const refReal2 = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
+                                            const curMM = el2._mmOverride != null ? el2._mmOverride : Math.round(len2 / refLen2 * refReal2);
+                                            const scale = newMM / curMM;
+                                            const newLen2 = len2 * scale;
+                                            const ux = dx2 / len2, uy = dy2 / len2;
+                                            setDW(els.map(x => x.id === dimEdit.id ? { ...x, x2: Math.round(el2.x1 + ux * newLen2), y2: Math.round(el2.y1 + uy * newLen2), _mmOverride: newMM } : x));
+                                          }
+                                        }
+                                        setDimEdit(null);
+                                      }} style={{ flex: 1, padding: "9px", borderRadius: 8, background: T.purple || "#8B5CF6", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>✓ Conferma</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             );
 }
 
