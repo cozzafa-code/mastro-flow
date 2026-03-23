@@ -2245,6 +2245,87 @@ export default function SettingsPanel() {
                   </div>
                   {f.banca && <div style={{ marginTop: 8, padding: 8, borderRadius: 8, background: T.bg }}><div style={{ fontSize: 10, color: T.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M6 22V4a2 2 0 012-2h8a2 2 0 012 2v18"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4"/></svg> {f.banca}</div>{f.iban && <div style={{ fontSize: 10, color: T.text, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 0.5 }}>{f.iban}</div>}</div>}
                 </div>
+                {/* ── LISTINO SCONTI PER CATEGORIA ── */}
+                <div style={{ background: T.card, borderRadius: 12, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.sub }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:4}}><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
+                      LISTINO SCONTI
+                    </div>
+                    <div onClick={() => {
+                      const newCat = { id: "c_"+Date.now(), nome: "", sconto: 0, note: "" };
+                      setFornitori(p => p.map(ff => ff.id === f.id
+                        ? {...ff, listinoCategorie: [...(ff.listinoCategorie||[]), newCat]}
+                        : ff));
+                      setShowFornitoreDetail(prev => ({...prev, listinoCategorie: [...(prev.listinoCategorie||[]), newCat]}));
+                    }} style={{ padding: "4px 10px", borderRadius: 6, background: "#1A9E7318", color: "#1A9E73", fontSize: 10, fontWeight: 700, cursor: "pointer", border: "1px solid #1A9E7340" }}>
+                      + Categoria
+                    </div>
+                  </div>
+                  {(!f.listinoCategorie || f.listinoCategorie.length === 0) ? (
+                    <div style={{ textAlign: "center", padding: "12px 0", fontSize: 11, color: T.sub }}>
+                      Nessuna categoria — aggiungi le categorie con i relativi sconti
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Header tabella */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 28px", gap: 6, marginBottom: 4, padding: "0 2px" }}>
+                        <div style={{ fontSize: 8, fontWeight: 700, color: T.sub, textTransform: "uppercase" }}>Categoria prodotto</div>
+                        <div style={{ fontSize: 8, fontWeight: 700, color: T.sub, textTransform: "uppercase", textAlign: "center" }}>Sconto %</div>
+                        <div/>
+                      </div>
+                      {(f.listinoCategorie || []).map((cat: any, ci: number) => (
+                        <div key={cat.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 28px", gap: 6, marginBottom: 6, alignItems: "center" }}>
+                          <input
+                            value={cat.nome}
+                            placeholder="es. Controtelai termici"
+                            onChange={e => {
+                              const updated = (f.listinoCategorie||[]).map((c:any,i:number) => i===ci ? {...c, nome: e.target.value} : c);
+                              setFornitori(p => p.map(ff => ff.id === f.id ? {...ff, listinoCategorie: updated} : ff));
+                              setShowFornitoreDetail(prev => ({...prev, listinoCategorie: updated}));
+                            }}
+                            style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid "+T.bdr, fontSize: 11, background: T.bg, color: T.text, outline: "none" }}/>
+                          <div style={{ position: "relative" }}>
+                            <input
+                              type="number" min="0" max="100" step="0.5"
+                              value={cat.sconto || ""}
+                              placeholder="0"
+                              onChange={e => {
+                                const updated = (f.listinoCategorie||[]).map((c:any,i:number) => i===ci ? {...c, sconto: parseFloat(e.target.value)||0} : c);
+                                setFornitori(p => p.map(ff => ff.id === f.id ? {...ff, listinoCategorie: updated} : ff));
+                                setShowFornitoreDetail(prev => ({...prev, listinoCategorie: updated}));
+                              }}
+                              style={{ width: "100%", padding: "8px 20px 8px 10px", borderRadius: 8,
+                                border: cat.sconto > 0 ? "1.5px solid #1A9E7360" : "1px solid "+T.bdr,
+                                fontSize: 13, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace",
+                                background: cat.sconto > 0 ? "#1A9E7308" : T.bg,
+                                color: cat.sconto > 0 ? "#1A9E73" : T.text,
+                                textAlign: "center", outline: "none", boxSizing: "border-box" }}/>
+                            <span style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: T.sub, pointerEvents: "none" }}>%</span>
+                          </div>
+                          <div onClick={() => {
+                            const updated = (f.listinoCategorie||[]).filter((_:any,i:number) => i!==ci);
+                            setFornitori(p => p.map(ff => ff.id === f.id ? {...ff, listinoCategorie: updated} : ff));
+                            setShowFornitoreDetail(prev => ({...prev, listinoCategorie: updated}));
+                          }} style={{ width: 28, height: 28, borderRadius: 6, background: "#DC444415", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#DC4444" strokeWidth="2.5" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Note listino */}
+                      <input
+                        value={f.listinoNote || ""}
+                        placeholder="Note listino (es. AR32 = alluminio rinforzato, SOMFY 50% = motori)"
+                        onChange={e => {
+                          setFornitori(p => p.map(ff => ff.id === f.id ? {...ff, listinoNote: e.target.value} : ff));
+                          setShowFornitoreDetail(prev => ({...prev, listinoNote: e.target.value}));
+                        }}
+                        style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid "+T.bdr,
+                          fontSize: 10, background: T.bg, color: T.sub, marginTop: 4, outline: "none", boxSizing: "border-box" }}/>
+                    </div>
+                  )}
+                </div>
+
                 {/* PRODOTTI */}
                 {f.sistemiTrattati && <div style={{ background: T.card, borderRadius: 12, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> SISTEMI/PRODOTTI</div>
