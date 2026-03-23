@@ -1546,18 +1546,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const isH = gy === p.y1, isV = gx === p.x1;
                                           return <>
                                             <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.95}/>
-                                            <text x={bx+bw/2} y={by+17} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
+                                            <text x={bx+bw/2} y={by+18} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
                                               {dw._guideLen != null ? `${dw._guideLen} mm` : ""}
                                             </text>
-                                            {(isH || isV) && <>
-                                              <rect x={bx} y={by+bh+3} width={bw} height={18} fill="#1A9E73" rx={4} opacity={0.9}/>
-                                              <text x={bx+bw/2} y={by+bh+15} textAnchor="middle" fontSize={10} fontWeight={800} fill="#fff" fontFamily="monospace">
-                                                {isV ? "↕ VERTICALE" : "↔ ORIZZONTALE"}
-                                              </text>
-                                            </>}
-                                            {!isH && !isV && dw._guideDeg != null && (
-                                              <text x={bx+bw/2} y={by+bh+15} textAnchor="middle" fontSize={13} fontWeight={800} fill="#fff" fontFamily="monospace">
+                                            {dw._guideDeg != null && (
+                                              <text x={bx+bw/2} y={by+36} textAnchor="middle" fontSize={13} fontWeight={700} fill="rgba(255,255,255,0.65)" fontFamily="'JetBrains Mono',monospace">
                                                 {`${dw._guideDeg}°`}
+                                              </text>
+                                            )}
+                                            {(isH || isV) && (
+                                              <text x={bx+bw/2} y={by+36} textAnchor="middle" fontSize={11} fontWeight={800} fill="#1A9E73" fontFamily="monospace">
+                                                {isV ? "VERT" : "ORIZ"}
                                               </text>
                                             )}
                                           </>;
