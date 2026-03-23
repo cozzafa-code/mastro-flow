@@ -1015,6 +1015,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>⭕ Oblò</div>
 
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" ? null : "line", _pendingLine: null })} style={bs(drawMode === "line")}>╱ Linea</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}>✒ Penna</div>
                                   {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
@@ -1140,6 +1141,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     setMode({ _zoom: newZoom });
                                   }}
                                   onMouseDown={(e2) => {
+                                    // Pen mode — inizia tracciato
+                                    if (drawMode === "pen" && e2.button === 0) {
+                                      const svg = e2.currentTarget;
+                                      const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
+                                      onUpdate({ ...dw, _penActive: true, _penPath: [[Math.round(gmx), Math.round(gmy)]] });
+                                      return;
+                                    }
                                     // Pan with middle mouse or shift+left
                                     if (e2.button === 1 || (e2.shiftKey && e2.button === 0)) {
                                       e2.preventDefault();
@@ -1156,8 +1164,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onMouseMove={(e2) => {
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
                                     const svg = e2.currentTarget;
+                                    // Pen mode — traccia path
+                                    if (drawMode === "pen" && dw._penActive) {
+                                      const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
+                                      const cur = dw._penPath || [];
+                                      onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
+                                      return;
+                                    }
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = snap(gmx), gy = snap(gmy);
                                     const p = dw._pendingLine;
@@ -1169,9 +1184,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
                                     }
                                   }}
+                                  onMouseUp={(e2) => {
+                                    // Pen mode — salva path come elemento
+                                    if (drawMode === "pen" && dw._penActive) {
+                                      const pts2 = dw._penPath || [];
+                                      if (pts2.length > 2) {
+                                        const d = pts2.map((p, i) => `${i === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ");
+                                        setDW([...els, { id: Date.now(), type: "penPath", d }], { _penActive: false, _penPath: null });
+                                      } else {
+                                        onUpdate({ ...dw, _penActive: false, _penPath: null });
+                                      }
+                                    }
+                                  }}
+                                  onTouchStart={(e2) => {
+                                    if (drawMode === "pen") {
+                                      e2.preventDefault();
+                                      const svg = e2.currentTarget;
+                                      const t = e2.touches[0];
+                                      const rect = svg.getBoundingClientRect();
+                                      const vb = svg.viewBox?.baseVal;
+                                      const sx = vb ? vb.width / rect.width : 1;
+                                      const sy2 = vb ? vb.height / rect.height : 1;
+                                      const gmx = Math.round((t.clientX - rect.left) * sx);
+                                      const gmy = Math.round((t.clientY - rect.top) * sy2);
+                                      onUpdate({ ...dw, _penActive: true, _penPath: [[gmx, gmy]] });
+                                    }
+                                  }}
                                   onTouchMove={(e2) => {
                                     e2.preventDefault();
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
                                     const svg = e2.currentTarget;
                                     const t = e2.touches[0];
                                     const rect = svg.getBoundingClientRect();
@@ -1180,6 +1220,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const sy2 = vb ? vb.height / rect.height : 1;
                                     const gmx = (t.clientX - rect.left) * sx;
                                     const gmy = (t.clientY - rect.top) * sy2;
+                                    // Pen mode touch
+                                    if (drawMode === "pen" && dw._penActive) {
+                                      const cur = dw._penPath || [];
+                                      onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
+                                      return;
+                                    }
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
                                     let gx = snap(gmx), gy = snap(gmy);
                                     const pp = dw._pendingLine;
                                     if (Math.abs(gx - pp.x1) < 8 && Math.abs(gy - pp.y1) > 8) gx = pp.x1;
@@ -1188,6 +1235,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
                                       onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                    }
+                                  }}
+                                  onTouchEnd={(e2) => {
+                                    if (drawMode === "pen" && dw._penActive) {
+                                      const pts2 = dw._penPath || [];
+                                      if (pts2.length > 2) {
+                                        const d = pts2.map((p, i) => `${i === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ");
+                                        setDW([...els, { id: Date.now(), type: "penPath", d }], { _penActive: false, _penPath: null });
+                                      } else {
+                                        onUpdate({ ...dw, _penActive: false, _penPath: null });
+                                      }
                                     }
                                   }}
                                   onMouseLeave={() => { if (dw._guideX != null) onUpdate({ ...dw, _guideX: null, _guideY: null }); }}>
@@ -1278,9 +1336,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let bx = n1x + n2x, by = n1y + n2y;
                                       const bLen = Math.hypot(bx, by) || 1;
                                       bx /= bLen; by /= bLen;
-                                      // Miter length
+                                      // Miter length — cap a 2.5x halfT per angoli acuti (no distorsione)
                                       const dot = n1x * bx + n1y * by;
-                                      const miter = dot > 0.3 ? halfT / dot : halfT;
+                                      const miter = Math.min(dot > 0.15 ? halfT / dot : halfT * 2.5, halfT * 2.5);
                                       outerPts.push([curr[0] + bx * miter, curr[1] + by * miter]);
                                       innerPts.push([curr[0] - bx * miter, curr[1] - by * miter]);
                                     }
@@ -1468,23 +1526,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const halfT = TK_FRAME;
                                       const nx = -dy2 / len * halfT, ny = dx2 / len * halfT;
-                                      // Dimension in mm
-                                      const refLen = frame ? Math.max(frame.w, frame.h) : fW;
-                                      const refReal = frame ? (frame.w >= frame.h ? realW : realH) : realW;
-                                      const mmLen = Math.round(len / refLen * refReal);
+                                      const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
+                                      const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
+                                      const mmLen = el._mmOverride != null ? el._mmOverride : Math.round(len / refLen * refReal);
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
                                       const ang = Math.atan2(dy2, dx2) * 180 / Math.PI;
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
-                                      const isPartOfPoly = poly && poly.length >= 4;
+                                      const isPartOfPoly = poly && poly.length >= 3;
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
-                                          {/* Wide transparent hit area */}
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
-                                          {/* Individual profile only if NOT part of closed polygon */}
                                           {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
-                                          {/* Dimension label */}
-                                          <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}>
+                                          {/* Badge misura — click per modificare */}
+                                          <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}
+                                            onClick={(e3) => {
+                                              e3.stopPropagation();
+                                              if (drawMode) return;
+                                              const nv = prompt(`Misura lato (mm) [attuale: ${mmLen}]:`, String(mmLen));
+                                              if (!nv || isNaN(parseInt(nv))) return;
+                                              const newMM = parseInt(nv);
+                                              if (newMM <= 0) return;
+                                              const scale = newMM / mmLen;
+                                              const newLen = len * scale;
+                                              const ux = dx2 / len, uy = dy2 / len;
+                                              setDW(els.map(x => x.id === el.id ? { ...x, x2: Math.round(el.x1 + ux * newLen), y2: Math.round(el.y1 + uy * newLen), _mmOverride: newMM } : x));
+                                            }}
+                                            style={{ cursor: "pointer" }}>
                                             <rect x={lx - 18} y={ly - 7} width={36} height={14} fill="#fff" rx={3} stroke={T.acc} strokeWidth={0.6} opacity={0.9} />
                                             <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={T.acc} fontFamily="monospace">{mmLen}</text>
                                           </g>
@@ -1582,10 +1650,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         </g>
                                       );
                                     }
+                                    if (el.type === "penPath") return (
+                                      <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
+                                        <path d={el.d} fill="none" stroke={sel ? T.purple : "#1A1A1C"} strokeWidth={sel ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
+                                        {sel && <path d={el.d} fill="none" stroke={T.purple} strokeWidth={8} opacity={0.12} strokeLinecap="round" />}
+                                      </g>
+                                    );
+
                                     return null;
                                   })}
 
-                                  {/* Pending line point + GUIDE */}
+                                  {/* Path live penna durante disegno */}
+                                  {drawMode === "pen" && dw._penPath && dw._penPath.length > 1 && (
+                                    <path d={dw._penPath.map((p, i) => `${i === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ")} fill="none" stroke="#1A1A1C" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" opacity={0.6} />
+                                  )}
                                   {dw._pendingLine && (() => {
                                     const clr = drawMode === "apertura" ? T.blue : "#333";
                                     const p = dw._pendingLine;
