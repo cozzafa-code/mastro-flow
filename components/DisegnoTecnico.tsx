@@ -414,7 +414,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // ══ POLYGON from freeLines ══
                             const getPolygon = () => {
                               const lines = els.filter(e => e.type === "freeLine");
-                              if (lines.length < 3) return null;
+                              if (lines.length < 4) return null;
                               const pts = [];
                               const used = new Set();
                               const addP = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
