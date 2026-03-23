@@ -1546,7 +1546,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const isH = gy === p.y1, isV = gx === p.x1;
                                           return <>
                                             <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.95}/>
-                                            <text x={bx+bw/2} y={by+20} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
+                                            <text x={bx+bw/2} y={by+17} textAnchor="middle" fontSize={15} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
                                               {dw._guideLen != null ? `${dw._guideLen} mm` : ""}
                                             </text>
                                             {(isH || isV) && <>
