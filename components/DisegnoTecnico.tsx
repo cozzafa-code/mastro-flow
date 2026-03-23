@@ -417,22 +417,72 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const lines = els.filter(e => e.type === "freeLine");
                               if (lines.length < 3) return null;
                               const CONN = 15;
-                              const pts = [];
-                              const used = new Set();
-                              const addP = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
-                              addP(lines[0].x1, lines[0].y1); addP(lines[0].x2, lines[0].y2); used.add(0);
+
+                              // Trova il punto che appare una sola volta (terminale della catena)
+                              // Se tutti i punti appaiono due volte → forma già chiusa, inizia da qualsiasi
+                              const ptCount: Record<string, number> = {};
+                              const ptCoord: Record<string, [number,number]> = {};
+                              lines.forEach(l => {
+                                const k1 = `${Math.round(l.x1)},${Math.round(l.y1)}`;
+                                const k2 = `${Math.round(l.x2)},${Math.round(l.y2)}`;
+                                ptCount[k1] = (ptCount[k1]||0)+1; ptCoord[k1] = [l.x1,l.y1];
+                                ptCount[k2] = (ptCount[k2]||0)+1; ptCoord[k2] = [l.x2,l.y2];
+                              });
+                              // Raggruppa punti vicini (entro CONN) — conta come lo stesso punto
+                              const allKeys = Object.keys(ptCount);
+                              const merged: Record<string, string> = {};
+                              allKeys.forEach(k => { merged[k] = k; });
+                              for (let i = 0; i < allKeys.length; i++) {
+                                for (let j = i+1; j < allKeys.length; j++) {
+                                  const a = ptCoord[allKeys[i]], b = ptCoord[allKeys[j]];
+                                  if (Math.hypot(a[0]-b[0],a[1]-b[1]) < CONN) {
+                                    merged[allKeys[j]] = merged[allKeys[i]];
+                                  }
+                                }
+                              }
+                              const mergedCount: Record<string, number> = {};
+                              allKeys.forEach(k => { const m = merged[k]; mergedCount[m] = (mergedCount[m]||0) + ptCount[k]; });
+                              // Terminali = chiavi merged con count dispari
+                              const terminals = allKeys.filter(k => merged[k] === k && (mergedCount[k]||0) % 2 !== 0);
+
+                              // Scegli punto di partenza
+                              let startX: number, startY: number;
+                              if (terminals.length > 0) {
+                                [startX, startY] = ptCoord[terminals[0]];
+                              } else {
+                                startX = lines[0].x1; startY = lines[0].y1;
+                              }
+
+                              // Costruisci catena da startX/startY
+                              const pts: [number,number][] = [];
+                              const used = new Set<number>();
+                              const addP = (x: number, y: number) => {
+                                const k = `${Math.round(x)},${Math.round(y)}`;
+                                if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x,y]);
+                              };
+                              // Trova prima linea che contiene startX/startY
+                              let firstIdx = lines.findIndex(l =>
+                                Math.hypot(l.x1-startX,l.y1-startY)<CONN || Math.hypot(l.x2-startX,l.y2-startY)<CONN
+                              );
+                              if (firstIdx < 0) firstIdx = 0;
+                              const fl = lines[firstIdx];
+                              if (Math.hypot(fl.x1-startX,fl.y1-startY)<CONN) { addP(fl.x1,fl.y1); addP(fl.x2,fl.y2); }
+                              else { addP(fl.x2,fl.y2); addP(fl.x1,fl.y1); }
+                              used.add(firstIdx);
                               for (let it = 0; it < lines.length; it++) {
-                                const last = pts[pts.length - 1];
+                                const last = pts[pts.length-1];
+                                let found = false;
                                 for (let li = 0; li < lines.length; li++) {
                                   if (used.has(li)) continue;
                                   const l = lines[li];
-                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < CONN) { addP(l.x2, l.y2); used.add(li); break; }
-                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < CONN) { addP(l.x1, l.y1); used.add(li); break; }
+                                  if (Math.hypot(l.x1-last[0],l.y1-last[1])<CONN) { addP(l.x2,l.y2); used.add(li); found=true; break; }
+                                  if (Math.hypot(l.x2-last[0],l.y2-last[1])<CONN) { addP(l.x1,l.y1); used.add(li); found=true; break; }
                                 }
+                                if (!found) break;
                               }
                               if (pts.length < 3) return null;
-                              const first = pts[0], lastPt = pts[pts.length - 1];
-                              return Math.hypot(first[0] - lastPt[0], first[1] - lastPt[1]) < CONN ? pts : null;
+                              const first = pts[0], lastPt = pts[pts.length-1];
+                              return Math.hypot(first[0]-lastPt[0],first[1]-lastPt[1]) < CONN ? pts : null;
                             };
                             const poly = !frame ? getPolygon() : null;
 
@@ -1305,7 +1355,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {/* ══ CLOSED POLYGON PROFILE — offset con miter cap bevel ══ */}
                                   {poly && poly.length >= 3 && (() => {
                                     const TK = TK_FRAME;
-                                    const MITER_LIMIT = TK * 3;
+                                    const MITER_LIMIT = TK * 6;
 
                                     const offsetPoly = (pts, d) => {
                                       const n2 = pts.length;
