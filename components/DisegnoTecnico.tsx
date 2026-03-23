@@ -989,6 +989,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>⭕ Oblò</div>
 
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" ? null : "line", _pendingLine: null })} style={bs(drawMode === "line")}>╱ Linea</div>
+                                  {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
+                                    <div onClick={() => {
+                                      const fl = els.filter(e => e.type === "freeLine");
+                                      const first = fl[0];
+                                      const last = fl[fl.length - 1];
+                                      setDW([...els, { id: Date.now(), type: "freeLine", x1: last.x2, y1: last.y2, x2: first.x1, y2: first.y1 }], { _pendingLine: null });
+                                    }} style={{ padding: "5px 9px", borderRadius: 6, border: "1.5px solid #1A9E7360", background: "#1A9E7315", fontSize: 10, fontWeight: 700, cursor: "pointer", color: "#1A9E73", whiteSpace: "nowrap" }}>
+                                      ⬡ Chiudi
+                                    </div>
+                                  )}
 
                                   <div onClick={() => {
                                     const txt = prompt("Testo etichetta:");
