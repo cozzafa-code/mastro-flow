@@ -428,7 +428,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 5) { addP(l.x1, l.y1); used.add(li); break; }
                                 }
                               }
-                              return pts.length >= 3 ? pts : null;
+                              return pts.length >= 4 ? pts : null;
                             };
                             const poly = !frame ? getPolygon() : null;
 
@@ -729,7 +729,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (!cell && cells.length === 0) {
                                   // Extract polygon from freeLines
                                   const lines = els.filter(e => e.type === "freeLine");
-                                  if (lines.length >= 3) {
+                                  if (lines.length >= 4) {
                                     // Build ordered point chain from connected lines
                                     const pts = [];
                                     const used = new Set();
@@ -749,7 +749,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         if (d2 < 15) { addPt(l.x1, l.y1); used.add(li); break; }
                                       }
                                     }
-                                    if (pts.length >= 3) {
+                                    if (pts.length >= 4) {
                                       cell = { id: "poly", poly: pts };
                                     }
                                   }
@@ -1172,7 +1172,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                     }
                                     const clr = drawMode === "place-ap" ? T.blue : T.grn;
-                                    if (pts.length >= 3) {
+                                    if (pts.length >= 4) {
                                       return <polygon points={pts.map(p => p.join(",")).join(" ")} fill={clr} fillOpacity={0.08} stroke={clr} strokeWidth={1.5} strokeDasharray="6,4" />;
                                     }
                                     // Fallback to bbox
@@ -1187,7 +1187,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   ))}
 
                                   {/* ══ CLOSED POLYGON PROFILE (proper mitered corners) ══ */}
-                                  {poly && poly.length >= 3 && (() => {
+                                  {poly && poly.length >= 4 && (() => {
                                     const n = poly.length;
                                     const halfT = TK_FRAME;
                                     // Compute centroid for inner/outer direction
@@ -1419,7 +1419,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
                                       const ang = Math.atan2(dy2, dx2) * 180 / Math.PI;
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
-                                      const isPartOfPoly = poly && poly.length >= 3;
+                                      const isPartOfPoly = poly && poly.length >= 4;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})}>
                                           {/* Wide transparent hit area */}
