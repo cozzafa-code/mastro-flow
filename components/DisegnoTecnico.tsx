@@ -1302,61 +1302,49 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
                                   ))}
 
-                                  {/* ══ CLOSED POLYGON PROFILE — offset geometrico esatto ══ */}
+                                  {/* ══ CLOSED POLYGON PROFILE — offset con miter cap bevel ══ */}
                                   {poly && poly.length >= 3 && (() => {
-                                    const n = poly.length;
-                                    const TK = TK_FRAME; // half-thickness per lato
+                                    const TK = TK_FRAME;
+                                    const MITER_LIMIT = TK * 3;
 
-                                    // Calcola poligono offset: sposta ogni lato di +d o -d lungo la normale,
-                                    // poi trova l'intersezione delle rette adiacenti (miter esatto, nessuna distorsione)
                                     const offsetPoly = (pts, d) => {
-                                      // Per ogni lato calcola retta offset
-                                      const lines = [];
-                                      for (let i = 0; i < pts.length; i++) {
-                                        const a = pts[i], b = pts[(i + 1) % pts.length];
+                                      const n2 = pts.length;
+                                      const normals = pts.map((a, i) => {
+                                        const b = pts[(i + 1) % n2];
                                         const dx = b[0] - a[0], dy = b[1] - a[1];
                                         const len = Math.hypot(dx, dy) || 1;
-                                        // Normale perpendicolare (ruota 90° CCW)
-                                        const nx = -dy / len, ny = dx / len;
-                                        // Punti del lato offset
-                                        const p1 = [a[0] + nx * d, a[1] + ny * d];
-                                        const p2 = [b[0] + nx * d, b[1] + ny * d];
-                                        lines.push({ p1, p2, dx, dy });
-                                      }
-                                      // Intersezione di ogni coppia di lati adiacenti
+                                        return [-dy / len * d, dx / len * d];
+                                      });
                                       const result = [];
-                                      for (let i = 0; i < lines.length; i++) {
-                                        const l1 = lines[i], l2 = lines[(i + 1) % lines.length];
-                                        // Intersezione rette: l1.p1 + t*(l1.p2-l1.p1) = l2.p1 + s*(l2.p2-l2.p1)
-                                        const d1x = l1.p2[0] - l1.p1[0], d1y = l1.p2[1] - l1.p1[1];
-                                        const d2x = l2.p2[0] - l2.p1[0], d2y = l2.p2[1] - l2.p1[1];
-                                        const denom = d1x * d2y - d1y * d2x;
-                                        if (Math.abs(denom) < 0.001) {
-                                          // Parallele — usa punto medio
-                                          result.push([(l1.p2[0] + l2.p1[0]) / 2, (l1.p2[1] + l2.p1[1]) / 2]);
-                                        } else {
-                                          const dx0 = l2.p1[0] - l1.p1[0], dy0 = l2.p1[1] - l1.p1[1];
-                                          const t = (dx0 * d2y - dy0 * d2x) / denom;
-                                          result.push([l1.p1[0] + t * d1x, l1.p1[1] + t * d1y]);
-                                        }
+                                      for (let i = 0; i < n2; i++) {
+                                        const prev = (i - 1 + n2) % n2;
+                                        const a1 = [pts[prev][0] + normals[prev][0], pts[prev][1] + normals[prev][1]];
+                                        const b1 = [pts[i][0] + normals[prev][0], pts[i][1] + normals[prev][1]];
+                                        const a2 = [pts[i][0] + normals[i][0], pts[i][1] + normals[i][1]];
+                                        const b2 = [pts[(i + 1) % n2][0] + normals[i][0], pts[(i + 1) % n2][1] + normals[i][1]];
+                                        const d1x = b1[0]-a1[0], d1y = b1[1]-a1[1];
+                                        const d2x = b2[0]-a2[0], d2y = b2[1]-a2[1];
+                                        const denom = d1x*d2y - d1y*d2x;
+                                        if (Math.abs(denom) < 0.001) { result.push(b1); continue; }
+                                        const dx0 = a2[0]-a1[0], dy0 = a2[1]-a1[1];
+                                        const t = (dx0*d2y - dy0*d2x) / denom;
+                                        const ix = a1[0]+t*d1x, iy = a1[1]+t*d1y;
+                                        const dist = Math.hypot(ix - pts[i][0], iy - pts[i][1]);
+                                        if (dist > MITER_LIMIT) { result.push(b1); result.push(a2); }
+                                        else { result.push([ix, iy]); }
                                       }
                                       return result;
                                     };
 
                                     const outer = offsetPoly(poly, TK);
                                     const inner = offsetPoly(poly, -TK);
-                                    const outerStr = outer.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
-                                    const innerStr = inner.map(p => p.map(v => v.toFixed(1)).join(",")).join(" ");
-
+                                    const toStr = (arr) => arr.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
                                     return (
                                       <g>
-                                        {/* Fill profilo tra outer e inner */}
-                                        <polygon points={outerStr} fill="#eceae0" stroke="none" />
-                                        <polygon points={innerStr} fill="#fff" stroke="none" />
-                                        {/* Bordi */}
-                                        <polygon points={outerStr} fill="none" stroke="#1A1A1C" strokeWidth={1.2} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        <polygon points={innerStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        {/* Corner dots */}
+                                        <polygon points={toStr(outer)} fill="#eceae0" stroke="none" />
+                                        <polygon points={toStr(inner)} fill="#fff" stroke="none" />
+                                        <polygon points={toStr(outer)} fill="none" stroke="#1A1A1C" strokeWidth={1.2} strokeLinejoin="round" />
+                                        <polygon points={toStr(inner)} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="round" />
                                         {poly.map((p, pi) => <circle key={`pc${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>
                                     );
