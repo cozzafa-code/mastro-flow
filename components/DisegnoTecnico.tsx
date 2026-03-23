@@ -1614,3 +1614,4 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             );
 }
 
+
