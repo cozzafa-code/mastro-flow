@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════════════════════
 import DisegnoTecnico from "./DisegnoTecnico";
 import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
+import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
@@ -188,6 +189,7 @@ export default function VanoDetailPanel() {
   const [vrActive, setVrActive] = useState(false);
   const [showFotoMisure, setShowFotoMisure] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
+  const [showOrdinePanel, setShowOrdinePanel] = useState(false);
   const [lamieraPieghe, setLamieraPieghe] = useState<Array<{dir:'su'|'giu'|'sx'|'dx', mm:number}>>([]);
   const [lamieraPDir, setLamieraPDir] = useState<'sx'|'dx'|'su'|'giu'>('sx');
   const [lamieraPMm, setLamieraPMm] = useState('');
@@ -1765,6 +1767,31 @@ export default function VanoDetailPanel() {
                   </div>
                   <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginLeft: "auto" }}>PDF ↓</span>
                 </div>
+
+                {/* Bottone Ordine Controtelai */}
+                {selectedRilievo?.vani?.some(vn => vn.controtelaio?.sistema && vn.controtelaio.sistema !== "nessuno") && (
+                  <div onClick={() => setShowOrdinePanel(true)}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                      padding: "14px 16px", borderRadius: 12, cursor: "pointer",
+                      background: "#1A1A1C",
+                      border: "none", boxShadow: "0 2px 8px #1A1A1C30",
+                      marginTop: 8,
+                    }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Ordine Controtelai</div>
+                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>Scheda ordine generica · PDF pronto per fornitore</div>
+                    </div>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginLeft: "auto" }}>PDF ↓</span>
+                  </div>
+                )}
               </div>
 
           </>
@@ -2988,6 +3015,17 @@ export default function VanoDetailPanel() {
 
       {/* ═══ MODAL DISEGNO TECNICO LAMIERA ═══ */}
       {/* ═══ FULLSCREEN DISEGNO LAMIERA ═══ */}
+      {/* ── MODAL ORDINE CONTROTELAI ── */}
+      {showOrdinePanel && (
+        <OrdineControtelaiPanel
+          vani={selectedRilievo?.vani || []}
+          commessa={selectedCM}
+          aziendaInfo={null}
+          T={T}
+          onClose={() => setShowOrdinePanel(false)}
+        />
+      )}
+
       {showLamieraDisegno && (() => {
         const allSegs = lamieraPieghe;
 
