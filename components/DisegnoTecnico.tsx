@@ -1555,7 +1555,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                 {isV ? "↕ VERTICALE" : "↔ ORIZZONTALE"}
                                               </text>
                                             </>}
-                                            {dw._guideDeg != null && (
+                                            {!isH && !isV && dw._guideDeg != null && (
                                               <text x={bx+bw/2} y={by+bh+15} textAnchor="middle" fontSize={13} fontWeight={800} fill="#fff" fontFamily="monospace">
                                                 {`${dw._guideDeg}°`}
                                               </text>
