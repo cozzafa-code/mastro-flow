@@ -1106,6 +1106,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
                                     }
                                   }}
+                                  onTouchMove={(e2) => {
+                                    e2.preventDefault();
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
+                                    const svg = e2.currentTarget;
+                                    const t = e2.touches[0];
+                                    const rect = svg.getBoundingClientRect();
+                                    const viewBox = svg.viewBox?.baseVal;
+                                    const scaleX = viewBox ? viewBox.width / rect.width : 1;
+                                    const scaleY = viewBox ? viewBox.height / rect.height : 1;
+                                    const gmx = (t.clientX - rect.left) * scaleX;
+                                    const gmy = (t.clientY - rect.top) * scaleY;
+                                    let gx = snap(gmx), gy = snap(gmy);
+                                    const p = dw._pendingLine;
+                                    if (Math.abs(gx - p.x1) < 8 && Math.abs(gy - p.y1) > 8) gx = p.x1;
+                                    if (Math.abs(gy - p.y1) < 8 && Math.abs(gx - p.x1) > 8) gy = p.y1;
+                                    const deg = Math.round(Math.atan2(-(gy - p.y1), gx - p.x1) * 180 / Math.PI);
+                                    const len = Math.round(Math.hypot(gx - p.x1, gy - p.y1) / fW * realW);
+                                    if (dw._guideX !== gx || dw._guideY !== gy) {
+                                      onUpdate({ ...dw, _guideX: gx, _guideY: gy, _guideDeg: deg, _guideLen: len });
+                                    }
+                                  }}
                                   onMouseLeave={() => { if (dw._guideX != null) onUpdate({ ...dw, _guideX: null, _guideY: null }); }}>
                                   <defs>
                                     <pattern id={`dg-${vanoId}`} width={GRID} height={GRID} patternUnits="userSpaceOnUse">
@@ -1512,15 +1533,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <line x1={p.x1} y1={0} x2={p.x1} y2={canvasH} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
                                       {/* Live guide line to mouse */}
                                       {gx != null && gy != null && <>
-                                        <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={1} strokeDasharray="6,3" opacity={0.5} />
+                                        <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={2} strokeDasharray="8,4" opacity={0.75} />
                                         {/* H/V snap indicator */}
                                         {gx === p.x1 && <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
                                         {gy === p.y1 && <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke={T.grn} strokeWidth={0.7} strokeDasharray="2,2" opacity={0.5} />}
                                         {/* Angle + length label */}
-                                        <rect x={gx + 8} y={gy - 20} width={72} height={18} fill="#333" rx={4} opacity={0.85} />
-                                        <text x={gx + 44} y={gy - 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="#fff" fontFamily="monospace">
-                                          {dw._guideDeg != null ? `${dw._guideDeg}° ${dw._guideLen}mm` : ""}
+                                        {/* Badge distanza — grande e leggibile */}
+                                        <rect x={gx + 10} y={gy - 28} width={82} height={22} fill="#1A1A1C" rx={5} opacity={0.92} />
+                                        <text x={gx + 51} y={gy - 13} textAnchor="middle" fontSize={12} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">
+                                          {dw._guideLen != null ? `${dw._guideLen} mm` : ""}
                                         </text>
+                                        {/* Angolo piccolo sotto */}
+                                        {dw._guideDeg != null && dw._guideDeg !== 0 && dw._guideDeg !== 90 && dw._guideDeg !== -90 && dw._guideDeg !== 180 && (
+                                          <text x={gx + 51} y={gy + 2} textAnchor="middle" fontSize={8} fill="#888" fontFamily="monospace">
+                                            {`${dw._guideDeg}°`}
+                                          </text>
+                                        )}
+                                        {/* Snap indicator H/V */}
+                                        {(gx === p.x1 || gy === p.y1) && (
+                                          <text x={gx + 51} y={gy + 2} textAnchor="middle" fontSize={8} fill="#1A9E73" fontWeight={800} fontFamily="monospace">
+                                            {gx === p.x1 ? "↕ VERT" : "↔ ORIZ"}
+                                          </text>
+                                        )}
                                       </>}
                                       <circle cx={p.x1} cy={p.y1} r={6} fill={clr} fillOpacity={0.4} />
                                       <circle cx={p.x1} cy={p.y1} r={10} fill="none" stroke={clr} strokeWidth={1.5} strokeDasharray="3,2" />
