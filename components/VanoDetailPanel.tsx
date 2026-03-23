@@ -20,7 +20,7 @@ const STATO_MISURE = [
   { id: "provvisorie", label: "Provvisorie", color: "#D08008", bg: "#D0800818", icon: "", desc: "Misure non ancora verificate" },
   { id: "verificate",  label: "Verificate",  color: "#D08008",  bg: "#D0800815", icon: "", desc: "Verificate sul posto, non ancora confermate" },
   { id: "confermate",  label: "Confermate",  color: "#1A9E73",  bg: "#1A9E7315", icon: "", desc: "Misure definitive — preventivo sbloccato" },
-  { id: "da_rivedere", label: "Da rivedere", color: T.red,  bg: "#DC444415", icon: "", desc: "Rilevate discrepanze — ricontrollare" },
+  { id: "da_rivedere", label: "Da rivedere", color: "#DC4444",  bg: "#DC444415", icon: "", desc: "Rilevate discrepanze — ricontrollare" },
 ];
 const getStatoMisure = (v) => STATO_MISURE.find(s => s.id === (v?.statoMisure || "provvisorie")) || STATO_MISURE[0];
 
@@ -1071,12 +1071,12 @@ export default function VanoDetailPanel() {
                               {/* infisso */}
                               <rect x={14} y={11} width={32} height={22} fill="#E0F2FE" stroke="#0284C7" strokeWidth={1}/>
                               {/* freccia luce */}
-                              <line x1={14} y1={38} x2={46} y2={38} stroke=T.red strokeWidth={1}/>
-                              <polygon points="14,36 14,40 10,38" fill=T.red/>
-                              <polygon points="46,36 46,40 50,38" fill=T.red/>
-                              <text x={30} y={43} textAnchor="middle" fontSize={5} fill=T.red fontWeight="800">LUCE ARCH.</text>
+                              <line x1={14} y1={38} x2={46} y2={38} stroke={T.red} strokeWidth={1}/>
+                              <polygon points="14,36 14,40 10,38" fill={T.red}/>
+                              <polygon points="46,36 46,40 50,38" fill={T.red}/>
+                              <text x={30} y={43} textAnchor="middle" fontSize={5} fill={T.red} fontWeight="800">LUCE ARCH.</text>
                               {/* label A */}
-                              <text x={4} y={24} textAnchor="middle" fontSize={5} fill=T.red fontWeight="800">A</text>
+                              <text x={4} y={24} textAnchor="middle" fontSize={5} fill={T.red} fontWeight="800">A</text>
                             </svg>
                             <div style={{fontSize:10,color:"#3B7FE0",lineHeight:1.5}}>
                               <div style={{fontWeight:800,marginBottom:2}}>Come misurare</div>
@@ -1996,7 +1996,7 @@ export default function VanoDetailPanel() {
                   onPointerLeave={() => setSpDrawing(false)}
                 />
                 <div style={{ padding: "6px 14px", display: "flex", gap: 4 }}>
-                  {["#1d1d1f", T.red, "#0D7C6B", "#1A9E73", "#E8A020"].map(c => (
+                  {["#1d1d1f", "#DC4444", "#0D7C6B", "#1A9E73", "#E8A020"].map(c => (
                     <div key={c} onClick={() => setPenColor(c)} style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: penColor === c ? `3px solid ${T.acc}` : "2px solid transparent", cursor: "pointer" }} />
                   ))}
                   <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
@@ -2480,7 +2480,7 @@ export default function VanoDetailPanel() {
                 );
                 const toolbar = (
                   <div style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" as const }}>
-                    {["#1d1d1f", T.red, "#0D7C6B", "#1A9E73", "#E8A020", "#af52de", "#EF4444", "#ffffff"].map(c => (
+                    {["#1d1d1f", "#DC4444", "#0D7C6B", "#1A9E73", "#E8A020", "#af52de", "#EF4444", "#ffffff"].map(c => (
                       <div key={c} onClick={() => { setPenColor(c); setDrawTool("pen"); }} style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: penColor === c && drawTool === "pen" ? `3px solid ${T.acc}` : c === "#ffffff" ? `1px solid ${T.bdr}` : "2px solid transparent", cursor: "pointer" }} />
                     ))}
                     <div style={{ width: 1, height: 20, background: T.bdr, margin: "0 4px" }} />
