@@ -1323,48 +1323,50 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
                                   ))}
 
-                                  {/* ══ CLOSED POLYGON PROFILES — tutte le forme, area-based outer/inner ══ */}
+                                  {/* ══ CLOSED POLYGON PROFILES — clipPath approach, sempre esterno ══ */}
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
-                                    const TK = TK_FRAME;
-                                    const MITER_LIMIT = TK * 8;
-                                    const calcArea = (pts) => Math.abs(pts.reduce((s,p,i)=>{ const q=pts[(i+1)%pts.length]; return s+(p[0]*q[1]-q[0]*p[1]); },0)/2);
-                                    const offsetPoly = (pts, d) => {
-                                      const n2 = pts.length;
-                                      const normals = pts.map((a,i)=>{ const b=pts[(i+1)%n2]; const dx=b[0]-a[0],dy=b[1]-a[1]; const len=Math.hypot(dx,dy)||1; return [-dy/len*d, dx/len*d]; });
-                                      const result = [];
-                                      for (let i = 0; i < n2; i++) {
-                                        const prev=(i-1+n2)%n2;
-                                        const a1=[pts[prev][0]+normals[prev][0],pts[prev][1]+normals[prev][1]];
-                                        const b1=[pts[i][0]+normals[prev][0],pts[i][1]+normals[prev][1]];
-                                        const a2=[pts[i][0]+normals[i][0],pts[i][1]+normals[i][1]];
-                                        const b2=[pts[(i+1)%n2][0]+normals[i][0],pts[(i+1)%n2][1]+normals[i][1]];
-                                        const d1x=b1[0]-a1[0],d1y=b1[1]-a1[1],d2x=b2[0]-a2[0],d2y=b2[1]-a2[1];
-                                        const denom=d1x*d2y-d1y*d2x;
-                                        if (Math.abs(denom)<0.001) { result.push(b1); continue; }
-                                        const t=((a2[0]-a1[0])*d2y-(a2[1]-a1[1])*d2x)/denom;
-                                        const ix=a1[0]+t*d1x,iy=a1[1]+t*d1y;
-                                        if (Math.hypot(ix-pts[i][0],iy-pts[i][1])>MITER_LIMIT) { result.push(b1); result.push(a2); }
-                                        else { result.push([ix,iy]); }
-                                      }
-                                      return result;
-                                    };
-                                    const p1=offsetPoly(polyPts,TK), p2=offsetPoly(polyPts,-TK);
-                                    const outer=calcArea(p1)>=calcArea(p2)?p1:p2;
-                                    const inner=calcArea(p1)>=calcArea(p2)?p2:p1;
-                                    const toStr=(arr)=>arr.map(p=>`${(+p[0]).toFixed(1)},${(+p[1]).toFixed(1)}`).join(" ");
+                                    const TK = TK_FRAME * 2.5; // spessore stroke totale
+                                    const ptStr = polyPts.map(p => `${p[0]},${p[1]}`).join(" ");
+                                    const clipId = `polyOuter-${vanoId}-${polyIdx}`;
+                                    // Espandi leggermente il clipPath verso l'esterno usando il centroide
+                                    const cx = polyPts.reduce((s,p)=>s+p[0],0)/polyPts.length;
+                                    const cy2 = polyPts.reduce((s,p)=>s+p[1],0)/polyPts.length;
+                                    const expandPts = polyPts.map(p => {
+                                      const dx=p[0]-cx, dy=p[1]-cy2;
+                                      const len=Math.hypot(dx,dy)||1;
+                                      return `${(p[0]+dx/len*TK).toFixed(1)},${(p[1]+dy/len*TK).toFixed(1)}`;
+                                    }).join(" ");
                                     return (
                                       <g key={`pp${polyIdx}`}>
-                                        <polygon points={toStr(outer)} fill="#eceae0" stroke="none" />
-                                        <polygon points={toStr(inner)} fill="#fff" stroke="none" />
-                                        <polygon points={toStr(outer)} fill="none" stroke="#1A1A1C" strokeWidth={1.2} strokeLinejoin="round" />
-                                        <polygon points={toStr(inner)} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="round" />
+                                        <defs>
+                                          {/* ClipPath = poligono espanso verso esterno — taglia lo stroke lasciando solo la parte esterna */}
+                                          <clipPath id={clipId}>
+                                            <polygon points={expandPts} />
+                                          </clipPath>
+                                        </defs>
+                                        {/* Stroke spesso sulla polygon — clipPath taglia la parte interna */}
+                                        <g clipPath={`url(#${clipId})`}>
+                                          <polygon points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK * 2} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                          <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={TK * 2 + 0.5} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        </g>
+                                        {/* Riempi l'interno di bianco */}
+                                        <polygon points={ptStr} fill="#fff" stroke="none" />
+                                        {/* Stroke interno sottile */}
+                                        <polygon points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK * 2} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        {/* Bordo interno */}
+                                        <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        {/* Bordo esterno netto */}
+                                        <g clipPath={`url(#${clipId})`}>
+                                          <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={1.5} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        </g>
+                                        {/* Corner dots */}
                                         {polyPts.map((p,pi)=><circle key={`pc${polyIdx}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>
                                     );
                                   })}
 
-                                  {/* ══ ELEMENTS ══ */}
+                                                                    {/* ══ ELEMENTS ══ */}
                                   {els.map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? T.purple : undefined;
