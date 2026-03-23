@@ -992,10 +992,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
-                                      const first = fl[0];
-                                      const last = fl[fl.length - 1];
-                                      setDW([...els, { id: Date.now(), type: "freeLine", x1: last.x2, y1: last.y2, x2: first.x1, y2: first.y1 }], { _pendingLine: null });
-                                    }} style={{ padding: "5px 9px", borderRadius: 6, border: "1.5px solid #1A9E7360", background: "#1A9E7315", fontSize: 10, fontWeight: 700, cursor: "pointer", color: "#1A9E73", whiteSpace: "nowrap" }}>
+                                      if (fl.length < 2) return;
+                                      // Conta quante volte ogni punto appare
+                                      const ptCount = {};
+                                      fl.forEach(l => {
+                                        const k1 = Math.round(l.x1)+","+Math.round(l.y1);
+                                        const k2 = Math.round(l.x2)+","+Math.round(l.y2);
+                                        ptCount[k1] = (ptCount[k1]||0) + 1;
+                                        ptCount[k2] = (ptCount[k2]||0) + 1;
+                                      });
+                                      // Punti liberi = appaiono una sola volta (estremità della catena)
+                                      const freePts = [];
+                                      fl.forEach(l => {
+                                        const k1 = Math.round(l.x1)+","+Math.round(l.y1);
+                                        const k2 = Math.round(l.x2)+","+Math.round(l.y2);
+                                        if (ptCount[k1] === 1) freePts.push({x:l.x1,y:l.y1});
+                                        if (ptCount[k2] === 1) freePts.push({x:l.x2,y:l.y2});
+                                      });
+                                      if (freePts.length >= 2) {
+                                        setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null });
+                                      } else {
+                                        // fallback
+                                        setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null });
+                                      }
+                                    }} style={{ padding: "7px 16px", borderRadius: 8, border: "2px solid #1A9E73", background: "#1A9E73", fontSize: 12, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap", boxShadow: "0 2px 8px #1A9E7340" }}>
                                       ⬡ Chiudi
                                     </div>
                                   )}
