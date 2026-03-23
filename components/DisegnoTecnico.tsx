@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -1556,7 +1556,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               </text>
                                             </>}
                                             {!isH && !isV && dw._guideDeg != null && (
-                                              <text x={bx+bw/2} y={by+bh+13} textAnchor="middle" fontSize={9} fill="#888" fontFamily="monospace">
+                                              <text x={bx+bw/2} y={by+bh+15} textAnchor="middle" fontSize={13} fontWeight={800} fill="#fff" fontFamily="monospace">
                                                 {`${dw._guideDeg}°`}
                                               </text>
                                             )}
@@ -1613,3 +1613,4 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               </div>
                             );
 }
+
