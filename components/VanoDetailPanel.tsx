@@ -502,7 +502,7 @@ export default function VanoDetailPanel() {
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderRadius: 10,
-              background: vrActive ? T.red : "#0F766E",
+              background: vrActive ? "#DC4444" : "#0F766E",
               border: "none", cursor: "pointer", justifyContent: "center",
               boxShadow: vrActive ? "0 4px 0 #991B1B" : "0 4px 0 #0D5C56",
               transition: "all 0.1s" }}>
@@ -1009,11 +1009,11 @@ export default function VanoDetailPanel() {
                         <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:12}}>
                           {/* A — sempre presente */}
                           <div style={{display:"flex",alignItems:"center",gap:8}}>
-                            <div style={{width:28,height:28,borderRadius:6,background:T.red,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <div style={{width:28,height:28,borderRadius:6,background:"#DC4444",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                               <span style={{fontSize:13,fontWeight:800,color:"white"}}>A</span>
                             </div>
                             <div style={{flex:1}}>
-                              <div style={{fontSize:9,fontWeight:700,color:T.red,marginBottom:3}}>SEDE INFISSO (mm) — variabile</div>
+                              <div style={{fontSize:9,fontWeight:700,color:"#DC4444",marginBottom:3}}>SEDE INFISSO (mm) — variabile</div>
                               <input type="number" inputMode="numeric" placeholder="inserisci mm"
                                 value={ct.varA||""}
                                 onChange={e=>updateV("controtelaio",{...ct,varA:parseInt(e.target.value)||0})}
@@ -1071,12 +1071,12 @@ export default function VanoDetailPanel() {
                               {/* infisso */}
                               <rect x={14} y={11} width={32} height={22} fill="#E0F2FE" stroke="#0284C7" strokeWidth={1}/>
                               {/* freccia luce */}
-                              <line x1={14} y1={38} x2={46} y2={38} stroke={T.red} strokeWidth={1}/>
-                              <polygon points="14,36 14,40 10,38" fill={T.red}/>
-                              <polygon points="46,36 46,40 50,38" fill={T.red}/>
-                              <text x={30} y={43} textAnchor="middle" fontSize={5} fill={T.red} fontWeight="800">LUCE ARCH.</text>
+                              <line x1={14} y1={38} x2={46} y2={38} stroke="#DC4444" strokeWidth={1}/>
+                              <polygon points="14,36 14,40 10,38" fill="#DC4444"/>
+                              <polygon points="46,36 46,40 50,38" fill="#DC4444"/>
+                              <text x={30} y={43} textAnchor="middle" fontSize={5} fill="#DC4444" fontWeight="800">LUCE ARCH.</text>
                               {/* label A */}
-                              <text x={4} y={24} textAnchor="middle" fontSize={5} fill={T.red} fontWeight="800">A</text>
+                              <text x={4} y={24} textAnchor="middle" fontSize={5} fill="#DC4444" fontWeight="800">A</text>
                             </svg>
                             <div style={{fontSize:10,color:"#3B7FE0",lineHeight:1.5}}>
                               <div style={{fontWeight:800,marginBottom:2}}>Come misurare</div>
@@ -1446,15 +1446,15 @@ export default function VanoDetailPanel() {
           </div>
 
           {/* FOTO + MISURE RAPIDA */}
-          <div onClick={() => setShowFotoMisure(true)} style={{ padding: "12px 16px", borderRadius: 14, background: T.card, cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 0, border: "1.5px solid T_BDR_PLACEHOLDER" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: T.acc+"15", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <div onClick={() => setShowFotoMisure(true)} style={{ padding: "12px 16px", borderRadius: 14, background: "linear-gradient(135deg, #DC4444, #B83030)", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 0, boxShadow: "0 3px 12px rgba(220,68,68,0.3)" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>Foto + Misure</div>
-              <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>Scatta foto e annota misure sopra</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>Foto + Misure</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 1 }}>Scatta foto e annota misure sopra</div>
             </div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           {/* GALLERY FOTO MISURE — sotto il bottone */}
           {(() => {
@@ -1692,50 +1692,109 @@ export default function VanoDetailPanel() {
                 </div>
               )}
 
-{/* Disegno mano libera — Enhanced: eraser, multi-page, fullscreen */}
+{/* Disegno mano libera — collassabile */}
               {(() => {
-                const W = drawFullscreen ? 760 : 380;
-                const H = drawFullscreen ? 680 : 340;
+                const W = drawFullscreen ? window.innerWidth : 380;
+                const H = drawFullscreen ? window.innerHeight - 120 : 340;
                 const savePageData = () => { const cv = canvasRef.current; if (cv) { setDrawPages(prev => { const n = [...prev]; n[drawPageIdx] = cv.toDataURL(); return n; }); } };
                 const loadPageData = (idx: number) => { const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx && cv) { ctx.clearRect(0, 0, cv.width, cv.height); if (drawPages[idx]) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = drawPages[idx]; } } };
                 const addPage = () => { savePageData(); setDrawPages(prev => [...prev, ""]); setDrawPageIdx(drawPages.length); setTimeout(() => { const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx && cv) ctx.clearRect(0, 0, cv.width, cv.height); }, 50); };
                 const switchPage = (idx: number) => { if (idx === drawPageIdx) return; savePageData(); setDrawPageIdx(idx); setTimeout(() => loadPageData(idx), 50); };
+                const hasDrawing = drawPages.some(p => p && p.length > 100);
+
+                // CHIUSO — mostra bottone compatto con anteprima
+                if (!drawFullscreen && !isDrawing && !hasDrawing) {
+                  return (
+                    <div onClick={() => setDrawFullscreen(true)}
+                      style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 12,
+                        border: `1px solid ${T.bdr}`, background: T.card,
+                        display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: T.acc+"12",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Disegno libero</div>
+                        <div style={{ fontSize: 10, color: T.sub }}>Tocca per aprire il foglio</div>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round" style={{ marginLeft: "auto" }}><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                  );
+                }
+
+                // APERTO con disegno salvato — mostra thumbnail + bottone modifica
+                if (!drawFullscreen && !isDrawing && hasDrawing) {
+                  return (
+                    <div style={{ marginBottom: 12, borderRadius: 12, border: `1px solid ${T.bdr}`, background: T.card, overflow: "hidden" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px" }}>
+                        <img src={drawPages[drawPageIdx] || drawPages[0]} alt="disegno"
+                          style={{ width: 64, height: 48, objectFit: "cover", borderRadius: 6, border: `1px solid ${T.bdr}` }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Disegno libero</div>
+                          <div style={{ fontSize: 10, color: T.sub }}>{drawPages.length} {drawPages.length === 1 ? "foglio" : "fogli"}</div>
+                        </div>
+                        <div onClick={() => setDrawFullscreen(true)}
+                          style={{ padding: "6px 12px", borderRadius: 8, background: T.acc+"15",
+                            border: `1px solid ${T.acc}30`, fontSize: 10, fontWeight: 700, color: T.acc, cursor: "pointer" }}>
+                          Modifica
+                        </div>
+                        <div onClick={() => { setDrawPages([""]); setDrawPageIdx(0); setTimeout(() => { const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if(ctx&&cv) ctx.clearRect(0,0,cv.width,cv.height); }, 50); }}
+                          style={{ padding: "6px 8px", borderRadius: 8, background: T.bg,
+                            border: `1px solid ${T.bdr}`, fontSize: 10, color: T.sub, cursor: "pointer" }}>✕</div>
+                      </div>
+                    </div>
+                  );
+                }
+
                 const canvasEl = (
-                  <canvas ref={canvasRef} width={W} height={H} style={{ width: "100%", height: drawFullscreen ? "calc(100vh - 140px)" : 340, background: "#fff", touchAction: "none", cursor: drawTool === "eraser" ? "cell" : "crosshair" }}
+                  <canvas ref={canvasRef} width={W} height={H}
+                    style={{ width: "100%", height: drawFullscreen ? "calc(100vh - 120px)" : 340,
+                      background: "#fff", touchAction: "none",
+                      cursor: drawTool === "eraser" ? "cell" : "crosshair" }}
                     onPointerDown={e => {
                       canvasRef.current?.setPointerCapture(e.pointerId); setIsDrawing(true);
                       const cv = canvasRef.current; const ctx = cv?.getContext("2d");
                       if (ctx && cv) {
-                        const r = cv.getBoundingClientRect(); const sx = cv.width / r.width, sy = cv.height / r.height;
-                        ctx.beginPath(); ctx.moveTo((e.clientX - r.left) * sx, (e.clientY - r.top) * sy);
-                        if (drawTool === "eraser") { ctx.globalCompositeOperation = "destination-out"; ctx.lineWidth = penSize * 8; }
+                        const r = cv.getBoundingClientRect(); const sx = cv.width/r.width, sy = cv.height/r.height;
+                        ctx.beginPath(); ctx.moveTo((e.clientX-r.left)*sx, (e.clientY-r.top)*sy);
+                        if (drawTool === "eraser") { ctx.globalCompositeOperation = "destination-out"; ctx.lineWidth = penSize*8; }
                         else { ctx.globalCompositeOperation = "source-over"; ctx.strokeStyle = penColor; ctx.lineWidth = penSize; }
                         ctx.lineCap = "round"; ctx.lineJoin = "round";
                       }
                     }}
                     onPointerMove={e => {
-                      if (!isDrawing) return; const cv = canvasRef.current; const ctx = cv?.getContext("2d");
-                      if (ctx && cv) { const r = cv.getBoundingClientRect(); const sx = cv.width / r.width, sy = cv.height / r.height; ctx.lineTo((e.clientX - r.left) * sx, (e.clientY - r.top) * sy); ctx.stroke(); }
+                      if (!isDrawing) return;
+                      const cv = canvasRef.current; const ctx = cv?.getContext("2d");
+                      if (ctx && cv) { const r = cv.getBoundingClientRect(); const sx = cv.width/r.width, sy = cv.height/r.height; ctx.lineTo((e.clientX-r.left)*sx, (e.clientY-r.top)*sy); ctx.stroke(); }
                     }}
-                    onPointerUp={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx) ctx.globalCompositeOperation = "source-over"; }}
-                    onPointerLeave={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if (ctx) ctx.globalCompositeOperation = "source-over"; }}
+                    onPointerUp={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if(ctx) ctx.globalCompositeOperation = "source-over"; }}
+                    onPointerLeave={() => { setIsDrawing(false); const cv = canvasRef.current; const ctx = cv?.getContext("2d"); if(ctx) ctx.globalCompositeOperation = "source-over"; }}
                   />
                 );
                 const toolbar = (
                   <div style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" as const }}>
-                    {["#1d1d1f", T.acc, "#007aff", "#34c759", "#ff9500", "#af52de", "#ff2d55", "#ffffff"].map(c => (
-                      <div key={c} onClick={() => { setPenColor(c); setDrawTool("pen"); }} style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: penColor === c && drawTool === "pen" ? `3px solid ${T.acc}` : c === "#ffffff" ? `1px solid ${T.bdr}` : "2px solid transparent", cursor: "pointer" }} />
+                    {["#1d1d1f","#3B7FE0","#1A9E73","#D08008","#af52de","#64748B","#0EA5E9","#ffffff"].map(c => (
+                      <div key={c} onClick={() => { setPenColor(c); setDrawTool("pen"); }}
+                        style={{ width: 22, height: 22, borderRadius: "50%", background: c,
+                          border: penColor===c && drawTool==="pen" ? `3px solid ${T.acc}` : c==="#ffffff" ? `1px solid ${T.bdr}` : "2px solid transparent",
+                          cursor: "pointer" }} />
                     ))}
                     <div style={{ width: 1, height: 20, background: T.bdr, margin: "0 4px" }} />
-                    {/* Gomma */}
-                    <div onClick={() => setDrawTool(drawTool === "eraser" ? "pen" : "eraser")}
-                      style={{ width: 32, height: 32, borderRadius: 8, background: drawTool === "eraser" ? T.acc + "18" : T.bg, border: drawTool === "eraser" ? "2px solid #ff3b30" : `1px solid ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "✕" : "🧹"}</span>
+                    <div onClick={() => setDrawTool(drawTool==="eraser"?"pen":"eraser")}
+                      style={{ width: 32, height: 32, borderRadius: 8,
+                        background: drawTool==="eraser" ? T.acc+"18" : T.bg,
+                        border: drawTool==="eraser" ? `2px solid ${T.acc}` : `1px solid ${T.bdr}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={drawTool==="eraser"?T.acc:T.sub} strokeWidth="2" strokeLinecap="round"><path d="M20 20H7L3 16l10-10 7 7-3 3"/><path d="M6.5 17.5l3-3"/></svg>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
-                      {[1, 2, 4, 6].map(s => (
-                        <div key={s} onClick={() => setPenSize(s)} style={{ width: 24, height: 24, borderRadius: 6, background: penSize === s ? T.accLt : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                          <div style={{ width: s * 2 + 1, height: s * 2 + 1, borderRadius: "50%", background: drawTool === "eraser" ? T.acc : T.text }} />
+                      {[1,2,4,6].map(s => (
+                        <div key={s} onClick={() => setPenSize(s)}
+                          style={{ width: 24, height: 24, borderRadius: 6, background: penSize===s ? T.accLt : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                          <div style={{ width: s*2+1, height: s*2+1, borderRadius: "50%", background: T.text }} />
                         </div>
                       ))}
                     </div>
@@ -1746,48 +1805,50 @@ export default function VanoDetailPanel() {
                     <span style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" as const }}>Fogli:</span>
                     {drawPages.map((_: string, i: number) => (
                       <div key={i} onClick={() => switchPage(i)}
-                        style={{ minWidth: drawPageIdx === i ? 22 : 8, height: 8, borderRadius: 4, background: drawPageIdx === i ? T.acc : T.bdr, cursor: "pointer", transition: "all 0.15s", position: "relative" as const }}>
-                        {drawPageIdx === i && <span style={{ position: "absolute" as const, top: -12, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: T.acc }}>{i + 1}</span>}
+                        style={{ minWidth: drawPageIdx===i ? 22 : 8, height: 8, borderRadius: 4,
+                          background: drawPageIdx===i ? T.acc : T.bdr, cursor: "pointer",
+                          transition: "all 0.15s", position: "relative" as const }}>
+                        {drawPageIdx===i && <span style={{ position: "absolute" as const, top: -12, left: "50%", transform: "translateX(-50%)", fontSize: 8, fontWeight: 700, color: T.acc }}>{i+1}</span>}
                       </div>
                     ))}
                     <div onClick={addPage} style={{ width: 22, height: 22, borderRadius: "50%", background: T.bg, border: `1.5px dashed ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: T.sub, cursor: "pointer", fontWeight: 700 }}>+</div>
-                    <span style={{ fontSize: 9, color: T.sub }}>{drawPageIdx + 1}/{drawPages.length}</span>
-                    <div style={{ marginLeft: "auto" }} />
-                    <div onClick={() => { savePageData(); setDrawFullscreen(!drawFullscreen); }}
-                      style={{ padding: "3px 8px", borderRadius: 6, background: drawFullscreen ? T.acc + "12" : T.bg, border: `1px solid ${drawFullscreen ? T.acc : T.bdr}`, fontSize: 10, fontWeight: 700, color: drawFullscreen ? T.acc : T.sub, cursor: "pointer" }}>
-                      {drawFullscreen ? "↙ Riduci" : "↗ Ingrandisci"}
-                    </div>
+                    <span style={{ fontSize: 9, color: T.sub }}>{drawPageIdx+1}/{drawPages.length}</span>
                   </div>
                 );
 
+                // FULLSCREEN
                 if (drawFullscreen) return (
                   <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#fff", display: "flex", flexDirection: "column" as const }}>
-                    <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: T.acc }}>✏️ Disegno — Foglio {drawPageIdx + 1}/{drawPages.length}</span>
+                    <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.bg, flexShrink: 0 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Disegno libero — {drawPageIdx+1}/{drawPages.length}</span>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci foglio</button>
-                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.acc, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
-                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>✕ Chiudi</button>
+                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }}
+                          style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Pulisci</button>
+                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }}
+                          style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: T.grn, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>Salva</button>
+                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }}
+                          style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>✕</button>
                       </div>
                     </div>
-                    <div style={{ flex: 1, overflow: "hidden" }}>{canvasEl}</div>
                     {toolbar}
+                    <div style={{ flex: 1, overflow: "hidden" }}>{canvasEl}</div>
                     {pageStrip}
                   </div>
                 );
 
+                // APERTO inline (non dovrebbe succedere ma fallback)
                 return (
                   <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginBottom: 12, overflow: "hidden" }}>
                     <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: T.acc }}>✏️ Disegno a mano libera</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Disegno libero</span>
                       <div style={{ display: "flex", gap: 6 }}>
-                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci foglio</button>
-                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.acc, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
+                        <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }}
+                          style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Pulisci</button>
+                        <button onClick={() => { savePageData(); setDrawFullscreen(false); }}
+                          style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.grn, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Salva</button>
                       </div>
                     </div>
-                    {canvasEl}
-                    {toolbar}
-                    {pageStrip}
+                    {canvasEl}{toolbar}{pageStrip}
                   </div>
                 );
               })()}
@@ -1868,7 +1929,7 @@ export default function VanoDetailPanel() {
                     <div onClick={() => { const a = document.createElement("a"); a.href = v.pdfFornitore; a.download = v.pdfFornitoreNome || "disegno.pdf"; a.click(); }}
                       style={{ padding: "5px 12px", borderRadius: 7, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0", whiteSpace: "nowrap" as const }}>⬇ Apri</div>
                     <div onClick={() => { updateVanoField(v.id, "pdfFornitore", null); updateVanoField(v.id, "pdfFornitoreNome", null); updateVanoField(v.id, "pdfFornitoreData", null); }}
-                      style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", border: "1px solid #DC444430", cursor: "pointer", fontSize: 11, fontWeight: 700, color: T.red }}></div>
+                      style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", border: "1px solid #DC444430", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#DC4444" }}></div>
                   </div>
                 ) : (
                   <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 10, background: T.card, border: `1.5px dashed #3B7FE040`, cursor: "pointer" }}>
@@ -2439,11 +2500,11 @@ export default function VanoDetailPanel() {
                 </div>
               )}
               {/* Foto + Note */}
-              <div onClick={() => setDetailOpen(d => ({...d, disegno: !d.disegno}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.disegno ? T.acc : T.bdr}`, background: detailOpen.disegno ? "T.acc08" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div onClick={() => setDetailOpen(d => ({...d, disegno: !d.disegno}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.disegno ? T.acc : T.bdr}`, background: detailOpen.disegno ? T.acc+"08" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 16 }}><I d={ICO.camera} /></span>
                   <span style={{ fontSize: 13, fontWeight: 700, color: detailOpen.disegno ? T.acc : T.text }}>Foto + Note</span>
-                  {(v.note) && <span style={{ fontSize: 10, color: T.acc, fontWeight: 700, background: "T.acc15", padding: "2px 8px", borderRadius: 6 }}><I d={ICO.fileText} /></span>}
+                  {(v.note) && <span style={{ fontSize: 10, color: T.acc, fontWeight: 700, background: T.acc+"15", padding: "2px 8px", borderRadius: 6 }}><I d={ICO.fileText} /></span>}
                 </div>
                 <span style={{ fontSize: 13, color: T.sub, transform: detailOpen.disegno ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s" }}>▾</span>
               </div>
@@ -2486,13 +2547,13 @@ export default function VanoDetailPanel() {
                     <div style={{ width: 1, height: 20, background: T.bdr, margin: "0 4px" }} />
                     {/* Gomma */}
                     <div onClick={() => setDrawTool(drawTool === "eraser" ? "pen" : "eraser")}
-                      style={{ width: 32, height: 32, borderRadius: 8, background: drawTool === "eraser" ? T.red + "18" : T.bg, border: drawTool === "eraser" ? "2px solid #DC4444" : `1px solid ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                      style={{ width: 32, height: 32, borderRadius: 8, background: drawTool === "eraser" ? "#DC4444" + "18" : T.bg, border: drawTool === "eraser" ? "2px solid #DC4444" : `1px solid ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                       <span style={{ fontSize: 14 }}>{drawTool === "eraser" ? "" : ""}</span>
                     </div>
                     <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
                       {[1, 2, 4, 6].map(s => (
                         <div key={s} onClick={() => setPenSize(s)} style={{ width: 24, height: 24, borderRadius: 6, background: penSize === s ? T.accLt : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                          <div style={{ width: s * 2 + 1, height: s * 2 + 1, borderRadius: "50%", background: drawTool === "eraser" ? T.red : T.text }} />
+                          <div style={{ width: s * 2 + 1, height: s * 2 + 1, borderRadius: "50%", background: drawTool === "eraser" ? "#DC4444" : T.text }} />
                         </div>
                       ))}
                     </div>
@@ -2523,7 +2584,7 @@ export default function VanoDetailPanel() {
                       <span style={{ fontSize: 13, fontWeight: 700, color: T.acc }}><I d={ICO.edit} /> Disegno — Foglio {drawPageIdx + 1}/{drawPages.length}</span>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.trash} /> Pulisci foglio</button>
-                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.red, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
+                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#DC4444", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
                         <button onClick={() => { savePageData(); setDrawFullscreen(false); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Chiudi</button>
                       </div>
                     </div>
@@ -2539,7 +2600,7 @@ export default function VanoDetailPanel() {
                       <span style={{ fontSize: 12, fontWeight: 700, color: T.acc }}><I d={ICO.edit} /> Disegno a mano libera</span>
                       <div style={{ display: "flex", gap: 6 }}>
                         <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, W, H); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.trash} /> Pulisci foglio</button>
-                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.red, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
+                        <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#DC4444", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
                       </div>
                     </div>
                     {canvasEl}
@@ -2553,8 +2614,8 @@ export default function VanoDetailPanel() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.blue }}><I d={ICO.camera} /> FOTO ({(v.foto && Object.keys(v.foto).length) || 0})</div>
                   <div style={{ display: "flex", gap: 4 }}>
-                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: T.acc+"15", color: T.acc, border: `1px solid ${T.acc}40`, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
-                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: T.acc+"15", color: T.acc, border: `1px solid ${T.acc}40`, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
+                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: "#DC4444", color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
+                    <button onClick={() => setShowFotoMisure(true)} style={{ padding: "4px 10px", borderRadius: 6, background: "#DC4444", color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>Misure</button>
                     <button onClick={() => openCamera("foto", null)}
                       style={{ padding: "4px 10px", borderRadius: 6, background: T.acc, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.camera} /> Foto</button>
                     <button onClick={() => openCamera("video", null)}
@@ -2608,8 +2669,8 @@ export default function VanoDetailPanel() {
                 <div style={{ fontSize: 10, color: T.sub, marginBottom: 6 }}>{Object.keys(v.foto||{}).length} allegati</div>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                   {[
-                    { n: "Panoramica", r: true, c: T.red }, { n: "Spalle muro", r: true, c: "#0D7C6B" }, { n: "Soglia", r: true, c: "#0D7C6B" },
-                    { n: "Cassonetto", r: false, c: "#1A9E73" }, { n: "Dettagli critici", r: true, c: T.red }, { n: "Imbotto", r: false, c: "#1A9E73" },
+                    { n: "Panoramica", r: true, c: "#DC4444" }, { n: "Spalle muro", r: true, c: "#0D7C6B" }, { n: "Soglia", r: true, c: "#0D7C6B" },
+                    { n: "Cassonetto", r: false, c: "#1A9E73" }, { n: "Dettagli critici", r: true, c: "#DC4444" }, { n: "Imbotto", r: false, c: "#1A9E73" },
                     { n: "Contesto", r: false, c: "#1A9E73" }, { n: "Altro", r: false, c: "#1A9E73" },
                   ].map((cat, i) => {
                     const fotoCount = Object.values(v.foto||{}).filter(f=>f.categoria===cat.n).length;
@@ -2747,7 +2808,7 @@ export default function VanoDetailPanel() {
                     {/* Misure */}
                     <Sec title="LARGHEZZE" color="#507aff" icon="" rows={[["Alto", m.lAlto], ["Centro", m.lCentro], ["Basso", m.lBasso]]} />
                     <Sec title="ALTEZZE" color="#1A9E73" icon="" rows={[["Sinistra", m.hSx], ["Centro", m.hCentro], ["Destra", m.hDx]]} />
-                    <Sec title="DIAGONALI" color="#E8A020" icon="" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? T.red : undefined]]} />
+                    <Sec title="DIAGONALI" color="#E8A020" icon="" rows={[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : "", fSq > 3 ? "#DC4444" : undefined]]} />
 
                     {/* Sistema + Vetro */}
                     <Sec title="SISTEMA / VETRO" color="#0D7C6B" icon="" rows={[
@@ -2841,7 +2902,7 @@ export default function VanoDetailPanel() {
 
                     {/* Accesso */}
                     {(v.difficoltaSalita || v.mezzoSalita) && (
-                      <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? T.red : "#E8A020"} icon="" rows={[
+                      <Sec title="ACCESSO" color={v.difficoltaSalita === "facile" ? T.grn : v.difficoltaSalita === "difficile" ? "#DC4444" : "#E8A020"} icon="" rows={[
                         ["Difficoltà", v.difficoltaSalita],
                         ["Mezzo salita", v.mezzoSalita],
                       ]} />
@@ -2869,7 +2930,7 @@ export default function VanoDetailPanel() {
                       const pct = Math.round(fields / tot * 100);
                       return (
                         <div style={{ padding: "10px 12px", borderRadius: 10, background: pct >= 80 ? T.grn + "10" : pct >= 50 ? "#E8A02010" : "#DC444410", border: `1px solid ${pct >= 80 ? T.grn + "30" : pct >= 50 ? "#E8A02030" : "#DC444430"}`, textAlign: "center" }}>
-                          <div style={{ fontSize: 24, fontWeight: 800, color: pct >= 80 ? T.grn : pct >= 50 ? "#E8A020" : T.red }}>{pct}%</div>
+                          <div style={{ fontSize: 24, fontWeight: 800, color: pct >= 80 ? T.grn : pct >= 50 ? "#E8A020" : "#DC4444" }}>{pct}%</div>
                           <div style={{ fontSize: 10, color: T.sub, fontWeight: 600 }}>Completezza vano ({fields}/{tot} campi chiave)</div>
                         </div>
                       );
@@ -2903,7 +2964,7 @@ export default function VanoDetailPanel() {
                 ["L", m.lCentro || m.lAlto || m.lBasso, null],
                 ["H", m.hCentro || m.hSx || m.hDx, null],
                 ["D1", m.d1, null], ["D2", m.d2, null],
-                ["F.sq", fSq !== null ? `${fSq}` : null, fSq > 3 ? T.red : null],
+                ["F.sq", fSq !== null ? `${fSq}` : null, fSq > 3 ? "#DC4444" : null],
               ].map(([l, val, c]) => (
                 <div key={l} style={{ padding: "3px 8px", borderRadius: 4, background: c ? c + "12" : T.bg, fontSize: 10, fontFamily: FM, color: c || (val ? T.text : T.sub2) }}>
                   {l}: {val || "—"}
