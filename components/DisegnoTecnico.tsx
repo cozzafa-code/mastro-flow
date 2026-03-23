@@ -540,7 +540,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               let best = null, bestD = SNAP_R;
                               pts.forEach(p => {
                                 // Escludi il primo punto della catena — impedisce chiusura automatica
-                                if (chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 3) return;
+                                if (chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
                                 const d = Math.hypot(p.x - mx, p.y - my);
                                 if (d < bestD) { bestD = d; best = p; }
                               });
