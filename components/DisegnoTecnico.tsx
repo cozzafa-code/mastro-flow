@@ -531,9 +531,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 pts.push({x:c2.x+c2.w/2,y:c2.y},{x:c2.x+c2.w/2,y:c2.y+c2.h});
                                 pts.push({x:c2.x,y:c2.y+c2.h/2},{x:c2.x+c2.w,y:c2.y+c2.h/2});
                               });
-                              els.filter(e => e.type === "freeLine" || e.type === "apLine").forEach(l => {
-                                pts.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2});
-                              });
+                              // snap solo a frame e celle, non a freeLine - lati indipendenti
                               return pts;
                             };
                             const findSnap = (mx, my) => {
