@@ -424,8 +424,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 for (let li = 0; li < lines.length; li++) {
                                   if (used.has(li)) continue;
                                   const l = lines[li];
-                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 5) { addP(l.x2, l.y2); used.add(li); break; }
-                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 5) { addP(l.x1, l.y1); used.add(li); break; }
+                                  if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 2) { addP(l.x2, l.y2); used.add(li); break; }
+                                  if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 2) { addP(l.x1, l.y1); used.add(li); break; }
                                 }
                               }
                               return pts.length >= 4 ? pts : null;
@@ -1167,8 +1167,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       for (let li = 0; li < lines.length; li++) {
                                         if (used.has(li)) continue;
                                         const l = lines[li];
-                                        if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 5) { addPt(l.x2, l.y2); used.add(li); break; }
-                                        if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 5) { addPt(l.x1, l.y1); used.add(li); break; }
+                                        if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 2) { addPt(l.x2, l.y2); used.add(li); break; }
+                                        if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 2) { addPt(l.x1, l.y1); used.add(li); break; }
                                       }
                                     }
                                     const clr = drawMode === "place-ap" ? T.blue : T.grn;
