@@ -2076,29 +2076,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
                                       const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
                                       const isPartOfPoly = poly && poly.length >= 3;
-                                      // Giunzioni: ritrai verso montanti adiacenti, clamp al bordo interno del frame
+                                      // Estendi ogni segmento di halfT — ma NON estendere verso un montante adiacente
                                       const WCONN = halfT * 2 + TK_MONT;
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
+                                      // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
                                       const ext1 = hasMontAt1 ? -HM_loc : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Clamp ogni punto del polygon al bordo interno del frame
+                                      // Clamp al bordo esterno del frame — profilo non esce mai dal telaio
                                       const isHorzEl = Math.abs(el.x2 - el.x1) >= Math.abs(el.y2 - el.y1);
-                                      const clampPt = (px, py) => {
+                                      const clampCoord = (px, py) => {
                                         if (!frame) return [px, py];
-                                        const fi = { x: frame.x + TK_FRAME, y: frame.y + TK_FRAME, r: frame.x + frame.w - TK_FRAME, b: frame.y + frame.h - TK_FRAME };
                                         return [
-                                          isHorzEl ? Math.max(fi.x, Math.min(fi.r, px)) : px,
-                                          !isHorzEl ? Math.max(fi.y, Math.min(fi.b, py)) : py
+                                          isHorzEl ? Math.max(frame.x, Math.min(frame.x + frame.w, px)) : px,
+                                          !isHorzEl ? Math.max(frame.y, Math.min(frame.y + frame.h, py)) : py
                                         ];
                                       };
-                                      const [p1x,p1y] = clampPt(ex1+nx, ey1+ny);
-                                      const [p2x,p2y] = clampPt(ex2+nx, ey2+ny);
-                                      const [p3x,p3y] = clampPt(ex2-nx, ey2-ny);
-                                      const [p4x,p4y] = clampPt(ex1-nx, ey1-ny);
+                                      const [p1x,p1y] = clampCoord(ex1+nx, ey1+ny);
+                                      const [p2x,p2y] = clampCoord(ex2+nx, ey2+ny);
+                                      const [p3x,p3y] = clampCoord(ex2-nx, ey2-ny);
+                                      const [p4x,p4y] = clampCoord(ex1-nx, ey1-ny);
                                       const pts4 = `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y} ${p4x},${p4y}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
