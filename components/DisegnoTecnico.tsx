@@ -409,7 +409,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const frame = frames[0] || null; // primary frame for compat
                             const allMontanti = els.filter(e => e.type === "montante");
                             const allTraversi = els.filter(e => e.type === "traverso");
-                            const TK_FRAME = 6, TK_MONT = 4, TK_ANTA = 4, TK_PORTA = 7;
+                            const TK_FRAME = 6, TK_MONT = 7, TK_ANTA = 4, TK_PORTA = 7, TK_SOGLIA = 3, TK_ZOCCOLO = 8, TK_FASCIA = 5, TK_PROFCOMP = 4;
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGONS from freeLines — tutte le catene chiuse ══
@@ -1125,141 +1125,97 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
-                                {/* Row 1: Struttura */}
-                                <div style={{ display: "flex", gap: 3, padding: "5px 8px", overflowX: "auto" }}>
+                                {/* ═══ GRUPPO 1: TELAIO + STRUTTURA ═══ */}
+                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Struttura</div>
+                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
+                                  {/* Telaio rettangolare */}
                                   <div onClick={() => {
                                     if (frames.length === 0) {
-                                      // First telaio: fill canvas
                                       setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
                                     } else {
-                                      // Additional telaio (zoppo): add offset
                                       const lastF = frames[frames.length - 1];
                                       const nw = lastF.w * 0.6, nh = lastF.h * 0.5;
-                                      const nx = lastF.x + lastF.w - TK_FRAME;
-                                      const ny = lastF.y + lastF.h - nh;
-                                      setDW([...els, { id: Date.now(), type: "rect", x: snap(nx), y: snap(ny), w: snap(nw), h: snap(nh) }]);
+                                      setDW([...els, { id: Date.now(), type: "rect", x: snap(lastF.x + lastF.w - TK_FRAME), y: snap(lastF.y + lastF.h - nh), w: snap(nw), h: snap(nh) }]);
                                     }
                                   }} style={bs()}>▭ Telaio</div>
-
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null })} style={bs(drawMode === "place-mont")}>┃ Mont.</div>
-
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null })} style={bs(drawMode === "place-trav")}>━ Trav.</div>
-
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}>🪟 Anta</div>
-
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}>🚪 Porta</div>
-
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}>▤ Pers.</div>
-
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-vetro" ? null : "place-vetro", _pendingLine: null })} style={bs(drawMode === "place-vetro")}>💎 Vetro</div>
-
-                                  <div onClick={() => {
-                                    const cx = frame ? frame.x + frame.w / 2 : fX + fW / 2;
-                                    const cy = frame ? frame.y + frame.h / 2 : fY + fH / 2;
-                                    setDW([...els, { id: Date.now(), type: "circle", cx, cy, r: Math.min(fW, fH) / 4 }]);
-                                  }} style={bs()}>⭕ Oblò</div>
-
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" ? null : "line", _pendingLine: null })} style={bs(drawMode === "line")}>╱ Linea</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}>✒ Penna</div>
+                                  {/* Telaio libero (ex Linea) */}
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" ? null : "line", _pendingLine: null })} style={bs(drawMode === "line")}>⬡ Tel.Libero</div>
                                   {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
-                                      if (fl.length < 2) return;
-                                      // Conta quante volte ogni punto appare
                                       const ptCount = {};
-                                      fl.forEach(l => {
-                                        const k1 = Math.round(l.x1)+","+Math.round(l.y1);
-                                        const k2 = Math.round(l.x2)+","+Math.round(l.y2);
-                                        ptCount[k1] = (ptCount[k1]||0) + 1;
-                                        ptCount[k2] = (ptCount[k2]||0) + 1;
-                                      });
-                                      // Punti liberi = appaiono una sola volta (estremità della catena)
+                                      fl.forEach(l => { const k1 = Math.round(l.x1)+","+Math.round(l.y1); const k2 = Math.round(l.x2)+","+Math.round(l.y2); ptCount[k1]=(ptCount[k1]||0)+1; ptCount[k2]=(ptCount[k2]||0)+1; });
                                       const freePts = [];
-                                      fl.forEach(l => {
-                                        const k1 = Math.round(l.x1)+","+Math.round(l.y1);
-                                        const k2 = Math.round(l.x2)+","+Math.round(l.y2);
-                                        if (ptCount[k1] === 1) freePts.push({x:l.x1,y:l.y1});
-                                        if (ptCount[k2] === 1) freePts.push({x:l.x2,y:l.y2});
-                                      });
-                                      if (freePts.length >= 2) {
-                                        setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null });
-                                      } else {
-                                        // fallback
-                                        setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null });
-                                      }
-                                    }} style={{ padding: "7px 16px", borderRadius: 8, border: "2px solid #1A9E73", background: "#1A9E73", fontSize: 12, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap", boxShadow: "0 2px 8px #1A9E7340" }}>
-                                      ⬡ Chiudi
-                                    </div>
+                                      fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
+                                      if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
+                                      else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
+                                    }} style={{ padding: "5px 12px", borderRadius: 6, border: "2px solid #1A9E73", background: "#1A9E73", fontSize: 10, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>⬡ Chiudi</div>
                                   )}
-
+                                  {/* Montante */}
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null })} style={bs(drawMode === "place-mont")}>┃ Montante</div>
+                                  {/* Traverso */}
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null })} style={bs(drawMode === "place-trav")}>━ Traverso</div>
+                                  {/* Soglia */}
                                   <div onClick={() => {
-                                    const txt = prompt("Testo etichetta:");
-                                    if (!txt) return;
-                                    const cx2 = frame ? frame.x + frame.w / 2 : fX + fW / 2;
-                                    const cy2 = frame ? frame.y + frame.h / 2 : fY + fH / 2;
-                                    setDW([...els, { id: Date.now(), type: "label", x: cx2, y: cy2, text: txt, fontSize: 11 }]);
-                                  }} style={bs()}>Aa Testo</div>
-
+                                    if (frame) setDW([...els, { id: Date.now(), type: "soglia", x: frame.x, y: frame.y + frame.h - TK_SOGLIA * 2, w: frame.w, profilo: "Soglia", subType: "soglia" }]);
+                                  }} style={bs()}>▬ Soglia</div>
+                                  {/* Zoccolo */}
                                   <div onClick={() => {
-                                    const nEls = els.filter(e => e.type !== "dim");
-                                    if (frame) {
-                                      nEls.push(
-                                        { id: Date.now() + 300, type: "dim", x1: frame.x, y1: frame.y + frame.h + 14, x2: frame.x + frame.w, y2: frame.y + frame.h + 14, label: String(realW) },
-                                        { id: Date.now() + 301, type: "dim", x1: frame.x + frame.w + 14, y1: frame.y, x2: frame.x + frame.w + 14, y2: frame.y + frame.h, label: String(realH) }
-                                      );
-                                      const iT = frame.y + TK_FRAME, iL = frame.x + TK_FRAME;
-                                      const topCells = cells.filter(c2 => Math.abs(c2.y - iT) < 4).sort((a, b) => a.x - b.x);
-                                      if (topCells.length > 1) topCells.forEach((c2, i) => nEls.push({ id: Date.now() + 310 + i, type: "dim", x1: c2.x, y1: frame.y - 10, x2: c2.x + c2.w, y2: frame.y - 10, label: String(Math.round(c2.w / fW * realW)) }));
-                                      const leftCells = cells.filter(c2 => Math.abs(c2.x - iL) < 4).sort((a, b) => a.y - b.y);
-                                      if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 330 + i, type: "dim", x1: frame.x - 14, y1: c2.y, x2: frame.x - 14, y2: c2.y + c2.h, label: String(Math.round(c2.h / fH * realH)) }));
-                                    } else if (poly) {
-                                      const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
-                                      const bL = Math.min(...xs), bR = Math.max(...xs), bT = Math.min(...ys), bB = Math.max(...ys);
-                                      // Bounding box total dims
-                                      nEls.push(
-                                        { id: Date.now() + 300, type: "dim", x1: bL, y1: bB + 14, x2: bR, y2: bB + 14, label: String(realW) },
-                                        { id: Date.now() + 301, type: "dim", x1: bR + 14, y1: bT, x2: bR + 14, y2: bB, label: String(realH) }
-                                      );
-                                      // Per-segment dimensions (each freeLine side)
-                                      const freeLines = els.filter(e => e.type === "freeLine");
-                                      const totalPx = Math.hypot(bR - bL, bB - bT);
-                                      freeLines.forEach((fl, fi) => {
-                                        const dx2 = fl.x2 - fl.x1, dy2 = fl.y2 - fl.y1;
-                                        const segPx = Math.hypot(dx2, dy2);
-                                        // Convert px to mm using diagonal ratio
-                                        const diagMM = Math.hypot(realW, realH);
-                                        const segMM = Math.round(segPx / totalPx * diagMM);
-                                        // Offset dim line outward from polygon center
-                                        const cx = (bL + bR) / 2, cy = (bT + bB) / 2;
-                                        const mx = (fl.x1 + fl.x2) / 2, my = (fl.y1 + fl.y2) / 2;
-                                        const toCx = cx - mx, toCy = cy - my;
-                                        const dist = Math.hypot(toCx, toCy) || 1;
-                                        const offX = -toCx / dist * 16, offY = -toCy / dist * 16;
-                                        nEls.push({ id: Date.now() + 350 + fi, type: "dim", x1: fl.x1 + offX, y1: fl.y1 + offY, x2: fl.x2 + offX, y2: fl.y2 + offY, label: String(segMM) });
-                                      });
-                                      // Per-cell dims
-                                      if (cells.length > 1) {
-                                        const topCells = cells.filter(c2 => Math.abs(c2.y - bT) < 6).sort((a, b) => a.x - b.x);
-                                        if (topCells.length > 1) topCells.forEach((c2, i) => nEls.push({ id: Date.now() + 370 + i, type: "dim", x1: c2.x, y1: bT - 10, x2: c2.x + c2.w, y2: bT - 10, label: String(Math.round(c2.w / (bR - bL) * realW)) }));
-                                        const leftCells = cells.filter(c2 => Math.abs(c2.x - bL) < 6).sort((a, b) => a.y - b.y);
-                                        if (leftCells.length > 1) leftCells.forEach((c2, i) => nEls.push({ id: Date.now() + 390 + i, type: "dim", x1: bL - 14, y1: c2.y, x2: bL - 14, y2: c2.y + c2.h, label: String(Math.round(c2.h / (bB - bT) * realH)) }));
-                                      }
-                                    }
-                                    setDW(nEls);
-                                  }} style={bs()}>↔ Misure</div>
+                                    if (frame) setDW([...els, { id: Date.now(), type: "soglia", x: frame.x, y: frame.y + frame.h - TK_ZOCCOLO * 2, w: frame.w, profilo: "Zoccolo", subType: "zoccolo" }]);
+                                  }} style={bs()}>▬ Zoccolo</div>
+                                  {/* Fascia */}
+                                  <div onClick={() => {
+                                    if (frame) setDW([...els, { id: Date.now(), type: "fascia", x: frame.x, y: frame.y, w: frame.w, profilo: "Fascia", subType: "fascia" }]);
+                                    else setMode({ drawMode: drawMode === "place-fascia" ? null : "place-fascia", _pendingLine: null });
+                                  }} style={bs(drawMode === "place-fascia")}>▬ Fascia</div>
+                                  {/* Profilo complementare */}
+                                  <div onClick={() => {
+                                    if (frame) setDW([...els, { id: Date.now(), type: "profcomp", x: frame.x, y: frame.y + frame.h / 2, w: frame.w, profilo: "Prof.Comp.", subType: "profcomp" }]);
+                                  }} style={bs()}>— Prof.Comp.</div>
                                 </div>
 
-                                {/* Row 2: Aperture (blu) */}
-                                <div style={{ display: "flex", gap: 3, padding: "2px 8px 5px", overflowX: "auto" }}>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}>↗ Disegna</div>
+                                {/* ═══ GRUPPO 2: ANTE + VETRI ═══ */}
+                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Aperture</div>
+                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}>🪟 Anta</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}>🚪 Porta</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}>▤ Pers.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-vetro" ? null : "place-vetro", _pendingLine: null })} style={bs(drawMode === "place-vetro")}>💎 Vetro</div>
+                                  <div onClick={() => { const cx=frame?frame.x+frame.w/2:fX+fW/2; const cy=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"circle",cx,cy,r:Math.min(fW,fH)/4}]); }} style={bs()}>⭕ Oblò</div>
                                   <span style={{ fontSize: 9, color: T.sub, alignSelf: "center" }}>|</span>
-                                  {[
-                                    { id: "SX", l: "← SX" }, { id: "DX", l: "DX →" }, { id: "RIB", l: "↕ Rib." },
-                                    { id: "OB", l: "↙↕ OB" }, { id: "ALZ", l: "→ Alz." }, { id: "SCO", l: "↔ Sco." }, { id: "FISSO", l: "✕ Fisso" },
-                                  ].map(ap => (
+                                  {[{id:"SX",l:"← SX"},{id:"DX",l:"DX →"},{id:"RIB",l:"↕ Rib."},{id:"OB",l:"↙↕ OB"},{id:"ALZ",l:"→ Alz."},{id:"SCO",l:"↔ Sco."},{id:"FISSO",l:"✕ Fisso"}].map(ap => (
                                     <div key={ap.id} onClick={() => setMode({ drawMode: "place-ap", _placeApType: ap.id, _pendingLine: null })} style={bAp(drawMode === "place-ap" && placeApType === ap.id)}>{ap.l}</div>
                                   ))}
                                 </div>
+
+                                {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
+                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Strumenti</div>
+                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}>↗ Linea lib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}>✒ Penna</div>
+                                  <div onClick={() => { const txt = prompt("Testo:"); if (!txt) return; const cx2=frame?frame.x+frame.w/2:fX+fW/2; const cy2=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"label",x:cx2,y:cy2,text:txt,fontSize:11}]); }} style={bs()}>Aa Testo</div>
+                                  <div onClick={() => {
+                                    const nEls = els.filter(e => e.type !== "dim");
+                                    if (frame) {
+                                      nEls.push({id:Date.now()+300,type:"dim",x1:frame.x,y1:frame.y+frame.h+14,x2:frame.x+frame.w,y2:frame.y+frame.h+14,label:String(realW)},{id:Date.now()+301,type:"dim",x1:frame.x+frame.w+14,y1:frame.y,x2:frame.x+frame.w+14,y2:frame.y+frame.h,label:String(realH)});
+                                      const iT=frame.y+TK_FRAME,iL=frame.x+TK_FRAME;
+                                      const topCells=cells.filter(c2=>Math.abs(c2.y-iT)<4).sort((a,b)=>a.x-b.x);
+                                      if(topCells.length>1)topCells.forEach((c2,i)=>nEls.push({id:Date.now()+310+i,type:"dim",x1:c2.x,y1:frame.y-10,x2:c2.x+c2.w,y2:frame.y-10,label:String(Math.round(c2.w/fW*realW))}));
+                                      const leftCells=cells.filter(c2=>Math.abs(c2.x-iL)<4).sort((a,b)=>a.y-b.y);
+                                      if(leftCells.length>1)leftCells.forEach((c2,i)=>nEls.push({id:Date.now()+330+i,type:"dim",x1:frame.x-14,y1:c2.y,x2:frame.x-14,y2:c2.y+c2.h,label:String(Math.round(c2.h/fH*realH))}));
+                                    } else if (poly) {
+                                      const xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);
+                                      const bL=Math.min(...xs),bR=Math.max(...xs),bT=Math.min(...ys),bB=Math.max(...ys);
+                                      nEls.push({id:Date.now()+300,type:"dim",x1:bL,y1:bB+14,x2:bR,y2:bB+14,label:String(realW)},{id:Date.now()+301,type:"dim",x1:bR+14,y1:bT,x2:bR+14,y2:bB,label:String(realH)});
+                                      els.filter(e=>e.type==="freeLine").forEach((fl,fi)=>{const dx2=fl.x2-fl.x1,dy2=fl.y2-fl.y1;const segPx=Math.hypot(dx2,dy2);const diagMM=Math.hypot(realW,realH);const totalPx=Math.hypot(bR-bL,bB-bT);const segMM=Math.round(segPx/totalPx*diagMM);const cx=(bL+bR)/2,cy=(bT+bB)/2;const mx=(fl.x1+fl.x2)/2,my=(fl.y1+fl.y2)/2;const toCx=cx-mx,toCy=cy-my;const dist=Math.hypot(toCx,toCy)||1;const offX=-toCx/dist*16,offY=-toCy/dist*16;nEls.push({id:Date.now()+350+fi,type:"dim",x1:fl.x1+offX,y1:fl.y1+offY,x2:fl.x2+offX,y2:fl.y2+offY,label:String(segMM)});});
+                                    }
+                                    setDW(nEls);
+                                  }} style={bs()}>↔ Misure</div>
+                                  {/* Distinta materiali */}
+                                  <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1.5px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}>📋 Distinta</div>
+                                </div>
+
+
 
                                 {/* Row 3: Azioni */}
                                 <div style={{ display: "flex", gap: 3, padding: "0 8px 6px", borderBottom: `1px solid ${T.bdr}` }}>
@@ -1466,7 +1422,79 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     );
                                   })}
 
-                                                                    {/* ══ ELEMENTS ══ */}
+                                                                    {/* ══ SOGLIA / ZOCCOLO / FASCIA / PROFCOMP ══ */}
+                                  {els.filter(e => ["soglia","fascia","profcomp"].includes(e.type)).map(el => {
+                                    const sel = el.id === selId;
+                                    const hc = sel ? "#1A9E73" : undefined;
+                                    const isSoglia = el.subType === "soglia";
+                                    const isZoccolo = el.subType === "zoccolo";
+                                    const isFascia = el.type === "fascia";
+                                    const isProfComp = el.type === "profcomp";
+                                    const tkH = isSoglia ? TK_SOGLIA*2 : isZoccolo ? TK_ZOCCOLO*2 : isFascia ? TK_FASCIA*2 : TK_PROFCOMP*2;
+                                    const fillC = isSoglia ? "#e8e6de" : isZoccolo ? "#d8d6ce" : isFascia ? "#eeecea" : "#e0dedc";
+                                    const refX = el.x !== undefined ? el.x : (frame ? frame.x : fX);
+                                    const refW = el.w !== undefined ? el.w : (frame ? frame.w : fW);
+                                    const refY = el.y !== undefined ? el.y : (frame ? frame.y + frame.h - tkH : fY);
+                                    const labelTxt = el.profilo || el.subType || el.type;
+                                    return (
+                                      <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}
+                                        {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "move" }}>
+                                        <rect x={refX} y={refY} width={refW} height={tkH} fill={hc ? hc+"20" : fillC} stroke={hc || "#555"} strokeWidth={sel ? 1.5 : 0.8} />
+                                        {/* Etichetta profilo */}
+                                        <text x={refX + refW/2} y={refY + tkH/2 + 3} textAnchor="middle" fontSize={7} fontWeight={700} fill={hc || "#333"} fontFamily="monospace">{labelTxt}</text>
+                                        {sel && <><circle cx={refX} cy={refY+tkH/2} r={3} fill={"#1A9E73"}/><circle cx={refX+refW} cy={refY+tkH/2} r={3} fill={"#1A9E73"}/></>}
+                                      </g>
+                                    );
+                                  })}
+
+                                  {/* ══ DISTINTA MATERIALI ══ */}
+                                  {dw._showDistinta && (() => {
+                                    const distinta = [];
+                                    // Telaio
+                                    if (frame) {
+                                      const perim = Math.round(2*(realW+realH));
+                                      distinta.push({ tipo: "Telaio", profilo: "Telaio", q: 1, lung: `${realW}×${realH}`, note: `Perimetro ${perim}mm` });
+                                    }
+                                    // Montanti
+                                    const monts = els.filter(e => e.type === "montante");
+                                    if (monts.length > 0) distinta.push({ tipo: "Montante", profilo: "Montante", q: monts.length, lung: `${Math.round(realH)}`, note: `×${monts.length} pz` });
+                                    // Traversi
+                                    const travs = els.filter(e => e.type === "traverso");
+                                    if (travs.length > 0) distinta.push({ tipo: "Traverso", profilo: "Traverso", q: travs.length, lung: `${Math.round(realW)}`, note: `×${travs.length} pz` });
+                                    // Soglie/Zoccoli/Fasce
+                                    els.filter(e => ["soglia","fascia","profcomp"].includes(e.type)).forEach(el => {
+                                      distinta.push({ tipo: el.profilo || el.subType, profilo: el.profilo || el.type, q: 1, lung: String(realW), note: el.subType || el.type });
+                                    });
+                                    // FreeLine
+                                    const fls = els.filter(e => e.type === "freeLine");
+                                    if (fls.length > 0) {
+                                      const allFL2 = fls;
+                                      const allXs2 = allFL2.flatMap(l => [l.x1,l.x2]), allYs2 = allFL2.flatMap(l => [l.y1,l.y2]);
+                                      const bboxW2 = Math.max(...allXs2)-Math.min(...allXs2)||1, bboxH2 = Math.max(...allYs2)-Math.min(...allYs2)||1;
+                                      const mmPerPx2 = Math.max(realW/bboxW2, realH/bboxH2);
+                                      fls.forEach(fl => {
+                                        const mmL = fl._mmOverride ?? Math.round(Math.hypot(fl.x2-fl.x1,fl.y2-fl.y1)*mmPerPx2);
+                                        distinta.push({ tipo: "Tel.Libero", profilo: "Profilo telaio", q: 1, lung: String(mmL), note: `${mmL}mm` });
+                                      });
+                                    }
+                                    if (distinta.length === 0) return null;
+                                    const bx = canvasW - 180, by = 20;
+                                    return (
+                                      <g>
+                                        <rect x={bx-8} y={by-8} width={188} height={distinta.length*16+32} fill="#fff" stroke="#D08008" strokeWidth={1.2} rx={6} opacity={0.97} />
+                                        <text x={bx} y={by+8} fontSize={9} fontWeight={800} fill="#D08008" fontFamily="monospace">📋 DISTINTA MATERIALI</text>
+                                        {distinta.map((d, i) => (
+                                          <g key={i}>
+                                            <text x={bx} y={by+22+i*16} fontSize={8} fontWeight={700} fill="#1A1A1C" fontFamily="monospace">{d.tipo}</text>
+                                            <text x={bx+75} y={by+22+i*16} fontSize={8} fill="#555" fontFamily="monospace">{d.lung}mm</text>
+                                            <text x={bx+130} y={by+22+i*16} fontSize={8} fill="#888" fontFamily="monospace">{d.note}</text>
+                                          </g>
+                                        ))}
+                                      </g>
+                                    );
+                                  })()}
+
+                                  {/* ══ ELEMENTS ══ */}
                                   {els.map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
