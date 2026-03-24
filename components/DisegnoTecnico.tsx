@@ -1052,7 +1052,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }
 
-                                  if (px===pending.x1 && py===pending.y1) return;
+                                  // Per montante X è sempre = pending.x1, per traverso Y è sempre = pending.y1
+                                  // → il guard "punto uguale" va saltato per questi subType
+                                  if (!isMont && !isTrav && px===pending.x1 && py===pending.y1) return;
+                                  if (isMont && py===pending.y1) return;   // zero-length verticale
+                                  if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata: aggiusta punti vicini degli altri elementi
@@ -1071,7 +1075,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   });
                                   // Per montante/traverso: non impostare chainStart (no chiusura automatica)
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
-                                  setDW([...weldedEls, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: newChainStart, _lineSubType: subTypeVal });
+                                  setDW([...weldedEls, newEl], { _pendingLine: { x1: px, y1: py, _subType: subTypeVal || null }, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
@@ -2039,6 +2043,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </>;
                                     }
                                     return null;
+                                  })()}
+                                  {/* ══ DEBUG OVERLAY — rimuovere prima del deploy ══ */}
+                                  {(() => {
+                                    const dbg = dwRef.current;
+                                    const p = dbg._pendingLine;
+                                    const lines = [
+                                      `mode: ${dbg.drawMode || "null"}`,
+                                      `subType: ${dbg._lineSubType || "null"}`,
+                                      `pending: ${p ? `(${Math.round(p.x1)},${Math.round(p.y1)}) sub=${p._subType||"null"}` : "null"}`,
+                                      `chain: ${dbg._chainStart ? `(${Math.round(dbg._chainStart.x)},${Math.round(dbg._chainStart.y)})` : "null"}`,
+                                    ];
+                                    return (
+                                      <g style={{ pointerEvents: "none" }}>
+                                        <rect x={4} y={4} width={310} height={lines.length * 14 + 10} fill="rgba(0,0,0,0.82)" rx={5} />
+                                        {lines.map((l, i) => (
+                                          <text key={i} x={10} y={18 + i * 14}
+                                            fill={i === 0 ? "#ff9" : i === 1 ? "#9ff" : i === 2 ? "#f90" : "#aaa"}
+                                            fontSize={11} fontFamily="'JetBrains Mono',monospace" fontWeight={700}>{l}</text>
+                                        ))}
+                                      </g>
+                                    );
                                   })()}
                                 </svg>
                                 </div>
