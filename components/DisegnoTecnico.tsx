@@ -986,8 +986,43 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
                                   const subTypeVal = dw._lineSubType || null;
+                                  // Montante/traverso libero: clampare dentro il frame o la forma
+                                  if (subTypeVal === "montante" || subTypeVal === "traverso") {
+                                    if (frame) {
+                                      px = Math.max(frame.x, Math.min(frame.x + frame.w, px));
+                                      py = Math.max(frame.y, Math.min(frame.y + frame.h, py));
+                                    } else if (polys.length > 0) {
+                                      // Clamp dentro la bbox della forma libera
+                                      const allPts = polys.flat();
+                                      const minX = Math.min(...allPts.map(p=>p[0])), maxX = Math.max(...allPts.map(p=>p[0]));
+                                      const minY = Math.min(...allPts.map(p=>p[1])), maxY = Math.max(...allPts.map(p=>p[1]));
+                                      px = Math.max(minX, Math.min(maxX, px));
+                                      py = Math.max(minY, Math.min(maxY, py));
+                                    }
+                                  }
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   setDW([...els, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart, _lineSubType: subTypeVal });
+                                }
+                                return;
+                              }
+
+                              // Righello — traccia misura con punti di riferimento
+                              if (drawMode === "righello") {
+                                const sp = findSnap(mx, my);
+                                let px2 = sp ? sp.x : snap(mx);
+                                let py2 = sp ? sp.y : snap(my);
+                                const pending2 = dw._pendingLine;
+                                if (!pending2) {
+                                  setMode({ _pendingLine: { x1: px2, y1: py2 }, _chainStart: { x: px2, y: py2 } });
+                                } else {
+                                  if (px2 === pending2.x1 && py2 === pending2.y1) return;
+                                  const dx2r = px2 - pending2.x1, dy2r = py2 - pending2.y1;
+                                  const lenPxR = Math.hypot(dx2r, dy2r) || 1;
+                                  const refLenR = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
+                                  const refRealR = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
+                                  const mmR = Math.round(lenPxR / refLenR * refRealR);
+                                  setDW([...els, { id: Date.now(), type: "righello", x1: pending2.x1, y1: pending2.y1, x2: px2, y2: py2, label: String(mmR) }], { _pendingLine: null, _chainStart: null });
+                                  setMode({ drawMode: null, _pendingLine: null });
                                 }
                                 return;
                               }
@@ -1249,6 +1284,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     setDW(nEls);
                                   }} style={bs()}>↔ Misure</div>
+                                  {/* Righello / Metro */}
+                                  <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1.5px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}>📐 Righello</div>
                                   {/* Distinta materiali */}
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1.5px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}>📋 Distinta</div>
                                 </div>
@@ -1788,6 +1825,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {sel && <path d={el.d} fill="none" stroke={"#1A9E73"} strokeWidth={8} opacity={0.12} strokeLinecap="round" />}
                                       </g>
                                     );
+
+                                    if (el.type === "righello") {
+                                      const dx2r = el.x2 - el.x1, dy2r = el.y2 - el.y1;
+                                      const lenR = Math.hypot(dx2r, dy2r) || 1;
+                                      const angR = Math.atan2(dy2r, dx2r) * 180 / Math.PI;
+                                      const midXR = (el.x1 + el.x2) / 2, midYR = (el.y1 + el.y2) / 2;
+                                      const nxR = -dy2r / lenR * 10, nyR = dx2r / lenR * 10;
+                                      const BLUE = T.blue || "#3B7FE0";
+                                      return (
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}
+                                          {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "move" }}>
+                                          {/* Linea tratteggiata blu */}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={BLUE} strokeWidth={1.2} strokeDasharray="6,3" opacity={0.7} />
+                                          {/* Tacche estremità */}
+                                          <line x1={el.x1-nxR*0.6} y1={el.y1-nyR*0.6} x2={el.x1+nxR*0.6} y2={el.y1+nyR*0.6} stroke={BLUE} strokeWidth={1.5} />
+                                          <line x1={el.x2-nxR*0.6} y1={el.y2-nyR*0.6} x2={el.x2+nxR*0.6} y2={el.y2+nyR*0.6} stroke={BLUE} strokeWidth={1.5} />
+                                          {/* Punti di ancoraggio */}
+                                          <circle cx={el.x1} cy={el.y1} r={sel ? 5 : 3} fill={BLUE} opacity={0.8} />
+                                          <circle cx={el.x2} cy={el.y2} r={sel ? 5 : 3} fill={BLUE} opacity={0.8} />
+                                          {/* Badge misura */}
+                                          <g transform={`rotate(${angR > 90 || angR < -90 ? angR + 180 : angR}, ${midXR + nxR}, ${midYR + nyR})`}>
+                                            <rect x={midXR + nxR - 20} y={midYR + nyR - 8} width={40} height={16} fill={BLUE} rx={4} opacity={0.9} />
+                                            <text x={midXR + nxR} y={midYR + nyR + 5} textAnchor="middle" fontSize={9} fontWeight={800} fill="#fff" fontFamily="monospace">{el.label}</text>
+                                          </g>
+                                        </g>
+                                      );
+                                    }
 
                                     return null;
                                   })}
