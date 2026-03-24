@@ -812,33 +812,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Mont.Lib — due click: primo=y1, secondo=y2, X raw
+                              // Mont.Lib — due click: primo=y1, secondo=y2, X fisso
                               if (drawMode === "place-mont-free") {
-                                const pending = dw._pendingLine;
+                                const pending = dw._pendingLine; // dw è già dwRef.current qui (riga 767)
                                 if (!pending) {
-                                  // Primo click: salva x e y1
-                                  setMode({ _pendingLine: { x1: snap(mx), y1: snap(my), _subType: "montante" } });
+                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "montante" } });
                                 } else {
-                                  // Secondo click: crea montante con y1=pending.y1, y2=my
-                                  const x = pending.x1;
-                                  const y1 = Math.min(pending.y1, snap(my));
-                                  const y2 = Math.max(pending.y1, snap(my));
-                                  if (Math.abs(y2 - y1) < 5) return;
+                                  const x = pending.x1; // X fisso al primo click
+                                  const y1 = Math.min(pending.y1, Math.round(my));
+                                  const y2 = Math.max(pending.y1, Math.round(my));
+                                  if (Math.abs(y2 - y1) < 3) return;
                                   setDW([...els, { id: Date.now(), type: "montante", x, y1, y2 }], { _pendingLine: null });
                                 }
                                 return;
                               }
 
-                              // Trav.Lib — due click: primo=x1, secondo=x2, Y raw
+                              // Trav.Lib — due click: primo=x1, secondo=x2, Y fisso
                               if (drawMode === "place-trav-free") {
                                 const pending = dw._pendingLine;
                                 if (!pending) {
-                                  setMode({ _pendingLine: { x1: snap(mx), y1: snap(my), _subType: "traverso" } });
+                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "traverso" } });
                                 } else {
-                                  const y = pending.y1;
-                                  const x1 = Math.min(pending.x1, snap(mx));
-                                  const x2 = Math.max(pending.x1, snap(mx));
-                                  if (Math.abs(x2 - x1) < 5) return;
+                                  const y = pending.y1; // Y fisso al primo click
+                                  const x1 = Math.min(pending.x1, Math.round(mx));
+                                  const x2 = Math.max(pending.x1, Math.round(mx));
+                                  if (Math.abs(x2 - x1) < 3) return;
                                   setDW([...els, { id: Date.now(), type: "traverso", y, x1, x2 }], { _pendingLine: null });
                                 }
                                 return;
@@ -1495,7 +1493,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free")) return;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const p = dw._pendingLine;
@@ -1507,13 +1505,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (Math.abs(gx - p.x1) < 5) gx = p.x1;
                                       if (Math.abs(gy - p.y1) < 5) gy = p.y1;
                                     }
-                                    // Montante libero: forza verticale + clamp nel frame
-                                    if (dw._lineSubType === "montante") {
+                                    // Mont.Lib: forza verticale
+                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") {
                                       gx = p.x1;
                                       if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
                                     }
-                                    // Traverso libero: forza orizzontale + clamp nel frame
-                                    if (dw._lineSubType === "traverso") {
+                                    // Trav.Lib: forza orizzontale
+                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") {
                                       gy = p.y1;
                                       if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx));
                                     }
@@ -1568,7 +1566,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free")) return;
                                     let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const pp = dw._pendingLine;
                                     const snapPtT = findSnap(gx, gy);
@@ -1577,8 +1575,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (Math.abs(gx - pp.x1) < 5) gx = pp.x1;
                                       if (Math.abs(gy - pp.y1) < 5) gy = pp.y1;
                                     }
-                                    if (dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
-                                    if (dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
+                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
+                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
