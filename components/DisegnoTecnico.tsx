@@ -2079,26 +2079,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // Estendi ogni segmento di halfT — ma NON estendere verso un montante adiacente
                                       const WCONN = halfT * 2 + TK_MONT;
                                       const HM_loc = TK_MONT / 2;
-                                      // Montante all'estremità → ritrai di HM_loc
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      // Frame (telaio) all'estremità → ritrai di TK_FRAME (entra dentro il telaio)
+                                      // Frame (telaio) all'estremità → ritrai di TK_FRAME (entra dentro il bordo del telaio)
                                       const FCONN = TK_FRAME * 2 + halfT;
-                                      const hasFrameAt1 = frames.some(f => {
-                                        const onLeft  = Math.abs(el.x1 - f.x) < FCONN;
-                                        const onRight = Math.abs(el.x1 - (f.x + f.w)) < FCONN;
-                                        const onTop   = Math.abs(el.y1 - f.y) < FCONN;
-                                        const onBot   = Math.abs(el.y1 - (f.y + f.h)) < FCONN;
-                                        return onLeft || onRight || onTop || onBot;
-                                      });
-                                      const hasFrameAt2 = frames.some(f => {
-                                        const onLeft  = Math.abs(el.x2 - f.x) < FCONN;
-                                        const onRight = Math.abs(el.x2 - (f.x + f.w)) < FCONN;
-                                        const onTop   = Math.abs(el.y2 - f.y) < FCONN;
-                                        const onBot   = Math.abs(el.y2 - (f.y + f.h)) < FCONN;
-                                        return onLeft || onRight || onTop || onBot;
-                                      });
-                                      // Calcola estensione: montante→ritrai HM_loc, frame→ritrai TK_FRAME, default→estendi halfT
+                                      const hasFrameAt1 = frames.some(f =>
+                                        Math.abs(el.x1 - f.x) < FCONN || Math.abs(el.x1 - (f.x+f.w)) < FCONN ||
+                                        Math.abs(el.y1 - f.y) < FCONN || Math.abs(el.y1 - (f.y+f.h)) < FCONN);
+                                      const hasFrameAt2 = frames.some(f =>
+                                        Math.abs(el.x2 - f.x) < FCONN || Math.abs(el.x2 - (f.x+f.w)) < FCONN ||
+                                        Math.abs(el.y2 - f.y) < FCONN || Math.abs(el.y2 - (f.y+f.h)) < FCONN);
+                                      // Priorità: montante > frame > default
                                       const ext1 = hasMontAt1 ? -HM_loc : hasFrameAt1 ? -TK_FRAME : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : hasFrameAt2 ? -TK_FRAME : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
