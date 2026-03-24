@@ -986,18 +986,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
                                   const subTypeVal = dw._lineSubType || null;
-                                  // Montante/traverso libero: clampare dentro il frame o la forma
+                                  // Montante/traverso libero: forza verticale o orizzontale + clamp nel frame
                                   if (subTypeVal === "montante" || subTypeVal === "traverso") {
+                                    const adxM = Math.abs(px - pending.x1), adyM = Math.abs(py - pending.y1);
+                                    if (subTypeVal === "montante") {
+                                      // Montante = sempre verticale: x fisso, y libero
+                                      px = pending.x1;
+                                    } else {
+                                      // Traverso = sempre orizzontale: y fisso, x libero
+                                      py = pending.y1;
+                                    }
+                                    // Clamp dentro il frame
                                     if (frame) {
                                       px = Math.max(frame.x, Math.min(frame.x + frame.w, px));
                                       py = Math.max(frame.y, Math.min(frame.y + frame.h, py));
-                                    } else if (polys.length > 0) {
-                                      // Clamp dentro la bbox della forma libera
-                                      const allPts = polys.flat();
-                                      const minX = Math.min(...allPts.map(p=>p[0])), maxX = Math.max(...allPts.map(p=>p[0]));
-                                      const minY = Math.min(...allPts.map(p=>p[1])), maxY = Math.max(...allPts.map(p=>p[1]));
-                                      px = Math.max(minX, Math.min(maxX, px));
-                                      py = Math.max(minY, Math.min(maxY, py));
                                     }
                                   }
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
@@ -1036,7 +1038,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const bAp = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
-                            const cursorMode = drawMode === "line" || drawMode === "apertura" ? "crosshair" : drawMode ? "pointer" : "default";
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
@@ -1348,7 +1350,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello")) return;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     let gx = snap(gmx), gy = snap(gmy);
                                     const p = dw._pendingLine;
@@ -1402,7 +1404,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onUpdate({ ...dw, _penPath: [...cur, [Math.round(gmx), Math.round(gmy)]] });
                                       return;
                                     }
-                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura")) return;
+                                    if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello")) return;
                                     let gx = snap(gmx), gy = snap(gmy);
                                     const pp = dw._pendingLine;
                                     if (Math.abs(gx - pp.x1) < 8 && Math.abs(gy - pp.y1) > 8) gx = pp.x1;
@@ -1472,7 +1474,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* Snap points in draw mode */}
-                                  {(drawMode === "line" || drawMode === "apertura") && dw._pendingLine && getSnapPoints().map((p, pi) => (
+                                  {(drawMode === "line" || drawMode === "apertura" || drawMode === "righello") && dw._pendingLine && getSnapPoints().map((p, pi) => (
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : "#1A9E73"} fillOpacity={0.2} />
                                   ))}
 
