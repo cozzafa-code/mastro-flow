@@ -974,7 +974,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Line / apertura draw modes
                               if (drawMode === "line" || drawMode === "apertura") {
                                 const pending = dw._pendingLine;
-                                // Leggi subType sia da dw che da pending (pending è più affidabile)
                                 const subTypeVal = (pending && pending._subType) || dw._lineSubType || null;
                                 const isMont = subTypeVal === "montante";
                                 const isTrav = subTypeVal === "traverso";
@@ -984,39 +983,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 let py = Math.round(my);
 
                                 if (!pending) {
-                                  // PRIMO CLICK
+                                  // PRIMO CLICK — coordinate quasi-raw, snap leggero ai bordi frame
                                   if (isMont) {
-                                    // Montante: X rimane dove clicchi, snap Y solo agli elementi interni (traversi, bordi frame)
-                                    // Prima guarda traversi/altri elementi orizzontali
-                                    const horzPts = els.filter(e=>e.x1!==undefined && e.subType!=="montante")
-                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                    let bestY=null, bestDY=SNAP_R;
-                                    horzPts.forEach(p=>{ const d=Math.abs(p.y-py); if(d<bestDY){bestDY=d;bestY=p.y;} });
-                                    if(bestY!==null) { py=bestY; }
-                                    else if (frame) {
-                                      // Snap ai bordi interni del frame
-                                      const distTop = Math.abs(py - frame.y);
-                                      const distBot = Math.abs(py - (frame.y + frame.h));
-                                      if (distTop < SNAP_R) py = frame.y;
-                                      else if (distBot < SNAP_R) py = frame.y + frame.h;
+                                    // X raw, snap Y SOLO se molto vicino a bordo frame (entro 8px)
+                                    if (frame) {
+                                      if (Math.abs(py - frame.y) < 8) py = frame.y;
+                                      else if (Math.abs(py - (frame.y + frame.h)) < 8) py = frame.y + frame.h;
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else if (isTrav) {
-                                    // Traverso: Y rimane dove clicchi, snap X agli elementi verticali o bordi frame
-                                    const vertPts = els.filter(e=>e.x1!==undefined && e.subType!=="traverso")
-                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                    let bestX=null, bestDX=SNAP_R;
-                                    vertPts.forEach(p=>{ const d=Math.abs(p.x-px); if(d<bestDX){bestDX=d;bestX=p.x;} });
-                                    if(bestX!==null) { px=bestX; }
-                                    else if (frame) {
-                                      const distL = Math.abs(px - frame.x);
-                                      const distR = Math.abs(px - (frame.x + frame.w));
-                                      if (distL < SNAP_R) px = frame.x;
-                                      else if (distR < SNAP_R) px = frame.x + frame.w;
+                                    // Y raw, snap X SOLO se molto vicino a bordo frame (entro 8px)
+                                    if (frame) {
+                                      if (Math.abs(px - frame.x) < 8) px = frame.x;
+                                      else if (Math.abs(px - (frame.x + frame.w)) < 8) px = frame.x + frame.w;
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
-                                    // Telaio libero e altri: snap a tutti i punti vicini
+                                    // Telaio libero: snap a tutti i punti vicini
                                     const allPts = [
                                       ...els.filter(e => e.x1 !== undefined).flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
                                       ...frames.flatMap(f => [{x:f.x,y:f.y},{x:f.x+f.w,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y+f.h}])
@@ -1028,34 +1011,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                 } else {
                                   // SECONDO CLICK — crea il segmento
-
-                                  // Montante: X SEMPRE uguale al primo punto, Y libera
                                   if (isMont) {
+                                    // X fisso al primo punto, Y snap a bordi frame + traversi (escludi origine)
                                     px = pending.x1;
-                                    // Snap Y: bordi frame + punti freeLine sulla stessa colonna, escludi punto di partenza
-                                    const framePtsY = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
-                                    const colPts = [
-                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
-                                      ...framePtsY
-                                    ].filter(p=>Math.abs(p.x-px)<12 && Math.abs(p.y-pending.y1)>5);
+                                    const snapYPts = [
+                                      ...(frame ? [{x:frame.x,y:frame.y},{x:frame.x,y:frame.y+frame.h}] : []),
+                                      ...els.filter(e=>e.type==="traverso").map(t=>({x:pending.x1,y:t.y})),
+                                      ...els.filter(e=>e.x1!==undefined && e.subType!=="montante").flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                    ].filter(p => Math.abs(p.y - pending.y1) > 8);
                                     let bestY=null, bestDY=SNAP_R;
-                                    colPts.forEach(p=>{const d=Math.abs(p.y-py);if(d<bestDY){bestDY=d;bestY=p.y;}});
+                                    snapYPts.forEach(p=>{const d=Math.abs(p.y-py);if(d<bestDY){bestDY=d;bestY=p.y;}});
                                     if(bestY!==null) py=bestY;
-                                    // Se nessuno snap: accetta py grezzo (non bloccare il click)
-                                  }
-                                  // Traverso: Y SEMPRE uguale al primo punto, X libera
-                                  else if (isTrav) {
+                                    // altrimenti py grezzo = dove hai cliccato
+                                  } else if (isTrav) {
+                                    // Y fisso al primo punto, X snap a bordi frame + montanti (escludi origine)
                                     py = pending.y1;
-                                    // Snap X: bordi frame + punti freeLine sulla stessa riga, escludi punto di partenza
-                                    const framePtsX = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
-                                    const rowPts = [
-                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
-                                      ...framePtsX
-                                    ].filter(p=>Math.abs(p.y-py)<12 && Math.abs(p.x-pending.x1)>5);
+                                    const snapXPts = [
+                                      ...(frame ? [{x:frame.x,y:frame.y},{x:frame.x+frame.w,y:frame.y}] : []),
+                                      ...els.filter(e=>e.type==="montante").map(m=>({x:m.x,y:pending.y1})),
+                                      ...els.filter(e=>e.x1!==undefined && e.subType!=="traverso").flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                    ].filter(p => Math.abs(p.x - pending.x1) > 8);
                                     let bestX=null, bestDX=SNAP_R;
-                                    rowPts.forEach(p=>{const d=Math.abs(p.x-px);if(d<bestDX){bestDX=d;bestX=p.x;}});
+                                    snapXPts.forEach(p=>{const d=Math.abs(p.x-px);if(d<bestDX){bestDX=d;bestX=p.x;}});
                                     if(bestX!==null) px=bestX;
-                                    // Se nessuno snap: accetta px grezzo
                                   }
                                   // Telaio libero / altri: snap normale
                                   else {
@@ -1879,7 +1857,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const subType = el.subType || null;
                                       const tkMap = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT };
                                       const halfT = subType ? (tkMap[subType] || TK_FRAME) : TK_FRAME;
-                                      const TK = halfT * 2; // spessore totale profilo
                                       const fillMap = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8" };
                                       const fillC = subType ? (fillMap[subType] || "#f0efe8") : "#f0efe8";
                                       const labelMap = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO" };
@@ -1893,34 +1870,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
                                       const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
                                       const isPartOfPoly = poly && poly.length >= 3;
+                                      // Punti del poligono profilo (rettangolo attorno alla linea)
+                                      const pts4 = `${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
-                                          {/* Hit area invisibile */}
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(18, TK + 8)} strokeLinecap="square" />
-                                          {/* Profilo — stroke spesso con cap quadrato: angoli si fondono perfettamente */}
+                                          {/* Hit area */}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
+                                          {/* Profilo: riempimento + bordo */}
                                           {!isPartOfPoly && <>
-                                            {/* Riempimento interno */}
-                                            <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2}
-                                              stroke={sel ? "#1A9E7320" : fillC}
-                                              strokeWidth={TK - 1.5}
-                                              strokeLinecap="square" />
-                                            {/* Bordo esterno */}
-                                            <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2}
-                                              stroke={sel ? "#1A9E73" : "#1A1A1C"}
-                                              strokeWidth={TK}
-                                              strokeLinecap="square"
-                                              fill="none"
-                                              style={{ pointerEvents: "none" }}
-                                              opacity={sel ? 1 : 1}
-                                            />
-                                            {/* Linea bordo interno (dettaglio profilo) */}
-                                            <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2}
-                                              stroke={sel ? "#1A9E7340" : "#1A1A1C"}
-                                              strokeWidth={sel ? 1.5 : 0.6}
-                                              strokeLinecap="square"
-                                              opacity={sel ? 1 : 0.4}
-                                            />
+                                            <polygon points={pts4} fill={sel ? "#1A9E7320" : fillC} stroke="none" />
+                                            <polygon points={pts4} fill="none" stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} strokeLinejoin="miter" strokeMiterlimit={10} />
                                           </>}
+                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={2} opacity={0.3} />}
                                           {/* Badge nome tipo */}
                                           {labelTxt && (
                                             <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lxN}, ${lyN})`}>
@@ -1941,7 +1902,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <rect x={lx - 18} y={ly - 7} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
                                             <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
                                           </g>
-                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={"#1A9E73"} /><circle cx={el.x2} cy={el.y2} r={5} fill={"#1A9E73"} /></>}
+                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill="#1A9E73" /><circle cx={el.x2} cy={el.y2} r={5} fill="#1A9E73" /></>}
                                         </g>
                                       );
                                     }
