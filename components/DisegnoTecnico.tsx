@@ -1827,7 +1827,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* ══ ELEMENTS ══ */}
-                                  {els.map(el => {
+                                  {/* Render in z-order: montanti/traversi prima, freeLine orizzontali sopra */}
+                                  {[
+                                    ...els.filter(e => e.type === "montante" || e.type === "traverso"),
+                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso"),
+                                  ].map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
                                     const dp = !drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id), style: { cursor: "move" } } : {};
@@ -1841,34 +1845,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ MONTANTE — giunzione pulita con profili adiacenti ═══
+                                    // ═══ MONTANTE — render semplice, profili orizzontali coprono sopra ═══
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const HM2 = TK_MONT / 2;
                                       const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
-                                      const ETOL = 30;
-                                      const horzLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined);
+                                      // Estendi di halfT del profilo adiacente — il profilo orizzontale (z sopra) coprirà il bordo
+                                      const horzLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined &&
+                                        Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1);
                                       let extTop = 0, extBot = 0;
                                       horzLines.forEach(l => {
-                                        const lHalfT = tkMapLocal[l.subType] || TK_FRAME;
-                                        const isHorz = Math.abs(l.y2 - l.y1) <= Math.abs(l.x2 - l.x1) + 1;
-                                        if (!isHorz) return;
-                                        const lY = (l.y1 + l.y2) / 2; // centro Y del profilo
-                                        // Estremità superiore: se lY è vicino a my1raw, estendi verso l'alto fino al centro lY
-                                        if (Math.abs(lY - my1raw) < ETOL && lY <= my1raw) {
-                                          extTop = Math.max(extTop, my1raw - lY); // quanto manca per arrivare al centro
-                                        }
-                                        // Estremità inferiore: se lY è vicino a my2raw, estendi verso il basso fino al centro lY
-                                        if (Math.abs(lY - my2raw) < ETOL && lY >= my2raw) {
-                                          extBot = Math.max(extBot, lY - my2raw); // quanto manca per arrivare al centro
-                                        }
+                                        const lHT = tkMapLocal[l.subType] || TK_FRAME;
+                                        const lY = (l.y1 + l.y2) / 2;
+                                        if (Math.abs(lY - my1raw) < lHT + 4) extTop = Math.max(extTop, lHT);
+                                        if (Math.abs(lY - my2raw) < lHT + 4) extBot = Math.max(extBot, lHT);
                                       });
-                                      const my1 = my1raw - extTop;
-                                      const my2 = my2raw + extBot;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1} width={TK_MONT} height={my2 - my1} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          <rect x={el.x - HM2} y={my1raw - extTop} width={TK_MONT} height={(my2raw + extBot) - (my1raw - extTop)} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
@@ -1884,20 +1879,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const vertLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined);
                                       let extL = 0, extR = 0;
                                       vertLines.forEach(l => {
-                                        const isVert = Math.abs(l.x2 - l.x1) <= Math.abs(l.y2 - l.y1) + 1;
+                                        const lHalfT = tkMapLocal[l.subType] || TK_FRAME;
+                                        const isVert = Math.abs(l.x2 - l.x1) < Math.abs(l.y2 - l.y1) + 1;
                                         if (!isVert) return;
                                         const lX = (l.x1 + l.x2) / 2;
-                                        // Estremità sinistra: se lX è a sinistra di tx1raw
-                                        if (Math.abs(lX - tx1raw) < ETOL && lX <= tx1raw) {
-                                          extL = Math.max(extL, tx1raw - lX);
-                                        }
-                                        // Estremità destra: se lX è a destra di tx2raw
-                                        if (Math.abs(lX - tx2raw) < ETOL && lX >= tx2raw) {
-                                          extR = Math.max(extR, lX - tx2raw);
-                                        }
+                                        const dL = Math.abs(lX - tx1raw);
+                                        if (dL < ETOL) extL = Math.max(extL, lHalfT - (tx1raw - lX));
+                                        const dR = Math.abs(lX - tx2raw);
+                                        if (dR < ETOL) extR = Math.max(extR, lHalfT - (lX - tx2raw));
                                       });
-                                      const tx1 = tx1raw - extL;
-                                      const tx2 = tx2raw + extR;
+                                      const tx1 = tx1raw - Math.max(0, extL);
+                                      const tx2 = tx2raw + Math.max(0, extR);
                                       // Taglia il traverso ai montanti che lo attraversano
                                       const intersectingMonts = allMontanti.filter(m => {
                                         const mx1 = m.x - HM2, mx2 = m.x + HM2;
