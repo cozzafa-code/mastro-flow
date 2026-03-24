@@ -1274,10 +1274,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>▭ Telaio</div>
                                   {/* Telaio libero (ex Linea) */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Libero</div>
-                                  {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
+                                  {drawMode === "line" && els.filter(e => e.type === "freeLine" && (e.subType||null) === (dw._lineSubType||null)).length >= 2 && (
                                     <div onClick={() => {
-                                      const fl = els.filter(e => e.type === "freeLine");
                                       const curSubType = dw._lineSubType || null;
+                                      const fl = els.filter(e => e.type === "freeLine" && (e.subType||null) === curSubType);
                                       const ptCount = {};
                                       fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); ptCount[k1]=(ptCount[k1]||0)+1; ptCount[k2]=(ptCount[k2]||0)+1; });
                                       const freePts = [];
@@ -1285,23 +1285,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let x1c, y1c, x2c, y2c;
                                       if (freePts.length >= 2) { x1c=freePts[0].x; y1c=freePts[0].y; x2c=freePts[1].x; y2c=freePts[1].y; }
                                       else { x1c=fl[fl.length-1].x2; y1c=fl[fl.length-1].y2; x2c=fl[0].x1; y2c=fl[0].y1; }
-                                      // Per montante: forza verticale
                                       if (curSubType === "montante") x2c = x1c;
-                                      // Per traverso: forza orizzontale
                                       if (curSubType === "traverso") y2c = y1c;
                                       const closeEl = { id: Date.now(), type: "freeLine", x1: x1c, y1: y1c, x2: x2c, y2: y2c, ...(curSubType ? { subType: curSubType } : {}) };
-                                      // Saldatura finale: aggiusta tutti i punti vicini
-                                      const WELD3 = SNAP_R;
-                                      const weldedFinal = els.map(x => {
-                                        if (x.x1===undefined) return x;
-                                        let nx1=x.x1,ny1=x.y1,nx2=x.x2,ny2=x.y2;
-                                        [[x1c,y1c],[x2c,y2c]].forEach(([tx,ty]) => {
-                                          if(Math.hypot(nx1-tx,ny1-ty)<WELD3){nx1=tx;ny1=ty;}
-                                          if(Math.hypot(nx2-tx,ny2-ty)<WELD3){nx2=tx;ny2=ty;}
-                                        });
-                                        return (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2)?{...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2}:x;
-                                      });
-                                      setDW([...weldedFinal, closeEl], { _pendingLine: null, _chainStart: null });
+                                      setDW([...els, closeEl], { _pendingLine: null, _chainStart: null });
                                     }} style={{ padding: "5px 12px", borderRadius: 6, border: "2px solid #1A9E73", background: "#1A9E73", fontSize: 10, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>⬡ Chiudi</div>
                                   )}
                                   {/* Montante (cella) */}
