@@ -1841,16 +1841,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     {/* Bottoni inclinazione — solo per freeLine */}
                                     {!(dimEdit as any).isDim && (
                                       <div style={{ display: "flex", gap: 6 }}>
-                                        <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'left'); setDimEdit(null); }}
+                                        <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'right'); setDimEdit(null); }}
                                           style={{ flex: 1, padding: "8px 4px", borderRadius: 8, background: "#F2F1EC", border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1A1A1C" }}>← SX</div>
                                         <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'both'); setDimEdit(null); }}
                                           style={{ flex: 1, padding: "8px 4px", borderRadius: 8, background: "#F2F1EC", border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1A1A1C" }}>↔ Entrambi</div>
-                                        <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'right'); setDimEdit(null); }}
+                                        <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'left'); setDimEdit(null); }}
                                           style={{ flex: 1, padding: "8px 4px", borderRadius: 8, background: "#F2F1EC", border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1A1A1C" }}>DX →</div>
                                       </div>
                                     )}
                                     <div style={{ display: "flex", gap: 8 }}>
-                                      <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
+                                      <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Chiudi</div>
+                                      <div onClick={() => { undo(); setDimEdit(null); }} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #DC4444", background: "#DC444408", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#DC4444" }}>↩ Ripristina</div>
                                       {(dimEdit as any).isDim && <div onClick={() => {
                                         applyDimChange(dimEdit.id, dimEdit.val, true);
                                         setDimEdit(null);
