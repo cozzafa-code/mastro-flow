@@ -968,7 +968,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
-                            const applyDimChange = (elId, valStr, isDim = false) => {
+                            const applyDimChange = (elId, valStr, isDim = false, side = 'right') => {
                               const newMM = parseInt(valStr);
                               if (isNaN(newMM) || newMM <= 0) return;
 
@@ -1027,7 +1027,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 setDW(upd);
                                 return;
                               }
-                              // Caso 2: freeLine — sposta solo x2/y2, aggiorna solo il punto condiviso del lato adiacente
+                              // Caso 2: freeLine — side: 'left'|'right'|'both'
                               if (isNaN(newMM) || newMM <= 0) return;
                               const el2 = els.find(x => x.id === elId);
                               if (!el2 || el2.type !== "freeLine") return;
@@ -1037,25 +1037,54 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (curMM <= 0) return;
                               const newLenPx = lenPx * newMM / curMM;
                               const ux = dx2 / lenPx, uy = dy2 / lenPx;
-                              const newX2 = Math.round(el2.x1 + ux * newLenPx);
-                              const newY2 = Math.round(el2.y1 + uy * newLenPx);
-                              const ddx = newX2 - el2.x2, ddy = newY2 - el2.y2;
-                              if (ddx === 0 && ddy === 0) return;
                               const CONN = 15;
-                              const allFL2 = els.filter(e => e.type === "freeLine");
-                              // Aggiorna solo il lato cliccato + il punto iniziale dei lati connessi all'x2/y2
-                              const updEls = els.map(x => {
-                                if (x.id === elId) return { ...x, x2: newX2, y2: newY2, _mmOverride: newMM };
-                                if (x.type !== "freeLine" || x.id === elId) return x;
-                                // Connesso al punto finale del lato modificato?
-                                if (Math.hypot(x.x1 - el2.x2, x.y1 - el2.y2) < CONN) {
-                                  return { ...x, x1: Math.round(x.x1 + ddx), y1: Math.round(x.y1 + ddy) };
-                                }
-                                if (Math.hypot(x.x2 - el2.x2, x.y2 - el2.y2) < CONN) {
-                                  return { ...x, x2: Math.round(x.x2 + ddx), y2: Math.round(x.y2 + ddy) };
-                                }
-                                return x;
-                              });
+                              // Calcola spostamento per ogni modalità
+                              // right: sposta x2 (punto finale), left: sposta x1 (punto iniziale), both: metà per ciascuno
+                              let updEls;
+                              if (side === 'right') {
+                                // Allunga/accorcia dal lato destro: x2 si sposta, x1 fisso
+                                const newX2 = Math.round(el2.x1 + ux * newLenPx);
+                                const newY2 = Math.round(el2.y1 + uy * newLenPx);
+                                const ddx = newX2 - el2.x2, ddy = newY2 - el2.y2;
+                                updEls = els.map(x => {
+                                  if (x.id === elId) return { ...x, x2: newX2, y2: newY2, _mmOverride: newMM };
+                                  if (x.type !== "freeLine") return x;
+                                  if (Math.hypot(x.x1 - el2.x2, x.y1 - el2.y2) < CONN) return { ...x, x1: Math.round(x.x1 + ddx), y1: Math.round(x.y1 + ddy) };
+                                  if (Math.hypot(x.x2 - el2.x2, x.y2 - el2.y2) < CONN) return { ...x, x2: Math.round(x.x2 + ddx), y2: Math.round(x.y2 + ddy) };
+                                  return x;
+                                });
+                              } else if (side === 'left') {
+                                // Allunga/accorcia dal lato sinistro: x1 si sposta, x2 fisso
+                                const newX1 = Math.round(el2.x2 - ux * newLenPx);
+                                const newY1 = Math.round(el2.y2 - uy * newLenPx);
+                                const ddx = newX1 - el2.x1, ddy = newY1 - el2.y1;
+                                updEls = els.map(x => {
+                                  if (x.id === elId) return { ...x, x1: newX1, y1: newY1, _mmOverride: newMM };
+                                  if (x.type !== "freeLine") return x;
+                                  if (Math.hypot(x.x1 - el2.x1, x.y1 - el2.y1) < CONN) return { ...x, x1: Math.round(x.x1 + ddx), y1: Math.round(x.y1 + ddy) };
+                                  if (Math.hypot(x.x2 - el2.x1, x.y2 - el2.y1) < CONN) return { ...x, x2: Math.round(x.x2 + ddx), y2: Math.round(x.y2 + ddy) };
+                                  return x;
+                                });
+                              } else {
+                                // both: distribuisce la differenza a metà su entrambi i lati
+                                const diff = newLenPx - lenPx;
+                                const halfDiff = diff / 2;
+                                const newX1 = Math.round(el2.x1 - ux * halfDiff);
+                                const newY1 = Math.round(el2.y1 - uy * halfDiff);
+                                const newX2 = Math.round(el2.x2 + ux * halfDiff);
+                                const newY2 = Math.round(el2.y2 + uy * halfDiff);
+                                const ddxL = newX1 - el2.x1, ddyL = newY1 - el2.y1;
+                                const ddxR = newX2 - el2.x2, ddyR = newY2 - el2.y2;
+                                updEls = els.map(x => {
+                                  if (x.id === elId) return { ...x, x1: newX1, y1: newY1, x2: newX2, y2: newY2, _mmOverride: newMM };
+                                  if (x.type !== "freeLine") return x;
+                                  if (Math.hypot(x.x1 - el2.x1, x.y1 - el2.y1) < CONN) return { ...x, x1: Math.round(x.x1 + ddxL), y1: Math.round(x.y1 + ddyL) };
+                                  if (Math.hypot(x.x2 - el2.x1, x.y2 - el2.y1) < CONN) return { ...x, x2: Math.round(x.x2 + ddxL), y2: Math.round(x.y2 + ddyL) };
+                                  if (Math.hypot(x.x1 - el2.x2, x.y1 - el2.y2) < CONN) return { ...x, x1: Math.round(x.x1 + ddxR), y1: Math.round(x.y1 + ddyR) };
+                                  if (Math.hypot(x.x2 - el2.x2, x.y2 - el2.y2) < CONN) return { ...x, x2: Math.round(x.x2 + ddxR), y2: Math.round(x.y2 + ddyR) };
+                                  return x;
+                                });
+                              }
                               setDW(updEls);
                             };
 
@@ -1809,12 +1838,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }}
                                       style={{ padding: "10px 14px", border: `2px solid ${"#1A9E73"}`, borderRadius: 8, fontSize: 22, fontWeight: 800, fontFamily: "monospace", textAlign: "center", outline: "none", color: "#1A1A1C", width: "100%", display: "block", boxSizing: "border-box" as any }}
                                     />
+                                    {/* Bottoni inclinazione — solo per freeLine */}
+                                    {!(dimEdit as any).isDim && (
+                                      <div style={{ display: "flex", gap: 6 }}>
+                                        <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'left'); setDimEdit(null); }}
+                                          style={{ flex: 1, padding: "8px 4px", borderRadius: 8, background: "#F2F1EC", border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1A1A1C" }}>← SX</div>
+                                        <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'both'); setDimEdit(null); }}
+                                          style={{ flex: 1, padding: "8px 4px", borderRadius: 8, background: "#F2F1EC", border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1A1A1C" }}>↔ Entrambi</div>
+                                        <div onClick={() => { applyDimChange(dimEdit.id, dimEdit.val, false, 'right'); setDimEdit(null); }}
+                                          style={{ flex: 1, padding: "8px 4px", borderRadius: 8, background: "#F2F1EC", border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1A1A1C" }}>DX →</div>
+                                      </div>
+                                    )}
                                     <div style={{ display: "flex", gap: 8 }}>
                                       <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
-                                      <div onClick={() => {
-                                        applyDimChange(dimEdit.id, dimEdit.val, (dimEdit as any).isDim);
+                                      {(dimEdit as any).isDim && <div onClick={() => {
+                                        applyDimChange(dimEdit.id, dimEdit.val, true);
                                         setDimEdit(null);
-                                      }} style={{ flex: 1, padding: "9px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>✓ Conferma</div>
+                                      }} style={{ flex: 1, padding: "9px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>✓ Conferma</div>}
                                     </div>
                                   </div>
                                 </div>
