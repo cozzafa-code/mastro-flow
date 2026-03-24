@@ -1020,21 +1020,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Montante: X SEMPRE uguale al primo punto, Y libera
                                   if (isMont) {
                                     px = pending.x1;
-                                    // snap Y a punti vicini sulla stessa colonna — escludi il punto di partenza
-                                    const colPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}])
-                                      .filter(p=>Math.abs(p.x-px)<5 && Math.abs(p.y-pending.y1)>3);
-                                    let bestY=null,bestDY=SNAP_R;
+                                    // Snap Y: bordi frame + punti freeLine sulla stessa colonna, escludi punto di partenza
+                                    const framePtsY = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
+                                    const colPts = [
+                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                      ...framePtsY
+                                    ].filter(p=>Math.abs(p.x-px)<12 && Math.abs(p.y-pending.y1)>5);
+                                    let bestY=null, bestDY=SNAP_R;
                                     colPts.forEach(p=>{const d=Math.abs(p.y-py);if(d<bestDY){bestDY=d;bestY=p.y;}});
                                     if(bestY!==null) py=bestY;
+                                    // Se nessuno snap: accetta py grezzo (non bloccare il click)
                                   }
                                   // Traverso: Y SEMPRE uguale al primo punto, X libera
                                   else if (isTrav) {
                                     py = pending.y1;
-                                    const rowPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}])
-                                      .filter(p=>Math.abs(p.y-py)<5 && Math.abs(p.x-pending.x1)>3);
-                                    let bestX=null,bestDX=SNAP_R;
+                                    // Snap X: bordi frame + punti freeLine sulla stessa riga, escludi punto di partenza
+                                    const framePtsX = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
+                                    const rowPts = [
+                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                      ...framePtsX
+                                    ].filter(p=>Math.abs(p.y-py)<12 && Math.abs(p.x-pending.x1)>5);
+                                    let bestX=null, bestDX=SNAP_R;
                                     rowPts.forEach(p=>{const d=Math.abs(p.x-px);if(d<bestDX){bestDX=d;bestX=p.x;}});
                                     if(bestX!==null) px=bestX;
+                                    // Se nessuno snap: accetta px grezzo
                                   }
                                   // Telaio libero / altri: snap normale
                                   else {
@@ -1073,9 +1082,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2) return {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2};
                                     return x;
                                   });
-                                  // Per montante/traverso: non impostare chainStart (no chiusura automatica)
+                                  // Per montante/traverso: reset pendingLine (no catena), per telaio libero: concatena
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
-                                  setDW([...weldedEls, newEl], { _pendingLine: { x1: px, y1: py, _subType: subTypeVal || null }, _chainStart: newChainStart, _lineSubType: subTypeVal });
+                                  const newPending = (isMont || isTrav) ? null : { x1: px, y1: py, _subType: subTypeVal || null };
+                                  setDW([...weldedEls, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
@@ -2043,27 +2053,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </>;
                                     }
                                     return null;
-                                  })()}
-                                  {/* ══ DEBUG OVERLAY — rimuovere prima del deploy ══ */}
-                                  {(() => {
-                                    const dbg = dwRef.current;
-                                    const p = dbg._pendingLine;
-                                    const lines = [
-                                      `mode: ${dbg.drawMode || "null"}`,
-                                      `subType: ${dbg._lineSubType || "null"}`,
-                                      `pending: ${p ? `(${Math.round(p.x1)},${Math.round(p.y1)}) sub=${p._subType||"null"}` : "null"}`,
-                                      `chain: ${dbg._chainStart ? `(${Math.round(dbg._chainStart.x)},${Math.round(dbg._chainStart.y)})` : "null"}`,
-                                    ];
-                                    return (
-                                      <g style={{ pointerEvents: "none" }}>
-                                        <rect x={4} y={4} width={310} height={lines.length * 14 + 10} fill="rgba(0,0,0,0.82)" rx={5} />
-                                        {lines.map((l, i) => (
-                                          <text key={i} x={10} y={18 + i * 14}
-                                            fill={i === 0 ? "#ff9" : i === 1 ? "#9ff" : i === 2 ? "#f90" : "#aaa"}
-                                            fontSize={11} fontFamily="'JetBrains Mono',monospace" fontWeight={700}>{l}</text>
-                                        ))}
-                                      </g>
-                                    );
                                   })()}
                                 </svg>
                                 </div>
