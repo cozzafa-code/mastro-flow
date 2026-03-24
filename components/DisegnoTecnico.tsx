@@ -1033,7 +1033,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 setDW(upd);
                                 return;
                               }
-                              const newMM = parseInt(valStr);
+                              // Caso 2: freeLine
                               if (isNaN(newMM) || newMM <= 0) return;
                               const el2 = els.find(x => x.id === elId);
                               if (!el2 || el2.type !== "freeLine") return;
