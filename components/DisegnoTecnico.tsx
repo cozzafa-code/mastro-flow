@@ -2077,11 +2077,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
                                       const isPartOfPoly = poly && poly.length >= 3;
                                       // Estendi ogni segmento di halfT — ma NON estendere verso un montante adiacente
-                                      const WCONN = halfT * 2 + 4;
+                                      const WCONN = halfT * 2 + TK_MONT;
+                                      const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      const ext1 = hasMontAt1 ? 0 : halfT;
-                                      const ext2 = hasMontAt2 ? 0 : halfT;
+                                      // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
+                                      const ext1 = hasMontAt1 ? -HM_loc : halfT;
+                                      const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
