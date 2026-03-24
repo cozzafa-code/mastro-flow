@@ -954,10 +954,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               // Line / apertura draw modes
                               if (drawMode === "line" || drawMode === "apertura") {
-                                const subTypeVal = dw._lineSubType || null;
+                                const pending = dw._pendingLine;
+                                // Leggi subType sia da dw che da pending (pending è più affidabile)
+                                const subTypeVal = (pending && pending._subType) || dw._lineSubType || null;
                                 const isMont = subTypeVal === "montante";
                                 const isTrav = subTypeVal === "traverso";
-                                const pending = dw._pendingLine;
 
                                 // Coordinate raw del click
                                 let px = Math.round(mx);
@@ -973,7 +974,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (distTop < SNAP_R) py = frame.y;
                                       else if (distBot < SNAP_R) py = frame.y + frame.h;
                                     }
-                                    setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
+                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else if (isTrav) {
                                     // Traverso: Y rimane dove clicchi, snap X ai bordi del frame
                                     if (frame) {
@@ -982,7 +983,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (distL < SNAP_R) px = frame.x;
                                       else if (distR < SNAP_R) px = frame.x + frame.w;
                                     }
-                                    setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
+                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
                                     // Telaio libero e altri: snap a tutti i punti vicini
                                     const allPts = [
@@ -992,7 +993,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     let best = null, bestD = SNAP_R * 1.5;
                                     allPts.forEach(p => { const d=Math.hypot(p.x-px,p.y-py); if(d<bestD){bestD=d;best=p;} });
                                     if (best) { px = best.x; py = best.y; }
-                                    setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
+                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
                                 } else {
                                   // SECONDO CLICK — crea il segmento
@@ -1243,7 +1244,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>▭ Telaio</div>
                                   {/* Telaio libero (ex Linea) */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Libero</div>
-                                  {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine").length >= 2 && (
+                                  {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
                                       const ptCount = {};
