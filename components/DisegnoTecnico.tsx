@@ -379,7 +379,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const zoom = dw._zoom || 1;
                             const panX = dw._panX || 0, panY = dw._panY || 0;
                             const canvasW = Math.min(window.innerWidth - 16, window.innerWidth > 768 ? 900 : 600);
-                            const GRID = 10;
+                            const GRID = 1; // movimento fluido al pixel
                             const SNAP_R = 22;
 
                             const aspect = realW / realH;
@@ -1353,10 +1353,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello")) return;
                                     const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
-                                    let gx = snap(gmx), gy = snap(gmy);
+                                    let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const p = dw._pendingLine;
-                                    if (Math.abs(gx - p.x1) < 8 && Math.abs(gy - p.y1) > 8) gx = p.x1;
-                                    if (Math.abs(gy - p.y1) < 8 && Math.abs(gx - p.x1) > 8) gy = p.y1;
+                                    // Snap a punti esistenti durante il movimento
+                                    const snapPt = findSnap(gx, gy);
+                                    if (snapPt) { gx = snapPt.x; gy = snapPt.y; }
+                                    // H/V snap se molto vicino (entro 5px)
+                                    if (!snapPt) {
+                                      if (Math.abs(gx - p.x1) < 5) gx = p.x1;
+                                      if (Math.abs(gy - p.y1) < 5) gy = p.y1;
+                                    }
+                                    // Montante libero: forza verticale + clamp nel frame
+                                    if (dw._lineSubType === "montante") {
+                                      gx = p.x1;
+                                      if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
+                                    }
+                                    // Traverso libero: forza orizzontale + clamp nel frame
+                                    if (dw._lineSubType === "traverso") {
+                                      gy = p.y1;
+                                      if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx));
+                                    }
                                     const deg = Math.round(Math.atan2(-(gy - p.y1), gx - p.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - p.x1, gy - p.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
@@ -1406,10 +1422,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return;
                                     }
                                     if (!dw._pendingLine || !(drawMode === "line" || drawMode === "apertura" || drawMode === "righello")) return;
-                                    let gx = snap(gmx), gy = snap(gmy);
+                                    let gx = Math.round(gmx), gy = Math.round(gmy);
                                     const pp = dw._pendingLine;
-                                    if (Math.abs(gx - pp.x1) < 8 && Math.abs(gy - pp.y1) > 8) gx = pp.x1;
-                                    if (Math.abs(gy - pp.y1) < 8 && Math.abs(gx - pp.x1) > 8) gy = pp.y1;
+                                    const snapPtT = findSnap(gx, gy);
+                                    if (snapPtT) { gx = snapPtT.x; gy = snapPtT.y; }
+                                    else {
+                                      if (Math.abs(gx - pp.x1) < 5) gx = pp.x1;
+                                      if (Math.abs(gy - pp.y1) < 5) gy = pp.y1;
+                                    }
+                                    if (dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
+                                    if (dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
