@@ -2081,7 +2081,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      // Frame: ritrai solo se l'estremità tocca il bordo del frame nella direzione della linea
+                                      // Frame: ritrai solo sul bordo nella direzione della linea
                                       const FTOL = TK_FRAME + halfT + 2;
                                       const isHorzLine = Math.abs(ux) > Math.abs(uy);
                                       const hasFrameAt1 = !hasMontAt1 && frames.some(f =>
@@ -2092,7 +2092,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         isHorzLine
                                           ? (Math.abs(el.x2 - f.x) < FTOL || Math.abs(el.x2 - (f.x+f.w)) < FTOL)
                                           : (Math.abs(el.y2 - f.y) < FTOL || Math.abs(el.y2 - (f.y+f.h)) < FTOL));
-                                      // Priorità: montante → -HM_loc | frame → -TK_FRAME | default → +halfT
                                       const ext1 = hasMontAt1 ? -HM_loc : hasFrameAt1 ? -TK_FRAME : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : hasFrameAt2 ? -TK_FRAME : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
