@@ -593,8 +593,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const d = Math.hypot(p.x - mx, p.y - my);
                                 if (d < bestD) { bestD = d; best = p; }
                               });
-                              // Snap al chainStart (chiusura forma) solo se ≥3 segmenti
-                              if (canClose && chainStart) {
+                              // Snap al chainStart (chiusura forma) solo se ≥3 segmenti e non montante/traverso
+                              if (canClose && chainStart && !dw._lineSubType) {
                                 const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
                                 if (d < bestD + 4) { best = chainStart; }
                               }
@@ -1023,16 +1023,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (Math.abs(px-pending.x1)<5) px=pending.x1;
                                       if (Math.abs(py-pending.y1)<5) py=pending.y1;
                                     }
-                                    // chiusura forma
-                                    const cs = dw._chainStart;
-                                    const freeLines = els.filter(e=>e.type==="freeLine");
-                                    if (cs && freeLines.length>=2 && Math.hypot(px-cs.x,py-cs.y)<SNAP_R+6) { px=cs.x; py=cs.y; }
+                                    // chiusura forma — solo per telaio libero senza subType
+                                    if (!subTypeVal) {
+                                      const cs = dw._chainStart;
+                                      const freeLines = els.filter(e=>e.type==="freeLine");
+                                      if (cs && freeLines.length>=2 && Math.hypot(px-cs.x,py-cs.y)<SNAP_R+6) { px=cs.x; py=cs.y; }
+                                    }
                                   }
 
                                   if (px===pending.x1 && py===pending.y1) return;
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
-                                  setDW([...els, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart, _lineSubType: subTypeVal });
+                                  // Per montante/traverso: non impostare chainStart (no chiusura automatica)
+                                  const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
+                                  setDW([...els, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
