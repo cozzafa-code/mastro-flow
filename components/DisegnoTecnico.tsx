@@ -984,36 +984,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 let py = Math.round(my);
 
                                 if (!pending) {
-                                  // PRIMO CLICK
+                                  // PRIMO CLICK — sempre raw, l'utente decide dove inizia
                                   if (isMont) {
-                                    // Montante: X rimane dove clicchi, snap Y solo agli elementi interni (traversi, bordi frame)
-                                    // Prima guarda traversi/altri elementi orizzontali
-                                    const horzPts = els.filter(e=>e.x1!==undefined && e.subType!=="montante")
-                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                    let bestY=null, bestDY=SNAP_R;
-                                    horzPts.forEach(p=>{ const d=Math.abs(p.y-py); if(d<bestDY){bestDY=d;bestY=p.y;} });
-                                    if(bestY!==null) { py=bestY; }
-                                    else if (frame) {
-                                      // Snap ai bordi interni del frame
-                                      const distTop = Math.abs(py - frame.y);
-                                      const distBot = Math.abs(py - (frame.y + frame.h));
-                                      if (distTop < SNAP_R) py = frame.y;
-                                      else if (distBot < SNAP_R) py = frame.y + frame.h;
-                                    }
+                                    // Montante: X e Y raw dove clicchi — nessuno snap automatico
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else if (isTrav) {
-                                    // Traverso: Y rimane dove clicchi, snap X agli elementi verticali o bordi frame
-                                    const vertPts = els.filter(e=>e.x1!==undefined && e.subType!=="traverso")
-                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                    let bestX=null, bestDX=SNAP_R;
-                                    vertPts.forEach(p=>{ const d=Math.abs(p.x-px); if(d<bestDX){bestDX=d;bestX=p.x;} });
-                                    if(bestX!==null) { px=bestX; }
-                                    else if (frame) {
-                                      const distL = Math.abs(px - frame.x);
-                                      const distR = Math.abs(px - (frame.x + frame.w));
-                                      if (distL < SNAP_R) px = frame.x;
-                                      else if (distR < SNAP_R) px = frame.x + frame.w;
-                                    }
+                                    // Traverso: X e Y raw dove clicchi — nessuno snap automatico
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
                                     // Telaio libero e altri: snap a tutti i punti vicini
@@ -1029,33 +1005,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else {
                                   // SECONDO CLICK — crea il segmento
 
-                                  // Montante: X SEMPRE uguale al primo punto, Y libera
+                                  // Montante: X fisso al primo punto, Y raw con snap stretto solo a bordi frame e traversi
                                   if (isMont) {
                                     px = pending.x1;
-                                    // Snap Y: bordi frame + punti freeLine sulla stessa colonna, escludi punto di partenza
-                                    const framePtsY = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
-                                    const colPts = [
-                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
-                                      ...framePtsY
-                                    ].filter(p=>Math.abs(p.x-px)<12 && Math.abs(p.y-pending.y1)>5);
-                                    let bestY=null, bestDY=SNAP_R;
-                                    colPts.forEach(p=>{const d=Math.abs(p.y-py);if(d<bestDY){bestDY=d;bestY=p.y;}});
-                                    if(bestY!==null) py=bestY;
-                                    // Se nessuno snap: accetta py grezzo (non bloccare il click)
+                                    // Snap Y solo se entro 10px da bordo frame o traverso esatto
+                                    const snapTargetsY = [
+                                      ...(frame ? [frame.y, frame.y + frame.h] : []),
+                                      ...els.filter(e=>e.type==="traverso").map(t=>t.y),
+                                    ].filter(y => Math.abs(y - pending.y1) > 8);
+                                    let bestY = null, bestDY = 10; // soglia stretta 10px
+                                    snapTargetsY.forEach(y => { const d=Math.abs(y-py); if(d<bestDY){bestDY=d;bestY=y;} });
+                                    if (bestY !== null) py = bestY;
+                                    // altrimenti py = raw del mouse — si blocca esattamente dove premi
                                   }
-                                  // Traverso: Y SEMPRE uguale al primo punto, X libera
+                                  // Traverso: Y fisso al primo punto, X raw con snap stretto solo a bordi frame e montanti
                                   else if (isTrav) {
                                     py = pending.y1;
-                                    // Snap X: bordi frame + punti freeLine sulla stessa riga, escludi punto di partenza
-                                    const framePtsX = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
-                                    const rowPts = [
-                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
-                                      ...framePtsX
-                                    ].filter(p=>Math.abs(p.y-py)<12 && Math.abs(p.x-pending.x1)>5);
-                                    let bestX=null, bestDX=SNAP_R;
-                                    rowPts.forEach(p=>{const d=Math.abs(p.x-px);if(d<bestDX){bestDX=d;bestX=p.x;}});
-                                    if(bestX!==null) px=bestX;
-                                    // Se nessuno snap: accetta px grezzo
+                                    const snapTargetsX = [
+                                      ...(frame ? [frame.x, frame.x + frame.w] : []),
+                                      ...els.filter(e=>e.type==="montante").map(m=>m.x),
+                                    ].filter(x => Math.abs(x - pending.x1) > 8);
+                                    let bestX = null, bestDX = 10;
+                                    snapTargetsX.forEach(x => { const d=Math.abs(x-px); if(d<bestDX){bestDX=d;bestX=x;} });
+                                    if (bestX !== null) px = bestX;
                                   }
                                   // Telaio libero / altri: snap normale
                                   else {
