@@ -1707,7 +1707,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const clr = drawMode === "apertura" ? T.blue : "#333";
                                     const p = dw._pendingLine;
                                     const gx = dw._guideX, gy = dw._guideY;
+                                    // Raccoglie tutti i vertici esistenti dei freeLine
+                                    const existingPts = els.filter(e => e.type === "freeLine").flatMap(l => [
+                                      { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
+                                    ]);
+                                    // Deduplica (arrotonda a 5px)
+                                    const seen = new Set();
+                                    const uniquePts = existingPts.filter(pt => {
+                                      const k = `${Math.round(pt.x/5)*5},${Math.round(pt.y/5)*5}`;
+                                      if (seen.has(k)) return false;
+                                      seen.add(k); return true;
+                                    });
                                     return <>
+                                      {/* Guide H/V dai vertici esistenti — solo visive */}
+                                      {uniquePts.map((pt, i) => (
+                                        <g key={`guide-${i}`} opacity={0.25}>
+                                          <line x1={0} y1={pt.y} x2={canvasW} y2={pt.y} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
+                                          <line x1={pt.x} y1={0} x2={pt.x} y2={canvasH} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
+                                        </g>
+                                      ))}
                                       {/* H/V guide lines from pending point */}
                                       <line x1={0} y1={p.y1} x2={canvasW} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
                                       <line x1={p.x1} y1={0} x2={p.x1} y2={canvasH} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
