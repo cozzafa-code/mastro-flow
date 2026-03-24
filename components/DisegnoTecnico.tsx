@@ -1876,45 +1876,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ MONTANTE ═══
+                                    // ═══ MONTANTE — render pulito, z-order gestisce giunzioni ═══
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const HM2 = TK_MONT / 2;
                                       const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
-                                      // Trova il bordo inferiore del profilo orizzontale più vicino sotto my2raw
+                                      // Estendi my2 al CENTRO del profilo orizzontale sotto — il fill del profilo (z sopra) coprirà il bordo
                                       let renderBot = my2raw;
-                                      els.filter(e => e.type === "freeLine" && e.x1 !== undefined).forEach(l => {
-                                        const isHorz = Math.abs(l.y2 - l.y1) <= Math.abs(l.x2 - l.x1) + 1;
-                                        if (!isHorz) return;
+                                      els.filter(e => e.type === "freeLine" && e.x1 !== undefined &&
+                                        Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1).forEach(l => {
                                         const lHT = tkMapLocal[l.subType] || TK_FRAME;
-                                        const lY = (l.y1 + l.y2) / 2; // centro del profilo
-                                        const lTop = lY - lHT;        // bordo superiore
-                                        const lBot = lY + lHT;        // bordo inferiore
-                                        // Il profilo deve essere sotto il centro del montante
-                                        // e il suo bordo superiore deve essere vicino a my2raw (entro lHT*3)
-                                        if (lY > (my1raw + my2raw) / 2 && lTop >= my2raw - lHT * 3) {
-                                          renderBot = Math.max(renderBot, lBot + lHT);
-                                        }
-                                      });
-                                      // Calcola dove terminano i bordi laterali visibili (al bordo inferiore del profilo, non oltre)
-                                      let lineBot = renderBot;
-                                      els.filter(e => e.type === "freeLine" && e.x1 !== undefined).forEach(l => {
-                                        const isHorz = Math.abs(l.y2 - l.y1) <= Math.abs(l.x2 - l.x1) + 1;
-                                        if (!isHorz) return;
-                                        const lHT2 = (tkMapLocal[l.subType] || TK_FRAME);
-                                        const lY2 = (l.y1 + l.y2) / 2;
-                                        const lBot2 = lY2 + lHT2;
-                                        if (lY2 > (my1raw + my2raw) / 2 && Math.abs(lBot2 - renderBot) < lHT2 * 2 + 2) {
-                                          lineBot = Math.min(lineBot, lBot2); // linee si fermano al bordo inferiore reale
+                                        const lY = (l.y1 + l.y2) / 2;
+                                        // Solo se il profilo è sotto il centro del montante e vicino all'estremità
+                                        if (lY > (my1raw + my2raw) / 2 && Math.abs(lY - my2raw) < lHT * 3) {
+                                          renderBot = Math.max(renderBot, lY); // arriva al CENTRO, fill del profilo copre
                                         }
                                       });
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={renderBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke="none" />
-                                          <line x1={el.x - HM2} y1={my1raw} x2={el.x - HM2} y2={lineBot} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8}/>
-                                          <line x1={el.x + HM2} y1={my1raw} x2={el.x + HM2} y2={lineBot} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8}/>
-                                          <line x1={el.x - HM2} y1={my1raw} x2={el.x + HM2} y2={my1raw} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8}/>
+                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={renderBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
