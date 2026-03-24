@@ -1027,7 +1027,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 setDW(upd);
                                 return;
                               }
-                              // Caso 2: freeLine
+                              // Caso 2: freeLine — sposta solo x2/y2, aggiorna solo il punto condiviso del lato adiacente
                               if (isNaN(newMM) || newMM <= 0) return;
                               const el2 = els.find(x => x.id === elId);
                               if (!el2 || el2.type !== "freeLine") return;
@@ -1043,31 +1043,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (ddx === 0 && ddy === 0) return;
                               const CONN = 15;
                               const allFL2 = els.filter(e => e.type === "freeLine");
-                              const visited = new Set();
-                              visited.add(elId);
-                              const toMove = new Set();
-                              const queue = [{ x: el2.x2, y: el2.y2 }];
-                              while (queue.length > 0) {
-                                const pt = queue.shift();
-                                allFL2.forEach(l => {
-                                  if (visited.has(l.id)) return;
-                                  if (Math.hypot(l.x1 - el2.x1, l.y1 - el2.y1) < CONN ||
-                                      Math.hypot(l.x2 - el2.x1, l.y2 - el2.y1) < CONN) {
-                                    visited.add(l.id); return;
-                                  }
-                                  if (Math.hypot(l.x1 - pt.x, l.y1 - pt.y) < CONN) {
-                                    visited.add(l.id); toMove.add(l.id);
-                                    queue.push({ x: l.x2, y: l.y2 });
-                                  } else if (Math.hypot(l.x2 - pt.x, l.y2 - pt.y) < CONN) {
-                                    visited.add(l.id); toMove.add(l.id);
-                                    queue.push({ x: l.x1, y: l.y1 });
-                                  }
-                                });
-                              }
+                              // Aggiorna solo il lato cliccato + il punto iniziale dei lati connessi all'x2/y2
                               const updEls = els.map(x => {
                                 if (x.id === elId) return { ...x, x2: newX2, y2: newY2, _mmOverride: newMM };
-                                if (x.type !== "freeLine" || !toMove.has(x.id)) return x;
-                                return { ...x, x1: Math.round(x.x1 + ddx), y1: Math.round(x.y1 + ddy), x2: Math.round(x.x2 + ddx), y2: Math.round(x.y2 + ddy) };
+                                if (x.type !== "freeLine" || x.id === elId) return x;
+                                // Connesso al punto finale del lato modificato?
+                                if (Math.hypot(x.x1 - el2.x2, x.y1 - el2.y2) < CONN) {
+                                  return { ...x, x1: Math.round(x.x1 + ddx), y1: Math.round(x.y1 + ddy) };
+                                }
+                                if (Math.hypot(x.x2 - el2.x2, x.y2 - el2.y2) < CONN) {
+                                  return { ...x, x2: Math.round(x.x2 + ddx), y2: Math.round(x.y2 + ddy) };
+                                }
+                                return x;
                               });
                               setDW(updEls);
                             };
