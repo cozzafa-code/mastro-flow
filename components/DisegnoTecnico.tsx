@@ -2086,13 +2086,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Clamp punti polygon al bordo interno del frame
+                                      // Clamp al bordo interno del frame — solo per linee orizzontali (zoccolo/soglia/fascia)
+                                      const isHorzEl = Math.abs(el.x2 - el.x1) > Math.abs(el.y2 - el.y1);
                                       const cpx = (x) => {
-                                        if (!frame) return x;
+                                        if (!frame || !isHorzEl) return x;
                                         return Math.max(frame.x + TK_FRAME, Math.min(frame.x + frame.w - TK_FRAME, x));
                                       };
                                       const cpy = (y) => {
-                                        if (!frame) return y;
+                                        if (!frame || isHorzEl) return y;
                                         return Math.max(frame.y + TK_FRAME, Math.min(frame.y + frame.h - TK_FRAME, y));
                                       };
                                       const p1x = cpx(ex1+nx), p1y = cpy(ey1+ny);
