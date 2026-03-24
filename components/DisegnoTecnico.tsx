@@ -1901,6 +1901,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
                                           <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={renderBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
+                                          {/* DEBUG — rimuovere dopo fix */}
+                                          <rect x={el.x + HM2 + 2} y={my2raw - 4} width={140} height={52} fill="rgba(0,0,0,0.8)" rx={3}/>
+                                          <text x={el.x + HM2 + 5} y={my2raw + 6} fontSize={8} fill="#ff0" fontFamily="monospace">my2={Math.round(my2raw)}</text>
+                                          <text x={el.x + HM2 + 5} y={my2raw + 16} fontSize={8} fill="#0ff" fontFamily="monospace">rBot={Math.round(renderBot)}</text>
+                                          {els.filter(e => e.type === "freeLine" && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+1).map((l,li) => {
+                                            const lHT2 = ({soglia:TK_SOGLIA,zoccolo:TK_ZOCCOLO,fascia:TK_FASCIA,profcomp:TK_PROFCOMP} as any)[l.subType] || TK_FRAME;
+                                            const lY2 = (l.y1+l.y2)/2;
+                                            const lTop2 = lY2 - lHT2;
+                                            const mid = (my1raw+my2raw)/2;
+                                            const cond = lY2 > mid && lTop2 >= my2raw - lHT2*3;
+                                            return <text key={li} x={el.x + HM2 + 5} y={my2raw + 28 + li*10} fontSize={7} fill={cond?"#0f0":"#f88"} fontFamily="monospace">{`lY=${Math.round(lY2)} lT=${Math.round(lTop2)} ${cond?"OK":"NO"}`}</text>;
+                                          })}
                                         </g>
                                       );
                                     }
