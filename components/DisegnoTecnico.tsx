@@ -967,7 +967,72 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const cursorMode = drawMode === "line" || drawMode === "apertura" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
-                            const applyDimChange = (elId, valStr) => {
+                            const applyDimChange = (elId, valStr, isDim = false) => {
+                              const newMM = parseInt(valStr);
+                              if (isNaN(newMM) || newMM <= 0) return;
+
+                              // Caso 1: dim di tipo "dim" (misure telaio/celle)
+                              if (isDim) {
+                                const dimEl = els.find(x => x.id === elId);
+                                if (!dimEl) return;
+                                const oldVal = parseInt(dimEl.label);
+                                if (isNaN(oldVal) || oldVal <= 0) return;
+                                const isH = Math.abs(dimEl.y1 - dimEl.y2) < 2;
+                                let upd = els.map(x => x.id === elId ? { ...x, label: String(newMM) } : x);
+                                if (frame) {
+                                  const isTotalW = isH && Math.abs(dimEl.x2 - dimEl.x1 - frame.w) < 5;
+                                  const isTotalH = !isH && Math.abs(dimEl.y2 - dimEl.y1 - frame.h) < 5;
+                                  const isColDim = isH && !isTotalW;
+                                  const isRowDim = !isH && !isTotalH;
+                                  const scale = newMM / oldVal;
+                                  if (isTotalW) {
+                                    // Scala tutto il frame orizzontalmente
+                                    const scX = newMM / oldVal;
+                                    const ox = frame.x;
+                                    upd = upd.map(x => {
+                                      if (x.type === "rect") return { ...x, w: Math.round(x.w * scX) };
+                                      if (x.type === "montante") return { ...x, x: Math.round(ox + (x.x - ox) * scX) };
+                                      if (x.type === "dim" && x.id !== elId) return { ...x, x1: Math.round(ox + (x.x1 - ox) * scX), x2: Math.round(ox + (x.x2 - ox) * scX), label: isH ? String(Math.round(parseInt(x.label) * scX)) : x.label };
+                                      if ((x.type === "innerRect" || x.type === "glass")) return { ...x, x: Math.round(ox + (x.x - ox) * scX), w: Math.round(x.w * scX) };
+                                      return x;
+                                    });
+                                    onUpdateField && onUpdateField("larghezza", newMM);
+                                  } else if (isTotalH) {
+                                    const scY = newMM / oldVal;
+                                    const oy = frame.y;
+                                    upd = upd.map(x => {
+                                      if (x.type === "rect") return { ...x, h: Math.round(x.h * scY) };
+                                      if (x.type === "traverso") return { ...x, y: Math.round(oy + (x.y - oy) * scY) };
+                                      if (x.type === "dim" && x.id !== elId) return { ...x, y1: Math.round(oy + (x.y1 - oy) * scY), y2: Math.round(oy + (x.y2 - oy) * scY), label: !isH ? String(Math.round(parseInt(x.label) * scY)) : x.label };
+                                      if ((x.type === "innerRect" || x.type === "glass")) return { ...x, y: Math.round(oy + (x.y - oy) * scY), h: Math.round(x.h * scY) };
+                                      return x;
+                                    });
+                                    onUpdateField && onUpdateField("altezza", newMM);
+                                  } else if (isColDim) {
+                                    const oldPxW = dimEl.x2 - dimEl.x1;
+                                    const diff = Math.round(oldPxW * scale) - oldPxW;
+                                    upd = upd.map(x => {
+                                      if (x.type === "montante" && x.x >= dimEl.x2 - 3) return { ...x, x: snap(x.x + diff) };
+                                      if (x.type === "dim" && x.id !== elId && x.x1 >= dimEl.x2 - 3) return { ...x, x1: x.x1 + diff, x2: x.x2 + diff };
+                                      if ((x.type === "innerRect" || x.type === "glass") && x.x >= dimEl.x2 - 5) return { ...x, x: x.x + diff };
+                                      return x;
+                                    });
+                                    upd = upd.map(x => x.type === "rect" ? { ...x, w: x.w + diff } : x);
+                                  } else if (isRowDim) {
+                                    const oldPxH = dimEl.y2 - dimEl.y1;
+                                    const diff = Math.round(oldPxH * scale) - oldPxH;
+                                    upd = upd.map(x => {
+                                      if (x.type === "traverso" && x.y >= dimEl.y2 - 3) return { ...x, y: snap(x.y + diff) };
+                                      if (x.type === "dim" && x.id !== elId && x.y1 >= dimEl.y2 - 3) return { ...x, y1: x.y1 + diff, y2: x.y2 + diff };
+                                      if ((x.type === "innerRect" || x.type === "glass") && x.y >= dimEl.y2 - 5) return { ...x, y: x.y + diff };
+                                      return x;
+                                    });
+                                    upd = upd.map(x => x.type === "rect" ? { ...x, h: x.h + diff } : x);
+                                  }
+                                }
+                                setDW(upd);
+                                return;
+                              }
                               const newMM = parseInt(valStr);
                               if (isNaN(newMM) || newMM <= 0) return;
                               const el2 = els.find(x => x.id === elId);
@@ -1625,67 +1690,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return (
                                         <g key={el.id} onClick={(e3) => {
                                           e3.stopPropagation();
-                                          const nv = prompt("Misura (mm):", el.label);
-                                          if (nv === null || !nv.trim()) return;
-                                          const newVal = parseInt(nv.trim());
-                                          const oldVal = parseInt(el.label);
-                                          let upd = els.map(x => x.id === el.id ? { ...x, label: nv.trim() } : x);
-                                          
-                                          // If this is a sub-dimension (column width or row height), adjust structure
-                                          if (!isNaN(newVal) && !isNaN(oldVal) && newVal !== oldVal && frame) {
-                                            // Is this a column width? (horizontal dim above or below frame)
-                                            const isColDim = isH && el.y1 < frame.y + frame.h / 2;
-                                            // Is this a row height? (vertical dim left of frame)
-                                            const isRowDim = !isH && el.x1 < frame.x + frame.w / 2;
-                                            // Is this total width/height?
-                                            const isTotalW = isH && Math.abs(el.x2 - el.x1 - frame.w) < 5;
-                                            const isTotalH = !isH && Math.abs(el.y2 - el.y1 - frame.h) < 5;
-                                            
-                                            if (isColDim && !isTotalW) {
-                                              // Find which column this dim spans, adjust montante
-                                              const dimLeft = el.x1;
-                                              const oldPixelW = el.x2 - el.x1;
-                                              const scale = newVal / oldVal;
-                                              const newPixelW = oldPixelW * scale;
-                                              const diff = newPixelW - oldPixelW;
-                                              // Move all montanti and elements that are to the right of this dim's right edge
-                                              upd = upd.map(x => {
-                                                if (x.type === "montante" && x.x >= el.x2 - 3) return { ...x, x: snap(x.x + diff) };
-                                                if (x.type === "dim" && x !== el && x.x1 >= el.x2 - 3) return { ...x, x1: x.x1 + diff, x2: x.x2 + diff };
-                                                if ((x.type === "innerRect" || x.type === "glass") && x.x >= el.x2 - 5) return { ...x, x: x.x + diff };
-                                                return x;
-                                              });
-                                              // Update frame width
-                                              upd = upd.map(x => x.type === "rect" ? { ...x, w: x.w + diff } : x);
-                                            }
-                                            if (isRowDim && !isTotalH) {
-                                              const oldPixelH = el.y2 - el.y1;
-                                              const scale = newVal / oldVal;
-                                              const newPixelH = oldPixelH * scale;
-                                              const diff = newPixelH - oldPixelH;
-                                              upd = upd.map(x => {
-                                                if (x.type === "traverso" && x.y >= el.y2 - 3) return { ...x, y: snap(x.y + diff) };
-                                                if (x.type === "dim" && x !== el && x.y1 >= el.y2 - 3) return { ...x, y1: x.y1 + diff, y2: x.y2 + diff };
-                                                if ((x.type === "innerRect" || x.type === "glass") && x.y >= el.y2 - 5) return { ...x, y: x.y + diff };
-                                                return x;
-                                              });
-                                              upd = upd.map(x => x.type === "rect" ? { ...x, h: x.h + diff } : x);
-                                            }
-                                          }
-                                          setDW(upd);
-                                          // Sync total dimensions to main fields
-                                          if (frame) {
-                                            const isTW = isH && Math.abs(el.x2 - el.x1 - frame.w) < 5;
-                                            const isTH = !isH && Math.abs(el.y2 - el.y1 - frame.h) < 5;
-                                            if (isTW && !isNaN(newVal)) onUpdateField && onUpdateField("larghezza", newVal);
-                                            if (isTH && !isNaN(newVal)) onUpdateField && onUpdateField("altezza", newVal);
-                                          }
+                                          if (drawMode) return;
+                                          setDimEdit({ id: el.id, val: el.label, x: 0, y: 0, isDim: true });
                                         }} style={{ cursor: "pointer" }}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.acc} strokeWidth={0.8} />
                                           {isH ? <><line x1={el.x1} y1={el.y1-5} x2={el.x1} y2={el.y1+5} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2} y1={el.y2-5} x2={el.x2} y2={el.y2+5} stroke={T.acc} strokeWidth={0.8}/></>
                                             : <><line x1={el.x1-5} y1={el.y1} x2={el.x1+5} y2={el.y1} stroke={T.acc} strokeWidth={0.8}/><line x1={el.x2-5} y1={el.y2} x2={el.x2+5} y2={el.y2} stroke={T.acc} strokeWidth={0.8}/></>}
-                                          <rect x={mx2-tw/2} y={my2-9} width={tw} height={18} fill="#fff" rx={3} stroke={T.acc} strokeWidth={0.6}/>
-                                          <text x={mx2} y={my2+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={T.acc} fontFamily="monospace">{el.label}</text>
+                                          <rect x={mx2-tw/2} y={my2-9} width={tw} height={18} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={T.acc} strokeWidth={0.6}/>
+                                          <text x={mx2} y={my2+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{el.label}</text>
                                         </g>
                                       );
                                     }
@@ -1818,17 +1830,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       onChange={e => setDimEdit({ ...dimEdit, val: e.target.value })}
                                       onKeyDown={e => {
                                         if (e.key === "Enter") {
-                                          applyDimChange(dimEdit.id, dimEdit.val);
+                                          applyDimChange(dimEdit.id, dimEdit.val, (dimEdit as any).isDim);
                                           setDimEdit(null);
                                         }
                                         if (e.key === "Escape") setDimEdit(null);
                                       }}
-                                      style={{ padding: "10px 14px", border: `2px solid ${"#1A9E73"}`, borderRadius: 8, fontSize: 18, fontWeight: 800, fontFamily: "monospace", textAlign: "center", outline: "none", color: "#1A1A1C", width: "100%" }}
+                                      style={{ padding: "10px 14px", border: `2px solid ${"#1A9E73"}`, borderRadius: 8, fontSize: 18, fontWeight: 800, fontFamily: "monospace", textAlign: "center", WebkitTextAlign: "center", outline: "none", color: "#1A1A1C", width: "100%" }}
                                     />
                                     <div style={{ display: "flex", gap: 8 }}>
                                       <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
                                       <div onClick={() => {
-                                        applyDimChange(dimEdit.id, dimEdit.val);
+                                        applyDimChange(dimEdit.id, dimEdit.val, (dimEdit as any).isDim);
                                         setDimEdit(null);
                                       }} style={{ flex: 1, padding: "9px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>✓ Conferma</div>
                                     </div>
