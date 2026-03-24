@@ -955,52 +955,60 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Line / apertura draw modes
                               if (drawMode === "line" || drawMode === "apertura") {
                                 const subTypeVal = dw._lineSubType || null;
-                                let px = snap(mx);
-                                let py = snap(my);
+                                const isMont = subTypeVal === "montante";
+                                const isTrav = subTypeVal === "traverso";
                                 const pending = dw._pendingLine;
-                                // Montante/traverso: forza direzione PRIMA di qualsiasi snap
-                                if (pending && subTypeVal === "montante") { px = pending.x1; }
-                                if (pending && subTypeVal === "traverso") { py = pending.y1; }
-                                // Snap a punti esistenti (solo se non montante/traverso)
-                                if (!subTypeVal || (subTypeVal !== "montante" && subTypeVal !== "traverso")) {
-                                  const sp = findSnap(mx, my);
-                                  if (sp) { px = sp.x; py = sp.y; }
-                                } else {
-                                  // Per montante/traverso: snap solo sull'asse libero
-                                  if (subTypeVal === "montante") {
-                                    const spY = findSnap(px, py);
-                                    if (spY) py = spY.y; // snap solo Y
-                                  } else {
-                                    const spX = findSnap(px, py);
-                                    if (spX) px = spX.x; // snap solo X
-                                  }
-                                }
-                                if (pending) {
-                                  // H/V snap solo per telaio libero (non per montante/traverso che già forzano)
-                                  if (!subTypeVal || (subTypeVal !== "montante" && subTypeVal !== "traverso")) {
-                                    const adx = Math.abs(px - pending.x1), ady = Math.abs(py - pending.y1);
-                                    if (adx < 5 && ady > 5) px = pending.x1;
-                                    if (ady < 5 && adx > 5) py = pending.y1;
-                                  }
-                                }
+
+                                // Coordinate raw del click
+                                let px = Math.round(mx);
+                                let py = Math.round(my);
+
                                 if (!pending) {
-                                  const allFLPts = els.filter(e => e.type === "freeLine").flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
-                                  const framePts = frames.flatMap(f => [{x:f.x,y:f.y},{x:f.x+f.w,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y+f.h}]);
-                                  let bestSnap = null, bestDist = SNAP_R * 1.5;
-                                  [...allFLPts, ...framePts].forEach(p => {
-                                    const d = Math.hypot(p.x - px, p.y - py);
-                                    if (d < bestDist) { bestDist = d; bestSnap = p; }
-                                  });
-                                  if (bestSnap) { px = bestSnap.x; py = bestSnap.y; }
-                                  setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: dw._lineSubType });
+                                  // PRIMO CLICK — snap a vertici vicini
+                                  const allPts = [
+                                    ...els.filter(e => e.x1 !== undefined).flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                    ...frames.flatMap(f => [{x:f.x,y:f.y},{x:f.x+f.w,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y+f.h}])
+                                  ];
+                                  let best = null, bestD = SNAP_R * 1.5;
+                                  allPts.forEach(p => { const d=Math.hypot(p.x-px,p.y-py); if(d<bestD){bestD=d;best=p;} });
+                                  if (best) { px = best.x; py = best.y; }
+                                  setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                 } else {
-                                  if (px === pending.x1 && py === pending.y1) return;
-                                  const cs = dw._chainStart;
-                                  const freeLines = els.filter(e => e.type === "freeLine");
-                                  if (!subTypeVal && cs && freeLines.length >= 2 && Math.hypot(px - cs.x, py - cs.y) < SNAP_R + 6) {
-                                    px = cs.x; py = cs.y;
+                                  // SECONDO CLICK — crea il segmento
+
+                                  // Montante: X SEMPRE uguale al primo punto, Y libera
+                                  if (isMont) {
+                                    px = pending.x1;
+                                    // snap Y a punti vicini sulla stessa colonna
+                                    const colPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]).filter(p=>Math.abs(p.x-px)<5);
+                                    let bestY=null,bestDY=SNAP_R;
+                                    colPts.forEach(p=>{const d=Math.abs(p.y-py);if(d<bestDY){bestDY=d;bestY=p.y;}});
+                                    if(bestY!==null) py=bestY;
                                   }
-                                  const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
+                                  // Traverso: Y SEMPRE uguale al primo punto, X libera
+                                  else if (isTrav) {
+                                    py = pending.y1;
+                                    const rowPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]).filter(p=>Math.abs(p.y-py)<5);
+                                    let bestX=null,bestDX=SNAP_R;
+                                    rowPts.forEach(p=>{const d=Math.abs(p.x-px);if(d<bestDX){bestDX=d;bestX=p.x;}});
+                                    if(bestX!==null) px=bestX;
+                                  }
+                                  // Telaio libero / altri: snap normale
+                                  else {
+                                    const sp = findSnap(px, py);
+                                    if (sp) { px = sp.x; py = sp.y; }
+                                    else {
+                                      if (Math.abs(px-pending.x1)<5) px=pending.x1;
+                                      if (Math.abs(py-pending.y1)<5) py=pending.y1;
+                                    }
+                                    // chiusura forma
+                                    const cs = dw._chainStart;
+                                    const freeLines = els.filter(e=>e.type==="freeLine");
+                                    if (cs && freeLines.length>=2 && Math.hypot(px-cs.x,py-cs.y)<SNAP_R+6) { px=cs.x; py=cs.y; }
+                                  }
+
+                                  if (px===pending.x1 && py===pending.y1) return;
+                                  const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   setDW([...els, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart, _lineSubType: subTypeVal });
                                 }
