@@ -967,67 +967,61 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const cursorMode = drawMode === "line" || drawMode === "apertura" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
+                            const dimEditRef = dimEdit; // accessibile in applyDimChange
                             const applyDimChange = (elId, valStr, isDim = false) => {
                               const newMM = parseInt(valStr);
                               if (isNaN(newMM) || newMM <= 0) return;
 
-                              // Caso 1: dim di tipo "dim" (misure telaio/celle)
+                              // Caso 1: dim di tipo "dim" (misure telaio)
                               if (isDim) {
                                 const dimEl = els.find(x => x.id === elId);
                                 if (!dimEl) return;
                                 const oldVal = parseInt(dimEl.label);
-                                if (isNaN(oldVal) || oldVal <= 0) return;
+                                if (isNaN(oldVal) || oldVal <= 0 || oldVal === newMM) return;
                                 const isH = Math.abs(dimEl.y1 - dimEl.y2) < 2;
                                 let upd = els.map(x => x.id === elId ? { ...x, label: String(newMM) } : x);
                                 if (frame) {
-                                  const isTotalW = isH && Math.abs(dimEl.x2 - dimEl.x1 - frame.w) < 5;
-                                  const isTotalH = !isH && Math.abs(dimEl.y2 - dimEl.y1 - frame.h) < 5;
-                                  const isColDim = isH && !isTotalW;
-                                  const isRowDim = !isH && !isTotalH;
-                                  const scale = newMM / oldVal;
-                                  if (isTotalW) {
-                                    // Scala tutto il frame orizzontalmente
-                                    const scX = newMM / oldVal;
-                                    const ox = frame.x;
+                                  // Scala px→mm: quanti px vale 1mm in questo disegno
+                                  const pxPerMmW = frame.w / (oldVal > 0 ? oldVal : 1);
+                                  const pxPerMmH = frame.h / (oldVal > 0 ? oldVal : 1);
+                                  if (isH) {
+                                    // Larghezza — cambia solo frame.w, aggiorna dim label
+                                    const newPxW = Math.round(newMM * pxPerMmW);
+                                    const diff = newPxW - frame.w;
                                     upd = upd.map(x => {
-                                      if (x.type === "rect") return { ...x, w: Math.round(x.w * scX) };
-                                      if (x.type === "montante") return { ...x, x: Math.round(ox + (x.x - ox) * scX) };
-                                      if (x.type === "dim" && x.id !== elId) return { ...x, x1: Math.round(ox + (x.x1 - ox) * scX), x2: Math.round(ox + (x.x2 - ox) * scX), label: isH ? String(Math.round(parseInt(x.label) * scX)) : x.label };
-                                      if ((x.type === "innerRect" || x.type === "glass")) return { ...x, x: Math.round(ox + (x.x - ox) * scX), w: Math.round(x.w * scX) };
+                                      if (x.type === "rect") return { ...x, w: newPxW };
+                                      if (x.type === "montante") {
+                                        // Mantieni proporzione relativa
+                                        const ratio = frame.w > 0 ? (x.x - frame.x) / frame.w : 0.5;
+                                        return { ...x, x: Math.round(frame.x + ratio * newPxW) };
+                                      }
+                                      if (x.type === "dim" && x.id !== elId && isH) {
+                                        // Aggiorna dim della larghezza totale
+                                        return { ...x, x2: Math.round(x.x1 + newPxW) };
+                                      }
+                                      if ((x.type === "innerRect" || x.type === "glass")) {
+                                        const ratio = frame.w > 0 ? (x.x - frame.x) / frame.w : 0;
+                                        return { ...x, x: Math.round(frame.x + ratio * newPxW), w: Math.round(x.w * newPxW / frame.w) };
+                                      }
                                       return x;
                                     });
                                     onUpdateField && onUpdateField("larghezza", newMM);
-                                  } else if (isTotalH) {
-                                    const scY = newMM / oldVal;
-                                    const oy = frame.y;
+                                  } else {
+                                    // Altezza — cambia solo frame.h
+                                    const newPxH = Math.round(newMM * pxPerMmH);
                                     upd = upd.map(x => {
-                                      if (x.type === "rect") return { ...x, h: Math.round(x.h * scY) };
-                                      if (x.type === "traverso") return { ...x, y: Math.round(oy + (x.y - oy) * scY) };
-                                      if (x.type === "dim" && x.id !== elId) return { ...x, y1: Math.round(oy + (x.y1 - oy) * scY), y2: Math.round(oy + (x.y2 - oy) * scY), label: !isH ? String(Math.round(parseInt(x.label) * scY)) : x.label };
-                                      if ((x.type === "innerRect" || x.type === "glass")) return { ...x, y: Math.round(oy + (x.y - oy) * scY), h: Math.round(x.h * scY) };
+                                      if (x.type === "rect") return { ...x, h: newPxH };
+                                      if (x.type === "traverso") {
+                                        const ratio = frame.h > 0 ? (x.y - frame.y) / frame.h : 0.5;
+                                        return { ...x, y: Math.round(frame.y + ratio * newPxH) };
+                                      }
+                                      if ((x.type === "innerRect" || x.type === "glass")) {
+                                        const ratio = frame.h > 0 ? (x.y - frame.y) / frame.h : 0;
+                                        return { ...x, y: Math.round(frame.y + ratio * newPxH), h: Math.round(x.h * newPxH / frame.h) };
+                                      }
                                       return x;
                                     });
                                     onUpdateField && onUpdateField("altezza", newMM);
-                                  } else if (isColDim) {
-                                    const oldPxW = dimEl.x2 - dimEl.x1;
-                                    const diff = Math.round(oldPxW * scale) - oldPxW;
-                                    upd = upd.map(x => {
-                                      if (x.type === "montante" && x.x >= dimEl.x2 - 3) return { ...x, x: snap(x.x + diff) };
-                                      if (x.type === "dim" && x.id !== elId && x.x1 >= dimEl.x2 - 3) return { ...x, x1: x.x1 + diff, x2: x.x2 + diff };
-                                      if ((x.type === "innerRect" || x.type === "glass") && x.x >= dimEl.x2 - 5) return { ...x, x: x.x + diff };
-                                      return x;
-                                    });
-                                    upd = upd.map(x => x.type === "rect" ? { ...x, w: x.w + diff } : x);
-                                  } else if (isRowDim) {
-                                    const oldPxH = dimEl.y2 - dimEl.y1;
-                                    const diff = Math.round(oldPxH * scale) - oldPxH;
-                                    upd = upd.map(x => {
-                                      if (x.type === "traverso" && x.y >= dimEl.y2 - 3) return { ...x, y: snap(x.y + diff) };
-                                      if (x.type === "dim" && x.id !== elId && x.y1 >= dimEl.y2 - 3) return { ...x, y1: x.y1 + diff, y2: x.y2 + diff };
-                                      if ((x.type === "innerRect" || x.type === "glass") && x.y >= dimEl.y2 - 5) return { ...x, y: x.y + diff };
-                                      return x;
-                                    });
-                                    upd = upd.map(x => x.type === "rect" ? { ...x, h: x.h + diff } : x);
                                   }
                                 }
                                 setDW(upd);
@@ -1039,17 +1033,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (!el2 || el2.type !== "freeLine") return;
                               const dx2 = el2.x2 - el2.x1, dy2 = el2.y2 - el2.y1;
                               const lenPx = Math.hypot(dx2, dy2) || 1;
-                              // Scala px→mm dalla bbox di tutti i freeLine
-                              const allFL = els.filter(e => e.type === "freeLine");
-                              const allXs = allFL.flatMap(l => [l.x1, l.x2]);
-                              const allYs = allFL.flatMap(l => [l.y1, l.y2]);
-                              const bboxW = Math.max(...allXs) - Math.min(...allXs) || 1;
-                              const bboxH = Math.max(...allYs) - Math.min(...allYs) || 1;
-                              // mm per pixel: usa la dimensione maggiore come riferimento
-                              const mmPerPx = Math.max(realW / bboxW, realH / bboxH);
-                              const curMM = el2._mmOverride != null ? el2._mmOverride : Math.round(lenPx * mmPerPx);
+                              // curMM: usa quello passato dal badge (preciso), fallback a override
+                              const curMM = (dimEditRef as any)?.curMM ?? el2._mmOverride ?? Math.round(lenPx);
                               if (curMM <= 0) return;
-                              const newLenPx = newMM / mmPerPx;
+                              // Nuova lunghezza px: proporzione diretta
+                              const newLenPx = lenPx * newMM / curMM;
                               const ux = dx2 / lenPx, uy = dy2 / lenPx;
                               const newX2 = Math.round(el2.x1 + ux * newLenPx);
                               const newY2 = Math.round(el2.y1 + uy * newLenPx);
@@ -1654,7 +1642,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               const r = svgEl?.getBoundingClientRect();
                                               const sx2 = r ? r.left + (lx - panX) * zoom / (canvasW / zoom) * (canvasW / zoom) / canvasW * r.width : lx;
                                               const sy2 = r ? r.top + (ly - panY) * zoom / (canvasH / zoom) * (canvasH / zoom) / canvasH * r.height : ly;
-                                              setDimEdit({ id: el.id, val: String(mmLen), x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 });
+                                              setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: len, x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 });
                                             }}
                                             style={{ cursor: "pointer" }}>
                                             <rect x={lx - 18} y={ly - 7} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
