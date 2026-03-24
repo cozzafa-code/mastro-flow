@@ -1876,26 +1876,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ MONTANTE — render pulito, z-order gestisce giunzioni ═══
+                                    // ═══ MONTANTE — render semplice, freeLine non si estende verso di lui ═══
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const HM2 = TK_MONT / 2;
-                                      const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
-                                      // Estendi my2 al CENTRO del profilo orizzontale sotto — il fill del profilo (z sopra) coprirà il bordo
-                                      let renderBot = my2raw;
-                                      els.filter(e => e.type === "freeLine" && e.x1 !== undefined &&
-                                        Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1).forEach(l => {
-                                        const lHT = tkMapLocal[l.subType] || TK_FRAME;
-                                        const lY = (l.y1 + l.y2) / 2;
-                                        // Solo se il profilo è sotto il centro del montante e vicino all'estremità
-                                        if (lY > (my1raw + my2raw) / 2 && Math.abs(lY - my2raw) < lHT * 3) {
-                                          renderBot = Math.max(renderBot, lY); // arriva al CENTRO, fill del profilo copre
-                                        }
-                                      });
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={renderBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={my2raw - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
@@ -2088,9 +2076,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
                                       const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
                                       const isPartOfPoly = poly && poly.length >= 3;
-                                      // Estendi ogni segmento di halfT in entrambe le direzioni per coprire gli angoli
-                                      const ex1 = el.x1 - ux * halfT, ey1 = el.y1 - uy * halfT;
-                                      const ex2 = el.x2 + ux * halfT, ey2 = el.y2 + uy * halfT;
+                                      // Estendi ogni segmento di halfT — ma NON estendere verso un montante adiacente
+                                      const WCONN = halfT * 2 + 4;
+                                      const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
+                                      const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
+                                      const ext1 = hasMontAt1 ? 0 : halfT;
+                                      const ext2 = hasMontAt2 ? 0 : halfT;
+                                      const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
+                                      const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
