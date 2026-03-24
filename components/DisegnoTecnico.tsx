@@ -383,7 +383,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const panX = dw._panX || 0, panY = dw._panY || 0;
                             const canvasW = Math.min(window.innerWidth - 16, window.innerWidth > 768 ? 900 : 600);
                             const GRID = 1; // movimento fluido al pixel
-                            const SNAP_R = 22;
+                            const SNAP_R = 28;
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -549,13 +549,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // ══ Snap points ══
                             const getSnapPoints = () => {
                               const pts = [];
-                              // Frame: angoli + mezzerie + ogni punto sul bordo
+                              // Frame: angoli + mezzerie + bordi continui
                               frames.forEach(fr => {
                                 const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
-                                // Angoli e mezzerie
                                 pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
-                                // Bordi continui: snap lungo i lati del telaio
                                 for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
                                 for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
                               });
@@ -563,35 +561,42 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               cells.forEach(c2 => {
                                 pts.push({x:c2.x,y:c2.y},{x:c2.x+c2.w,y:c2.y},{x:c2.x,y:c2.y+c2.h},{x:c2.x+c2.w,y:c2.y+c2.h});
                               });
-                              // Montanti e traversi — snap alle loro estremità
+                              // Montanti — estremità + mezza altezza
                               els.filter(e => e.type === "montante").forEach(m => {
                                 const my1 = m.y1 ?? (frame ? frame.y : fY);
                                 const my2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
                                 pts.push({x:m.x, y:my1},{x:m.x, y:my2},{x:m.x, y:(my1+my2)/2});
+                                // Snap lungo tutto il montante (ogni GRID pixel)
+                                for (let y = my1 + GRID; y < my2; y += GRID) pts.push({x:m.x, y});
                               });
+                              // Traversi — estremità + mezza larghezza
                               els.filter(e => e.type === "traverso").forEach(t => {
                                 const tx1 = t.x1 ?? (frame ? frame.x : fX);
                                 const tx2 = t.x2 ?? (frame ? frame.x + frame.w : fX + fW);
                                 pts.push({x:tx1, y:t.y},{x:tx2, y:t.y},{x:(tx1+tx2)/2, y:t.y});
+                                for (let x = tx1 + GRID; x < tx2; x += GRID) pts.push({x, y:t.y});
+                              });
+                              // FreeLine con subType (zoccolo, soglia, fascia, profcomp, soglia_rib)
+                              // Snap a: estremità + punto medio + bordi del profilo (offset ±halfT)
+                              els.filter(e => e.type === "freeLine").forEach(l => {
+                                // Estremità
+                                pts.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2});
+                                // Punto medio
+                                pts.push({x:(l.x1+l.x2)/2, y:(l.y1+l.y2)/2});
+                                // Snap lungo la linea ogni GRID pixel
+                                const len = Math.hypot(l.x2-l.x1, l.y2-l.y1) || 1;
+                                const ux = (l.x2-l.x1)/len, uy = (l.y2-l.y1)/len;
+                                for (let d = GRID; d < len; d += GRID) pts.push({x:l.x1+ux*d, y:l.y1+uy*d});
                               });
                               return pts;
                             };
                             const findSnap = (mx, my) => {
                               const pts = getSnapPoints();
                               const chainStart = dw._chainStart;
-                              // Tutti gli elementi con punti x1/y1/x2/y2 (freeLine di qualsiasi subType)
-                              const allLinePts = els.filter(e => e.x1 !== undefined).flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              // Snap a frame/celle/montanti/traversi
                               pts.forEach(p => {
-                                if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
-                                const d = Math.hypot(p.x - mx, p.y - my);
-                                if (d < bestD) { bestD = d; best = p; }
-                              });
-                              // Snap a TUTTI i vertici di linee esistenti (qualsiasi subType)
-                              allLinePts.forEach(p => {
                                 if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
                                 const d = Math.hypot(p.x - mx, p.y - my);
                                 if (d < bestD) { bestD = d; best = p; }
@@ -2087,6 +2092,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {/* H/V snap indicator */}
                                         {gx === p.x1 && <line x1={gx} y1={0} x2={gx} y2={canvasH} stroke="#1A9E73" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.7} />}
                                         {gy === p.y1 && <line x1={0} y1={gy} x2={canvasW} y2={gy} stroke="#1A9E73" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.7} />}
+                                        {/* Snap indicator sul punto target — cerchio verde se agganciato */}
+                                        {(() => {
+                                          const snapped = findSnap(gx, gy);
+                                          if (snapped && Math.hypot(snapped.x - gx, snapped.y - gy) < 3) {
+                                            return <>
+                                              <circle cx={gx} cy={gy} r={10} fill="none" stroke="#1A9E73" strokeWidth={2} />
+                                              <circle cx={gx} cy={gy} r={4} fill="#1A9E73" />
+                                              <line x1={gx-14} y1={gy} x2={gx+14} y2={gy} stroke="#1A9E73" strokeWidth={1} opacity={0.6} />
+                                              <line x1={gx} y1={gy-14} x2={gx} y2={gy+14} stroke="#1A9E73" strokeWidth={1} opacity={0.6} />
+                                            </>;
+                                          }
+                                          return <circle cx={gx} cy={gy} r={5} fill={clr} fillOpacity={0.7} />;
+                                        })()}
                                         {/* Angle + length label */}
                                         {/* Badge — si adatta per restare visibile */}
                                         {(() => {
