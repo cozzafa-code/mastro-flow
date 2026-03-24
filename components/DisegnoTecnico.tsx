@@ -1313,8 +1313,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ GRUPPO 1: TELAIO + STRUTTURA ═══ */}
                                 <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Struttura</div>
-                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
-                                  {/* Telaio rettangolare */}
+                                {/* RIGA 1: Telaio + Montante + Traverso */}
+                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 2px", flexWrap: "wrap" }}>
                                   <div onClick={() => {
                                     if (frames.length === 0) {
                                       setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
@@ -1324,8 +1324,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       setDW([...els, { id: Date.now(), type: "rect", x: snap(lastF.x + lastF.w - TK_FRAME), y: snap(lastF.y + lastF.h - nh), w: snap(nw), h: snap(nh) }]);
                                     }
                                   }} style={bs()}>▭ Telaio</div>
-                                  {/* Telaio libero (ex Linea) */}
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Libero</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Lib.</div>
                                   {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
@@ -1337,22 +1336,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
                                     }} style={{ padding: "5px 12px", borderRadius: 6, border: "2px solid #1A9E73", background: "#1A9E73", fontSize: 10, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>⬡ Chiudi</div>
                                   )}
-                                  {/* Montante (cella) */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}>┃ Mont.</div>
-                                  {/* Traverso (cella) */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}>━ Trav.</div>
-                                  {/* Soglia */}
+                                </div>
+                                {/* RIGA 2: Profili liberi — sempre visibili */}
+                                <div style={{ display: "flex", gap: 3, padding: "2px 8px 4px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
-                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "soglia"), borderColor: drawMode === "line" && dw._lineSubType === "soglia" ? "#1A9E73" : undefined }}>— Soglia</div>
-                                  {/* Zoccolo */}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "soglia")}>— Soglia</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
-                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "zoccolo") }}>━ Zoccolo</div>
-                                  {/* Fascia */}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "zoccolo")}>━ Zoccolo</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "fascia" ? null : "line", _lineSubType: "fascia", _pendingLine: null })}
-                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "fascia") }}>▬ Fascia</div>
-                                  {/* Profilo complementare */}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "fascia")}>▬ Fascia</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia_rib" ? null : "line", _lineSubType: "soglia_rib", _pendingLine: null })}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "soglia_rib")}>⌐ Soglia Rib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
-                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "profcomp") }}>— Prof.Comp.</div>
+                                    style={bs(drawMode === "line" && dw._lineSubType === "profcomp")}>— Prof.Comp.</div>
                                 </div>
 
                                 {/* ═══ GRUPPO 2: ANTE + VETRI ═══ */}
@@ -1889,11 +1887,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const subType = el.subType || null;
-                                      const tkMap = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT };
+                                      const tkMap = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT, soglia_rib: TK_SOGLIA };
                                       const halfT = subType ? (tkMap[subType] || TK_FRAME) : TK_FRAME;
-                                      const fillMap = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8" };
+                                      const fillMap = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8", soglia_rib: "#c0beb8" };
                                       const fillC = subType ? (fillMap[subType] || "#f0efe8") : "#f0efe8";
-                                      const labelMap = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO" };
+                                      const labelMap = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO", soglia_rib: "SOGLIA RIB." };
                                       const labelTxt = subType ? (labelMap[subType] || subType.toUpperCase()) : null;
                                       const ux = dx2 / len, uy = dy2 / len; // versore direzione
                                       const nx = -uy * halfT, ny = ux * halfT; // normale
