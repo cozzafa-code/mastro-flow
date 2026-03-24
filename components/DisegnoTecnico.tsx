@@ -1013,8 +1013,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Montante: X SEMPRE uguale al primo punto, Y libera
                                   if (isMont) {
                                     px = pending.x1;
-                                    // snap Y a punti vicini sulla stessa colonna
-                                    const colPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]).filter(p=>Math.abs(p.x-px)<5);
+                                    // snap Y a punti vicini sulla stessa colonna — escludi il punto di partenza
+                                    const colPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}])
+                                      .filter(p=>Math.abs(p.x-px)<5 && Math.abs(p.y-pending.y1)>3);
                                     let bestY=null,bestDY=SNAP_R;
                                     colPts.forEach(p=>{const d=Math.abs(p.y-py);if(d<bestDY){bestDY=d;bestY=p.y;}});
                                     if(bestY!==null) py=bestY;
@@ -1022,7 +1023,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Traverso: Y SEMPRE uguale al primo punto, X libera
                                   else if (isTrav) {
                                     py = pending.y1;
-                                    const rowPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]).filter(p=>Math.abs(p.y-py)<5);
+                                    const rowPts = els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}])
+                                      .filter(p=>Math.abs(p.y-py)<5 && Math.abs(p.x-pending.x1)>3);
                                     let bestX=null,bestDX=SNAP_R;
                                     rowPts.forEach(p=>{const d=Math.abs(p.x-px);if(d<bestDX){bestDX=d;bestX=p.x;}});
                                     if(bestX!==null) px=bestX;
@@ -1274,21 +1276,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>▭ Telaio</div>
                                   {/* Telaio libero (ex Linea) */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Libero</div>
-                                  {drawMode === "line" && els.filter(e => e.type === "freeLine" && (e.subType||null) === (dw._lineSubType||null)).length >= 2 && (
+                                  {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (
                                     <div onClick={() => {
-                                      const curSubType = dw._lineSubType || null;
-                                      const fl = els.filter(e => e.type === "freeLine" && (e.subType||null) === curSubType);
+                                      const fl = els.filter(e => e.type === "freeLine");
                                       const ptCount = {};
-                                      fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); ptCount[k1]=(ptCount[k1]||0)+1; ptCount[k2]=(ptCount[k2]||0)+1; });
+                                      fl.forEach(l => { const k1 = Math.round(l.x1)+","+Math.round(l.y1); const k2 = Math.round(l.x2)+","+Math.round(l.y2); ptCount[k1]=(ptCount[k1]||0)+1; ptCount[k2]=(ptCount[k2]||0)+1; });
                                       const freePts = [];
                                       fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
-                                      let x1c, y1c, x2c, y2c;
-                                      if (freePts.length >= 2) { x1c=freePts[0].x; y1c=freePts[0].y; x2c=freePts[1].x; y2c=freePts[1].y; }
-                                      else { x1c=fl[fl.length-1].x2; y1c=fl[fl.length-1].y2; x2c=fl[0].x1; y2c=fl[0].y1; }
-                                      if (curSubType === "montante") x2c = x1c;
-                                      if (curSubType === "traverso") y2c = y1c;
-                                      const closeEl = { id: Date.now(), type: "freeLine", x1: x1c, y1: y1c, x2: x2c, y2: y2c, ...(curSubType ? { subType: curSubType } : {}) };
-                                      setDW([...els, closeEl], { _pendingLine: null, _chainStart: null });
+                                      if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
+                                      else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
                                     }} style={{ padding: "5px 12px", borderRadius: 6, border: "2px solid #1A9E73", background: "#1A9E73", fontSize: 10, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>⬡ Chiudi</div>
                                   )}
                                   {/* Montante (cella) */}
