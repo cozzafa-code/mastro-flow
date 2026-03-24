@@ -984,12 +984,36 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 let py = Math.round(my);
 
                                 if (!pending) {
-                                  // PRIMO CLICK — sempre raw, l'utente decide dove inizia
+                                  // PRIMO CLICK
                                   if (isMont) {
-                                    // Montante: X e Y raw dove clicchi — nessuno snap automatico
+                                    // Montante: X rimane dove clicchi, snap Y solo agli elementi interni (traversi, bordi frame)
+                                    // Prima guarda traversi/altri elementi orizzontali
+                                    const horzPts = els.filter(e=>e.x1!==undefined && e.subType!=="montante")
+                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                    let bestY=null, bestDY=SNAP_R;
+                                    horzPts.forEach(p=>{ const d=Math.abs(p.y-py); if(d<bestDY){bestDY=d;bestY=p.y;} });
+                                    if(bestY!==null) { py=bestY; }
+                                    else if (frame) {
+                                      // Snap ai bordi interni del frame
+                                      const distTop = Math.abs(py - frame.y);
+                                      const distBot = Math.abs(py - (frame.y + frame.h));
+                                      if (distTop < SNAP_R) py = frame.y;
+                                      else if (distBot < SNAP_R) py = frame.y + frame.h;
+                                    }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else if (isTrav) {
-                                    // Traverso: X e Y raw dove clicchi — nessuno snap automatico
+                                    // Traverso: Y rimane dove clicchi, snap X agli elementi verticali o bordi frame
+                                    const vertPts = els.filter(e=>e.x1!==undefined && e.subType!=="traverso")
+                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                    let bestX=null, bestDX=SNAP_R;
+                                    vertPts.forEach(p=>{ const d=Math.abs(p.x-px); if(d<bestDX){bestDX=d;bestX=p.x;} });
+                                    if(bestX!==null) { px=bestX; }
+                                    else if (frame) {
+                                      const distL = Math.abs(px - frame.x);
+                                      const distR = Math.abs(px - (frame.x + frame.w));
+                                      if (distL < SNAP_R) px = frame.x;
+                                      else if (distR < SNAP_R) px = frame.x + frame.w;
+                                    }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
                                     // Telaio libero e altri: snap a tutti i punti vicini
@@ -1005,29 +1029,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else {
                                   // SECONDO CLICK — crea il segmento
 
-                                  // Montante: X fisso al primo punto, Y raw con snap stretto solo a bordi frame e traversi
+                                  // Montante: X SEMPRE uguale al primo punto, Y libera
                                   if (isMont) {
                                     px = pending.x1;
-                                    // Snap Y solo se entro 10px da bordo frame o traverso esatto
-                                    const snapTargetsY = [
-                                      ...(frame ? [frame.y, frame.y + frame.h] : []),
-                                      ...els.filter(e=>e.type==="traverso").map(t=>t.y),
-                                    ].filter(y => Math.abs(y - pending.y1) > 8);
-                                    let bestY = null, bestDY = 10; // soglia stretta 10px
-                                    snapTargetsY.forEach(y => { const d=Math.abs(y-py); if(d<bestDY){bestDY=d;bestY=y;} });
-                                    if (bestY !== null) py = bestY;
-                                    // altrimenti py = raw del mouse — si blocca esattamente dove premi
+                                    // Snap Y: bordi frame + punti freeLine sulla stessa colonna, escludi punto di partenza
+                                    const framePtsY = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
+                                    const colPts = [
+                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                      ...framePtsY
+                                    ].filter(p=>Math.abs(p.x-px)<12 && Math.abs(p.y-pending.y1)>5);
+                                    let bestY=null, bestDY=SNAP_R;
+                                    colPts.forEach(p=>{const d=Math.abs(p.y-py);if(d<bestDY){bestDY=d;bestY=p.y;}});
+                                    if(bestY!==null) py=bestY;
+                                    // Se nessuno snap: accetta py grezzo (non bloccare il click)
                                   }
-                                  // Traverso: Y fisso al primo punto, X raw con snap stretto solo a bordi frame e montanti
+                                  // Traverso: Y SEMPRE uguale al primo punto, X libera
                                   else if (isTrav) {
                                     py = pending.y1;
-                                    const snapTargetsX = [
-                                      ...(frame ? [frame.x, frame.x + frame.w] : []),
-                                      ...els.filter(e=>e.type==="montante").map(m=>m.x),
-                                    ].filter(x => Math.abs(x - pending.x1) > 8);
-                                    let bestX = null, bestDX = 10;
-                                    snapTargetsX.forEach(x => { const d=Math.abs(x-px); if(d<bestDX){bestDX=d;bestX=x;} });
-                                    if (bestX !== null) px = bestX;
+                                    // Snap X: bordi frame + punti freeLine sulla stessa riga, escludi punto di partenza
+                                    const framePtsX = frames.flatMap(f=>[{x:f.x,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y},{x:f.x+f.w,y:f.y+f.h}]);
+                                    const rowPts = [
+                                      ...els.filter(e=>e.x1!==undefined).flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                      ...framePtsX
+                                    ].filter(p=>Math.abs(p.y-py)<12 && Math.abs(p.x-pending.x1)>5);
+                                    let bestX=null, bestDX=SNAP_R;
+                                    rowPts.forEach(p=>{const d=Math.abs(p.x-px);if(d<bestDX){bestDX=d;bestX=p.x;}});
+                                    if(bestX!==null) px=bestX;
+                                    // Se nessuno snap: accetta px grezzo
                                   }
                                   // Telaio libero / altri: snap normale
                                   else {
@@ -1313,12 +1341,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}>┃ Mont.</div>
                                   {/* Traverso (cella) */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}>━ Trav.</div>
-                                  {/* Montante libero */}
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "montante" ? null : "line", _lineSubType: "montante", _pendingLine: null })}
-                                    style={bs(drawMode === "line" && dw._lineSubType === "montante")}>┃ Mont.Lib</div>
-                                  {/* Traverso libero */}
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "traverso" ? null : "line", _lineSubType: "traverso", _pendingLine: null })}
-                                    style={bs(drawMode === "line" && dw._lineSubType === "traverso")}>━ Trav.Lib</div>
                                   {/* Soglia */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
                                     style={{ ...bs(drawMode === "line" && dw._lineSubType === "soglia"), borderColor: drawMode === "line" && dw._lineSubType === "soglia" ? "#1A9E73" : undefined }}>— Soglia</div>
@@ -1702,22 +1724,40 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "montante") {
                                       const my1 = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2 = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      const HM2 = TK_MONT / 2;
                                       return (
-                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
-                                          {sel && <><circle cx={el.x} cy={my1} r={4} fill={"#1A9E73"}/><circle cx={el.x} cy={my2} r={4} fill={"#1A9E73"}/></>}
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
+                                          <rect x={el.x - HM2} y={my1} width={TK_MONT} height={my2 - my1} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          {sel && <><circle cx={el.x} cy={my1} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
                                     }
 
-                                    // ═══ TRAVERSO — clipped to polygon ═══
+                                    // ═══ TRAVERSO — tagliato ai montanti (montante vince) ═══
                                     if (el.type === "traverso") {
-                                      const tx1 = el.x1 !== undefined ? el.x1 : (frame ? frame.x : fX);
-                                      const tx2 = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
+                                      const tx1raw = el.x1 !== undefined ? el.x1 : (frame ? frame.x : fX);
+                                      const tx2raw = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
+                                      const HM2 = TK_MONT / 2;
+                                      // Taglia il traverso ai montanti che lo attraversano
+                                      const intersectingMonts = allMontanti.filter(m => {
+                                        const mx1 = m.x - HM2, mx2 = m.x + HM2;
+                                        const my1 = m.y1 ?? (frame ? frame.y : fY);
+                                        const my2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
+                                        return mx1 > tx1raw + 2 && mx2 < tx2raw - 2 && my1 <= el.y + HM2 && my2 >= el.y - HM2;
+                                      });
+                                      // Costruisci segmenti tagliati
+                                      const segments: {x1:number,x2:number}[] = [];
+                                      let cur = tx1raw;
+                                      const cuts = intersectingMonts.map(m => ({ x1: m.x - HM2, x2: m.x + HM2 })).sort((a,b) => a.x1 - b.x1);
+                                      cuts.forEach(cut => { if (cur < cut.x1) segments.push({ x1: cur, x2: cut.x1 }); cur = cut.x2; });
+                                      if (cur < tx2raw) segments.push({ x1: cur, x2: tx2raw });
+                                      if (segments.length === 0) segments.push({ x1: tx1raw, x2: tx2raw });
                                       return (
-                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
-                                          <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
-                                          {sel && <><circle cx={tx1} cy={el.y} r={4} fill={"#1A9E73"}/><circle cx={tx2} cy={el.y} r={4} fill={"#1A9E73"}/></>}
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
+                                          {segments.map((seg, si) => (
+                                            <rect key={si} x={seg.x1} y={el.y - HM2} width={seg.x2 - seg.x1} height={TK_MONT} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          ))}
+                                          {sel && <><circle cx={tx1raw} cy={el.y} r={4} fill="#1A9E73"/><circle cx={tx2raw} cy={el.y} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
                                     }
