@@ -726,13 +726,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const onU = () => {
                                 document.removeEventListener("mousemove", onM); document.removeEventListener("mouseup", onU);
                                 document.removeEventListener("touchmove", onM); document.removeEventListener("touchend", onU);
-                                // Saldatura: snap finale a punti vicini di altri elementi
+                                // Saldatura: snap finale a TUTTI i punti rilevanti (frame, montanti, traversi, freeLine)
                                 const WELD = SNAP_R;
+                                const buildWeldPts = (allEls) => {
+                                  const pts = [];
+                                  allEls.forEach(o => {
+                                    // freeLine / apLine / righello — punti estremi
+                                    if (o.x1 !== undefined) { pts.push({x:o.x1,y:o.y1}); pts.push({x:o.x2,y:o.y2}); }
+                                    // frame rect — 4 angoli
+                                    if (o.type === "rect") { pts.push({x:o.x,y:o.y},{x:o.x+o.w,y:o.y},{x:o.x,y:o.y+o.h},{x:o.x+o.w,y:o.y+o.h}); }
+                                    // montante — top/bottom
+                                    if (o.type === "montante") { const my1=o.y1??o.y, my2=o.y2??(o.y+(o.h||0)); pts.push({x:o.x,y:my1},{x:o.x,y:my2}); }
+                                    // traverso — left/right
+                                    if (o.type === "traverso") { const tx1=o.x1??o.x, tx2=o.x2??(o.x+(o.w||0)); pts.push({x:tx1,y:o.y},{x:tx2,y:o.y}); }
+                                  });
+                                  return pts;
+                                };
                                 const welded = latestEls.map(x => {
                                   if (x.id !== elId || x.x1 === undefined) return x;
-                                  const otherPts = latestEls.filter(o => o.id !== elId && o.x1 !== undefined)
-                                    .flatMap(o => [{x:o.x1,y:o.y1},{x:o.x2,y:o.y2}]);
-                                  // snap x1/y1
+                                  const otherPts = buildWeldPts(latestEls.filter(o => o.id !== elId));
                                   let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
                                   otherPts.forEach(p => {
                                     if (Math.hypot(p.x-x.x1,p.y-x.y1)<WELD) { nx1=p.x; ny1=p.y; }
@@ -1068,17 +1080,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
-                                  // Saldatura immediata: aggiusta punti vicini degli altri elementi
+                                  // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
+                                  const buildWeldPts2 = (allEls) => {
+                                    const wpts = [];
+                                    allEls.forEach(o => {
+                                      if (o.x1 !== undefined) { wpts.push({x:o.x1,y:o.y1}); wpts.push({x:o.x2,y:o.y2}); }
+                                      if (o.type === "rect") { wpts.push({x:o.x,y:o.y},{x:o.x+o.w,y:o.y},{x:o.x,y:o.y+o.h},{x:o.x+o.w,y:o.y+o.h}); }
+                                      if (o.type === "montante") { const my1=o.y1??o.y, my2=o.y2??(o.y+(o.h||0)); wpts.push({x:o.x,y:my1},{x:o.x,y:my2}); }
+                                      if (o.type === "traverso") { const tx1=o.x1??o.x, tx2=o.x2??(o.x+(o.w||0)); wpts.push({x:tx1,y:o.y},{x:tx2,y:o.y}); }
+                                    });
+                                    return wpts;
+                                  };
+                                  // Snap i punti del NUOVO elemento ai vicini esistenti
+                                  let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
+                                  const existingWeldPts = buildWeldPts2(els);
+                                  existingWeldPts.forEach(p => {
+                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
+                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
+                                  });
+                                  newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
+                                  // Snap i freeLine ESISTENTI ai punti del nuovo elemento
                                   const weldedEls = els.map(x => {
                                     if (x.x1 === undefined) return x;
                                     let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
-                                    // Salda a x1/y1 del nuovo elemento
-                                    if (Math.hypot(nx1-pending.x1, ny1-pending.y1)<WELD2) { nx1=pending.x1; ny1=pending.y1; }
-                                    if (Math.hypot(nx2-pending.x1, ny2-pending.y1)<WELD2) { nx2=pending.x1; ny2=pending.y1; }
-                                    // Salda a x2/y2 del nuovo elemento
-                                    if (Math.hypot(nx1-px, ny1-py)<WELD2) { nx1=px; ny1=py; }
-                                    if (Math.hypot(nx2-px, ny2-py)<WELD2) { nx2=px; ny2=py; }
+                                    if (Math.hypot(nx1-snappedX1, ny1-snappedY1)<WELD2) { nx1=snappedX1; ny1=snappedY1; }
+                                    if (Math.hypot(nx2-snappedX1, ny2-snappedY1)<WELD2) { nx2=snappedX1; ny2=snappedY1; }
+                                    if (Math.hypot(nx1-snappedX2, ny1-snappedY2)<WELD2) { nx1=snappedX2; ny1=snappedY2; }
+                                    if (Math.hypot(nx2-snappedX2, ny2-snappedY2)<WELD2) { nx2=snappedX2; ny2=snappedY2; }
                                     if (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2) return {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2};
                                     return x;
                                   });
