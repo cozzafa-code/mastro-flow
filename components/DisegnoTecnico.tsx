@@ -2081,15 +2081,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      // Frame (telaio) all'estremità → ritrai di TK_FRAME (entra dentro il bordo del telaio)
-                                      const FCONN = TK_FRAME * 2 + halfT;
-                                      const hasFrameAt1 = frames.some(f =>
-                                        Math.abs(el.x1 - f.x) < FCONN || Math.abs(el.x1 - (f.x+f.w)) < FCONN ||
-                                        Math.abs(el.y1 - f.y) < FCONN || Math.abs(el.y1 - (f.y+f.h)) < FCONN);
-                                      const hasFrameAt2 = frames.some(f =>
-                                        Math.abs(el.x2 - f.x) < FCONN || Math.abs(el.x2 - (f.x+f.w)) < FCONN ||
-                                        Math.abs(el.y2 - f.y) < FCONN || Math.abs(el.y2 - (f.y+f.h)) < FCONN);
-                                      // Priorità: montante > frame > default
+                                      // Frame: se l'estremità è dentro o sul bordo del telaio → ritrai di TK_FRAME
+                                      const ptInFrame = (px, py) => frames.some(f =>
+                                        px >= f.x - halfT && px <= f.x + f.w + halfT &&
+                                        py >= f.y - halfT && py <= f.y + f.h + halfT);
+                                      const hasFrameAt1 = !hasMontAt1 && ptInFrame(el.x1, el.y1);
+                                      const hasFrameAt2 = !hasMontAt2 && ptInFrame(el.x2, el.y2);
+                                      // Priorità: montante → ritrai HM_loc | frame → ritrai TK_FRAME | default → estendi halfT
                                       const ext1 = hasMontAt1 ? -HM_loc : hasFrameAt1 ? -TK_FRAME : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : hasFrameAt2 ? -TK_FRAME : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
