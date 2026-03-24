@@ -1845,25 +1845,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ MONTANTE — render semplice, profili orizzontali coprono sopra ═══
+                                    // ═══ MONTANTE — scende fino al bordo inferiore del profilo orizzontale ═══
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const HM2 = TK_MONT / 2;
                                       const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
-                                      // Estendi di halfT del profilo adiacente — il profilo orizzontale (z sopra) coprirà il bordo
                                       const horzLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined &&
                                         Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1);
-                                      let extTop = 0, extBot = 0;
+                                      let newTop = my1raw, newBot = my2raw;
                                       horzLines.forEach(l => {
                                         const lHT = tkMapLocal[l.subType] || TK_FRAME;
                                         const lY = (l.y1 + l.y2) / 2;
-                                        if (Math.abs(lY - my1raw) < lHT + 4) extTop = Math.max(extTop, lHT);
-                                        if (Math.abs(lY - my2raw) < lHT + 4) extBot = Math.max(extBot, lHT);
+                                        const lTop = lY - lHT; // bordo superiore del profilo
+                                        const lBot = lY + lHT; // bordo inferiore del profilo
+                                        const TOL = lHT * 2 + 8; // tolleranza = diametro profilo + 8px
+                                        // Estremità inferiore montante vicina al profilo → scende al bordo inferiore
+                                        if (Math.abs(lTop - my2raw) < TOL || Math.abs(lBot - my2raw) < TOL || Math.abs(lY - my2raw) < TOL) {
+                                          newBot = Math.max(newBot, lBot);
+                                        }
+                                        // Estremità superiore montante vicina al profilo → sale al bordo superiore
+                                        if (Math.abs(lTop - my1raw) < TOL || Math.abs(lBot - my1raw) < TOL || Math.abs(lY - my1raw) < TOL) {
+                                          newTop = Math.min(newTop, lTop);
+                                        }
                                       });
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1raw - extTop} width={TK_MONT} height={(my2raw + extBot) - (my1raw - extTop)} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          <rect x={el.x - HM2} y={newTop} width={TK_MONT} height={newBot - newTop} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
