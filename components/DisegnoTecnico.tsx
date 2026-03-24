@@ -831,15 +831,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (cell) {
                                   const cx = snap(mx);
                                   const clampedX = Math.max(cell.x + 10, Math.min(cell.x + cell.w - 10, cx));
-                                  // If polygon exists, clip montante to polygon edges
+                                  const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
+                                  const adjY = (y: number, dir: number) => {
+                                    let result = y;
+                                    els.filter(e => e.type === "freeLine" && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+1).forEach(l => {
+                                      const lHT = tkMapLocal[l.subType] || TK_FRAME;
+                                      const lY = (l.y1+l.y2)/2;
+                                      if (Math.abs(lY - y) < lHT*2+10) result = dir > 0 ? lY + lHT : lY - lHT;
+                                    });
+                                    return result;
+                                  };
                                   if (poly) {
                                     const ys = segIntersectV(clampedX, poly);
-                                    if (ys) setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: ys[0], y2: ys[1] }]);
+                                    if (ys) setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: adjY(ys[0],-1), y2: adjY(ys[1],1) }]);
                                   } else {
-                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: cell.y, y2: cell.y + cell.h }]);
+                                    setDW([...els, { id: Date.now(), type: "montante", x: clampedX, y1: adjY(cell.y,-1), y2: adjY(cell.y+cell.h,1) }]);
                                   }
                                 } else if (poly) {
-                                  // No cells yet but polygon exists — clip to polygon
                                   const cx = snap(mx);
                                   const ys = segIntersectV(cx, poly);
                                   if (ys) setDW([...els, { id: Date.now(), type: "montante", x: cx, y1: ys[0], y2: ys[1] }]);
@@ -879,13 +887,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (!pending) {
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "montante" } });
                                 } else {
-                                  // X fisso al primo click, snap Y al secondo
                                   const x = pending.x1;
-                                  // Snap Y: cerca punti sulla stessa colonna (±SNAP_R) tra freeLine/frame/traversi
                                   const colSnap = findSnap(x, Math.round(my));
                                   const finalY = colSnap ? colSnap.y : Math.round(my);
-                                  const y1 = Math.min(pending.y1, finalY);
-                                  const y2 = Math.max(pending.y1, finalY);
+                                  let y1 = Math.min(pending.y1, finalY);
+                                  let y2 = Math.max(pending.y1, finalY);
+                                  // Aggiusta y1/y2 al bordo del profilo orizzontale più vicino
+                                  const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
+                                  els.filter(e => e.type === "freeLine" && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+1).forEach(l => {
+                                    const lHT = tkMapLocal[l.subType] || TK_FRAME;
+                                    const lY = (l.y1+l.y2)/2;
+                                    if (Math.abs(lY - y2) < lHT*2+10) y2 = lY + lHT; // scende al bordo inferiore
+                                    if (Math.abs(lY - y1) < lHT*2+10) y1 = lY - lHT; // sale al bordo superiore
+                                  });
                                   if (Math.abs(y2 - y1) < 3) return;
                                   setDW([...els, { id: Date.now(), type: "montante", x, y1, y2 }], { _pendingLine: null });
                                 }
@@ -1391,7 +1405,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                             return (
                               <>
-                              <div style={{ marginTop: 8, background: T.card, borderRadius: 12, border: `1.5px solid ${"#1A9E73"}`, overflow: "hidden" }}>
+                              <div style={{
+                                marginTop: window.innerWidth > 768 ? 8 : 0,
+                                background: T.card,
+                                borderRadius: window.innerWidth > 768 ? 12 : 0,
+                                border: window.innerWidth > 768 ? `1.5px solid ${"#1A9E73"}` : "none",
+                                overflow: "hidden",
+                                // Mobile: posizione fissa fullscreen
+                                ...(window.innerWidth <= 768 ? {
+                                  position: "fixed" as const,
+                                  top: 0, left: 0, right: 0, bottom: 0,
+                                  zIndex: 1000,
+                                  display: "flex",
+                                  flexDirection: "column" as const,
+                                  overflow: "hidden",
+                                  borderRadius: 0,
+                                  margin: 0,
+                                } : {})
+                              }}>
                                 {/* Header */}
                                 <div style={{ padding: "8px 12px", background: `${"#1A9E73"}10`, display: "flex", alignItems: "center", gap: 8 }}>
                                   <span style={{ fontSize: 14 }}>✏️</span>
@@ -1535,7 +1566,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* SVG Canvas — zoomable with wheel + pannable */}
-                                <div style={{ overflow: "auto", position: "relative", maxHeight: window.innerWidth > 768 ? "85vh" : "70vh", border: `1px solid ${T.bdr}` }}>
+                                <div style={{ overflow: "auto", position: "relative", flex: window.innerWidth <= 768 ? "1 1 0" : undefined, maxHeight: window.innerWidth > 768 ? "85vh" : undefined, border: `1px solid ${T.bdr}` }}>
                                 <svg width={canvasW * Math.max(1, zoom)} height={canvasH * Math.max(1, zoom)}
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default") }}
