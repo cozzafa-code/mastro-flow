@@ -817,30 +817,44 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // Mont.Lib — due click: primo=y1, secondo=y2, X fisso
+                              // Mont.Lib — due click con snap: primo=inizio, secondo=fine
                               if (drawMode === "place-mont-free") {
-                                const pending = dw._pendingLine; // dw è già dwRef.current qui (riga 767)
+                                const pending = dw._pendingLine;
+                                // Snap generico + snap verticale al frame/zoccolo/traversi
+                                const snapPt = findSnap(Math.round(mx), Math.round(my));
+                                let rx = snapPt ? snapPt.x : Math.round(mx);
+                                let ry = snapPt ? snapPt.y : Math.round(my);
                                 if (!pending) {
-                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "montante" } });
+                                  setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "montante" } });
                                 } else {
-                                  const x = pending.x1; // X fisso al primo click
-                                  const y1 = Math.min(pending.y1, Math.round(my));
-                                  const y2 = Math.max(pending.y1, Math.round(my));
+                                  // X fisso al primo click, snap Y al secondo
+                                  const x = pending.x1;
+                                  // Snap Y: cerca punti sulla stessa colonna (±SNAP_R) tra freeLine/frame/traversi
+                                  const colSnap = findSnap(x, Math.round(my));
+                                  const finalY = colSnap ? colSnap.y : Math.round(my);
+                                  const y1 = Math.min(pending.y1, finalY);
+                                  const y2 = Math.max(pending.y1, finalY);
                                   if (Math.abs(y2 - y1) < 3) return;
                                   setDW([...els, { id: Date.now(), type: "montante", x, y1, y2 }], { _pendingLine: null });
                                 }
                                 return;
                               }
 
-                              // Trav.Lib — due click: primo=x1, secondo=x2, Y fisso
+                              // Trav.Lib — due click con snap: primo=inizio, secondo=fine
                               if (drawMode === "place-trav-free") {
                                 const pending = dw._pendingLine;
+                                const snapPt = findSnap(Math.round(mx), Math.round(my));
+                                let rx = snapPt ? snapPt.x : Math.round(mx);
+                                let ry = snapPt ? snapPt.y : Math.round(my);
                                 if (!pending) {
-                                  setMode({ _pendingLine: { x1: Math.round(mx), y1: Math.round(my), _subType: "traverso" } });
+                                  setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "traverso" } });
                                 } else {
-                                  const y = pending.y1; // Y fisso al primo click
-                                  const x1 = Math.min(pending.x1, Math.round(mx));
-                                  const x2 = Math.max(pending.x1, Math.round(mx));
+                                  // Y fisso al primo click, snap X al secondo
+                                  const y = pending.y1;
+                                  const rowSnap = findSnap(Math.round(mx), y);
+                                  const finalX = rowSnap ? rowSnap.x : Math.round(mx);
+                                  const x1 = Math.min(pending.x1, finalX);
+                                  const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 3) return;
                                   setDW([...els, { id: Date.now(), type: "traverso", y, x1, x2 }], { _pendingLine: null });
                                 }
@@ -1051,14 +1065,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
-                                    // Telaio libero e altri: snap a tutti i punti vicini
-                                    const allPts = [
-                                      ...els.filter(e => e.x1 !== undefined).flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
-                                      ...frames.flatMap(f => [{x:f.x,y:f.y},{x:f.x+f.w,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y+f.h}])
-                                    ];
-                                    let best = null, bestD = SNAP_R * 1.5;
-                                    allPts.forEach(p => { const d=Math.hypot(p.x-px,p.y-py); if(d<bestD){bestD=d;best=p;} });
-                                    if (best) { px = best.x; py = best.y; }
+                                    // Soglia, zoccolo, fascia, profcomp, tel.libero — snap unificato
+                                    const snapPt = findSnap(px, py);
+                                    if (snapPt) { px = snapPt.x; py = snapPt.y; }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
                                 } else {
@@ -1120,10 +1129,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const buildWeldPts2 = (allEls) => {
                                     const wpts = [];
                                     allEls.forEach(o => {
-                                      if (o.x1 !== undefined) { wpts.push({x:o.x1,y:o.y1}); wpts.push({x:o.x2,y:o.y2}); }
+                                      if (o.x1 !== undefined) { wpts.push({x:o.x1,y:o.y1}); wpts.push({x:o.x2,y:o.y2}); wpts.push({x:(o.x1+o.x2)/2,y:(o.y1+o.y2)/2}); }
                                       if (o.type === "rect") { wpts.push({x:o.x,y:o.y},{x:o.x+o.w,y:o.y},{x:o.x,y:o.y+o.h},{x:o.x+o.w,y:o.y+o.h}); }
-                                      if (o.type === "montante") { const my1=o.y1??o.y, my2=o.y2??(o.y+(o.h||0)); wpts.push({x:o.x,y:my1},{x:o.x,y:my2}); }
-                                      if (o.type === "traverso") { const tx1=o.x1??o.x, tx2=o.x2??(o.x+(o.w||0)); wpts.push({x:tx1,y:o.y},{x:tx2,y:o.y}); }
+                                      if (o.type === "montante") {
+                                        const my1=o.y1??o.y, my2=o.y2??(o.y+(o.h||0));
+                                        wpts.push({x:o.x,y:my1},{x:o.x,y:my2},{x:o.x,y:(my1+my2)/2});
+                                      }
+                                      if (o.type === "traverso") {
+                                        const tx1=o.x1??o.x, tx2=o.x2??(o.x+(o.w||0));
+                                        wpts.push({x:tx1,y:o.y},{x:tx2,y:o.y},{x:(tx1+tx2)/2,y:o.y});
+                                      }
                                     });
                                     return wpts;
                                   };
