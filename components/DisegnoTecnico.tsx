@@ -1876,29 +1876,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ MONTANTE — estende verso il basso al bordo inferiore del profilo orizzontale ═══
+                                    // ═══ MONTANTE ═══
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const HM2 = TK_MONT / 2;
                                       const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
-                                      const montMidY = (my1raw + my2raw) / 2;
-                                      const horzLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined &&
-                                        Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1);
-                                      let newBot = my2raw;
-                                      horzLines.forEach(l => {
+                                      // Trova il bordo inferiore del profilo orizzontale più vicino sotto my2raw
+                                      let renderBot = my2raw;
+                                      els.filter(e => e.type === "freeLine" && e.x1 !== undefined).forEach(l => {
+                                        const isHorz = Math.abs(l.y2 - l.y1) <= Math.abs(l.x2 - l.x1) + 1;
+                                        if (!isHorz) return;
                                         const lHT = tkMapLocal[l.subType] || TK_FRAME;
-                                        const lY = (l.y1 + l.y2) / 2;
-                                        const lBot = lY + lHT;
-                                        // Solo se il profilo è nella metà inferiore del montante (lY > montMidY)
-                                        // E entro lHT*3 dall'estremità inferiore
-                                        if (lY > montMidY && Math.abs(lY - my2raw) < lHT * 3 + 4) {
-                                          newBot = Math.max(newBot, lBot);
+                                        const lY = (l.y1 + l.y2) / 2; // centro del profilo
+                                        const lTop = lY - lHT;        // bordo superiore
+                                        const lBot = lY + lHT;        // bordo inferiore
+                                        // Il profilo deve essere sotto il centro del montante
+                                        // e il suo bordo superiore deve essere vicino a my2raw (entro lHT*3)
+                                        if (lY > (my1raw + my2raw) / 2 && lTop >= my2raw - lHT * 3) {
+                                          renderBot = Math.max(renderBot, lBot);
                                         }
                                       });
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={newBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={renderBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
