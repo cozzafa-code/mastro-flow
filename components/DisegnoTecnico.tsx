@@ -1243,7 +1243,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>▭ Telaio</div>
                                   {/* Telaio libero (ex Linea) */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Libero</div>
-                                  {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
+                                  {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine").length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
                                       const ptCount = {};
