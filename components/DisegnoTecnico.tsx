@@ -78,7 +78,7 @@ function Iso3D({ T, realW, realH, profMuro, faceData, activeFace, onSelectFace }
     {[0, 1, 2, 3, 4].map(i => <line key={`z${i}`} x1={cx + iX(0, 0, (i / 4) * D)} y1={cy + iY(0, 0, (i / 4) * D)} x2={cx + iX(W, 0, (i / 4) * D)} y2={cy + iY(W, 0, (i / 4) * D)} stroke="#E8E8E8" strokeWidth={0.5} />)}
     {[0, 1, 2, 3, 4].map(i => <line key={`x${i}`} x1={cx + iX((i / 4) * W, 0, 0)} y1={cy + iY((i / 4) * W, 0, 0)} x2={cx + iX((i / 4) * W, 0, D)} y2={cy + iY((i / 4) * W, 0, D)} stroke="#E8E8E8" strokeWidth={0.5} />)}
     {["back", "bottom", "left", "right", "front", "top"].map(fk => { const f = fp[fk], sel = activeFace === fk, els = faceData[fk]?.elements || [], has = els.length > 0; const lp = lps[fk], lx = cx + iX(lp.x, lp.y, lp.z), ly = cy + iY(lp.x, lp.y, lp.z);
-      return (<g key={fk} onClick={() => onSelectFace(fk)} style={{ cursor: "pointer" }}><polygon points={f.pts} fill={sel ? T.purple + "40" : has ? G + "15" : f.fill} stroke={sel ? T.purple : has ? G : "#666"} strokeWidth={sel ? 2.5 : 1} strokeLinejoin="round" /><text x={lx} y={ly - 3} textAnchor="middle" fontSize={sel ? 10 : 7} fontWeight={sel ? 800 : 600} fontFamily={FM3} fill={sel ? T.purple : has ? G : "#555"}>{FA3[fk].label}</text>{has && <text x={lx} y={ly + 8} textAnchor="middle" fontSize={7} fontFamily={FM3} fill={G}>{els.length} el.</text>}</g>); })}
+      return (<g key={fk} onClick={() => onSelectFace(fk)} style={{ cursor: "pointer" }}><polygon points={f.pts} fill={sel ? "#1A9E73" + "40" : has ? G + "15" : f.fill} stroke={sel ? "#1A9E73" : has ? G : "#666"} strokeWidth={sel ? 2.5 : 1} strokeLinejoin="round" /><text x={lx} y={ly - 3} textAnchor="middle" fontSize={sel ? 10 : 7} fontWeight={sel ? 800 : 600} fontFamily={FM3} fill={sel ? "#1A9E73" : has ? G : "#555"}>{FA3[fk].label}</text>{has && <text x={lx} y={ly + 8} textAnchor="middle" fontSize={7} fontFamily={FM3} fill={G}>{els.length} el.</text>}</g>); })}
     <text x={(cx + iX(0, 0, 0) + cx + iX(W, 0, 0)) / 2} y={(cy + iY(0, 0, 0) + cy + iY(W, 0, 0)) / 2 + 22} textAnchor="middle" fontSize={9} fontWeight={700} fontFamily={FM3} fill={T.acc}>L {realW}</text>
     <text x={cx + iX(0, H / 2, 0) - 22} y={cy + iY(0, H / 2, 0) + 3} textAnchor="middle" fontSize={9} fontWeight={700} fontFamily={FM3} fill={T.acc}>H {realH}</text>
     <text x={170} y={270} textAnchor="middle" fontSize={8} fill={T.sub} fontFamily={FF3}>Tap su una faccia per disegnare</text>
@@ -96,8 +96,8 @@ function FaceCanvas3D({ T, faceKey, realW, realH, elements, onUpdateElements, ac
   const hUp = () => { if (!ds || !dc || !activeTool) { setDs(null); setDc(null); return; } const x = Math.min(ds.x, dc.x), y = Math.min(ds.y, dc.y), w = Math.abs(dc.x - ds.x), h = Math.abs(dc.y - ds.y); if (w < 10 && h < 10) { setDs(null); setDc(null); return; } onUpdateElements([...(elements || []), { id: `el_${Date.now()}`, type: activeTool, x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h), face: faceKey }]); setDs(null); setDc(null); };
   const els = (elements || []).map((el: any) => ({ ...el, _sel: el.id === selId }));
   return (<div>
-    <div style={{ display: "flex", alignItems: "center", padding: "6px 10px", gap: 6, background: `${T.purple}06`, borderBottom: `1px solid ${T.bdr}` }}>
-      <span style={{ fontSize: 12 }}>{face.icon}</span><span style={{ fontSize: 11, fontWeight: 800, color: T.purple, flex: 1 }}>{face.label}</span><span style={{ fontSize: 8, color: T.sub, fontFamily: FM3 }}>{realW}x{realH}mm</span>
+    <div style={{ display: "flex", alignItems: "center", padding: "6px 10px", gap: 6, background: `${"#1A9E73"}06`, borderBottom: `1px solid ${T.bdr}` }}>
+      <span style={{ fontSize: 12 }}>{face.icon}</span><span style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73", flex: 1 }}>{face.label}</span><span style={{ fontSize: 8, color: T.sub, fontFamily: FM3 }}>{realW}x{realH}mm</span>
       {elements?.length > 0 && <span style={{ padding: "1px 6px", borderRadius: 4, background: `${T.grn || "#1A9E73"}18`, fontSize: 8, fontWeight: 800, color: T.grn || "#1A9E73" }}>{elements.length} el.</span>}
       {selId && <span onClick={() => { onUpdateElements((elements || []).filter((el: any) => el.id !== selId)); setSelId(null); }} style={{ padding: "2px 6px", borderRadius: 4, background: `${T.red || "#DC4444"}15`, fontSize: 8, fontWeight: 700, color: T.red || "#DC4444", cursor: "pointer" }}>🗑 Elimina</span>}
     </div>
@@ -136,8 +136,8 @@ function RenderPreview3D({ T, realW, realH, faceData }: any) {
 function FDataPanel3D({ T, faceKey, faceData, setFaceData, onClose }: any) {
   const face = FA3[faceKey], data = faceData[faceKey]?.fields || {}, fields = getFields3D(faceKey);
   const setF = (k: string, v: any) => setFaceData((prev: any) => ({ ...prev, [faceKey]: { ...(prev[faceKey] || {}), fields: { ...(prev[faceKey]?.fields || {}), [k]: v } } }));
-  return (<div style={{ borderTop: `1.5px solid ${T.purple}40`, background: T.card || "#fff", padding: "8px 12px" }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}><span style={{ fontSize: 12 }}>{face.icon}</span><span style={{ fontSize: 11, fontWeight: 800, color: T.purple }}>{face.label} - Dati</span><span style={{ flex: 1 }} /><span onClick={onClose} style={{ fontSize: 11, cursor: "pointer", color: T.sub }}>✕</span></div>
+  return (<div style={{ borderTop: `1.5px solid ${"#1A9E73"}40`, background: T.card || "#fff", padding: "8px 12px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}><span style={{ fontSize: 12 }}>{face.icon}</span><span style={{ fontSize: 11, fontWeight: 800, color: "#1A9E73" }}>{face.label} - Dati</span><span style={{ flex: 1 }} /><span onClick={onClose} style={{ fontSize: 11, cursor: "pointer", color: T.sub }}>✕</span></div>
     {fields.map((f: any) => (<div key={f.k} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
       <span style={{ fontSize: 9, fontWeight: 700, color: T.sub, minWidth: 72 }}>{f.l}</span>
       {f.type === "text" ? <input value={data[f.k] || ""} placeholder="..." onChange={(e: any) => setF(f.k, e.target.value)} style={{ flex: 1, padding: "4px 8px", border: `1px solid ${T.bdr}`, borderRadius: 5, fontSize: 10, fontFamily: FF3, color: T.text }} />
@@ -177,7 +177,7 @@ function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
       </div>
       <FaceCanvas3D T={T} faceKey={activeFace} realW={realW} realH={realH} elements={faceData[activeFace]?.elements || []} onUpdateElements={(els: any[]) => updateFaceEls(activeFace!, els)} activeTool={activeTool} />
       <div onClick={() => setShowFields(!showFields)} style={{ padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, color: T.purple }}>Dati {FA3[activeFace].label}</span>
+        <span style={{ fontSize: 9, fontWeight: 700, color: "#1A9E73" }}>Dati {FA3[activeFace].label}</span>
         <span style={{ fontSize: 8, color: T.sub, transform: showFields ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
       </div>
       {showFields && <FDataPanel3D T={T} faceKey={activeFace} faceData={faceData} setFaceData={setFaceData} onClose={() => setShowFields(false)} />}
@@ -187,7 +187,7 @@ function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
     {/* Face chips */}
     <div style={{ padding: "6px 10px", borderTop: `1px solid ${T.bdr}`, display: "flex", gap: 4, alignItems: "center", flexWrap: "wrap" }}>
       {FK3.map(k => { const els = faceData[k]?.elements || []; const active = activeFace === k && mode3d === "face"; return (
-        <div key={k} onClick={() => openFace(k)} style={{ padding: "3px 7px", borderRadius: 5, border: `1.5px solid ${active ? T.purple : els.length > 0 ? G : T.bdr}`, background: active ? T.purple + "12" : els.length > 0 ? G + "08" : T.card || "#fff", cursor: "pointer", fontSize: 8, fontWeight: 700, color: active ? T.purple : els.length > 0 ? G : T.sub, display: "flex", alignItems: "center", gap: 2 }}>
+        <div key={k} onClick={() => openFace(k)} style={{ padding: "3px 7px", borderRadius: 5, border: `1.5px solid ${active ? "#1A9E73" : els.length > 0 ? G : T.bdr}`, background: active ? "#1A9E73" + "12" : els.length > 0 ? G + "08" : T.card || "#fff", cursor: "pointer", fontSize: 8, fontWeight: 700, color: active ? "#1A9E73" : els.length > 0 ? G : T.sub, display: "flex", alignItems: "center", gap: 2 }}>
           {FA3[k].icon} {FA3[k].s}{els.length > 0 && <span style={{ fontSize: 7, opacity: 0.7 }}>({els.length})</span>}
         </div>); })}
     </div>
@@ -289,7 +289,7 @@ function FormaEditor({ T, realW, realH }: any) {
   const fCells: any[] = [];
   for (let r = 0; r < rowEdges.length - 1; r++) for (let c = 0; c < colEdges.length - 1; c++) fCells.push({ key: `${r}-${c}`, x: colEdges[c], y: rowEdges[r], w: colEdges[c + 1] - colEdges[c], h: rowEdges[r + 1] - rowEdges[r] });
 
-  const bs2 = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.purple : T.bdr}`, background: active ? `${T.purple}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? T.purple : T.text });
+  const bs2 = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? "#1A9E73" : T.bdr}`, background: active ? `${"#1A9E73"}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#1A9E73" : T.text });
 
   return (
     <div>
@@ -312,7 +312,7 @@ function FormaEditor({ T, realW, realH }: any) {
           {/* Inner frame line */}
           {(() => { const center = { x: pts.reduce((s: number, p: any) => s + p.x, 0) / pts.length, y: pts.reduce((s: number, p: any) => s + p.y, 0) / pts.length }; const inner = pts.map((p: any) => { const dx = center.x - p.x, dy = center.y - p.y, d = Math.sqrt(dx*dx+dy*dy)||1; return toSvg({ x: p.x+(dx/d)*65, y: p.y+(dy/d)*65 }); }); const iD = inner.map((p: any,i: number) => `${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z"; return <path d={iD} fill="none" stroke="#5A5A5C" strokeWidth={0.8} strokeDasharray="3,2"/>; })()}
           {/* Dividers */}
-          {dividers.map((d: any) => d.axis === "v" ? <g key={d.id}><line x1={ox+(d.pos+minX)*sc} y1={oy+minY*sc} x2={ox+(d.pos+minX)*sc} y2={oy+maxY*sc} stroke={T.purple||"#8B5CF6"} strokeWidth={2}/><text x={ox+(d.pos+minX)*sc} y={oy+maxY*sc+14} textAnchor="middle" fontSize={8} fontWeight={700} fontFamily={FM2} fill={T.purple||"#8B5CF6"}>{d.pos}</text></g> : <g key={d.id}><line x1={ox+minX*sc} y1={oy+(d.pos+minY)*sc} x2={ox+maxX*sc} y2={oy+(d.pos+minY)*sc} stroke="#0D9488" strokeWidth={2}/><text x={ox+maxX*sc+8} y={oy+(d.pos+minY)*sc+3} fontSize={8} fontWeight={700} fontFamily={FM2} fill="#0D9488">{d.pos}</text></g>)}
+          {dividers.map((d: any) => d.axis === "v" ? <g key={d.id}><line x1={ox+(d.pos+minX)*sc} y1={oy+minY*sc} x2={ox+(d.pos+minX)*sc} y2={oy+maxY*sc} stroke={"#1A9E73"||"#8B5CF6"} strokeWidth={2}/><text x={ox+(d.pos+minX)*sc} y={oy+maxY*sc+14} textAnchor="middle" fontSize={8} fontWeight={700} fontFamily={FM2} fill={"#1A9E73"||"#8B5CF6"}>{d.pos}</text></g> : <g key={d.id}><line x1={ox+minX*sc} y1={oy+(d.pos+minY)*sc} x2={ox+maxX*sc} y2={oy+(d.pos+minY)*sc} stroke="#0D9488" strokeWidth={2}/><text x={ox+maxX*sc+8} y={oy+(d.pos+minY)*sc+3} fontSize={8} fontWeight={700} fontFamily={FM2} fill="#0D9488">{d.pos}</text></g>)}
           {/* Cell labels */}
           {fCells.map((cell: any) => { const cx2=ox+(cell.x+cell.w/2)*sc, cy2=oy+(cell.y+cell.h/2)*sc, isSel=selCell===cell.key, type=cellTypes[cell.key]||"fisso", ap=AP2.find((a: any)=>a.id===type); return <g key={cell.key} onClick={(e: any)=>{e.stopPropagation();setSelCell(cell.key);setSel(null)}} style={{cursor:"pointer"}}>{isSel&&<rect x={ox+cell.x*sc+2} y={oy+cell.y*sc+2} width={cell.w*sc-4} height={cell.h*sc-4} fill={(T.blue||"#3B7FE0")+"10"} stroke={T.blue||"#3B7FE0"} strokeWidth={1.5} strokeDasharray="4,3" rx={3}/>}<text x={cx2} y={cy2-4} textAnchor="middle" fontSize={14} fill={isSel?T.blue||"#3B7FE0":"#8E8E9380"}>{ap?.ic||"▣"}</text><text x={cx2} y={cy2+10} textAnchor="middle" fontSize={7} fontWeight={700} fontFamily={FM2} fill={isSel?T.blue||"#3B7FE0":"#8E8E93"}>{Math.round(cell.w)}×{Math.round(cell.h)}</text></g>; })}
           {/* Edge lengths */}
@@ -337,10 +337,10 @@ function FormaEditor({ T, realW, realH }: any) {
       </div>
       {/* Dividers bar */}
       <div style={{ display: "flex", gap: 3, padding: "4px 8px", borderTop: `1px solid ${T.bdr}`, alignItems: "center", flexWrap: "wrap" }}>
-        <div onClick={()=>addDiv("v")} style={{ padding: "4px 8px", borderRadius: 5, background: (T.purple||"#8B5CF6")+"12", border: `1px solid ${(T.purple||"#8B5CF6")}30`, cursor: "pointer" }}><span style={{ fontSize: 9, fontWeight: 700, color: T.purple||"#8B5CF6" }}>+│ Mont.</span></div>
+        <div onClick={()=>addDiv("v")} style={{ padding: "4px 8px", borderRadius: 5, background: ("#1A9E73"||"#8B5CF6")+"12", border: `1px solid ${("#1A9E73"||"#8B5CF6")}30`, cursor: "pointer" }}><span style={{ fontSize: 9, fontWeight: 700, color: "#1A9E73"||"#8B5CF6" }}>+│ Mont.</span></div>
         <div onClick={()=>addDiv("h")} style={{ padding: "4px 8px", borderRadius: 5, background: "#0D948812", border: "1px solid #0D948830", cursor: "pointer" }}><span style={{ fontSize: 9, fontWeight: 700, color: "#0D9488" }}>+─ Trav.</span></div>
-        {dividers.map((d: any)=><div key={d.id} style={{ display: "flex", alignItems: "center", gap: 2, padding: "2px 5px", borderRadius: 4, background: (d.axis==="v"?T.purple||"#8B5CF6":"#0D9488")+"10" }}>
-          <input type="number" value={d.pos} onChange={(e: any)=>setDividers(dividers.map((x: any)=>x.id===d.id?{...x,pos:parseInt(e.target.value)||0}:x))} style={{ width: 36, padding: "1px", border: "none", borderRadius: 3, fontSize: 9, fontWeight: 700, fontFamily: FM2, textAlign: "center", background: "transparent", color: d.axis==="v"?T.purple||"#8B5CF6":"#0D9488" }}/>
+        {dividers.map((d: any)=><div key={d.id} style={{ display: "flex", alignItems: "center", gap: 2, padding: "2px 5px", borderRadius: 4, background: (d.axis==="v"?"#1A9E73"||"#8B5CF6":"#0D9488")+"10" }}>
+          <input type="number" value={d.pos} onChange={(e: any)=>setDividers(dividers.map((x: any)=>x.id===d.id?{...x,pos:parseInt(e.target.value)||0}:x))} style={{ width: 36, padding: "1px", border: "none", borderRadius: 3, fontSize: 9, fontWeight: 700, fontFamily: FM2, textAlign: "center", background: "transparent", color: d.axis==="v"?"#1A9E73"||"#8B5CF6":"#0D9488" }}/>
           <span onClick={()=>setDividers(dividers.filter((x: any)=>x.id!==d.id))} style={{ fontSize: 9, color: T.red||"#DC4444", cursor: "pointer", fontWeight: 700 }}>×</span>
         </div>)}
       </div>
@@ -378,7 +378,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const placeApType = dw._placeApType || "SX";
                             const zoom = dw._zoom || 1;
                             const panX = dw._panX || 0, panY = dw._panY || 0;
-                            const canvasW = Math.min(window.innerWidth - 32, 500);
+                            const canvasW = Math.min(window.innerWidth - 16, window.innerWidth > 768 ? 900 : 600);
                             const GRID = 10;
                             const SNAP_R = 14;
 
@@ -399,7 +399,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const by2 = Math.max(...allFrames.map(f => f.y + f.h));
                               fW = bx2 - bx1 + PAD; fH = by2 - by1 + PAD;
                             }
-                            const baseCanvasH = Math.max(280, fH + PAD * 2 + PAD_DIM);
+                            const baseCanvasH = Math.max(400, fH + PAD * 2 + PAD_DIM);
                             const canvasH = baseCanvasH;
                             const fX = PAD, fY = PAD;
                             const snap = (v2) => Math.round(v2 / GRID) * GRID;
@@ -960,7 +960,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
 
                             // ══ Styles ══
-                            const bs = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.purple : T.bdr}`, background: active ? `${T.purple}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? T.purple : T.text });
+                            const bs = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? "#1A9E73" : T.bdr}`, background: active ? `${"#1A9E73"}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#1A9E73" : T.text });
                             const bAp = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
@@ -1024,17 +1024,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                             return (
                               <>
-                              <div style={{ marginTop: 8, background: T.card, borderRadius: 12, border: `1.5px solid ${T.purple}`, overflow: "hidden" }}>
+                              <div style={{ marginTop: 8, background: T.card, borderRadius: 12, border: `1.5px solid ${"#1A9E73"}`, overflow: "hidden" }}>
                                 {/* Header */}
-                                <div style={{ padding: "8px 12px", background: `${T.purple}10`, display: "flex", alignItems: "center", gap: 8 }}>
+                                <div style={{ padding: "8px 12px", background: `${"#1A9E73"}10`, display: "flex", alignItems: "center", gap: 8 }}>
                                   <span style={{ fontSize: 14 }}>✏️</span>
-                                  <span style={{ fontSize: 12, fontWeight: 800, color: T.purple, flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: "#1A9E73", flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
                                   <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
                                 </div>
 
                                 {/* ═══ TAB BAR ═══ */}
                                 <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
-                                  {[{ id: "disegno", l: "✏️ Disegno", c: T.purple }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }].map(tab => (
+                                  {[{ id: "disegno", l: "✏️ Disegno", c: "#1A9E73" }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }].map(tab => (
                                     <div key={tab.id} onClick={() => setViewTab(tab.id)}
                                       style={{ flex: 1, padding: "7px 0", textAlign: "center", fontSize: 11, fontWeight: viewTab === tab.id ? 800 : 500, color: viewTab === tab.id ? tab.c : T.sub, borderBottom: viewTab === tab.id ? `2.5px solid ${tab.c}` : "2.5px solid transparent", cursor: "pointer", transition: "all 0.15s" }}>
                                       {tab.l}
@@ -1209,7 +1209,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* SVG Canvas — zoomable with wheel + pannable */}
-                                <div style={{ overflow: "auto", position: "relative", maxHeight: "70vh", border: `1px solid ${T.bdr}` }}>
+                                <div style={{ overflow: "auto", position: "relative", maxHeight: window.innerWidth > 768 ? "85vh" : "70vh", border: `1px solid ${T.bdr}` }}>
                                 <svg width={canvasW * Math.max(1, zoom)} height={canvasH * Math.max(1, zoom)}
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default") }}
@@ -1376,7 +1376,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                   {/* Snap points in draw mode */}
                                   {(drawMode === "line" || drawMode === "apertura") && getSnapPoints().map((p, pi) => (
-                                    <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : T.purple} fillOpacity={0.2} />
+                                    <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : "#1A9E73"} fillOpacity={0.2} />
                                   ))}
 
                                   {/* ══ CLOSED POLYGON PROFILES ══ */}
@@ -1403,7 +1403,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                                                     {/* ══ ELEMENTS ══ */}
                                   {els.map(el => {
                                     const sel = el.id === selId;
-                                    const hc = sel ? T.purple : undefined;
+                                    const hc = sel ? "#1A9E73" : undefined;
                                     const dp = !drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id), style: { cursor: "move" } } : {};
 
                                     // ═══ TELAIO — doppio rettangolo con spessore ═══
@@ -1411,7 +1411,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <g key={el.id} {...dp}>
                                         <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f8f8f6" stroke={hc || "#1A1A1C"} strokeWidth={1.5} rx={1} />
                                         <rect x={el.x + TK_FRAME} y={el.y + TK_FRAME} width={el.w - TK_FRAME * 2} height={el.h - TK_FRAME * 2} fill="none" stroke={hc || "#1A1A1C"} strokeWidth={1} rx={0.5} />
-                                        {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={T.purple} />)}
+                                        {sel && [[el.x,el.y],[el.x+el.w,el.y],[el.x,el.y+el.h],[el.x+el.w,el.y+el.h]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={"#1A9E73"} />)}
                                       </g>
                                     );
 
@@ -1422,7 +1422,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
                                           <rect x={el.x - TK_MONT / 2} y={my1} width={TK_MONT} height={my2 - my1} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
-                                          {sel && <><circle cx={el.x} cy={my1} r={4} fill={T.purple}/><circle cx={el.x} cy={my2} r={4} fill={T.purple}/></>}
+                                          {sel && <><circle cx={el.x} cy={my1} r={4} fill={"#1A9E73"}/><circle cx={el.x} cy={my2} r={4} fill={"#1A9E73"}/></>}
                                         </g>
                                       );
                                     }
@@ -1434,7 +1434,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
                                           <rect x={tx1} y={el.y - TK_MONT / 2} width={tx2 - tx1} height={TK_MONT} fill="#e8e8e4" stroke={hc || "#555"} strokeWidth={0.8} />
-                                          {sel && <><circle cx={tx1} cy={el.y} r={4} fill={T.purple}/><circle cx={tx2} cy={el.y} r={4} fill={T.purple}/></>}
+                                          {sel && <><circle cx={tx1} cy={el.y} r={4} fill={"#1A9E73"}/><circle cx={tx2} cy={el.y} r={4} fill={"#1A9E73"}/></>}
                                         </g>
                                       );
                                     }
@@ -1544,7 +1544,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "circle") return (
                                       <g key={el.id} {...dp}>
                                         <circle cx={el.cx} cy={el.cy} r={el.r} fill="#e8f4fc" fillOpacity={0.2} stroke={hc || "#4a90d9"} strokeWidth={sel ? 2.5 : 1.5} />
-                                        {sel && [[el.cx,el.cy-el.r],[el.cx+el.r,el.cy],[el.cx,el.cy+el.r],[el.cx-el.r,el.cy]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={T.purple} />)}
+                                        {sel && [[el.cx,el.cy-el.r],[el.cx+el.r,el.cy],[el.cx,el.cy+el.r],[el.cx-el.r,el.cy]].map(([px,py],pi) => <circle key={pi} cx={px} cy={py} r={4} fill={"#1A9E73"} />)}
                                       </g>
                                     );
 
@@ -1557,7 +1557,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           if (newTxt !== null) setDW(els.map(x => x.id === el.id ? { ...x, text: newTxt } : x));
                                         }}
                                         style={{ cursor: drawMode ? undefined : "move" }}>
-                                        {sel && <rect x={el.x - 4} y={el.y - (el.fontSize || 11) - 2} width={Math.max(40, (el.text || "").length * 6)} height={(el.fontSize || 11) + 8} fill={`${T.purple}10`} stroke={T.purple} strokeWidth={1} strokeDasharray="3,2" rx={3} />}
+                                        {sel && <rect x={el.x - 4} y={el.y - (el.fontSize || 11) - 2} width={Math.max(40, (el.text || "").length * 6)} height={(el.fontSize || 11) + 8} fill={`${"#1A9E73"}10`} stroke={"#1A9E73"} strokeWidth={1} strokeDasharray="3,2" rx={3} />}
                                         <text x={el.x} y={el.y} fontSize={el.fontSize || 11} fontWeight={700} fill={hc || "#333"} fontFamily="Inter, sans-serif">{el.text}</text>
                                       </g>
                                     );
@@ -1578,7 +1578,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
                                           {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
-                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={T.purple} strokeWidth={3} opacity={0.4} />}
+                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={"#1A9E73"} strokeWidth={3} opacity={0.4} />}
                                           {/* Badge misura — click per modificare */}
                                           <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}
                                             onClick={(e3) => {
@@ -1592,10 +1592,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               setDimEdit({ id: el.id, val: String(mmLen), x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 });
                                             }}
                                             style={{ cursor: "pointer" }}>
-                                            <rect x={lx - 18} y={ly - 7} width={36} height={14} fill={dimEdit?.id === el.id ? T.purple : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? T.purple : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
+                                            <rect x={lx - 18} y={ly - 7} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
                                             <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
                                           </g>
-                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={T.purple} /><circle cx={el.x2} cy={el.y2} r={5} fill={T.purple} /></>}
+                                          {sel && <><circle cx={el.x1} cy={el.y1} r={5} fill={"#1A9E73"} /><circle cx={el.x2} cy={el.y2} r={5} fill={"#1A9E73"} /></>}
                                         </g>
                                       );
                                     }
@@ -1691,8 +1691,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     if (el.type === "penPath") return (
                                       <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                        <path d={el.d} fill="none" stroke={sel ? T.purple : "#1A1A1C"} strokeWidth={sel ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
-                                        {sel && <path d={el.d} fill="none" stroke={T.purple} strokeWidth={8} opacity={0.12} strokeLinecap="round" />}
+                                        <path d={el.d} fill="none" stroke={sel ? "#1A9E73" : "#1A1A1C"} strokeWidth={sel ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
+                                        {sel && <path d={el.d} fill="none" stroke={"#1A9E73"} strokeWidth={8} opacity={0.12} strokeLinecap="round" />}
                                       </g>
                                     );
 
@@ -1805,14 +1805,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }
                                         if (e.key === "Escape") setDimEdit(null);
                                       }}
-                                      style={{ padding: "10px 14px", border: `2px solid ${T.purple || "#8B5CF6"}`, borderRadius: 8, fontSize: 18, fontWeight: 800, fontFamily: "monospace", textAlign: "center", outline: "none", color: "#1A1A1C", width: "100%" }}
+                                      style={{ padding: "10px 14px", border: `2px solid ${"#1A9E73"}`, borderRadius: 8, fontSize: 18, fontWeight: 800, fontFamily: "monospace", textAlign: "center", outline: "none", color: "#1A1A1C", width: "100%" }}
                                     />
                                     <div style={{ display: "flex", gap: 8 }}>
                                       <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
                                       <div onClick={() => {
                                         applyDimChange(dimEdit.id, dimEdit.val);
                                         setDimEdit(null);
-                                      }} style={{ flex: 1, padding: "9px", borderRadius: 8, background: T.purple || "#8B5CF6", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>✓ Conferma</div>
+                                      }} style={{ flex: 1, padding: "9px", borderRadius: 8, background: "#1A9E73", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#fff" }}>✓ Conferma</div>
                                     </div>
                                   </div>
                                 </div>
