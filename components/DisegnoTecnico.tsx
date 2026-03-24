@@ -1774,38 +1774,75 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ MONTANTE — clipped to polygon ═══
+                                    // ═══ MONTANTE — giunzione pulita con profili adiacenti ═══
                                     if (el.type === "montante") {
-                                      const my1 = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
-                                      const my2 = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
+                                      const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const HM2 = TK_MONT / 2;
+                                      // Cerca freeLine orizzontali che toccano le estremità del montante
+                                      // e calcola l'estensione necessaria per coprire il loro halfT
+                                      const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
+                                      const horzLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined);
+                                      let extTop = 0, extBot = 0;
+                                      horzLines.forEach(l => {
+                                        const lHalfT = (tkMapLocal[l.subType] || TK_FRAME) ;
+                                        // Controlla se il freeLine passa vicino all'estremità superiore
+                                        if (Math.abs(l.y1 - my1raw) < lHalfT + 2 || Math.abs(l.y2 - my1raw) < lHalfT + 2) {
+                                          extTop = Math.max(extTop, lHalfT);
+                                        }
+                                        // Controlla se il freeLine passa vicino all'estremità inferiore
+                                        if (Math.abs(l.y1 - my2raw) < lHalfT + 2 || Math.abs(l.y2 - my2raw) < lHalfT + 2) {
+                                          extBot = Math.max(extBot, lHalfT);
+                                        }
+                                      });
+                                      // Estendi anche al frame se tocca i bordi
+                                      if (frame) {
+                                        if (Math.abs(my1raw - frame.y) < TK_FRAME + 2) extTop = Math.max(extTop, TK_FRAME / 2);
+                                        if (Math.abs(my2raw - (frame.y + frame.h)) < TK_FRAME + 2) extBot = Math.max(extBot, TK_FRAME / 2);
+                                      }
+                                      const my1 = my1raw - extTop;
+                                      const my2 = my2raw + extBot;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
                                           <rect x={el.x - HM2} y={my1} width={TK_MONT} height={my2 - my1} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
-                                          {sel && <><circle cx={el.x} cy={my1} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2} r={4} fill="#1A9E73"/></>}
+                                          {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
                                     }
 
-                                    // ═══ TRAVERSO — tagliato ai montanti (montante vince) ═══
+                                    // ═══ TRAVERSO — tagliato ai montanti (montante vince), esteso ai profili adiacenti ═══
                                     if (el.type === "traverso") {
                                       const tx1raw = el.x1 !== undefined ? el.x1 : (frame ? frame.x : fX);
                                       const tx2raw = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
                                       const HM2 = TK_MONT / 2;
+                                      // Estensione agli estremi verso freeLine verticali adiacenti
+                                      const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
+                                      const vertLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined);
+                                      let extL = 0, extR = 0;
+                                      vertLines.forEach(l => {
+                                        const lHalfT = tkMapLocal[l.subType] || TK_FRAME;
+                                        if (Math.abs(l.x1 - tx1raw) < lHalfT + 2 || Math.abs(l.x2 - tx1raw) < lHalfT + 2) extL = Math.max(extL, lHalfT);
+                                        if (Math.abs(l.x1 - tx2raw) < lHalfT + 2 || Math.abs(l.x2 - tx2raw) < lHalfT + 2) extR = Math.max(extR, lHalfT);
+                                      });
+                                      if (frame) {
+                                        if (Math.abs(tx1raw - frame.x) < TK_FRAME + 2) extL = Math.max(extL, TK_FRAME / 2);
+                                        if (Math.abs(tx2raw - (frame.x + frame.w)) < TK_FRAME + 2) extR = Math.max(extR, TK_FRAME / 2);
+                                      }
+                                      const tx1 = tx1raw - extL;
+                                      const tx2 = tx2raw + extR;
                                       // Taglia il traverso ai montanti che lo attraversano
                                       const intersectingMonts = allMontanti.filter(m => {
                                         const mx1 = m.x - HM2, mx2 = m.x + HM2;
-                                        const my1 = m.y1 ?? (frame ? frame.y : fY);
-                                        const my2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
-                                        return mx1 > tx1raw + 2 && mx2 < tx2raw - 2 && my1 <= el.y + HM2 && my2 >= el.y - HM2;
+                                        const mmy1 = m.y1 ?? (frame ? frame.y : fY);
+                                        const mmy2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
+                                        return mx1 > tx1 + 2 && mx2 < tx2 - 2 && mmy1 <= el.y + HM2 && mmy2 >= el.y - HM2;
                                       });
-                                      // Costruisci segmenti tagliati
                                       const segments: {x1:number,x2:number}[] = [];
-                                      let cur = tx1raw;
+                                      let cur = tx1;
                                       const cuts = intersectingMonts.map(m => ({ x1: m.x - HM2, x2: m.x + HM2 })).sort((a,b) => a.x1 - b.x1);
                                       cuts.forEach(cut => { if (cur < cut.x1) segments.push({ x1: cur, x2: cut.x1 }); cur = cut.x2; });
-                                      if (cur < tx2raw) segments.push({ x1: cur, x2: tx2raw });
-                                      if (segments.length === 0) segments.push({ x1: tx1raw, x2: tx2raw });
+                                      if (cur < tx2) segments.push({ x1: cur, x2: tx2 });
+                                      if (segments.length === 0) segments.push({ x1: tx1, x2: tx2 });
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
                                           {segments.map((seg, si) => (
