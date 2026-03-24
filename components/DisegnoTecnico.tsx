@@ -1033,10 +1033,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (!el2 || el2.type !== "freeLine") return;
                               const dx2 = el2.x2 - el2.x1, dy2 = el2.y2 - el2.y1;
                               const lenPx = Math.hypot(dx2, dy2) || 1;
-                              // curMM: usa quello passato dal badge (preciso), fallback a override
                               const curMM = (dimEditRef as any)?.curMM ?? el2._mmOverride ?? Math.round(lenPx);
                               if (curMM <= 0) return;
-                              // Nuova lunghezza px: proporzione diretta
                               const newLenPx = lenPx * newMM / curMM;
                               const ux = dx2 / lenPx, uy = dy2 / lenPx;
                               const newX2 = Math.round(el2.x1 + ux * newLenPx);
@@ -1044,16 +1042,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const ddx = newX2 - el2.x2, ddy = newY2 - el2.y2;
                               if (ddx === 0 && ddy === 0) return;
                               const CONN = 15;
-                              // Propaga ai segmenti connessi al punto FINALE — escludi chi tocca il punto INIZIALE
+                              const allFL2 = els.filter(e => e.type === "freeLine");
                               const visited = new Set();
                               visited.add(elId);
                               const toMove = new Set();
                               const queue = [{ x: el2.x2, y: el2.y2 }];
                               while (queue.length > 0) {
                                 const pt = queue.shift();
-                                allFL.forEach(l => {
+                                allFL2.forEach(l => {
                                   if (visited.has(l.id)) return;
-                                  // Se connesso al punto iniziale del segmento → è il lato precedente, non spostare
                                   if (Math.hypot(l.x1 - el2.x1, l.y1 - el2.y1) < CONN ||
                                       Math.hypot(l.x2 - el2.x1, l.y2 - el2.y1) < CONN) {
                                     visited.add(l.id); return;
@@ -1823,7 +1820,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         }
                                         if (e.key === "Escape") setDimEdit(null);
                                       }}
-                                      style={{ padding: "10px 14px", border: `2px solid ${"#1A9E73"}`, borderRadius: 8, fontSize: 18, fontWeight: 800, fontFamily: "monospace", textAlign: "center", WebkitTextAlign: "center", outline: "none", color: "#1A1A1C", width: "100%" }}
+                                      style={{ padding: "10px 14px", border: `2px solid ${"#1A9E73"}`, borderRadius: 8, fontSize: 22, fontWeight: 800, fontFamily: "monospace", textAlign: "center", outline: "none", color: "#1A1A1C", width: "100%", display: "block", boxSizing: "border-box" as any }}
                                     />
                                     <div style={{ display: "flex", gap: 8 }}>
                                       <div onClick={() => setDimEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Annulla</div>
