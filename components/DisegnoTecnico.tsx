@@ -2079,28 +2079,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // Estendi ogni segmento di halfT — ma NON estendere verso un montante adiacente
                                       const WCONN = halfT * 2 + TK_MONT;
                                       const HM_loc = TK_MONT / 2;
-                                      const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
-                                      const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
+                                      const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN))
+                                        || els.some(m => m.type === "montante" && Math.abs((m.x + HM_loc) - el.x1) < halfT + 2 && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
+                                      const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN))
+                                        || els.some(m => m.type === "montante" && Math.abs((m.x - HM_loc) - el.x2) < halfT + 2 && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
                                       // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
                                       const ext1 = hasMontAt1 ? -HM_loc : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Clamp al bordo interno del frame — solo per linee orizzontali (zoccolo/soglia/fascia)
-                                      const isHorzEl = Math.abs(el.x2 - el.x1) > Math.abs(el.y2 - el.y1);
-                                      const cpx = (x) => {
-                                        if (!frame || !isHorzEl) return x;
-                                        return Math.max(frame.x + TK_FRAME, Math.min(frame.x + frame.w - TK_FRAME, x));
-                                      };
-                                      const cpy = (y) => {
-                                        if (!frame || isHorzEl) return y;
-                                        return Math.max(frame.y + TK_FRAME, Math.min(frame.y + frame.h - TK_FRAME, y));
-                                      };
-                                      const p1x = cpx(ex1+nx), p1y = cpy(ey1+ny);
-                                      const p2x = cpx(ex2+nx), p2y = cpy(ey2+ny);
-                                      const p3x = cpx(ex2-nx), p3y = cpy(ey2-ny);
-                                      const p4x = cpx(ex1-nx), p4y = cpy(ey1-ny);
-                                      const pts4 = `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y} ${p4x},${p4y}`;
+                                      const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           {/* Hit area */}
