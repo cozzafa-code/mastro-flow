@@ -546,38 +546,52 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // ══ Snap points ══
                             const getSnapPoints = () => {
                               const pts = [];
+                              // Frame: angoli + mezzerie + ogni punto sul bordo
                               frames.forEach(fr => {
                                 const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
+                                // Angoli e mezzerie
                                 pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
+                                // Bordi continui: snap lungo i lati del telaio
+                                for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
+                                for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
                               });
+                              // Celle
                               cells.forEach(c2 => {
                                 pts.push({x:c2.x,y:c2.y},{x:c2.x+c2.w,y:c2.y},{x:c2.x,y:c2.y+c2.h},{x:c2.x+c2.w,y:c2.y+c2.h});
-                                pts.push({x:c2.x+c2.w/2,y:c2.y},{x:c2.x+c2.w/2,y:c2.y+c2.h});
-                                pts.push({x:c2.x,y:c2.y+c2.h/2},{x:c2.x+c2.w,y:c2.y+c2.h/2});
                               });
-                              // snap solo a frame e celle, non a freeLine - lati indipendenti
+                              // Montanti e traversi — snap alle loro estremità
+                              els.filter(e => e.type === "montante").forEach(m => {
+                                const my1 = m.y1 ?? (frame ? frame.y : fY);
+                                const my2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
+                                pts.push({x:m.x, y:my1},{x:m.x, y:my2},{x:m.x, y:(my1+my2)/2});
+                              });
+                              els.filter(e => e.type === "traverso").forEach(t => {
+                                const tx1 = t.x1 ?? (frame ? frame.x : fX);
+                                const tx2 = t.x2 ?? (frame ? frame.x + frame.w : fX + fW);
+                                pts.push({x:tx1, y:t.y},{x:tx2, y:t.y},{x:(tx1+tx2)/2, y:t.y});
+                              });
                               return pts;
                             };
                             const findSnap = (mx, my) => {
                               const pts = getSnapPoints();
                               const chainStart = dw._chainStart;
+                              // Tutti gli elementi con punti x1/y1/x2/y2 (freeLine di qualsiasi subType)
+                              const allLinePts = els.filter(e => e.x1 !== undefined).flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              // Snap ai punti frame/celle (escludi chainStart se non possiamo ancora chiudere)
+                              // Snap a frame/celle/montanti/traversi
                               pts.forEach(p => {
                                 if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
                                 const d = Math.hypot(p.x - mx, p.y - my);
                                 if (d < bestD) { bestD = d; best = p; }
                               });
-                              // Snap ai punti delle freeLine esistenti (angoli già disegnati)
-                              freeLines.forEach(l => {
-                                [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}].forEach(p => {
-                                  if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
-                                  const d = Math.hypot(p.x - mx, p.y - my);
-                                  if (d < bestD) { bestD = d; best = p; }
-                                });
+                              // Snap a TUTTI i vertici di linee esistenti (qualsiasi subType)
+                              allLinePts.forEach(p => {
+                                if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
+                                const d = Math.hypot(p.x - mx, p.y - my);
+                                if (d < bestD) { bestD = d; best = p; }
                               });
                               // Snap al chainStart (chiusura forma) solo se ≥3 segmenti
                               if (canClose && chainStart) {
@@ -634,6 +648,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const dx = snap(mx - sx), dy = snap(my - sy);
                                 const upd = els.map(x => {
                                   if (x.id !== elId) return x;
+                                  // Snap a vertici vicini durante drag
                                   if (x.type === "montante") {
                                     const newX = snap(orig.x + dx);
                                     // Recalculate y1/y2 from polygon if present
@@ -708,7 +723,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const onU = () => {
                                 document.removeEventListener("mousemove", onM); document.removeEventListener("mouseup", onU);
                                 document.removeEventListener("touchmove", onM); document.removeEventListener("touchend", onU);
-                                onUpdate({ ...dw, elements: latestEls, selectedId: elId, _dragDim: null });
+                                // Saldatura: snap finale a punti vicini di altri elementi
+                                const WELD = SNAP_R;
+                                const welded = latestEls.map(x => {
+                                  if (x.id !== elId || x.x1 === undefined) return x;
+                                  const otherPts = latestEls.filter(o => o.id !== elId && o.x1 !== undefined)
+                                    .flatMap(o => [{x:o.x1,y:o.y1},{x:o.x2,y:o.y2}]);
+                                  // snap x1/y1
+                                  let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
+                                  otherPts.forEach(p => {
+                                    if (Math.hypot(p.x-x.x1,p.y-x.y1)<WELD) { nx1=p.x; ny1=p.y; }
+                                    if (Math.hypot(p.x-x.x2,p.y-x.y2)<WELD) { nx2=p.x; ny2=p.y; }
+                                  });
+                                  if (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2) return {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2};
+                                  return x;
+                                });
+                                onUpdate({ ...dw, elements: welded, selectedId: elId, _dragDim: null });
                               };
                               document.addEventListener("mousemove", onM); document.addEventListener("mouseup", onU);
                               document.addEventListener("touchmove", onM, { passive: false }); document.addEventListener("touchend", onU);
