@@ -2089,10 +2089,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (frames.length > 0) {
                                         const f = frames[0];
                                         const fi = { x: f.x + TK_FRAME, y: f.y + TK_FRAME, r: f.x + f.w - TK_FRAME, b: f.y + f.h - TK_FRAME };
-                                        if (Math.abs(ux) > Math.abs(uy)) { // orizzontale
-                                          ex1 = Math.max(ex1, fi.x - halfT); ex2 = Math.min(ex2, fi.r + halfT);
-                                        } else { // verticale
-                                          ey1 = Math.max(ey1, fi.y - halfT); ey2 = Math.min(ey2, fi.b + halfT);
+                                        if (Math.abs(ux) > Math.abs(uy)) { // orizzontale: clamp X
+                                          ex1 = Math.max(ex1, fi.x); ex2 = Math.min(ex2, fi.r);
+                                        } else { // verticale: clamp Y
+                                          ey1 = Math.max(ey1, fi.y); ey2 = Math.min(ey2, fi.b);
                                         }
                                       }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
