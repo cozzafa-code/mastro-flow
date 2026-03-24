@@ -375,6 +375,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const els = dw.elements || [];
                             const selId = dw.selectedId || null;
                             const drawMode = dw.drawMode || null; // "line"|"apertura"|"place-anta"|"place-vetro"|"place-ap"
+                            // dwRef: sempre aggiornato, usato nei click handler per evitare stale closure
+                            const dwRef = React.useRef(dw);
+                            dwRef.current = dw;
                             const placeApType = dw._placeApType || "SX";
                             const zoom = dw._zoom || 1;
                             const panX = dw._panX || 0, panY = dw._panY || 0;
@@ -748,6 +751,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const onSvgClick = (e2) => {
                               const svg = e2.currentTarget;
                               const { mx, my } = getSvgXY(e2, svg);
+                              // Usa dwRef.current per avere sempre lo stato fresco (evita stale closure)
+                              const dw = dwRef.current;
+                              const els = dw.elements || [];
+                              const drawMode = dw.drawMode || null;
 
                               // Place montante/traverso — click on cell OR polygon
                               if (drawMode === "place-mont") {
@@ -1404,6 +1411,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onMouseMove={(e2) => {
+                                    const dw = dwRef.current;
+                                    const els = dw.elements || [];
+                                    const drawMode = dw.drawMode || null;
                                     const svg = e2.currentTarget;
                                     // Pen mode — traccia path
                                     if (drawMode === "pen" && dw._penActive) {
@@ -1467,6 +1477,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchMove={(e2) => {
+                                    const dw = dwRef.current;
+                                    const els = dw.elements || [];
+                                    const drawMode = dw.drawMode || null;
                                     e2.preventDefault();
                                     const svg = e2.currentTarget;
                                     const t = e2.touches[0];
