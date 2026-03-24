@@ -554,6 +554,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
                                 pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
+                                // Bordi interni del frame — snap per profili interni (zoccolo, soglia, fascia)
+                                const TKF = 6;
+                                pts.push({x:fx+TKF,y:fy+TKF},{x:fx+fw-TKF,y:fy+TKF},{x:fx+TKF,y:fy+fh2-TKF},{x:fx+fw-TKF,y:fy+fh2-TKF});
+                                pts.push({x:fx+TKF,y:fy+fh2/2},{x:fx+fw-TKF,y:fy+fh2/2},{x:fx+fw/2,y:fy+TKF},{x:fx+fw/2,y:fy+fh2-TKF});
+                                for (let t = GRID; t < fw-TKF*2; t += GRID) pts.push({x:fx+TKF+t,y:fy+TKF},{x:fx+TKF+t,y:fy+fh2-TKF});
+                                for (let t = GRID; t < fh2-TKF*2; t += GRID) pts.push({x:fx+TKF,y:fy+TKF+t},{x:fx+fw-TKF,y:fy+TKF+t});
                                 for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
                                 for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
                               });
@@ -1189,16 +1195,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (isMont && py===pending.y1) return;   // zero-length verticale
                                   if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
-                                  // Clamp coordinate al bordo del frame se esiste
-                                  const clampToFrame = (x1, y1, x2, y2) => {
-                                    const fr = dwRef.current.elements?.find(e => e.type === "rect");
-                                    if (!fr) return {x1,y1,x2,y2};
-                                    const isH = Math.abs(x2-x1) >= Math.abs(y2-y1);
-                                    if (isH) return { x1: Math.max(fr.x, Math.min(fr.x+fr.w, x1)), y1, x2: Math.max(fr.x, Math.min(fr.x+fr.w, x2)), y2 };
-                                    return { x1, y1: Math.max(fr.y, Math.min(fr.y+fr.h, y1)), x2, y2: Math.max(fr.y, Math.min(fr.y+fr.h, y2)) };
-                                  };
-                                  const clamped = clampToFrame(pending.x1, pending.y1, px, py);
-                                  const newEl = { id: Date.now(), type: lineType, x1: clamped.x1, y1: clamped.y1, x2: clamped.x2, y2: clamped.y2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
                                   const buildWeldPts2 = (allEls) => {
