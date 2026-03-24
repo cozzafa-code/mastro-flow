@@ -620,6 +620,58 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
                             const setMode = (extra) => onUpdate({ ...dw, ...extra });
 
+                            // ══ JUNCTIONS — rilevamento automatico punti di contatto ══
+                            const junctions = React.useMemo(() => {
+                              const result: any[] = [];
+                              const JTOL = 18; // tolleranza px per rilevare contatto
+                              const freeLines = els.filter(e => e.type === "freeLine");
+                              const montanti = els.filter(e => e.type === "montante");
+                              const traversi = els.filter(e => e.type === "traverso");
+                              // freeLine vs freeLine
+                              for (let i = 0; i < freeLines.length; i++) {
+                                for (let j = i + 1; j < freeLines.length; j++) {
+                                  const a = freeLines[i], b = freeLines[j];
+                                  const pts = [{x:a.x1,y:a.y1},{x:a.x2,y:a.y2}];
+                                  const pts2 = [{x:b.x1,y:b.y1},{x:b.x2,y:b.y2}];
+                                  for (const pa of pts) for (const pb of pts2) {
+                                    if (Math.hypot(pa.x-pb.x, pa.y-pb.y) < JTOL) {
+                                      const existing = dw._junctions?.find((jj:any) => jj.elA === a.id && jj.elB === b.id);
+                                      result.push({ id: `j_${a.id}_${b.id}`, ptX: (pa.x+pb.x)/2, ptY: (pa.y+pb.y)/2, elA: a.id, elB: b.id, type: existing?.type || "90", winner: existing?.winner || "A" });
+                                    }
+                                  }
+                                }
+                              }
+                              // montante vs freeLine orizzontale
+                              for (const m of montanti) {
+                                const mx = m.x, my1 = m.y1 ?? (frame?.y || fY), my2 = m.y2 ?? (frame?.y+frame?.h || fY+fH);
+                                for (const l of freeLines) {
+                                  const pts = [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}];
+                                  for (const p of pts) {
+                                    if (Math.abs(p.x - mx) < JTOL && (Math.abs(p.y - my1) < JTOL || Math.abs(p.y - my2) < JTOL)) {
+                                      const existing = dw._junctions?.find((jj:any) => jj.elA === m.id && jj.elB === l.id);
+                                      result.push({ id: `j_${m.id}_${l.id}`, ptX: mx, ptY: p.y, elA: m.id, elB: l.id, type: existing?.type || "90", winner: existing?.winner || "A" });
+                                    }
+                                  }
+                                }
+                              }
+                              // montante vs traverso
+                              for (const m of montanti) {
+                                for (const t of traversi) {
+                                  const tx1 = t.x1 ?? fX, tx2 = t.x2 ?? fX+fW;
+                                  const my1 = m.y1 ?? fY, my2 = m.y2 ?? fY+fH;
+                                  if (m.x > tx1 && m.x < tx2 && t.y > my1 && t.y < my2) {
+                                    const existing = dw._junctions?.find((jj:any) => jj.elA === m.id && jj.elB === t.id);
+                                    result.push({ id: `j_${m.id}_${t.id}`, ptX: m.x, ptY: t.y, elA: m.id, elB: t.id, type: existing?.type || "90", winner: existing?.winner || "A" });
+                                  }
+                                }
+                              }
+                              // Deduplica per id
+                              const seen = new Set();
+                              return result.filter(j => { if (seen.has(j.id)) return false; seen.add(j.id); return true; });
+                            }, [els, dw._junctions]);
+
+                            const [junctionEdit, setJunctionEdit] = React.useState<any>(null);
+
                             const undo = () => {
                               const hist = dw.history || [];
                               if (hist.length === 0) return;
@@ -1191,6 +1243,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
+                              // Modalità giunzione — click su marker apre pannello
+                              if (drawMode === "junction") {
+                                const JTOL = 24;
+                                const nearest = junctions.reduce((best: any, j: any) => {
+                                  const d = Math.hypot(j.ptX - mx, j.ptY - my);
+                                  return (!best || d < best.d) ? { ...j, d } : best;
+                                }, null);
+                                if (nearest && nearest.d < JTOL) {
+                                  setJunctionEdit(nearest);
+                                }
+                                return;
+                              }
+
                               // Default — deselect
                               setMode({ selectedId: null });
                             };
@@ -1450,6 +1515,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1.5px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}>📐 Righello</div>
                                   {/* Distinta materiali */}
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1.5px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}>📋 Distinta</div>
+                                  {/* Giunzioni */}
+                                  {junctions.length > 0 && <div onClick={() => setMode({ drawMode: drawMode === "junction" ? null : "junction", _pendingLine: null })} style={{ ...bs(drawMode === "junction"), background: drawMode === "junction" ? "#3B7FE012" : undefined, color: drawMode === "junction" ? T.blue : undefined, border: `1.5px solid ${drawMode === "junction" ? T.blue : T.bdr}` }}>⌐ Giunzioni ({junctions.length})</div>}
                                 </div>
 
 
@@ -2209,8 +2276,92 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     return null;
                                   })()}
+                                  {/* ══ JUNCTION MARKERS ══ */}
+                                  {(drawMode === "junction" || junctions.some((j:any) => dw._junctions?.find((jj:any) => jj.id === j.id))) && junctions.map((j: any) => {
+                                    const saved = dw._junctions?.find((jj:any) => jj.id === j.id);
+                                    const jType = saved?.type || "90";
+                                    const isSelected = junctionEdit?.id === j.id;
+                                    return (
+                                      <g key={j.id} style={{ cursor: "pointer" }} onClick={(e3) => { e3.stopPropagation(); if (drawMode === "junction") setJunctionEdit(j); }}>
+                                        <circle cx={j.ptX} cy={j.ptY} r={9} fill={jType === "45" ? "#D08008" : T.blue} fillOpacity={0.15} stroke={jType === "45" ? "#D08008" : T.blue} strokeWidth={isSelected ? 2.5 : 1.5} />
+                                        <text x={j.ptX} y={j.ptY + 4} textAnchor="middle" fontSize={8} fontWeight={800} fill={jType === "45" ? "#D08008" : T.blue} fontFamily="monospace">{jType}°</text>
+                                      </g>
+                                    );
+                                  })}
                                 </svg>
                                 </div>
+
+                                {/* ══ PANNELLO GIUNZIONE ══ */}
+                                {junctionEdit && (
+                                  <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.35)" }}
+                                    onClick={() => setJunctionEdit(null)}>
+                                    <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 260, display: "flex", flexDirection: "column", gap: 12 }}
+                                      onClick={e => e.stopPropagation()}>
+                                      <div style={{ fontSize: 13, fontWeight: 800, color: "#1A1A1C" }}>⌐ Modifica Giunzione</div>
+                                      <div style={{ fontSize: 11, color: "#888" }}>Scegli il tipo di taglio angolare</div>
+                                      {/* Tipo giunzione */}
+                                      <div style={{ display: "flex", gap: 8 }}>
+                                        {[{id:"90",label:"90°",desc:"Un profilo passa"},{id:"45",label:"45°",desc:"Taglio a 45°"}].map(opt => {
+                                          const saved = dw._junctions?.find((jj:any) => jj.id === junctionEdit.id);
+                                          const curType = saved?.type || "90";
+                                          const isSel = curType === opt.id;
+                                          return (
+                                            <div key={opt.id} onClick={() => {
+                                              const newJ = { ...junctionEdit, type: opt.id, winner: saved?.winner || "A" };
+                                              const existing = dw._junctions || [];
+                                              const updated = existing.filter((jj:any) => jj.id !== junctionEdit.id);
+                                              setMode({ _junctions: [...updated, newJ] });
+                                              setJunctionEdit(newJ);
+                                            }} style={{ flex: 1, padding: "10px 8px", borderRadius: 8, border: `2px solid ${isSel ? T.blue : "#ddd"}`, background: isSel ? `${T.blue}12` : "#fff", cursor: "pointer", textAlign: "center" }}>
+                                              <div style={{ fontSize: 18, fontWeight: 800, color: isSel ? T.blue : "#555" }}>{opt.label}</div>
+                                              <div style={{ fontSize: 9, color: "#888", marginTop: 2 }}>{opt.desc}</div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                      {/* Chi vince */}
+                                      {(() => {
+                                        const saved = dw._junctions?.find((jj:any) => jj.id === junctionEdit.id);
+                                        const curType = saved?.type || "90";
+                                        if (curType !== "90") return null;
+                                        const elA = els.find((e:any) => e.id === junctionEdit.elA);
+                                        const elB = els.find((e:any) => e.id === junctionEdit.elB);
+                                        const nameA = elA?.subType || elA?.type || "A";
+                                        const nameB = elB?.subType || elB?.type || "B";
+                                        const curWinner = saved?.winner || "A";
+                                        return (
+                                          <div>
+                                            <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 6 }}>Chi vince (passa sopra)</div>
+                                            <div style={{ display: "flex", gap: 8 }}>
+                                              {[{id:"A",label:nameA.toUpperCase()},{id:"B",label:nameB.toUpperCase()}].map(opt => {
+                                                const isSel = curWinner === opt.id;
+                                                return (
+                                                  <div key={opt.id} onClick={() => {
+                                                    const newJ = { ...(saved || junctionEdit), winner: opt.id };
+                                                    const existing = dw._junctions || [];
+                                                    const updated = existing.filter((jj:any) => jj.id !== junctionEdit.id);
+                                                    setMode({ _junctions: [...updated, newJ] });
+                                                    setJunctionEdit(newJ);
+                                                  }} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `2px solid ${isSel ? "#1A9E73" : "#ddd"}`, background: isSel ? "#1A9E7312" : "#fff", cursor: "pointer", textAlign: "center", fontSize: 11, fontWeight: 800, color: isSel ? "#1A9E73" : "#555" }}>
+                                                    {opt.label}
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
+                                      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                                        <div onClick={() => setJunctionEdit(null)} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #ddd", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#888" }}>Chiudi</div>
+                                        <div onClick={() => {
+                                          const existing = dw._junctions || [];
+                                          setMode({ _junctions: existing.filter((jj:any) => jj.id !== junctionEdit.id) });
+                                          setJunctionEdit(null);
+                                        }} style={{ flex: 1, padding: "9px", borderRadius: 8, border: "1.5px solid #DC4444", background: "#DC444408", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#DC4444" }}>Reset</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
 
                                 {/* Footer */}
                                 <div style={{ padding: "4px 10px 5px", fontSize: 9, textAlign: "center", color: (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") ? T.grn : (drawMode === "apertura" || drawMode === "place-ap") ? T.blue : (drawMode === "line" || drawMode === "place-mont" || drawMode === "place-trav") ? "#555" : T.sub, fontWeight: drawMode ? 700 : 400 }}>
