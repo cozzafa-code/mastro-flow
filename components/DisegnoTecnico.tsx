@@ -1876,10 +1876,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "freeLine") {
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
-                                      // Spessore in base al subType
                                       const subType = el.subType || null;
                                       const tkMap = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT };
                                       const halfT = subType ? (tkMap[subType] || TK_FRAME) : TK_FRAME;
+                                      const TK = halfT * 2; // spessore totale profilo
                                       const fillMap = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8" };
                                       const fillC = subType ? (fillMap[subType] || "#f0efe8") : "#f0efe8";
                                       const labelMap = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO" };
@@ -1890,24 +1890,45 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const mmLen = el._mmOverride != null ? el._mmOverride : Math.round(len / refLen * refReal);
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
                                       const ang = Math.atan2(dy2, dx2) * 180 / Math.PI;
-                                      // Badge misura: offset dalla linea
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
-                                      // Badge nome: offset opposto (sopra il profilo)
                                       const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
                                       const isPartOfPoly = poly && poly.length >= 3;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
-                                          {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill={sel ? "#1A9E7320" : fillC} stroke={sel ? "#1A9E73" : "#1A1A1C"} strokeWidth={sel ? 1.5 : 0.8} strokeLinejoin="miter" />}
-                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={"#1A9E73"} strokeWidth={2} opacity={0.3} />}
-                                          {/* Badge nome tipo — sopra il profilo */}
+                                          {/* Hit area invisibile */}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(18, TK + 8)} strokeLinecap="square" />
+                                          {/* Profilo — stroke spesso con cap quadrato: angoli si fondono perfettamente */}
+                                          {!isPartOfPoly && <>
+                                            {/* Riempimento interno */}
+                                            <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2}
+                                              stroke={sel ? "#1A9E7320" : fillC}
+                                              strokeWidth={TK - 1.5}
+                                              strokeLinecap="square" />
+                                            {/* Bordo esterno */}
+                                            <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2}
+                                              stroke={sel ? "#1A9E73" : "#1A1A1C"}
+                                              strokeWidth={TK}
+                                              strokeLinecap="square"
+                                              fill="none"
+                                              style={{ pointerEvents: "none" }}
+                                              opacity={sel ? 1 : 1}
+                                            />
+                                            {/* Linea bordo interno (dettaglio profilo) */}
+                                            <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2}
+                                              stroke={sel ? "#1A9E7340" : "#1A1A1C"}
+                                              strokeWidth={sel ? 1.5 : 0.6}
+                                              strokeLinecap="square"
+                                              opacity={sel ? 1 : 0.4}
+                                            />
+                                          </>}
+                                          {/* Badge nome tipo */}
                                           {labelTxt && (
                                             <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lxN}, ${lyN})`}>
                                               <rect x={lxN - labelTxt.length*3.5} y={lyN - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
                                               <text x={lxN} y={lyN + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="monospace">{labelTxt}</text>
                                             </g>
                                           )}
-                                          {/* Badge misura — click per modificare */}
+                                          {/* Badge misura */}
                                           <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}
                                             onClick={(e3) => {
                                               e3.stopPropagation();
