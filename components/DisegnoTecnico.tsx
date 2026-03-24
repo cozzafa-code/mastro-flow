@@ -967,8 +967,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (!pending) {
                                   // PRIMO CLICK
                                   if (isMont) {
-                                    // Montante: X rimane dove clicchi, snap Y ai bordi del frame
-                                    if (frame) {
+                                    // Montante: X rimane dove clicchi, snap Y solo agli elementi interni (traversi, bordi frame)
+                                    // Prima guarda traversi/altri elementi orizzontali
+                                    const horzPts = els.filter(e=>e.x1!==undefined && e.subType!=="montante")
+                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                    let bestY=null, bestDY=SNAP_R;
+                                    horzPts.forEach(p=>{ const d=Math.abs(p.y-py); if(d<bestDY){bestDY=d;bestY=p.y;} });
+                                    if(bestY!==null) { py=bestY; }
+                                    else if (frame) {
+                                      // Snap ai bordi interni del frame
                                       const distTop = Math.abs(py - frame.y);
                                       const distBot = Math.abs(py - (frame.y + frame.h));
                                       if (distTop < SNAP_R) py = frame.y;
@@ -976,8 +983,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else if (isTrav) {
-                                    // Traverso: Y rimane dove clicchi, snap X ai bordi del frame
-                                    if (frame) {
+                                    // Traverso: Y rimane dove clicchi, snap X agli elementi verticali o bordi frame
+                                    const vertPts = els.filter(e=>e.x1!==undefined && e.subType!=="traverso")
+                                      .flatMap(l=>[{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                                    let bestX=null, bestDX=SNAP_R;
+                                    vertPts.forEach(p=>{ const d=Math.abs(p.x-px); if(d<bestDX){bestDX=d;bestX=p.x;} });
+                                    if(bestX!==null) { px=bestX; }
+                                    else if (frame) {
                                       const distL = Math.abs(px - frame.x);
                                       const distR = Math.abs(px - (frame.x + frame.w));
                                       if (distL < SNAP_R) px = frame.x;
@@ -1034,9 +1046,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (px===pending.x1 && py===pending.y1) return;
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  // Saldatura immediata: aggiusta punti vicini degli altri elementi
+                                  const WELD2 = SNAP_R;
+                                  const weldedEls = els.map(x => {
+                                    if (x.x1 === undefined) return x;
+                                    let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
+                                    // Salda a x1/y1 del nuovo elemento
+                                    if (Math.hypot(nx1-pending.x1, ny1-pending.y1)<WELD2) { nx1=pending.x1; ny1=pending.y1; }
+                                    if (Math.hypot(nx2-pending.x1, ny2-pending.y1)<WELD2) { nx2=pending.x1; ny2=pending.y1; }
+                                    // Salda a x2/y2 del nuovo elemento
+                                    if (Math.hypot(nx1-px, ny1-py)<WELD2) { nx1=px; ny1=py; }
+                                    if (Math.hypot(nx2-px, ny2-py)<WELD2) { nx2=px; ny2=py; }
+                                    if (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2) return {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2};
+                                    return x;
+                                  });
                                   // Per montante/traverso: non impostare chainStart (no chiusura automatica)
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
-                                  setDW([...els, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: newChainStart, _lineSubType: subTypeVal });
+                                  setDW([...weldedEls, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
