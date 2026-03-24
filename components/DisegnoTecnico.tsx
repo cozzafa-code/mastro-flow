@@ -1858,11 +1858,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* ══ ELEMENTS ══ */}
-                                  {/* Render in z-order: montanti/traversi → freeLine → rect (frame sopra tutto) */}
+                                  {/* Render in z-order: montanti/traversi prima, freeLine orizzontali sopra */}
                                   {[
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "rect"),
-                                    ...els.filter(e => e.type === "rect"),
+                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso"),
                                   ].map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
@@ -2082,11 +2081,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
                                       const ext1 = hasMontAt1 ? -HM_loc : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
-                                      const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
-                                      const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
+                                      let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
+                                      let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
+                                      // Clamp al bordo interno del frame (non sporge mai oltre il telaio)
+                                      if (frames.length > 0) {
+                                        const f = frames[0];
+                                        const fi = { x: f.x + TK_FRAME, y: f.y + TK_FRAME, r: f.x + f.w - TK_FRAME, b: f.y + f.h - TK_FRAME };
+                                        if (Math.abs(ux) > Math.abs(uy)) { // orizzontale
+                                          ex1 = Math.max(ex1, fi.x - halfT); ex2 = Math.min(ex2, fi.r + halfT);
+                                        } else { // verticale
+                                          ey1 = Math.max(ey1, fi.y - halfT); ey2 = Math.min(ey2, fi.b + halfT);
+                                        }
+                                      }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
