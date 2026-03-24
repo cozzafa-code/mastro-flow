@@ -986,22 +986,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
                                   const subTypeVal = dw._lineSubType || null;
-                                  // Montante/traverso libero: forza verticale o orizzontale + clamp nel frame
-                                  if (subTypeVal === "montante" || subTypeVal === "traverso") {
-                                    const adxM = Math.abs(px - pending.x1), adyM = Math.abs(py - pending.y1);
-                                    if (subTypeVal === "montante") {
-                                      // Montante = sempre verticale: x fisso, y libero
-                                      px = pending.x1;
-                                    } else {
-                                      // Traverso = sempre orizzontale: y fisso, x libero
-                                      py = pending.y1;
-                                    }
-                                    // Clamp dentro il frame
-                                    if (frame) {
-                                      px = Math.max(frame.x, Math.min(frame.x + frame.w, px));
-                                      py = Math.max(frame.y, Math.min(frame.y + frame.h, py));
-                                    }
-                                  }
+                                  // Montante: verticale (x fisso al punto di partenza)
+                                  if (subTypeVal === "montante") { px = pending.x1; }
+                                  // Traverso: orizzontale (y fisso al punto di partenza)
+                                  if (subTypeVal === "traverso") { py = pending.y1; }
                                   const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   setDW([...els, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart, _lineSubType: subTypeVal });
                                 }
@@ -1363,16 +1351,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (Math.abs(gx - p.x1) < 5) gx = p.x1;
                                       if (Math.abs(gy - p.y1) < 5) gy = p.y1;
                                     }
-                                    // Montante libero: forza verticale + clamp nel frame
-                                    if (dw._lineSubType === "montante") {
-                                      gx = p.x1;
-                                      if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
-                                    }
-                                    // Traverso libero: forza orizzontale + clamp nel frame
-                                    if (dw._lineSubType === "traverso") {
-                                      gy = p.y1;
-                                      if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx));
-                                    }
+                                    // Montante libero: forza verticale (solo x fisso)
+                                    if (dw._lineSubType === "montante") { gx = p.x1; }
+                                    // Traverso libero: forza orizzontale (solo y fisso)
+                                    if (dw._lineSubType === "traverso") { gy = p.y1; }
                                     const deg = Math.round(Math.atan2(-(gy - p.y1), gx - p.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - p.x1, gy - p.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
@@ -1430,8 +1412,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (Math.abs(gx - pp.x1) < 5) gx = pp.x1;
                                       if (Math.abs(gy - pp.y1) < 5) gy = pp.y1;
                                     }
-                                    if (dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
-                                    if (dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
+                                    if (dw._lineSubType === "montante") { gx = pp.x1; }
+                                    if (dw._lineSubType === "traverso") { gy = pp.y1; }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
