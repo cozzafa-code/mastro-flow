@@ -964,15 +964,36 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 let py = Math.round(my);
 
                                 if (!pending) {
-                                  // PRIMO CLICK — snap a vertici vicini
-                                  const allPts = [
-                                    ...els.filter(e => e.x1 !== undefined).flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
-                                    ...frames.flatMap(f => [{x:f.x,y:f.y},{x:f.x+f.w,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y+f.h}])
-                                  ];
-                                  let best = null, bestD = SNAP_R * 1.5;
-                                  allPts.forEach(p => { const d=Math.hypot(p.x-px,p.y-py); if(d<bestD){bestD=d;best=p;} });
-                                  if (best) { px = best.x; py = best.y; }
-                                  setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
+                                  // PRIMO CLICK
+                                  if (isMont) {
+                                    // Montante: X rimane dove clicchi, snap Y ai bordi del frame
+                                    if (frame) {
+                                      const distTop = Math.abs(py - frame.y);
+                                      const distBot = Math.abs(py - (frame.y + frame.h));
+                                      if (distTop < SNAP_R) py = frame.y;
+                                      else if (distBot < SNAP_R) py = frame.y + frame.h;
+                                    }
+                                    setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
+                                  } else if (isTrav) {
+                                    // Traverso: Y rimane dove clicchi, snap X ai bordi del frame
+                                    if (frame) {
+                                      const distL = Math.abs(px - frame.x);
+                                      const distR = Math.abs(px - (frame.x + frame.w));
+                                      if (distL < SNAP_R) px = frame.x;
+                                      else if (distR < SNAP_R) px = frame.x + frame.w;
+                                    }
+                                    setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
+                                  } else {
+                                    // Telaio libero e altri: snap a tutti i punti vicini
+                                    const allPts = [
+                                      ...els.filter(e => e.x1 !== undefined).flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]),
+                                      ...frames.flatMap(f => [{x:f.x,y:f.y},{x:f.x+f.w,y:f.y},{x:f.x,y:f.y+f.h},{x:f.x+f.w,y:f.y+f.h}])
+                                    ];
+                                    let best = null, bestD = SNAP_R * 1.5;
+                                    allPts.forEach(p => { const d=Math.hypot(p.x-px,p.y-py); if(d<bestD){bestD=d;best=p;} });
+                                    if (best) { px = best.x; py = best.y; }
+                                    setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
+                                  }
                                 } else {
                                   // SECONDO CLICK — crea il segmento
 
