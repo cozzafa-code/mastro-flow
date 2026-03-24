@@ -1189,7 +1189,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (isMont && py===pending.y1) return;   // zero-length verticale
                                   if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
-                                  const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  // Clamp coordinate al bordo del frame se esiste
+                                  const clampToFrame = (x1, y1, x2, y2) => {
+                                    const fr = dwRef.current.elements?.find(e => e.type === "rect");
+                                    if (!fr) return {x1,y1,x2,y2};
+                                    const isH = Math.abs(x2-x1) >= Math.abs(y2-y1);
+                                    if (isH) return { x1: Math.max(fr.x, Math.min(fr.x+fr.w, x1)), y1, x2: Math.max(fr.x, Math.min(fr.x+fr.w, x2)), y2 };
+                                    return { x1, y1: Math.max(fr.y, Math.min(fr.y+fr.h, y1)), x2, y2: Math.max(fr.y, Math.min(fr.y+fr.h, y2)) };
+                                  };
+                                  const clamped = clampToFrame(pending.x1, pending.y1, px, py);
+                                  const newEl = { id: Date.now(), type: lineType, x1: clamped.x1, y1: clamped.y1, x2: clamped.x2, y2: clamped.y2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
                                   const buildWeldPts2 = (allEls) => {
@@ -2086,20 +2095,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Clamp al bordo esterno del frame — profilo non esce mai dal telaio
-                                      const isHorzEl = Math.abs(el.x2 - el.x1) >= Math.abs(el.y2 - el.y1);
-                                      const clampCoord = (px, py) => {
-                                        if (!frame) return [px, py];
-                                        return [
-                                          isHorzEl ? Math.max(frame.x, Math.min(frame.x + frame.w, px)) : px,
-                                          !isHorzEl ? Math.max(frame.y, Math.min(frame.y + frame.h, py)) : py
-                                        ];
-                                      };
-                                      const [p1x,p1y] = clampCoord(ex1+nx, ey1+ny);
-                                      const [p2x,p2y] = clampCoord(ex2+nx, ey2+ny);
-                                      const [p3x,p3y] = clampCoord(ex2-nx, ey2-ny);
-                                      const [p4x,p4y] = clampCoord(ex1-nx, ey1-ny);
-                                      const pts4 = `${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y} ${p4x},${p4y}`;
+                                      const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           {/* Hit area */}
