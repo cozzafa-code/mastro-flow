@@ -381,7 +381,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const placeApType = dw._placeApType || "SX";
                             const zoom = dw._zoom || 1;
                             const panX = dw._panX || 0, panY = dw._panY || 0;
-                            const canvasW = Math.min(window.innerWidth - 16, window.innerWidth > 768 ? 900 : 600);
+                            const canvasW = Math.min(window.innerWidth > 768 ? 900 : window.innerWidth - 8, window.innerWidth - 8);
                             const GRID = 1; // movimento fluido al pixel
                             const SNAP_R = 28;
 
@@ -1845,27 +1845,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ MONTANTE — scende fino al bordo inferiore del profilo orizzontale ═══
+                                    // ═══ MONTANTE — scende al bordo inferiore del profilo orizzontale alla stessa Y ═══
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const HM2 = TK_MONT / 2;
                                       const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
+                                      // Trova freeLine orizzontali: tolleranza Y = 50px, ignora posizione X
                                       const horzLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined &&
                                         Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1);
                                       let newTop = my1raw, newBot = my2raw;
                                       horzLines.forEach(l => {
                                         const lHT = tkMapLocal[l.subType] || TK_FRAME;
                                         const lY = (l.y1 + l.y2) / 2;
-                                        const lTop = lY - lHT; // bordo superiore del profilo
-                                        const lBot = lY + lHT; // bordo inferiore del profilo
-                                        const TOL = lHT * 2 + 8; // tolleranza = diametro profilo + 8px
-                                        // Estremità inferiore montante vicina al profilo → scende al bordo inferiore
-                                        if (Math.abs(lTop - my2raw) < TOL || Math.abs(lBot - my2raw) < TOL || Math.abs(lY - my2raw) < TOL) {
+                                        const lBot = lY + lHT;
+                                        const lTop = lY - lHT;
+                                        // Estremità inferiore: se c'è un profilo orizzontale entro 50px sotto my2raw → scendi al suo bordo inferiore
+                                        if (lY >= my2raw - 4 && lY <= my2raw + 50) {
                                           newBot = Math.max(newBot, lBot);
                                         }
-                                        // Estremità superiore montante vicina al profilo → sale al bordo superiore
-                                        if (Math.abs(lTop - my1raw) < TOL || Math.abs(lBot - my1raw) < TOL || Math.abs(lY - my1raw) < TOL) {
+                                        // Estremità superiore: se c'è un profilo orizzontale entro 50px sopra my1raw → sali al suo bordo superiore
+                                        if (lY <= my1raw + 4 && lY >= my1raw - 50) {
                                           newTop = Math.min(newTop, lTop);
                                         }
                                       });
