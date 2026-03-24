@@ -950,7 +950,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     px = cs.x; py = cs.y;
                                   }
                                   const lineType = drawMode === "apertura" ? "apLine" : "freeLine";
-                                  setDW([...els, { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py }], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart });
+                                  const subTypeVal = dw._lineSubType || null;
+                                  const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  setDW([...els, newEl], { _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
@@ -1139,7 +1141,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }} style={bs()}>▭ Telaio</div>
                                   {/* Telaio libero (ex Linea) */}
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" ? null : "line", _pendingLine: null })} style={bs(drawMode === "line")}>⬡ Tel.Libero</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Libero</div>
                                   {drawMode === "line" && els.filter(e => e.type === "freeLine").length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
@@ -1156,22 +1158,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {/* Traverso */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null })} style={bs(drawMode === "place-trav")}>━ Traverso</div>
                                   {/* Soglia */}
-                                  <div onClick={() => {
-                                    if (frame) setDW([...els, { id: Date.now(), type: "soglia", x: frame.x, y: frame.y + frame.h - TK_SOGLIA * 2, w: frame.w, profilo: "Soglia", subType: "soglia" }]);
-                                  }} style={bs()}>▬ Soglia</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
+                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "soglia"), borderColor: drawMode === "line" && dw._lineSubType === "soglia" ? "#1A9E73" : undefined }}>— Soglia</div>
                                   {/* Zoccolo */}
-                                  <div onClick={() => {
-                                    if (frame) setDW([...els, { id: Date.now(), type: "soglia", x: frame.x, y: frame.y + frame.h - TK_ZOCCOLO * 2, w: frame.w, profilo: "Zoccolo", subType: "zoccolo" }]);
-                                  }} style={bs()}>▬ Zoccolo</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
+                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "zoccolo") }}>━ Zoccolo</div>
                                   {/* Fascia */}
-                                  <div onClick={() => {
-                                    if (frame) setDW([...els, { id: Date.now(), type: "fascia", x: frame.x, y: frame.y, w: frame.w, profilo: "Fascia", subType: "fascia" }]);
-                                    else setMode({ drawMode: drawMode === "place-fascia" ? null : "place-fascia", _pendingLine: null });
-                                  }} style={bs(drawMode === "place-fascia")}>▬ Fascia</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "fascia" ? null : "line", _lineSubType: "fascia", _pendingLine: null })}
+                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "fascia") }}>▬ Fascia</div>
                                   {/* Profilo complementare */}
-                                  <div onClick={() => {
-                                    if (frame) setDW([...els, { id: Date.now(), type: "profcomp", x: frame.x, y: frame.y + frame.h / 2, w: frame.w, profilo: "Prof.Comp.", subType: "profcomp" }]);
-                                  }} style={bs()}>— Prof.Comp.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
+                                    style={{ ...bs(drawMode === "line" && dw._lineSubType === "profcomp") }}>— Prof.Comp.</div>
                                 </div>
 
                                 {/* ═══ GRUPPO 2: ANTE + VETRI ═══ */}
@@ -1397,7 +1394,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* Snap points in draw mode */}
-                                  {(drawMode === "line" || drawMode === "apertura") && getSnapPoints().map((p, pi) => (
+                                  {(drawMode === "line" || drawMode === "apertura") && dw._pendingLine && getSnapPoints().map((p, pi) => (
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : "#1A9E73"} fillOpacity={0.2} />
                                   ))}
 
@@ -1659,30 +1656,44 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "freeLine") {
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
-                                      const halfT = TK_FRAME;
+                                      // Spessore in base al subType
+                                      const subType = el.subType || null;
+                                      const tkMap = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
+                                      const halfT = subType ? (tkMap[subType] || TK_FRAME) : TK_FRAME;
+                                      const fillMap = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4" };
+                                      const fillC = subType ? (fillMap[subType] || "#f0efe8") : "#f0efe8";
+                                      const labelMap = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP." };
+                                      const labelTxt = subType ? (labelMap[subType] || subType.toUpperCase()) : null;
                                       const nx = -dy2 / len * halfT, ny = dx2 / len * halfT;
                                       const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
                                       const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
                                       const mmLen = el._mmOverride != null ? el._mmOverride : Math.round(len / refLen * refReal);
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
                                       const ang = Math.atan2(dy2, dx2) * 180 / Math.PI;
+                                      // Badge misura: offset dalla linea
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
+                                      // Badge nome: offset opposto (sopra il profilo)
+                                      const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
                                       const isPartOfPoly = poly && poly.length >= 3;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
-                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={14} />
-                                          {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill="#f0efe8" stroke="#1A1A1C" strokeWidth={1} strokeLinejoin="miter" />}
-                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={"#1A9E73"} strokeWidth={3} opacity={0.4} />}
+                                          <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
+                                          {!isPartOfPoly && <polygon points={`${el.x1+nx},${el.y1+ny} ${el.x2+nx},${el.y2+ny} ${el.x2-nx},${el.y2-ny} ${el.x1-nx},${el.y1-ny}`} fill={sel ? "#1A9E7320" : fillC} stroke={sel ? "#1A9E73" : "#1A1A1C"} strokeWidth={sel ? 1.5 : 0.8} strokeLinejoin="miter" />}
+                                          {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke={"#1A9E73"} strokeWidth={2} opacity={0.3} />}
+                                          {/* Badge nome tipo — sopra il profilo */}
+                                          {labelTxt && (
+                                            <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lxN}, ${lyN})`}>
+                                              <rect x={lxN - labelTxt.length*3.5} y={lyN - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
+                                              <text x={lxN} y={lyN + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="monospace">{labelTxt}</text>
+                                            </g>
+                                          )}
                                           {/* Badge misura — click per modificare */}
                                           <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}
                                             onClick={(e3) => {
                                               e3.stopPropagation();
                                               if (drawMode) return;
-                                              // Calcola posizione schermo del badge
                                               const svgEl = e3.currentTarget.closest("svg");
                                               const r = svgEl?.getBoundingClientRect();
-                                              const sx2 = r ? r.left + (lx - panX) * zoom / (canvasW / zoom) * (canvasW / zoom) / canvasW * r.width : lx;
-                                              const sy2 = r ? r.top + (ly - panY) * zoom / (canvasH / zoom) * (canvasH / zoom) / canvasH * r.height : ly;
                                               setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: len, x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 });
                                             }}
                                             style={{ cursor: "pointer" }}>
