@@ -812,6 +812,38 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
+                              // Mont.Lib — due click: primo=y1, secondo=y2, X raw
+                              if (drawMode === "place-mont-free") {
+                                const pending = dw._pendingLine;
+                                if (!pending) {
+                                  // Primo click: salva x e y1
+                                  setMode({ _pendingLine: { x1: snap(mx), y1: snap(my), _subType: "montante" } });
+                                } else {
+                                  // Secondo click: crea montante con y1=pending.y1, y2=my
+                                  const x = pending.x1;
+                                  const y1 = Math.min(pending.y1, snap(my));
+                                  const y2 = Math.max(pending.y1, snap(my));
+                                  if (Math.abs(y2 - y1) < 5) return;
+                                  setDW([...els, { id: Date.now(), type: "montante", x, y1, y2 }], { _pendingLine: null });
+                                }
+                                return;
+                              }
+
+                              // Trav.Lib — due click: primo=x1, secondo=x2, Y raw
+                              if (drawMode === "place-trav-free") {
+                                const pending = dw._pendingLine;
+                                if (!pending) {
+                                  setMode({ _pendingLine: { x1: snap(mx), y1: snap(my), _subType: "traverso" } });
+                                } else {
+                                  const y = pending.y1;
+                                  const x1 = Math.min(pending.x1, snap(mx));
+                                  const x2 = Math.max(pending.x1, snap(mx));
+                                  if (Math.abs(x2 - x1) < 5) return;
+                                  setDW([...els, { id: Date.now(), type: "traverso", y, x1, x2 }], { _pendingLine: null });
+                                }
+                                return;
+                              }
+
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
@@ -1150,7 +1182,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const bAp = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
-                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" ? "crosshair" : drawMode ? "pointer" : "default";
+                            const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" ? "crosshair" : drawMode ? "pointer" : "default";
 
                             // ══ Apply dim change con propagazione catena ══
                             const dimEditRef = dimEdit; // accessibile in applyDimChange
@@ -1308,6 +1340,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {drawMode === "apertura" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>↗ APERTURA</span>}
                                   {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") && <span style={{ fontSize: 9, background: T.grn, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 CLICK su cella</span>}
                                   {(drawMode === "place-mont" || drawMode === "place-trav") && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {drawMode === "place-mont" ? "MONTANTE" : "TRAVERSO"} — click cella</span>}
+                                  {drawMode === "place-mont-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine montante" : "1° click → inizio montante"}</span>}
+                                  {drawMode === "place-trav-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine traverso" : "1° click → inizio traverso"}</span>}
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
@@ -1341,6 +1375,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
                                 {/* RIGA 2: Profili liberi — sempre visibili */}
                                 <div style={{ display: "flex", gap: 3, padding: "2px 8px 4px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont-free" ? null : "place-mont-free", _pendingLine: null })}
+                                    style={bs(drawMode === "place-mont-free")}>┃ Mont.Lib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
+                                    style={bs(drawMode === "place-trav-free")}>━ Trav.Lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "soglia")}>— Soglia</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
