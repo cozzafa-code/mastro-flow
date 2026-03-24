@@ -1858,10 +1858,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* ══ ELEMENTS ══ */}
-                                  {/* Render in z-order: montanti/traversi prima, freeLine orizzontali sopra */}
+                                  {/* Render in z-order: montanti/traversi → freeLine → rect (frame sopra tutto) */}
                                   {[
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso"),
+                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso" && e.type !== "rect"),
+                                    ...els.filter(e => e.type === "rect"),
                                   ].map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
@@ -2081,19 +2082,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      // Frame: ritrai solo sul bordo nella direzione della linea
-                                      const FTOL = TK_FRAME + halfT + 2;
-                                      const isHorzLine = Math.abs(ux) > Math.abs(uy);
-                                      const hasFrameAt1 = !hasMontAt1 && frames.some(f =>
-                                        isHorzLine
-                                          ? (Math.abs(el.x1 - f.x) < FTOL || Math.abs(el.x1 - (f.x+f.w)) < FTOL)
-                                          : (Math.abs(el.y1 - f.y) < FTOL || Math.abs(el.y1 - (f.y+f.h)) < FTOL));
-                                      const hasFrameAt2 = !hasMontAt2 && frames.some(f =>
-                                        isHorzLine
-                                          ? (Math.abs(el.x2 - f.x) < FTOL || Math.abs(el.x2 - (f.x+f.w)) < FTOL)
-                                          : (Math.abs(el.y2 - f.y) < FTOL || Math.abs(el.y2 - (f.y+f.h)) < FTOL));
-                                      const ext1 = hasMontAt1 ? -HM_loc : hasFrameAt1 ? -TK_FRAME : halfT;
-                                      const ext2 = hasMontAt2 ? -HM_loc : hasFrameAt2 ? -TK_FRAME : halfT;
+                                      // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
+                                      const ext1 = hasMontAt1 ? -HM_loc : halfT;
+                                      const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
