@@ -1894,12 +1894,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         // Il profilo deve essere sotto il centro del montante
                                         // e il suo bordo superiore deve essere vicino a my2raw (entro lHT*3)
                                         if (lY > (my1raw + my2raw) / 2 && lTop >= my2raw - lHT * 3) {
-                                          renderBot = Math.max(renderBot, lBot + lHT); // +lHT copre l'estensione del polygon
+                                          renderBot = Math.max(renderBot, lBot + lHT);
                                         }
                                       });
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={renderBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          {/* Fill */}
+                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={renderBot - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke="none" />
+                                          {/* Bordi: solo linee laterali + bordo superiore — no bordo inferiore (coperto dal profilo) */}
+                                          <line x1={el.x - HM2} y1={my1raw} x2={el.x - HM2} y2={renderBot} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8}/>
+                                          <line x1={el.x + HM2} y1={my1raw} x2={el.x + HM2} y2={renderBot} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8}/>
+                                          <line x1={el.x - HM2} y1={my1raw} x2={el.x + HM2} y2={my1raw} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8}/>
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
