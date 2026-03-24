@@ -975,7 +975,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (d < bestDist) { bestDist = d; bestSnap = p; }
                                   });
                                   if (bestSnap) { px = bestSnap.x; py = bestSnap.y; }
-                                  setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py } });
+                                  setMode({ _pendingLine: { x1: px, y1: py }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: dw._lineSubType });
                                 } else {
                                   if (px === pending.x1 && py === pending.y1) return;
                                   // Snap esatto al chainStart se vicino (chiusura forma intenzionale)
@@ -1023,8 +1023,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const refLenR = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
                                   const refRealR = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
                                   const mmR = Math.round(lenPxR / refLenR * refRealR);
-                                  setDW([...els, { id: Date.now(), type: "righello", x1: pending2.x1, y1: pending2.y1, x2: px2, y2: py2, label: String(mmR) }], { _pendingLine: null, _chainStart: null });
-                                  setMode({ drawMode: null, _pendingLine: null });
+                                  const hist = pushHistory();
+                                  // Una sola chiamata — aggiunge elemento e resetta drawMode
+                                  onUpdate({ ...dw, elements: [...els, { id: Date.now(), type: "righello", x1: pending2.x1, y1: pending2.y1, x2: px2, y2: py2, label: String(mmR) }], history: hist, drawMode: "righello", _pendingLine: null, _chainStart: null });
                                 }
                                 return;
                               }
