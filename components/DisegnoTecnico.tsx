@@ -2138,14 +2138,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const vL = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1);
                                           const allVx = vL.flatMap(l => [(l.x1+l.x2)/2]);
                                           const allVy = vL.flatMap(l => [l.y1, l.y2]);
-                                          bL = allVx.length ? Math.min(...allVx) + TK_MONT/2 : fX;
-                                          bR = allVx.length ? Math.max(...allVx) - TK_MONT/2 : fX + fW;
+                                          bL = allVx.length ? Math.min(...allVx) : fX;
+                                          bR = allVx.length ? Math.max(...allVx) : fX + fW;
                                           bT = allVy.length ? Math.min(...allVy) : fY;
                                           bB = allVy.length ? Math.max(...allVy) : fY + fH;
                                         }
-                                        // Ignora el.x1/x2 — usa sempre i bordi del telaio
+                                        // X = bordi interni del telaio, Y = bordo inferiore
                                         ex1 = bL; ex2 = bR;
-                                        // Y: sempre agganciata al bordo inferiore del telaio
                                         ey1 = bB - halfT;
                                         ey2 = bB - halfT;
                                       }
