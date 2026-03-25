@@ -2108,11 +2108,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
                                       const ext1 = hasMontAt1 ? -HM_loc : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
-                                      const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
-                                      const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
+                                      let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
+                                      let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
+                                      // ── CLAMP ai bordi interni del frame (evita sforamenti visivi) ──
+                                      if (frame && !isPartOfPoly) {
+                                        const fInner = { x: frame.x + TK_FRAME, y: frame.y + TK_FRAME, x2: frame.x + frame.w - TK_FRAME, y2: frame.y + frame.h - TK_FRAME };
+                                        const isHorz = Math.abs(dy2) <= Math.abs(dx2) + 0.5;
+                                        if (isHorz) {
+                                          // linea orizzontale: clamp X
+                                          if (dx2 < 0) { ex1 = Math.max(ex1, fInner.x); ex2 = Math.min(ex2, fInner.x2); }
+                                          else          { ex1 = Math.max(ex1, fInner.x); ex2 = Math.min(ex2, fInner.x2); }
+                                        } else {
+                                          // linea verticale: clamp Y
+                                          ey1 = Math.max(ey1, fInner.y); ey1 = Math.min(ey1, fInner.y2);
+                                          ey2 = Math.max(ey2, fInner.y); ey2 = Math.min(ey2, fInner.y2);
+                                        }
+                                      }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
-                                        <g key={el.id} clipPath={frame && !isPartOfPoly ? `url(#frameClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
+                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           {/* Hit area */}
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
                                           {/* Profilo esteso agli angoli */}
