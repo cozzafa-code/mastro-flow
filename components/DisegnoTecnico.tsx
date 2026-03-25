@@ -2097,38 +2097,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // ── Determina se la linea è orizzontale o verticale ──
                                       const isHorzLine = Math.abs(dy2) <= Math.abs(dx2) + 0.5;
                                       // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
-                                      const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
-                                      if (isFrameSubType && !isPartOfPoly) {
-                                        const thickness = halfT * 2;
-                                        // Usa ESATTAMENTE le coordinate della linea disegnata dall'utente
-                                        const rX = Math.min(el.x1, el.x2);
-                                        const rW = Math.max(thickness, Math.abs(el.x2 - el.x1));
-                                        const rH = thickness;
-                                        const rY = Math.min(el.y1, el.y2) - halfT;
-                                        const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
-                                        return (
-                                          <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
-                                            {/* Hit area */}
-                                            <rect x={rX} y={rY} width={rW} height={rH} fill="transparent" />
-                                            {/* Profilo — stesso approccio del telaio: rect con bordo */}
-                                            <rect x={rX} y={rY} width={rW} height={rH} fill={sel ? "#1A9E7318" : fillC} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} />
-                                            {/* Badge nome tipo */}
-                                            {labelTxt && (
-                                              <g>
-                                                <rect x={midX2 - labelTxt.length*3.5} y={midY2 - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
-                                                <text x={midX2} y={midY2 + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="monospace">{labelTxt}</text>
-                                              </g>
-                                            )}
-                                            {/* Badge misura */}
-                                            <g onClick={(e3) => { e3.stopPropagation(); if (drawMode) return; const svgEl = e3.currentTarget.closest("svg"); const r = svgEl?.getBoundingClientRect(); setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: len, x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 }); }} style={{ cursor: "pointer" }}>
-                                              <rect x={midX2 - 18} y={rY - 16} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
-                                              <text x={midX2} y={rY - 5} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
-                                            </g>
-                                            {sel && <><circle cx={rX} cy={midY2} r={4} fill="#1A9E73" /><circle cx={rX + rW} cy={midY2} r={4} fill="#1A9E73" /></>}
-                                          </g>
-                                        );
-                                      }
-                                      // ── Linee libere / telaio poligonale: mantieni logica polygon ──
+                                      // ── Tutte le freeLine usano logica polygon con spessore halfT ──
                                       const ux = dx2 / len, uy = dy2 / len;
                                       const nx = -uy * halfT, ny = ux * halfT;
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
@@ -2141,8 +2110,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
                                       const ext1 = hasMontAt1 ? -HM_loc : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
-                                      const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
-                                      const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
+                                      let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
+                                      let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
+                                      // Clamp X ai bordi del frame per linee orizzontali con subType
+                                      const isHorzSub = subType && Math.abs(dy2) <= Math.abs(dx2) + 0.5;
+                                      if (isHorzSub && !isPartOfPoly) {
+                                        const bL = frame ? frame.x + TK_FRAME : fX;
+                                        const bR = frame ? frame.x + frame.w - TK_FRAME : fX + fW;
+                                        ex1 = Math.max(bL, ex1);
+                                        ex2 = Math.min(bR, ex2);
+                                      }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
