@@ -549,20 +549,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // ══ Snap points ══
                             const getSnapPoints = () => {
                               const pts = [];
-                              // Frame: bordi ESTERNI (angoli) + bordi INTERNI (per profili interni)
+                              // Frame: angoli + mezzerie + bordi continui
                               frames.forEach(fr => {
                                 const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
-                                const TKF = 6; // TK_FRAME
-                                // Bordi esterni — per telaio e montanti
                                 pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
                                 for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
                                 for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
-                                // Bordi INTERNI — snap per zoccolo/soglia/fascia
-                                const il=fx+TKF, ir=fx+fw-TKF, it=fy+TKF, ib=fy+fh2-TKF;
-                                pts.push({x:il,y:it},{x:ir,y:it},{x:il,y:ib},{x:ir,y:ib});
-                                for (let t = GRID; t < fw-TKF*2; t += GRID) pts.push({x:il+t,y:it},{x:il+t,y:ib});
-                                for (let t = GRID; t < fh2-TKF*2; t += GRID) pts.push({x:il,y:it+t},{x:ir,y:it+t});
                               });
                               // Celle
                               cells.forEach(c2 => {
@@ -1569,7 +1562,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>🗑 Elimina sel.</div>}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
-
+                                  {frame && <div onClick={() => {
+                                    // Aggiusta tutti i freeLine al bordo interno del frame
+                                    const TKF = 6;
+                                    const fi = {l:frame.x+TKF, r:frame.x+frame.w-TKF, t:frame.y+TKF, b:frame.y+frame.h-TKF};
+                                    const fixed = els.map(e => {
+                                      if (e.type !== "freeLine") return e;
+                                      const isH = Math.abs(e.x2-e.x1) >= Math.abs(e.y2-e.y1);
+                                      if (isH) {
+                                        const dTop = Math.abs(e.y1 - fi.t), dBot = Math.abs(e.y1 - fi.b);
+                                        const newY = dTop <= dBot ? fi.t : fi.b;
+                                        return {...e, x1:Math.max(fi.l,Math.min(fi.r,e.x1)), x2:Math.max(fi.l,Math.min(fi.r,e.x2)), y1:newY, y2:newY};
+                                      } else {
+                                        const dL = Math.abs(e.x1 - fi.l), dR = Math.abs(e.x1 - fi.r);
+                                        const newX = dL <= dR ? fi.l : fi.r;
+                                        return {...e, y1:Math.max(fi.t,Math.min(fi.b,e.y1)), y2:Math.max(fi.t,Math.min(fi.b,e.y2)), x1:newX, x2:newX};
+                                      }
+                                    });
+                                    setDW(fixed);
+                                  }} style={{...bDel("#1A9E73"), background:"#1A9E7312"}}>⚡ Aggiusta</div>}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setMode({ _zoom: Math.max(0.5, (zoom || 1) - 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>−</div>
                                   <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, minWidth: 32, textAlign: "center" }}>{Math.round(zoom * 100)}%</div>
@@ -2094,9 +2105,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
+                                      const hasFrameAt1 = !hasMontAt1 && frame && Math.abs(el.x1 - frame.x) < WCONN;
+                                      const hasFrameAt2 = !hasMontAt2 && frame && Math.abs(el.x2 - (frame.x+frame.w)) < WCONN;
                                       // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
-                                      const ext1 = hasMontAt1 ? -HM_loc : halfT;
-                                      const ext2 = hasMontAt2 ? -HM_loc : halfT;
+                                      const ext1 = hasMontAt1 ? -HM_loc : hasFrameAt1 ? -TK_FRAME : halfT;
+                                      const ext2 = hasMontAt2 ? -HM_loc : hasFrameAt2 ? -TK_FRAME : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
