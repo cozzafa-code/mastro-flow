@@ -2105,17 +2105,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         if (!fr) {
                                           const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
                                           if (telLines.length >= 2) {
-                                            const allX = telLines.flatMap(l => [l.x1, l.x2]);
-                                            const allY = telLines.flatMap(l => [l.y1, l.y2]);
-                                            fr = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX) - Math.min(...allX), h: Math.max(...allY) - Math.min(...allY) };
-                                            isFreeFrame = true;
+                                            // Usa linee orizzontali per X, verticali per Y — evita che le verticali allarghino il bbox
+                                            const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
+                                            const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
+                                            const srcX = hL.length ? hL : telLines;
+                                            const srcY = vL.length ? vL : telLines;
+                                            const allX = srcX.flatMap(l => [l.x1, l.x2]);
+                                            const allY = srcY.flatMap(l => [l.y1, l.y2]);
+                                            fr = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX)-Math.min(...allX), h: Math.max(...allY)-Math.min(...allY) };
                                           } else {
                                             fr = { x: fX, y: fY, w: fW, h: fH };
-                                            isFreeFrame = true;
                                           }
+                                          isFreeFrame = true;
                                         }
-                                        // Tel.Lib.: le freeLine sono già il bordo, non applicare TK_FRAME
-                                        const tk = isFreeFrame ? 0 : TK_FRAME;
+                                        // Tel.Lib.: le freeLine hanno spessore visivo ~TK_FRAME/2 — rientra di quel tanto
+                                        const tk = isFreeFrame ? Math.round(TK_FRAME / 2) : TK_FRAME;
                                         const innerX = fr.x + tk;
                                         const innerX2 = fr.x + fr.w - tk;
                                         const innerY = fr.y + tk;
