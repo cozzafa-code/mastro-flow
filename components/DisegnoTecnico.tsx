@@ -2124,8 +2124,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const vL = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1);
                                           const allVx = vL.flatMap(l => [(l.x1+l.x2)/2]);
                                           const allVy = vL.flatMap(l => [l.y1, l.y2]);
-                                          bL = allVx.length ? Math.min(...allVx) : fX;
-                                          bR = allVx.length ? Math.max(...allVx) : fX + fW;
+                                          bL = allVx.length ? Math.min(...allVx) + halfT : fX;
+                                          bR = allVx.length ? Math.max(...allVx) - halfT : fX + fW;
                                           bT = allVy.length ? Math.min(...allVy) : fY;
                                           bB = allVy.length ? Math.max(...allVy) : fY + fH;
                                         }
