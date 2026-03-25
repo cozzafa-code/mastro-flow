@@ -2100,29 +2100,39 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
                                         const thickness = halfT * 2;
-                                        // Bordi X di riferimento: frame rect oppure linee verticali del Tel.Lib.
-                                        let clampX1: number, clampX2: number;
+                                        // Bordi di riferimento: frame rect oppure linee del Tel.Lib.
+                                        let clampX1: number, clampX2: number, clampY1: number, clampY2: number;
                                         if (frame) {
                                           clampX1 = frame.x + TK_FRAME;
                                           clampX2 = frame.x + frame.w - TK_FRAME;
+                                          clampY1 = frame.y + TK_FRAME;
+                                          clampY2 = frame.y + frame.h - TK_FRAME;
                                         } else {
-                                          const vL = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1);
-                                          if (vL.length >= 2) {
-                                            const allX = vL.flatMap(l => [(l.x1+l.x2)/2]);
-                                            clampX1 = Math.min(...allX);
-                                            clampX2 = Math.max(...allX);
+                                          const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
+                                          const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
+                                          const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
+                                          if (hL.length >= 1 && vL.length >= 1) {
+                                            const hXs = hL.flatMap(l => [l.x1, l.x2]);
+                                            const hYs = hL.flatMap(l => [l.y1, l.y2]);
+                                            const vXs = vL.flatMap(l => [(l.x1+l.x2)/2]);
+                                            clampX1 = Math.min(...vXs);
+                                            clampX2 = Math.max(...vXs);
+                                            clampY1 = Math.min(...hYs);
+                                            clampY2 = Math.max(...hYs);
                                           } else {
                                             clampX1 = fX; clampX2 = fX + fW;
+                                            clampY1 = fY; clampY2 = fY + fH;
                                           }
                                         }
-                                        // X: esattamente dove l'utente ha disegnato, clampato ai bordi interni
+                                        // X clampata
                                         const rawX1 = Math.min(el.x1, el.x2);
                                         const rawX2 = Math.max(el.x1, el.x2);
                                         const rX = Math.max(clampX1, rawX1);
                                         const rW = Math.max(thickness, Math.min(clampX2, rawX2) - rX);
                                         const rH = thickness;
-                                        // Y: centrata sulla linea disegnata
-                                        const rY = (el.y1 + el.y2) / 2 - halfT;
+                                        // Y clampata: centrata sulla linea, poi clampata dentro il frame
+                                        const rawY = (el.y1 + el.y2) / 2 - halfT;
+                                        const rY = Math.max(clampY1, Math.min(clampY2 - rH, rawY));
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
