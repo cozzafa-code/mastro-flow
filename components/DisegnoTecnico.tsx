@@ -549,20 +549,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // ══ Snap points ══
                             const getSnapPoints = () => {
                               const pts = [];
-                              // Frame: bordi esterni + bordi INTERNI per snap profili
+                              // Frame: angoli + mezzerie + bordi continui
                               frames.forEach(fr => {
                                 const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
-                                const TKF = 6;
-                                const il = fx+TKF, ir = fx+fw-TKF, it = fy+TKF, ib = fy+fh2-TKF;
-                                // Bordi esterni (per telaio/montanti)
                                 pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
                                 for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
                                 for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
-                                // Bordi INTERNI (per zoccolo/soglia/fascia) — priorità alta
-                                pts.push({x:il,y:ib},{x:ir,y:ib},{x:il,y:it},{x:ir,y:it});
-                                for (let t = GRID; t < fw-TKF*2; t += GRID) pts.push({x:il+t,y:ib},{x:il+t,y:it});
-                                for (let t = GRID; t < fh2-TKF*2; t += GRID) pts.push({x:il,y:it+t},{x:ir,y:it+t});
                               });
                               // Celle
                               cells.forEach(c2 => {
@@ -2113,11 +2106,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
                                       // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
-                                      const ext1 = hasMontAt1 ? -HM_loc : halfT;
-                                      const ext2 = hasMontAt2 ? -HM_loc : halfT;
+                                      // Frame edge: ext=0 (non estendere, non ritrarre — bordo esatto)
+                                      const isHorzEl = Math.abs(el.x2-el.x1) >= Math.abs(el.y2-el.y1);
+                                      const hasFrameAt1 = !hasMontAt1 && frame && (isHorzEl
+                                        ? Math.abs(el.x1 - frame.x) < WCONN || Math.abs(el.x1 - (frame.x+frame.w)) < WCONN
+                                        : Math.abs(el.y1 - frame.y) < WCONN || Math.abs(el.y1 - (frame.y+frame.h)) < WCONN);
+                                      const hasFrameAt2 = !hasMontAt2 && frame && (isHorzEl
+                                        ? Math.abs(el.x2 - frame.x) < WCONN || Math.abs(el.x2 - (frame.x+frame.w)) < WCONN
+                                        : Math.abs(el.y2 - frame.y) < WCONN || Math.abs(el.y2 - (frame.y+frame.h)) < WCONN);
+                                      const ext1 = hasMontAt1 ? -HM_loc : hasFrameAt1 ? 0 : halfT;
+                                      const ext2 = hasMontAt2 ? -HM_loc : hasFrameAt2 ? 0 : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
+                                      // Clamp punti al bordo interno del frame
+                                      const cpx = (x) => frame ? Math.max(frame.x, Math.min(frame.x+frame.w, x)) : x;
+                                      const cpy = (y) => frame ? Math.max(frame.y, Math.min(frame.y+frame.h, y)) : y;
+                                      const pts4 = `${cpx(ex1+nx)},${cpy(ey1+ny)} ${cpx(ex2+nx)},${cpy(ey2+ny)} ${cpx(ex2-nx)},${cpy(ey2-ny)} ${cpx(ex1-nx)},${cpy(ey1-ny)}`;
                                       return (
                                         <g key={el.id} clipPath={frame && !isPartOfPoly ? `url(#frameClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           {/* Hit area */}
