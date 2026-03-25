@@ -2122,8 +2122,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      const ext1 = hasMontAt1 ? -HM_loc : halfT;
-                                      const ext2 = hasMontAt2 ? -HM_loc : halfT;
+                                      // Per freeLine orizzontali con subType: considera anche le freeLine verticali del Tel.Lib.
+                                      const isHorzEl = subType && Math.abs(dy2) <= Math.abs(dx2) + 0.5;
+                                      const hasVertAt1 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x1) < WCONN);
+                                      const hasVertAt2 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x2) < WCONN);
+                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -HM_loc : halfT;
+                                      const ext2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
