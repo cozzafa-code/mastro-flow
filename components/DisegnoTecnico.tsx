@@ -2084,73 +2084,92 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
                                       const subType = el.subType || null;
-                                      const tkMap = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT, soglia_rib: TK_SOGLIA };
+                                      const tkMap: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, montante: TK_MONT, traverso: TK_MONT, soglia_rib: TK_SOGLIA };
                                       const halfT = subType ? (tkMap[subType] || TK_FRAME) : TK_FRAME;
-                                      const fillMap = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8", soglia_rib: "#c0beb8" };
+                                      const fillMap: any = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", montante: "#e4e2d8", traverso: "#e4e2d8", soglia_rib: "#c0beb8" };
                                       const fillC = subType ? (fillMap[subType] || "#f0efe8") : "#f0efe8";
-                                      const labelMap = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO", soglia_rib: "SOGLIA RIB." };
+                                      const labelMap: any = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", montante: "MONTANTE", traverso: "TRAVERSO", soglia_rib: "SOGLIA RIB." };
                                       const labelTxt = subType ? (labelMap[subType] || subType.toUpperCase()) : null;
-                                      const ux = dx2 / len, uy = dy2 / len; // versore direzione
-                                      const nx = -uy * halfT, ny = ux * halfT; // normale
                                       const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
                                       const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
                                       const mmLen = el._mmOverride != null ? el._mmOverride : Math.round(len / refLen * refReal);
+                                      const isPartOfPoly = poly && poly.length >= 3;
+                                      // ── Determina se la linea è orizzontale o verticale ──
+                                      const isHorzLine = Math.abs(dy2) <= Math.abs(dx2) + 0.5;
+                                      // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
+                                      const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
+                                      if (isFrameSubType && !isPartOfPoly) {
+                                        // Calcola rect usando il frame come riferimento (se esiste) oppure le coordinate raw
+                                        const fr = frame || { x: fX, y: fY, w: fW, h: fH };
+                                        const innerX = fr.x + TK_FRAME;
+                                        const innerX2 = fr.x + fr.w - TK_FRAME;
+                                        const innerY = fr.y + TK_FRAME;
+                                        const innerY2 = fr.y + fr.h - TK_FRAME;
+                                        const thickness = halfT * 2;
+                                        // Posizione Y del rettangolo: usa la Y media della linea, centrata sullo spessore
+                                        const lineY = isHorzLine ? ((el.y1 + el.y2) / 2) : ((el.x1 + el.x2) / 2);
+                                        // Rect orizzontale: full-width del frame interno, altezza = thickness
+                                        const rX = innerX;
+                                        const rW = innerX2 - innerX;
+                                        // Per soglia_rib: aggancia in basso; per zoccolo: aggancia in basso; per soglia: aggancia in basso; fascia/profcomp: posizione libera
+                                        const isBottom = subType === "zoccolo" || subType === "soglia" || subType === "soglia_rib";
+                                        const rY = isBottom ? (innerY2 - thickness) : Math.max(innerY, Math.min(innerY2 - thickness, lineY - halfT));
+                                        const rH = thickness;
+                                        const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
+                                        return (
+                                          <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
+                                            {/* Hit area */}
+                                            <rect x={rX} y={rY} width={rW} height={rH} fill="transparent" />
+                                            {/* Profilo — stesso approccio del telaio: rect con bordo */}
+                                            <rect x={rX} y={rY} width={rW} height={rH} fill={sel ? "#1A9E7318" : fillC} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} />
+                                            {/* Badge nome tipo */}
+                                            {labelTxt && (
+                                              <g>
+                                                <rect x={midX2 - labelTxt.length*3.5} y={midY2 - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
+                                                <text x={midX2} y={midY2 + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="monospace">{labelTxt}</text>
+                                              </g>
+                                            )}
+                                            {/* Badge misura */}
+                                            <g onClick={(e3) => { e3.stopPropagation(); if (drawMode) return; const svgEl = e3.currentTarget.closest("svg"); const r = svgEl?.getBoundingClientRect(); setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: len, x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 }); }} style={{ cursor: "pointer" }}>
+                                              <rect x={midX2 - 18} y={rY - 16} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
+                                              <text x={midX2} y={rY - 5} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
+                                            </g>
+                                            {sel && <><circle cx={rX} cy={midY2} r={4} fill="#1A9E73" /><circle cx={rX + rW} cy={midY2} r={4} fill="#1A9E73" /></>}
+                                          </g>
+                                        );
+                                      }
+                                      // ── Linee libere / telaio poligonale: mantieni logica polygon ──
+                                      const ux = dx2 / len, uy = dy2 / len;
+                                      const nx = -uy * halfT, ny = ux * halfT;
                                       const midX = (el.x1 + el.x2) / 2, midY = (el.y1 + el.y2) / 2;
                                       const ang = Math.atan2(dy2, dx2) * 180 / Math.PI;
                                       const lx = midX + nx * 2, ly = midY + ny * 2;
                                       const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
-                                      const isPartOfPoly = poly && poly.length >= 3;
-                                      // Estendi ogni segmento di halfT — ma NON estendere verso un montante adiacente
                                       const WCONN = halfT * 2 + TK_MONT;
                                       const HM_loc = TK_MONT / 2;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
                                       const ext1 = hasMontAt1 ? -HM_loc : halfT;
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
-                                      let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
-                                      let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // ── CLAMP ai bordi interni del frame (evita sforamenti visivi) ──
-                                      if (frame && !isPartOfPoly) {
-                                        const fInner = { x: frame.x + TK_FRAME, y: frame.y + TK_FRAME, x2: frame.x + frame.w - TK_FRAME, y2: frame.y + frame.h - TK_FRAME };
-                                        const isHorz = Math.abs(dy2) <= Math.abs(dx2) + 0.5;
-                                        if (isHorz) {
-                                          // linea orizzontale: clamp X
-                                          if (dx2 < 0) { ex1 = Math.max(ex1, fInner.x); ex2 = Math.min(ex2, fInner.x2); }
-                                          else          { ex1 = Math.max(ex1, fInner.x); ex2 = Math.min(ex2, fInner.x2); }
-                                        } else {
-                                          // linea verticale: clamp Y
-                                          ey1 = Math.max(ey1, fInner.y); ey1 = Math.min(ey1, fInner.y2);
-                                          ey2 = Math.max(ey2, fInner.y); ey2 = Math.min(ey2, fInner.y2);
-                                        }
-                                      }
+                                      const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
+                                      const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
-                                          {/* Hit area */}
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
-                                          {/* Profilo esteso agli angoli */}
                                           {!isPartOfPoly && <>
                                             <polygon points={pts4} fill={sel ? "#1A9E7318" : fillC} stroke="none" />
                                             <polygon points={pts4} fill="none" stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} strokeLinejoin="miter" strokeMiterlimit={20} />
                                           </>}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={2} opacity={0.3} />}
-                                          {/* Badge nome tipo */}
                                           {labelTxt && (
                                             <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lxN}, ${lyN})`}>
                                               <rect x={lxN - labelTxt.length*3.5} y={lyN - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
                                               <text x={lxN} y={lyN + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="monospace">{labelTxt}</text>
                                             </g>
                                           )}
-                                          {/* Badge misura */}
                                           <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lx}, ${ly})`}
-                                            onClick={(e3) => {
-                                              e3.stopPropagation();
-                                              if (drawMode) return;
-                                              const svgEl = e3.currentTarget.closest("svg");
-                                              const r = svgEl?.getBoundingClientRect();
-                                              setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: len, x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 });
-                                            }}
+                                            onClick={(e3) => { e3.stopPropagation(); if (drawMode) return; const svgEl = e3.currentTarget.closest("svg"); const r = svgEl?.getBoundingClientRect(); setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: len, x: r ? r.left + r.width / 2 : 200, y: r ? r.top + 80 : 80 }); }}
                                             style={{ cursor: "pointer" }}>
                                             <rect x={lx - 18} y={ly - 7} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={dimEdit?.id === el.id ? 1.5 : 0.6} opacity={0.9} />
                                             <text x={lx} y={ly + 4} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
