@@ -549,13 +549,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // ══ Snap points ══
                             const getSnapPoints = () => {
                               const pts = [];
-                              // Frame: angoli + mezzerie + bordi continui
+                              // Frame: bordi ESTERNI (angoli) + bordi INTERNI (per profili interni)
                               frames.forEach(fr => {
                                 const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
+                                const TKF = 6; // TK_FRAME
+                                // Bordi esterni — per telaio e montanti
                                 pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
                                 for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
                                 for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
+                                // Bordi INTERNI — snap per zoccolo/soglia/fascia
+                                const il=fx+TKF, ir=fx+fw-TKF, it=fy+TKF, ib=fy+fh2-TKF;
+                                pts.push({x:il,y:it},{x:ir,y:it},{x:il,y:ib},{x:ir,y:ib});
+                                for (let t = GRID; t < fw-TKF*2; t += GRID) pts.push({x:il+t,y:it},{x:il+t,y:ib});
+                                for (let t = GRID; t < fh2-TKF*2; t += GRID) pts.push({x:il,y:it+t},{x:ir,y:it+t});
                               });
                               // Celle
                               cells.forEach(c2 => {
@@ -1562,35 +1569,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>🗑 Elimina sel.</div>}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
-                                  {(frame || els.some(e=>e.type==="freeLine")) && <div onClick={() => {
-                                    // Aggiusta tutti i freeLine al bordo del telaio (frame o freeLine)
-                                    const TKF = 6;
-                                    let fi;
-                                    if (frame) {
-                                      fi = {l:frame.x+TKF, r:frame.x+frame.w-TKF, t:frame.y+TKF, b:frame.y+frame.h-TKF};
-                                    } else {
-                                      // Calcola bounding box dai freeLine del telaio (senza subType)
-                                      const telLines = els.filter(e=>e.type==="freeLine"&&!e.subType);
-                                      if (telLines.length===0) return;
-                                      const allX=[...telLines.flatMap(l=>[l.x1,l.x2])];
-                                      const allY=[...telLines.flatMap(l=>[l.y1,l.y2])];
-                                      fi = {l:Math.min(...allX), r:Math.max(...allX), t:Math.min(...allY), b:Math.max(...allY)};
-                                    }
-                                    const fixed = els.map(e => {
-                                      if (e.type !== "freeLine" || !e.subType) return e; // salta telaio libero
-                                      const isH = Math.abs(e.x2-e.x1) >= Math.abs(e.y2-e.y1);
-                                      if (isH) {
-                                        const dTop = Math.abs(e.y1 - fi.t), dBot = Math.abs(e.y1 - fi.b);
-                                        const newY = dTop <= dBot ? fi.t : fi.b;
-                                        return {...e, x1:Math.max(fi.l,Math.min(fi.r,e.x1)), x2:Math.max(fi.l,Math.min(fi.r,e.x2)), y1:newY, y2:newY};
-                                      } else {
-                                        const dL = Math.abs(e.x1 - fi.l), dR = Math.abs(e.x1 - fi.r);
-                                        const newX = dL <= dR ? fi.l : fi.r;
-                                        return {...e, y1:Math.max(fi.t,Math.min(fi.b,e.y1)), y2:Math.max(fi.t,Math.min(fi.b,e.y2)), x1:newX, x2:newX};
-                                      }
-                                    });
-                                    setDW(fixed);
-                                  }} style={{...bDel("#1A9E73"), background:"#1A9E7312"}}>⚡ Aggiusta</div>}
+
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setMode({ _zoom: Math.max(0.5, (zoom || 1) - 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>−</div>
                                   <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, minWidth: 32, textAlign: "center" }}>{Math.round(zoom * 100)}%</div>
