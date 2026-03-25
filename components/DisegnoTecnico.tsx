@@ -2099,8 +2099,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
-                                        const fr = frame || { x: fX, y: fY, w: fW, h: fH };
-                                        console.log("[MASTRO] freeLine subType render", { subType, frame: !!frame, fr, el });
+                                        // frame è null quando il telaio è Tel.Lib. (freeLine senza subType)
+                                        // Ricava bounding box dai freeLine senza subType
+                                        let fr = frame;
+                                        if (!fr) {
+                                          const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
+                                          if (telLines.length >= 2) {
+                                            const allX = telLines.flatMap(l => [l.x1, l.x2]);
+                                            const allY = telLines.flatMap(l => [l.y1, l.y2]);
+                                            fr = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX) - Math.min(...allX), h: Math.max(...allY) - Math.min(...allY) };
+                                          } else {
+                                            fr = { x: fX, y: fY, w: fW, h: fH };
+                                          }
+                                        }
                                         const innerX = fr.x + TK_FRAME;
                                         const innerX2 = fr.x + fr.w - TK_FRAME;
                                         const innerY = fr.y + TK_FRAME;
@@ -2113,7 +2124,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           ? innerY
                                           : innerY2 - rH;
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
-                                        console.log("[MASTRO] rect coords", { rX, rY, rW, rH, innerX, innerX2, innerY, innerY2 });
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                             {/* Hit area */}
