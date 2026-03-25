@@ -2106,8 +2106,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           refX2 = frame.x + frame.w - TK_FRAME;
                                         } else {
                                           const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                          const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
-                                          const srcX = vL.length ? vL : telLines;
+                                          const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
+                                          const srcX = hL.length ? hL : telLines;
                                           if (srcX.length) {
                                             const allX = srcX.flatMap(l => [l.x1, l.x2]);
                                             refX1 = Math.min(...allX);
