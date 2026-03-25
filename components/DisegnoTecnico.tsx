@@ -2115,7 +2115,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Clamp X e Y ai bordi del frame per linee orizzontali con subType
-                                      const isHorzSub = subType && Math.abs(dy2) <= Math.abs(dx2) + 0.5;
                                       if (isHorzSub && !isPartOfPoly) {
                                         let bL: number, bR: number, bT: number, bB: number;
                                         if (frame) {
