@@ -2100,38 +2100,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
                                         const thickness = halfT * 2;
-                                        // Bordi di riferimento: frame rect oppure linee del Tel.Lib.
-                                        let clampX1: number, clampX2: number, clampY1: number, clampY2: number;
-                                        if (frame) {
-                                          clampX1 = frame.x + TK_FRAME;
-                                          clampX2 = frame.x + frame.w - TK_FRAME;
-                                          clampY1 = frame.y + TK_FRAME;
-                                          clampY2 = frame.y + frame.h - TK_FRAME;
-                                        } else {
-                                          const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                          const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
-                                          const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
-                                          // X dai centri delle verticali
-                                          const vXs = vL.length ? vL.flatMap(l=>[(l.x1+l.x2)/2]) : telLines.flatMap(l=>[l.x1,l.x2]);
-                                          clampX1 = Math.min(...vXs);
-                                          clampX2 = Math.max(...vXs);
-                                          // Y1 dalla linea orizzontale superiore
-                                          const hYs = hL.length ? hL.flatMap(l=>[l.y1,l.y2]) : [];
-                                          clampY1 = hYs.length ? Math.min(...hYs) : fY;
-                                          // Y2 dal punto più basso delle linee verticali
-                                          const vYs = vL.length ? vL.flatMap(l=>[l.y1,l.y2]) : telLines.flatMap(l=>[l.y1,l.y2]);
-                                          clampY2 = Math.max(...vYs);
-                                        }
-                                        // X clampata
-                                        const rawX1 = Math.min(el.x1, el.x2);
-                                        const rawX2 = Math.max(el.x1, el.x2);
-                                        const rX = Math.max(clampX1, rawX1);
-                                        const rW = Math.max(thickness, Math.min(clampX2, rawX2) - rX);
+                                        // Usa ESATTAMENTE le coordinate della linea disegnata dall'utente
+                                        const rX = Math.min(el.x1, el.x2);
+                                        const rW = Math.max(thickness, Math.abs(el.x2 - el.x1));
                                         const rH = thickness;
-                                        // Y: ignora dove l'utente ha disegnato — aggancia fisso al bordo corretto
-                                        const rY = (subType === "fascia" || subType === "profcomp")
-                                          ? clampY1
-                                          : clampY2 - rH;
+                                        const rY = Math.min(el.y1, el.y2) - halfT;
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
