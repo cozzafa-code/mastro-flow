@@ -1189,15 +1189,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (isMont && py===pending.y1) return;   // zero-length verticale
                                   if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
-                                  // Clamp coordinate al bordo INTERNO del frame
-                                  let nx1=pending.x1, ny1=pending.y1, nx2=px, ny2=py;
-                                  const fr = els.find(e => e.type === "rect");
-                                  if (fr && lineType === "freeLine") {
-                                    const fi = {l:fr.x+TK_FRAME, r:fr.x+fr.w-TK_FRAME, t:fr.y+TK_FRAME, b:fr.y+fr.h-TK_FRAME};
-                                    const isH = Math.abs(nx2-nx1) >= Math.abs(ny2-ny1);
-                                    if (isH) { nx1=Math.max(fi.l,Math.min(fi.r,nx1)); nx2=Math.max(fi.l,Math.min(fi.r,nx2)); }
-                                    else     { ny1=Math.max(fi.t,Math.min(fi.b,ny1)); ny2=Math.max(fi.t,Math.min(fi.b,ny2)); }
-                                  }
+                                  // Clamp al frame
+                                  let [nx1,ny1,nx2,ny2] = [pending.x1,pending.y1,px,py];
+                                  const fr=els.find(e=>e.type==="rect");
+                                  if(fr&&lineType==="freeLine"){const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}}
                                   const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
