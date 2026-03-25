@@ -2093,15 +2093,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
+                                        <g key={el.id} clipPath={frame && !isPartOfPoly ? `url(#frameClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           {/* Hit area */}
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
                                           {/* Profilo esteso agli angoli */}
                                           {!isPartOfPoly && <>
-                                            <g clipPath={frame ? `url(#frameClip-${vanoId})` : undefined}>
-                                              <polygon points={pts4} fill={sel ? "#1A9E7318" : fillC} stroke="none" />
-                                              <polygon points={pts4} fill="none" stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} strokeLinejoin="miter" strokeMiterlimit={20} />
-                                            </g>
+                                            <polygon points={pts4} fill={sel ? "#1A9E7318" : fillC} stroke="none" />
+                                            <polygon points={pts4} fill="none" stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} strokeLinejoin="miter" strokeMiterlimit={20} />
                                           </>}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={2} opacity={0.3} />}
                                           {/* Badge nome tipo */}
