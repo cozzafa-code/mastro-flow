@@ -1193,7 +1193,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   let [nx1,ny1,nx2,ny2] = [pending.x1,pending.y1,px,py];
                                   const fr=els.find(e=>e.type==="rect");
                                   if(fr&&lineType==="freeLine"){const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}}
-                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  // Clamp anche per Tel.Lib. (freeLine senza subType come telaio)
+                                  if(!fr&&subTypeVal&&lineType==="freeLine"){
+                                    const telV=els.filter(e=>e.type==="freeLine"&&!e.subType&&Math.abs(e.x2-e.x1)<Math.abs(e.y2-e.y1)+1);
+                                    const telH=els.filter(e=>e.type==="freeLine"&&!e.subType&&Math.abs(e.y2-e.y1)<=Math.abs(e.x2-e.x1)+1);
+                                    if(telV.length>=2){
+                                      const vXs=telV.flatMap(l=>[(l.x1+l.x2)/2]);
+                                      const cL=Math.min(...vXs), cR=Math.max(...vXs);
+                                      nx1=Math.max(cL,Math.min(cR,nx1)); nx2=Math.max(cL,Math.min(cR,nx2));
+                                    }
+                                    if(telV.length>=1){
+                                      const vYs=telV.flatMap(l=>[l.y1,l.y2]);
+                                      const cT=Math.min(...vYs), cB=Math.max(...vYs);
+                                      ny1=Math.max(cT,Math.min(cB,ny1)); ny2=Math.max(cT,Math.min(cB,ny2));
+                                    }
+                                  }                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
                                   const buildWeldPts2 = (allEls) => {
