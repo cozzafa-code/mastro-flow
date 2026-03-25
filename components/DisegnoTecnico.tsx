@@ -2100,22 +2100,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
                                         // frame è null quando il telaio è Tel.Lib. (freeLine senza subType)
-                                        // Ricava bounding box dai freeLine senza subType
                                         let fr = frame;
+                                        let isFreeFrame = false;
                                         if (!fr) {
                                           const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
                                           if (telLines.length >= 2) {
                                             const allX = telLines.flatMap(l => [l.x1, l.x2]);
                                             const allY = telLines.flatMap(l => [l.y1, l.y2]);
                                             fr = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX) - Math.min(...allX), h: Math.max(...allY) - Math.min(...allY) };
+                                            isFreeFrame = true;
                                           } else {
                                             fr = { x: fX, y: fY, w: fW, h: fH };
+                                            isFreeFrame = true;
                                           }
                                         }
-                                        const innerX = fr.x + TK_FRAME;
-                                        const innerX2 = fr.x + fr.w - TK_FRAME;
-                                        const innerY = fr.y + TK_FRAME;
-                                        const innerY2 = fr.y + fr.h - TK_FRAME;
+                                        // Tel.Lib.: le freeLine sono già il bordo, non applicare TK_FRAME
+                                        const tk = isFreeFrame ? 0 : TK_FRAME;
+                                        const innerX = fr.x + tk;
+                                        const innerX2 = fr.x + fr.w - tk;
+                                        const innerY = fr.y + tk;
+                                        const innerY2 = fr.y + fr.h - tk;
                                         const thickness = halfT * 2;
                                         const rX = innerX;
                                         const rW = Math.max(1, innerX2 - innerX);
