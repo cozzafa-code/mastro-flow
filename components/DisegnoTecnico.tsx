@@ -2130,9 +2130,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const rX = Math.max(clampX1, rawX1);
                                         const rW = Math.max(thickness, Math.min(clampX2, rawX2) - rX);
                                         const rH = thickness;
-                                        // Y clampata: centrata sulla linea, poi clampata dentro il frame
-                                        const rawY = (el.y1 + el.y2) / 2 - halfT;
-                                        const rY = Math.max(clampY1, Math.min(clampY2 - rH, rawY));
+                                        // Y: ignora dove l'utente ha disegnato — aggancia fisso al bordo corretto
+                                        const rY = (subType === "fascia" || subType === "profcomp")
+                                          ? clampY1
+                                          : clampY2 - rH;
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
