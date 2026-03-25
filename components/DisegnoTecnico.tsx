@@ -1562,12 +1562,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>🗑 Elimina sel.</div>}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
-                                  {frame && <div onClick={() => {
-                                    // Aggiusta tutti i freeLine al bordo interno del frame
+                                  {(frame || els.some(e=>e.type==="freeLine")) && <div onClick={() => {
+                                    // Aggiusta tutti i freeLine al bordo del telaio (frame o freeLine)
                                     const TKF = 6;
-                                    const fi = {l:frame.x+TKF, r:frame.x+frame.w-TKF, t:frame.y+TKF, b:frame.y+frame.h-TKF};
+                                    let fi;
+                                    if (frame) {
+                                      fi = {l:frame.x+TKF, r:frame.x+frame.w-TKF, t:frame.y+TKF, b:frame.y+frame.h-TKF};
+                                    } else {
+                                      // Calcola bounding box dai freeLine del telaio (senza subType)
+                                      const telLines = els.filter(e=>e.type==="freeLine"&&!e.subType);
+                                      if (telLines.length===0) return;
+                                      const allX=[...telLines.flatMap(l=>[l.x1,l.x2])];
+                                      const allY=[...telLines.flatMap(l=>[l.y1,l.y2])];
+                                      fi = {l:Math.min(...allX), r:Math.max(...allX), t:Math.min(...allY), b:Math.max(...allY)};
+                                    }
                                     const fixed = els.map(e => {
-                                      if (e.type !== "freeLine") return e;
+                                      if (e.type !== "freeLine" || !e.subType) return e; // salta telaio libero
                                       const isH = Math.abs(e.x2-e.x1) >= Math.abs(e.y2-e.y1);
                                       if (isH) {
                                         const dTop = Math.abs(e.y1 - fi.t), dBot = Math.abs(e.y1 - fi.b);
