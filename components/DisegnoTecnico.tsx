@@ -2111,18 +2111,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
                                           const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
                                           const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
-                                          if (hL.length >= 1 && vL.length >= 1) {
-                                            const hXs = hL.flatMap(l => [l.x1, l.x2]);
-                                            const hYs = hL.flatMap(l => [l.y1, l.y2]);
-                                            const vXs = vL.flatMap(l => [(l.x1+l.x2)/2]);
-                                            clampX1 = Math.min(...vXs);
-                                            clampX2 = Math.max(...vXs);
-                                            clampY1 = Math.min(...hYs);
-                                            clampY2 = Math.max(...hYs);
-                                          } else {
-                                            clampX1 = fX; clampX2 = fX + fW;
-                                            clampY1 = fY; clampY2 = fY + fH;
-                                          }
+                                          const allXv = vL.length ? vL.flatMap(l => [(l.x1+l.x2)/2]) : telLines.flatMap(l => [l.x1, l.x2]);
+                                          const allYv = vL.length ? vL.flatMap(l => [l.y1, l.y2]) : telLines.flatMap(l => [l.y1, l.y2]);
+                                          const allXh = hL.length ? hL.flatMap(l => [l.x1, l.x2]) : telLines.flatMap(l => [l.x1, l.x2]);
+                                          const allYh = hL.length ? hL.flatMap(l => [l.y1, l.y2]) : [];
+                                          clampX1 = Math.min(...allXv);
+                                          clampX2 = Math.max(...allXv);
+                                          // clampY2 = max Y tra verticali e orizzontali (il bordo inferiore)
+                                          const allY = [...allYv, ...allYh];
+                                          clampY1 = Math.min(...allY);
+                                          clampY2 = Math.max(...allY);
                                         }
                                         // X clampata
                                         const rawX1 = Math.min(el.x1, el.x2);
