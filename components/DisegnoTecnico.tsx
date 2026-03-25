@@ -2112,13 +2112,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Clamp X ai bordi del frame per linee orizzontali con subType
+                                      // Clamp X e Y ai bordi del frame per linee orizzontali con subType
                                       const isHorzSub = subType && Math.abs(dy2) <= Math.abs(dx2) + 0.5;
                                       if (isHorzSub && !isPartOfPoly) {
-                                        const bL = frame ? frame.x + TK_FRAME : fX;
-                                        const bR = frame ? frame.x + frame.w - TK_FRAME : fX + fW;
+                                        let bL: number, bR: number, bT: number, bB: number;
+                                        if (frame) {
+                                          bL = frame.x + TK_FRAME; bR = frame.x + frame.w - TK_FRAME;
+                                          bT = frame.y + TK_FRAME; bB = frame.y + frame.h - TK_FRAME;
+                                        } else {
+                                          const vL = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1);
+                                          const allVx = vL.flatMap(l => [(l.x1+l.x2)/2]);
+                                          const allVy = vL.flatMap(l => [l.y1, l.y2]);
+                                          bL = allVx.length ? Math.min(...allVx) : fX;
+                                          bR = allVx.length ? Math.max(...allVx) : fX + fW;
+                                          bT = allVy.length ? Math.min(...allVy) : fY;
+                                          bB = allVy.length ? Math.max(...allVy) : fY + fH;
+                                        }
                                         ex1 = Math.max(bL, ex1);
                                         ex2 = Math.min(bR, ex2);
+                                        // Clamp Y: il polygon non deve uscire oltre bB
+                                        const polyMaxY = Math.max(ey1+ny, ey1-ny, ey2+ny, ey2-ny);
+                                        if (polyMaxY > bB) { const shift = polyMaxY - bB; ey1 -= shift; ey2 -= shift; }
+                                        const polyMinY = Math.min(ey1+ny, ey1-ny, ey2+ny, ey2-ny);
+                                        if (polyMinY < bT) { const shift = bT - polyMinY; ey1 += shift; ey2 += shift; }
                                       }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
