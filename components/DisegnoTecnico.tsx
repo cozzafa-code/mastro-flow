@@ -2100,6 +2100,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
                                         const fr = frame || { x: fX, y: fY, w: fW, h: fH };
+                                        console.log("[MASTRO] freeLine subType render", { subType, frame: !!frame, fr, el });
                                         const innerX = fr.x + TK_FRAME;
                                         const innerX2 = fr.x + fr.w - TK_FRAME;
                                         const innerY = fr.y + TK_FRAME;
@@ -2108,11 +2109,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const rX = innerX;
                                         const rW = Math.max(1, innerX2 - innerX);
                                         const rH = thickness;
-                                        // Aggancio fisso: zoccolo/soglia/soglia_rib → in basso; fascia/profcomp → in alto
                                         const rY = (subType === "fascia" || subType === "profcomp")
                                           ? innerY
                                           : innerY2 - rH;
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
+                                        console.log("[MASTRO] rect coords", { rX, rY, rW, rH, innerX, innerX2, innerY, innerY2 });
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                             {/* Hit area */}
