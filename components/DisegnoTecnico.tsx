@@ -1189,10 +1189,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (isMont && py===pending.y1) return;   // zero-length verticale
                                   if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
-                                  // Clamp al frame
+                                  // Snap al bordo interno del frame per profili interni (zoccolo/soglia/fascia/profcomp)
                                   let [nx1,ny1,nx2,ny2] = [pending.x1,pending.y1,px,py];
                                   const fr=els.find(e=>e.type==="rect");
-                                  if(fr&&lineType==="freeLine"){const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}}
+                                  if(fr&&lineType==="freeLine"&&subTypeVal){
+                                    const TKF=6;
+                                    const fi={l:fr.x+TKF,r:fr.x+fr.w-TKF,t:fr.y+TKF,b:fr.y+fr.h-TKF};
+                                    const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);
+                                    if(isH){
+                                      // Orizzontale: aggancia Y al bordo interno più vicino
+                                      const dT=Math.abs(ny1-fi.t), dB=Math.abs(ny1-fi.b);
+                                      ny1=ny2=dT<=dB?fi.t:fi.b;
+                                      // Clamp X ai bordi interni laterali
+                                      nx1=Math.max(fi.l,Math.min(fi.r,nx1));
+                                      nx2=Math.max(fi.l,Math.min(fi.r,nx2));
+                                    } else {
+                                      // Verticale: aggancia X al bordo interno più vicino
+                                      const dL=Math.abs(nx1-fi.l), dR=Math.abs(nx1-fi.r);
+                                      nx1=nx2=dL<=dR?fi.l:fi.r;
+                                      ny1=Math.max(fi.t,Math.min(fi.b,ny1));
+                                      ny2=Math.max(fi.t,Math.min(fi.b,ny2));
+                                    }
+                                  } else if(fr&&lineType==="freeLine"){
+                                    const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);
+                                    if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}
+                                    else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}
+                                  }
                                   const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
@@ -2106,22 +2128,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
                                       // Se c'è un montante: ritrai di HM per entrare dentro il montante (copertura visiva)
-                                      // Frame edge: ext=0 (non estendere, non ritrarre — bordo esatto)
-                                      const isHorzEl = Math.abs(el.x2-el.x1) >= Math.abs(el.y2-el.y1);
-                                      const hasFrameAt1 = !hasMontAt1 && frame && (isHorzEl
-                                        ? Math.abs(el.x1 - frame.x) < WCONN || Math.abs(el.x1 - (frame.x+frame.w)) < WCONN
-                                        : Math.abs(el.y1 - frame.y) < WCONN || Math.abs(el.y1 - (frame.y+frame.h)) < WCONN);
-                                      const hasFrameAt2 = !hasMontAt2 && frame && (isHorzEl
-                                        ? Math.abs(el.x2 - frame.x) < WCONN || Math.abs(el.x2 - (frame.x+frame.w)) < WCONN
-                                        : Math.abs(el.y2 - frame.y) < WCONN || Math.abs(el.y2 - (frame.y+frame.h)) < WCONN);
-                                      const ext1 = hasMontAt1 ? -HM_loc : hasFrameAt1 ? 0 : halfT;
-                                      const ext2 = hasMontAt2 ? -HM_loc : hasFrameAt2 ? 0 : halfT;
+                                      const ext1 = hasMontAt1 ? -HM_loc : halfT;
+                                      const ext2 = hasMontAt2 ? -HM_loc : halfT;
                                       const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Clamp punti al bordo interno del frame
-                                      const cpx = (x) => frame ? Math.max(frame.x, Math.min(frame.x+frame.w, x)) : x;
-                                      const cpy = (y) => frame ? Math.max(frame.y, Math.min(frame.y+frame.h, y)) : y;
-                                      const pts4 = `${cpx(ex1+nx)},${cpy(ey1+ny)} ${cpx(ex2+nx)},${cpy(ey2+ny)} ${cpx(ex2-nx)},${cpy(ey2-ny)} ${cpx(ex1-nx)},${cpy(ey1-ny)}`;
+                                      const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} clipPath={frame && !isPartOfPoly ? `url(#frameClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           {/* Hit area */}
