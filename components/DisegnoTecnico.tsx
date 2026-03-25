@@ -2126,14 +2126,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isHorzEl = subType && Math.abs(dy2) <= Math.abs(dx2) + 0.5;
                                       const hasVertAt1 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x1) < WCONN);
                                       const hasVertAt2 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x2) < WCONN);
-                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -halfT : halfT;
+                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -(halfT + TK_FRAME) : halfT;
                                       const ext2 = (hasMontAt2 || hasVertAt2) ? -(halfT + TK_FRAME) : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali con subType: centra Y sulla linea (evita di uscire in basso)
                                       if (isHorzEl && !isPartOfPoly) {
-                                        ey1 = el.y1 - TK_FRAME/2;
-                                        ey2 = el.y2 - TK_FRAME/2;
+                                        ey1 = el.y1 - TK_FRAME;
+                                        ey2 = el.y2 - TK_FRAME;
                                       }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
