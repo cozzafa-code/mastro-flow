@@ -2099,30 +2099,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
-                                        // Riferimento X: dal frame rect se esiste, altrimenti dai freeLine senza subType
-                                        let refX1: number, refX2: number;
-                                        if (frame) {
-                                          refX1 = frame.x + TK_FRAME;
-                                          refX2 = frame.x + frame.w - TK_FRAME;
-                                        } else {
-                                          const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                          const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
-                                          const srcX = hL.length ? hL : telLines;
-                                          if (srcX.length) {
-                                            const allX = srcX.flatMap(l => [l.x1, l.x2]);
-                                            refX1 = Math.min(...allX);
-                                            refX2 = Math.max(...allX);
-                                          } else {
-                                            refX1 = fX; refX2 = fX + fW;
-                                          }
-                                        }
                                         const thickness = halfT * 2;
-                                        const rX = refX1;
-                                        const rW = Math.max(1, refX2 - refX1);
+                                        // X: esattamente dove l'utente ha disegnato
+                                        const rX = Math.min(el.x1, el.x2);
+                                        const rW = Math.max(thickness, Math.abs(el.x2 - el.x1));
                                         const rH = thickness;
-                                        // Y: usa direttamente la Y media della linea disegnata
-                                        const lineY = (el.y1 + el.y2) / 2;
-                                        const rY = lineY - halfT;
+                                        // Y: centrata sulla linea disegnata
+                                        const rY = (el.y1 + el.y2) / 2 - halfT;
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
