@@ -1189,32 +1189,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (isMont && py===pending.y1) return;   // zero-length verticale
                                   if (isTrav && px===pending.x1) return;   // zero-length orizzontale
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
-                                  // Snap al bordo interno del frame per profili interni (zoccolo/soglia/fascia/profcomp)
+                                  // Clamp al frame
                                   let [nx1,ny1,nx2,ny2] = [pending.x1,pending.y1,px,py];
                                   const fr=els.find(e=>e.type==="rect");
-                                  if(fr&&lineType==="freeLine"&&subTypeVal){
-                                    const TKF=6;
-                                    const fi={l:fr.x+TKF,r:fr.x+fr.w-TKF,t:fr.y+TKF,b:fr.y+fr.h-TKF};
-                                    const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);
-                                    if(isH){
-                                      // Orizzontale: aggancia Y al bordo interno più vicino
-                                      const dT=Math.abs(ny1-fi.t), dB=Math.abs(ny1-fi.b);
-                                      ny1=ny2=dT<=dB?fi.t:fi.b;
-                                      // Clamp X ai bordi interni laterali
-                                      nx1=Math.max(fi.l,Math.min(fi.r,nx1));
-                                      nx2=Math.max(fi.l,Math.min(fi.r,nx2));
-                                    } else {
-                                      // Verticale: aggancia X al bordo interno più vicino
-                                      const dL=Math.abs(nx1-fi.l), dR=Math.abs(nx1-fi.r);
-                                      nx1=nx2=dL<=dR?fi.l:fi.r;
-                                      ny1=Math.max(fi.t,Math.min(fi.b,ny1));
-                                      ny2=Math.max(fi.t,Math.min(fi.b,ny2));
-                                    }
-                                  } else if(fr&&lineType==="freeLine"){
-                                    const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);
-                                    if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}
-                                    else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}
-                                  }
+                                  if(fr&&lineType==="freeLine"){const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}}
                                   const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
@@ -1763,7 +1741,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="#f0f0f0" strokeWidth="0.5" />
                                     </pattern>
                                     {poly && <clipPath id={`polyClip-${vanoId}`}><polygon points={poly.map(p => p.join(",")).join(" ")} /></clipPath>}
-                                    {frame && <clipPath id={`frameClip-${vanoId}`}><rect x={frame.x} y={frame.y} width={frame.w} height={frame.h} /></clipPath>}
+                                    {frame && <clipPath id={`frameClip-${vanoId}`}><rect x={frame.x+6} y={frame.y+6} width={frame.w-12} height={frame.h-12} /></clipPath>}
                                   </defs>
                                   <rect width={canvasW} height={canvasH} fill={`url(#dg-${vanoId})`} />
 
