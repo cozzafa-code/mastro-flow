@@ -2102,24 +2102,32 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         // frame è null quando il telaio è Tel.Lib. (freeLine senza subType)
                                         let fr = frame;
                                         let isFreeFrame = false;
+                                        // Per Tel.Lib.: calcola bordi esatti dalle linee orizzontali/verticali
+                                        let freeTopY = 0, freeBotY = 0, freeLeftX = 0, freeRightX = 0;
                                         if (!fr) {
                                           const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
                                           if (telLines.length >= 2) {
-                                            // Usa linee orizzontali per X, verticali per Y — evita che le verticali allarghino il bbox
                                             const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
                                             const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
                                             const srcX = hL.length ? hL : telLines;
                                             const srcY = vL.length ? vL : telLines;
                                             const allX = srcX.flatMap(l => [l.x1, l.x2]);
                                             const allY = srcY.flatMap(l => [l.y1, l.y2]);
-                                            fr = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX)-Math.min(...allX), h: Math.max(...allY)-Math.min(...allY) };
+                                            freeLeftX = Math.min(...allX); freeRightX = Math.max(...allX);
+                                            freeTopY = Math.min(...allY); freeBotY = Math.max(...allY);
+                                            // bottomY dalla linea orizzontale più in basso
+                                            if (hL.length) {
+                                              const hYs = hL.flatMap(l => [l.y1, l.y2]);
+                                              freeBotY = Math.max(...hYs);
+                                              freeTopY = Math.min(...hYs);
+                                            }
+                                            fr = { x: freeLeftX, y: freeTopY, w: freeRightX - freeLeftX, h: freeBotY - freeTopY };
                                           } else {
                                             fr = { x: fX, y: fY, w: fW, h: fH };
                                           }
                                           isFreeFrame = true;
                                         }
-                                        // Tel.Lib.: le freeLine hanno spessore visivo ~TK_FRAME/2 — rientra di quel tanto
-                                        const tk = isFreeFrame ? Math.round(TK_FRAME / 2) : TK_FRAME;
+                                        const tk = isFreeFrame ? 0 : TK_FRAME;
                                         const innerX = fr.x + tk;
                                         const innerX2 = fr.x + fr.w - tk;
                                         const innerY = fr.y + tk;
@@ -2128,6 +2136,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const rX = innerX;
                                         const rW = Math.max(1, innerX2 - innerX);
                                         const rH = thickness;
+                                        // zoccolo/soglia: appoggiato SUL bordo inferiore (rY = innerY2 - rH)
+                                        // fascia/profcomp: appoggiato SUL bordo superiore
                                         const rY = (subType === "fascia" || subType === "profcomp")
                                           ? innerY
                                           : innerY2 - rH;
