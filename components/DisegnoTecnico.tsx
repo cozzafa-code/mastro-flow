@@ -1207,35 +1207,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const cT=Math.min(...vYs), cB=Math.max(...vYs);
                                       ny1=Math.max(cT,Math.min(cB,ny1)); ny2=Math.max(cT,Math.min(cB,ny2));
                                     }
-                                  }                                  const isProfiloSubType = ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(subTypeVal || "");
-                                  if (isProfiloSubType && lineType === "freeLine") {
-                                    // Crea un RECT agganciato al frame/Tel.Lib. — identico al telaio
-                                    const tkMap: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, soglia_rib: TK_SOGLIA };
-                                    const tk = tkMap[subTypeVal] || TK_FRAME;
-                                    const fr2 = els.find(e => e.type === "rect");
-                                    let rX: number, rW: number, rY: number, rH: number;
-                                    if (fr2) {
-                                      rX = fr2.x + TK_FRAME; rW = fr2.w - TK_FRAME * 2;
-                                      const innerY2 = fr2.y + fr2.h - TK_FRAME;
-                                      rH = tk * 2;
-                                      rY = (subTypeVal === "fascia") ? fr2.y + TK_FRAME : innerY2 - rH;
-                                    } else {
-                                      // Tel.Lib.: usa bbox linee verticali per X, max Y verticali per bottom
-                                      const telV = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1);
-                                      const vXs = telV.flatMap(l => [(l.x1+l.x2)/2]);
-                                      const vYs = telV.flatMap(l => [l.y1, l.y2]);
-                                      rX = vXs.length ? Math.min(...vXs) : fX;
-                                      rW = vXs.length ? Math.max(...vXs) - Math.min(...vXs) : fW;
-                                      const botY = vYs.length ? Math.max(...vYs) : fY + fH;
-                                      const topY = vYs.length ? Math.min(...vYs) : fY;
-                                      rH = tk * 2;
-                                      rY = (subTypeVal === "fascia") ? topY : botY - rH;
-                                    }
-                                    const profiloEl = { id: Date.now(), type: "profilo", subType: subTypeVal, x: rX, y: rY, w: rW, h: rH };
-                                    setDW([...els, profiloEl], { _pendingLine: null, _lineSubType: subTypeVal, drawMode: null });
-                                    return;
-                                  }
-                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  }                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
                                   const buildWeldPts2 = (allEls) => {
@@ -1942,32 +1914,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    // ═══ PROFILO (zoccolo/soglia/fascia/profcomp) — rect come il telaio ═══
-                                    if (el.type === "profilo") {
-                                      const fillMap: any = { soglia: "#d8d6d0", zoccolo: "#c8c6c0", fascia: "#e8e4dc", profcomp: "#dcdad4", soglia_rib: "#c0beb8" };
-                                      const labelMap: any = { soglia: "SOGLIA", zoccolo: "ZOCCOLO", fascia: "FASCIA", profcomp: "PROF.COMP.", soglia_rib: "SOGLIA RIB." };
-                                      const fillC = fillMap[el.subType] || "#e0e0d8";
-                                      const labelTxt = labelMap[el.subType] || el.subType?.toUpperCase();
-                                      const refLen = frame ? Math.max(frame.w, frame.h) : Math.max(fW, fH);
-                                      const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
-                                      const mmLen = Math.round(el.w / refLen * refReal);
-                                      const midX = el.x + el.w / 2, midY = el.y + el.h / 2;
-                                      return (
-                                        <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id), style: { cursor: "move" } } : {})}>
-                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill={sel ? "#1A9E7318" : fillC} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} />
-                                          {labelTxt && <>
-                                            <rect x={midX - labelTxt.length*3.5} y={midY - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
-                                            <text x={midX} y={midY + 3} textAnchor="middle" fontSize={7} fontWeight={800} fill="#fff" fontFamily="monospace">{labelTxt}</text>
-                                          </>}
-                                          <g onClick={(e3) => { e3.stopPropagation(); if (drawMode) return; setDimEdit({ id: el.id, val: String(mmLen), curMM: mmLen, lenPx: el.w, x: 0, y: 0 }); }} style={{ cursor: "pointer" }}>
-                                            <rect x={midX - 18} y={el.y - 16} width={36} height={14} fill={dimEdit?.id === el.id ? "#1A9E73" : "#fff"} rx={3} stroke={dimEdit?.id === el.id ? "#1A9E73" : T.acc} strokeWidth={0.6} opacity={0.9} />
-                                            <text x={midX} y={el.y - 5} textAnchor="middle" fontSize={8} fontWeight={700} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{mmLen}</text>
-                                          </g>
-                                          {sel && <><circle cx={el.x} cy={midY} r={4} fill="#1A9E73"/><circle cx={el.x+el.w} cy={midY} r={4} fill="#1A9E73"/></>}
-                                        </g>
-                                      );
-                                    }
-
                                     // ═══ MONTANTE — render semplice, freeLine non si estende verso di lui ═══
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
@@ -2174,34 +2120,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const lxN = midX - nx * (halfT + 8), lyN = midY - ny * (halfT + 8);
                                       const WCONN = halfT * 2 + TK_MONT;
                                       const HM_loc = TK_MONT / 2;
-                                      const isHorzSub = subType && Math.abs(dy2) <= Math.abs(dx2) + 0.5;
                                       const hasMontAt1 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x1) < WCONN && ((m.y1 ?? fY) <= el.y1 + WCONN) && ((m.y2 ?? fY+fH) >= el.y1 - WCONN));
                                       const hasMontAt2 = els.some(m => m.type === "montante" && Math.abs(m.x - el.x2) < WCONN && ((m.y1 ?? fY) <= el.y2 + WCONN) && ((m.y2 ?? fY+fH) >= el.y2 - WCONN));
-                                      // Orizzontali con subType: nessuna estensione laterale
-                                      const ext1 = isHorzSub ? 0 : (hasMontAt1 ? -HM_loc : halfT);
-                                      const ext2 = isHorzSub ? 0 : (hasMontAt2 ? -HM_loc : halfT);
-                                      let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
-                                      let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Clamp X e Y ai bordi del frame per linee orizzontali con subType
-                                      if (isHorzSub && !isPartOfPoly) {
-                                        let bL: number, bR: number, bT: number, bB: number;
-                                        if (frame) {
-                                          bL = frame.x + TK_FRAME; bR = frame.x + frame.w - TK_FRAME;
-                                          bT = frame.y + TK_FRAME; bB = frame.y + frame.h - TK_FRAME;
-                                        } else {
-                                          const vL = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1);
-                                          const allVx = vL.flatMap(l => [(l.x1+l.x2)/2]);
-                                          const allVy = vL.flatMap(l => [l.y1, l.y2]);
-                                          bL = allVx.length ? Math.min(...allVx) : fX;
-                                          bR = allVx.length ? Math.max(...allVx) : fX + fW;
-                                          bT = allVy.length ? Math.min(...allVy) : fY;
-                                          bB = allVy.length ? Math.max(...allVy) : fY + fH;
-                                        }
-                                        // X = bordi interni del telaio, Y = bordo inferiore
-                                        ex1 = bL; ex2 = bR;
-                                        ey1 = bB - halfT;
-                                        ey2 = bB - halfT;
-                                      }
+                                      const ext1 = hasMontAt1 ? -HM_loc : halfT;
+                                      const ext2 = hasMontAt2 ? -HM_loc : halfT;
+                                      const ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
+                                      const ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
