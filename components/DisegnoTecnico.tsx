@@ -2099,48 +2099,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
-                                        // frame è null quando il telaio è Tel.Lib. (freeLine senza subType)
-                                        let fr = frame;
-                                        let isFreeFrame = false;
-                                        // Per Tel.Lib.: calcola bordi esatti dalle linee orizzontali/verticali
-                                        let freeTopY = 0, freeBotY = 0, freeLeftX = 0, freeRightX = 0;
-                                        if (!fr) {
+                                        // Riferimento X: dal frame rect se esiste, altrimenti dai freeLine senza subType
+                                        let refX1: number, refX2: number;
+                                        if (frame) {
+                                          refX1 = frame.x + TK_FRAME;
+                                          refX2 = frame.x + frame.w - TK_FRAME;
+                                        } else {
                                           const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                          if (telLines.length >= 2) {
-                                            const hL = telLines.filter(l => Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+1);
-                                            const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
-                                            const srcX = hL.length ? hL : telLines;
-                                            const srcY = vL.length ? vL : telLines;
+                                          const vL = telLines.filter(l => Math.abs(l.x2-l.x1) < Math.abs(l.y2-l.y1)+1);
+                                          const srcX = vL.length ? vL : telLines;
+                                          if (srcX.length) {
                                             const allX = srcX.flatMap(l => [l.x1, l.x2]);
-                                            const allY = srcY.flatMap(l => [l.y1, l.y2]);
-                                            freeLeftX = Math.min(...allX); freeRightX = Math.max(...allX);
-                                            freeTopY = Math.min(...allY); freeBotY = Math.max(...allY);
-                                            // bottomY dalla linea orizzontale più in basso
-                                            if (hL.length) {
-                                              const hYs = hL.flatMap(l => [l.y1, l.y2]);
-                                              freeBotY = Math.max(...hYs);
-                                              freeTopY = Math.min(...hYs);
-                                            }
-                                            fr = { x: freeLeftX, y: freeTopY, w: freeRightX - freeLeftX, h: freeBotY - freeTopY };
+                                            refX1 = Math.min(...allX);
+                                            refX2 = Math.max(...allX);
                                           } else {
-                                            fr = { x: fX, y: fY, w: fW, h: fH };
+                                            refX1 = fX; refX2 = fX + fW;
                                           }
-                                          isFreeFrame = true;
                                         }
-                                        const tk = isFreeFrame ? 0 : TK_FRAME;
-                                        const innerX = fr.x + tk;
-                                        const innerX2 = fr.x + fr.w - tk;
-                                        const innerY = fr.y + tk;
-                                        const innerY2 = fr.y + fr.h - tk;
                                         const thickness = halfT * 2;
-                                        const rX = innerX;
-                                        const rW = Math.max(1, innerX2 - innerX);
+                                        const rX = refX1;
+                                        const rW = Math.max(1, refX2 - refX1);
                                         const rH = thickness;
-                                        // zoccolo/soglia: appoggiato SUL bordo inferiore (rY = innerY2 - rH)
-                                        // fascia/profcomp: appoggiato SUL bordo superiore
-                                        const rY = (subType === "fascia" || subType === "profcomp")
-                                          ? innerY
-                                          : innerY2 - rH;
+                                        // Y: usa direttamente la Y media della linea disegnata
+                                        const lineY = (el.y1 + el.y2) / 2;
+                                        const rY = lineY - halfT;
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
