@@ -2100,9 +2100,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
                                         const thickness = halfT * 2;
-                                        // X: esattamente dove l'utente ha disegnato
-                                        const rX = Math.min(el.x1, el.x2);
-                                        const rW = Math.max(thickness, Math.abs(el.x2 - el.x1));
+                                        // Bordi X di riferimento: frame rect oppure linee verticali del Tel.Lib.
+                                        let clampX1: number, clampX2: number;
+                                        if (frame) {
+                                          clampX1 = frame.x + TK_FRAME;
+                                          clampX2 = frame.x + frame.w - TK_FRAME;
+                                        } else {
+                                          const vL = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1);
+                                          if (vL.length >= 2) {
+                                            const allX = vL.flatMap(l => [(l.x1+l.x2)/2]);
+                                            clampX1 = Math.min(...allX);
+                                            clampX2 = Math.max(...allX);
+                                          } else {
+                                            clampX1 = fX; clampX2 = fX + fW;
+                                          }
+                                        }
+                                        // X: esattamente dove l'utente ha disegnato, clampato ai bordi interni
+                                        const rawX1 = Math.min(el.x1, el.x2);
+                                        const rawX2 = Math.max(el.x1, el.x2);
+                                        const rX = Math.max(clampX1, rawX1);
+                                        const rW = Math.max(thickness, Math.min(clampX2, rawX2) - rX);
                                         const rH = thickness;
                                         // Y: centrata sulla linea disegnata
                                         const rY = (el.y1 + el.y2) / 2 - halfT;
