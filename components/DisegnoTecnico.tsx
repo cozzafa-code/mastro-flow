@@ -2127,8 +2127,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const hasVertAt1 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x1) < WCONN);
                                       const hasVertAt2 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x2) < WCONN);
                                       
-                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -(halfT + TK_FRAME) : halfT;
-                                      const ext2 = (hasMontAt2 || hasVertAt2) ? -(halfT + TK_FRAME) : halfT;
+                                      // ext negativo = accorcia; -HM_loc → bordo esterno del montante/verticale
+                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -HM_loc : halfT;
+                                      const ext2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali con subType (zoccolo/soglia/fascia):
