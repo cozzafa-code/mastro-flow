@@ -2105,16 +2105,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const innerY = fr.y + TK_FRAME;
                                         const innerY2 = fr.y + fr.h - TK_FRAME;
                                         const thickness = halfT * 2;
-                                        // X: usa le coordinate della linea, clampate ai bordi interni del frame
-                                        const rawX1 = Math.min(el.x1, el.x2);
-                                        const rawX2 = Math.max(el.x1, el.x2);
-                                        const rX = Math.max(innerX, rawX1);
-                                        const rX2 = Math.min(innerX2, rawX2);
-                                        const rW = Math.max(1, rX2 - rX);
+                                        // Sempre piena larghezza interna del frame
+                                        const rX = innerX;
+                                        const rW = Math.max(1, innerX2 - innerX);
+                                        const rH = thickness;
                                         // Y: usa la Y media della linea, clampata dentro il frame
                                         const lineYmid = (el.y1 + el.y2) / 2;
-                                        const rY = Math.max(innerY, Math.min(innerY2 - thickness, lineYmid - halfT));
-                                        const rH = thickness;
+                                        const rY = Math.max(innerY, Math.min(innerY2 - rH, lineYmid - halfT));
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
