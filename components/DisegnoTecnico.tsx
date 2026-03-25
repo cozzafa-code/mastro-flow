@@ -1192,27 +1192,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Clamp al frame
                                   let [nx1,ny1,nx2,ny2] = [pending.x1,pending.y1,px,py];
                                   const fr=els.find(e=>e.type==="rect");
-                                  if(fr&&lineType==="freeLine"){
-                                    const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);
-                                    const TKF=6;
-                                    if(isH){
-                                      // Orizzontale: clamp X ai bordi laterali interni
-                                      nx1=Math.max(fr.x+TKF,Math.min(fr.x+fr.w-TKF,nx1));
-                                      nx2=Math.max(fr.x+TKF,Math.min(fr.x+fr.w-TKF,nx2));
-                                      // Clamp Y al bordo interno più vicino
-                                      const distTop=Math.abs(ny1-(fr.y+TKF));
-                                      const distBot=Math.abs(ny1-(fr.y+fr.h-TKF));
-                                      ny1=ny2=distTop<=distBot ? fr.y+TKF : fr.y+fr.h-TKF;
-                                    }else{
-                                      // Verticale: clamp Y ai bordi top/bottom interni
-                                      ny1=Math.max(fr.y+TKF,Math.min(fr.y+fr.h-TKF,ny1));
-                                      ny2=Math.max(fr.y+TKF,Math.min(fr.y+fr.h-TKF,ny2));
-                                      // Clamp X al bordo interno più vicino
-                                      const distL=Math.abs(nx1-(fr.x+TKF));
-                                      const distR=Math.abs(nx1-(fr.x+fr.w-TKF));
-                                      nx1=nx2=distL<=distR ? fr.x+TKF : fr.x+fr.w-TKF;
-                                    }
-                                  }
+                                  if(fr&&lineType==="freeLine"){const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}}
                                   const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   const WELD2 = SNAP_R;
@@ -1582,6 +1562,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>🗑 Elimina sel.</div>}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
+                                  {frame && <div onClick={() => {
+                                    // Aggiusta tutti i freeLine al bordo interno del frame
+                                    const TKF = 6;
+                                    const fi = {l:frame.x+TKF, r:frame.x+frame.w-TKF, t:frame.y+TKF, b:frame.y+frame.h-TKF};
+                                    const fixed = els.map(e => {
+                                      if (e.type !== "freeLine") return e;
+                                      const isH = Math.abs(e.x2-e.x1) >= Math.abs(e.y2-e.y1);
+                                      if (isH) {
+                                        const dTop = Math.abs(e.y1 - fi.t), dBot = Math.abs(e.y1 - fi.b);
+                                        const newY = dTop <= dBot ? fi.t : fi.b;
+                                        return {...e, x1:Math.max(fi.l,Math.min(fi.r,e.x1)), x2:Math.max(fi.l,Math.min(fi.r,e.x2)), y1:newY, y2:newY};
+                                      } else {
+                                        const dL = Math.abs(e.x1 - fi.l), dR = Math.abs(e.x1 - fi.r);
+                                        const newX = dL <= dR ? fi.l : fi.r;
+                                        return {...e, y1:Math.max(fi.t,Math.min(fi.b,e.y1)), y2:Math.max(fi.t,Math.min(fi.b,e.y2)), x1:newX, x2:newX};
+                                      }
+                                    });
+                                    setDW(fixed);
+                                  }} style={{...bDel("#1A9E73"), background:"#1A9E7312"}}>⚡ Aggiusta</div>}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setMode({ _zoom: Math.max(0.5, (zoom || 1) - 0.25) })} style={{ ...bs(), fontSize: 14, padding: "3px 8px" }}>−</div>
                                   <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, minWidth: 32, textAlign: "center" }}>{Math.round(zoom * 100)}%</div>
