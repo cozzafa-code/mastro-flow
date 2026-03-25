@@ -2099,22 +2099,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
                                       const isFrameSubType = ["soglia","zoccolo","fascia","profcomp","soglia_rib"].includes(subType || "");
                                       if (isFrameSubType && !isPartOfPoly) {
-                                        // Calcola rect usando il frame come riferimento (se esiste) oppure le coordinate raw
                                         const fr = frame || { x: fX, y: fY, w: fW, h: fH };
                                         const innerX = fr.x + TK_FRAME;
                                         const innerX2 = fr.x + fr.w - TK_FRAME;
                                         const innerY = fr.y + TK_FRAME;
                                         const innerY2 = fr.y + fr.h - TK_FRAME;
                                         const thickness = halfT * 2;
-                                        // Posizione Y del rettangolo: usa la Y media della linea, centrata sullo spessore
-                                        const lineY = isHorzLine ? ((el.y1 + el.y2) / 2) : ((el.x1 + el.x2) / 2);
-                                        // Rect orizzontale: full-width del frame interno, altezza = thickness
+                                        // Larghezza = piena larghezza interna del frame
                                         const rX = innerX;
-                                        const rW = innerX2 - innerX;
-                                        // Per soglia_rib: aggancia in basso; per zoccolo: aggancia in basso; per soglia: aggancia in basso; fascia/profcomp: posizione libera
-                                        const isBottom = subType === "zoccolo" || subType === "soglia" || subType === "soglia_rib";
-                                        const rY = isBottom ? (innerY2 - thickness) : Math.max(innerY, Math.min(innerY2 - thickness, lineY - halfT));
+                                        const rW = Math.max(1, innerX2 - innerX);
+                                        // Altezza = spessore del profilo
                                         const rH = thickness;
+                                        // Posizione Y: usa la Y media della linea disegnata, centrata sullo spessore, clampata dentro il frame
+                                        const lineYmid = (el.y1 + el.y2) / 2;
+                                        const rY = Math.max(innerY, Math.min(innerY2 - rH, lineYmid - halfT));
                                         const midX2 = rX + rW / 2, midY2 = rY + rH / 2;
                                         return (
                                           <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
