@@ -1890,16 +1890,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {/* ══ CLOSED POLYGON PROFILES ══ */}
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
-                                    const TK = TK_FRAME * 2;
+                                    const TK = TK_FRAME * 2; // spessore profilo
+                                    // Angoli 45° automatici: taglia ogni vertice del polygon
                                     const cut45 = TK_FRAME * 2;
                                     const savedJ = dw._junctions || [];
-                                    // Per ogni vertice: controlla se c'è una junction salvata vicina
-                                    // Se junction type=90 → angolo netto (no bevel)
-                                    // Se junction type=45 o nessuna junction → bevel 45°
                                     const getVertexCut = (vx, vy) => {
-                                      const j = savedJ.find((jj:any) => Math.hypot(jj.ptX-vx, jj.ptY-vy) < 20);
-                                      if (j && j.type === "90") return 0; // angolo netto 90°
-                                      return cut45; // default 45°
+                                      const j = savedJ.find((jj:any) => Math.hypot(jj.ptX-vx, jj.ptY-vy) < 40);
+                                      console.log("[BEVEL]", Math.round(vx), Math.round(vy), "jcts:", savedJ.length, "found:", j?.type, j ? Math.round(Math.hypot(j.ptX-vx,j.ptY-vy)) : "none");
+                                      return (j && j.type === "90") ? 0 : cut45;
                                     };
                                     const smartBevel = (pts) => {
                                       const n = pts.length;
@@ -1907,9 +1905,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       for (let i = 0; i < n; i++) {
                                         const prev = pts[(i-1+n)%n], cur = pts[i], next = pts[(i+1)%n];
                                         const cut = getVertexCut(cur[0], cur[1]);
-                                        if (cut === 0) {
-                                          out.push([cur[0], cur[1]]); // netto
-                                        } else {
+                                        if (cut === 0) { out.push([cur[0], cur[1]]); }
+                                        else {
                                           const d1x = cur[0]-prev[0], d1y = cur[1]-prev[1], l1 = Math.hypot(d1x,d1y)||1;
                                           const d2x = next[0]-cur[0], d2y = next[1]-cur[1], l2 = Math.hypot(d2x,d2y)||1;
                                           out.push([cur[0]-d1x/l1*cut, cur[1]-d1y/l1*cut]);
@@ -2107,6 +2104,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         // Cerca junction vicina a ptX e alla Y del traverso
                                         const allSavedJ = dw._junctions || [];
                                         const j = allSavedJ.find((jj:any) => Math.abs(jj.ptX - ptX) < 60 && Math.abs(jj.ptY - el.y) < 60);
+                                        console.log("[JCT TRAV]", ptX, el.y, allSavedJ.length, j?.ptX, j?.ptY, j?.winner, j?.type);
                                         if (!j) return "V"; // default: verticale vince
                                         if (j.type === "45") return "45";
                                         const winner = j.winner || "A";
