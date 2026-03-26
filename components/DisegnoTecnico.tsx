@@ -1294,6 +1294,90 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
+                              // ═══ Angolo 45°/90° — click su angolo intersezione ═══
+                              if (drawMode === "corner-45" || drawMode === "corner-90") {
+                                const TOL = 20;
+                                const angle = drawMode === "corner-45" ? 45 : 90;
+                                // Trova angoli: intersezione tra montante/verticale e freeLine orizzontale
+                                const horzEls = els.filter(e => (e.type === "freeLine" && e.subType) && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+0.5);
+                                const vertEls = [
+                                  ...els.filter(e => e.type === "montante"),
+                                  ...els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1),
+                                ];
+                                let bestCorner: any = null, bestD = TOL;
+                                horzEls.forEach(h => {
+                                  vertEls.forEach(v => {
+                                    const vx = v.type === "montante" ? v.x : (v.x1+v.x2)/2;
+                                    const hy = (h.y1+h.y2)/2;
+                                    // Check intersezione X e Y
+                                    const hx1 = Math.min(h.x1,h.x2), hx2 = Math.max(h.x1,h.x2);
+                                    const vy1 = v.type==="montante" ? (v.y1??fY) : Math.min(v.y1,v.y2);
+                                    const vy2 = v.type==="montante" ? (v.y2??fY+fH) : Math.max(v.y1,v.y2);
+                                    if (vx < hx1-TOL || vx > hx2+TOL) return;
+                                    if (hy < vy1-TOL || hy > vy2+TOL) return;
+                                    // Corner point
+                                    const cx2 = vx, cy2 = hy;
+                                    const d = Math.hypot(mx-cx2, my-cy2);
+                                    if (d < bestD) {
+                                      bestD = d;
+                                      bestCorner = { hId: h.id, vId: v.id, cx: cx2, cy: cy2, angle };
+                                    }
+                                  });
+                                });
+                                if (bestCorner) {
+                                  const hist = pushHistory();
+                                  const updEls = els.map(e => {
+                                    if (e.id === bestCorner.hId || e.id === bestCorner.vId) {
+                                      const corners = e.corners ? [...e.corners.filter(c => Math.hypot(c.cx-bestCorner.cx,c.cy-bestCorner.cy)>5)] : [];
+                                      if (angle !== 90) corners.push({ cx: bestCorner.cx, cy: bestCorner.cy, angle });
+                                      return { ...e, corners };
+                                    }
+                                    return e;
+                                  });
+                                  onUpdate({ ...dw, elements: updEls, history: hist });
+                                }
+                                return;
+                              }
+
+                              // ═══ Angolo 45°/90° ═══
+                              if (drawMode === "corner-45" || drawMode === "corner-90") {
+                                const TOL = 20;
+                                const angle = drawMode === "corner-45" ? 45 : 90;
+                                const horzEls = els.filter(e => e.type === "freeLine" && e.subType && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+0.5);
+                                const vertEls = [
+                                  ...els.filter(e => e.type === "montante"),
+                                  ...els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1),
+                                ];
+                                let bestCorner = null, bestD = TOL;
+                                horzEls.forEach(h => {
+                                  vertEls.forEach(v => {
+                                    const vx = v.type === "montante" ? v.x : (v.x1+v.x2)/2;
+                                    const hy = (h.y1+h.y2)/2;
+                                    const hx1 = Math.min(h.x1,h.x2), hx2 = Math.max(h.x1,h.x2);
+                                    const vy1 = v.type==="montante" ? (v.y1??fY) : Math.min(v.y1,v.y2);
+                                    const vy2 = v.type==="montante" ? (v.y2??(fY+fH)) : Math.max(v.y1,v.y2);
+                                    if (vx < hx1-TOL || vx > hx2+TOL) return;
+                                    if (hy < vy1-TOL || hy > vy2+TOL) return;
+                                    const d = Math.hypot(mx-vx, my-hy);
+                                    if (d < bestD) { bestD = d; bestCorner = { hId: h.id, vId: v.id, cx: vx, cy: hy, angle }; }
+                                  });
+                                });
+                                if (bestCorner) {
+                                  const hist = pushHistory();
+                                  const updEls = els.map(e => {
+                                    if (e.id === bestCorner.hId || e.id === bestCorner.vId) {
+                                      const corners = (e.corners||[]).filter(c => Math.hypot(c.cx-bestCorner.cx,c.cy-bestCorner.cy)>5);
+                                      if (angle !== 90) corners.push({ cx: bestCorner.cx, cy: bestCorner.cy, angle });
+                                      return { ...e, corners };
+                                    }
+                                    return e;
+                                  });
+                                  onUpdate({ ...dw, elements: updEls, history: hist });
+                                }
+                                return;
+                              }
+
+
                               // Modalità giunzione — click su marker apre pannello
                               if (drawMode === "junction") {
                                 const JTOL = 24;
@@ -1581,6 +1665,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>↔ Misure</div>
                                   {/* Righello / Metro */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1.5px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}>📐 Righello</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   {/* Distinta materiali */}
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1.5px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}>📋 Distinta</div>
                                   {/* Giunzioni */}
@@ -1941,10 +2029,48 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         Math.max(e.x1, e.x2) >= el.x - TK_MONT && Math.min(e.x1, e.x2) <= el.x + TK_MONT);
                                       const my2 = zoccoloEl ? zoccoloEl.y1 + TK_FRAME : my2raw;
                                       const HM2 = TK_MONT / 2;
+                                      const mX1 = el.x - HM2, mX2 = el.x + HM2;
+                                      // Calcola tagli 45° agli angoli
+                                      const mCorners = el.corners || [];
+                                      // Costruisci polygon con tagli 45° dove richiesto
+                                      const buildMontPoly = () => {
+                                        // Angoli: TL, TR, BR, BL
+                                        let pts = [[mX1,my1raw],[mX2,my1raw],[mX2,my2],[mX1,my2]];
+                                        mCorners.forEach(c => {
+                                          const cut = HM2; // dimensione taglio = mezza larghezza
+                                          if (Math.abs(c.cy - my1raw) < 8) {
+                                            // Angolo top
+                                            if (Math.abs(c.cx - mX1) < 8) pts = [[mX1+cut,my1raw],[mX2,my1raw],[mX2,my2],[mX1,my2],[mX1,my1raw+cut]];
+                                            else pts = [[mX1,my1raw],[mX2-cut,my1raw],[mX2,my1raw+cut],[mX2,my2],[mX1,my2]];
+                                          } else if (Math.abs(c.cy - my2) < 8) {
+                                            // Angolo bottom
+                                            if (Math.abs(c.cx - mX1) < 8) pts = [[mX1,my1raw],[mX2,my1raw],[mX2,my2],[mX1+cut,my2],[mX1,my2-cut]];
+                                            else pts = [[mX1,my1raw],[mX2,my1raw],[mX2,my2-cut],[mX2-cut,my2],[mX1,my2]];
+                                          } else {
+                                            // Angolo intermedio (intersezione con profilo orizzontale)
+                                            const isRight = c.cx > el.x;
+                                            if (isRight) {
+                                              // Taglia angolo in basso-destra e alto-destra
+                                              pts = pts.map(p => p);
+                                            }
+                                          }
+                                        });
+                                        return pts.map(p => p.join(",")).join(" ");
+                                      };
+                                      const hasCuts = mCorners.length > 0;
+                                      const fillC = sel ? "#1A9E7318" : "#e8e8e4";
+                                      const strokeC = sel ? "#1A9E73" : "#3A3A3C";
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={my2 - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          {hasCuts
+                                            ? <polygon points={buildMontPoly()} fill={fillC} stroke={strokeC} strokeWidth={sel ? 1.5 : 0.8} />
+                                            : <rect x={mX1} y={my1raw} width={TK_MONT} height={my2 - my1raw} fill={fillC} stroke={strokeC} strokeWidth={sel ? 1.5 : 0.8} />
+                                          }
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2} r={4} fill="#1A9E73"/></>}
+                                          {/* Marker angoli */}
+                                          {mCorners.map((c,ci) => (
+                                            <circle key={ci} cx={c.cx} cy={c.cy} r={3} fill="#D08008" opacity={0.6} />
+                                          ))}
                                         </g>
                                       );
                                     }
@@ -2160,7 +2286,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         ey1 = el.y1 - halfT + TK_FRAME;
                                         ey2 = el.y2 - halfT + TK_FRAME;
                                       }
-                                      const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
+                                      // Taglio 45° sul profilo freeLine orizzontale
+                                      const flCorners = el.corners || [];
+                                      const buildFreePoly = () => {
+                                        // pts4 base: TL, TR, BR, BL (top=ey+ny, bot=ey-ny)
+                                        let p = [
+                                          [ex1+nx, ey1+ny], [ex2+nx, ey2+ny],
+                                          [ex2-nx, ey2-ny], [ex1-nx, ey1-ny]
+                                        ];
+                                        flCorners.forEach(c => {
+                                          // Per orizzontale: cx = x del taglio, cy ~ ey
+                                          // Lato sinistro = ex1, lato destro = ex2
+                                          const cut = halfT; // dimensione taglio diagonale
+                                          const isLeft = Math.abs(c.cx - ex1) < halfT * 3;
+                                          const isRight = Math.abs(c.cx - ex2) < halfT * 3;
+                                          if (isLeft) {
+                                            // Taglia angolo TL e BL
+                                            p = [[ex1+cut+nx, ey1+ny],[ex2+nx, ey2+ny],[ex2-nx, ey2-ny],[ex1+cut-nx, ey1-ny],[ex1-nx, ey1-ny+cut],[ex1+nx, ey1+ny-cut]];
+                                          } else if (isRight) {
+                                            // Taglia angolo TR e BR
+                                            p = [[ex1+nx, ey1+ny],[ex2-cut+nx, ey2+ny],[ex2+nx, ey2+ny-cut],[ex2-nx, ey2-ny+cut],[ex2-cut-nx, ey2-ny],[ex1-nx, ey1-ny]];
+                                          }
+                                        });
+                                        return p.map(pt => pt.join(",")).join(" ");
+                                      };
+                                      const pts4 = flCorners.length > 0 ? buildFreePoly() : `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
