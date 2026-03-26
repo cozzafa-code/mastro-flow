@@ -1938,7 +1938,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
                                       const zoccoloEl = els.find((e: any) => e.type === "freeLine" && e.subType === "zoccolo");
-                                      const my2 = zoccoloEl ? my2raw + TK_FRAME : my2raw;
+                                      const my2 = zoccoloEl ? my2raw + TK_ZOCCOLO + TK_FRAME : my2raw;
                                       const HM2 = TK_MONT / 2;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
