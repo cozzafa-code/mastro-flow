@@ -2129,7 +2129,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       
                                       // ext1: si estende verso montante sx (SVG) = dx utente
                                       // ext2: si ferma su el.x2, non esce
-                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -(TK_MONT + HM_loc) : halfT;
+                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -(TK_MONT + 2) : halfT;
                                       const ext2 = (hasMontAt2 || hasVertAt2) ? 0 : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
