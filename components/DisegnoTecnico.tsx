@@ -569,32 +569,40 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 // Snap lungo tutto il montante (ogni GRID pixel)
                                 for (let y = my1 + GRID; y < my2; y += GRID) pts.push({x:m.x, y});
                               });
-                              // Traversi — estremità + mezza larghezza
+                              // Traversi — bordi superiore e inferiore + centro
                               els.filter(e => e.type === "traverso").forEach(t => {
                                 const tx1 = t.x1 ?? (frame ? frame.x : fX);
                                 const tx2 = t.x2 ?? (frame ? frame.x + frame.w : fX + fW);
+                                const HT2 = TK_MONT / 2;
+                                // centro, bordo sup, bordo inf
                                 pts.push({x:tx1, y:t.y},{x:tx2, y:t.y},{x:(tx1+tx2)/2, y:t.y});
+                                pts.push({x:tx1, y:t.y-HT2},{x:tx2, y:t.y-HT2},{x:(tx1+tx2)/2, y:t.y-HT2});
+                                pts.push({x:tx1, y:t.y+HT2},{x:tx2, y:t.y+HT2},{x:(tx1+tx2)/2, y:t.y+HT2});
                                 for (let x = tx1 + GRID; x < tx2; x += GRID) pts.push({x, y:t.y});
                               });
-                              // FreeLine — snap a estremità, punto medio, bordi profilo (±halfT)
+                              // FreeLine — snap a bordi esatti del profilo renderizzato
+                              // Bordo sup zoccolo = l.y1 - halfT + TK_FRAME, bordo inf = l.y1 + halfT + TK_FRAME
                               const tkSnapMap: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
                               els.filter(e => e.type === "freeLine").forEach(l => {
                                 const len = Math.hypot(l.x2-l.x1, l.y2-l.y1) || 1;
                                 const ux = (l.x2-l.x1)/len, uy = (l.y2-l.y1)/len;
-                                const nx = -uy, ny = ux; // normale
                                 const hT = l.subType ? (tkSnapMap[l.subType] || TK_FRAME) : TK_FRAME;
-                                const isHz = Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1) + 0.5;
-                                // Estremità sulla linea
-                                pts.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2});
-                                // Punto medio sulla linea
-                                pts.push({x:(l.x1+l.x2)/2, y:(l.y1+l.y2)/2});
-                                if (l.subType && isHz) {
-                                  // Bordo superiore del profilo (y - hT)
-                                  pts.push({x:l.x1, y:l.y1 - hT + TK_FRAME}, {x:l.x2, y:l.y2 - hT + TK_FRAME});
-                                  pts.push({x:(l.x1+l.x2)/2, y:(l.y1+l.y2)/2 - hT + TK_FRAME});
-                                  // Bordo inferiore del profilo (y + hT)
-                                  pts.push({x:l.x1, y:l.y1 + hT + TK_FRAME}, {x:l.x2, y:l.y2 + hT + TK_FRAME});
-                                  pts.push({x:(l.x1+l.x2)/2, y:(l.y1+l.y2)/2 + hT + TK_FRAME});
+                                const isHz = l.subType && Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1) + 0.5;
+                                const mx2 = (l.x1+l.x2)/2, my2 = (l.y1+l.y2)/2;
+                                // Estremità e centro sulla linea
+                                pts.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2},{x:mx2,y:my2});
+                                if (isHz) {
+                                  // Bordo superiore renderizzato: ey1 = l.y1 - hT + TK_FRAME
+                                  const yTop = l.y1 - hT + TK_FRAME;
+                                  // Bordo inferiore renderizzato: ey1 + ny*2 = yTop + hT*2
+                                  const yBot = yTop + hT * 2;
+                                  pts.push({x:l.x1,y:yTop},{x:l.x2,y:yTop},{x:mx2,y:yTop});
+                                  pts.push({x:l.x1,y:yBot},{x:l.x2,y:yBot},{x:mx2,y:yBot});
+                                  // Snap ogni GRID lungo i bordi
+                                  for (let d = GRID; d < len; d += GRID) {
+                                    pts.push({x:l.x1+ux*d, y:yTop});
+                                    pts.push({x:l.x1+ux*d, y:yBot});
+                                  }
                                 }
                                 // Snap lungo la linea ogni GRID pixel
                                 for (let d = GRID; d < len; d += GRID) pts.push({x:l.x1+ux*d, y:l.y1+uy*d});
