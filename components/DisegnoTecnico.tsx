@@ -2135,8 +2135,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
                                       if (isHorzEl && !isPartOfPoly) {
-                                        ey1 = el.y1 - halfT + TK_FRAME;
-                                        ey2 = el.y2 - halfT + TK_FRAME;
+                                        ey1 = el.y1 - halfT * 2;
+                                        ey2 = el.y2 - halfT * 2;
                                       }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
