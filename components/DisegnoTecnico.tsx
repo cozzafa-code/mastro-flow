@@ -2089,23 +2089,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const tx2raw = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
                                       const HM2 = TK_MONT / 2;
                                       // Leggi junction per questo traverso
-                                      // Cerca tutte le junction che coinvolgono questo traverso
-                                      const allJ = dw._junctions || [];
+                                      const myJunctions = dw._junctions?.filter((jj:any) => jj.elA === el.id || jj.elB === el.id) || [];
                                       const getJType = (ptX) => {
-                                        // Trova junction vicina a ptX che coinvolge questo traverso
-                                        const j = allJ.find((jj:any) =>
-                                          Math.abs(jj.ptX - ptX) < 24 &&
-                                          Math.abs(jj.ptY - el.y) < 24
-                                        );
+                                        // Cerca junction vicina a ptX e alla Y del traverso
+                                        const allSavedJ = dw._junctions || [];
+                                        const j = allSavedJ.find((jj:any) => Math.abs(jj.ptX - ptX) < 24 && Math.abs(jj.ptY - el.y) < 24);
                                         if (!j) return "V"; // default: verticale vince
                                         if (j.type === "45") return "45";
-                                        // elA=montante (verticale), elB=traverso (orizzontale) di solito
-                                        // winner "A" = verticale vince, winner "B" = orizzontale vince
                                         const winner = j.winner || "A";
-                                        // Determina se il traverso è elA o elB
-                                        const travIsA = j.elA === el.id;
-                                        // O vince se: traverso=B e winner=B, oppure traverso=A e winner=A
-                                        const oWins = (travIsA && winner === "A") || (!travIsA && winner === "B");
+                                        // Determina quale dei due elementi è verticale
+                                        const elAobj = els.find((e:any) => e.id === j.elA);
+                                        const aIsVert = !elAobj || elAobj.type === "montante" || (elAobj.type === "freeLine" && !elAobj.subType);
+                                        // O vince se winner punta all orizzontale
+                                        const oWins = (winner === "A" && !aIsVert) || (winner === "B" && aIsVert);
                                         return oWins ? "O" : "V";
                                       };
                                       // Calcola estensioni in base al tipo giunzione
