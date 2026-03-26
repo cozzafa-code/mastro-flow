@@ -2018,6 +2018,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const my2 = zoccoloEl ? zoccoloEl.y1 + TK_FRAME : my2raw;
                                       const HM2 = TK_MONT / 2;
                                       const mX1 = el.x - HM2, mX2 = el.x + HM2;
+                                      // Applica junction: se O vince il montante si accorcia dove incrocia il traverso
+                                      const montJunctions = dw._junctions?.filter((jj:any) => jj.elA === el.id || jj.elB === el.id) || [];
+                                      // Calcola zone dove il montante è interrotto (O vince)
+                                      const montCuts: {y1:number,y2:number}[] = [];
+                                      montJunctions.forEach((jj:any) => {
+                                        if (jj.type !== "90") return;
+                                        const isElA = jj.elA === el.id;
+                                        const oWins = (isElA && jj.winner === "B") || (!isElA && jj.winner === "A");
+                                        if (!oWins) return;
+                                        montCuts.push({ y1: jj.ptY - HM2, y2: jj.ptY + HM2 });
+                                      });
                                       // Calcola tagli 45° agli angoli
                                       const mCorners = el.corners || [];
                                       // Costruisci polygon con tagli 45° dove richiesto
@@ -2048,12 +2059,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const hasCuts = mCorners.length > 0;
                                       const fillC = sel ? "#1A9E7318" : "#e8e8e4";
                                       const strokeC = sel ? "#1A9E73" : "#3A3A3C";
+                                      // Segmenti montante con tagli O-vince
+                                      const montSegs: {y1:number,y2:number}[] = [];
+                                      let curM = my1raw;
+                                      montCuts.sort((a,b)=>a.y1-b.y1).forEach(cut => {
+                                        if (curM < cut.y1) montSegs.push({y1:curM,y2:cut.y1});
+                                        curM = cut.y2;
+                                      });
+                                      if (curM < my2) montSegs.push({y1:curM,y2:my2});
+                                      if (montSegs.length === 0) montSegs.push({y1:my1raw,y2:my2});
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          {hasCuts
-                                            ? <polygon points={buildMontPoly()} fill={fillC} stroke={strokeC} strokeWidth={sel ? 1.5 : 0.8} />
-                                            : <rect x={mX1} y={my1raw} width={TK_MONT} height={my2 - my1raw} fill={fillC} stroke={strokeC} strokeWidth={sel ? 1.5 : 0.8} />
-                                          }
+                                          {montSegs.map((seg,si) => hasCuts && si===0
+                                            ? <polygon key={si} points={buildMontPoly()} fill={fillC} stroke={strokeC} strokeWidth={sel ? 1.5 : 0.8} />
+                                            : <rect key={si} x={mX1} y={seg.y1} width={TK_MONT} height={seg.y2-seg.y1} fill={fillC} stroke={strokeC} strokeWidth={sel ? 1.5 : 0.8} />
+                                          )}
                                           {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2} r={4} fill="#1A9E73"/></>}
                                           {/* Marker angoli */}
                                           {mCorners.map((c,ci) => (
@@ -2063,28 +2083,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       );
                                     }
 
-                                    // ═══ TRAVERSO — tagliato ai montanti, esteso ai profili verticali adiacenti ═══
+                                    // ═══ TRAVERSO — junction-aware render ═══
                                     if (el.type === "traverso") {
                                       const tx1raw = el.x1 !== undefined ? el.x1 : (frame ? frame.x : fX);
                                       const tx2raw = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
                                       const HM2 = TK_MONT / 2;
-                                      const tkMapLocal: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP };
-                                      const ETOL = 30;
-                                      const vertLines = els.filter(e => e.type === "freeLine" && e.x1 !== undefined);
-                                      let extL = 0, extR = 0;
-                                      vertLines.forEach(l => {
-                                        const lHalfT = tkMapLocal[l.subType] || TK_FRAME;
-                                        const isVert = Math.abs(l.x2 - l.x1) < Math.abs(l.y2 - l.y1) + 1;
-                                        if (!isVert) return;
-                                        const lX = (l.x1 + l.x2) / 2;
-                                        const dL = Math.abs(lX - tx1raw);
-                                        if (dL < ETOL) extL = Math.max(extL, lHalfT - (tx1raw - lX));
-                                        const dR = Math.abs(lX - tx2raw);
-                                        if (dR < ETOL) extR = Math.max(extR, lHalfT - (lX - tx2raw));
-                                      });
-                                      const tx1 = tx1raw - Math.max(0, extL);
-                                      const tx2 = tx2raw + Math.max(0, extR);
-                                      // Taglia il traverso ai montanti che lo attraversano
+                                      // Leggi junction per questo traverso
+                                      const myJunctions = dw._junctions?.filter((jj:any) => jj.elA === el.id || jj.elB === el.id) || [];
+                                      const getJType = (ptX) => {
+                                        const j = myJunctions.find((jj:any) => Math.abs(jj.ptX - ptX) < 20);
+                                        if (!j) return "V"; // default: verticale vince
+                                        if (j.type === "45") return "45";
+                                        // winner A=verticale (montante), B=orizzontale (traverso)
+                                        const isElA = j.elA === el.id;
+                                        const winner = j.winner || "A";
+                                        // Se winner è il montante (A quando traverso=B, o B quando traverso=A) → V vince
+                                        return ((!isElA && winner === "A") || (isElA && winner === "B")) ? "O" : "V";
+                                      };
+                                      // Calcola estensioni in base al tipo giunzione
+                                      const jTypeL = getJType(tx1raw);
+                                      const jTypeR = getJType(tx2raw);
+                                      // V vince → traverso si accorcia di HM2 (il montante copre)
+                                      // O vince → traverso si estende di HM2 (passa sopra il montante)
+                                      const tx1 = tx1raw + (jTypeL === "V" ? HM2 : jTypeL === "O" ? -HM2 : 0);
+                                      const tx2 = tx2raw - (jTypeR === "V" ? HM2 : jTypeR === "O" ? -HM2 : 0);
+                                      // Taglia il traverso ai montanti interni che lo attraversano (junction V)
                                       const intersectingMonts = allMontanti.filter(m => {
                                         const mx1 = m.x - HM2, mx2 = m.x + HM2;
                                         const mmy1 = m.y1 ?? (frame ? frame.y : fY);
@@ -2093,15 +2116,39 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       });
                                       const segments: {x1:number,x2:number}[] = [];
                                       let cur = tx1;
-                                      const cuts = intersectingMonts.map(m => ({ x1: m.x - HM2, x2: m.x + HM2 })).sort((a,b) => a.x1 - b.x1);
-                                      cuts.forEach(cut => { if (cur < cut.x1) segments.push({ x1: cur, x2: cut.x1 }); cur = cut.x2; });
+                                      const cuts = intersectingMonts.map(m => {
+                                        const jj = myJunctions.find((j:any) => j.elA === m.id || j.elB === m.id);
+                                        const jt = jj?.type === "45" ? "45" : "V";
+                                        return { x1: m.x - HM2, x2: m.x + HM2, type: jt };
+                                      }).sort((a,b) => a.x1 - b.x1);
+                                      cuts.forEach(cut => {
+                                        if (cur < cut.x1) segments.push({ x1: cur, x2: cut.x1 });
+                                        cur = cut.x2;
+                                      });
                                       if (cur < tx2) segments.push({ x1: cur, x2: tx2 });
                                       if (segments.length === 0) segments.push({ x1: tx1, x2: tx2 });
+                                      const fillT = sel ? "#1A9E7318" : "#e8e8e4";
+                                      const strokeT = sel ? "#1A9E73" : "#3A3A3C";
+                                      // Render segmenti con tagli 45° agli estremi se necessario
+                                      const buildTravPoly = (sx1, sx2, typeL, typeR) => {
+                                        const y1 = el.y - HM2, y2 = el.y + HM2;
+                                        const cut = HM2;
+                                        let pts = [[sx1,y1],[sx2,y1],[sx2,y2],[sx1,y2]];
+                                        if (typeL === "45") pts = [[sx1+cut,y1],[sx2,y1],[sx2,y2],[sx1,y2],[sx1,y2-cut],[sx1,y1+cut]].filter((_,i)=>i<6);
+                                        if (typeR === "45") pts = [[sx1,y1],[sx2-cut,y1],[sx2,y1+cut],[sx2,y2-cut],[sx2-cut,y2],[sx1,y2]];
+                                        return pts.map(p=>p.join(",")).join(" ");
+                                      };
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ns-resize" }}>
-                                          {segments.map((seg, si) => (
-                                            <rect key={si} x={seg.x1} y={el.y - HM2} width={seg.x2 - seg.x1} height={TK_MONT} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
-                                          ))}
+                                          {segments.map((seg, si) => {
+                                            const isFirst = si === 0, isLast = si === segments.length-1;
+                                            const tL = isFirst ? jTypeL : "V";
+                                            const tR = isLast ? jTypeR : "V";
+                                            if (tL === "45" || tR === "45") {
+                                              return <polygon key={si} points={buildTravPoly(seg.x1, seg.x2, tL, tR)} fill={fillT} stroke={strokeT} strokeWidth={sel ? 1.5 : 0.8} />;
+                                            }
+                                            return <rect key={si} x={seg.x1} y={el.y - HM2} width={seg.x2 - seg.x1} height={TK_MONT} fill={fillT} stroke={strokeT} strokeWidth={sel ? 1.5 : 0.8} />;
+                                          })}
                                           {sel && <><circle cx={tx1raw} cy={el.y} r={4} fill="#1A9E73"/><circle cx={tx2raw} cy={el.y} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
