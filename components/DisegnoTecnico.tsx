@@ -684,6 +684,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                 }
                               }
+                              // freeLine orizzontale con subType vs bordi frame (sx/dx)
+                              if (frame) {
+                                const horzSub = freeLines.filter(l => l.subType && Math.abs(l.y2-l.y1) <= Math.abs(l.x2-l.x1)+0.5);
+                                horzSub.forEach(l => {
+                                  const pts = [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}];
+                                  pts.forEach(p => {
+                                    // Bordo sinistro frame
+                                    if (Math.abs(p.x - (frame.x + TK_FRAME)) < JTOL) {
+                                      const existing = dw._junctions?.find((jj:any) => jj.elA === "frame_L" && jj.elB === l.id);
+                                      result.push({ id: `j_frameL_${l.id}`, ptX: p.x, ptY: p.y, elA: "frame_L", elB: l.id, type: existing?.type || "90", winner: existing?.winner || "A" });
+                                    }
+                                    // Bordo destro frame
+                                    if (Math.abs(p.x - (frame.x + frame.w - TK_FRAME)) < JTOL) {
+                                      const existing = dw._junctions?.find((jj:any) => jj.elA === "frame_R" && jj.elB === l.id);
+                                      result.push({ id: `j_frameR_${l.id}`, ptX: p.x, ptY: p.y, elA: "frame_R", elB: l.id, type: existing?.type || "90", winner: existing?.winner || "A" });
+                                    }
+                                  });
+                                });
+              }
                               // Deduplica per id
                               const seen = new Set();
                               return result.filter(j => { if (seen.has(j.id)) return false; seen.add(j.id); return true; });
@@ -2244,10 +2263,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const hasVertAt1 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x1) < WCONN);
                                       const hasVertAt2 = isHorzEl && els.some(v => v.type === "freeLine" && !v.subType && Math.abs(v.x2-v.x1) < Math.abs(v.y2-v.y1)+1 && Math.abs((v.x1+v.x2)/2 - el.x2) < WCONN);
                                       
+                                      // Leggi junction winner per questo elemento
+                                      const jAtEl1 = dw._junctions?.find((jj:any) => (jj.elA === el.id || jj.elB === el.id) && Math.abs(jj.ptX - el.x1) < 20);
+                                      const jAtEl2 = dw._junctions?.find((jj:any) => (jj.elA === el.id || jj.elB === el.id) && Math.abs(jj.ptX - el.x2) < 20);
+                                      // Se junction esiste e orizzontale vince (winner B quando A=vert, o winner A quando A=orizz): estenditi
+                                      const horzWinsAt1 = jAtEl1 && jAtEl1.type === "90" && ((jAtEl1.elA === el.id && jAtEl1.winner === "A") || (jAtEl1.elB === el.id && jAtEl1.winner === "B"));
+                                      const horzWinsAt2 = jAtEl2 && jAtEl2.type === "90" && ((jAtEl2.elA === el.id && jAtEl2.winner === "A") || (jAtEl2.elB === el.id && jAtEl2.winner === "B"));
                                       // ext1: si estende verso montante sx (SVG) = dx utente
                                       // ext2: si ferma su el.x2, non esce
-                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
-                                      const ext2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
+                                      // Se orizzontale vince: si estende di halfT oltre il montante (passa sopra)
+                                      const ext1 = horzWinsAt1 ? halfT : (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
+                                      const ext2 = horzWinsAt2 ? halfT : (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
@@ -2483,8 +2509,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const isSelected = junctionEdit?.id === j.id;
                                     return (
                                       <g key={j.id} style={{ cursor: "pointer" }} onClick={(e3) => { e3.stopPropagation(); if (drawMode === "junction") setJunctionEdit(j); }}>
-                                        <circle cx={j.ptX} cy={j.ptY} r={9} fill={jType === "45" ? "#D08008" : T.blue} fillOpacity={0.15} stroke={jType === "45" ? "#D08008" : T.blue} strokeWidth={isSelected ? 2.5 : 1.5} />
-                                        <text x={j.ptX} y={j.ptY + 4} textAnchor="middle" fontSize={8} fontWeight={800} fill={jType === "45" ? "#D08008" : T.blue} fontFamily="monospace">{jType}°</text>
+                                        <circle cx={j.ptX} cy={j.ptY} r={10} fill={jType === "45" ? "#D08008" : "#1A9E73"} fillOpacity={0.18} stroke={jType === "45" ? "#D08008" : "#1A9E73"} strokeWidth={isSelected ? 2.5 : 1.5} />
+                                        <text x={j.ptX} y={j.ptY + 4} textAnchor="middle" fontSize={7} fontWeight={800} fill={jType === "45" ? "#D08008" : "#1A9E73"} fontFamily="monospace">
+                                          {jType === "45" ? "45°" : saved?.winner === "B" ? "O→" : "V↕"}
+                                        </text>
                                       </g>
                                     );
                                   })}
@@ -2526,14 +2554,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         if (curType !== "90") return null;
                                         const elA = els.find((e:any) => e.id === junctionEdit.elA);
                                         const elB = els.find((e:any) => e.id === junctionEdit.elB);
-                                        const nameA = elA?.subType || elA?.type || "A";
-                                        const nameB = elB?.subType || elB?.type || "B";
+                                        // Determina quale è verticale e quale orizzontale
+                                        const isAVert = elA?.type === "montante" || (elA?.type === "freeLine" && Math.abs((elA?.x2||0)-(elA?.x1||0)) < Math.abs((elA?.y2||0)-(elA?.y1||0))+1);
+                                        const nameA = isAVert ? "VERTICALE" : "ORIZZONTALE";
+                                        const nameB = isAVert ? "ORIZZONTALE" : "VERTICALE";
                                         const curWinner = saved?.winner || "A";
                                         return (
                                           <div>
-                                            <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 6 }}>Chi vince (passa sopra)</div>
+                                            <div style={{ fontSize: 10, fontWeight: 700, color: "#888", marginBottom: 6 }}>Chi passa intero (vince)</div>
                                             <div style={{ display: "flex", gap: 8 }}>
-                                              {[{id:"A",label:nameA.toUpperCase()},{id:"B",label:nameB.toUpperCase()}].map(opt => {
+                                              {[{id:"A",label:nameA},{id:"B",label:nameB}].map(opt => {
                                                 const isSel = curWinner === opt.id;
                                                 return (
                                                   <div key={opt.id} onClick={() => {
