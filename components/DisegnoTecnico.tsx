@@ -1872,8 +1872,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
                                     const TK = TK_FRAME * 2; // spessore profilo
-                                    const ptStr = polyPts.map(p => `${p[0]},${p[1]}`).join(" ");
-                                    // Calcola punti con taglio 45° agli angoli
+                                    // Angoli 45° automatici: taglia ogni vertice del polygon
+                                    const cut45 = TK_FRAME * 2;
                                     const bevelPts = (pts, cut) => {
                                       const n = pts.length;
                                       const out = [];
@@ -1886,7 +1886,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       }
                                       return out;
                                     };
-                                    const cut45 = TK_FRAME;
                                     const bPts = bevelPts(polyPts, cut45);
                                     const bStr = bPts.map(p => `${p[0]},${p[1]}`).join(" ");
                                     return (
