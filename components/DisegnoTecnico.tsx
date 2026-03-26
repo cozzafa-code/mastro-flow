@@ -1896,13 +1896,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* ══ ELEMENTS ══ */}
-                                  {/* Z-order: rect(telaio) → freeLine(zoccolo/soglia) → montanti/traversi → resto */}
+                                  {/* Render in z-order: montanti/traversi prima, freeLine orizzontali sopra */}
                                   {[
-                                    ...els.filter(e => e.type === "rect"),
-                                    ...els.filter(e => e.type === "freeLine" && e.subType),
-                                    ...els.filter(e => e.type === "freeLine" && !e.subType),
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "rect" && e.type !== "freeLine" && e.type !== "montante" && e.type !== "traverso"),
+                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso"),
                                   ].map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
@@ -2138,8 +2135,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
                                       if (isHorzEl && !isPartOfPoly) {
-                                        ey1 = el.y1 - halfT * 2;
-                                        ey2 = el.y2 - halfT * 2;
+                                        ey1 = el.y1 - halfT + TK_FRAME;
+                                        ey2 = el.y2 - halfT + TK_FRAME;
                                       }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
