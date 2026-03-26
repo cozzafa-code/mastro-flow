@@ -1892,30 +1892,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (polyPts.length < 3) return null;
                                     const TK = TK_FRAME * 2; // spessore profilo
                                     // Angoli 45° automatici: taglia ogni vertice del polygon
-                                    const cut45 = TK_FRAME * 0.8;
-                                    const savedJ = dw._junctions || [];
-                                    const getVertexCut = (vx, vy) => {
-                                      const j = savedJ.find((jj:any) => Math.hypot(jj.ptX-vx, jj.ptY-vy) < 40);
-                                      console.log("[BEVEL]", Math.round(vx), Math.round(vy), "jcts:", savedJ.length, "found:", j?.type, j ? Math.round(Math.hypot(j.ptX-vx,j.ptY-vy)) : "none");
-                                      return (j && j.type === "90") ? 0 : cut45;
-                                    };
-                                    const smartBevel = (pts) => {
+                                    const cut45 = TK_FRAME * 2;
+                                    const bevelPts = (pts, cut) => {
                                       const n = pts.length;
                                       const out = [];
                                       for (let i = 0; i < n; i++) {
                                         const prev = pts[(i-1+n)%n], cur = pts[i], next = pts[(i+1)%n];
-                                        const cut = getVertexCut(cur[0], cur[1]);
-                                        if (cut === 0) { out.push([cur[0], cur[1]]); }
-                                        else {
-                                          const d1x = cur[0]-prev[0], d1y = cur[1]-prev[1], l1 = Math.hypot(d1x,d1y)||1;
-                                          const d2x = next[0]-cur[0], d2y = next[1]-cur[1], l2 = Math.hypot(d2x,d2y)||1;
-                                          out.push([cur[0]-d1x/l1*cut, cur[1]-d1y/l1*cut]);
-                                          out.push([cur[0]+d2x/l2*cut, cur[1]+d2y/l2*cut]);
-                                        }
+                                        const d1x = cur[0]-prev[0], d1y = cur[1]-prev[1], l1 = Math.hypot(d1x,d1y)||1;
+                                        const d2x = next[0]-cur[0], d2y = next[1]-cur[1], l2 = Math.hypot(d2x,d2y)||1;
+                                        out.push([cur[0]-d1x/l1*cut, cur[1]-d1y/l1*cut]);
+                                        out.push([cur[0]+d2x/l2*cut, cur[1]+d2y/l2*cut]);
                                       }
                                       return out;
                                     };
-                                    const bPts = smartBevel(polyPts);
+                                    const bPts = bevelPts(polyPts, cut45);
                                     const bStr = bPts.map(p => `${p[0]},${p[1]}`).join(" ");
                                     return (
                                       <g key={`pp${polyIdx}`}>
@@ -2099,20 +2089,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const tx2raw = el.x2 !== undefined ? el.x2 : (frame ? frame.x + frame.w : fX + fW);
                                       const HM2 = TK_MONT / 2;
                                       // Leggi junction per questo traverso
-                                      const myJunctions = dw._junctions?.filter((jj:any) => jj.elA === el.id || jj.elB === el.id) || [];
+                                      // Cerca tutte le junction che coinvolgono questo traverso
+                                      const allJ = dw._junctions || [];
                                       const getJType = (ptX) => {
-                                        // Cerca junction vicina a ptX e alla Y del traverso
-                                        const allSavedJ = dw._junctions || [];
-                                        const j = allSavedJ.find((jj:any) => Math.abs(jj.ptX - ptX) < 60 && Math.abs(jj.ptY - el.y) < 60);
-                                        console.log("[JCT TRAV]", ptX, el.y, allSavedJ.length, j?.ptX, j?.ptY, j?.winner, j?.type);
+                                        // Trova junction vicina a ptX che coinvolge questo traverso
+                                        const j = allJ.find((jj:any) =>
+                                          Math.abs(jj.ptX - ptX) < 24 &&
+                                          Math.abs(jj.ptY - el.y) < 24
+                                        );
                                         if (!j) return "V"; // default: verticale vince
                                         if (j.type === "45") return "45";
+                                        // elA=montante (verticale), elB=traverso (orizzontale) di solito
+                                        // winner "A" = verticale vince, winner "B" = orizzontale vince
                                         const winner = j.winner || "A";
-                                        // Determina quale dei due elementi è verticale
-                                        const elAobj = els.find((e:any) => e.id === j.elA);
-                                        const aIsVert = !elAobj || elAobj.type === "montante" || (elAobj.type === "freeLine" && !elAobj.subType);
-                                        // O vince se winner punta all orizzontale
-                                        const oWins = (winner === "A" && !aIsVert) || (winner === "B" && aIsVert);
+                                        // Determina se il traverso è elA o elB
+                                        const travIsA = j.elA === el.id;
+                                        // O vince se: traverso=B e winner=B, oppure traverso=A e winner=A
+                                        const oWins = (travIsA && winner === "A") || (!travIsA && winner === "B");
                                         return oWins ? "O" : "V";
                                       };
                                       // Calcola estensioni in base al tipo giunzione
