@@ -1937,8 +1937,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
-                                      const zoccoloEl = els.find((e: any) => e.type === "freeLine" && e.subType === "zoccolo");
-                                      const my2 = zoccoloEl ? my2raw + TK_ZOCCOLO + TK_FRAME : my2raw;
+                                      // Estendi solo se lo zoccolo copre l X del montante
+                                      const zoccoloEl = els.find((e: any) => e.type === "freeLine" && e.subType === "zoccolo" &&
+                                        Math.max(e.x1, e.x2) >= el.x - TK_MONT && Math.min(e.x1, e.x2) <= el.x + TK_MONT);
+                                      const my2 = zoccoloEl ? zoccoloEl.y1 + TK_ZOCCOLO + TK_FRAME : my2raw;
                                       const HM2 = TK_MONT / 2;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
