@@ -1873,17 +1873,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (polyPts.length < 3) return null;
                                     const TK = TK_FRAME * 2; // spessore profilo
                                     const ptStr = polyPts.map(p => `${p[0]},${p[1]}`).join(" ");
+                                    // Calcola punti con taglio 45° agli angoli
+                                    const bevelPts = (pts, cut) => {
+                                      const n = pts.length;
+                                      const out = [];
+                                      for (let i = 0; i < n; i++) {
+                                        const prev = pts[(i-1+n)%n], cur = pts[i], next = pts[(i+1)%n];
+                                        const d1x = cur[0]-prev[0], d1y = cur[1]-prev[1], l1 = Math.hypot(d1x,d1y)||1;
+                                        const d2x = next[0]-cur[0], d2y = next[1]-cur[1], l2 = Math.hypot(d2x,d2y)||1;
+                                        out.push([cur[0]-d1x/l1*cut, cur[1]-d1y/l1*cut]);
+                                        out.push([cur[0]+d2x/l2*cut, cur[1]+d2y/l2*cut]);
+                                      }
+                                      return out;
+                                    };
+                                    const cut45 = TK_FRAME;
+                                    const bPts = bevelPts(polyPts, cut45);
+                                    const bStr = bPts.map(p => `${p[0]},${p[1]}`).join(" ");
                                     return (
                                       <g key={`pp${polyIdx}`}>
-                                        {/* 1. Stroke spesso nero — va TK/2 dentro e TK/2 fuori */}
-                                        <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={TK + 1} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        {/* 2. Stroke beige più stretto — colore profilo */}
-                                        <polygon points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK - 0.5} strokeLinejoin="miter" strokeMiterlimit="20" />
-                                        {/* 3. Fill bianco — copre la metà interna dello stroke */}
-                                        <polygon points={ptStr} fill="#fff" stroke="none" />
-                                        {/* 4. Bordo interno netto */}
-                                        <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" />
-                                        {/* Corner dots */}
+                                        <polygon points={bStr} fill="none" stroke="#1A1A1C" strokeWidth={TK + 1} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        <polygon points={bStr} fill="none" stroke="#eceae0" strokeWidth={TK - 0.5} strokeLinejoin="miter" strokeMiterlimit="20" />
+                                        <polygon points={bStr} fill="#fff" stroke="none" />
+                                        <polygon points={bStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" />
                                         {polyPts.map((p,pi)=><circle key={`pc${polyIdx}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>
                                     );
