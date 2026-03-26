@@ -2129,14 +2129,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       
                                       // ext1: si estende verso montante sx (SVG) = dx utente
                                       // ext2: si ferma su el.x2, non esce
-                                      const ext1 = (hasMontAt1 || hasVertAt1) ? -TK_MONT : halfT;
+                                      const ext1 = (hasMontAt1 || hasVertAt1) ? HM_loc : halfT;
                                       const ext2 = (hasMontAt2 || hasVertAt2) ? 0 : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo basso polygon = el.y1
                                       if (isHorzEl && !isPartOfPoly) {
-                                        ey1 = el.y1 - halfT;
-                                        ey2 = el.y2 - halfT;
+                                        ey1 = el.y1 - halfT + TK_FRAME;
+                                        ey2 = el.y2 - halfT + TK_FRAME;
                                       }
                                       const pts4 = `${ex1+nx},${ey1+ny} ${ex2+nx},${ey2+ny} ${ex2-nx},${ey2-ny} ${ex1-nx},${ey1-ny}`;
                                       return (
