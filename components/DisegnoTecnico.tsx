@@ -1918,11 +1918,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "montante") {
                                       const my1raw = el.y1 !== undefined ? el.y1 : (frame ? frame.y : fY);
                                       const my2raw = el.y2 !== undefined ? el.y2 : (frame ? frame.y + frame.h : fY + fH);
+                                      // Se c'è uno zoccolo, estendi il montante fino al bordo inferiore dello zoccolo
+                                      const zoccoloEl = els.find(e => e.type === "freeLine" && e.subType === "zoccolo");
+                                      const my2 = zoccoloEl ? my2raw + TK_ZOCCOLO + TK_FRAME : my2raw;
                                       const HM2 = TK_MONT / 2;
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id) } : {})} style={{ cursor: drawMode ? undefined : "ew-resize" }}>
-                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={my2raw - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
-                                          {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2raw} r={4} fill="#1A9E73"/></>}
+                                          <rect x={el.x - HM2} y={my1raw} width={TK_MONT} height={my2 - my1raw} fill={sel ? "#1A9E7318" : "#e8e8e4"} stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.8} />
+                                          {sel && <><circle cx={el.x} cy={my1raw} r={4} fill="#1A9E73"/><circle cx={el.x} cy={my2} r={4} fill="#1A9E73"/></>}
                                         </g>
                                       );
                                     }
