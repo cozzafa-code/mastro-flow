@@ -1294,78 +1294,39 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 return;
                               }
 
-                              // ═══ Angolo 45°/90° — click su angolo intersezione ═══
-                              if (drawMode === "corner-45" || drawMode === "corner-90") {
-                                const TOL = 20;
-                                const angle = drawMode === "corner-45" ? 45 : 90;
-                                // Trova angoli: intersezione tra montante/verticale e freeLine orizzontale
-                                const horzEls = els.filter(e => (e.type === "freeLine" && e.subType) && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+0.5);
-                                const vertEls = [
-                                  ...els.filter(e => e.type === "montante"),
-                                  ...els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1),
-                                ];
-                                let bestCorner: any = null, bestD = TOL;
-                                horzEls.forEach(h => {
-                                  vertEls.forEach(v => {
-                                    const vx = v.type === "montante" ? v.x : (v.x1+v.x2)/2;
-                                    const hy = (h.y1+h.y2)/2;
-                                    // Check intersezione X e Y
-                                    const hx1 = Math.min(h.x1,h.x2), hx2 = Math.max(h.x1,h.x2);
-                                    const vy1 = v.type==="montante" ? (v.y1??fY) : Math.min(v.y1,v.y2);
-                                    const vy2 = v.type==="montante" ? (v.y2??fY+fH) : Math.max(v.y1,v.y2);
-                                    if (vx < hx1-TOL || vx > hx2+TOL) return;
-                                    if (hy < vy1-TOL || hy > vy2+TOL) return;
-                                    // Corner point
-                                    const cx2 = vx, cy2 = hy;
-                                    const d = Math.hypot(mx-cx2, my-cy2);
-                                    if (d < bestD) {
-                                      bestD = d;
-                                      bestCorner = { hId: h.id, vId: v.id, cx: cx2, cy: cy2, angle };
-                                    }
-                                  });
-                                });
-                                if (bestCorner) {
-                                  const hist = pushHistory();
-                                  const updEls = els.map(e => {
-                                    if (e.id === bestCorner.hId || e.id === bestCorner.vId) {
-                                      const corners = e.corners ? [...e.corners.filter(c => Math.hypot(c.cx-bestCorner.cx,c.cy-bestCorner.cy)>5)] : [];
-                                      if (angle !== 90) corners.push({ cx: bestCorner.cx, cy: bestCorner.cy, angle });
-                                      return { ...e, corners };
-                                    }
-                                    return e;
-                                  });
-                                  onUpdate({ ...dw, elements: updEls, history: hist });
-                                }
-                                return;
-                              }
-
                               // ═══ Angolo 45°/90° ═══
                               if (drawMode === "corner-45" || drawMode === "corner-90") {
-                                const TOL = 20;
+                                const TOL = 40;
                                 const angle = drawMode === "corner-45" ? 45 : 90;
+                                // Profili orizzontali con subType (zoccolo, soglia, fascia...)
                                 const horzEls = els.filter(e => e.type === "freeLine" && e.subType && Math.abs(e.y2-e.y1) <= Math.abs(e.x2-e.x1)+0.5);
+                                // Verticali: montanti + freeLine verticali + bordi laterali del frame
                                 const vertEls = [
                                   ...els.filter(e => e.type === "montante"),
                                   ...els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x2-e.x1) < Math.abs(e.y2-e.y1)+1),
+                                  ...(frame ? [
+                                    { id: frame.id+"_L", _isFrameEdge: true, x: frame.x + TK_FRAME, y1: frame.y, y2: frame.y+frame.h },
+                                    { id: frame.id+"_R", _isFrameEdge: true, x: frame.x + frame.w - TK_FRAME, y1: frame.y, y2: frame.y+frame.h },
+                                  ] : []),
                                 ];
                                 let bestCorner = null, bestD = TOL;
                                 horzEls.forEach(h => {
                                   vertEls.forEach(v => {
-                                    const vx = v.type === "montante" ? v.x : (v.x1+v.x2)/2;
+                                    const vx = v.type === "montante" ? v.x : (v._isFrameEdge ? v.x : (v.x1+v.x2)/2);
                                     const hy = (h.y1+h.y2)/2;
-                                    const hx1 = Math.min(h.x1,h.x2), hx2 = Math.max(h.x1,h.x2);
-                                    const vy1 = v.type==="montante" ? (v.y1??fY) : Math.min(v.y1,v.y2);
-                                    const vy2 = v.type==="montante" ? (v.y2??(fY+fH)) : Math.max(v.y1,v.y2);
-                                    if (vx < hx1-TOL || vx > hx2+TOL) return;
+                                    const hx1 = Math.min(h.x1,h.x2)-TOL, hx2 = Math.max(h.x1,h.x2)+TOL;
+                                    const vy1 = v.type==="montante" ? (v.y1??fY) : (v.y1??Math.min(v.y1??fY,v.y2??fY+fH));
+                                    const vy2 = v.type==="montante" ? (v.y2??(fY+fH)) : (v.y2??Math.max(v.y1??fY,v.y2??fY+fH));
+                                    if (vx < hx1 || vx > hx2) return;
                                     if (hy < vy1-TOL || hy > vy2+TOL) return;
                                     const d = Math.hypot(mx-vx, my-hy);
-                                    if (d < bestD) { bestD = d; bestCorner = { hId: h.id, vId: v.id, cx: vx, cy: hy, angle }; }
+                                    if (d < bestD) { bestD = d; bestCorner = { hId: h.id, vId: v._isFrameEdge ? null : v.id, cx: vx, cy: hy, angle }; }
                                   });
                                 });
                                 if (bestCorner) {
                                   const hist = pushHistory();
                                   const updEls = els.map(e => {
-                                    if (e.id === bestCorner.hId || e.id === bestCorner.vId) {
+                                    if (e.id === bestCorner.hId || (bestCorner.vId && e.id === bestCorner.vId)) {
                                       const corners = (e.corners||[]).filter(c => Math.hypot(c.cx-bestCorner.cx,c.cy-bestCorner.cy)>5);
                                       if (angle !== 90) corners.push({ cx: bestCorner.cx, cy: bestCorner.cy, angle });
                                       return { ...e, corners };
@@ -1665,8 +1626,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}>↔ Misure</div>
                                   {/* Righello / Metro */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1.5px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}>📐 Righello</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   {/* Distinta materiali */}
