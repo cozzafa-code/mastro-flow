@@ -2093,7 +2093,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const getJType = (ptX) => {
                                         // Cerca junction vicina a ptX e alla Y del traverso
                                         const allSavedJ = dw._junctions || [];
-                                        const j = allSavedJ.find((jj:any) => Math.abs(jj.ptX - ptX) < 24 && Math.abs(jj.ptY - el.y) < 24);
+                                        const j = allSavedJ.find((jj:any) => Math.abs(jj.ptX - ptX) < 60 && Math.abs(jj.ptY - el.y) < 60);
+                                        console.log("[JCT TRAV]", ptX, el.y, allSavedJ.length, j?.ptX, j?.ptY, j?.winner, j?.type);
                                         if (!j) return "V"; // default: verticale vince
                                         if (j.type === "45") return "45";
                                         const winner = j.winner || "A";
