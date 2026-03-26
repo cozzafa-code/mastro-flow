@@ -1896,10 +1896,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   })()}
 
                                   {/* ══ ELEMENTS ══ */}
-                                  {/* Render in z-order: montanti/traversi prima, freeLine orizzontali sopra */}
+                                  {/* Z-order: rect(telaio) → freeLine(zoccolo/soglia) → montanti/traversi → resto */}
                                   {[
+                                    ...els.filter(e => e.type === "rect"),
+                                    ...els.filter(e => e.type === "freeLine" && e.subType),
+                                    ...els.filter(e => e.type === "freeLine" && !e.subType),
                                     ...els.filter(e => e.type === "montante" || e.type === "traverso"),
-                                    ...els.filter(e => e.type !== "montante" && e.type !== "traverso"),
+                                    ...els.filter(e => e.type !== "rect" && e.type !== "freeLine" && e.type !== "montante" && e.type !== "traverso"),
                                   ].map(el => {
                                     const sel = el.id === selId;
                                     const hc = sel ? "#1A9E73" : undefined;
