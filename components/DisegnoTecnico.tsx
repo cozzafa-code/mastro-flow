@@ -497,7 +497,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 cl.forEach(c => {
                                   const my1 = m.y1 !== undefined ? m.y1 : c.y;
                                   const my2 = m.y2 !== undefined ? m.y2 : c.y + c.h;
-                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + 2 && my2 >= c.y + c.h - 2) {
+                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + TK_FRAME*3 && my2 >= c.y + c.h - TK_FRAME*3 - TK_ZOCCOLO*3) {
                                     next.push({ x: c.x, y: c.y, w: m.x - HM - c.x, h: c.h, id: c.id + "L" + mi });
                                     next.push({ x: m.x + HM, y: c.y, w: c.x + c.w - m.x - HM, h: c.h, id: c.id + "R" + mi });
                                   } else { next.push(c); }
