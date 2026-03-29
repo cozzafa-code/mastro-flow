@@ -497,7 +497,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 cl.forEach(c => {
                                   const my1 = m.y1 !== undefined ? m.y1 : c.y;
                                   const my2 = m.y2 !== undefined ? m.y2 : c.y + c.h;
-                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + TK_FRAME*3 && my2 >= c.y + c.h - TK_FRAME*3 - TK_ZOCCOLO*3) {
+                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + c.h * 0.3 && my2 >= c.y + c.h * 0.7) {
                                     next.push({ x: c.x, y: c.y, w: m.x - HM - c.x, h: c.h, id: c.id + "L" + mi });
                                     next.push({ x: m.x + HM, y: c.y, w: c.x + c.w - m.x - HM, h: c.h, id: c.id + "R" + mi });
                                   } else { next.push(c); }
@@ -951,9 +951,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
-                                const _fr = frame ? "fw="+Math.round(frame.w)+" fh="+Math.round(frame.h)+" fy="+Math.round(frame.y) : "NOFRAME";
-                                const _mo = allMontanti.map(m=>"x="+Math.round(m.x)+" y1="+Math.round(m.y1??-1)+" y2="+Math.round(m.y2??-1)).join("|");
-                                document.title = "mx="+Math.round(mx)+" ncelle="+cells.length+" "+_fr+" M=["+_mo+"] hit="+(cell?cell.id:"null");
+                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   // Extract polygon from freeLines
                                   const lines = els.filter(e => e.type === "freeLine");
@@ -1052,9 +1050,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "place-ap") {
                                 let cell = findCellAt(mx, my);
-                                const _fr = frame ? "fw="+Math.round(frame.w)+" fh="+Math.round(frame.h)+" fy="+Math.round(frame.y) : "NOFRAME";
-                                const _mo = allMontanti.map(m=>"x="+Math.round(m.x)+" y1="+Math.round(m.y1??-1)+" y2="+Math.round(m.y2??-1)).join("|");
-                                document.title = "mx="+Math.round(mx)+" ncelle="+cells.length+" "+_fr+" M=["+_mo+"] hit="+(cell?cell.id:"null");
+                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   const lines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
                                   if (lines.length > 0) {
