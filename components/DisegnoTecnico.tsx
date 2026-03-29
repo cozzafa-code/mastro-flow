@@ -412,7 +412,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const frame = frames[0] || null; // primary frame for compat
                             const allMontanti = els.filter(e => e.type === "montante");
                             const allTraversi = els.filter(e => e.type === "traverso");
-                            const TK_FRAME = 6, TK_MONT = 7, TK_ANTA = 4, TK_PORTA = 7, TK_SOGLIA = 3, TK_ZOCCOLO = 8, TK_FASCIA = 5, TK_PROFCOMP = 4;
+                            const TK_FRAME = 6, TK_MONT = 7, TK_ANTA = 6, TK_PORTA = 7, TK_SOGLIA = 3, TK_ZOCCOLO = 8, TK_FASCIA = 5, TK_PROFCOMP = 4;
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGONS from freeLines — tutte le catene chiuse ══
@@ -497,7 +497,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 cl.forEach(c => {
                                   const my1 = m.y1 !== undefined ? m.y1 : c.y;
                                   const my2 = m.y2 !== undefined ? m.y2 : c.y + c.h;
-                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + c.h * 0.3 && my2 >= c.y + c.h * 0.7) {
+                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + TK_FRAME*3 && my2 >= c.y + c.h - TK_FRAME*3 - TK_ZOCCOLO*3) {
                                     next.push({ x: c.x, y: c.y, w: m.x - HM - c.x, h: c.h, id: c.id + "L" + mi });
                                     next.push({ x: m.x + HM, y: c.y, w: c.x + c.w - m.x - HM, h: c.h, id: c.id + "R" + mi });
                                   } else { next.push(c); }
@@ -537,6 +537,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const pL = Math.min(...allX2) + 2, pR = Math.max(...allX2) - 2;
                                 const pT = Math.min(...allY2) + 2, pB = Math.max(...allY2) - 2;
                                 return bspSplit([{ x: pL, y: pT, w: pR - pL, h: pB - pT, id: "P0" }]);
+                              }
+                              // Fallback: poly non chiuso — usa bbox delle freeLine senza subType
+                              const _bboxLines = els.filter((e: any) => e.type === "freeLine" && !e.subType);
+                              if (_bboxLines.length >= 2) {
+                                const _bX = _bboxLines.flatMap((l: any) => [l.x1, l.x2]);
+                                const _bY = _bboxLines.flatMap((l: any) => [l.y1, l.y2]);
+                                const _bbox = { x: Math.min(..._bX) + TK_FRAME, y: Math.min(..._bY) + TK_FRAME, w: Math.max(..._bX) - Math.min(..._bX) - TK_FRAME * 2, h: Math.max(..._bY) - Math.min(..._bY) - TK_FRAME * 2, id: "BBOX" };
+                                if (_bbox.w > 10 && _bbox.h > 10) return bspSplit([_bbox]);
                               }
                               return [];
                             };
@@ -951,7 +959,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
-                                const _fr=frame?"fw="+Math.round(frame.w)+" fy="+Math.round(frame.y):"NOFRAME"; const _mo=allMontanti.map(m=>"x="+Math.round(m.x)+" y1="+Math.round(m.y1??-1)+" y2="+Math.round(m.y2??-1)).join("|"); document.title="mx="+Math.round(mx)+" ncelle="+cells.length+" "+_fr+" M=["+_mo+"] hit="+(cell?cell.id:"null");
+                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   // Extract polygon from freeLines
                                   const lines = els.filter(e => e.type === "freeLine");
@@ -1050,7 +1058,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "place-ap") {
                                 let cell = findCellAt(mx, my);
-                                const _fr=frame?"fw="+Math.round(frame.w)+" fy="+Math.round(frame.y):"NOFRAME"; const _mo=allMontanti.map(m=>"x="+Math.round(m.x)+" y1="+Math.round(m.y1??-1)+" y2="+Math.round(m.y2??-1)).join("|"); document.title="mx="+Math.round(mx)+" ncelle="+cells.length+" "+_fr+" M=["+_mo+"] hit="+(cell?cell.id:"null");
+                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   const lines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
                                   if (lines.length > 0) {
@@ -2127,12 +2135,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ ANTA — doppio rettangolo, clipped to polygon ═══
                                     if (el.type === "innerRect") {
-                                      const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                      const clr = hc || (el.subType === "porta" ? "#444" : "#777");
+                                      const clr = hc || "#1A1A1C";
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
-                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="none" stroke={clr} strokeWidth={1} />
-                                          <rect x={el.x + tk} y={el.y + tk} width={el.w - tk * 2} height={el.h - tk * 2} fill="none" stroke={clr} strokeWidth={0.6} />
+                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill="#f8f8f6" stroke={clr} strokeWidth={1.5} rx={1} />
+                                          <rect x={el.x + TK_FRAME} y={el.y + TK_FRAME} width={el.w - TK_FRAME * 2} height={el.h - TK_FRAME * 2} fill="none" stroke={clr} strokeWidth={1} rx={0.5} />
                                           {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
