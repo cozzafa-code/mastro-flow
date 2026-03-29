@@ -951,7 +951,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
-                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
+                                const _fr=frame?"fw="+Math.round(frame.w)+" fy="+Math.round(frame.y):"NOFRAME"; const _mo=allMontanti.map(m=>"x="+Math.round(m.x)+" y1="+Math.round(m.y1??-1)+" y2="+Math.round(m.y2??-1)).join("|"); document.title="mx="+Math.round(mx)+" ncelle="+cells.length+" "+_fr+" M=["+_mo+"] hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   // Extract polygon from freeLines
                                   const lines = els.filter(e => e.type === "freeLine");
@@ -1050,7 +1050,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "place-ap") {
                                 let cell = findCellAt(mx, my);
-                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
+                                const _fr=frame?"fw="+Math.round(frame.w)+" fy="+Math.round(frame.y):"NOFRAME"; const _mo=allMontanti.map(m=>"x="+Math.round(m.x)+" y1="+Math.round(m.y1??-1)+" y2="+Math.round(m.y2??-1)).join("|"); document.title="mx="+Math.round(mx)+" ncelle="+cells.length+" "+_fr+" M=["+_mo+"] hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   const lines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
                                   if (lines.length > 0) {
