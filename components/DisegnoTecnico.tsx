@@ -1023,15 +1023,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const newEls = [...els];
                                     newEls.push({ id: Date.now(), type: "innerRect", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
                                     setDW(newEls);
+                                    setMode({ drawMode: null });
                                   }
                                 } else if (drawMode === "place-porta") {
                                   const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana") && inCell(e)));
                                   newEls.push({ id: Date.now(), type: "innerRect", subType: "porta", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
                                   setDW(newEls);
+                                  setMode({ drawMode: null });
                                 } else if (drawMode === "place-persiana") {
                                   const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana") && inCell(e)));
                                   newEls.push({ id: Date.now(), type: "persiana", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
                                   setDW(newEls);
+                                  setMode({ drawMode: null });
                                 } else if (drawMode === "place-vetro") {
                                   const anta = els.find(e => (e.type === "innerRect") && inCell(e));
                                   const tk = anta ? (anta.subType === "porta" ? TK_PORTA : TK_ANTA) : 1;
