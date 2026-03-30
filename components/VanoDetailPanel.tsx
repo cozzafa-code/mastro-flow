@@ -833,14 +833,28 @@ export default function VanoDetailPanel() {
                       const svilTot = (lam.pieghe||[]).reduce((a:number,s:any)=>a+s.mm,0);
                       let preNodes:{x:number,y:number}[] = [];
                       if((lam.pieghe||[]).length > 0){
-                        let cx2=20, cy2=30;
-                        preNodes=[{x:cx2,y:cy2}];
+                        // Costruisce path raw in mm poi normalizza nel viewBox
+                        let rx=0, ry=0;
+                        const rawNodes:[number,number][] = [[0,0]];
                         (lam.pieghe||[]).forEach((s:any)=>{
-                          const d=Math.min(s.mm*0.08,80);
-                          if(s.dir==='dx'){cx2+=d;}else if(s.dir==='sx'){cx2-=d;}
-                          else if(s.dir==='giu'){cy2+=d;}else{cy2-=d;}
-                          preNodes.push({x:Math.max(5,Math.min(cx2,195)),y:Math.max(5,Math.min(cy2,55))});
+                          if(s.dir==='dx'){rx+=s.mm;}else if(s.dir==='sx'){rx-=s.mm;}
+                          else if(s.dir==='giu'){ry+=s.mm;}else{ry-=s.mm;}
+                          rawNodes.push([rx,ry]);
                         });
+                        // Bounding box
+                        const xs=rawNodes.map(n=>n[0]), ys=rawNodes.map(n=>n[1]);
+                        const minX=Math.min(...xs), maxX=Math.max(...xs);
+                        const minY=Math.min(...ys), maxY=Math.max(...ys);
+                        const rangeX=Math.max(maxX-minX,1), rangeY=Math.max(maxY-minY,1);
+                        const PAD=12, SVG_W=180, SVG_H=44;
+                        const scX=(SVG_W-PAD*2)/rangeX, scY=(SVG_H-PAD*2)/rangeY;
+                        const sc=Math.min(scX,scY);
+                        const offX=PAD+(SVG_W-PAD*2-(rangeX*sc))/2-minX*sc;
+                        const offY=PAD+(SVG_H-PAD*2-(rangeY*sc))/2-minY*sc;
+                        preNodes=rawNodes.map(([x,y])=>({
+                          x: Math.round((offX+x*sc)*10)/10,
+                          y: Math.round((offY+y*sc)*10)/10,
+                        }));
                       }
                       const prePts = preNodes.map(n=>`${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
                       return (
@@ -868,7 +882,7 @@ export default function VanoDetailPanel() {
                             </div>
                           </div>
                           {prePts.length > 0 ? (
-                            <svg viewBox="0 0 200 60" width="100%" style={{display:"block",background:"#F0FDF9",cursor:"pointer"}}
+                            <svg viewBox="0 0 200 60" width="100%" height="60" style={{display:"block",background:"#F0FDF9",cursor:"pointer",borderRadius:"0 0 8px 8px"}}
                               onClick={e=>{e.stopPropagation();
                                 setLamieraPieghe(lam.pieghe||[]);
                                 setLamieraLatoBuono(lam.latoBuono||"esterno");
@@ -885,9 +899,9 @@ export default function VanoDetailPanel() {
                               {preNodes.map((n,i)=>(
                                 <circle key={i} cx={n.x} cy={n.y} r={i===0?3.5:2.5} fill={i===0?"#0F766E":"#fff"} stroke="#0F766E" strokeWidth="1.5"/>
                               ))}
-                              <rect x="2" y="2" width={lam.latoBuono==='esterno'?42:38} height="13" rx="4" fill={lam.latoBuono==='esterno'?"#3B7FE0":"#D08008"}/>
-                              <text x="5" y="11" fontSize="7" fill="#fff" fontWeight="800">◐ {lam.latoBuono==='esterno'?'ESTERNO':'INTERNO'}</text>
-                              {svilTot>0 && <text x="198" y="57" textAnchor="end" fontSize="8" fill="#0F766E" fontWeight="700">{svilTot}mm</text>}
+                              <rect x="3" y="3" width={lam.latoBuono==='esterno'?46:42} height="12" rx="4" fill={lam.latoBuono==='esterno'?"#3B7FE0":"#D08008"}/>
+                              <text x="7" y="12" fontSize="7" fill="#fff" fontWeight="700">{lam.latoBuono==='esterno'?'ESTERNO':'INTERNO'}</text>
+                              {svilTot>0 && <text x="197" y="57" textAnchor="end" fontSize="8" fill="#1a9e73" fontWeight="700">{svilTot} mm</text>}
                             </svg>
                           ) : (
                             <div style={{padding:"10px",textAlign:"center",fontSize:11,color:"#0F766E80"}}>Tocca Modifica per disegnare le pieghe</div>
