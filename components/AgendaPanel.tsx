@@ -4,6 +4,33 @@ import React from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPI_EVENTO, tipoEvColor } from "./mastro-constants";
 
+
+// ─── Lumina Design Tokens ────────────────────────────────
+const L = {
+  bg:          "#f9f9fb",
+  surface:     "#ffffff",
+  surfaceLow:  "#f3f3f5",
+  surfaceMid:  "#eeeef0",
+  primary:     "#031631",
+  primaryCont: "#1a2b47",
+  onPrimary:   "#ffffff",
+  muted:       "#8293b4",
+  text:        "#1a1c1d",
+  sub:         "#44474d",
+  placeholder: "#75777e",
+  green:       "#1a9e73",
+  red:         "#dc4444",
+  amber:       "#e4c18c",
+  amberBg:     "#ffdeac",
+  border:      "rgba(197,198,206,0.25)",
+  glass:       "rgba(255,255,255,0.85)",
+} as const;
+const SH = {
+  ambient: "0 20px 40px rgba(26,28,29,0.04)",
+  float:   "0 20px 40px rgba(26,28,29,0.08)",
+  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+} as const;
+// ─────────────────────────────────────────────────────────
 export default function AgendaPanel() {
   const {
     T, S, isDesktop, fs,
@@ -83,7 +110,7 @@ export default function AgendaPanel() {
       <div key={ev.id} style={{ ...S.card, margin: "0 0 8px", opacity: ev._isTask && ev.done ? 0.5 : 1, borderLeft: (ev._isMontaggio || ev._isConsegna || ev._isScadenza) ? "4px solid " + ev.color : "none" }} onClick={() => !ev._isTask && !ev._isMontaggio && !ev._isConsegna && !ev._isScadenza && setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}>
         <div style={{ ...S.cardInner, display: "flex", gap: 10 }}>
           {ev._isTask ? (
-            <div onClick={(e) => { e.stopPropagation(); toggleTask(ev.id); }} style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${ev.done ? T.grn : T.bdr}`, background: ev.done ? T.grn : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginTop: 2 }}>
+            <div onClick={(e) => { e.stopPropagation(); toggleTask(ev.id); }} style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${ev.done ? T.grn : T.bdr}`, background: ev.done ? L.green : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginTop: 2 }}>
               {ev.done && <Ico d={ICO.check} s={13} c="#fff" sw={3} />}
             </div>
           ) : ev._isMontaggio ? (
@@ -95,24 +122,24 @@ export default function AgendaPanel() {
           ) : (
             <div style={{ width: 3, borderRadius: 2, background: ev.color, flexShrink: 0 }} />
           )}
-          {ev.time && <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, minWidth: 38, fontFamily: FM }}>{ev.time}</div>}
+          {ev.time && <div style={{ fontSize: 12, fontWeight: 700, color: L.sub, minWidth: 38, fontFamily: FM }}>{ev.time}</div>}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600, textDecoration: ev._isTask && ev.done ? "line-through" : "none" }}>{ev.text}</div>
-            {ev._isTask && ev.meta && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}><I d={ICO.fileText} s={11} c={T.sub} /> {ev.meta}</div>}
-            {!ev._isTask && !ev._isMontaggio && !ev._isConsegna && !ev._isScadenza && ev.addr && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}><I d={ICO.mapPin} s={11} c={T.sub} /> {ev.addr}</div>}
-            {ev._isMontaggio && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{ev._squadra} · {ev._vani} vani · {ev._stato === "completato" ? "Completato" : ev._stato === "in_corso" ? "In corso" : "Programmato"}</div>}
-            {ev._isConsegna && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>Materiale per {ev.cm}</div>}
-            {ev._isScadenza && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{ev._tipo === "incasso" ? "Da incassare" : "Da pagare"}: <b style={{ color: ev.color }}>€{(ev._importo || 0).toLocaleString("it-IT")}</b></div>}
+            {ev._isTask && ev.meta && <div style={{ fontSize: 11, color: L.sub, marginTop: 2 }}><I d={ICO.fileText} s={11} c={L.sub} /> {ev.meta}</div>}
+            {!ev._isTask && !ev._isMontaggio && !ev._isConsegna && !ev._isScadenza && ev.addr && <div style={{ fontSize: 11, color: L.sub, marginTop: 2 }}><I d={ICO.mapPin} s={11} c={L.sub} /> {ev.addr}</div>}
+            {ev._isMontaggio && <div style={{ fontSize: 10, color: L.sub, marginTop: 2 }}>{ev._squadra} · {ev._vani} vani · {ev._stato === "completato" ? "Completato" : ev._stato === "in_corso" ? "In corso" : "Programmato"}</div>}
+            {ev._isConsegna && <div style={{ fontSize: 10, color: L.sub, marginTop: 2 }}>Materiale per {ev.cm}</div>}
+            {ev._isScadenza && <div style={{ fontSize: 10, color: L.sub, marginTop: 2 }}>{ev._tipo === "incasso" ? "Da incassare" : "Da pagare"}: <b style={{ color: ev.color }}>€{(ev._importo || 0).toLocaleString("it-IT")}</b></div>}
             <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-              {ev.cm && <span onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{ev.cm}</span>}
-              {ev.persona && !ev._isMontaggio && !ev._isConsegna && <span style={S.badge(T.purpleLt, T.purple)}>{ev.persona}</span>}
+              {ev.cm && <span onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(L.amberBg, L.primary), cursor: "pointer" }}>{ev.cm}</span>}
+              {ev.persona && !ev._isMontaggio && !ev._isConsegna && <span style={S.badge("#6366f1"Lt, "#6366f1")}>{ev.persona}</span>}
               {ev._isTask && <span style={S.badge(ev.priority === "alta" ? "#FF3B3018" : ev.priority === "media" ? "#FF950018" : "#8E8E9318", ev.priority === "alta" ? "#FF3B30" : ev.priority === "media" ? "#FF9500" : "#8E8E93")}>task · {ev.priority}</span>}
-              {!ev._isTask && ev.reminder && <span style={S.badge(ev.reminderSent ? T.grnLt : "#FF950015", ev.reminderSent ? T.grn : "#FF9500")}>{ev.reminderSent ? "Reminder inviato" : `${ev.reminder}`}</span>}
+              {!ev._isTask && ev.reminder && <span style={S.badge(ev.reminderSent ? "#d1fae5" : "#FF950015", ev.reminderSent ? L.green : "#FF9500")}>{ev.reminderSent ? "Reminder inviato" : `${ev.reminder}`}</span>}
               {!ev._isTask && <span style={S.badge(tipoEvColor(ev.tipo) + "18", tipoEvColor(ev.tipo))}>{(TIPI_EVENTO.find(t=>t.id===ev.tipo)||{l:ev.tipo}).l}</span>}
             </div>
           </div>
           <div style={{ alignSelf: "center", transition: "transform 0.2s", transform: selectedEvent?.id === ev.id ? "rotate(90deg)" : "rotate(0deg)" }}>
-            <Ico d={ICO.back} s={14} c={T.sub} />
+            <Ico d={ICO.back} s={14} c={L.sub} />
           </div>
         </div>
         {/* Expanded detail */}
@@ -120,31 +147,31 @@ export default function AgendaPanel() {
           <div style={{ padding: "0 14px 12px", borderTop: `1px solid ${T.bdr}`, marginTop: 4 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: "10px 0" }}>
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Data</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Data</div>
                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{new Date(ev.date).toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })}</div>
               </div>
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Orario</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Orario</div>
                 <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{ev.time || "Tutto il giorno"}</div>
               </div>
               {ev.persona && <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Assegnato a</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}><I d={ICO.user} s={11} c={T.purple} /> {ev.persona}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Assegnato a</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}><I d={ICO.user} s={11} c={"#6366f1"} /> {ev.persona}</div>
               </div>}
               {ev.addr && <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Luogo</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}><I d={ICO.mapPin} s={11} c={T.sub} /> {ev.addr}</div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Luogo</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}><I d={ICO.mapPin} s={11} c={L.sub} /> {ev.addr}</div>
               </div>}
             </div>
             {ev.cm && (
-              <div style={{ padding: "8px 10px", background: T.accLt, borderRadius: 8, marginBottom: 8 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5 }}>Commessa collegata</div>
-                <div onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ fontSize: 13, fontWeight: 700, color: T.acc, marginTop: 2, cursor: "pointer" }}>{ev.cm} → Apri commessa</div>
+              <div style={{ padding: "8px 10px", background: L.amberBg, borderRadius: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: L.primary, textTransform: "uppercase", letterSpacing: 0.5 }}>Commessa collegata</div>
+                <div onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ fontSize: 13, fontWeight: 700, color: L.primary, marginTop: 2, cursor: "pointer" }}>{ev.cm} → Apri commessa</div>
               </div>
             )}
             <div style={{ display: "flex", gap: 6 }}>
-              <div onClick={(e) => { e.stopPropagation(); if (ev.addr) window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr)); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.blue }}>º Mappa</div>
-              <div onClick={(e) => { e.stopPropagation(); const tel = contatti.find(ct => ct.nome === ev.persona)?.telefono; if (tel) window.location.href="tel:" + tel; }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.grn }}><I d={ICO.phone} /> Chiama</div>
+              <div onClick={(e) => { e.stopPropagation(); if (ev.addr) window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr)); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: L.surface, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#3b7fe0" }}>º Mappa</div>
+              <div onClick={(e) => { e.stopPropagation(); const tel = contatti.find(ct => ct.nome === ev.persona)?.telefono; if (tel) window.location.href="tel:" + tel; }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: L.surface, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: L.green }}><I d={ICO.phone} /> Chiama</div>
               <div onClick={(e) => {
                 e.stopPropagation();
                 const cmObj = cantieri.find(c => c.code === ev.cm) || null;
@@ -166,8 +193,8 @@ Fabio Cozza
 Walter Cozza Serramenti`;
                 setMailBody(tpl);
                 setShowMailModal({ ev, cm: cmObj });
-              }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.accLt, border: `1px solid ${T.acc}30`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.acc }}><I d={ICO.mail} /> Mail</div>
-              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.redLt, border: `1px solid ${T.red}30`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.red }}>‘</div>
+              }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: L.amberBg, border: `1px solid ${T.acc}30`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: L.primary }}><I d={ICO.mail} /> Mail</div>
+              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#ffdad6", border: `1px solid ${T.red}30`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: L.red }}>‘</div>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
               <div onClick={(e) => { e.stopPropagation(); const cmObj = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cmObj) { setSelectedCM(cmObj); } else { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: ev.text }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); } setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 10, background: "linear-gradient(135deg, #0D7C6B15, #0D7C6B08)", border: "1px solid #0D7C6B25", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#0D7C6B" }}><I d={ICO.folder} s={11} c="#0D7C6B" /> Commessa</div>
@@ -190,13 +217,13 @@ Walter Cozza Serramenti`;
                selDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}
             </div>
           </div>
-          <div onClick={() => setShowNewEvent(true)} style={{ width: 36, height: 36, borderRadius: 10, background: T.acc, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, fontWeight: 300 }}>+</div>
+          <div onClick={() => setShowNewEvent(true)} style={{ width: 36, height: 36, borderRadius: 10, background: L.primary, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, fontWeight: 300 }}>+</div>
         </div>
 
         {/* View switcher */}
         <div style={{ display: "flex", gap: 0, margin: "8px 16px", borderRadius: 8, overflow: "hidden", border: `1px solid ${T.bdr}` }}>
           {["giorno", "settimana", "mese"].map(v => (
-            <div key={v} onClick={() => setAgendaView(v)} style={{ flex: 1, padding: "8px 4px", textAlign: "center", fontSize: 12, fontWeight: 600, background: agendaView === v ? T.acc : T.card, color: agendaView === v ? "#fff" : T.sub, cursor: "pointer", textTransform: "capitalize" }}>
+            <div key={v} onClick={() => setAgendaView(v)} style={{ flex: 1, padding: "8px 4px", textAlign: "center", fontSize: 12, fontWeight: 600, background: agendaView === v ? L.primary : L.surface, color: agendaView === v ? "#fff" : L.sub, cursor: "pointer", textTransform: "capitalize" }}>
               {v}
             </div>
           ))}
@@ -214,19 +241,19 @@ Walter Cozza Serramenti`;
             const active = agendaFilters[f.id];
             return <div key={f.id} onClick={() => setAgendaFilters(p => ({...p, [f.id]: !p[f.id]}))}
               style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
-                background: active ? f.col + "18" : T.bg, color: active ? f.col : T.sub + "80",
-                border: "1.5px solid " + (active ? f.col + "60" : T.bdr), opacity: active ? 1 : 0.5,
+                background: active ? f.col + "18" : L.bg, color: active ? f.col : L.sub + "80",
+                border: "1.5px solid " + (active ? f.col + "60" : L.border), opacity: active ? 1 : 0.5,
                 transition: "all 0.15s ease" }}>
-              <I d={ICO[f.ico]} s={12} c={active ? f.col : T.sub} /> {f.l}
+              <I d={ICO[f.ico]} s={12} c={active ? f.col : L.sub} /> {f.l}
             </div>;
           })}
         </div>
 
         {/* Nav arrows */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 16px" }}>
-          <div onClick={() => navDate(-1)} style={{ cursor: "pointer", padding: "4px 8px" }}><Ico d={ICO.back} s={18} c={T.sub} /></div>
-          <div onClick={() => setSelDate(new Date())} style={{ fontSize: 12, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Oggi</div>
-          <div onClick={() => navDate(1)} style={{ cursor: "pointer", padding: "4px 8px", transform: "rotate(180deg)" }}><Ico d={ICO.back} s={18} c={T.sub} /></div>
+          <div onClick={() => navDate(-1)} style={{ cursor: "pointer", padding: "4px 8px" }}><Ico d={ICO.back} s={18} c={L.sub} /></div>
+          <div onClick={() => setSelDate(new Date())} style={{ fontSize: 12, fontWeight: 600, color: L.primary, cursor: "pointer" }}>Oggi</div>
+          <div onClick={() => navDate(1)} style={{ cursor: "pointer", padding: "4px 8px", transform: "rotate(180deg)" }}><Ico d={ICO.back} s={18} c={L.sub} /></div>
         </div>
 
         {/* === BANNER REMINDER PENDENTI === */}
@@ -256,7 +283,7 @@ Walter Cozza Serramenti`;
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#FF9500" }}>
                     {reminderPendenti.length} reminder da inviare
                   </div>
-                  <div style={{ fontSize: 10, color: T.sub }}>Avvisa i clienti con 1 click</div>
+                  <div style={{ fontSize: 10, color: L.sub }}>Avvisa i clienti con 1 click</div>
                 </div>
               </div>
               {reminderPendenti.map(ev => {
@@ -280,8 +307,8 @@ Walter Cozza Serramenti`;
                 return (
                   <div key={ev.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 8px", background:"#fff", borderRadius:8, marginBottom:4, border:"1px solid #FF950030" }}>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{ev.text}</div>
-                      <div style={{ fontSize:10, color:T.sub }}>{cliente} · {ev.time || "tutto il giorno"}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:L.text }}>{ev.text}</div>
+                      <div style={{ fontSize:10, color:L.sub }}>{cliente} · {ev.time || "tutto il giorno"}</div>
                     </div>
                     <div onClick={() => {
                       setMailBody(tpl);
@@ -306,17 +333,17 @@ Walter Cozza Serramenti`;
               {eventiOggi.length > 0 && (
                 <div style={{ ...S.card, marginBottom: 10, padding: "10px 14px", borderLeft: `3px solid ${eventiOggi[0].color || tipoEvColor(eventiOggi[0].tipo)}`, display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, color: T.sub, fontWeight: 600 }}>
+                    <div style={{ fontSize: 11, color: L.sub, fontWeight: 600 }}>
                       Prossimo evento tra {eventiOggi[0].minutiAlEvento < 60
                         ? `${eventiOggi[0].minutiAlEvento} min`
                         : `${Math.floor(eventiOggi[0].minutiAlEvento/60)}h ${eventiOggi[0].minutiAlEvento%60>0?eventiOggi[0].minutiAlEvento%60+"min":""}`}
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{eventiOggi[0].text}</div>
-                    {eventiOggi[0].addr && <div style={{ fontSize: 11, color: T.sub }}><I d={ICO.mapPin} s={11} c={T.sub} /> {eventiOggi[0].addr}</div>}
+                    {eventiOggi[0].addr && <div style={{ fontSize: 11, color: L.sub }}><I d={ICO.mapPin} s={11} c={L.sub} /> {eventiOggi[0].addr}</div>}
                   </div>
                   {eventiOggi[0].addr && (
                     <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(eventiOggi[0].addr))}
-                      style={{ padding: "6px 10px", borderRadius: 8, background: T.blueLt, color: T.blue, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      style={{ padding: "6px 10px", borderRadius: 8, background: "#dbeafe", color: "#3b7fe0", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                       <I d={ICO.lock} />º Naviga
                     </div>
                   )}
@@ -324,11 +351,11 @@ Walter Cozza Serramenti`;
               )}
               {/* GRIGLIA MENSILE A RIQUADRI */}
               <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-                style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden", marginBottom: 12 }}>
+                style={{ background: L.surface, borderRadius: 16, border: `1px solid ${T.bdr}`, overflow: "hidden", marginBottom: 12 }}>
                 {/* Intestazione giorni */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: `1px solid ${T.bdr}` }}>
                   {["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].map((d, i) => (
-                    <div key={i} style={{ fontSize: 10, fontWeight: 700, color: T.sub, padding: "7px 4px", textAlign: "center", borderRight: i < 6 ? `1px solid ${T.bdr}` : "none" }}>{d}</div>
+                    <div key={i} style={{ fontSize: 10, fontWeight: 700, color: L.sub, padding: "7px 4px", textAlign: "center", borderRight: i < 6 ? `1px solid ${T.bdr}` : "none" }}>{d}</div>
                   ))}
                 </div>
                 {/* Celle mese */}
@@ -349,7 +376,7 @@ Walter Cozza Serramenti`;
                         minHeight: 72, padding: "5px 6px",
                         borderRight: col < 6 ? `1px solid ${T.bdr}` : "none",
                         borderBottom: `1px solid ${T.bdr}`,
-                        background: sel ? T.acc + "18" : isExp ? T.accLt : isWeekend && inMonth ? T.bg : T.card,
+                        background: sel ? L.primary + "18" : isExp ? L.amberBg : isWeekend && inMonth ? L.bg : L.surface,
                         cursor: "pointer", position: "relative",
                         outline: sel ? `2px solid ${T.acc}` : isExp ? `1.5px solid ${T.acc}50` : "none",
                         outlineOffset: -1,
@@ -358,8 +385,8 @@ Walter Cozza Serramenti`;
                         <div style={{
                           display: "inline-flex", alignItems: "center", justifyContent: "center",
                           width: 22, height: 22, borderRadius: "50%", fontSize: 12, fontWeight: sel || tod ? 800 : 400,
-                          background: tod ? T.acc : "transparent",
-                          color: tod ? "#fff" : !inMonth ? T.sub2 : sel ? T.acc : T.text,
+                          background: tod ? L.primary : "transparent",
+                          color: tod ? "#fff" : !inMonth ? L.sub2 : sel ? L.primary : L.text,
                           marginBottom: 3,
                         }}>{d.getDate()}</div>
                         {/* Eventi (max 3 visibili) */}
@@ -377,7 +404,7 @@ Walter Cozza Serramenti`;
                           </div>
                         ))}
                         {evs.length > 3 && (
-                          <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>+{evs.length - 3} altri</div>
+                          <div style={{ fontSize: 9, color: L.sub, fontWeight: 600 }}>+{evs.length - 3} altri</div>
                         )}
                       </div>
                     );
@@ -387,7 +414,7 @@ Walter Cozza Serramenti`;
               {/* Sezione prossimi eventi */}
               {prossimiEventi.length > 0 && (
                 <div style={{ ...S.card, marginBottom: 10, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Prossimi eventi</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Prossimi eventi</div>
                   {prossimiEventi.map((ev, i) => {
                     const evDate = new Date(ev.date + "T12:00:00");
                     const isEvToday = ev.date === todayStr;
@@ -400,13 +427,13 @@ Walter Cozza Serramenti`;
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 600 }}>{ev.text}</div>
                           <div style={{ display: "flex", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                            {ev.cm && <span style={S.badge(T.accLt, T.acc)}>{ev.cm}</span>}
-                            {ev.persona && <span style={S.badge(T.purpleLt, T.purple)}><I d={ICO.user} s={11} c={T.purple} /> {ev.persona}</span>}
+                            {ev.cm && <span style={S.badge(L.amberBg, L.primary)}>{ev.cm}</span>}
+                            {ev.persona && <span style={S.badge("#6366f1"Lt, "#6366f1")}><I d={ICO.user} s={11} c={"#6366f1"} /> {ev.persona}</span>}
                           </div>
                         </div>
                         <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: isEvToday ? T.acc : T.sub }}>{labelData}</div>
-                          {ev.time && <div style={{ fontSize: 11, color: T.sub }}>{ev.time}</div>}
+                          <div style={{ fontSize: 11, fontWeight: 700, color: isEvToday ? L.primary : L.sub }}>{labelData}</div>
+                          {ev.time && <div style={{ fontSize: 11, color: L.sub }}>{ev.time}</div>}
                         </div>
                       </div>
                     );
@@ -421,16 +448,16 @@ Walter Cozza Serramenti`;
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{selectedEvent.text}</div>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {selectedEvent.time && <span style={S.badge(T.bg, T.sub)}><I d={ICO.calendar} s={11} c={T.sub} /> {selectedEvent.time}</span>}
-                        {selectedEvent.cm && <span style={S.badge(T.accLt, T.acc)}>{selectedEvent.cm}</span>}
-                        {selectedEvent.persona && <span style={S.badge(T.purpleLt, T.purple)}><I d={ICO.user} s={11} c={T.purple} /> {selectedEvent.persona}</span>}
-                        {selectedEvent.addr && <span style={S.badge(T.grnLt, T.grn)}><I d={ICO.mapPin} s={11} c={T.grn} /> {selectedEvent.addr}</span>}
+                        {selectedEvent.time && <span style={S.badge(L.bg, L.sub)}><I d={ICO.calendar} s={11} c={L.sub} /> {selectedEvent.time}</span>}
+                        {selectedEvent.cm && <span style={S.badge(L.amberBg, L.primary)}>{selectedEvent.cm}</span>}
+                        {selectedEvent.persona && <span style={S.badge("#6366f1"Lt, "#6366f1")}><I d={ICO.user} s={11} c={"#6366f1"} /> {selectedEvent.persona}</span>}
+                        {selectedEvent.addr && <span style={S.badge("#d1fae5", L.green)}><I d={ICO.mapPin} s={11} c={L.green} /> {selectedEvent.addr}</span>}
                       </div>
                     </div>
-                    <div onClick={() => setSelectedEvent(null)} style={{ padding: 4, cursor: "pointer", color: T.sub, fontSize: 16 }}>×</div>
+                    <div onClick={() => setSelectedEvent(null)} style={{ padding: 4, cursor: "pointer", color: L.sub, fontSize: 16 }}>×</div>
                   </div>
                   <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                    {selectedEvent.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(selectedEvent.addr))} style={{ flex:1, padding:"6px", borderRadius:6, background:T.blueLt, textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:T.blue }}><I d={ICO.lock} />º Mappa</div>}
+                    {selectedEvent.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(selectedEvent.addr))} style={{ flex:1, padding:"6px", borderRadius:6, background:"#dbeafe", textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:"#3b7fe0" }}><I d={ICO.lock} />º Mappa</div>}
                     <div onClick={() => {
                       const ev = selectedEvent;
                       const cmObj = cantieri.find(c => c.code === ev.cm) || null;
@@ -452,8 +479,8 @@ Fabio Cozza
 Walter Cozza Serramenti`;
                       setMailBody(tpl);
                       setShowMailModal({ ev, cm: cmObj });
-                    }} style={{ flex:1, padding:"6px", borderRadius:6, background:T.accLt, textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:T.acc }}><I d={ICO.mail} />️ Mail</div>
-                    <div onClick={() => deleteEvent(selectedEvent.id)} style={{ flex:1, padding:"6px", borderRadius:6, background:T.redLt, textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:T.red }}><I d={ICO.lock} />‘ Elimina</div>
+                    }} style={{ flex:1, padding:"6px", borderRadius:6, background:L.amberBg, textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:L.primary }}><I d={ICO.mail} />️ Mail</div>
+                    <div onClick={() => deleteEvent(selectedEvent.id)} style={{ flex:1, padding:"6px", borderRadius:6, background:"#ffdad6", textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:L.red }}><I d={ICO.lock} />‘ Elimina</div>
                   </div>
                 </div>
               )}
@@ -461,7 +488,7 @@ Walter Cozza Serramenti`;
                 {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
               </div>
               {dayEvents.length === 0 ? (
-                <div style={{ padding: "16px", textAlign: "center", color: T.sub, fontSize: 12, background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}` }}>Nessun evento. Tocca + per aggiungere.</div>
+                <div style={{ padding: "16px", textAlign: "center", color: L.sub, fontSize: 12, background: L.surface, borderRadius: 16, border: `1px dashed ${T.bdr}` }}>Nessun evento. Tocca + per aggiungere.</div>
               ) : dayEvents.map(renderEventCard)}
             </>
           )}
@@ -475,12 +502,12 @@ Walter Cozza Serramenti`;
                   const tod = isToday2(d);
                   const n = eventsOn(d).length;
                   return (
-                    <div key={i} onClick={() => setSelDate(new Date(d))} style={{ flex: 1, textAlign: "center", padding: "8px 2px", borderRadius: 10, background: sel ? T.acc : tod ? T.accLt : T.card, border: `1px solid ${sel ? T.acc : T.bdr}`, cursor: "pointer" }}>
-                      <div style={{ fontSize: 9, fontWeight: 600, color: sel ? "#fff" : T.sub, textTransform: "uppercase" }}>
+                    <div key={i} onClick={() => setSelDate(new Date(d))} style={{ flex: 1, textAlign: "center", padding: "8px 2px", borderRadius: 10, background: sel ? L.primary : tod ? L.amberBg : L.surface, border: `1px solid ${sel ? T.acc : T.bdr}`, cursor: "pointer" }}>
+                      <div style={{ fontSize: 9, fontWeight: 600, color: sel ? "#fff" : L.sub, textTransform: "uppercase" }}>
                         {["Lu", "Ma", "Me", "Gi", "Ve", "Sa", "Do"][i]}
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: sel ? "#fff" : T.text, marginTop: 2 }}>{d.getDate()}</div>
-                      {n > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: sel ? "#fff" : T.red, margin: "2px auto 0" }} />}
+                      <div style={{ fontSize: 14, fontWeight: 700, color: sel ? "#fff" : L.text, marginTop: 2 }}>{d.getDate()}</div>
+                      {n > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: sel ? "#fff" : L.red, margin: "2px auto 0" }} />}
                     </div>
                   );
                 })}
@@ -489,7 +516,7 @@ Walter Cozza Serramenti`;
                 {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
               </div>
               {dayEvents.length === 0 ? (
-                <div style={{ padding: "16px", textAlign: "center", color: T.sub, fontSize: 12, background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}` }}>Nessun evento</div>
+                <div style={{ padding: "16px", textAlign: "center", color: L.sub, fontSize: 12, background: L.surface, borderRadius: 16, border: `1px dashed ${T.bdr}` }}>Nessun evento</div>
               ) : dayEvents.map(renderEventCard)}
             </>
           )}
@@ -498,18 +525,18 @@ Walter Cozza Serramenti`;
           {agendaView === "giorno" && (
             <>
               {/* Timeline ore — scrollabile con dito */}
-              <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflowY: "auto", overflowX: "hidden", marginBottom: 12, maxHeight: "60vh" } as any}>
+              <div style={{ background: L.surface, borderRadius: 16, border: `1px solid ${T.bdr}`, overflowY: "auto", overflowX: "hidden", marginBottom: 12, maxHeight: "60vh" } as any}>
                 {Array.from({ length: 15 }, (_, i) => i + 6).map(h => {
                   const hour = `${String(h).padStart(2, "0")}:00`;
                   const hourEvents = dayEvents.filter(e => e.time && e.time.startsWith(String(h).padStart(2, "0")));
                   return (
                     <div key={h} style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, minHeight: 48 }}>
-                      <div style={{ width: 48, padding: "4px 6px", fontSize: 10, color: T.sub, fontFamily: FM, fontWeight: 600, borderRight: `1px solid ${T.bdr}`, flexShrink: 0 }}>{hour}</div>
+                      <div style={{ width: 48, padding: "4px 6px", fontSize: 10, color: L.sub, fontFamily: FM, fontWeight: 600, borderRight: `1px solid ${T.bdr}`, flexShrink: 0 }}>{hour}</div>
                       <div style={{ flex: 1, padding: "4px 8px" }}>
                         {hourEvents.map(ev => (
-                          <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "6px 10px", marginBottom: 2, borderRadius: 6, background: selectedEvent?.id === ev.id ? (ev.color || T.acc) + "30" : (ev.color || T.acc) + "18", borderLeft: `3px solid ${ev.color || T.acc}`, cursor: "pointer", transition: "all 0.15s" }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{ev.text} {ev.persona && <span style={{ fontWeight: 400, color: T.sub }}>· {ev.persona}</span>}</div>
-                            {ev.addr && <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>{ev.addr}</div>}
+                          <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "6px 10px", marginBottom: 2, borderRadius: 6, background: selectedEvent?.id === ev.id ? (ev.color || L.primary) + "30" : (ev.color || L.primary) + "18", borderLeft: `3px solid ${ev.color || T.acc}`, cursor: "pointer", transition: "all 0.15s" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: L.text }}>{ev.text} {ev.persona && <span style={{ fontWeight: 400, color: L.sub }}>· {ev.persona}</span>}</div>
+                            {ev.addr && <div style={{ fontSize: 10, color: L.sub, marginTop: 1 }}>{ev.addr}</div>}
                           </div>
                         ))}
                       </div>
@@ -520,8 +547,8 @@ Walter Cozza Serramenti`;
               {/* Unscheduled */}
               {dayEvents.filter(e => !e.time).length > 0 && (
                 <>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: T.sub }}>Senza orario</div>
-                  {dayEvents.filter(e => !e.time).map(ev => (<div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "8px 12px", marginBottom: 4, borderRadius: 8, background: selectedEvent?.id === ev.id ? (ev.color || T.acc) + "30" : (ev.color || T.acc) + "18", borderLeft: `3px solid ${ev.color || T.acc}`, cursor: "pointer" }}><div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{ev.text}</div>{ev.persona && <div style={{ fontSize: 11, color: T.sub }}>{ev.persona} {ev.addr ? "· " + ev.addr : ""}</div>}</div>))}
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: L.sub }}>Senza orario</div>
+                  {dayEvents.filter(e => !e.time).map(ev => (<div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "8px 12px", marginBottom: 4, borderRadius: 8, background: selectedEvent?.id === ev.id ? (ev.color || L.primary) + "30" : (ev.color || L.primary) + "18", borderLeft: `3px solid ${ev.color || T.acc}`, cursor: "pointer" }}><div style={{ fontSize: 13, fontWeight: 700, color: L.text }}>{ev.text}</div>{ev.persona && <div style={{ fontSize: 11, color: L.sub }}>{ev.persona} {ev.addr ? "· " + ev.addr : ""}</div>}</div>))}
                 </>
               )}
             </>

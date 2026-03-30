@@ -23,6 +23,33 @@ const STATO = {
 };
 const fmt = d => d.toISOString().split("T")[0];
 
+
+// ─── Lumina Design Tokens ────────────────────────────────
+const L = {
+  bg:          "#f9f9fb",
+  surface:     "#ffffff",
+  surfaceLow:  "#f3f3f5",
+  surfaceMid:  "#eeeef0",
+  primary:     "#031631",
+  primaryCont: "#1a2b47",
+  onPrimary:   "#ffffff",
+  muted:       "#8293b4",
+  text:        "#1a1c1d",
+  sub:         "#44474d",
+  placeholder: "#75777e",
+  green:       "#1a9e73",
+  red:         "#dc4444",
+  amber:       "#e4c18c",
+  amberBg:     "#ffdeac",
+  border:      "rgba(197,198,206,0.25)",
+  glass:       "rgba(255,255,255,0.85)",
+} as const;
+const SH = {
+  ambient: "0 20px 40px rgba(26,28,29,0.04)",
+  float:   "0 20px 40px rgba(26,28,29,0.08)",
+  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+} as const;
+// ─────────────────────────────────────────────────────────
 export default function MontaggiCalendar() {
   const {
     T, S, cantieri, montaggiDB, setMontaggiDB, squadreDB, setSelectedCM, setTab,
@@ -170,7 +197,7 @@ export default function MontaggiCalendar() {
     setTouchDrag(null); setTouchPos(null); setDropTarget(null); setTouchLabel("");
   };
 
-  const cS = { background: T.card, borderRadius: 10, border: "1px solid " + T.bdr };
+  const cS = { background: L.surface, borderRadius: 10, border: "1px solid " + L.border };
   const squads = squadreDB.length > 0 ? squadreDB : [{ id:"default", nome:"Squadra", colore:"#3B7FE0" }];
 
   // ═══ EVENT CHIP ═══
@@ -197,27 +224,27 @@ export default function MontaggiCalendar() {
     const sc=STATO[ev.stato]||STATO.programmato; const cm=cantieri.find(c=>c.id===ev.cmId);
     return (
       <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setSelectedEvent(null)}>
-        <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,background:T.card,borderRadius:"16px 16px 0 0",padding:"16px 20px 28px",maxHeight:"70vh",overflowY:"auto"}}>
-          <div style={{width:36,height:4,borderRadius:2,background:T.bdr,margin:"0 auto 12px"}} />
+        <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,background:L.surface,borderRadius:"16px 16px 0 0",padding:"16px 20px 28px",maxHeight:"70vh",overflowY:"auto"}}>
+          <div style={{width:36,height:4,borderRadius:2,background:L.border,margin:"0 auto 12px"}} />
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
             <div style={{width:44,height:44,borderRadius:10,flexShrink:0,background:isM?sqC+"12":(ev.urgenza==="urgente"?"#DC444412":"#ff950012"),display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{isM?"🔧":"🛠"}</div>
             <div style={{flex:1}}>
-              <div style={{fontSize:17,fontWeight:900,color:T.text}}>{ev.cliente}</div>
-              <div style={{fontSize:11,color:T.sub,marginTop:1}}>{ev.code||ev.cmCode||""}{ev.indirizzo?" · "+ev.indirizzo:""}</div>
+              <div style={{fontSize:17,fontWeight:900,color:L.text}}>{ev.cliente}</div>
+              <div style={{fontSize:11,color:L.sub,marginTop:1}}>{ev.code||ev.cmCode||""}{ev.indirizzo?" · "+ev.indirizzo:""}</div>
             </div>
             <div style={{padding:"4px 10px",borderRadius:8,fontSize:10,fontWeight:800,background:isM?sc.bg:(ev.urgenza==="urgente"?"#DC444412":"#ff950012"),color:isM?sc.tx:(ev.urgenza==="urgente"?"#DC4444":"#ff9500"),border:"1px solid "+(isM?sc.bd+"30":(ev.urgenza==="urgente"?"#DC444430":"#ff950030"))}}>{isM?sc.l:(ev.urgenza==="urgente"?"⚠ Urgente":ev.urgenza==="media"?"Media":"Normale")}</div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
-            <div style={{padding:"8px 10px",borderRadius:8,background:T.bg,border:"1px solid "+T.bdr}}><div style={{fontSize:8,fontWeight:700,color:T.sub,textTransform:"uppercase",marginBottom:2}}>Data</div><div style={{fontSize:12,fontWeight:800,color:T.text}}>{ev.data?new Date(ev.data+"T12:00:00").toLocaleDateString("it-IT",{day:"numeric",month:"short"}):"—"}</div></div>
-            <div style={{padding:"8px 10px",borderRadius:8,background:T.bg,border:"1px solid "+T.bdr}}><div style={{fontSize:8,fontWeight:700,color:T.sub,textTransform:"uppercase",marginBottom:2}}>Orario</div><div style={{fontSize:12,fontWeight:800,color:T.text}}>{ev.orario||"08:00"}</div></div>
-            {isM?(<div style={{padding:"8px 10px",borderRadius:8,background:T.bg,border:"1px solid "+T.bdr}}><div style={{fontSize:8,fontWeight:700,color:T.sub,textTransform:"uppercase",marginBottom:2}}>Durata</div><div style={{fontSize:12,fontWeight:800,color:T.text}}>{ev.giorni||1}g</div></div>):(<div style={{padding:"8px 10px",borderRadius:8,background:T.bg,border:"1px solid "+T.bdr}}><div style={{fontSize:8,fontWeight:700,color:T.sub,textTransform:"uppercase",marginBottom:2}}>Tipo</div><div style={{fontSize:11,fontWeight:800,color:T.text}}>{ev.tipoProblema||"Ripar."}</div></div>)}
+            <div style={{padding:"8px 10px",borderRadius:8,background:L.bg,border:"1px solid "+L.border}}><div style={{fontSize:8,fontWeight:700,color:L.sub,textTransform:"uppercase",marginBottom:2}}>Data</div><div style={{fontSize:12,fontWeight:800,color:L.text}}>{ev.data?new Date(ev.data+"T12:00:00").toLocaleDateString("it-IT",{day:"numeric",month:"short"}):"—"}</div></div>
+            <div style={{padding:"8px 10px",borderRadius:8,background:L.bg,border:"1px solid "+L.border}}><div style={{fontSize:8,fontWeight:700,color:L.sub,textTransform:"uppercase",marginBottom:2}}>Orario</div><div style={{fontSize:12,fontWeight:800,color:L.text}}>{ev.orario||"08:00"}</div></div>
+            {isM?(<div style={{padding:"8px 10px",borderRadius:8,background:L.bg,border:"1px solid "+L.border}}><div style={{fontSize:8,fontWeight:700,color:L.sub,textTransform:"uppercase",marginBottom:2}}>Durata</div><div style={{fontSize:12,fontWeight:800,color:L.text}}>{ev.giorni||1}g</div></div>):(<div style={{padding:"8px 10px",borderRadius:8,background:L.bg,border:"1px solid "+L.border}}><div style={{fontSize:8,fontWeight:700,color:L.sub,textTransform:"uppercase",marginBottom:2}}>Tipo</div><div style={{fontSize:11,fontWeight:800,color:L.text}}>{ev.tipoProblema||"Ripar."}</div></div>)}
           </div>
           <div style={{display:"flex",gap:8,marginBottom:14}}>
             {isM&&ev.squadra&&(<div style={{flex:1,padding:"8px 10px",borderRadius:8,background:sqC+"08",border:"1px solid "+sqC+"20"}}><div style={{fontSize:8,fontWeight:700,color:sqC,textTransform:"uppercase",marginBottom:2}}>Squadra</div><div style={{fontSize:12,fontWeight:800,color:sqC,display:"flex",alignItems:"center",gap:4}}><div style={{width:8,height:8,borderRadius:4,background:sqC}} />{ev.squadra.nome}</div></div>)}
-            {cm&&(<div style={{flex:1,padding:"8px 10px",borderRadius:8,background:T.acc+"08",border:"1px solid "+T.acc+"20"}}><div style={{fontSize:8,fontWeight:700,color:T.acc,textTransform:"uppercase",marginBottom:2}}>Commessa</div><div style={{fontSize:12,fontWeight:800,color:T.acc}}>{cm.code} · Fase: {cm.fase}</div></div>)}
+            {cm&&(<div style={{flex:1,padding:"8px 10px",borderRadius:8,background:L.primary+"08",border:"1px solid "+L.primary+"20"}}><div style={{fontSize:8,fontWeight:700,color:L.primary,textTransform:"uppercase",marginBottom:2}}>Commessa</div><div style={{fontSize:12,fontWeight:800,color:L.primary}}>{cm.code} · Fase: {cm.fase}</div></div>)}
           </div>
-          {!isM&&ev.problema&&(<div style={{padding:"8px 12px",borderRadius:8,background:"#ff950006",border:"1px solid #ff950020",marginBottom:14}}><div style={{fontSize:8,fontWeight:700,color:"#ff9500",textTransform:"uppercase",marginBottom:3}}>Problema</div><div style={{fontSize:12,color:T.text}}>{ev.problema}</div></div>)}
-          {isM&&(<div style={{marginBottom:14}}><div style={{fontSize:9,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase"}}>Stato intervento</div><div style={{display:"flex",gap:2}}>{["programmato","in_viaggio","arrivato","in_corso","completato","collaudo","chiuso"].map((key,i)=>{const val=STATO[key]; const fasi=["programmato","in_viaggio","arrivato","in_corso","completato","collaudo","chiuso"]; const curIdx=fasi.indexOf(ev.stato); const isActive=i<=curIdx; return(<div key={key} style={{flex:1,padding:"6px 2px",borderRadius:6,textAlign:"center",background:isActive?val.bg:T.bg,border:"1px solid "+(isActive?val.bd+"40":T.bdr+"40"),fontSize:7,fontWeight:800,color:isActive?val.tx:T.sub+"80",overflow:"hidden",whiteSpace:"nowrap"}}>{i<=curIdx&&ev.stato===key?"● ":""}{val.l}</div>);})}</div></div>)}
+          {!isM&&ev.problema&&(<div style={{padding:"8px 12px",borderRadius:8,background:"#ff950006",border:"1px solid #ff950020",marginBottom:14}}><div style={{fontSize:8,fontWeight:700,color:"#ff9500",textTransform:"uppercase",marginBottom:3}}>Problema</div><div style={{fontSize:12,color:L.text}}>{ev.problema}</div></div>)}
+          {isM&&(<div style={{marginBottom:14}}><div style={{fontSize:9,fontWeight:700,color:L.sub,marginBottom:4,textTransform:"uppercase"}}>Stato intervento</div><div style={{display:"flex",gap:2}}>{["programmato","in_viaggio","arrivato","in_corso","completato","collaudo","chiuso"].map((key,i)=>{const val=STATO[key]; const fasi=["programmato","in_viaggio","arrivato","in_corso","completato","collaudo","chiuso"]; const curIdx=fasi.indexOf(ev.stato); const isActive=i<=curIdx; return(<div key={key} style={{flex:1,padding:"6px 2px",borderRadius:6,textAlign:"center",background:isActive?val.bg:L.bg,border:"1px solid "+(isActive?val.bd+"40":L.border+"40"),fontSize:7,fontWeight:800,color:isActive?val.tx:L.sub+"80",overflow:"hidden",whiteSpace:"nowrap"}}>{i<=curIdx&&ev.stato===key?"● ":""}{val.l}</div>);})}</div></div>)}
           <div style={{display:"flex",gap:8}}>
             {isM && (
               <div onClick={()=>{setInterventoOpen(ev);setSelectedEvent(null);}} style={{
@@ -228,7 +255,7 @@ export default function MontaggiCalendar() {
                 {ev.interventoStato && ev.interventoStato !== "programmato" ? "🔧 Gestisci intervento" : "🚐 Avvia intervento"}
               </div>
             )}
-            <div onClick={()=>{const c=cantieri.find(c=>c.id===ev.cmId);if(c){setSelectedCM(c);setTab("commesse");}setSelectedEvent(null);}} style={{flex:isM?0:1,padding:"12px",borderRadius:10,textAlign:"center",cursor:"pointer",background:isM?T.acc+"10":"#ff950010",border:"1px solid "+(isM?T.acc+"25":"#ff950025"),fontSize:12,fontWeight:800,color:isM?T.acc:"#ff9500",minWidth:isM?120:undefined}}>
+            <div onClick={()=>{const c=cantieri.find(c=>c.id===ev.cmId);if(c){setSelectedCM(c);setTab("commesse");}setSelectedEvent(null);}} style={{flex:isM?0:1,padding:"12px",borderRadius:10,textAlign:"center",cursor:"pointer",background:isM?L.primary+"10":"#ff950010",border:"1px solid "+(isM?L.primary+"25":"#ff950025"),fontSize:12,fontWeight:800,color:isM?L.primary:"#ff9500",minWidth:isM?120:undefined}}>
               Commessa →
             </div>
           </div>
@@ -240,17 +267,17 @@ export default function MontaggiCalendar() {
   // ═══ RENDER ═══
   return (
     <div style={{ paddingBottom: 90 }} onTouchMove={touchDrag?onTouchMoveGlobal:undefined} onTouchEnd={touchDrag?onTouchEndGlobal:undefined}>
-      {touchDrag&&touchPos&&(<div style={{position:"fixed",left:touchPos.x-40,top:touchPos.y-20,zIndex:1000,padding:"6px 12px",borderRadius:8,background:T.acc,color:"#fff",fontSize:11,fontWeight:800,pointerEvents:"none",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>🔧 {touchLabel}</div>)}
+      {touchDrag&&touchPos&&(<div style={{position:"fixed",left:touchPos.x-40,top:touchPos.y-20,zIndex:1000,padding:"6px 12px",borderRadius:8,background:L.primary,color:"#fff",fontSize:11,fontWeight:800,pointerEvents:"none",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>🔧 {touchLabel}</div>)}
 
       {/* ═══ HEADER ═══ */}
       <div style={{ padding:"14px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div>
-          <div style={{ fontSize:20, fontWeight:900, color:T.text, letterSpacing:"-0.03em" }}>Cantieri</div>
-          <div style={{ fontSize:10, color:T.sub, marginTop:1 }}>{stats.m} montaggi · {stats.r} riparazioni · {MN[month]}</div>
+          <div style={{ fontSize:20, fontWeight:900, color:L.text, letterSpacing:"-0.03em" }}>Cantieri</div>
+          <div style={{ fontSize:10, color:L.sub, marginTop:1 }}>{stats.m} montaggi · {stats.r} riparazioni · {MN[month]}</div>
         </div>
         <div style={{ display:"flex", gap:6 }}>
-          <div onClick={goToday} style={{ padding:"5px 10px", borderRadius:6, background:T.grn+"10", border:"1px solid "+T.grn+"30", fontSize:10, fontWeight:700, color:T.grn, cursor:"pointer" }}>Oggi</div>
-          <div onClick={() => setTab("home")} style={{ padding:"5px 10px", borderRadius:6, background:T.bg, border:"1px solid "+T.bdr, fontSize:10, fontWeight:700, color:T.sub, cursor:"pointer" }}>✕</div>
+          <div onClick={goToday} style={{ padding:"5px 10px", borderRadius:6, background:L.green+"10", border:"1px solid "+L.green+"30", fontSize:10, fontWeight:700, color:L.green, cursor:"pointer" }}>Oggi</div>
+          <div onClick={() => setTab("home")} style={{ padding:"5px 10px", borderRadius:6, background:L.bg, border:"1px solid "+L.border, fontSize:10, fontWeight:700, color:L.sub, cursor:"pointer" }}>✕</div>
         </div>
       </div>
 
@@ -258,15 +285,15 @@ export default function MontaggiCalendar() {
       <div style={{ margin:"14px 12px 0" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 4px", marginBottom:8 }}>
           <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <div style={{ width:8, height:8, borderRadius:4, background:T.grn, animation:"todayPulse 2s infinite" }} />
-            <span style={{ fontSize:13, fontWeight:900, color:T.text }}>Oggi in cantiere</span>
+            <div style={{ width:8, height:8, borderRadius:4, background:L.green, animation:"todayPulse 2s infinite" }} />
+            <span style={{ fontSize:13, fontWeight:900, color:L.text }}>Oggi in cantiere</span>
           </div>
-          <span style={{ fontSize:11, fontWeight:700, color:T.sub, fontFamily:FM }}>{todayAll.length}</span>
+          <span style={{ fontSize:11, fontWeight:700, color:L.sub, fontFamily:FM }}>{todayAll.length}</span>
         </div>
         {todayAll.length === 0 ? (
           <div style={{ padding:"20px 16px", textAlign:"center", ...cS }}>
-            <div style={{ fontSize:13, fontWeight:700, color:T.sub }}>Nessun impegno oggi</div>
-            <div style={{ fontSize:11, color:T.sub, marginTop:2 }}>Giornata libera</div>
+            <div style={{ fontSize:13, fontWeight:700, color:L.sub }}>Nessun impegno oggi</div>
+            <div style={{ fontSize:11, color:L.sub, marginTop:2 }}>Giornata libera</div>
           </div>
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
@@ -280,16 +307,16 @@ export default function MontaggiCalendar() {
                   display:"flex", alignItems:"center", gap:14,
                 }}>
                   <div style={{ flexShrink:0, textAlign:"center", minWidth:44 }}>
-                    <div style={{ fontSize:18, fontWeight:900, color:T.text, fontFamily:FM, lineHeight:1 }}>
+                    <div style={{ fontSize:18, fontWeight:900, color:L.text, fontFamily:FM, lineHeight:1 }}>
                       {(ev.orario||"08:00").split(":")[0]}<span style={{fontSize:12}}>:{(ev.orario||"08:00").split(":")[1]||"00"}</span>
                     </div>
                   </div>
-                  <div style={{ width:1, height:36, background:T.bdr+"80" }} />
+                  <div style={{ width:1, height:36, background:L.border+"80" }} />
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:15, fontWeight:800, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.cliente}</div>
+                    <div style={{ fontSize:15, fontWeight:800, color:L.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{ev.cliente}</div>
                     <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3, flexWrap:"wrap" }}>
                       {isM&&ev.squadra&&(<span style={{display:"inline-flex",alignItems:"center",gap:3,fontSize:10,fontWeight:700,color:sqC}}><span style={{width:6,height:6,borderRadius:3,background:sqC,display:"inline-block"}} />{ev.squadra.nome}</span>)}
-                      {ev.indirizzo&&<span style={{fontSize:10,color:T.sub}}>{ev.indirizzo}</span>}
+                      {ev.indirizzo&&<span style={{fontSize:10,color:L.sub}}>{ev.indirizzo}</span>}
                       {!isM&&<span style={{fontSize:10,fontWeight:700,color:ev.urgenza==="urgente"?"#DC4444":"#ff9500"}}>{ev.urgenza==="urgente"?"⚠ Urgente":"Riparazione"}</span>}
                     </div>
                   </div>
@@ -318,41 +345,41 @@ export default function MontaggiCalendar() {
         {["tutti","montaggio","riparazione"].map(t => (
           <div key={t} onClick={()=>setFilterTipo(t===filterTipo?"tutti":t)} style={{
             padding:"5px 12px", borderRadius:20, fontSize:10, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap",
-            background:filterTipo===t?(t==="montaggio"?"#3B7FE012":t==="riparazione"?"#ff950012":T.text+"08"):T.bg,
-            color:filterTipo===t?(t==="montaggio"?"#3B7FE0":t==="riparazione"?"#ff9500":T.text):T.sub,
-            border:"1px solid "+(filterTipo===t?(t==="montaggio"?"#3B7FE035":t==="riparazione"?"#ff950035":T.text+"18"):T.bdr),
+            background:filterTipo===t?(t==="montaggio"?"#3B7FE012":t==="riparazione"?"#ff950012":L.text+"08"):L.bg,
+            color:filterTipo===t?(t==="montaggio"?"#3B7FE0":t==="riparazione"?"#ff9500":L.text):L.sub,
+            border:"1px solid "+(filterTipo===t?(t==="montaggio"?"#3B7FE035":t==="riparazione"?"#ff950035":L.text+"18"):L.border),
           }}>{t==="tutti"?"Tutti":t==="montaggio"?"🔧 Montaggi":"🛠 Riparazioni"}</div>
         ))}
-        {squadreDB.length>1&&<div style={{width:1,background:T.bdr,margin:"2px 2px"}} />}
+        {squadreDB.length>1&&<div style={{width:1,background:L.border,margin:"2px 2px"}} />}
         {squadreDB.map(sq => (
           <div key={sq.id} onClick={()=>setFilterSquadra(filterSquadra===sq.id?"tutte":sq.id)} style={{
             padding:"5px 12px", borderRadius:20, fontSize:10, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap",
-            background:filterSquadra===sq.id?(sq.colore||"#007aff")+"12":T.bg,
-            color:filterSquadra===sq.id?(sq.colore||"#007aff"):T.sub,
-            border:"1px solid "+(filterSquadra===sq.id?(sq.colore||"#007aff")+"35":T.bdr),
+            background:filterSquadra===sq.id?(sq.colore||"#007aff")+"12":L.bg,
+            color:filterSquadra===sq.id?(sq.colore||"#007aff"):L.sub,
+            border:"1px solid "+(filterSquadra===sq.id?(sq.colore||"#007aff")+"35":L.border),
           }}><span style={{display:"inline-block",width:6,height:6,borderRadius:3,background:sq.colore||"#007aff",marginRight:4}} />{sq.nome}</div>
         ))}
       </div>
 
       {/* ═══ 4. VIEW TOGGLE ═══ */}
-      <div style={{ display:"flex", gap:0, margin:"10px 12px 8px", borderRadius:8, overflow:"hidden", border:"1px solid "+T.bdr }}>
+      <div style={{ display:"flex", gap:0, margin:"10px 12px 8px", borderRadius:8, overflow:"hidden", border:"1px solid "+L.border }}>
         {[{id:"day",l:"Giorno"},{id:"week",l:"Settimana"},{id:"month",l:"Mese"}].map(v => (
           <div key={v.id} onClick={()=>setView(v.id)} style={{
             flex:1, padding:"7px 0", textAlign:"center", fontSize:11, fontWeight:700, cursor:"pointer",
-            background:view===v.id?T.acc:T.card, color:view===v.id?"#fff":T.sub,
+            background:view===v.id?L.primary:L.surface, color:view===v.id?"#fff":L.sub,
           }}>{v.l}</div>
         ))}
       </div>
 
       {/* NAV */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"2px 20px 6px" }}>
-        <div onClick={()=>nav(-1)} style={{cursor:"pointer",padding:"4px 10px",fontSize:18,fontWeight:800,color:T.acc}}>‹</div>
-        <div style={{ fontSize:15, fontWeight:900, color:T.text }}>
+        <div onClick={()=>nav(-1)} style={{cursor:"pointer",padding:"4px 10px",fontSize:18,fontWeight:800,color:L.primary}}>‹</div>
+        <div style={{ fontSize:15, fontWeight:900, color:L.text }}>
           {view==="day"?curDate.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})
            :view==="week"?`${weekDays[0].date.toLocaleDateString("it-IT",{day:"numeric",month:"short"})} — ${weekDays[6].date.toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"})}`
            :`${MN[month]} ${year}`}
         </div>
-        <div onClick={()=>nav(1)} style={{cursor:"pointer",padding:"4px 10px",fontSize:18,fontWeight:800,color:T.acc}}>›</div>
+        <div onClick={()=>nav(1)} style={{cursor:"pointer",padding:"4px 10px",fontSize:18,fontWeight:800,color:L.primary}}>›</div>
       </div>
 
       {/* ═══ VISTA GIORNO ═══ */}
@@ -361,7 +388,7 @@ export default function MontaggiCalendar() {
         return (
           <div style={{padding:"0 12px"}}>
             {evts.length===0?(
-              <div style={{padding:"32px 16px",textAlign:"center",...cS}}><div style={{fontSize:32,marginBottom:6}}>📅</div><div style={{fontSize:13,fontWeight:800,color:T.text}}>Giornata libera</div></div>
+              <div style={{padding:"32px 16px",textAlign:"center",...cS}}><div style={{fontSize:32,marginBottom:6}}>📅</div><div style={{fontSize:13,fontWeight:800,color:L.text}}>Giornata libera</div></div>
             ):(
               <div style={{display:"flex",flexDirection:"column",gap:6}}>
                 {evts.map((ev,i)=>{
@@ -371,8 +398,8 @@ export default function MontaggiCalendar() {
                     <div key={ev.id+"_"+i} onClick={()=>setSelectedEvent(ev)} style={{...cS,cursor:"pointer",borderLeft:"3px solid "+col,padding:"12px 14px",display:"flex",alignItems:"center",gap:12}}>
                       <div style={{width:42,height:42,borderRadius:10,background:col+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{isM?"🔧":"🛠"}</div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:14,fontWeight:800,color:T.text}}>{ev.cliente}</div>
-                        <div style={{fontSize:10,color:T.sub,marginTop:1}}>{isM&&ev.squadra&&<><span style={{fontWeight:800,color:sqC}}>{ev.squadra.nome}</span> · </>}{ev.orario||"08:00"} · {ev.indirizzo||ev.code||""}</div>
+                        <div style={{fontSize:14,fontWeight:800,color:L.text}}>{ev.cliente}</div>
+                        <div style={{fontSize:10,color:L.sub,marginTop:1}}>{isM&&ev.squadra&&<><span style={{fontWeight:800,color:sqC}}>{ev.squadra.nome}</span> · </>}{ev.orario||"08:00"} · {ev.indirizzo||ev.code||""}</div>
                       </div>
                       <div style={{padding:"3px 8px",borderRadius:6,fontSize:9,fontWeight:800,background:sc.bg,color:sc.tx,border:"1px solid "+sc.bd+"30",flexShrink:0}}>{isM?sc.l:(ev.urgenza==="urgente"?"⚠ Urg.":"Ripar.")}</div>
                     </div>
@@ -392,18 +419,18 @@ export default function MontaggiCalendar() {
             {weekDays.map((wd,i)=>(
               <div key={i} data-dropiso={wd.iso} onDragOver={e=>onDragOver(e,wd.iso)} onDragLeave={onDragLeave} onDrop={e=>onDrop(e,wd.iso)}
                 style={{textAlign:"center",padding:"3px 0",borderRadius:6,cursor:"pointer",
-                  background:dropTarget===wd.iso?T.acc+"20":wd.iso===todayISO?T.grn+"10":wd.iso===fmt(curDate)?T.acc+"10":"transparent",
-                  border:dropTarget===wd.iso?"1.5px dashed "+T.acc:wd.iso===todayISO?"1.5px solid "+T.grn+"30":"1.5px solid transparent",transition:"all 0.15s"}}
+                  background:dropTarget===wd.iso?L.primary+"20":wd.iso===todayISO?L.green+"10":wd.iso===fmt(curDate)?L.primary+"10":"transparent",
+                  border:dropTarget===wd.iso?"1.5px dashed "+L.primary:wd.iso===todayISO?"1.5px solid "+L.green+"30":"1.5px solid transparent",transition:"all 0.15s"}}
                 onClick={()=>{setCurDate(new Date(wd.iso+"T12:00:00"));setView("day");}}>
-                <div style={{fontSize:9,fontWeight:700,color:wd.iso===todayISO?T.grn:i>=5?T.sub+"50":T.sub}}>{DN[i]}</div>
-                <div style={{fontSize:12,fontWeight:wd.iso===todayISO?900:600,color:wd.iso===todayISO?T.grn:T.text}}>{wd.date.getDate()}</div>
+                <div style={{fontSize:9,fontWeight:700,color:wd.iso===todayISO?L.green:i>=5?L.sub+"50":L.sub}}>{DN[i]}</div>
+                <div style={{fontSize:12,fontWeight:wd.iso===todayISO?900:600,color:wd.iso===todayISO?L.green:L.text}}>{wd.date.getDate()}</div>
               </div>
             ))}
           </div>
           {squads.map(sq=>{
             const sqC=sq.colore||"#007aff";
             return (
-              <div key={sq.id} style={{display:"grid",gridTemplateColumns:"52px repeat(7,1fr)",padding:"0 4px",borderTop:"1px solid "+T.bdr+"25"}}>
+              <div key={sq.id} style={{display:"grid",gridTemplateColumns:"52px repeat(7,1fr)",padding:"0 4px",borderTop:"1px solid "+L.border+"25"}}>
                 <div style={{fontSize:8,fontWeight:800,color:sqC,padding:"4px 2px",display:"flex",alignItems:"center",gap:2,overflow:"hidden"}}>
                   <div style={{width:6,height:6,borderRadius:3,background:sqC,flexShrink:0}} />
                   <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sq.nome}</span>
@@ -413,7 +440,7 @@ export default function MontaggiCalendar() {
                   const unique=dayEvts.filter((m,i,a)=>a.findIndex(x=>x.id===m.id)===i);
                   return (
                     <div key={di} data-dropiso={wd.iso} onDragOver={e=>onDragOver(e,wd.iso)} onDragLeave={onDragLeave} onDrop={e=>onDrop(e,wd.iso)}
-                      style={{padding:"2px 1px",minHeight:26,background:dropTarget===wd.iso?T.acc+"10":"transparent",borderRadius:3,transition:"background 0.15s"}}>
+                      style={{padding:"2px 1px",minHeight:26,background:dropTarget===wd.iso?L.primary+"10":"transparent",borderRadius:3,transition:"background 0.15s"}}>
                       {unique.map((ev,ei)=><EventChip key={ev.id+"_"+ei} ev={ev} compact />)}
                     </div>
                   );
@@ -421,7 +448,7 @@ export default function MontaggiCalendar() {
               </div>
             );
           })}
-          <div style={{display:"grid",gridTemplateColumns:"52px repeat(7,1fr)",padding:"0 4px",borderTop:"1px solid "+T.bdr+"25"}}>
+          <div style={{display:"grid",gridTemplateColumns:"52px repeat(7,1fr)",padding:"0 4px",borderTop:"1px solid "+L.border+"25"}}>
             <div style={{fontSize:8,fontWeight:800,color:"#ff9500",padding:"4px 2px",display:"flex",alignItems:"center",gap:2}}>
               <div style={{width:6,height:6,borderRadius:3,background:"#ff9500",flexShrink:0}} />Ripar.
             </div>
@@ -431,7 +458,7 @@ export default function MontaggiCalendar() {
             })}
           </div>
           <div style={{height:4}} />
-          <div style={{padding:"4px 12px 6px",fontSize:8,color:T.sub+"80",textAlign:"center"}}>💡 Tieni premuto un montaggio e trascinalo per spostarlo</div>
+          <div style={{padding:"4px 12px 6px",fontSize:8,color:L.sub+"80",textAlign:"center"}}>💡 Tieni premuto un montaggio e trascinalo per spostarlo</div>
         </div>
       )}
 
@@ -439,7 +466,7 @@ export default function MontaggiCalendar() {
       {view==="month"&&(
         <>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",padding:"0 10px 3px"}}>
-            {DN.map((d,i)=>(<div key={i} style={{textAlign:"center",fontSize:9,fontWeight:800,color:i>=5?T.sub+"50":T.sub,textTransform:"uppercase",letterSpacing:"0.06em"}}>{d}</div>))}
+            {DN.map((d,i)=>(<div key={i} style={{textAlign:"center",fontSize:9,fontWeight:800,color:i>=5?L.sub+"50":L.sub,textTransform:"uppercase",letterSpacing:"0.06em"}}>{d}</div>))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",padding:"0 10px",gap:1}}>
             {monthDays.map((day,idx)=>{
@@ -449,14 +476,14 @@ export default function MontaggiCalendar() {
                 <div key={idx} data-dropiso={day.iso} onDragOver={e=>onDragOver(e,day.iso)} onDragLeave={onDragLeave} onDrop={e=>onDrop(e,day.iso)}
                   onClick={()=>{setCurDate(new Date(day.iso+"T12:00:00"));setView("day");}}
                   style={{minHeight:52,padding:"2px 1px",borderRadius:6,cursor:"pointer",
-                    background:dropTarget===day.iso?T.acc+"15":isToday?T.grn+"06":"transparent",
-                    border:dropTarget===day.iso?"1.5px dashed "+T.acc:isToday?"1.5px solid "+T.grn+"35":"1.5px solid transparent",
+                    background:dropTarget===day.iso?L.primary+"15":isToday?L.green+"06":"transparent",
+                    border:dropTarget===day.iso?"1.5px dashed "+L.primary:isToday?"1.5px solid "+L.green+"35":"1.5px solid transparent",
                     opacity:day.inMonth?1:0.25}}>
-                  <div style={{textAlign:"center",fontSize:12,fontWeight:isToday?900:500,color:isToday?"#fff":T.text,marginBottom:2,
-                    ...(isToday?{background:T.grn,width:22,height:22,lineHeight:"22px",borderRadius:"50%",margin:"0 auto 2px"}:{})}}>{day.date.getDate()}</div>
+                  <div style={{textAlign:"center",fontSize:12,fontWeight:isToday?900:500,color:isToday?"#fff":L.text,marginBottom:2,
+                    ...(isToday?{background:L.green,width:22,height:22,lineHeight:"22px",borderRadius:"50%",margin:"0 auto 2px"}:{})}}>{day.date.getDate()}</div>
                   <div style={{display:"flex",flexDirection:"column",gap:1,padding:"0 1px"}}>
                     {evts.slice(0,3).map((e,ei)=>{const col=e.tipo==="montaggio"?(e.squadra?.colore||"#3B7FE0"):(e.urgenza==="urgente"?"#DC4444":"#ff9500");return <div key={ei} style={{height:4,borderRadius:1,background:col+"35",borderLeft:"2px solid "+col}} />;})}
-                    {evts.length>3&&<div style={{fontSize:7,textAlign:"center",color:T.acc,fontWeight:800}}>+{evts.length-3}</div>}
+                    {evts.length>3&&<div style={{fontSize:7,textAlign:"center",color:L.primary,fontWeight:800}}>+{evts.length-3}</div>}
                   </div>
                   {evts.length>0&&evts.length<=3&&(<div style={{textAlign:"center",marginTop:1}}>{mC>0&&<span style={{fontSize:7,fontWeight:800,color:"#3B7FE0"}}>{mC}M </span>}{rC>0&&<span style={{fontSize:7,fontWeight:800,color:evts.some(e=>e.urgenza==="urgente")?"#DC4444":"#ff9500"}}>{rC}R</span>}</div>)}
                 </div>
@@ -469,7 +496,7 @@ export default function MontaggiCalendar() {
       {/* LEGENDA */}
       <div style={{padding:"12px 20px 0",display:"flex",gap:14}}>
         {[{c:"#3B7FE0",l:"Montaggio"},{c:"#ff9500",l:"Riparazione"},{c:"#DC4444",l:"Urgente"}].map((x,i)=>(
-          <div key={i} style={{fontSize:9,color:T.sub,fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
+          <div key={i} style={{fontSize:9,color:L.sub,fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
             <div style={{width:14,height:4,borderRadius:1,background:x.c+"40",borderLeft:"2.5px solid "+x.c}} />{x.l}
           </div>
         ))}
@@ -482,7 +509,7 @@ export default function MontaggiCalendar() {
         if (upcoming.length===0) return null;
         return (
           <div style={{padding:"14px 12px 0"}}>
-            <div style={{fontSize:12,fontWeight:900,color:T.text,marginBottom:8,padding:"0 4px"}}>Prossimi impegni</div>
+            <div style={{fontSize:12,fontWeight:900,color:L.text,marginBottom:8,padding:"0 4px"}}>Prossimi impegni</div>
             <div style={{display:"flex",flexDirection:"column",gap:4}}>
               {upcoming.map((ev,i)=>{
                 const isM=ev.tipo==="montaggio"; const sqC=ev.squadra?.colore||"#3B7FE0";
@@ -493,16 +520,16 @@ export default function MontaggiCalendar() {
                 const dayLabel=isTomorrow?"Domani":evDate.toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"});
                 return (
                   <div key={ev.id+"_up_"+i} onClick={()=>setSelectedEvent(ev)}
-                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:T.card,borderRadius:8,border:"1px solid "+T.bdr,borderLeft:"3px solid "+col,cursor:"pointer"}}>
+                    style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:L.surface,borderRadius:8,border:"1px solid "+L.border,borderLeft:"3px solid "+col,cursor:"pointer"}}>
                     <div style={{width:52,flexShrink:0,textAlign:"center"}}>
-                      <div style={{fontSize:8,fontWeight:700,color:T.sub,textTransform:"uppercase",lineHeight:1.3}}>{evDate.toLocaleDateString("it-IT",{weekday:"short"}).toUpperCase()}</div>
-                      <div style={{fontSize:8,fontWeight:700,color:T.sub,textTransform:"uppercase"}}>{evDate.toLocaleDateString("it-IT",{day:"numeric",month:"short"}).toUpperCase()}</div>
-                      <div style={{fontSize:13,fontWeight:900,color:T.text,fontFamily:FM}}>{ev.orario||"08:00"}</div>
+                      <div style={{fontSize:8,fontWeight:700,color:L.sub,textTransform:"uppercase",lineHeight:1.3}}>{evDate.toLocaleDateString("it-IT",{weekday:"short"}).toUpperCase()}</div>
+                      <div style={{fontSize:8,fontWeight:700,color:L.sub,textTransform:"uppercase"}}>{evDate.toLocaleDateString("it-IT",{day:"numeric",month:"short"}).toUpperCase()}</div>
+                      <div style={{fontSize:13,fontWeight:900,color:L.text,fontFamily:FM}}>{ev.orario||"08:00"}</div>
                     </div>
-                    <div style={{width:1,height:28,background:T.bdr+"60"}} />
+                    <div style={{width:1,height:28,background:L.border+"60"}} />
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.cliente}</div>
-                      <div style={{fontSize:9,color:T.sub,marginTop:2}}>{isM&&ev.squadra?ev.squadra.nome+" · ":""}{ev.indirizzo||ev.code||""}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:L.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ev.cliente}</div>
+                      <div style={{fontSize:9,color:L.sub,marginTop:2}}>{isM&&ev.squadra?ev.squadra.nome+" · ":""}{ev.indirizzo||ev.code||""}</div>
                     </div>
                     <div style={{width:8,height:8,borderRadius:4,flexShrink:0,background:sc.bd}} />
                   </div>

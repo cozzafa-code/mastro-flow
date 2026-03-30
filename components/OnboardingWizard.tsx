@@ -84,6 +84,33 @@ function Field({
 }
 
 // â”€â”€ MAIN COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+// ─── Lumina Design Tokens ────────────────────────────────
+const L = {
+  bg:          "#f9f9fb",
+  surface:     "#ffffff",
+  surfaceLow:  "#f3f3f5",
+  surfaceMid:  "#eeeef0",
+  primary:     "#031631",
+  primaryCont: "#1a2b47",
+  onPrimary:   "#ffffff",
+  muted:       "#8293b4",
+  text:        "#1a1c1d",
+  sub:         "#44474d",
+  placeholder: "#75777e",
+  green:       "#1a9e73",
+  red:         "#dc4444",
+  amber:       "#e4c18c",
+  amberBg:     "#ffdeac",
+  border:      "rgba(197,198,206,0.25)",
+  glass:       "rgba(255,255,255,0.85)",
+} as const;
+const SH = {
+  ambient: "0 20px 40px rgba(26,28,29,0.04)",
+  float:   "0 20px 40px rgba(26,28,29,0.08)",
+  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+} as const;
+// ─────────────────────────────────────────────────────────
 export default function OnboardingWizard() {
   const router = useRouter()
   const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)

@@ -9,6 +9,33 @@ import { useMastro } from "./MastroContext";
 import SpesaQuick from "./SpesaQuick";
 import { FF, FM, ICO, Ico, I } from "./mastro-constants";
 
+
+// ─── Lumina Design Tokens ────────────────────────────────
+const L = {
+  bg:          "#f9f9fb",
+  surface:     "#ffffff",
+  surfaceLow:  "#f3f3f5",
+  surfaceMid:  "#eeeef0",
+  primary:     "#031631",
+  primaryCont: "#1a2b47",
+  onPrimary:   "#ffffff",
+  muted:       "#8293b4",
+  text:        "#1a1c1d",
+  sub:         "#44474d",
+  placeholder: "#75777e",
+  green:       "#1a9e73",
+  red:         "#dc4444",
+  amber:       "#e4c18c",
+  amberBg:     "#ffdeac",
+  border:      "rgba(197,198,206,0.25)",
+  glass:       "rgba(255,255,255,0.85)",
+} as const;
+const SH = {
+  ambient: "0 20px 40px rgba(26,28,29,0.04)",
+  float:   "0 20px 40px rgba(26,28,29,0.08)",
+  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+} as const;
+// ─────────────────────────────────────────────────────────
 export default function HomePanel() {
   const {
     T, S, isDesktop, fs, PIPELINE,
@@ -97,12 +124,12 @@ export default function HomePanel() {
   const problemiAperti = problemi.filter(p => p.stato !== "risolto");
 
   const getAdesso = () => {
-    if (problemiAperti.length > 0) { const p = problemiAperti[0]; return { titolo: "Problema: " + (p.titolo || (p.descrizione || "").slice(0, 40) || "da risolvere"), sotto: problemiAperti.length + " problemi aperti", color: T.red, icon: "alertCircle", action: () => setShowProblemiView(true) }; }
-    if (ferme.length > 0) { const c = ferme[0]; return { titolo: "Sblocca " + c.cliente, sotto: c.code + " · ferma da " + giorniFermaCM(c) + " giorni", color: T.red, icon: "alert", action: () => { setSelectedCM(c); setTab("commesse"); } }; }
+    if (problemiAperti.length > 0) { const p = problemiAperti[0]; return { titolo: "Problema: " + (p.titolo || (p.descrizione || "").slice(0, 40) || "da risolvere"), sotto: problemiAperti.length + " problemi aperti", color: L.red, icon: "alertCircle", action: () => setShowProblemiView(true) }; }
+    if (ferme.length > 0) { const c = ferme[0]; return { titolo: "Sblocca " + c.cliente, sotto: c.code + " · ferma da " + giorniFermaCM(c) + " giorni", color: L.red, icon: "alert", action: () => { setSelectedCM(c); setTab("commesse"); } }; }
     if (preventiviDaFare.length > 0) { const c = preventiviDaFare[0]; return { titolo: "Invia preventivo a " + c.cliente, sotto: c.code + " · " + preventiviDaFare.length + " in attesa", color: "#af52de", icon: "clipboard", action: () => { setSelectedCM(c); setTab("commesse"); } }; }
     if (misureInAttesa.length > 0) { const c = misureInAttesa[0]; const tot = getVaniAttivi(c).length; const ok = getVaniAttivi(c).filter(v => Object.keys(v.misure || {}).length >= 4).length; return { titolo: "Completa misure " + c.cliente, sotto: ok + "/" + tot + " vani misurati", color: "#E8A020", icon: "ruler", action: () => { setSelectedCM(c); setTab("commesse"); } }; }
-    if (taskUrgenti.length > 0) { const t = taskUrgenti[0]; return { titolo: t.text, sotto: t.meta || "Priorità alta", color: T.red, icon: "checkCircle", action: () => setTab("agenda") }; }
-    if (todayEvents.length > 0) { const e = todayEvents[0]; return { titolo: e.text, sotto: (e.time || "—") + " · " + (e.persona || ""), color: e.color || T.acc, icon: "mapPin", action: () => setSelectedEvent(e) }; }
+    if (taskUrgenti.length > 0) { const t = taskUrgenti[0]; return { titolo: t.text, sotto: t.meta || "Priorità alta", color: L.red, icon: "checkCircle", action: () => setTab("agenda") }; }
+    if (todayEvents.length > 0) { const e = todayEvents[0]; return { titolo: e.text, sotto: (e.time || "—") + " · " + (e.persona || ""), color: e.color || L.primary, icon: "mapPin", action: () => setSelectedEvent(e) }; }
     return null;
   };
   const adesso = getAdesso();
@@ -209,15 +236,15 @@ export default function HomePanel() {
       {/* BRAND BAR */}
       <div style={{ padding: "14px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: T.acc, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: FM, letterSpacing: "-0.04em" }}>M</div>
-          <div><span style={{ fontSize: 15, fontWeight: 800, color: T.text, letterSpacing: "-0.02em" }}>MASTRO</span></div>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: L.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 900, color: "#fff", fontFamily: FM, letterSpacing: "-0.04em" }}>M</div>
+          <div><span style={{ fontSize: 15, fontWeight: 800, color: L.text, letterSpacing: "-0.02em" }}>MASTRO</span></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {meteo && <>
             <I d={ICO.sun} s={18} c="#F5A623" />
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, fontFamily: FM, lineHeight: 1 }}>{meteo.temp}°</div>
-              <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>{meteo.citta}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: L.text, fontFamily: FM, lineHeight: 1 }}>{meteo.temp}°</div>
+              <div style={{ fontSize: 9, color: L.sub, fontWeight: 600 }}>{meteo.citta}</div>
             </div>
           </>}
         </div>
@@ -227,8 +254,8 @@ export default function HomePanel() {
       <div style={{ padding: "8px 20px 2px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div suppressHydrationWarning style={{ fontSize: 22, fontWeight: 800, color: T.text, letterSpacing: "-0.03em" }}>{saluto}, Fabio</div>
-            <div suppressHydrationWarning style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>{today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+            <div suppressHydrationWarning style={{ fontSize: 22, fontWeight: 800, color: L.text, letterSpacing: "-0.03em" }}>{saluto}, Fabio</div>
+            <div suppressHydrationWarning style={{ fontSize: 12, color: L.sub, marginTop: 2 }}>{today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
           </div>
           {/* #08 Riordina rimosso */}
         </div>
@@ -236,37 +263,37 @@ export default function HomePanel() {
 
       {/* Trial */}
       {activePlan === "trial" && (
-        <div onClick={() => { setSettingsTab("piano"); setTab("settings"); }} style={{ margin: "12px 20px 0", padding: "10px 14px", borderRadius: 10, background: T.acc + "08", border: "1px solid " + T.acc + "15", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span suppressHydrationWarning style={{ fontSize: 12, fontWeight: 600, color: T.acc }}>Trial gratuito · {trialDaysLeft} giorni rimasti</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: T.acc }}>Vedi piani <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
+        <div onClick={() => { setSettingsTab("piano"); setTab("settings"); }} style={{ margin: "12px 20px 0", padding: "10px 14px", borderRadius: 10, background: L.primary + "08", border: "1px solid " + L.primary + "15", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span suppressHydrationWarning style={{ fontSize: 12, fontWeight: 600, color: L.primary }}>Trial gratuito · {trialDaysLeft} giorni rimasti</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: L.primary }}>Vedi piani <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
         </div>
       )}
       {activePlan === "free" && (
-        <div onClick={() => { setSettingsTab("piano"); setTab("settings"); }} style={{ margin: "12px 20px 0", padding: "10px 14px", borderRadius: 10, background: T.red + "06", border: "1px solid " + T.red + "15", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: T.red }}>Trial scaduto</span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: T.acc }}>Attiva <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
+        <div onClick={() => { setSettingsTab("piano"); setTab("settings"); }} style={{ margin: "12px 20px 0", padding: "10px 14px", borderRadius: 10, background: L.red + "06", border: "1px solid " + L.red + "15", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: L.red }}>Trial scaduto</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: L.primary }}>Attiva <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
         </div>
       )}
 
       {/* ADESSO */}
       {adesso ? (
-        <div onClick={adesso.action} style={{ margin: "16px 20px 0", padding: "16px 18px", borderRadius: 14, background: T.card, border: "1.5px solid " + adesso.color + "20", cursor: "pointer", position: "relative", overflow: "hidden", boxShadow: "0 4px 0 " + adesso.color + "30, 0 6px 16px rgba(0,0,0,0.08)", transition: "all 0.1s" }}>
+        <div onClick={adesso.action} style={{ margin: "16px 20px 0", padding: "16px 18px", borderRadius: 14, background: L.surface, border: "1.5px solid " + adesso.color + "20", cursor: "pointer", position: "relative", overflow: "hidden", boxShadow: "0 4px 0 " + adesso.color + "30, 0 6px 16px rgba(0,0,0,0.08)", transition: "all 0.1s" }}>
           <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: adesso.color, borderRadius: "14px 0 0 14px" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: 8 }}>
             <I d={ICO[adesso.icon] || ICO.alert} s={22} c={adesso.color} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: adesso.color, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Adesso</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.3 }}>{adesso.titolo}</div>
-              <div style={{ fontSize: 12, color: T.sub, marginTop: 3 }}>{adesso.sotto}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: L.text, lineHeight: 1.3 }}>{adesso.titolo}</div>
+              <div style={{ fontSize: 12, color: L.sub, marginTop: 3 }}>{adesso.sotto}</div>
             </div>
-            <span style={{ fontSize: 14, color: T.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span style={{ fontSize: 14, color: L.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
           </div>
         </div>
       ) : (
-        <div style={{ margin: "16px 20px 0", padding: "20px 18px", borderRadius: 14, background: T.card, border: "1px solid " + T.bdr, textAlign: "center" }}>
+        <div style={{ margin: "16px 20px 0", padding: "20px 18px", borderRadius: 14, background: L.surface, border: "1px solid " + L.border, textAlign: "center" }}>
           <div style={{ marginBottom: 6 }}><I d={ICO.checkCircle} s={22} c="#1A9E73" /></div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Tutto in ordine</div>
-          <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>Nessuna azione urgente</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: L.text }}>Tutto in ordine</div>
+          <div style={{ fontSize: 12, color: L.sub, marginTop: 2 }}>Nessuna azione urgente</div>
         </div>
       )}
 
@@ -274,17 +301,17 @@ export default function HomePanel() {
       <div style={{ margin: "14px 20px 0" }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <div onClick={() => { setWeekOffset(w => w - 1); const nw = getWeekForOffset(weekOffset - 1); if (!nw.some(d => d.offset === dayOffset)) setDayOffset(nw[3].offset); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: T.bg }}>
-              <span style={{fontSize:18,color:T.sub,fontWeight:700,lineHeight:1}}>‹</span>
+            <div onClick={() => { setWeekOffset(w => w - 1); const nw = getWeekForOffset(weekOffset - 1); if (!nw.some(d => d.offset === dayOffset)) setDayOffset(nw[3].offset); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: L.bg }}>
+              <span style={{fontSize:18,color:L.sub,fontWeight:700,lineHeight:1}}>‹</span>
             </div>
-            <span style={{ fontSize: 14, fontWeight: 800, color: T.text, minWidth: 130 }}>{weekMonth} {weekYear}</span>
-            <div onClick={() => { setWeekOffset(w => w + 1); const nw = getWeekForOffset(weekOffset + 1); if (!nw.some(d => d.offset === dayOffset)) setDayOffset(nw[3].offset); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: T.bg }}>
-              <span style={{fontSize:18,color:T.sub,fontWeight:700,lineHeight:1}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: L.text, minWidth: 130 }}>{weekMonth} {weekYear}</span>
+            <div onClick={() => { setWeekOffset(w => w + 1); const nw = getWeekForOffset(weekOffset + 1); if (!nw.some(d => d.offset === dayOffset)) setDayOffset(nw[3].offset); }} style={{ width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: L.bg }}>
+              <span style={{fontSize:18,color:L.sub,fontWeight:700,lineHeight:1}}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="9 18 15 12 9 6"/></svg></span>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {isNotCurrentWeek && <div onClick={goToday} style={{ padding: "4px 12px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>Oggi</div>}
-            <span onClick={() => setTab("agenda")} style={{ fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Agenda </span>
+            {isNotCurrentWeek && <div onClick={goToday} style={{ padding: "4px 12px", borderRadius: 8, background: L.primary, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>Oggi</div>}
+            <span onClick={() => setTab("agenda")} style={{ fontSize: 11, fontWeight: 600, color: L.primary, cursor: "pointer" }}>Agenda </span>
           </div>
         </div>
 
@@ -292,13 +319,13 @@ export default function HomePanel() {
           {weekDays.map((d, i) => {
             const isSel = d.offset === dayOffset;
             return (
-              <div key={i} onClick={() => setDayOffset(d.offset)} style={{ flex: 1, textAlign: "center", cursor: "pointer", padding: "6px 0 8px", borderRadius: 12, transition: "all 0.2s cubic-bezier(.4,0,.2,1)", background: isSel ? T.acc : "transparent" }}>
-                <div style={{ fontSize: 9, fontWeight: 600, color: isSel ? "rgba(255,255,255,0.7)" : d.isWeekend ? T.acc : T.sub, letterSpacing: "0.04em" }}>{dayNames[i]}</div>
-                <div suppressHydrationWarning style={{ width: 30, height: 30, borderRadius: 15, margin: "3px auto 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontFamily: FM, fontWeight: isSel || d.isToday ? 800 : 500, background: d.isToday && !isSel ? T.text : "transparent", color: isSel ? "#fff" : d.isToday ? "#fff" : d.isWeekend ? T.sub : T.text, transition: "all 0.2s" }}>{d.day}</div>
+              <div key={i} onClick={() => setDayOffset(d.offset)} style={{ flex: 1, textAlign: "center", cursor: "pointer", padding: "6px 0 8px", borderRadius: 12, transition: "all 0.2s cubic-bezier(.4,0,.2,1)", background: isSel ? L.primary : "transparent" }}>
+                <div style={{ fontSize: 9, fontWeight: 600, color: isSel ? "rgba(255,255,255,0.7)" : d.isWeekend ? L.primary : L.sub, letterSpacing: "0.04em" }}>{dayNames[i]}</div>
+                <div suppressHydrationWarning style={{ width: 30, height: 30, borderRadius: 15, margin: "3px auto 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontFamily: FM, fontWeight: isSel || d.isToday ? 800 : 500, background: d.isToday && !isSel ? L.text : "transparent", color: isSel ? "#fff" : d.isToday ? "#fff" : d.isWeekend ? L.sub : L.text, transition: "all 0.2s" }}>{d.day}</div>
                 <div style={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 3, height: 5 }}>
                   {d.hasEvents && (d.eventCount <= 3
-                    ? Array.from({ length: d.eventCount }, (_, j) => <div key={j} style={{ width: 4, height: 4, borderRadius: 2, background: isSel ? "rgba(255,255,255,0.8)" : T.acc }} />)
-                    : <><div style={{ width: 4, height: 4, borderRadius: 2, background: isSel ? "rgba(255,255,255,0.8)" : T.acc }} /><span style={{ fontSize: 8, fontWeight: 700, color: isSel ? "rgba(255,255,255,0.8)" : T.acc, lineHeight: 1 }}>+{d.eventCount - 1}</span></>
+                    ? Array.from({ length: d.eventCount }, (_, j) => <div key={j} style={{ width: 4, height: 4, borderRadius: 2, background: isSel ? "rgba(255,255,255,0.8)" : L.primary }} />)
+                    : <><div style={{ width: 4, height: 4, borderRadius: 2, background: isSel ? "rgba(255,255,255,0.8)" : L.primary }} /><span style={{ fontSize: 8, fontWeight: 700, color: isSel ? "rgba(255,255,255,0.8)" : L.primary, lineHeight: 1 }}>+{d.eventCount - 1}</span></>
                   )}
                 </div>
               </div>
@@ -308,28 +335,28 @@ export default function HomePanel() {
 
         {dayOffset !== 0 && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{dayLabel}</span>
-            <span onClick={goToday} style={{ fontSize: 11, color: T.acc, fontWeight: 600, cursor: "pointer" }}>Oggi</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: L.text }}>{dayLabel}</span>
+            <span onClick={goToday} style={{ fontSize: 11, color: L.primary, fontWeight: 600, cursor: "pointer" }}>Oggi</span>
           </div>
         )}
 
         {dayEvents.length === 0 ? (
-          <div style={{ padding: "16px", textAlign: "center", background: T.card, borderRadius: 12, border: "1px solid " + T.bdr }}>
-            <div style={{ fontSize: 12, color: T.sub }}>{isPast ? "Nessuna attività" : "Giornata libera"}</div>
+          <div style={{ padding: "16px", textAlign: "center", background: L.surface, borderRadius: 12, border: "1px solid " + L.border }}>
+            <div style={{ fontSize: 12, color: L.sub }}>{isPast ? "Nessuna attività" : "Giornata libera"}</div>
           </div>
         ) : (
-          <div style={{ borderRadius: 12, border: "1px solid " + T.bdr, overflow: "hidden", background: T.card, boxShadow: "0 2px 0 rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)" }}>
+          <div style={{ borderRadius: 12, border: "1px solid " + L.border, overflow: "hidden", background: L.surface, boxShadow: "0 2px 0 rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)" }}>
             {dayEvents.slice(0, 5).map((ev, i) => (
-              <div key={ev.id} onClick={() => setSelectedEvent(ev)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: i < Math.min(dayEvents.length, 5) - 1 ? "1px solid " + T.bdr : "none", opacity: isPast ? 0.5 : 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, fontFamily: FM, width: 36, flexShrink: 0 }}>{ev.time || "—"}</div>
-                <div style={{ width: 3, height: 24, borderRadius: 2, background: ev.color || T.acc, flexShrink: 0 }} />
+              <div key={ev.id} onClick={() => setSelectedEvent(ev)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", borderBottom: i < Math.min(dayEvents.length, 5) - 1 ? "1px solid " + L.border : "none", opacity: isPast ? 0.5 : 1 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: L.sub, fontFamily: FM, width: 36, flexShrink: 0 }}>{ev.time || "—"}</div>
+                <div style={{ width: 3, height: 24, borderRadius: 2, background: ev.color || L.primary, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.text}</div>
-                  {(ev.persona || ev.addr) && <div style={{ fontSize: 11, color: T.sub, marginTop: 1 }}>{ev.persona}{ev.addr ? " · " + ev.addr : ""}</div>}
+                  <div style={{ fontSize: 13, fontWeight: 600, color: L.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.text}</div>
+                  {(ev.persona || ev.addr) && <div style={{ fontSize: 11, color: L.sub, marginTop: 1 }}>{ev.persona}{ev.addr ? " · " + ev.addr : ""}</div>}
                 </div>
               </div>
             ))}
-            {dayEvents.length > 5 && <div onClick={() => setTab("agenda")} style={{ padding: "8px 14px", fontSize: 11, fontWeight: 600, color: T.acc, textAlign: "center", cursor: "pointer", background: T.bg }}>+{dayEvents.length - 5} altri →</div>}
+            {dayEvents.length > 5 && <div onClick={() => setTab("agenda")} style={{ padding: "8px 14px", fontSize: 11, fontWeight: 600, color: L.primary, textAlign: "center", cursor: "pointer", background: L.bg }}>+{dayEvents.length - 5} altri →</div>}
           </div>
         )}
       </div>
@@ -337,58 +364,58 @@ export default function HomePanel() {
       {/* PIPELINE */}
       <div style={{ margin: "14px 20px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pipeline</span>
-          <span onClick={() => setTab("commesse")} style={{ fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer" }}>{totAttive} attive →</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: "0.06em" }}>Pipeline</span>
+          <span onClick={() => setTab("commesse")} style={{ fontSize: 11, fontWeight: 600, color: L.primary, cursor: "pointer" }}>{totAttive} attive →</span>
         </div>
         {totAttive > 0 ? (<>
-          <div style={{ display: "flex", height: 28, borderRadius: 8, overflow: "hidden", background: T.bdr }}>
+          <div style={{ display: "flex", height: 28, borderRadius: 8, overflow: "hidden", background: L.border }}>
             {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => {
               const pct = Math.max(8, (faseCounts[f.id] / totAttive) * 100);
               return (<div key={f.id} onClick={() => { setFilterFase(f.id); setTab("commesse"); }} title={f.nome + ": " + faseCounts[f.id]} style={{ width: pct + "%", background: f.color, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "opacity 0.15s", minWidth: 24 }} onMouseEnter={e => e.currentTarget.style.opacity = "0.8"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}><span style={{ fontSize: 11, fontWeight: 800, color: "#fff", fontFamily: FM, textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}>{faseCounts[f.id]}</span></div>);
             })}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-            {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => (<div key={f.id} onClick={() => { setFilterFase(f.id); setTab("commesse"); }} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: f.color + "10", cursor: "pointer" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: f.color }} /><span style={{ fontSize: 10, fontWeight: 600, color: T.text }}>{f.nome}</span><span style={{ fontSize: 10, fontWeight: 800, color: f.color, fontFamily: FM }}>{faseCounts[f.id]}</span></div>))}
+            {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => (<div key={f.id} onClick={() => { setFilterFase(f.id); setTab("commesse"); }} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: f.color + "10", cursor: "pointer" }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: f.color }} /><span style={{ fontSize: 10, fontWeight: 600, color: L.text }}>{f.nome}</span><span style={{ fontSize: 10, fontWeight: 800, color: f.color, fontFamily: FM }}>{faseCounts[f.id]}</span></div>))}
           </div>
-        </>) : (<div style={{ padding: "16px", textAlign: "center", background: T.card, borderRadius: 12, border: "1px solid " + T.bdr }}><div style={{ fontSize: 12, color: T.sub }}>Nessuna commessa attiva</div></div>)}
+        </>) : (<div style={{ padding: "16px", textAlign: "center", background: L.surface, borderRadius: 12, border: "1px solid " + L.border }}><div style={{ fontSize: 12, color: L.sub }}>Nessuna commessa attiva</div></div>)}
       </div>
 
       {/* NUMERI */}
       <div style={{ margin: "14px 20px 0", display: "flex", gap: 6 }}>
-        <div onClick={() => setTab("commesse")} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Preventivato</div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: T.text, fontFamily: FM, marginTop: 3 }}>€{totPrev > 999 ? Math.round(totPrev / 1000) + "k" : totPrev.toLocaleString("it-IT")}</div>
+        <div onClick={() => setTab("commesse")} style={{ flex: 1, background: L.surface, borderRadius: 10, border: "1px solid " + L.border, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Preventivato</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: L.text, fontFamily: FM, marginTop: 3 }}>€{totPrev > 999 ? Math.round(totPrev / 1000) + "k" : totPrev.toLocaleString("it-IT")}</div>
         </div>
-        <div onClick={() => { setFilterFase("conferma"); setTab("commesse"); }} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Confermato</div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: T.grn, fontFamily: FM, marginTop: 3 }}>€{totConf > 999 ? Math.round(totConf / 1000) + "k" : totConf.toLocaleString("it-IT")}</div>
+        <div onClick={() => { setFilterFase("conferma"); setTab("commesse"); }} style={{ flex: 1, background: L.surface, borderRadius: 10, border: "1px solid " + L.border, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Confermato</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: L.green, fontFamily: FM, marginTop: 3 }}>€{totConf > 999 ? Math.round(totConf / 1000) + "k" : totConf.toLocaleString("it-IT")}</div>
         </div>
-        {fatAtt.length > 0 && (<div onClick={() => setShowContabilita(true)} style={{ flex: 1, background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Da incassare</div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: T.red, fontFamily: FM, marginTop: 3 }}>€{totFat > 999 ? Math.round(totFat / 1000) + "k" : totFat.toLocaleString("it-IT")}</div>
+        {fatAtt.length > 0 && (<div onClick={() => setShowContabilita(true)} style={{ flex: 1, background: L.surface, borderRadius: 10, border: "1px solid " + L.border, padding: "10px 10px", cursor: "pointer", textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: "0.04em" }}>Da incassare</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: L.red, fontFamily: FM, marginTop: 3 }}>€{totFat > 999 ? Math.round(totFat / 1000) + "k" : totFat.toLocaleString("it-IT")}</div>
         </div>)}
       </div>
 
       {/* Scorciatoie */}
       <div style={{ margin: "8px 20px 0", display: "flex", gap: 8 }}>
-        <div onClick={() => setTab("contabilita")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.sub, textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>€ Contabilità</div>
+        <div onClick={() => setTab("contabilita")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: L.surface, border: "1px solid " + L.border, cursor: "pointer", fontSize: 12, fontWeight: 700, color: L.sub, textAlign: "center", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>€ Contabilità</div>
         <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "#1A9E7308", border: "1px solid #1A9E7330", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#1A9E73", textAlign: "center", boxShadow: "0 3px 0 rgba(26,158,115,0.20), 0 4px 10px rgba(26,158,115,0.10)", transition: "all 0.1s" }}>Cantieri</div>
       </div>
 
       {/* Quick links */}
       {(ordAtt.length > 0 || montAtt.length > 0) && (
         <div style={{ margin: "12px 20px 0", display: "flex", gap: 6 }}>
-          {ordAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}><I d={ICO.package} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{ordAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Ordini attivi</div></div></div>)}
-          {montAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr, cursor: "pointer", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}><I d={ICO.wrench} s={16} c={T.acc} /><div><div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{montAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: T.sub }}>Montaggi</div></div></div>)}
+          {ordAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: L.surface, border: "1px solid " + L.border, cursor: "pointer", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}><I d={ICO.package} s={16} c={L.primary} /><div><div style={{ fontSize: 13, fontWeight: 800, color: L.text, fontFamily: FM }}>{ordAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: L.sub }}>Ordini attivi</div></div></div>)}
+          {montAtt.length > 0 && (<div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, background: L.surface, border: "1px solid " + L.border, cursor: "pointer", boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06)", transition: "all 0.1s" }}><I d={ICO.wrench} s={16} c={L.primary} /><div><div style={{ fontSize: 13, fontWeight: 800, color: L.text, fontFamily: FM }}>{montAtt.length}</div><div style={{ fontSize: 9, fontWeight: 600, color: L.sub }}>Montaggi</div></div></div>)}
         </div>
       )}
 
       {/* AZIONI RAPIDE */}
       <div style={{ margin: "14px 20px 0" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Azioni rapide</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: L.sub, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>Azioni rapide</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <div onClick={() => setShowModal("commessa")}
-            style={{ padding: "14px 12px", borderRadius: 14, background: T.acc, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+            style={{ padding: "14px 12px", borderRadius: 14, background: L.primary, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
               boxShadow: "0 4px 0 #0D7C6B, 0 6px 16px rgba(13,124,107,0.20)", transition: "all 0.1s" }}>
             <I d={ICO.folder} s={22} c="#fff" />
             <div>
@@ -406,21 +433,21 @@ export default function HomePanel() {
             </div>
           </div>
           <div onClick={() => setShowModal("contatto")}
-            style={{ padding: "14px 12px", borderRadius: 14, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+            style={{ padding: "14px 12px", borderRadius: 14, background: L.surface, border: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
               boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
-            <I d={ICO.user} s={22} c={T.acc} />
+            <I d={ICO.user} s={22} c={L.primary} />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Cliente</div>
-              <div style={{ fontSize: 10, color: T.sub }}>Nuovo contatto</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: L.text }}>Cliente</div>
+              <div style={{ fontSize: 10, color: L.sub }}>Nuovo contatto</div>
             </div>
           </div>
           <div onClick={() => setShowModal("evento")}
-            style={{ padding: "14px 12px", borderRadius: 14, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+            style={{ padding: "14px 12px", borderRadius: 14, background: L.surface, border: `1px solid ${T.bdr}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
               boxShadow: "0 3px 0 rgba(0,0,0,0.10), 0 4px 12px rgba(0,0,0,0.06)", transition: "all 0.1s" }}>
             <I d={ICO.calendar} s={22} c="#5856d6" />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Appuntamento</div>
-              <div style={{ fontSize: 10, color: T.sub }}>Agenda</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: L.text }}>Appuntamento</div>
+              <div style={{ fontSize: 10, color: L.sub }}>Agenda</div>
             </div>
           </div>
         </div>
