@@ -8,6 +8,7 @@ import React from "react";
 import { useMastro } from "./MastroContext";
 import { FM, ICO, Ico, I } from "./mastro-constants";
 
+
 // ─── Lumina Design Tokens ────────────────────────────────
 const L = {
   bg:          "#f9f9fb",
@@ -34,9 +35,6 @@ const SH = {
   sm:          "0 2px 8px rgba(26,28,29,0.05)",
 } as const;
 // ─────────────────────────────────────────────────────────
-
-
-
 export default function RilieviListPanel() {
   const {
     T, S, PIPELINE,
@@ -141,10 +139,10 @@ export default function RilieviListPanel() {
             <div style={{ padding: "16px", borderRadius: 14, border: "1.5px solid #1A9E7340", background: "#1A9E7308" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 16, background: "#1A9E7320", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke=L.green strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a9e73" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: L.green }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#1a9e73" }}>
                     {rilievi.length === 0 ? "Rilievo iniziale" : `Rilievo #${rilievi.length + 1}`}
                   </div>
                   <div style={{ fontSize: 12, color: "#666", marginTop: 3, lineHeight: 1.4 }}>
@@ -173,10 +171,10 @@ export default function RilieviListPanel() {
             const prevVani = rilievi[rilievi.length - 1]?.vani || [];
             return prevVani.length > 0 ? (
               <div style={{ padding: "14px 16px", borderRadius: 14, border: "1.5px solid #1A9E7340", background: "#1A9E7306" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: L.green, marginBottom: 8 }}>{prevVani.length} vani ereditati dal rilievo precedente</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1a9e73", marginBottom: 8 }}>{prevVani.length} vani ereditati dal rilievo precedente</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {prevVani.slice(0, 8).map((v: any, i: number) => (
-                    <span key={i} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 12, background: "#1A9E7315", color: L.green, fontWeight: 600 }}>
+                    <span key={i} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 12, background: "#1A9E7315", color: "#1a9e73", fontWeight: 600 }}>
                       {v.nome || `Vano ${i+1}`}
                     </span>
                   ))}
@@ -227,7 +225,7 @@ export default function RilieviListPanel() {
           <button
             onClick={() => { if (autoTipo === "modifica" && !nuovoRilData.motivoModifica) { alert("Inserisci il motivo della modifica"); return; } salvaRilievo(); }}
             style={{ ...S.btn, width: "100%", padding: "18px", fontSize: 16, fontWeight: 800,
-              background: autoTipo === "modifica" ? "#ff9500" : L.green,
+              background: autoTipo === "modifica" ? "#ff9500" : "#1a9e73",
               boxShadow: autoTipo === "modifica" ? "0 4px 0 #c07000" : "0 4px 0 #0D7C6B",
               borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
               transition: "all 0.1s", marginTop: 4 }}>
@@ -1078,7 +1076,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                             <div>
                               <div style={{ fontSize: 11, color: L.sub, marginBottom: 8 }}>Crea il primo rilievo con i vani da misurare</div>
                               <button onClick={() => setShowRilieviForm(true)}
-                                style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: L.green, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                                style={{ width: "100%", padding: 14, borderRadius: 14, border: "none", background: "#1a9e73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
                                   boxShadow: "0 4px 0 #0D7C6B", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                                 CREA RILIEVO
@@ -1125,7 +1123,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                 </div>
                                 {/* CTA */}
                                 <button onClick={() => { salvaRilievo(); setShowRilieviForm(false); }}
-                                  style={{ width: "100%", padding: "12px", borderRadius: 14, border: "none", background: L.green, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer",
+                                  style={{ width: "100%", padding: "12px", borderRadius: 14, border: "none", background: "#1a9e73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer",
                                     boxShadow: "0 3px 0 #0D7C6B", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                                   Crea Rilievo #{rilievi.length + 1}
@@ -1878,7 +1876,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", margin: "8px 0 4px" }}>Documenti</div>
                         {sg.documenti.map((d, i) => <div key={i} style={{ fontSize: 11, color: "#333", padding: "3px 0", borderBottom: "1px solid #f0f0f0" }}>✓ {d}</div>)}
                         <div style={{ marginTop: 8, padding: "8px 10px", background: "#FFF8EC", borderRadius: 12, border: "1px solid #D0800830" }}>
-                          <div style={{ fontSize: 9, fontWeight: 700, color: L.amber, marginBottom: 3 }}>TESTO FATTURA / BONIFICO</div>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: "#e4c18c", marginBottom: 3 }}>TESTO FATTURA / BONIFICO</div>
                           <div style={{ fontSize: 11, color: "#555", fontStyle: "italic", lineHeight: 1.5 }}>{sg.fattura}</div>
                         </div>
                       </div>
