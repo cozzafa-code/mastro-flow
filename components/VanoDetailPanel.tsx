@@ -838,7 +838,7 @@ export default function VanoDetailPanel() {
                         const raw:number[][] = [[0,0]];
                         (lam.pieghe||[]).forEach((s:any)=>{
                           if(s.dir==='dx'){rx+=s.mm;}else if(s.dir==='sx'){rx-=s.mm;}
-                          else if(s.dir==='giu'){ry+=s.mm;}else{ry-=s.mm;}
+                          else if(s.dir==='su'){ry-=s.mm;}else{ry+=s.mm;}
                           raw.push([rx,ry]);
                         });
                         const xs=raw.map(n=>n[0]), ys=raw.map(n=>n[1]);
