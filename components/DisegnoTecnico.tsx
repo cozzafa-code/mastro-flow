@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -710,6 +710,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const r2 = svg.getBoundingClientRect();
                               const clientX = e2.touches ? e2.touches[0].clientX : e2.clientX;
                               const clientY = e2.touches ? e2.touches[0].clientY : e2.clientY;
+                              // Convert screen coords to viewBox coords
+                              // Use actual rendered size (r2.width/height) — not canvasW — to handle maxWidth:100% scaling
                               const px = clientX - r2.left;
                               const py = clientY - r2.top;
                               const scaleX = canvasW / r2.width;
@@ -957,7 +959,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
-
+                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   // Extract polygon from freeLines
                                   const lines = els.filter(e => e.type === "freeLine");
@@ -1017,9 +1019,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 
                                 // Match elements to cell by position overlap (BSP IDs change dynamically)
                                 const inCell = (el2) => el2.x !== undefined && el2.w !== undefined &&
-                                  (el2.cellId ? el2.cellId === cell.id :
                                   el2.x >= cell.x - 2 && el2.y >= cell.y - 2 &&
-                                  el2.x + el2.w <= cell.x + cell.w + 2 && el2.y + el2.h <= cell.y + cell.h + 2);
+                                  el2.x + el2.w <= cell.x + cell.w + 2 && el2.y + el2.h <= cell.y + cell.h + 2;
                                 
                                 // Regular cell handling
                                 if (drawMode === "place-anta") {
@@ -1057,7 +1058,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "place-ap") {
                                 let cell = findCellAt(mx, my);
-
+                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
                                   const lines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
                                   if (lines.length > 0) {
@@ -1829,7 +1830,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     e2.preventDefault();
                                     const svg = e2.currentTarget;
                                     const t = e2.touches[0];
-                                    const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
+                                    const rect = svg.getBoundingClientRect();
+                                    const vb = svg.viewBox?.baseVal;
+                                    const sx = vb ? vb.width / rect.width : 1;
+                                    const sy2 = vb ? vb.height / rect.height : 1;
+                                    const gmx = (t.clientX - rect.left) * sx;
+                                    const gmy = (t.clientY - rect.top) * sy2;
                                     // Pen mode touch
                                     if (drawMode === "pen" && dw._penActive) {
                                       const cur = dw._penPath || [];
