@@ -38,9 +38,9 @@ export default function MessaggiPanel() {
     aiInbox, cantieri, contatti, fornitori, gmailLoading, gmailMessages, gmailNextPage, gmailReply, gmailSearch, gmailSelected, gmailSending, gmailStatus, msgFilter, msgSearch, msgSubTab, msgs, rubricaFilter, rubricaSearch, selectedAiMsg, setAiInbox, setComposeMsg, setContatti, setGmailMessages, setGmailReply, setGmailSearch, setGmailSelected, setGmailStatus, setMailBody, setMsgFilter, setMsgSearch, setMsgSubTab, setMsgs, setNewCM, setNewEvent, setNewTask, setRubricaFilter, setRubricaSearch, setSelectedAiMsg, setSelectedCM, setSelectedMsg, setShowCompose, setShowMailModal, setShowModal, setShowNewEvent, setTab, team, gmailFetchMessages, gmailSendReply, gmailMatchCommessa,
   } = useMastro();
 
-    const chCol = { email: #3b7fe0, whatsapp: "#25d366", sms: L.amber, telegram: "#0088cc" };
+    const chCol = { email: "#3b7fe0", whatsapp: "#25d366", sms: L.amber, telegram: "#0088cc" };
     const chIco = { email: <Ico d={ICO.mail} s={14} c={chCol.email} />, whatsapp: <Ico d={ICO.messageCircle} s={14} c={chCol.whatsapp} />, sms: <Ico d={ICO.phone} s={14} c={chCol.sms} />, telegram: <Ico d={ICO.send} s={14} c={chCol.telegram} /> };
-    const chBg = { email: #dbeafe, whatsapp: "#25d36618", sms: #fff7ed, telegram: "#0088cc18" };
+    const chBg = { email: "#dbeafe", whatsapp: "#25d36618", sms: "#fff7ed", telegram: "#0088cc18" };
     const filteredMsgs = msgs.filter(m => {
       const matchFilter = msgFilter === "tutti" || m.canale === msgFilter;
       const matchSearch = !msgSearch.trim() || m.from.toLowerCase().includes(msgSearch.toLowerCase()) || m.preview.toLowerCase().includes(msgSearch.toLowerCase());
@@ -95,7 +95,7 @@ export default function MessaggiPanel() {
             {[
               { id: "tutti", l: "Tutti", c: L.primary },
               { id: "whatsapp", l: "WhatsApp", ico: ICO.messageCircle, c: "#25d366" },
-              { id: "email", l: "Email", ico: ICO.mail, c: #3b7fe0 },
+              { id: "email", l: "Email", ico: ICO.mail, c: "#3b7fe0" },
               { id: "sms", l: "SMS", ico: ICO.phone, c: L.amber },
               { id: "telegram", l: "Telegram", ico: ICO.send, c: "#0088cc" },
             ].map(f => {
@@ -384,7 +384,7 @@ export default function MessaggiPanel() {
 
                       {/* Dati estratti (se nuova commessa) */}
                       {m.ai.estratto && (
-                        <div style={{ background: #d1fae5, border: `1px solid ${L.green}30`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
+                        <div style={{ background: "#d1fae5", border: `1px solid ${L.green}30`, borderRadius: 10, padding: "10px 12px", marginBottom: 10 }}>
                           <div style={{ fontSize: 10, fontWeight: 800, color: L.green, letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}><I d={ICO.clipboard} /> Dati estratti automaticamente</div>
                           {m.ai.estratto.cliente && <div style={{ fontSize: 12, color: L.text, marginBottom: 3 }}><I d={ICO.user} /> <strong>Cliente:</strong> {m.ai.estratto.cliente}</div>}
                           {m.ai.estratto.indirizzo && <div style={{ fontSize: 12, color: L.text, marginBottom: 3 }}><I d={ICO.mapPin} /> <strong>Indirizzo:</strong> {m.ai.estratto.indirizzo}</div>}
@@ -427,7 +427,7 @@ Grazie per il suo messaggio.
                         </div>
                       )}
                       {m.archiviata && (
-                        <div style={{ padding: "8px 12px", background: #d1fae5, borderRadius: 8, textAlign: "center", fontSize: 12, fontWeight: 700, color: L.green }}>
+                        <div style={{ padding: "8px 12px", background: "#d1fae5", borderRadius: 8, textAlign: "center", fontSize: 12, fontWeight: 700, color: L.green }}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg> Archiviata con successo
                         </div>
                       )}
@@ -458,7 +458,7 @@ Grazie per il suo messaggio.
               { id: "tutti", l: "Tutti", c: L.primary },
               { id: "preferiti", l: "⭐ Preferiti", c: "#ff9500" },
               { id: "team", l: "● Team", c: "#34c759" },
-              { id: "clienti", l: "Clienti", c: #3b7fe0 },
+              { id: "clienti", l: "Clienti", c: "#3b7fe0" },
               { id: "fornitori", l: "Fornitori", c: "#af52de" },
             ].map(f => (
               <div key={f.id} onClick={() => setRubricaFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${rubricaFilter === f.id ? f.c : L.border}`, background: rubricaFilter === f.id ? f.c + "15" : L.surface, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: rubricaFilter === f.id ? f.c : L.sub }}>
@@ -471,7 +471,7 @@ Grazie per il suo messaggio.
               {filteredContatti.length === 0 ? (
                 <div style={{ padding: 30, textAlign: "center", color: L.sub, fontSize: 13 }}>Nessun contatto trovato</div>
               ) : filteredContatti.map(c => {
-                const tipoColor = c.tipo === "team" ? "#34c759" : c.tipo === "cliente" ? #3b7fe0 : c.tipo === "fornitore" ? "#af52de" : "#ff9500";
+                const tipoColor = c.tipo === "team" ? "#34c759" : c.tipo === "cliente" ? "#3b7fe0" : c.tipo === "fornitore" ? "#af52de" : "#ff9500";
                 const tipoLabel = c.tipo === "team" ? "Team" : c.tipo === "cliente" ? "Cliente" : c.tipo === "fornitore" ? "Fornitore" : "Professionista";
                 return (
                   <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${L.bg}` }}>
@@ -492,7 +492,7 @@ Grazie per il suo messaggio.
                         <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "whatsapp", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: "#25d36618", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}><I d={ICO.messageCircle} /></div>
                       )}
                       {(c.canali || []).includes("email") && (
-                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "email", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: #dbeafe, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}><I d={ICO.mail} /></div>
+                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "email", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}><I d={ICO.mail} /></div>
                       )}
                       <div onClick={() => { setContatti(cs => cs.map(x => x.id === c.id ? { ...x, preferito: !x.preferito } : x)); }} style={{ width: 32, height: 32, borderRadius: "50%", background: c.preferito ? "#ff950018" : L.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>
                         {c.preferito ? "⭐" : ""}
