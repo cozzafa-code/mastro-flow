@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -366,6 +366,273 @@ function FormaEditor({ T, realW, realH }: any) {
 // ═══════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// LIBERO EDITOR — disegno libero infisso con Paper.js
+// ═══════════════════════════════════════════════════════════
+function LiberoEditor({ T, realW, realH }: any) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const paperRef = React.useRef<any>(null);
+  const shapesRef = React.useRef<any[]>([]);
+  const currentPtsRef = React.useRef<any[]>([]);
+  const activeToolRef = React.useRef("muro");
+  const spessoreRef = React.useRef(12);
+  const snapOnRef = React.useRef(true);
+  const [activeTool, setActiveTool] = React.useState("muro");
+  const [spessore, setSpessore] = React.useState(12);
+  const [snapOn, setSnapOn] = React.useState(true);
+  const [dims, setDims] = React.useState("");
+  const [shapeCount, setShapeCount] = React.useState(0);
+
+  React.useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
+  React.useEffect(() => { spessoreRef.current = spessore; }, [spessore]);
+  React.useEffect(() => { snapOnRef.current = snapOn; }, [snapOn]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const existing = document.getElementById("paperjs-cdn");
+    if (existing) { setTimeout(initPaper, 100); return; }
+    const script = document.createElement("script");
+    script.id = "paperjs-cdn";
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.min.js";
+    script.onload = () => setTimeout(initPaper, 100);
+    document.head.appendChild(script);
+  }, []);
+
+  function initPaper() {
+    const cnv = canvasRef.current;
+    if (!cnv || !window.paper) return;
+    const paper = window.paper;
+    paper.setup(cnv);
+    paperRef.current = paper;
+    drawGrid(paper);
+
+    const tool = new paper.Tool();
+    tool.onMouseMove = (e: any) => {
+      const pt = snapPt(e.point, paper);
+      redrawPreview(paper, pt);
+    };
+    tool.onMouseDown = (e: any) => {
+      const pt = snapPt(e.point, paper);
+      const pts = currentPtsRef.current;
+      // Chiudi su primo punto
+      if (pts.length > 1) {
+        const fp = pts[0];
+        if (Math.hypot(fp.x - pt.x, fp.y - pt.y) < 14) { doCommit(paper); return; }
+      }
+      pts.push({ x: pt.x, y: pt.y });
+      const tool2 = activeToolRef.current;
+      if (tool2 === "misura" && pts.length >= 2) { doCommit(paper); return; }
+      if (tool2 === "arco" && pts.length >= 3) { doCommit(paper); return; }
+      redrawPreview(paper, pt);
+    };
+    tool.onKeyDown = (e: any) => {
+      if (e.key === "enter") doCommit(paper);
+      if (e.key === "escape") { currentPtsRef.current = []; clearPreviews(paper); }
+    };
+  }
+
+  function snapPt(pt: any, paper: any) {
+    if (!snapOnRef.current) return pt;
+    const grid = 20;
+    const sx = Math.round(pt.x / grid) * grid;
+    const sy = Math.round(pt.y / grid) * grid;
+    for (const s of shapesRef.current) {
+      for (const p of s.pts) {
+        if (Math.hypot(p.x - pt.x, p.y - pt.y) < 14) return new paper.Point(p.x, p.y);
+      }
+    }
+    return new paper.Point(sx, sy);
+  }
+
+  function drawGrid(paper: any) {
+    const g = new paper.Group();
+    g.data = { grid: true };
+    for (let x = 0; x <= 600; x += 20) {
+      const l = new paper.Path.Line(new paper.Point(x, 0), new paper.Point(x, 420));
+      l.strokeColor = new paper.Color(0, 0, 0, 0.07); l.strokeWidth = 0.5; g.addChild(l);
+    }
+    for (let y = 0; y <= 420; y += 20) {
+      const l = new paper.Path.Line(new paper.Point(0, y), new paper.Point(600, y));
+      l.strokeColor = new paper.Color(0, 0, 0, 0.07); l.strokeWidth = 0.5; g.addChild(l);
+    }
+  }
+
+  function clearPreviews(paper: any) {
+    paper.project.activeLayer.children
+      .filter((c: any) => c.data?.preview).forEach((c: any) => c.remove());
+    paper.view.draw();
+  }
+
+  function redrawPreview(paper: any, mousePt?: any) {
+    clearPreviews(paper);
+    const pts = currentPtsRef.current;
+    if (pts.length === 0) return;
+    const all = mousePt ? [...pts, { x: mousePt.x, y: mousePt.y }] : pts;
+    const tool = activeToolRef.current;
+    const sp = spessoreRef.current;
+    const col = tool === "vano" ? "#3b7fe0" : tool === "arco" ? "#dc4444" : tool === "misura" ? "#1a9e73" : "#031631";
+
+    if (tool === "muro" || tool === "vano") {
+      for (let i = 0; i < all.length - 1; i++) {
+        const a = all[i], b = all[i+1];
+        const dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx, dy) || 1;
+        const nx = -dy/len * sp * 0.4, ny = dx/len * sp * 0.4;
+        const r = new paper.Path([
+          new paper.Point(a.x+nx,a.y+ny), new paper.Point(b.x+nx,b.y+ny),
+          new paper.Point(b.x-nx,b.y-ny), new paper.Point(a.x-nx,a.y-ny)
+        ]);
+        r.closed = true;
+        r.fillColor = tool === "vano" ? new paper.Color(0.8,0.9,1,0.3) : new paper.Color(0.88,0.88,0.88,0.6);
+        r.strokeColor = new paper.Color(col); r.strokeWidth = tool === "vano" ? 2 : 1.5;
+        r.data = { preview: true };
+      }
+    }
+    if (tool === "arco" || tool === "muro" || tool === "vano") {
+      const path = new paper.Path();
+      path.moveTo(new paper.Point(all[0].x, all[0].y));
+      all.slice(1).forEach((p: any) => path.lineTo(new paper.Point(p.x, p.y)));
+      path.strokeColor = new paper.Color(col); path.strokeWidth = 1; path.dashArray = [4, 3];
+      path.data = { preview: true };
+    }
+
+    // Punti esistenti
+    pts.forEach((p: any, i: number) => {
+      const c = new paper.Path.Circle(new paper.Point(p.x, p.y), i === 0 ? 6 : 4);
+      c.fillColor = i === 0 ? new paper.Color("#dc4444") : new paper.Color(col);
+      c.data = { preview: true };
+    });
+    // Snap indicator
+    if (mousePt) {
+      const r = new paper.Path.Circle(new paper.Point(mousePt.x, mousePt.y), 4);
+      r.strokeColor = new paper.Color("#8293b4"); r.strokeWidth = 1; r.data = { preview: true };
+    }
+    paper.view.draw();
+  }
+
+  function doCommit(paper: any) {
+    const pts = [...currentPtsRef.current];
+    if (pts.length < 2) { currentPtsRef.current = []; clearPreviews(paper); return; }
+    clearPreviews(paper);
+    const s = { type: activeToolRef.current, pts, spessore: spessoreRef.current };
+    shapesRef.current = [...shapesRef.current, s];
+    currentPtsRef.current = [];
+    renderFinal(paper, s);
+    paper.view.draw();
+    setShapeCount(shapesRef.current.length);
+    // Aggiorna quote vani
+    const vani = shapesRef.current.filter(x => x.type === "vano");
+    if (vani.length > 0) {
+      setDims(vani.map((v, i) => {
+        const a = v.pts[0], b = v.pts[v.pts.length-1];
+        return "V"+(i+1)+": "+Math.round(Math.hypot(b.x-a.x,b.y-a.y)/20*10)+" cm";
+      }).join("  ·  "));
+    }
+  }
+
+  function renderFinal(paper: any, s: any) {
+    const col = s.type === "vano" ? "#3b7fe0" : s.type === "arco" ? "#dc4444" : s.type === "misura" ? "#1a9e73" : "#031631";
+    if (s.type === "muro") {
+      for (let i = 0; i < s.pts.length-1; i++) {
+        const a=s.pts[i],b=s.pts[i+1],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+        const nx=-dy/len*s.spessore*0.4,ny=dx/len*s.spessore*0.4;
+        const r=new paper.Path([new paper.Point(a.x+nx,a.y+ny),new paper.Point(b.x+nx,b.y+ny),new paper.Point(b.x-nx,b.y-ny),new paper.Point(a.x-nx,a.y-ny)]);
+        r.closed=true; r.fillColor=new paper.Color(0.91,0.91,0.91); r.strokeColor=new paper.Color(0.12); r.strokeWidth=1.5;
+        const cl=new paper.Path.Line(new paper.Point(a.x,a.y),new paper.Point(b.x,b.y));
+        cl.strokeColor=new paper.Color(0.25); cl.strokeWidth=0.8; cl.dashArray=[4,4];
+      }
+    } else if (s.type === "vano") {
+      const a=s.pts[0],b=s.pts[s.pts.length-1],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+      const nx=-dy/len*s.spessore*0.4,ny=dx/len*s.spessore*0.4;
+      const r=new paper.Path([new paper.Point(a.x+nx,a.y+ny),new paper.Point(b.x+nx,b.y+ny),new paper.Point(b.x-nx,b.y-ny),new paper.Point(a.x-nx,a.y-ny)]);
+      r.closed=true; r.fillColor=new paper.Color(0.85,0.93,1,0.7); r.strokeColor=new paper.Color(col); r.strokeWidth=2;
+      // Arco apertura
+      const ang=Math.atan2(dy,dx);
+      const arc=new paper.Path.Arc(new paper.Point(a.x,a.y),new paper.Point(a.x+len*0.65*Math.cos(ang+0.7),a.y+len*0.65*Math.sin(ang+0.7)),new paper.Point(a.x+len*0.85*Math.cos(ang+Math.PI/2.2),a.y+len*0.85*Math.sin(ang+Math.PI/2.2)));
+      arc.strokeColor=new paper.Color(col); arc.strokeWidth=1; arc.dashArray=[2,2];
+      // Quota
+      const cm=Math.round(len/20*10);
+      const lbl=new paper.PointText(new paper.Point((a.x+b.x)/2,(a.y+b.y)/2-s.spessore*0.5-5));
+      lbl.content=cm+" cm"; lbl.fontSize=11; lbl.fontWeight="bold"; lbl.fillColor=new paper.Color(col); lbl.justification="center";
+    } else if (s.type === "arco") {
+      const path=new paper.Path();
+      path.moveTo(new paper.Point(s.pts[0].x,s.pts[0].y));
+      s.pts.slice(1).forEach((p: any) => path.lineTo(new paper.Point(p.x,p.y)));
+      if (s.pts.length>=3) path.smooth({type:"catmull-rom"});
+      path.strokeColor=new paper.Color(col); path.strokeWidth=3;
+    } else if (s.type === "misura") {
+      const a=s.pts[0],b=s.pts[1];
+      const ln=new paper.Path.Line(new paper.Point(a.x,a.y),new paper.Point(b.x,b.y));
+      ln.strokeColor=new paper.Color(col); ln.strokeWidth=1.5;
+      const cm=Math.round(Math.hypot(b.x-a.x,b.y-a.y)/20*10);
+      const lbl=new paper.PointText(new paper.Point((a.x+b.x)/2,(a.y+b.y)/2-7));
+      lbl.content=cm+" cm"; lbl.fontSize=11; lbl.fontWeight="bold"; lbl.fillColor=new paper.Color(col); lbl.justification="center";
+    }
+  }
+
+  function undoLast() {
+    const paper = paperRef.current;
+    if (!paper || shapesRef.current.length === 0) return;
+    shapesRef.current = shapesRef.current.slice(0, -1);
+    paper.project.activeLayer.removeChildren();
+    drawGrid(paper);
+    shapesRef.current.forEach(s => renderFinal(paper, s));
+    paper.view.draw();
+    setShapeCount(shapesRef.current.length);
+  }
+
+  function clearAll() {
+    const paper = paperRef.current;
+    if (paper) { paper.project.activeLayer.removeChildren(); drawGrid(paper); paper.view.draw(); }
+    shapesRef.current = []; currentPtsRef.current = []; setShapeCount(0); setDims("");
+  }
+
+  const bs = (active?: boolean, col?: string) => ({
+    padding: "5px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+    cursor: "pointer", flexShrink: 0,
+    background: active ? (col || "#031631") : "#ffffff",
+    color: active ? "#ffffff" : "#44474d",
+    border: "1px solid " + (active ? (col || "#031631") : "rgba(197,198,206,0.4)"),
+  });
+
+  const hint: any = {
+    muro: "Clicca punti → Enter o clic sul 1° punto per chiudere",
+    vano: "2 punti → larghezza vano con quota automatica",
+    arco: "3 punti: inizio · controllo · fine curva",
+    misura: "2 punti → quota in cm",
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", gap: 4, padding: "6px 8px", flexWrap: "wrap", borderBottom: "1px solid rgba(197,198,206,0.25)", alignItems: "center" }}>
+        <div onClick={() => setActiveTool("muro")} style={bs(activeTool==="muro")}>▭ Muro</div>
+        <div onClick={() => setActiveTool("vano")} style={bs(activeTool==="vano", "#3b7fe0")}>↗ Vano</div>
+        <div onClick={() => setActiveTool("arco")} style={bs(activeTool==="arco", "#dc4444")}>∿ Arco</div>
+        <div onClick={() => setActiveTool("misura")} style={bs(activeTool==="misura", "#1a9e73")}>↔ Misura</div>
+        <div style={{ width: 1, height: 20, background: "rgba(197,198,206,0.4)", flexShrink: 0 }} />
+        <div onClick={() => setSnapOn(v => !v)} style={bs(snapOn, "#6366f1")}>Snap {snapOn?"ON":"OFF"}</div>
+        <select value={String(spessore)} onChange={e => setSpessore(Number(e.target.value))} style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid rgba(197,198,206,0.4)", fontSize: 11, background: "#fff", color: "#44474d" }}>
+          <option value="6">6 cm</option>
+          <option value="8">8 cm</option>
+          <option value="12">12 cm</option>
+          <option value="20">20 cm</option>
+        </select>
+        <div style={{ flex: 1 }} />
+        <div onClick={undoLast} style={bs()}>↩ Annulla</div>
+        <div onClick={clearAll} style={{ ...bs(), color: "#dc4444", borderColor: "#dc444440" }}>Reset</div>
+      </div>
+      <div style={{ fontSize: 9, color: "#75777e", padding: "3px 10px", fontWeight: 600 }}>{hint[activeTool]}</div>
+      <canvas
+        ref={canvasRef}
+        width={600} height={420}
+        style={{ display: "block", width: "100%", background: "#f9f9fb", cursor: "crosshair", touchAction: "none" }}
+      />
+      {dims && <div style={{ padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#031631", borderTop: "1px solid rgba(197,198,206,0.25)" }}>Vani: {dims}</div>}
+    </div>
+  );
+}
+
+
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -1608,7 +1875,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ TAB BAR ═══ */}
                                 <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
-                                  {[{ id: "disegno", l: "✏️ Disegno", c: "#1A9E73" }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }].map(tab => (
+                                  {[{ id: "disegno", l: "✏️ Disegno", c: "#1A9E73" }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }, { id: "libero", l: "✍️ Libero", c: "#6366f1" }].map(tab => (
                                     <div key={tab.id} onClick={() => setViewTab(tab.id)}
                                       style={{ flex: 1, padding: "7px 0", textAlign: "center", fontSize: 11, fontWeight: viewTab === tab.id ? 800 : 500, color: viewTab === tab.id ? tab.c : T.sub, borderBottom: viewTab === tab.id ? `2.5px solid ${tab.c}` : "2.5px solid transparent", cursor: "pointer", transition: "all 0.15s" }}>
                                       {tab.l}
@@ -1621,6 +1888,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ TAB: 3D ═══ */}
                                 {viewTab === "3d" && <View3D T={T} realW={realW} realH={realH} vanoDisegno={vanoDisegno} onUpdate={onUpdate} />}
+
+                                {/* ═══ TAB: LIBERO (Paper.js free drawing) ═══ */}
+                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
+
+                                {/* ═══ TAB: LIBERO (Paper.js) ═══ */}
+                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
 
                                 {/* ═══ TAB: DISEGNO (originale) ═══ */}
                                 {viewTab === "disegno" && <>
