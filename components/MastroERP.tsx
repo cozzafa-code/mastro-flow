@@ -51,7 +51,7 @@ import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 
 function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
-  const [theme, setTheme] = useState("chiaro");
+  const [theme, setTheme] = useState("lumina");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
   // Inject font link in <head> client-side to avoid SSR hydration mismatch
@@ -1471,31 +1471,31 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   /* ======= STYLES ======= */
   const fs = isDesktop ? 1.1 : isTablet ? 1.05 : 1;
   const S = {
-    app: { fontFamily: "'Inter', sans-serif", background: "#f9f9fb", color: "#1a1c1d", width: "100%", minHeight: "unset", position: "relative", WebkitFontSmoothing: "antialiased" },
-    header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: "#ffffff", borderBottom: "1px solid rgba(197,198,206,0.25)", display: "flex", alignItems: "center", gap: 10 },
-    headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: "#1a1c1d" },
-    headerSub: { fontSize: 12*fs, color: "#44474d", marginTop: 1 },
+    app: { fontFamily: FF, background: T.bg, color: T.text, width: "100%", minHeight: "unset", position: "relative", WebkitFontSmoothing: "antialiased" },
+    header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
+    headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
+    headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
     section: { margin: `0 ${16*fs}px`, padding: "10px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" },
     sectionTitle: { fontSize: 13*fs, fontWeight: 700, color: T.text },
-    sectionBtn: { fontSize: 12*fs, color: "#031631", fontWeight: 600, background: "none", border: "none", cursor: "pointer" },
-    card: { background: "#ffffff", borderRadius: 16, boxShadow: "0 1px 3px rgba(26,28,29,0.06), 0 4px 16px rgba(26,28,29,0.04)", overflow: "hidden", marginBottom: 8, cursor: "pointer", transition: "box-shadow 0.15s", border: "1px solid rgba(197,198,206,0.25)" },
+    sectionBtn: { fontSize: 12*fs, color: T.acc, fontWeight: 600, background: "none", border: "none", cursor: "pointer" },
+    card: { background: T.card, borderRadius: T.r, boxShadow: T.cardSh, overflow: "hidden", marginBottom: 8, cursor: "pointer", transition: "box-shadow 0.15s" },
     cardInner: { padding: `${12*fs}px ${14*fs}px` },
-    chip: (active) => ({ padding: `${6*fs}px ${12*fs}px`, borderRadius: 9999, border: `1px solid ${active ? "#031631" : "rgba(197,198,206,0.35)"}`, background: active ? "#031631" : "#ffffff", color: active ? "#fff" : "#1a1c1d", fontSize: 12*fs, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s" }),
+    chip: (active) => ({ padding: `${6*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${active ? T.acc : T.bdr}`, background: active ? T.acc : T.card, color: active ? "#fff" : T.text, fontSize: 12*fs, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s" }),
     stat: { flex: 1, textAlign: "center", padding: `${10*fs}px 4px`, background: T.card, cursor: "pointer" },
     statNum: { fontSize: 18*fs, fontWeight: 700 },
     statLabel: { fontSize: 9*fs, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3, marginTop: 1 },
     badge: (bg, color) => ({ fontSize: 11*fs, fontWeight: 600, padding: `${3*fs}px ${8*fs}px`, borderRadius: 6, background: bg, color, display: "inline-block" }),
-    input: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 12, border: "1px solid rgba(197,198,206,0.4)", background: "#f3f3f5", fontSize: 14*fs, color: "#1a1c1d", outline: "none", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" },
-    select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 12, border: "1px solid rgba(197,198,206,0.4)", background: "#f3f3f5", fontSize: 14*fs, color: "#1a1c1d", outline: "none", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" },
-    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 14, border: "none", background: "#031631", color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 6px 16px rgba(3,22,49,0.25)" },
+    input: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14*fs, color: T.text, outline: "none", fontFamily: FF, boxSizing: "border-box" },
+    select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14*fs, color: T.text, outline: "none", fontFamily: FF, boxSizing: "border-box" },
+    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF },
     btnCancel: { width: "100%", padding: `${12*fs}px`, borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14*fs, fontWeight: 600, cursor: "pointer", fontFamily: FF },
     tabBar: { position: "fixed", bottom: 0, left: 0, right: 0, width: "100%", background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: `${6*fs}px 0 ${8*fs}px`, zIndex: 100 },
     tabItem: (active) => ({ flex: 1, textAlign: "center", padding: "4px 0", cursor: "pointer", opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }),
-    tabLabel: (active) => ({ fontSize: 10*fs, fontWeight: 600, color: active ? "#031631" : "#75777e", marginTop: 1 }),
+    tabLabel: (active) => ({ fontSize: 10*fs, fontWeight: 600, color: active ? T.acc : T.sub, marginTop: 1 }),
     modal: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", justifyContent: "center", alignItems: "flex-end" },
-    modalInner: { background: "#ffffff", borderRadius: "24px 24px 0 0", width: "100%", maxWidth: isDesktop ? 600 : 500, padding: `${20*fs}px ${16*fs}px ${30*fs}px`, maxHeight: "85vh", overflowY: "auto" },
-    modalTitle: { fontSize: 17*fs, fontWeight: 700, marginBottom: 16, color: "#1a1c1d" },
-    fieldLabel: { fontSize: 12*fs, fontWeight: 600, color: "#44474d", marginBottom: 4, display: "block" },
+    modalInner: { background: T.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: isDesktop ? 600 : 500, padding: `${20*fs}px ${16*fs}px ${30*fs}px`, maxHeight: "85vh", overflowY: "auto" },
+    modalTitle: { fontSize: 17*fs, fontWeight: 700, marginBottom: 16, color: T.text },
+    fieldLabel: { fontSize: 12*fs, fontWeight: 600, color: T.sub, marginBottom: 4, display: "block" },
     pipeStep: (done, current) => ({ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 52, cursor: "pointer" }),
     pipeCircle: (done, current, color) => ({ width: current ? 32 : 26, height: current ? 32 : 26, borderRadius: "50%", background: done ? color : "transparent", border: done ? "none" : current ? `3px solid ${color}` : `2px dashed ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: current ? 14 : 12, boxShadow: current ? `0 0 12px ${color}40` : "none", transition: "all 0.2s" }),
     pipeLine: (done) => ({ flex: 1, height: 2, background: done ? T.grn : T.bdr, minWidth: 12, alignSelf: "center", marginTop: -14 }),
@@ -2949,12 +2949,11 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         <>
           <style>{`
             * { box-sizing: border-box; }
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
-            body { margin: 0; background: #f9f9fb; }
+            body { margin: 0; }
             input, select, textarea, button { font-size: inherit; }
             ::-webkit-scrollbar { width: 4px; height: 4px; }
             ::-webkit-scrollbar-track { background: transparent; }
-            ::-webkit-scrollbar-thumb { background: rgba(197,198,206,0.5); border-radius: 2px; }
+            ::-webkit-scrollbar-thumb { background: #DCDCD7; border-radius: 2px; }
           `}</style>
           <MastroDesktop />
         </>
@@ -2969,7 +2968,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
-        {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#f9f9fb",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
+        {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
         {tab === "messaggi" && !selectedMsg && <PanelErrorBoundary name="Messaggi">{renderMessaggi()}</PanelErrorBoundary>}
 
@@ -2984,7 +2983,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {/* FAB — Quick Actions */}
         {/* FAB — Compose menu */}
         <style>{`
-          @keyframes fabPulse { 0%,100% { box-shadow: 0 8px 24px rgba(3,22,49,0.35); } 50% { box-shadow: 0 12px 32px rgba(3,22,49,0.50); } }
+          @keyframes fabPulse { 0%,100% { box-shadow: 0 4px 20px rgba(13,124,107,0.4); } 50% { box-shadow: 0 4px 30px rgba(13,124,107,0.6); } }
           @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         `}</style>
         {/* EVENT POPUP OVERLAY — Google Calendar style */}
@@ -3447,42 +3446,33 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             { id: "settings",  ico: ICO.settings,  label: "Altro" },
           ];
           return (
-            <div style={{
-              position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
-              zIndex: 100, display: "flex", alignItems: "center",
-              background: "rgba(255,255,255,0.92)",
-              backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" as any,
-              borderRadius: 9999,
-              boxShadow: "0 8px 32px rgba(3,22,49,0.12), 0 2px 8px rgba(3,22,49,0.08)",
-              padding: "6px 8px",
-              gap: 2,
-              minWidth: 300,
-            }}>
+            <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+              background: T.card + "f0", borderTop: `1px solid ${T.bdr}`,
+              display: "flex", alignItems: "center",
+              backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" as any,
+              paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
               {TABS.map(t => {
                 const active = tab === t.id;
                 const badge = t.id === "messaggi" && (msgs||[]).filter((m:any) => !m.letto).length > 0
                   ? (msgs||[]).filter((m:any) => !m.letto).length : 0;
                 return (
                   <div key={t.id} onClick={() => { setTab(t.id); if (t.id !== "commesse") setSelectedCM(null); }}
-                    style={{
-                      flex: 1, display: "flex", flexDirection: "column" as any, alignItems: "center",
-                      justifyContent: "center", padding: active ? "10px 0" : "10px 0",
-                      cursor: "pointer", position: "relative" as any,
-                      background: active ? "#031631" : "transparent",
-                      borderRadius: 9999,
-                      transition: "all 0.2s",
-                    }}>
+                    style={{ flex: 1, display: "flex", flexDirection: "column" as any, alignItems: "center",
+                      justifyContent: "center", padding: "8px 0 6px", cursor: "pointer", position: "relative" as any }}>
+                    {active && <div style={{ position: "absolute", top: 0, left: "20%", right: "20%",
+                      height: 2, borderRadius: "0 0 2px 2px", background: T.acc }} />}
                     <div style={{ position: "relative" as any }}>
-                      <I d={t.ico} s={22} c={active ? "#ffffff" : "#75777e"} />
+                      <I d={t.ico} s={22} c={active ? T.acc : T.sub} />
                       {badge > 0 && (
                         <div style={{ position: "absolute", top: -4, right: -6, width: 16, height: 16,
-                          borderRadius: "50%", background: "#dc4444", color: "#fff",
+                          borderRadius: "50%", background: T.red, color: "#fff",
                           fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {badge > 9 ? "9+" : badge}
                         </div>
                       )}
                     </div>
-                    {active && <div style={{ fontSize: 9, fontWeight: 700, color: "#ffffff", marginTop: 2, letterSpacing: "0.04em" }}>{t.label}</div>}
+                    <div style={{ fontSize: 10, fontWeight: active ? 700 : 500,
+                      color: active ? T.acc : T.sub, marginTop: 3 }}>{t.label}</div>
                   </div>
                 );
               })}
