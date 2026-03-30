@@ -51,7 +51,7 @@ import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 
 function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
-  const [theme, setTheme] = useState("chiaro");
+  const [theme, setTheme] = useState("lumina");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
   // Inject font link in <head> client-side to avoid SSR hydration mismatch

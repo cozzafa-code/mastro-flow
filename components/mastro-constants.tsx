@@ -1,7 +1,7 @@
 import React from "react";
 
 //               MOTIVI_BLOCCO, AFASE, useDragOrder hook, Home, Helpers, Stili
-// Supabase sync — stubs (enable import when Supabase is configured)
+// Supabase sync ÔÇö stubs (enable import when Supabase is configured)
 var _syncQueue: Record<string, any> = {};
 var _syncTimer: any = null;
 export const cloudSave = (userId: string, key: string, data: any) => {
@@ -55,7 +55,7 @@ export const saveMateriali = async (...a: any[]) => {};
 export const savePipeline = async (...a: any[]) => {};
 
 /* =======================================================
-   MASTRO MISURE — v15 COMPLETE REBUILD
+   MASTRO MISURE ÔÇö v15 COMPLETE REBUILD
    Tutte le feature recuperate + design Apple chiaro
    ======================================================= */
 
@@ -74,6 +74,24 @@ export const tipoToMinCat = (tipo: string): string => {
 
 /* == TEMI == */
 export const THEMES = {
+  lumina: {
+    name: "Lumina", emoji: "sparkles",
+    bg: "#f9f9fb", bg2: "#f3f3f5", card: "#ffffff", card2: "#f3f3f5",
+    bdr: "rgba(197,198,206,0.35)", bdrL: "rgba(197,198,206,0.20)", 
+    text: "#1a1c1d", sub: "#44474d", sub2: "#75777e",
+    pri: "#031631",
+    acc: "#031631", accD: "#1a2b47", accLt: "rgba(3,22,49,0.06)", accBg: "linear-gradient(135deg,#031631,#1a2b47)",
+    grn: "#1a9e73", grnLt: "rgba(26,158,115,0.08)",
+    red: "#dc4444", redLt: "rgba(220,68,68,0.08)",
+    orange: "#e4c18c", orangeLt: "rgba(228,193,140,0.15)",
+    blue: "#3b7fe0", blueLt: "rgba(59,127,224,0.08)",
+    purple: "#6366f1", purpleLt: "rgba(99,102,241,0.08)",
+    cyan: "#8293b4", cyanLt: "rgba(130,147,180,0.10)",
+    cardSh: "0 20px 40px rgba(26,28,29,0.04)",
+    cardShH: "0 20px 40px rgba(26,28,29,0.08)",
+    topbar: "#031631",
+    r: 20, r2: 12
+  },
   chiaro: {
     name: "Chiaro", emoji: "sun",
     bg: "#F8FAFC", bg2: "#F1F5F9", card: "#FFFFFF", card2: "#F8FAFC",
@@ -127,9 +145,9 @@ export const THEMES = {
 /* == PIANI ABBONAMENTO == */
 export const PLANS = {
   trial: { nome: "Trial Gratuito", prezzo: 0, maxCommesse: 999, maxVani: 999, maxUtenti: 1, maxCataloghi: 1, sync: true, pdf: true, admin: false, api: false, durata: 14, badge: "gift", desc: "14 giorni con tutte le funzioni PRO" },
-  free: { nome: "Free", prezzo: 0, maxCommesse: 5, maxVani: 15, maxUtenti: 1, maxCataloghi: 1, sync: false, pdf: false, admin: false, api: false, durata: null, badge: "zap", desc: "Per provare MASTRO — 5 commesse, 1 utente" },
-  pro: { nome: "Pro", prezzo: 49, maxCommesse: 9999, maxVani: 9999, maxUtenti: 2, maxCataloghi: 5, sync: true, pdf: true, admin: false, api: false, durata: null, badge: "star", desc: "Serramentista / Artigiano — commesse illimitate" },
-  business: { nome: "Business", prezzo: 149, maxCommesse: 9999, maxVani: 9999, maxUtenti: 10, maxCataloghi: 99, sync: true, pdf: true, admin: true, api: true, durata: null, badge: "gem", desc: "Showroom / Multi-sede — team fino a 10 persone" },
+  free: { nome: "Free", prezzo: 0, maxCommesse: 5, maxVani: 15, maxUtenti: 1, maxCataloghi: 1, sync: false, pdf: false, admin: false, api: false, durata: null, badge: "zap", desc: "Per provare MASTRO ÔÇö 5 commesse, 1 utente" },
+  pro: { nome: "Pro", prezzo: 49, maxCommesse: 9999, maxVani: 9999, maxUtenti: 2, maxCataloghi: 5, sync: true, pdf: true, admin: false, api: false, durata: null, badge: "star", desc: "Serramentista / Artigiano ÔÇö commesse illimitate" },
+  business: { nome: "Business", prezzo: 149, maxCommesse: 9999, maxVani: 9999, maxUtenti: 10, maxCataloghi: 99, sync: true, pdf: true, admin: true, api: true, durata: null, badge: "gem", desc: "Showroom / Multi-sede ÔÇö team fino a 10 persone" },
 };
 
 /* == PIPELINE 7+1 FASI == */
@@ -156,9 +174,9 @@ export const MOTIVI_BLOCCO = [
 
 /* == AZIONE SUGGERITA PER FASE == */
 export const AFASE = {
-  sopralluogo: { i: "search", t: "Vai al cantiere — misure, foto, note",  c: "#3B7FE0" },
-  preventivo:  { i: "clipboard", t: "Prepara preventivo — prezzi, sconti, condizioni",  c: "#F5A623" },
-  conferma:    { i: "signatureEdit", t: "Attendi conferma cliente — firma contratto",   c: "#E85BAF" },
+  sopralluogo: { i: "search", t: "Vai al cantiere ÔÇö misure, foto, note",  c: "#3B7FE0" },
+  preventivo:  { i: "clipboard", t: "Prepara preventivo ÔÇö prezzi, sconti, condizioni",  c: "#F5A623" },
+  conferma:    { i: "signatureEdit", t: "Attendi conferma cliente ÔÇö firma contratto",   c: "#E85BAF" },
   ordini:      { i: "package", t: "Ordina materiali ai fornitori",          c: "#EF4444" },
   produzione:  { i: "building", t: "Monitora produzione",      c: "#F59E0B" },
   posa:        { i: "wrench", t: "Schedula montaggio",            c: "#F97316" },
@@ -166,56 +184,56 @@ export const AFASE = {
   chiusura:    { i: "check", t: "Fattura saldo e chiudi",    c: "#10B981" },
 };
 
-// ═══ 20 COMMESSE DEMO REALISTICHE ═══
+// ÔòÉÔòÉÔòÉ 20 COMMESSE DEMO REALISTICHE ÔòÉÔòÉÔòÉ
 export const CANTIERI_INIT = [
-  // ═══ 1. SOPRALLUOGO — appena creato ═══
+  // ÔòÉÔòÉÔòÉ 1. SOPRALLUOGO ÔÇö appena creato ÔòÉÔòÉÔòÉ
   {
     id: 1001, code: "S-0001", cliente: "Giuseppe", cognome: "Verdi", indirizzo: "Via Garibaldi 12, Rende (CS)",
     telefono: "347 555 1234", email: "giuseppe.verdi@email.it", fase: "sopralluogo",
-    sistema: "Aluplast Ideal 4000", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "2°",
+    sistema: "Aluplast Ideal 4000", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "2┬░",
     note: "Appartamento secondo piano, 5 finestre da sostituire.",
     rilievi: [], allegati: [],
     creato: "25 feb", aggiornato: "25 feb",
     cf: "VRDGPP80A01D086Z", piva: "", sdi: "", pec: "",
     log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "2 giorni fa", color: "#86868b" }],
   },
-  // ═══ 2. PREVENTIVO — misure fatte, deve firmare ═══
+  // ÔòÉÔòÉÔòÉ 2. PREVENTIVO ÔÇö misure fatte, deve firmare ÔòÉÔòÉÔòÉ
   {
     id: 1002, code: "S-0002", cliente: "Anna", cognome: "Bianchi", indirizzo: "Corso Mazzini 88, Cosenza (CS)",
     telefono: "339 888 5678", email: "anna.bianchi@gmail.com", fase: "preventivo",
-    sistema: "Aluplast Ideal 4000", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "1°",
+    sistema: "Aluplast Ideal 4000", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "1┬░",
     note: "Ristrutturazione completa. IVA agevolata 10%.",
     prezzoMq: 180,
     rilievi: [{
       id: 2001, n: 1, data: "2026-02-20", ora: "09:30", rilevatore: "Fabio", tipo: "rilievo",
       motivoModifica: "", note: "Tutti i vani accessibili.", stato: "completato",
       vani: [
-        { id: 3001, nome: "Finestra Soggiorno", tipo: "F2A", stanza: "Soggiorno", piano: "1°", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1210, lCentro: 1200, lBasso: 1195, hSx: 1410, hCentro: 1400, hDx: 1405, d1: 1852, d2: 1849 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: true, l: 1200, h: 1400 } } },
-        { id: 3002, nome: "Portafinestra Camera", tipo: "PF2A", stanza: "Camera", piano: "1°", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1405, lCentro: 1400, lBasso: 1398, hSx: 2210, hCentro: 2200, hDx: 2205, d1: 2610, d2: 2607 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: true, l: 1400, h: 2200 }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-        { id: 3003, nome: "Vasistas Bagno", tipo: "VAS", stanza: "Bagno", piano: "1°", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 605, lCentro: 600, lBasso: 598, hSx: 605, hCentro: 600, hDx: 602, d1: 850, d2: 848 }, foto: {}, note: "Vetro opaco", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-        { id: 3004, nome: "Scorrevole Salone", tipo: "SC2A", stanza: "Salone", piano: "1°", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1810, lCentro: 1800, lBasso: 1795, hSx: 2210, hCentro: 2200, hDx: 2205, d1: 2843, d2: 2840 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: true, l: 1800, h: 2200 } } },
+        { id: 3001, nome: "Finestra Soggiorno", tipo: "F2A", stanza: "Soggiorno", piano: "1┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1210, lCentro: 1200, lBasso: 1195, hSx: 1410, hCentro: 1400, hDx: 1405, d1: 1852, d2: 1849 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: true, l: 1200, h: 1400 } } },
+        { id: 3002, nome: "Portafinestra Camera", tipo: "PF2A", stanza: "Camera", piano: "1┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1405, lCentro: 1400, lBasso: 1398, hSx: 2210, hCentro: 2200, hDx: 2205, d1: 2610, d2: 2607 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: true, l: 1400, h: 2200 }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3003, nome: "Vasistas Bagno", tipo: "VAS", stanza: "Bagno", piano: "1┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 605, lCentro: 600, lBasso: 598, hSx: 605, hCentro: 600, hDx: 602, d1: 850, d2: 848 }, foto: {}, note: "Vetro opaco", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3004, nome: "Scorrevole Salone", tipo: "SC2A", stanza: "Salone", piano: "1┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, coloreInt: "RAL 9010", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1810, lCentro: 1800, lBasso: 1795, hSx: 2210, hCentro: 2200, hDx: 2205, d1: 2843, d2: 2840 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: true, l: 1800, h: 2200 } } },
       ],
     }],
     allegati: [], creato: "20 feb", aggiornato: "22 feb",
     cf: "BNCNNA85C41D086Y", piva: "", sdi: "0000000", pec: "anna.bianchi@pec.it", ivaPerc: 10,
-    log: [{ chi: "Fabio", cosa: "completato rilievo misure — 4 vani", quando: "5 giorni fa", color: "#8B5CF6" }],
+    log: [{ chi: "Fabio", cosa: "completato rilievo misure ÔÇö 4 vani", quando: "5 giorni fa", color: "#8B5CF6" }],
   },
-  // ═══ 3. ORDINI — firmato, deve ordinare ═══
+  // ÔòÉÔòÉÔòÉ 3. ORDINI ÔÇö firmato, deve ordinare ÔòÉÔòÉÔòÉ
   {
     id: 1003, code: "S-0003", cliente: "Mario", cognome: "Rossi", indirizzo: "Via Roma 42, Cosenza (CS)",
     telefono: "320 111 4567", email: "mario.rossi@libero.it", fase: "ordini",
-    sistema: "Aluplast Ideal 7000", tipo: "nuova", difficoltaSalita: "media", mezzoSalita: "Argano", foroScale: "80×200", pianoEdificio: "3°",
-    note: "3° piano, serve argano. 4 finestre + portone.",
+    sistema: "Aluplast Ideal 7000", tipo: "nuova", difficoltaSalita: "media", mezzoSalita: "Argano", foroScale: "80├ù200", pianoEdificio: "3┬░",
+    note: "3┬░ piano, serve argano. 4 finestre + portone.",
     prezzoMq: 220, euro: 3520,
     firmaCliente: true, dataFirma: "2026-02-10",
     rilievi: [{
       id: 2003, n: 1, data: "2026-02-05", ora: "10:00", rilevatore: "Fabio", tipo: "rilievo",
       motivoModifica: "", note: "", stato: "completato",
       vani: [
-        { id: 3010, nome: "F1 Cucina", tipo: "F2A", stanza: "Cucina", piano: "3°", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "Bianco", bicolore: false, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1010, lCentro: 1000, lBasso: 995, hSx: 1210, hCentro: 1200, hDx: 1205, d1: 1562, d2: 1560 }, foto: {}, note: "", cassonetto: true, accessori: { tapparella: { attivo: true, l: 1000, h: 1200 }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-        { id: 3011, nome: "F2 Soggiorno", tipo: "F2A", stanza: "Soggiorno", piano: "3°", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "Bianco", bicolore: false, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1410, lCentro: 1400, lBasso: 1395, hSx: 1510, hCentro: 1500, hDx: 1505, d1: 2052, d2: 2050 }, foto: {}, note: "", cassonetto: true, accessori: { tapparella: { attivo: true, l: 1400, h: 1500 }, persiana: { attivo: false }, zanzariera: { attivo: true, l: 1400, h: 1500 } } },
-        { id: 3012, nome: "PF Camera", tipo: "PF2A", stanza: "Camera", piano: "3°", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "Bianco", bicolore: false, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1210, lCentro: 1200, lBasso: 1198, hSx: 2310, hCentro: 2300, hDx: 2305, d1: 2594, d2: 2592 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-        { id: 3013, nome: "Portone Ingresso", tipo: "PORTONE", stanza: "Ingresso", piano: "3°", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 910, lCentro: 900, lBasso: 898, hSx: 2110, hCentro: 2100, hDx: 2105, d1: 2284, d2: 2282 }, foto: {}, note: "Blindato", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3010, nome: "F1 Cucina", tipo: "F2A", stanza: "Cucina", piano: "3┬░", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "Bianco", bicolore: false, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1010, lCentro: 1000, lBasso: 995, hSx: 1210, hCentro: 1200, hDx: 1205, d1: 1562, d2: 1560 }, foto: {}, note: "", cassonetto: true, accessori: { tapparella: { attivo: true, l: 1000, h: 1200 }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3011, nome: "F2 Soggiorno", tipo: "F2A", stanza: "Soggiorno", piano: "3┬░", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "Bianco", bicolore: false, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1410, lCentro: 1400, lBasso: 1395, hSx: 1510, hCentro: 1500, hDx: 1505, d1: 2052, d2: 2050 }, foto: {}, note: "", cassonetto: true, accessori: { tapparella: { attivo: true, l: 1400, h: 1500 }, persiana: { attivo: false }, zanzariera: { attivo: true, l: 1400, h: 1500 } } },
+        { id: 3012, nome: "PF Camera", tipo: "PF2A", stanza: "Camera", piano: "3┬░", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "Bianco", bicolore: false, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1210, lCentro: 1200, lBasso: 1198, hSx: 2310, hCentro: 2300, hDx: 2305, d1: 2594, d2: 2592 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3013, nome: "Portone Ingresso", tipo: "PORTONE", stanza: "Ingresso", piano: "3┬░", sistema: "Aluplast Ideal 7000", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 910, lCentro: 900, lBasso: 898, hSx: 2110, hCentro: 2100, hDx: 2105, d1: 2284, d2: 2282 }, foto: {}, note: "Blindato", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
       ],
     }],
     allegati: [
@@ -225,10 +243,10 @@ export const CANTIERI_INIT = [
     cf: "RSSMRA75B15D086X", piva: "", sdi: "", pec: "", ivaPerc: 10,
     log: [
       { chi: "Fabio", cosa: "cliente ha firmato il preventivo", quando: "17 giorni fa", color: "#1A9E73" },
-      { chi: "Fabio", cosa: "completato rilievo misure — 4 vani", quando: "22 giorni fa", color: "#8B5CF6" },
+      { chi: "Fabio", cosa: "completato rilievo misure ÔÇö 4 vani", quando: "22 giorni fa", color: "#8B5CF6" },
     ],
   },
-  // ═══ 4. PRODUZIONE — ordinato, attesa materiale ═══
+  // ÔòÉÔòÉÔòÉ 4. PRODUZIONE ÔÇö ordinato, attesa materiale ÔòÉÔòÉÔòÉ
   {
     id: 1004, code: "S-0004", cliente: "Laura", cognome: "Esposito", indirizzo: "Viale Trieste 5, Rende (CS)",
     telefono: "333 222 8888", email: "laura.esposito@yahoo.it", fase: "produzione",
@@ -262,11 +280,11 @@ export const CANTIERI_INIT = [
       { chi: "Fabio", cosa: "inviato ordine ad Aluplast", quando: "1 mese fa", color: "#EF4444" },
     ],
   },
-  // ═══ 5. CHIUSURA — completata con tutto ═══
+  // ÔòÉÔòÉÔòÉ 5. CHIUSURA ÔÇö completata con tutto ÔòÉÔòÉÔòÉ
   {
     id: 1005, code: "S-0005", cliente: "Salvatore", cognome: "De Luca", indirizzo: "Corso Italia 22, Cosenza (CS)",
     telefono: "329 456 7890", email: "s.deluca@gmail.com", fase: "chiusura",
-    sistema: "Schüco CT70", tipo: "ristrutturazione", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "1°",
+    sistema: "Sch├╝co CT70", tipo: "ristrutturazione", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "1┬░",
     note: "Lavoro completato. Cliente soddisfatto.",
     prezzoMq: 280, euro: 1930,
     firmaCliente: true, dataFirma: "2025-12-10",
@@ -283,9 +301,9 @@ export const CANTIERI_INIT = [
       id: 2005, n: 1, data: "2025-12-05", ora: "09:00", rilevatore: "Fabio", tipo: "rilievo",
       motivoModifica: "", note: "Appartamento ristrutturato, muri perfetti.", stato: "completato",
       vani: [
-        { id: 3030, nome: "F Cucina", tipo: "F2A", stanza: "Cucina", piano: "1°", sistema: "Schüco CT70", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1210, hCentro: 1200, hDx: 1205, d1: 1562, d2: 1560 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-        { id: 3031, nome: "PF Salone", tipo: "PF2A", stanza: "Salone", piano: "1°", sistema: "Schüco CT70", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1410, lCentro: 1400, lBasso: 1398, hSx: 2310, hCentro: 2300, hDx: 2305, d1: 2694, d2: 2692 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-        { id: 3032, nome: "VAS Bagno", tipo: "VAS", stanza: "Bagno", piano: "1°", sistema: "Schüco CT70", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 605, lCentro: 600, lBasso: 598, hSx: 505, hCentro: 500, hDx: 502, d1: 781, d2: 780 }, foto: {}, note: "Vetro opaco", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3030, nome: "F Cucina", tipo: "F2A", stanza: "Cucina", piano: "1┬░", sistema: "Sch├╝co CT70", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1210, hCentro: 1200, hDx: 1205, d1: 1562, d2: 1560 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3031, nome: "PF Salone", tipo: "PF2A", stanza: "Salone", piano: "1┬░", sistema: "Sch├╝co CT70", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 1410, lCentro: 1400, lBasso: 1398, hSx: 2310, hCentro: 2300, hDx: 2305, d1: 2694, d2: 2692 }, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+        { id: 3032, nome: "VAS Bagno", tipo: "VAS", stanza: "Bagno", piano: "1┬░", sistema: "Sch├╝co CT70", pezzi: 1, coloreInt: "Bianco", coloreEst: "RAL 7016", bicolore: true, coloreAcc: "", vetro: "", telaio: "", coprifilo: "", lamiera: "", misure: { lAlto: 605, lCentro: 600, lBasso: 598, hSx: 505, hCentro: 500, hDx: 502, d1: 781, d2: 780 }, foto: {}, note: "Vetro opaco", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
       ],
     }],
     creato: "01 dic", aggiornato: "18 feb",
@@ -308,30 +326,30 @@ export const CANTIERI_INIT = [
       { chi: "Fabio", cosa: "emessa fattura saldo", quando: "7 giorni fa", color: "#E8A020" },
     ],
   },
-  // ═══ 6. POSA — pronto per montaggio ═══
-  { id: 1006, code: "S-0006", cliente: "Francesca", cognome: "Romano", indirizzo: "Via Popilia 156, Cosenza (CS)", telefono: "340 777 3333", email: "f.romano@outlook.it", fase: "posa", sistema: "Rehau Geneo", tipo: "nuova", difficoltaSalita: "facile", note: "Villa bifamiliare PT+1°, 8 vani totali.", prezzoMq: 250, euro: 6400, firmaCliente: true, dataFirma: "2026-01-05", rilievi: [{ id: 2006, n: 1, data: "2025-12-20", ora: "10:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3040, nome: "F1 Cucina PT", tipo: "F2A", stanza: "Cucina", piano: "PT", sistema: "Rehau Geneo", pezzi: 1, misure: { lAlto: 1210, lCentro: 1200, lBasso: 1195, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }, { id: 3041, nome: "PF Soggiorno PT", tipo: "PF2A", stanza: "Soggiorno", piano: "PT", sistema: "Rehau Geneo", pezzi: 1, misure: { lAlto: 1810, lCentro: 1800, lBasso: 1798, hSx: 2310, hCentro: 2300, hDx: 2305 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: true }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9920, tipo: "firma", nome: "Preventivo_S-0006.pdf", data: "05/01/2026" }, { id: 9921, tipo: "ordine", nome: "Ordine_Rehau.pdf", data: "10/01/2026" }, { id: 9922, tipo: "conferma", nome: "Conferma_Rehau_9987.pdf", data: "14/01/2026" }], creato: "15 dic", aggiornato: "14 gen", cf: "RMNFNC88M41D086T", ivaPerc: 10, praticaFiscale: "Detraz. 50%", docIdentita: [{ id: "di6", tipo: "CI", nome: "CI_Romano_fronte.jpg", data: "05/01/2026" }, { id: "di7", tipo: "CF", nome: "CF_Romano.jpg", data: "05/01/2026" }], log: [{ chi: "Fabio", cosa: "materiale arrivato, programmare montaggio", quando: "2 sett fa", color: "#1A9E73" }] },
-  // ═══ 7-20 — commesse aggiuntive in vari stadi ═══
+  // ÔòÉÔòÉÔòÉ 6. POSA ÔÇö pronto per montaggio ÔòÉÔòÉÔòÉ
+  { id: 1006, code: "S-0006", cliente: "Francesca", cognome: "Romano", indirizzo: "Via Popilia 156, Cosenza (CS)", telefono: "340 777 3333", email: "f.romano@outlook.it", fase: "posa", sistema: "Rehau Geneo", tipo: "nuova", difficoltaSalita: "facile", note: "Villa bifamiliare PT+1┬░, 8 vani totali.", prezzoMq: 250, euro: 6400, firmaCliente: true, dataFirma: "2026-01-05", rilievi: [{ id: 2006, n: 1, data: "2025-12-20", ora: "10:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3040, nome: "F1 Cucina PT", tipo: "F2A", stanza: "Cucina", piano: "PT", sistema: "Rehau Geneo", pezzi: 1, misure: { lAlto: 1210, lCentro: 1200, lBasso: 1195, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }, { id: 3041, nome: "PF Soggiorno PT", tipo: "PF2A", stanza: "Soggiorno", piano: "PT", sistema: "Rehau Geneo", pezzi: 1, misure: { lAlto: 1810, lCentro: 1800, lBasso: 1798, hSx: 2310, hCentro: 2300, hDx: 2305 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: true }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9920, tipo: "firma", nome: "Preventivo_S-0006.pdf", data: "05/01/2026" }, { id: 9921, tipo: "ordine", nome: "Ordine_Rehau.pdf", data: "10/01/2026" }, { id: 9922, tipo: "conferma", nome: "Conferma_Rehau_9987.pdf", data: "14/01/2026" }], creato: "15 dic", aggiornato: "14 gen", cf: "RMNFNC88M41D086T", ivaPerc: 10, praticaFiscale: "Detraz. 50%", docIdentita: [{ id: "di6", tipo: "CI", nome: "CI_Romano_fronte.jpg", data: "05/01/2026" }, { id: "di7", tipo: "CF", nome: "CF_Romano.jpg", data: "05/01/2026" }], log: [{ chi: "Fabio", cosa: "materiale arrivato, programmare montaggio", quando: "2 sett fa", color: "#1A9E73" }] },
+  // ÔòÉÔòÉÔòÉ 7-20 ÔÇö commesse aggiuntive in vari stadi ÔòÉÔòÉÔòÉ
   { id: 1007, code: "S-0007", cliente: "Marco", cognome: "Ferraro", indirizzo: "Via dei Mille 33, Rende (CS)", telefono: "335 444 9999", email: "m.ferraro@gmail.com", fase: "sopralluogo", sistema: "", tipo: "nuova", note: "Nuovo cliente da passaparola De Luca. 6 finestre.", rilievi: [], allegati: [], creato: "27 feb", aggiornato: "27 feb", log: [{ chi: "Fabio", cosa: "creato da passaparola", quando: "oggi", color: "#86868b" }] },
-  { id: 1008, code: "S-0008", cliente: "Lucia", cognome: "Greco", indirizzo: "Piazza XV Marzo 8, Cosenza (CS)", telefono: "328 111 2222", email: "lucia.greco@pec.it", fase: "sopralluogo", sistema: "Aluplast Ideal 8000", tipo: "nuova", difficoltaSalita: "difficile", mezzoSalita: "Autoscala", pianoEdificio: "5°", note: "5° piano, serve autoscala. Condominio storico.", prezzoMq: 200, rilievi: [{ id: 2008, n: 1, data: "2026-02-15", ora: "08:00", rilevatore: "Fabio", tipo: "rilievo", stato: "parziale", vani: [{ id: 3050, nome: "F1 Salone", tipo: "F2A", stanza: "Salone", piano: "5°", sistema: "Aluplast Ideal 8000", pezzi: 1, misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1510, hCentro: 1500, hDx: 1505 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [], creato: "10 feb", aggiornato: "15 feb", cf: "GRCLCU92P65D086S", log: [{ chi: "Fabio", cosa: "rilievo parziale — tornare per 3 vani", quando: "12 giorni fa", color: "#E8A020" }] },
-  { id: 1009, code: "S-0009", cliente: "Roberto", cognome: "Mancini", indirizzo: "Contrada San Vito, Mendicino (CS)", telefono: "347 888 1111", email: "", fase: "produzione", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Villa in campagna, 8 vani. Materiale in produzione.", prezzoMq: 180, euro: 5760, firmaCliente: true, dataFirma: "2026-01-25", rilievi: [{ id: 2009, n: 1, data: "2026-01-18", ora: "09:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3060, nome: "F1", tipo: "F2A", stanza: "Cucina", piano: "PT", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1210, lCentro: 1200, lBasso: 1195, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }, { id: 3061, nome: "F2", tipo: "F2A", stanza: "Camera", piano: "1°", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1210, hCentro: 1200, hDx: 1205 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9930, tipo: "firma", nome: "Prev_S-0009_firmato.pdf", data: "25/01/2026" }, { id: 9931, tipo: "ordine", nome: "Ordine_Aluplast_S0009.pdf", data: "28/01/2026" }], creato: "15 gen", aggiornato: "28 gen", cf: "MNCRRT68S20D086R", ivaPerc: 10, log: [] },
-  { id: 1010, code: "S-0010", cliente: "Francesco", cognome: "Greco", indirizzo: "Via Calabria 77, Cosenza (CS)", telefono: "339 555 6666", email: "f.greco@gmail.com", fase: "posa", sistema: "Schüco AWS 75", tipo: "nuova", note: "Ufficio commerciale, 6 finestre grandi.", prezzoMq: 300, euro: 7200, firmaCliente: true, dataFirma: "2026-01-08", rilievi: [{ id: 2010, n: 1, data: "2025-12-15", ora: "14:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3070, nome: "F1 Ufficio", tipo: "F2A", stanza: "Ufficio 1", piano: "PT", sistema: "Schüco AWS 75", pezzi: 1, misure: { lAlto: 1810, lCentro: 1800, lBasso: 1798, hSx: 1610, hCentro: 1600, hDx: 1605 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9940, tipo: "firma", nome: "Prev_S-0010.pdf", data: "08/01/2026" }], creato: "10 dic", aggiornato: "20 feb", cf: "", piva: "03456789012", ivaPerc: 22, log: [] },
-  { id: 1011, code: "S-0011", cliente: "Lucia", cognome: "Ferraro", indirizzo: "Via Panebianco 200, Cosenza (CS)", telefono: "366 999 4444", email: "l.ferraro@alice.it", fase: "conferma", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Preventivo da firmare. 2 vasistas bagno.", prezzoMq: 180, rilievi: [{ id: 2011, n: 1, data: "2026-02-22", ora: "11:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3080, nome: "VAS Bagno 1", tipo: "VAS", stanza: "Bagno", piano: "1°", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 605, lCentro: 600, lBasso: 598, hSx: 505, hCentro: 500, hDx: 502 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }, { id: 3081, nome: "VAS Bagno 2", tipo: "VAS", stanza: "Bagno ospiti", piano: "1°", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 505, lCentro: 500, lBasso: 498, hSx: 505, hCentro: 500, hDx: 502 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [], creato: "22 feb", aggiornato: "24 feb", log: [] },
-  // ═══ 12-16 — CHIUSE (archivio) ═══
-  { id: 1012, code: "S-0012", cliente: "Paolo", cognome: "Valentino", indirizzo: "Via Caloprese 15, Cosenza (CS)", telefono: "348 222 3333", fase: "chiusura", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Completata. 3 finestre, nessun problema.", prezzoMq: 180, euro: 1620, firmaCliente: true, dataFirma: "2025-11-10", rilievi: [{ id: 2012, n: 1, data: "2025-11-01", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3090, nome: "F Cucina", tipo: "F2A", stanza: "Cucina", piano: "2°", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9950, tipo: "firma", nome: "Prev_S-0012.pdf", data: "10/11/2025" }, { id: 9951, tipo: "fattura", nome: "Fattura_saldo_S-0012.pdf", data: "15/01/2026" }, { id: 9952, tipo: "verbale", nome: "Verbale_S-0012.pdf", data: "10/01/2026" }], creato: "25 ott", aggiornato: "15 gen", cf: "VLNPLA82D10D086Q", praticaFiscale: "IVA 10%", docIdentita: [{ id: "di10", tipo: "CI", nome: "CI_Valentino.jpg", data: "10/11/2025" }], log: [] },
+  { id: 1008, code: "S-0008", cliente: "Lucia", cognome: "Greco", indirizzo: "Piazza XV Marzo 8, Cosenza (CS)", telefono: "328 111 2222", email: "lucia.greco@pec.it", fase: "sopralluogo", sistema: "Aluplast Ideal 8000", tipo: "nuova", difficoltaSalita: "difficile", mezzoSalita: "Autoscala", pianoEdificio: "5┬░", note: "5┬░ piano, serve autoscala. Condominio storico.", prezzoMq: 200, rilievi: [{ id: 2008, n: 1, data: "2026-02-15", ora: "08:00", rilevatore: "Fabio", tipo: "rilievo", stato: "parziale", vani: [{ id: 3050, nome: "F1 Salone", tipo: "F2A", stanza: "Salone", piano: "5┬░", sistema: "Aluplast Ideal 8000", pezzi: 1, misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1510, hCentro: 1500, hDx: 1505 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [], creato: "10 feb", aggiornato: "15 feb", cf: "GRCLCU92P65D086S", log: [{ chi: "Fabio", cosa: "rilievo parziale ÔÇö tornare per 3 vani", quando: "12 giorni fa", color: "#E8A020" }] },
+  { id: 1009, code: "S-0009", cliente: "Roberto", cognome: "Mancini", indirizzo: "Contrada San Vito, Mendicino (CS)", telefono: "347 888 1111", email: "", fase: "produzione", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Villa in campagna, 8 vani. Materiale in produzione.", prezzoMq: 180, euro: 5760, firmaCliente: true, dataFirma: "2026-01-25", rilievi: [{ id: 2009, n: 1, data: "2026-01-18", ora: "09:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3060, nome: "F1", tipo: "F2A", stanza: "Cucina", piano: "PT", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1210, lCentro: 1200, lBasso: 1195, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }, { id: 3061, nome: "F2", tipo: "F2A", stanza: "Camera", piano: "1┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1210, hCentro: 1200, hDx: 1205 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9930, tipo: "firma", nome: "Prev_S-0009_firmato.pdf", data: "25/01/2026" }, { id: 9931, tipo: "ordine", nome: "Ordine_Aluplast_S0009.pdf", data: "28/01/2026" }], creato: "15 gen", aggiornato: "28 gen", cf: "MNCRRT68S20D086R", ivaPerc: 10, log: [] },
+  { id: 1010, code: "S-0010", cliente: "Francesco", cognome: "Greco", indirizzo: "Via Calabria 77, Cosenza (CS)", telefono: "339 555 6666", email: "f.greco@gmail.com", fase: "posa", sistema: "Sch├╝co AWS 75", tipo: "nuova", note: "Ufficio commerciale, 6 finestre grandi.", prezzoMq: 300, euro: 7200, firmaCliente: true, dataFirma: "2026-01-08", rilievi: [{ id: 2010, n: 1, data: "2025-12-15", ora: "14:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3070, nome: "F1 Ufficio", tipo: "F2A", stanza: "Ufficio 1", piano: "PT", sistema: "Sch├╝co AWS 75", pezzi: 1, misure: { lAlto: 1810, lCentro: 1800, lBasso: 1798, hSx: 1610, hCentro: 1600, hDx: 1605 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9940, tipo: "firma", nome: "Prev_S-0010.pdf", data: "08/01/2026" }], creato: "10 dic", aggiornato: "20 feb", cf: "", piva: "03456789012", ivaPerc: 22, log: [] },
+  { id: 1011, code: "S-0011", cliente: "Lucia", cognome: "Ferraro", indirizzo: "Via Panebianco 200, Cosenza (CS)", telefono: "366 999 4444", email: "l.ferraro@alice.it", fase: "conferma", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Preventivo da firmare. 2 vasistas bagno.", prezzoMq: 180, rilievi: [{ id: 2011, n: 1, data: "2026-02-22", ora: "11:00", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3080, nome: "VAS Bagno 1", tipo: "VAS", stanza: "Bagno", piano: "1┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 605, lCentro: 600, lBasso: 598, hSx: 505, hCentro: 500, hDx: 502 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }, { id: 3081, nome: "VAS Bagno 2", tipo: "VAS", stanza: "Bagno ospiti", piano: "1┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 505, lCentro: 500, lBasso: 498, hSx: 505, hCentro: 500, hDx: 502 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [], creato: "22 feb", aggiornato: "24 feb", log: [] },
+  // ÔòÉÔòÉÔòÉ 12-16 ÔÇö CHIUSE (archivio) ÔòÉÔòÉÔòÉ
+  { id: 1012, code: "S-0012", cliente: "Paolo", cognome: "Valentino", indirizzo: "Via Caloprese 15, Cosenza (CS)", telefono: "348 222 3333", fase: "chiusura", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Completata. 3 finestre, nessun problema.", prezzoMq: 180, euro: 1620, firmaCliente: true, dataFirma: "2025-11-10", rilievi: [{ id: 2012, n: 1, data: "2025-11-01", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3090, nome: "F Cucina", tipo: "F2A", stanza: "Cucina", piano: "2┬░", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9950, tipo: "firma", nome: "Prev_S-0012.pdf", data: "10/11/2025" }, { id: 9951, tipo: "fattura", nome: "Fattura_saldo_S-0012.pdf", data: "15/01/2026" }, { id: 9952, tipo: "verbale", nome: "Verbale_S-0012.pdf", data: "10/01/2026" }], creato: "25 ott", aggiornato: "15 gen", cf: "VLNPLA82D10D086Q", praticaFiscale: "IVA 10%", docIdentita: [{ id: "di10", tipo: "CI", nome: "CI_Valentino.jpg", data: "10/11/2025" }], log: [] },
   { id: 1013, code: "S-0013", cliente: "Andrea", cognome: "Colombo", indirizzo: "Via degli Stadi 45, Rende (CS)", telefono: "320 444 5555", fase: "chiusura", sistema: "Rehau Geneo", tipo: "nuova", note: "Completata. 4 portefinestre.", prezzoMq: 250, euro: 4000, firmaCliente: true, dataFirma: "2025-10-20", rilievi: [{ id: 2013, n: 1, data: "2025-10-10", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3100, nome: "PF1", tipo: "PF2A", stanza: "Salone", piano: "PT", sistema: "Rehau Geneo", pezzi: 1, misure: { lAlto: 1410, lCentro: 1400, lBasso: 1398, hSx: 2310, hCentro: 2300, hDx: 2305 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9960, tipo: "firma", nome: "Prev_S-0013.pdf", data: "20/10/2025" }, { id: 9961, tipo: "fattura", nome: "Fattura_unica_S-0013.pdf", data: "20/12/2025" }], creato: "05 ott", aggiornato: "20 dic", praticaFiscale: "Ecobonus 65%", docIdentita: [{ id: "di11", tipo: "CI", nome: "CI_Colombo_f.jpg", data: "20/10/2025" }, { id: "di12", tipo: "CI", nome: "CI_Colombo_r.jpg", data: "20/10/2025" }, { id: "di13", tipo: "CF", nome: "CF_Colombo.jpg", data: "20/10/2025" }], docFiscali: [{ id: "df4", nome: "ENEA_S-0013.pdf", data: "10/01/2026" }, { id: "df5", nome: "Asseverazione.pdf", data: "12/01/2026" }], log: [] },
-  { id: 1014, code: "S-0014", cliente: "Teresa", cognome: "Catanzaro", indirizzo: "Via Firenze 9, Cosenza (CS)", telefono: "389 666 7777", fase: "chiusura", sistema: "Aluplast Ideal 7000", tipo: "nuova", note: "Appartamento 3° piano. Completata.", prezzoMq: 220, euro: 2640, firmaCliente: true, allegati: [{ id: 9970, tipo: "verbale", nome: "Verbale_S-0014.pdf", data: "05/02/2026" }], rilievi: [{ id: 2014, n: 1, data: "2025-12-01", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3110, nome: "F Camera", tipo: "F2A", stanza: "Camera", piano: "3°", sistema: "Aluplast Ideal 7000", pezzi: 1, misure: { lAlto: 1210, lCentro: 1200, lBasso: 1198, hSx: 1310, hCentro: 1300, hDx: 1305 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], creato: "25 nov", aggiornato: "05 feb", log: [] },
+  { id: 1014, code: "S-0014", cliente: "Teresa", cognome: "Catanzaro", indirizzo: "Via Firenze 9, Cosenza (CS)", telefono: "389 666 7777", fase: "chiusura", sistema: "Aluplast Ideal 7000", tipo: "nuova", note: "Appartamento 3┬░ piano. Completata.", prezzoMq: 220, euro: 2640, firmaCliente: true, allegati: [{ id: 9970, tipo: "verbale", nome: "Verbale_S-0014.pdf", data: "05/02/2026" }], rilievi: [{ id: 2014, n: 1, data: "2025-12-01", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3110, nome: "F Camera", tipo: "F2A", stanza: "Camera", piano: "3┬░", sistema: "Aluplast Ideal 7000", pezzi: 1, misure: { lAlto: 1210, lCentro: 1200, lBasso: 1198, hSx: 1310, hCentro: 1300, hDx: 1305 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], creato: "25 nov", aggiornato: "05 feb", log: [] },
   { id: 1015, code: "S-0015", cliente: "Vincenzo", cognome: "Pinto", indirizzo: "Contrada Donnici, Cosenza (CS)", telefono: "338 888 0000", fase: "chiusura", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Villa campagna. 10 vani. Completata.", prezzoMq: 180, euro: 7200, firmaCliente: true, allegati: [{ id: 9980, tipo: "verbale", nome: "Verbale_S-0015.pdf", data: "20/01/2026" }], rilievi: [{ id: 2015, n: 1, data: "2025-09-15", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3120, nome: "F1", tipo: "F2A", stanza: "Cucina", piano: "PT", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1010, lCentro: 1000, lBasso: 998, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], creato: "10 set", aggiornato: "20 gen", praticaFiscale: "Superbonus", docIdentita: [{ id: "di14", tipo: "CI", nome: "CI_Pinto.jpg", data: "15/09/2025" }, { id: "di15", tipo: "CF", nome: "CF_Pinto.jpg", data: "15/09/2025" }], docFiscali: [{ id: "df6", nome: "APE_ante.pdf" }, { id: "df7", nome: "APE_post.pdf" }, { id: "df8", nome: "ENEA_trasmissione.pdf" }, { id: "df9", nome: "Visto_conformita.pdf" }], log: [] },
-  { id: 1016, code: "S-0016", cliente: "Giovanna", cognome: "Ferrara", indirizzo: "Viale Mancini 12, Cosenza (CS)", telefono: "333 111 2233", fase: "chiusura", sistema: "Schüco CT70", tipo: "ristrutturazione", note: "2 portefinestre salone. Completata.", prezzoMq: 280, euro: 2240, firmaCliente: true, allegati: [{ id: 9990, tipo: "verbale", nome: "Verbale_S-0016.pdf", data: "10/02/2026" }], rilievi: [{ id: 2016, n: 1, data: "2025-11-20", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3130, nome: "PF Salone", tipo: "PF2A", stanza: "Salone", piano: "2°", sistema: "Schüco CT70", pezzi: 1, misure: { lAlto: 1410, lCentro: 1400, lBasso: 1398, hSx: 2210, hCentro: 2200, hDx: 2205 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], creato: "15 nov", aggiornato: "10 feb", log: [] },
-  // ═══ 17-20 — ATTIVE (vari stadi) ═══
+  { id: 1016, code: "S-0016", cliente: "Giovanna", cognome: "Ferrara", indirizzo: "Viale Mancini 12, Cosenza (CS)", telefono: "333 111 2233", fase: "chiusura", sistema: "Sch├╝co CT70", tipo: "ristrutturazione", note: "2 portefinestre salone. Completata.", prezzoMq: 280, euro: 2240, firmaCliente: true, allegati: [{ id: 9990, tipo: "verbale", nome: "Verbale_S-0016.pdf", data: "10/02/2026" }], rilievi: [{ id: 2016, n: 1, data: "2025-11-20", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3130, nome: "PF Salone", tipo: "PF2A", stanza: "Salone", piano: "2┬░", sistema: "Sch├╝co CT70", pezzi: 1, misure: { lAlto: 1410, lCentro: 1400, lBasso: 1398, hSx: 2210, hCentro: 2200, hDx: 2205 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], creato: "15 nov", aggiornato: "10 feb", log: [] },
+  // ÔòÉÔòÉÔòÉ 17-20 ÔÇö ATTIVE (vari stadi) ÔòÉÔòÉÔòÉ
   { id: 1017, code: "S-0017", cliente: "Carmela", cognome: "Aiello", indirizzo: "Via Marconi 55, Montalto Uffugo (CS)", telefono: "347 333 4455", fase: "sopralluogo", tipo: "riparazione", note: "Tapparella bloccata + guarnizioni da sostituire.", rilievi: [], allegati: [], creato: "26 feb", aggiornato: "26 feb", log: [{ chi: "Fabio", cosa: "richiesta riparazione ricevuta", quando: "ieri", color: "#E8A020" }] },
-  { id: 1018, code: "S-0018", cliente: "Antonio", cognome: "Scalia", indirizzo: "Corso Umberto 120, Cosenza (CS)", telefono: "320 555 8899", email: "a.scalia@studio.it", fase: "preventivo", sistema: "Schüco ASS 70", tipo: "nuova", note: "Studio legale, 4 finestre anti-rumore.", prezzoMq: 320, rilievi: [{ id: 2018, n: 1, data: "2026-02-24", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3140, nome: "F Studio", tipo: "F2A", stanza: "Studio", piano: "1°", sistema: "Schüco ASS 70", pezzi: 1, misure: { lAlto: 1610, lCentro: 1600, lBasso: 1598, hSx: 1410, hCentro: 1400, hDx: 1405 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [], creato: "20 feb", aggiornato: "24 feb", piva: "04567890123", ivaPerc: 22, log: [] },
+  { id: 1018, code: "S-0018", cliente: "Antonio", cognome: "Scalia", indirizzo: "Corso Umberto 120, Cosenza (CS)", telefono: "320 555 8899", email: "a.scalia@studio.it", fase: "preventivo", sistema: "Sch├╝co ASS 70", tipo: "nuova", note: "Studio legale, 4 finestre anti-rumore.", prezzoMq: 320, rilievi: [{ id: 2018, n: 1, data: "2026-02-24", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3140, nome: "F Studio", tipo: "F2A", stanza: "Studio", piano: "1┬░", sistema: "Sch├╝co ASS 70", pezzi: 1, misure: { lAlto: 1610, lCentro: 1600, lBasso: 1598, hSx: 1410, hCentro: 1400, hDx: 1405 }, foto: {}, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [], creato: "20 feb", aggiornato: "24 feb", piva: "04567890123", ivaPerc: 22, log: [] },
   { id: 1019, code: "S-0019", cliente: "Maria Rosa", cognome: "Pellegrini", indirizzo: "Via Casali 8, Castrolibero (CS)", telefono: "349 777 1122", fase: "ordini", sistema: "Aluplast Ideal 4000", tipo: "nuova", note: "Villetta, 5 finestre + 2 portefinestre.", prezzoMq: 180, euro: 4500, firmaCliente: true, dataFirma: "2026-02-18", rilievi: [{ id: 2019, n: 1, data: "2026-02-10", rilevatore: "Fabio", tipo: "rilievo", stato: "completato", vani: [{ id: 3150, nome: "F1 Cucina", tipo: "F2A", stanza: "Cucina", piano: "PT", sistema: "Aluplast Ideal 4000", pezzi: 1, misure: { lAlto: 1210, lCentro: 1200, lBasso: 1195, hSx: 1010, hCentro: 1000, hDx: 1005 }, foto: {}, accessori: { tapparella: { attivo: true }, persiana: { attivo: false }, zanzariera: { attivo: false } } }] }], allegati: [{ id: 9995, tipo: "firma", nome: "Prev_S-0019.pdf", data: "18/02/2026" }], creato: "05 feb", aggiornato: "18 feb", cf: "PLLMRS65R41D086P", praticaFiscale: "Detraz. 50%", docIdentita: [{ id: "di16", tipo: "CI", nome: "CI_Pellegrini.jpg", data: "18/02/2026" }, { id: "di17", tipo: "CF", nome: "CF_Pellegrini.jpg", data: "18/02/2026" }], log: [] },
   { id: 1020, code: "S-0020", cliente: "Domenico", cognome: "Cosenza", indirizzo: "Via dei Normanni 30, Cosenza (CS)", telefono: "340 888 9900", email: "d.cosenza@gmail.com", fase: "sopralluogo", sistema: "", tipo: "nuova", note: "Condominio 12 appartamenti, sopralluogo esplorativo per offerta.", rilievi: [], allegati: [], creato: "27 feb", aggiornato: "27 feb", log: [{ chi: "Fabio", cosa: "primo contatto telefonico", quando: "oggi", color: "#86868b" }] },
 ];
 
 
 // Demo fatture
-// Demo fatture — matching 20 commesse
+// Demo fatture ÔÇö matching 20 commesse
 export const FATTURE_INIT = [
   { id: "fat_1", numero: 1, anno: 2026, data: "15/02/2026", dataISO: "2026-02-15", tipo: "acconto", importo: 593, cliente: "Anna Bianchi", cmId: 1002, cmCode: "S-0002", pagata: false, scadenza: "2026-03-15" },
   { id: "fat_2", numero: 2, anno: 2026, data: "10/02/2026", dataISO: "2026-02-10", tipo: "acconto", importo: 1056, cliente: "Mario Rossi", cmId: 1003, cmCode: "S-0003", pagata: true, dataPagamento: "2026-02-12", scadenza: "2026-03-10" },
@@ -351,26 +369,26 @@ export const FATTURE_INIT = [
 
 
 // Demo ordini fornitore
-// Demo ordini fornitore — matching 20 commesse
+// Demo ordini fornitore ÔÇö matching 20 commesse
 export const ORDINI_INIT = [
   { id: "ord_1", cmId: 1003, cmCode: "S-0003", cliente: "Mario Rossi", fornitore: { id: "f1", nome: "Aluplast Italia" }, totale: 1200, totaleIva: 1464, stato: "inviato", dataInvio: "2026-02-20", conferma: { ricevuta: false }, consegna: { settimane: 4, prevista: "2026-03-20" } },
   { id: "ord_2", cmId: 1004, cmCode: "S-0004", cliente: "Laura Esposito", fornitore: { id: "f1", nome: "Aluplast Italia" }, totale: 970, totaleIva: 1183.4, stato: "confermato", dataInvio: "2026-01-22", conferma: { ricevuta: true, nomeFile: "Conferma_Aluplast_8821.pdf", dataRicezione: "2026-01-25" }, consegna: { settimane: 5, prevista: "2026-02-28" } },
-  { id: "ord_3", cmId: 1005, cmCode: "S-0005", cliente: "Salvatore De Luca", fornitore: { id: "f2", nome: "Schüco International" }, totale: 1298, totaleIva: 1583.56, stato: "consegnato", dataInvio: "2025-12-13", conferma: { ricevuta: true, nomeFile: "Conferma_Schuco_12345.pdf", dataRicezione: "2025-12-16" }, consegna: { settimane: 7, prevista: "2026-01-30" } },
+  { id: "ord_3", cmId: 1005, cmCode: "S-0005", cliente: "Salvatore De Luca", fornitore: { id: "f2", nome: "Sch├╝co International" }, totale: 1298, totaleIva: 1583.56, stato: "consegnato", dataInvio: "2025-12-13", conferma: { ricevuta: true, nomeFile: "Conferma_Schuco_12345.pdf", dataRicezione: "2025-12-16" }, consegna: { settimane: 7, prevista: "2026-01-30" } },
   { id: "ord_4", cmId: 1006, cmCode: "S-0006", cliente: "Francesca Romano", fornitore: { id: "f5", nome: "Rehau Italia" }, totale: 2100, totaleIva: 2562, stato: "consegnato", dataInvio: "2026-01-10", conferma: { ricevuta: true, nomeFile: "Conferma_Rehau_9987.pdf", dataRicezione: "2026-01-14" }, consegna: { settimane: 5, prevista: "2026-02-14" } },
   { id: "ord_5", cmId: 1009, cmCode: "S-0009", cliente: "Roberto Mancini", fornitore: { id: "f1", nome: "Aluplast Italia" }, totale: 1850, totaleIva: 2257, stato: "confermato", dataInvio: "2026-01-28", conferma: { ricevuta: true, nomeFile: "Conferma_Aluplast_9102.pdf", dataRicezione: "2026-02-01" }, consegna: { settimane: 6, prevista: "2026-03-12" } },
-  { id: "ord_6", cmId: 1010, cmCode: "S-0010", cliente: "Francesco Greco", fornitore: { id: "f2", nome: "Schüco International" }, totale: 2800, totaleIva: 3416, stato: "consegnato", dataInvio: "2026-01-12", conferma: { ricevuta: true }, consegna: { settimane: 6, prevista: "2026-02-22" } },
+  { id: "ord_6", cmId: 1010, cmCode: "S-0010", cliente: "Francesco Greco", fornitore: { id: "f2", nome: "Sch├╝co International" }, totale: 2800, totaleIva: 3416, stato: "consegnato", dataInvio: "2026-01-12", conferma: { ricevuta: true }, consegna: { settimane: 6, prevista: "2026-02-22" } },
   { id: "ord_7", cmId: 1019, cmCode: "S-0019", cliente: "Maria Rosa Pellegrini", fornitore: { id: "f1", nome: "Aluplast Italia" }, totale: 1500, totaleIva: 1830, stato: "inviato", dataInvio: "2026-02-22", conferma: { ricevuta: false }, consegna: { settimane: 5, prevista: "2026-03-28" } },
 ];
 
 
 // Demo montaggi
-// Demo montaggi — matching 20 commesse
+// Demo montaggi ÔÇö matching 20 commesse
 export const MONTAGGI_INIT = [
   { id: "m_1", cmId: 1005, cmCode: "S-0005", cliente: "Salvatore De Luca", vani: 3, data: "2026-02-17", orario: "08:00", durata: "2g", giorni: 2, squadraId: "sq1", stato: "completato", note: "Completato senza problemi." },
   { id: "m_2", cmId: 1006, cmCode: "S-0006", cliente: "Francesca Romano", vani: 8, data: "2026-03-03", orario: "07:30", durata: "3g", giorni: 3, squadraId: "sq1", stato: "programmato", note: "Villa bifamiliare, 2 piani." },
   { id: "m_3", cmId: 1010, cmCode: "S-0010", cliente: "Francesco Greco", vani: 6, data: "2026-03-06", orario: "08:00", durata: "2g", giorni: 2, squadraId: "sq2", stato: "programmato", note: "Ufficio, 6 finestre grandi." },
   { id: "m_4", cmId: 1009, cmCode: "S-0009", cliente: "Roberto Mancini", vani: 8, data: "2026-03-16", orario: "07:00", durata: "4g", giorni: 4, squadraId: "sq1", stato: "programmato", note: "Villa campagna, 8 infissi." },
-  { id: "m_5", cmId: 1003, cmCode: "S-0003", cliente: "Mario Rossi", vani: 4, data: "2026-03-24", orario: "08:00", durata: "2g", giorni: 2, squadraId: "sq1", stato: "programmato", note: "3° piano con argano." },
+  { id: "m_5", cmId: 1003, cmCode: "S-0003", cliente: "Mario Rossi", vani: 4, data: "2026-03-24", orario: "08:00", durata: "2g", giorni: 2, squadraId: "sq1", stato: "programmato", note: "3┬░ piano con argano." },
   { id: "m_6", cmId: 1012, cmCode: "S-0012", cliente: "Paolo Valentino", vani: 3, data: "2026-01-08", orario: "08:00", durata: "1g", giorni: 1, squadraId: "sq2", stato: "completato", note: "3 finestre, completato." },
   { id: "m_7", cmId: 1013, cmCode: "S-0013", cliente: "Andrea Colombo", vani: 4, data: "2025-12-15", orario: "08:00", durata: "2g", giorni: 2, squadraId: "sq1", stato: "completato", note: "4 portefinestre." },
   { id: "m_8", cmId: 1014, cmCode: "S-0014", cliente: "Teresa Catanzaro", vani: 3, data: "2026-01-28", orario: "08:00", durata: "1.5g", giorni: 1.5, squadraId: "sq2", stato: "completato", note: "" },
@@ -388,7 +406,7 @@ export const TASKS_INIT = [
   { id: 4, text: "Controllare consegna Esposito", meta: "Prevista 28/02", time: "", priority: "media", cm: "S-0004", date: "2026-02-28", persona: "", done: false, allegati: [] },
   { id: 5, text: "Programmare montaggio Romano", meta: "8 vani, 3 giorni", time: "", priority: "alta", cm: "S-0006", date: "2026-03-01", persona: "", done: false, allegati: [] },
   { id: 6, text: "Tornare per misure Greco Lucia", meta: "3 vani mancanti", time: "", priority: "media", cm: "S-0008", date: "2026-03-03", persona: "Lucia Greco", done: false, allegati: [] },
-  { id: 7, text: "Richiedere autoscala per Greco", meta: "5° piano", time: "", priority: "alta", cm: "S-0008", date: "2026-03-02", persona: "", done: false, allegati: [] },
+  { id: 7, text: "Richiedere autoscala per Greco", meta: "5┬░ piano", time: "", priority: "alta", cm: "S-0008", date: "2026-03-02", persona: "", done: false, allegati: [] },
   { id: 8, text: "Sopralluogo Ferraro passaparola", meta: "6 finestre", time: "", priority: "media", cm: "S-0007", date: "2026-03-04", persona: "Marco Ferraro", done: false, allegati: [] },
   { id: 9, text: "Far firmare preventivo Scalia", meta: "Studio legale", time: "", priority: "alta", cm: "S-0018", date: "2026-03-01", persona: "Antonio Scalia", done: false, allegati: [] },
   { id: 10, text: "Sopralluogo condominio Cosenza", meta: "12 appartamenti", time: "", priority: "media", cm: "S-0020", date: "2026-03-05", persona: "Domenico Cosenza", done: false, allegati: [] },
@@ -396,7 +414,7 @@ export const TASKS_INIT = [
 
 
 
-// === AI INBOX — email in arrivo con classificazione AI ===
+// === AI INBOX ÔÇö email in arrivo con classificazione AI ===
 export const AI_INBOX_INIT = [];
 
 export const MSGS_INIT = [
@@ -406,27 +424,27 @@ export const MSGS_INIT = [
              { who: "Salvatore De Luca", text: "Perfetto, grazie mille", time: "09:30", date: "12/12", canale: "whatsapp" }] },
   { id: "msg2", from: "Anna Bianchi", preview: "Ho ricevuto il preventivo, vorrei procedere", time: "14:30", date: "2026-01-20", cm: "S-0002", read: true, canale: "email",
     thread: [{ who: "Anna Bianchi", text: "Buongiorno, ho ricevuto il preventivo per le 4 finestre. Vorrei procedere con l'ordine. Possiamo fissare un appuntamento per la firma?", time: "14:30", date: "20/01", canale: "email" },
-             { who: "Tu", text: "Gentile Anna, perfetto! Le propongo giovedì prossimo alle 10:00 nel nostro showroom. Le confermo che il prezzo include IVA 10%.", time: "15:45", date: "20/01", canale: "email" }] },
-  { id: "msg3", from: "Mario Rossi", preview: "Confermo disponibilità per il sopralluogo", time: "11:00", date: "2026-02-10", cm: "S-0003", read: true, canale: "whatsapp",
-    thread: [{ who: "Tu", text: "Buongiorno Mario, il materiale è in produzione. Prevediamo consegna tra 3 settimane.", time: "10:45", date: "10/02", canale: "whatsapp" },
-             { who: "Mario Rossi", text: "Confermo disponibilità per il sopralluogo di venerdì", time: "11:00", date: "10/02", canale: "whatsapp" }] },
+             { who: "Tu", text: "Gentile Anna, perfetto! Le propongo gioved├¼ prossimo alle 10:00 nel nostro showroom. Le confermo che il prezzo include IVA 10%.", time: "15:45", date: "20/01", canale: "email" }] },
+  { id: "msg3", from: "Mario Rossi", preview: "Confermo disponibilit├á per il sopralluogo", time: "11:00", date: "2026-02-10", cm: "S-0003", read: true, canale: "whatsapp",
+    thread: [{ who: "Tu", text: "Buongiorno Mario, il materiale ├¿ in produzione. Prevediamo consegna tra 3 settimane.", time: "10:45", date: "10/02", canale: "whatsapp" },
+             { who: "Mario Rossi", text: "Confermo disponibilit├á per il sopralluogo di venerd├¼", time: "11:00", date: "10/02", canale: "whatsapp" }] },
   { id: "msg4", from: "Laura Esposito", preview: "Le finestre sono bellissime, grazie!", time: "16:20", date: "2026-02-20", cm: "S-0004", read: false, canale: "whatsapp",
     thread: [{ who: "Laura Esposito", text: "Le finestre sono bellissime, grazie! Volevo chiedere informazioni sulla manutenzione.", time: "16:20", date: "20/02", canale: "whatsapp" }] },
   { id: "msg5", from: "Francesca Romano", preview: "Conferma montaggio 3 marzo", time: "08:30", date: "2026-02-25", cm: "S-0006", read: false, canale: "sms",
-    thread: [{ who: "Tu", text: "Gentile Francesca, confermiamo il montaggio per lunedì 3 marzo. La squadra arriverà alle 8:00.", time: "08:30", date: "25/02", canale: "sms" },
+    thread: [{ who: "Tu", text: "Gentile Francesca, confermiamo il montaggio per luned├¼ 3 marzo. La squadra arriver├á alle 8:00.", time: "08:30", date: "25/02", canale: "sms" },
              { who: "Francesca Romano", text: "Perfetto, saremo presenti. Grazie", time: "09:10", date: "25/02", canale: "sms" }] },
   { id: "msg6", from: "Paolo Valentino", preview: "Fattura ricevuta, pagamento effettuato", time: "10:00", date: "2025-11-18", cm: "S-0012", read: true, canale: "email",
     thread: [{ who: "Tu", text: "Gentile Paolo, in allegato la fattura per i lavori completati. Cordiali saluti.", time: "09:00", date: "18/11", canale: "email" },
              { who: "Paolo Valentino", text: "Fattura ricevuta, pagamento effettuato tramite bonifico. Grazie per l'ottimo lavoro!", time: "10:00", date: "18/11", canale: "email" }] },
   { id: "msg7", from: "Andrea Colombo", preview: "Quando arriva il materiale Rehau?", time: "17:45", date: "2025-11-25", cm: "S-0013", read: true, canale: "whatsapp",
     thread: [{ who: "Andrea Colombo", text: "Quando arriva il materiale Rehau?", time: "17:45", date: "25/11", canale: "whatsapp" },
-             { who: "Tu", text: "Il materiale è in consegna per il 2 dicembre. La terremo aggiornato.", time: "18:00", date: "25/11", canale: "whatsapp" },
+             { who: "Tu", text: "Il materiale ├¿ in consegna per il 2 dicembre. La terremo aggiornato.", time: "18:00", date: "25/11", canale: "whatsapp" },
              { who: "Andrea Colombo", text: "Ottimo, grazie", time: "18:05", date: "25/11", canale: "whatsapp" }] },
   { id: "msg8", from: "Vincenzo Pinto", preview: "Documentazione Superbonus completata", time: "11:30", date: "2026-01-10", cm: "S-0015", read: true, canale: "email",
-    thread: [{ who: "Tu", text: "Gentile Vincenzo, le comunichiamo che la documentazione Superbonus è stata completata e inviata all'ENEA.", time: "11:30", date: "10/01", canale: "email" },
+    thread: [{ who: "Tu", text: "Gentile Vincenzo, le comunichiamo che la documentazione Superbonus ├¿ stata completata e inviata all'ENEA.", time: "11:30", date: "10/01", canale: "email" },
              { who: "Vincenzo Pinto", text: "Ricevuto, grazie per la gestione impeccabile della pratica.", time: "14:00", date: "10/01", canale: "email" }] },
   { id: "msg9", from: "Roberto Mancini", preview: "Possiamo spostare il montaggio?", time: "07:45", date: "2026-02-28", cm: "S-0009", read: false, canale: "whatsapp",
-    thread: [{ who: "Roberto Mancini", text: "Buongiorno, è possibile spostare il montaggio di una settimana? Ho un imprevisto.", time: "07:45", date: "28/02", canale: "whatsapp" }] },
+    thread: [{ who: "Roberto Mancini", text: "Buongiorno, ├¿ possibile spostare il montaggio di una settimana? Ho un imprevisto.", time: "07:45", date: "28/02", canale: "whatsapp" }] },
   { id: "msg10", from: "Giuseppe Verdi", preview: "Richiesta sopralluogo nuove finestre", time: "15:00", date: "2026-02-26", cm: "S-0001", read: false, canale: "email",
     thread: [{ who: "Giuseppe Verdi", text: "Buongiorno, vorrei richiedere un sopralluogo per la sostituzione di 6 finestre del mio appartamento. Quando sarebbe disponibile?", time: "15:00", date: "26/02", canale: "email" }] },
 ];
@@ -451,7 +469,7 @@ export const CONTATTI_INIT = [
   { id: "ct13", nome: "Domenico", cognome: "Cosenza", telefono: "340 888 9900", email: "d.cosenza@gmail.com", indirizzo: "Via dei Normanni 30, Cosenza", tipo: "cliente", preferito: false },
   { id: "ct14", nome: "Antonio", cognome: "Scalia", telefono: "320 555 8899", email: "a.scalia@studio.it", indirizzo: "Corso Umberto 120, Cosenza", tipo: "cliente", preferito: false },
   { id: "ct15", nome: "Marco", cognome: "Rossi", telefono: "+39 045 123456", email: "m.rossi@aluplast.it", azienda: "Aluplast Italia", tipo: "fornitore", preferito: true },
-  { id: "ct16", nome: "Luca", cognome: "Bianchi", telefono: "+39 335 7654321", email: "l.bianchi@schueco.com", azienda: "Schüco International", tipo: "fornitore", preferito: true },
+  { id: "ct16", nome: "Luca", cognome: "Bianchi", telefono: "+39 335 7654321", email: "l.bianchi@schueco.com", azienda: "Sch├╝co International", tipo: "fornitore", preferito: true },
 ];
 
 
@@ -472,7 +490,7 @@ export const SISTEMI_INIT = [
     { l: 1200, h: 1200, prezzo: 340 }, { l: 1200, h: 1400, prezzo: 385 }, { l: 1200, h: 1600, prezzo: 430 }, { l: 1200, h: 1800, prezzo: 480 },
     { l: 1400, h: 1400, prezzo: 430 }, { l: 1400, h: 1600, prezzo: 485 }, { l: 1400, h: 2200, prezzo: 580 },
   ] },
-  { id: 2, marca: "Schüco", sistema: "CT70", euroMq: 280, prezzoMq: 280, sovRAL: 15, sovLegno: 25, minimiMq: { "1anta": 1.5, "2ante": 2.0, "scorrevole": 3.5 }, colori: ["RAL 9010", "RAL 7016", "RAL 9005"], sottosistemi: ["Classic", "Rondo"], griglia: [
+  { id: 2, marca: "Sch├╝co", sistema: "CT70", euroMq: 280, prezzoMq: 280, sovRAL: 15, sovLegno: 25, minimiMq: { "1anta": 1.5, "2ante": 2.0, "scorrevole": 3.5 }, colori: ["RAL 9010", "RAL 7016", "RAL 9005"], sottosistemi: ["Classic", "Rondo"], griglia: [
     { l: 600, h: 800, prezzo: 195 }, { l: 600, h: 1200, prezzo: 260 },
     { l: 800, h: 1000, prezzo: 275 }, { l: 800, h: 1400, prezzo: 365 },
     { l: 1000, h: 1200, prezzo: 380 }, { l: 1000, h: 1400, prezzo: 440 },
@@ -536,11 +554,11 @@ export const TIPOLOGIE_RAPIDE = [
   // Zanzariere
   { code: "ZANZLAT",label: "Zanzariera laterale",       icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
   { code: "ZANZVER",label: "Zanzariera verticale",      icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZPLI",label: "Zanzariera plissé",         icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZPLI",label: "Zanzariera pliss├®",         icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
   { code: "ZANZBAT",label: "Zanzariera battente",       icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
   { code: "ZANZFIX",label: "Zanzariera fissa",          icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
   { code: "ZANZMAG",label: "Zanzariera magnetica",      icon: "zap", cat: "Zanzariere", settore: "zanzariere" },
-  { code: "ZANZ2A", label: "Zanzariera 2 ante plissé",  icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
+  { code: "ZANZ2A", label: "Zanzariera 2 ante pliss├®",  icon: "grid", cat: "Zanzariere", settore: "zanzariere" },
   // Tende da sole
   { code: "TDBR",   label: "Tenda a bracci",            icon: "sun", cat: "Tende da sole", settore: "tende" },
   { code: "TDCAD",  label: "Tenda a caduta",            icon: "sun", cat: "Tende da sole", settore: "tende" },
@@ -589,7 +607,7 @@ export const SETTORI = [
   { id: "porte", label: "Porte", icon: "door", desc: "Porte interne, blindate, scorrevoli, sezionali" },
   { id: "persiane", label: "Persiane e Scuri", icon: "layers", desc: "Persiane in alluminio, legno, PVC, scuri" },
   { id: "tapparelle", label: "Tapparelle e Avvolgibili", icon: "chevronDown", desc: "Tapparelle, cassonetti, motorizzazioni" },
-  { id: "zanzariere", label: "Zanzariere", icon: "grid", desc: "Laterali, verticali, plissé, battenti, magnetiche" },
+  { id: "zanzariere", label: "Zanzariere", icon: "grid", desc: "Laterali, verticali, pliss├®, battenti, magnetiche" },
   { id: "tende", label: "Tende da Sole", icon: "sun", desc: "Bracci, caduta, cappottine, pergole, ZIP, veneziane" },
   { id: "boxdoccia", label: "Box Doccia", icon: "droplets", desc: "Nicchia, angolari, walk-in, pareti vasca" },
   { id: "cancelli", label: "Cancelli e Recinzioni", icon: "building", desc: "Battenti, scorrevoli, recinzioni, ringhiere, automazioni" },
@@ -618,11 +636,11 @@ export const LAMIERE_INIT = [
 export const Ico = ({ d, s = 20, c = "#888", sw = 1.8 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 );
-// Inline icon helper (replaces emoji spans) — usage: <I d={ICO.package} c="#0D7C6B" />
+// Inline icon helper (replaces emoji spans) ÔÇö usage: <I d={ICO.package} c="#0D7C6B" />
 export const I = ({ d, s = 16, c = "currentColor", sw = 2 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",flexShrink:0}}>{d}</svg>
 );
-// Render icona da stringa-chiave — usage: <IcoKey name="columns" s={16} c="#64748B" />
+// Render icona da stringa-chiave ÔÇö usage: <IcoKey name="columns" s={16} c="#64748B" />
 export const IcoKey = ({ name, s = 16, c = "currentColor", sw = 1.8 }: { name: string; s?: number; c?: string; sw?: number }) => {
   const d = ICO[name as keyof typeof ICO];
   if (!d) return null;
@@ -750,8 +768,8 @@ export const PUNTI_MISURE = [
   { key: "hSx", label: "H sx", x: 8, y: 125, color: "blue", rot: true },
   { key: "hCentro", label: "H centro", x: 95, y: 170, color: "blue" },
   { key: "hDx", label: "H dx", x: 182, y: 125, color: "blue", rot: true },
-  { key: "d1", label: "D1 ↗", x: 50, y: 55, color: "purple" },
-  { key: "d2", label: "D2 ↘", x: 140, y: 55, color: "purple" },
+  { key: "d1", label: "D1 Ôåù", x: 50, y: 55, color: "purple" },
+  { key: "d2", label: "D2 Ôåÿ", x: 140, y: 55, color: "purple" },
 ];
 
 /* ====================================== */
