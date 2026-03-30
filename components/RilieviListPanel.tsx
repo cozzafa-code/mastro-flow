@@ -4,14 +4,16 @@
 // MASTRO ERP — RilieviListPanel
 // Estratto S3: ~1.812 righe (Lista rilievi + wizard + report + dossier)
 // ═══════════════════════════════════════════════════════════
+import React from "react";
+import { useMastro } from "./MastroContext";
+import { FM, ICO, Ico, I } from "./mastro-constants";
 
-// ─── Lumina Design Tokens (iniettati automaticamente) ─────
+// ─── Lumina Design Tokens ────────────────────────────────
 const L = {
   bg:          "#f9f9fb",
   surface:     "#ffffff",
   surfaceLow:  "#f3f3f5",
   surfaceMid:  "#eeeef0",
-  surfaceHigh: "#e8e8ea",
   primary:     "#031631",
   primaryCont: "#1a2b47",
   onPrimary:   "#ffffff",
@@ -25,21 +27,15 @@ const L = {
   amberBg:     "#ffdeac",
   border:      "rgba(197,198,206,0.25)",
   glass:       "rgba(255,255,255,0.85)",
-  blur:        "blur(20px)",
 } as const;
-
 const SH = {
   ambient:     "0 20px 40px rgba(26,28,29,0.04)",
   float:       "0 20px 40px rgba(26,28,29,0.08)",
   sm:          "0 2px 8px rgba(26,28,29,0.05)",
-  ceramic:     "inset 0 1px 0 0 rgba(255,255,255,0.2), inset 0 -1px 0 0 rgba(0,0,0,0.1), 0 10px 20px -5px rgba(3,22,49,0.28)",
-  ceramicSoft: "inset 0 1px 0 0 rgba(255,255,255,0.15), inset 0 -1px 0 0 rgba(0,0,0,0.06), 0 4px 12px rgba(3,22,49,0.06)",
-};
-// ──────────────────────────────────────────────────────────
+} as const;
+// ─────────────────────────────────────────────────────────
 
-import React from "react";
-import { useMastro } from "./MastroContext";
-import { FM, ICO, Ico, I } from "./mastro-constants";
+
 
 export default function RilieviListPanel() {
   const {
@@ -142,7 +138,7 @@ export default function RilieviListPanel() {
 
           {/* Tipo rilievo */}
           {autoTipo === "rilievo" && (
-            <div style={{ padding: "16px", borderRadius: 18, border: "1.5px solid #1A9E7340", background: "#1A9E7308" }}>
+            <div style={{ padding: "16px", borderRadius: 14, border: "1.5px solid #1A9E7340", background: "#1A9E7308" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 16, background: "#1A9E7320", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke=L.green strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -163,7 +159,7 @@ export default function RilieviListPanel() {
           )}
 
           {autoTipo === "modifica" && (
-            <div style={{ padding: "16px", borderRadius: 18, border: "1.5px solid #ff950060", background: "#ff950008" }}>
+            <div style={{ padding: "16px", borderRadius: 14, border: "1.5px solid #ff950060", background: "#ff950008" }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: "#ff9500", marginBottom: 10 }}>Modifica post-firma</div>
               <div style={{ fontSize: 11, color: L.sub, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.6 }}>Motivo della modifica *</div>
               <input style={{ ...S.input, borderColor: !nuovoRilData.motivoModifica ? "#ff9500" : L.border, fontSize: 15, padding: "12px 14px" }}
@@ -176,7 +172,7 @@ export default function RilieviListPanel() {
           {rilievi.length > 0 && (() => {
             const prevVani = rilievi[rilievi.length - 1]?.vani || [];
             return prevVani.length > 0 ? (
-              <div style={{ padding: "14px 16px", borderRadius: 18, border: "1.5px solid #1A9E7340", background: "#1A9E7306" }}>
+              <div style={{ padding: "14px 16px", borderRadius: 14, border: "1.5px solid #1A9E7340", background: "#1A9E7306" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: L.green, marginBottom: 8 }}>{prevVani.length} vani ereditati dal rilievo precedente</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {prevVani.slice(0, 8).map((v: any, i: number) => (
@@ -191,7 +187,7 @@ export default function RilieviListPanel() {
           })()}
 
           {/* Data e Ora */}
-          <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12 }}>Data e ora del rilievo</div>
             <div style={{ display: "flex", gap: 12 }}>
               <div style={{ flex: 1 }}>
@@ -210,7 +206,7 @@ export default function RilieviListPanel() {
           </div>
 
           {/* Rilevatore */}
-          <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Chi esegue il rilievo</label>
             <input style={{ ...S.input, fontSize: 16, padding: "12px 14px", borderRadius: 14 }}
               placeholder="Nome del rilevatore..."
@@ -219,7 +215,7 @@ export default function RilieviListPanel() {
           </div>
 
           {/* Note */}
-          <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Note preliminari</label>
             <textarea style={{ ...S.input, fontSize: 15, padding: "12px 14px", borderRadius: 14, minHeight: 80, resize: "none", lineHeight: 1.5 }}
               placeholder="Annotazioni, accesso al cantiere, particolarità..."
@@ -233,7 +229,7 @@ export default function RilieviListPanel() {
             style={{ ...S.btn, width: "100%", padding: "18px", fontSize: 16, fontWeight: 800,
               background: autoTipo === "modifica" ? "#ff9500" : L.green,
               boxShadow: autoTipo === "modifica" ? "0 4px 0 #c07000" : "0 4px 0 #0D7C6B",
-              borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
               transition: "all 0.1s", marginTop: 4 }}>
             <span>{autoTipo === "modifica" ? "Crea Rilievo Modifica" : `Crea Rilievo #${rilievi.length + 1}`}</span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -277,7 +273,7 @@ export default function RilieviListPanel() {
                   </div>
                   {aggiunti.length + rimossi.length + modificati.length === 0
                     ? <span style={S.badge(#d1fae5, L.green)}>Nessuna differenza</span>
-                    : <span style={S.badge(#fff7ed, #e4c18c)}>{aggiunti.length + rimossi.length + modificati.length} diff</span>}
+                    : <span style={S.badge(#fff7ed, L.amber)}>{aggiunti.length + rimossi.length + modificati.length} diff</span>}
                 </div>
                 <div style={{ padding: "10px 14px" }}>
                   {aggiunti.length > 0 && (
@@ -294,13 +290,13 @@ export default function RilieviListPanel() {
                   )}
                   {modificati.length > 0 && (
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: #e4c18c, marginBottom: 6 }}>~ MODIFICATI</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: L.amber, marginBottom: 6 }}>~ MODIFICATI</div>
                       {modificati.map(v => {
                         const match = prevVani.find(p => p.nome.replace(" ","") === v.nome.replace(" ",""));
                         const diffMisure = Object.entries(v.misure || {}).filter(([k, val]) => match?.misure?.[k] !== val);
                         return (
-                          <div key={v.id} style={{ marginBottom: 8, padding: "8px 10px", background: #fff7ed, borderRadius: 12, border: `1px solid ${#e4c18c}30` }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: #e4c18c, marginBottom: 4 }}>~ {v.nome.replace(" ","")}</div>
+                          <div key={v.id} style={{ marginBottom: 8, padding: "8px 10px", background: #fff7ed, borderRadius: 12, border: `1px solid ${L.amber}30` }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: L.amber, marginBottom: 4 }}>~ {v.nome.replace(" ","")}</div>
                             {v.sistema !== match?.sistema && <div style={{ fontSize: 11, color: L.text, marginBottom: 2 }}>Sistema: <strong>{match?.sistema || "—"}</strong> → <strong>{v.sistema}</strong></div>}
                             {v.tipo !== match?.tipo && <div style={{ fontSize: 11, color: L.text, marginBottom: 2 }}>Tipo: <strong>{match?.tipo || "—"}</strong> → <strong>{v.tipo}</strong></div>}
                             {diffMisure.slice(0, 5).map(([k, val]) => (
@@ -772,7 +768,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
     }
 
     // == LISTA RILIEVI ==
-    const tipoColor = { rilievo: #3b7fe0, definitiva: L.green, modifica: #e4c18c };
+    const tipoColor = { rilievo: #3b7fe0, definitiva: L.green, modifica: L.amber };
     const tipoIco   = { rilievo: "", definitiva: "", modifica: "" };
     const [rilTab, setRilTab] = (window as any).__rilTab__ || [null, null];
     // Use local state via component trick: riutilizza cmSubTab per il tab rilievi/report
@@ -797,7 +793,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
         <div style={{ padding: "0 16px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {c.sistema && <span style={S.badge(#dbeafe, #3b7fe0)}>{c.sistema}</span>}
           {c.tipo === "nuova" && <span style={S.badge(#d1fae5, L.green)}>🆕 Nuova</span>}
-          {c.tipo === "riparazione" && <span style={S.badge(#fff7ed, #e4c18c)}>Riparazione</span>}
+          {c.tipo === "riparazione" && <span style={S.badge(#fff7ed, L.amber)}>Riparazione</span>}
           {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(#d1fae5, L.green), cursor: "pointer" }}>{c.telefono}</span>}
           {c.euro > 0 && <span style={S.badge(L.amberBg, L.primary)}>€{c.euro.toLocaleString("it-IT")}</span>}
         </div>
@@ -821,9 +817,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           fattCm.forEach(f => docs.push({ ico: "", nome: `Fattura N.${f.numero}/${f.anno} — ${f.tipo}`, detail: `${fmtE(f.importo)} · ${f.pagata ? "Pagata" : "⏳ Da incassare"}`, col: f.pagata ? L.green : L.red }));
           ordCm.forEach(o => docs.push({ ico: "", nome: `Ordine ${o.fornitore?.nome || ""}`, detail: `${fmtE(o.totaleIva || o.totale || 0)} · ${o.conferma?.ricevuta ? "Confermato" : "⏳"}`, col: #6366f1 }));
           montCm.forEach(m => { const sq = (squadreDB || []).find(s => s.id === m.squadraId); docs.push({ ico: "", nome: `Montaggio ${m.data || ""}`, detail: `${sq?.nome || ""} · ${m.stato === "completato" ? "Completato" : m.stato}`, col: "#007aff" }); });
-          if (c.praticaFiscale) docs.push({ ico: "", nome: `Pratica Fiscale: ${c.praticaFiscale}`, detail: `${(c.docFiscali || []).length} documenti`, col: #e4c18c });
+          if (c.praticaFiscale) docs.push({ ico: "", nome: `Pratica Fiscale: ${c.praticaFiscale}`, detail: `${(c.docFiscali || []).length} documenti`, col: L.amber });
           (c.docIdentita || []).forEach(d => docs.push({ ico: d.tipo === "CI" ? "" : "", nome: d.tipo === "CI" ? "Carta d'Identità" : "Codice Fiscale", detail: `${d.nome} · ${d.data || ""}`, col: "#5856d6" }));
-          (c.docFiscali || []).forEach(d => docs.push({ ico: "", nome: d.nome, detail: d.data || "", col: #e4c18c }));
+          (c.docFiscali || []).forEach(d => docs.push({ ico: "", nome: d.nome, detail: d.data || "", col: L.amber }));
           (c.allegati || []).forEach(a => docs.push({ ico: a.tipo === "firma" ? "️" : a.tipo === "fattura" ? "" : a.tipo === "ordine" ? "" : a.tipo === "conferma" ? "" : a.tipo === "verbale" ? "" : "", nome: a.nome, detail: a.data || "", col: "#86868b" }));
           
           return <div style={{ margin: "0 16px 12px", background: "linear-gradient(135deg, #34c75908, #34c75912)", borderRadius: 20, border: "2px solid #34c759", overflow: "hidden" }}>
@@ -1040,11 +1036,11 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                           )}
                         </div>
                         {step.done && (
-                            <span style={{ fontSize: 10, fontWeight: 700, color: "#34c759", background: "#34c75912", padding: "2px 8px", borderRadius: 8 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: "#34c759", background: "#34c75912", padding: "2px 8px", borderRadius: 6 }}>
                               Fatto {stepDocs.length > 0 && <span style={{ fontSize: 8 }}>{stepDocs.length}</span>}
                             </span>
                         )}
-                        {isCurrent && <span style={{ fontSize: 10, fontWeight: 700, color: L.primary, background: `${L.primary}15`, padding: "2px 8px", borderRadius: 8 }}>DA FARE</span>}
+                        {isCurrent && <span style={{ fontSize: 10, fontWeight: 700, color: L.primary, background: `${L.primary}15`, padding: "2px 8px", borderRadius: 6 }}>DA FARE</span>}
                       </div>
 
                       {/* Done detail */}
@@ -1787,8 +1783,8 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#34c759", textAlign: "right" }}>€{fmt(incassato)}</div>
                     </>}
                     {incassato > 0 && incassato < totIva && <>
-                      <div style={{ fontSize: 11, color: #e4c18c }}>⏳ Resta</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: #e4c18c, textAlign: "right" }}>€{fmt(totIva - incassato)}</div>
+                      <div style={{ fontSize: 11, color: L.amber }}>⏳ Resta</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: L.amber, textAlign: "right" }}>€{fmt(totIva - incassato)}</div>
                     </>}
                     {hasOrdine && <>
                       <div style={{ fontSize: 11, color: L.sub, borderTop: `1px solid ${L.border}`, paddingTop: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Costo fornitore</div>
@@ -1817,9 +1813,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
             <div style={{ margin: "8px 16px 0", background: L.surface, borderRadius: 16, border: `1px solid ${L.border}`, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: L.sub, textTransform: "uppercase" }}>️ Pratica Fiscale</div>
-                {c.praticaFiscale && <span style={{ fontSize: 10, fontWeight: 700, color: "#34c759", background: "#34c75912", padding: "2px 8px", borderRadius: 8 }}>Attiva</span>}
+                {c.praticaFiscale && <span style={{ fontSize: 10, fontWeight: 700, color: "#34c759", background: "#34c75912", padding: "2px 8px", borderRadius: 6 }}>Attiva</span>}
                 <span onClick={(e) => { e.stopPropagation(); setShowGuidaFiscale(sg => !sg); }}
-                  style={{ fontSize: 10, fontWeight: 700, color: "#3B7FE0", background: "#3B7FE010", padding: "2px 8px", borderRadius: 8, cursor: "pointer", border: "1px solid #3B7FE030" }}>
+                  style={{ fontSize: 10, fontWeight: 700, color: "#3B7FE0", background: "#3B7FE010", padding: "2px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid #3B7FE030" }}>
                   {showGuidaFiscale ? "× Chiudi guida" : "ℹ Guida IVA/Detrazioni"}
                 </span>
               </div>
@@ -2164,7 +2160,7 @@ IVA 10% manutenzione straordinaria`,
                             <div style={{ padding: "8px 12px", background: pp.color + "12", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: pp.color }}>{voce.label}</div>
                               <div onClick={() => { try { navigator.clipboard.writeText(voce.testo); } catch(e) { const ta = document.createElement("textarea"); ta.value = voce.testo; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); } }}
-                                style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: pp.color, padding: "3px 10px", borderRadius: 8, cursor: "pointer", whiteSpace: "nowrap" }}>
+                                style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: pp.color, padding: "3px 10px", borderRadius: 6, cursor: "pointer", whiteSpace: "nowrap" }}>
                                 Copia
                               </div>
                             </div>
@@ -2281,7 +2277,7 @@ IVA 10% manutenzione straordinaria`,
                       <div style={{ fontSize: 11, color: L.sub }}>
                         {r.ora && `${r.ora} · `}{r.rilevatore || "—"}
                       </div>
-                      {r.motivoModifica && <div style={{ fontSize: 11, color: #e4c18c, marginTop: 2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> {r.motivoModifica}</div>}
+                      {r.motivoModifica && <div style={{ fontSize: 11, color: L.amber, marginTop: 2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> {r.motivoModifica}</div>}
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: colore }}>{vaniCount}</div>
