@@ -833,16 +833,28 @@ export default function VanoDetailPanel() {
                       const svilTot = (lam.pieghe||[]).reduce((a:number,s:any)=>a+s.mm,0);
                       let preNodes:{x:number,y:number}[] = [];
                       if((lam.pieghe||[]).length > 0){
-                        let cx2=20, cy2=30;
-                        preNodes=[{x:cx2,y:cy2}];
+                        // Costruisce path in mm poi normalizza nel viewBox 280x96
+                        let rx=0, ry=0;
+                        const raw:number[][] = [[0,0]];
                         (lam.pieghe||[]).forEach((s:any)=>{
-                          const d=Math.min(s.mm*0.08,80);
-                          if(s.dir==='dx'){cx2+=d;}else if(s.dir==='sx'){cx2-=d;}
-                          else if(s.dir==='giu'){cy2+=d;}else{cy2-=d;}
-                          preNodes.push({x:Math.max(5,Math.min(cx2,195)),y:Math.max(5,Math.min(cy2,55))});
+                          if(s.dir==='dx'){rx+=s.mm;}else if(s.dir==='sx'){rx-=s.mm;}
+                          else if(s.dir==='giu'){ry+=s.mm;}else{ry-=s.mm;}
+                          raw.push([rx,ry]);
                         });
+                        const xs=raw.map(n=>n[0]), ys=raw.map(n=>n[1]);
+                        const minX=Math.min(...xs), maxX=Math.max(...xs);
+                        const minY=Math.min(...ys), maxY=Math.max(...ys);
+                        const rX=Math.max(maxX-minX,1), rY=Math.max(maxY-minY,1);
+                        const PAD=16, VW=248, VH=64;
+                        const sc=Math.min((VW-PAD*2)/rX,(VH-PAD*2)/rY);
+                        const ox=PAD+(VW-PAD*2-rX*sc)/2-minX*sc;
+                        const oy=PAD+(VH-PAD*2-rY*sc)/2-minY*sc;
+                        preNodes=raw.map(([x,y])=>({
+                          x:Math.round((ox+x*sc)*10)/10,
+                          y:Math.round((oy+y*sc)*10)/10
+                        }));
                       }
-                      const prePts = preNodes.map(n=>`${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
+                      const prePts = preNodes.map(n=>`${n.x},${n.y}`).join(' ');
                       return (
                         <div key={lam.id} style={{borderRadius:10,background:"#0F766E0A",border:"1px solid #0F766E25",overflow:"hidden"}}>
                           <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #0F766E15"}}>
@@ -867,65 +879,30 @@ export default function VanoDetailPanel() {
                               ✕
                             </div>
                           </div>
-                          {preNodes.length > 1 ? (() => {
-                            const openEditor = (e:any) => { e.stopPropagation();
-                              setLamieraPieghe(lam.pieghe||[]);
-                              setLamieraLatoBuono(lam.latoBuono||"esterno");
-                              setLamieraLatoInfisso(lam.latoInfisso||"");
-                              setLamieraLunghezza(lam.lunghezza||"");
-                              setLamieraEditIdx(li);
-                              lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
-                              setShowLamieraDisegno(true);
-                            };
-                            return (
-                              <svg viewBox="0 0 280 96" width="100%" style={{display:"block",background:"#F0FDF9",cursor:"pointer",borderRadius:"0 0 8px 8px"}} onClick={openEditor}>
-                                {Array.from({length:12}).map((_,gi)=>(
-                                  <line key={"gx"+gi} x1={gi*25} y1="0" x2={gi*25} y2="96" stroke="#E0F5EE" strokeWidth="0.5"/>
-                                ))}
-                                {Array.from({length:4}).map((_,gi)=>(
-                                  <line key={"gy"+gi} x1="0" y1={gi*30} x2="280" y2={gi*30} stroke="#E0F5EE" strokeWidth="0.5"/>
-                                ))}
-                                <polyline points={preNodes.map((n:{x:number,y:number})=>`${n.x},${n.y}`).join(' ')}
-                                  fill="none" stroke="#0F766E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                                {(lam.pieghe||[]).map((s:any, si:number) => {
-                                  if(si >= preNodes.length-1) return null;
-                                  const n1=preNodes[si] as {x:number,y:number};
-                                  const n2=preNodes[si+1] as {x:number,y:number};
-                                  const mx=(n1.x+n2.x)/2, my=(n1.y+n2.y)/2;
-                                  const isH=Math.abs(n2.x-n1.x)>=Math.abs(n2.y-n1.y);
-                                  const lx=isH?mx:mx-16, ly=isH?my-10:my;
-                                  return (
-                                    <g key={"lbl"+si}>
-                                      <rect x={lx-15} y={ly-7} width="30" height="13" rx="3" fill="rgba(3,22,49,0.82)"/>
-                                      <text x={lx} y={ly+2} textAnchor="middle" fontSize="8" fill="#fff" fontWeight="700">{s.mm}</text>
-                                    </g>
-                                  );
-                                })}
-                                {preNodes.map((n:{x:number,y:number},i:number)=>(
-                                  <circle key={i} cx={n.x} cy={n.y} r={i===0||i===preNodes.length-1?4.5:3}
-                                    fill={i===0?"#031631":i===preNodes.length-1?"#dc4444":"#fff"}
-                                    stroke="#0F766E" strokeWidth="2"/>
-                                ))}
-                                <rect x="3" y="3" width={lam.latoBuono==='esterno'?44:40} height="12" rx="3"
-                                  fill={lam.latoBuono==='esterno'?"#3B7FE0":"#D08008"}/>
-                                <text x="6" y="11" fontSize="7" fill="#fff" fontWeight="700">
-                                  {lam.latoBuono==='esterno'?'EST':'INT'}
-                                </text>
-                                <text x="277" y="92" textAnchor="end" fontSize="8" fill="#0F766E" fontWeight="700">{svilTot} mm tot</text>
-                              </svg>
-                            );
-                          })() : (
-                            <div onClick={e=>{e.stopPropagation();
-                              setLamieraPieghe(lam.pieghe||[]);
-                              setLamieraLatoBuono(lam.latoBuono||"esterno");
-                              setLamieraLatoInfisso(lam.latoInfisso||"");
-                              setLamieraLunghezza(lam.lunghezza||"");
-                              setLamieraEditIdx(li);
-                              lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
-                              setShowLamieraDisegno(true);
-                            }} style={{padding:"14px",textAlign:"center",fontSize:11,color:"#0F766E",fontWeight:600,cursor:"pointer",background:"#F0FDF9",borderRadius:"0 0 8px 8px"}}>
-                              ✏️ Tocca per disegnare le pieghe
-                            </div>
+                          {prePts.length > 0 ? (
+                            <svg viewBox="0 0 200 60" width="100%" style={{display:"block",background:"#F0FDF9",cursor:"pointer"}}
+                              onClick={e=>{e.stopPropagation();
+                                setLamieraPieghe(lam.pieghe||[]);
+                                setLamieraLatoBuono(lam.latoBuono||"esterno");
+                                setLamieraLatoInfisso(lam.latoInfisso||"");
+                                setLamieraLunghezza(lam.lunghezza||"");
+                                setLamieraEditIdx(li);
+                                lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                                setShowLamieraDisegno(true);
+                              }}>
+                              {Array.from({length:8}).map((_,i)=>(
+                                <line key={i} x1={i*25} y1="0" x2={i*25} y2="60" stroke="#E2E8F0" strokeWidth="0.3"/>
+                              ))}
+                              <polyline points={prePts} fill="none" stroke="#0F766E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              {preNodes.map((n,i)=>(
+                                <circle key={i} cx={n.x} cy={n.y} r={i===0?3.5:2.5} fill={i===0?"#0F766E":"#fff"} stroke="#0F766E" strokeWidth="1.5"/>
+                              ))}
+                              <rect x="2" y="2" width={lam.latoBuono==='esterno'?42:38} height="13" rx="4" fill={lam.latoBuono==='esterno'?"#3B7FE0":"#D08008"}/>
+                              <text x="5" y="11" fontSize="7" fill="#fff" fontWeight="800">◐ {lam.latoBuono==='esterno'?'ESTERNO':'INTERNO'}</text>
+                              {svilTot>0 && <text x="198" y="57" textAnchor="end" fontSize="8" fill="#0F766E" fontWeight="700">{svilTot}mm</text>}
+                            </svg>
+                          ) : (
+                            <div style={{padding:"10px",textAlign:"center",fontSize:11,color:"#0F766E80"}}>Tocca Modifica per disegnare le pieghe</div>
                           )}
                         </div>
                       );
