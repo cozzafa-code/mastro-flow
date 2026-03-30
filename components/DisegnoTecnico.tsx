@@ -1017,8 +1017,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 
                                 // Match elements to cell by position overlap (BSP IDs change dynamically)
                                 const inCell = (el2) => el2.x !== undefined && el2.w !== undefined &&
+                                  (el2.cellId ? el2.cellId === cell.id :
                                   el2.x >= cell.x - 2 && el2.y >= cell.y - 2 &&
-                                  el2.x + el2.w <= cell.x + cell.w + 2 && el2.y + el2.h <= cell.y + cell.h + 2;
+                                  el2.x + el2.w <= cell.x + cell.w + 2 && el2.y + el2.h <= cell.y + cell.h + 2);
                                 
                                 // Regular cell handling
                                 if (drawMode === "place-anta") {
