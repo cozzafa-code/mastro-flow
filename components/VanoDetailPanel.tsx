@@ -3117,6 +3117,17 @@ export default function VanoDetailPanel() {
       )}
 
       {showLamieraDisegno && (() => {
+        // updateV locale — salva campo nel vano selezionato
+        const updateV = (field: string, val: any) => {
+          const updRil = selectedRilievo ? { ...selectedRilievo, vani: selectedRilievo.vani.map(vn => vn.id === selectedVano?.id ? { ...vn, [field]: val } : vn) } : null;
+          if (updRil) {
+            setCantieri(cs => cs.map(c => c.id === selectedCM?.id
+              ? { ...c, rilievi: c.rilievi.map(r2 => r2.id === selectedRilievo?.id ? updRil : r2) } : c));
+            setSelectedRilievo(updRil);
+            setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r => r.id === selectedRilievo?.id ? updRil : r) }) : prev);
+          }
+          setSelectedVano(prev => prev ? ({ ...prev, [field]: val }) : prev);
+        };
         const allSegs = lamieraPieghe;
 
         // Build nodes in mm, poi scala per fit
