@@ -126,14 +126,14 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
   }, [setFabOpen]);
   const isRight = side === "right";
   const baseItems = [
-    { l: "Assistente AI", c: "#0F766E", t: "AI",  a: () => { setAiOpen(true); setFabOpen(false); } },
+    { l: "Assistente AI", c: "#1a2b47", t: "AI",  a: () => { setAiOpen(true); setFabOpen(false); } },
     { l: "Appuntamento", c: "#1A9E73", t: "CAL", a: onEvento },
     { l: "Nuovo cliente", c: "#3B7FE0", t: "USR", a: onCliente },
-    { l: "Nuova commessa", c: "#E8A020", t: "FLD", a: onCommessa },
+    { l: "Nuova commessa", c: "#d4a843", t: "FLD", a: onCommessa },
     { l: "Messaggio", c: "#8B5CF6", t: "MSG", a: onMessaggio },
   ];
   const recent = (recentActions || []).slice(0, 3).map(ra => ({
-    l: ra.label, c: "#0D7C6B", t: "BCK",
+    l: ra.label, c: "#1a2b47", t: "BCK",
     a: () => { try { const d = JSON.parse(ra.action); if (d.type === "commessa" && onLastCM) onLastCM({ id: d.id }); } catch {} }
   }));
   const items = recent.length > 0 ? [...baseItems, { l: "SEP", c: "#555", t: "SEP", a: null }, ...recent] : baseItems;
@@ -248,7 +248,7 @@ export default function DraggableFAB({ fabOpen, setFabOpen, acc, onEvento, onCli
         id: "ev_" + Date.now(), text: action.params.testo,
         date: action.params.data || oggi, time: action.params.ora || ora,
         tipo: action.params.tipo || "altro", cm: action.params.commessa || "",
-        color: "#14B8A6",
+        color: "#031631",
       };
       setEvents(prev => [...prev, newEvent]);
       return { ok: true, msg: "Evento creato" };
@@ -423,14 +423,14 @@ Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci
               <div style={{ width: 54, height: 54, borderRadius: "50%", background: item.c, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px " + item.c + "70" }}>
                 {icons[item.t] && icons[item.t]()}
               </div>
-              <div style={{ background: "#1A1A1C", color: "#fff", fontSize: 13, fontWeight: 700, padding: "7px 13px", borderRadius: 10, whiteSpace: "nowrap", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>{item.l}</div>
+              <div style={{ background: "#031631", color: "#fff", fontSize: 13, fontWeight: 700, padding: "7px 13px", borderRadius: 10, whiteSpace: "nowrap", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>{item.l}</div>
             </div>
           ))}
         </div>
       )}
       <div ref={wrapRef} style={{ position: "fixed", [isRight ? "right" : "left"]: 0, top: topPx, zIndex: 92 }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 110 : 0, overflow: "hidden", background: "#0A5940",
+          <div style={{ width: fabOpen ? 44 : 24, height: fabOpen ? 110 : 0, overflow: "hidden", background: "#0f1f38",
             borderRadius: isRight ? "12px 0 0 0" : "0 12px 0 0",
             display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
             transition: "width 0.25s ease, height 0.25s ease" }}>
@@ -461,34 +461,34 @@ Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci
 
       {/* ÔöÇÔöÇ PANNELLO AI ÔöÇÔöÇ */}
       {aiOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", flexDirection: "column", background: "#F8FAFC" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", flexDirection: "column", background: "#f9f9fb" }}>
           <div style={{ padding: "16px 20px 12px", borderBottom: "1px solid #E2E8F0", background: "#fff", display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: acc, display: "flex", alignItems: "center", justifyContent: "center" }}><AI_Sm s={18} /></div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A" }}>MASTRO AI</div>
-              <div style={{ fontSize: 11, color: "#64748B" }}>{liveMode ? (isListening ? "In ascolto..." : isSpeaking ? "Sto parlando..." : "Live ÔÇö parla ora") : "Assistente intelligente"}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#031631" }}>MASTRO AI</div>
+              <div style={{ fontSize: 11, color: "#44474d" }}>{liveMode ? (isListening ? "In ascolto..." : isSpeaking ? "Sto parlando..." : "Live ÔÇö parla ora") : "Assistente intelligente"}</div>
             </div>
             <button onClick={toggleLiveMode} style={{ padding: "6px 12px", borderRadius: 20, border: `2px solid ${liveMode ? "#DC4444" : acc}`, background: liveMode ? "#DC4444" : "transparent", color: liveMode ? "#fff" : acc, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
               {liveMode ? "Stop" : "Live"}
             </button>
-            <div onClick={() => { stopListening(); stopSpeaking(); setLiveMode(false); setAiOpen(false); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <div onClick={() => { stopListening(); stopSpeaking(); setLiveMode(false); setAiOpen(false); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#f3f3f5", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#44474d" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </div>
           </div>
           {!audioUnlocked && (
-            <div onClick={() => { unlockAudio(); setTimeout(() => { setLiveMode(true); liveModeRef.current = true; startListening(); }, 300); }} style={{ background: "#0F766E", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", borderBottom: "1px solid #0a5940" }}>
+            <div onClick={() => { unlockAudio(); setTimeout(() => { setLiveMode(true); liveModeRef.current = true; startListening(); }, 300); }} style={{ background: "#1a2b47", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", borderBottom: "1px solid #0a5940" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
               <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Tocca per attivare la voce e iniziare</span>
             </div>
           )}
           {liveMode && (
-            <div style={{ background: isListening ? "#DC444415" : "#F1F5F9", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #E2E8F0" }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: isListening ? "#DC4444" : isSpeaking ? acc : "#E2E8F0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <MIC_Icon c={isListening || isSpeaking ? "#fff" : "#94A3B8"} />
+            <div style={{ background: isListening ? "#DC444415" : "#f3f3f5", padding: "12px 20px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #E2E8F0" }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: isListening ? "#DC4444" : isSpeaking ? acc : "rgba(197,198,206,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <MIC_Icon c={isListening || isSpeaking ? "#fff" : "#75777e"} />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{isListening ? "Sto ascoltando..." : isSpeaking ? "Sto rispondendo..." : "Parla per fare una domanda"}</div>
-                <div style={{ fontSize: 11, color: "#64748B" }}>Conversazione continua automaticamente</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#031631" }}>{isListening ? "Sto ascoltando..." : isSpeaking ? "Sto rispondendo..." : "Parla per fare una domanda"}</div>
+                <div style={{ fontSize: 11, color: "#44474d" }}>Conversazione continua automaticamente</div>
               </div>
             </div>
           )}
@@ -496,11 +496,11 @@ Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci
             {aiMessages.length === 0 && !liveMode && (
               <div style={{ textAlign: "center", padding: "32px 20px" }}>
                 <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><AI_Sm s={36} c={acc} /></div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#0F172A", marginBottom: 4 }}>Come posso aiutarti?</div>
-                <div style={{ fontSize: 12, color: "#64748B", marginBottom: 16 }}>Scrivi, usa il microfono o premi Live per parlare</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#031631", marginBottom: 4 }}>Come posso aiutarti?</div>
+                <div style={{ fontSize: 12, color: "#44474d", marginBottom: 16 }}>Scrivi, usa il microfono o premi Live per parlare</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
                   {["Quante commesse ho aperte?", "Fatture scadute?", "Riepilogo pipeline", "Chi devo chiamare oggi?"].map(s => (
-                    <div key={s} onClick={() => sendAI(s)} style={{ padding: "8px 14px", borderRadius: 20, border: "1px solid #E2E8F0", background: "#fff", color: "#0F172A", fontSize: 12, cursor: "pointer", fontWeight: 500 }}>{s}</div>
+                    <div key={s} onClick={() => sendAI(s)} style={{ padding: "8px 14px", borderRadius: 20, border: "1px solid #E2E8F0", background: "#fff", color: "#031631", fontSize: 12, cursor: "pointer", fontWeight: 500 }}>{s}</div>
                   ))}
                 </div>
               </div>
@@ -508,7 +508,7 @@ Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci
             {aiMessages.map((msg, i) => (
               <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", marginBottom: 12 }}>
                 {msg.role === "assistant" && <div style={{ width: 28, height: 28, borderRadius: 8, background: acc, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: 8, marginTop: 2 }}><AI_Sm s={14} /></div>}
-                <div style={{ maxWidth: "78%", padding: "10px 14px", borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: msg.role === "user" ? acc : "#fff", color: msg.role === "user" ? "#fff" : "#0F172A", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>{msg.content}</div>
+                <div style={{ maxWidth: "78%", padding: "10px 14px", borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: msg.role === "user" ? acc : "#fff", color: msg.role === "user" ? "#fff" : "#031631", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>{msg.content}</div>
               </div>
             ))}
             {aiLoading && (
@@ -524,17 +524,17 @@ Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci
           {!liveMode && (
             <div style={{ padding: "12px 16px 28px", background: "#fff", borderTop: "1px solid #E2E8F0" }}>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <div style={{ flex: 1, display: "flex", alignItems: "center", background: "#F8FAFC", borderRadius: 24, border: "1.5px solid #E2E8F0", padding: "8px 14px" }}>
-                  <input value={aiInput} onChange={e => setAiInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") sendAI(); }} placeholder="Chiedimi qualcosa..." style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: "#0F172A", fontFamily: "inherit" }} />
+                <div style={{ flex: 1, display: "flex", alignItems: "center", background: "#f9f9fb", borderRadius: 24, border: "1.5px solid #E2E8F0", padding: "8px 14px" }}>
+                  <input value={aiInput} onChange={e => setAiInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") sendAI(); }} placeholder="Chiedimi qualcosa..." style={{ flex: 1, border: "none", background: "transparent", outline: "none", fontSize: 14, color: "#031631", fontFamily: "inherit" }} />
                 </div>
-                <button onClick={isListening ? stopListening : startListening} style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${isListening ? "#DC4444" : "#E2E8F0"}`, background: isListening ? "#DC4444" : "#F8FAFC", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <MIC_Icon c={isListening ? "#fff" : "#64748B"} />
+                <button onClick={isListening ? stopListening : startListening} style={{ width: 44, height: 44, borderRadius: "50%", border: `1.5px solid ${isListening ? "#DC4444" : "rgba(197,198,206,0.3)"}`, background: isListening ? "#DC4444" : "#f9f9fb", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <MIC_Icon c={isListening ? "#fff" : "#44474d"} />
                 </button>
-                <button onClick={() => sendAI()} disabled={!aiInput.trim() || aiLoading} style={{ width: 44, height: 44, borderRadius: "50%", border: "none", background: aiInput.trim() && !aiLoading ? acc : "#E2E8F0", cursor: aiInput.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button onClick={() => sendAI()} disabled={!aiInput.trim() || aiLoading} style={{ width: 44, height: 44, borderRadius: "50%", border: "none", background: aiInput.trim() && !aiLoading ? acc : "rgba(197,198,206,0.3)", cursor: aiInput.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <SND_Icon />
                 </button>
               </div>
-              {aiMessages.length > 0 && <div onClick={() => setAiMessages([])} style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "#94A3B8", cursor: "pointer" }}>Nuova conversazione</div>}
+              {aiMessages.length > 0 && <div onClick={() => setAiMessages([])} style={{ textAlign: "center", marginTop: 8, fontSize: 11, color: "#75777e", cursor: "pointer" }}>Nuova conversazione</div>}
             </div>
           )}
         </div>
