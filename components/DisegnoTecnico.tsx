@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -959,7 +959,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
-                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
+
                                 if (!cell && cells.length === 0) {
                                   // Extract polygon from freeLines
                                   const lines = els.filter(e => e.type === "freeLine");
@@ -1058,7 +1058,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "place-ap") {
                                 let cell = findCellAt(mx, my);
-                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
+
                                 if (!cell && cells.length === 0) {
                                   const lines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
                                   if (lines.length > 0) {
@@ -1830,12 +1830,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     e2.preventDefault();
                                     const svg = e2.currentTarget;
                                     const t = e2.touches[0];
-                                    const rect = svg.getBoundingClientRect();
-                                    const vb = svg.viewBox?.baseVal;
-                                    const sx = vb ? vb.width / rect.width : 1;
-                                    const sy2 = vb ? vb.height / rect.height : 1;
-                                    const gmx = (t.clientX - rect.left) * sx;
-                                    const gmy = (t.clientY - rect.top) * sy2;
+                                    const { mx: gmx, my: gmy } = getSvgXY(e2, svg);
                                     // Pen mode touch
                                     if (drawMode === "pen" && dw._penActive) {
                                       const cur = dw._penPath || [];
