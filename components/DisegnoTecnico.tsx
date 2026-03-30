@@ -1001,17 +1001,58 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 
                                 // Polygon shape handling
                                 if (cell.poly) {
+                                  // Se ci sono montanti liberi, dividi il polygon per trovare la sotto-cella cliccata
+                                  const freeMontanti = els.filter(e => e.type === "freeLine" && e.subType === "montante");
+                                  let cellPoly = cell.poly;
+                                  if (freeMontanti.length > 0) {
+                                    // Trova i montanti che attraversano il polygon verticalmente
+                                    const allPolyX = cell.poly.map(p => p[0]);
+                                    const polyMinX = Math.min(...allPolyX);
+                                    const polyMaxX = Math.max(...allPolyX);
+                                    // Ordina montanti per X
+                                    const montX = freeMontanti
+                                      .map(m => (m.x1 + m.x2) / 2)
+                                      .filter(x => x > polyMinX + 5 && x < polyMaxX - 5)
+                                      .sort((a, b) => a - b);
+                                    if (montX.length > 0) {
+                                      // Determina i bounds X della sotto-cella cliccata
+                                      let subX1 = polyMinX, subX2 = polyMaxX;
+                                      for (let i = 0; i < montX.length; i++) {
+                                        if (mx < montX[i]) { subX2 = montX[i]; break; }
+                                        subX1 = montX[i];
+                                      }
+                                      // Filtra i punti del polygon alla sotto-cella (clamp X)
+                                      const allPolyY = cell.poly.map(p => p[1]);
+                                      const polyMinY = Math.min(...allPolyY);
+                                      const polyMaxY = Math.max(...allPolyY);
+                                      cellPoly = [
+                                        [subX1 + TK_FRAME, polyMinY + TK_FRAME],
+                                        [subX2 - TK_FRAME, polyMinY + TK_FRAME],
+                                        [subX2 - TK_FRAME, polyMaxY - TK_FRAME],
+                                        [subX1 + TK_FRAME, polyMaxY - TK_FRAME]
+                                      ];
+                                    }
+                                  }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
-                                    const newEls = els.filter(e => e.type !== "polyAnta");
-                                    newEls.push({ id: Date.now(), type: "polyAnta", poly: cell.poly, subType: drawMode === "place-porta" ? "porta" : undefined });
+                                    // Rimuovi solo le polyAnta nella stessa zona X
+                                    const subMinX = Math.min(...cellPoly.map(p => p[0]));
+                                    const subMaxX = Math.max(...cellPoly.map(p => p[0]));
+                                    const newEls = els.filter(e => {
+                                      if (e.type !== "polyAnta") return true;
+                                      const eMinX = Math.min(...e.poly.map(p => p[0]));
+                                      const eMaxX = Math.max(...e.poly.map(p => p[0]));
+                                      // Rimuovi se si sovrappone alla zona cliccata
+                                      return !(eMinX < subMaxX - 5 && eMaxX > subMinX + 5);
+                                    });
+                                    newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
                                     setDW(newEls);
                                   } else if (drawMode === "place-vetro") {
                                     const newEls = els.filter(e => e.type !== "polyGlass");
-                                    newEls.push({ id: Date.now(), type: "polyGlass", poly: cell.poly });
+                                    newEls.push({ id: Date.now(), type: "polyGlass", poly: cellPoly });
                                     setDW(newEls);
                                   } else if (drawMode === "place-persiana") {
                                     const newEls = els.filter(e => e.type !== "polyPersiana");
-                                    newEls.push({ id: Date.now(), type: "polyPersiana", poly: cell.poly });
+                                    newEls.push({ id: Date.now(), type: "polyPersiana", poly: cellPoly });
                                     setDW(newEls);
                                   }
                                   return;
