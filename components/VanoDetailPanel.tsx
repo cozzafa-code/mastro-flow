@@ -203,6 +203,7 @@ export default function VanoDetailPanel() {
   const [lamieraSelIdx, setLamieraSelIdx] = useState<number|null>(null);
   const [lamieraLunghezza, setLamieraLunghezza] = useState('');
   // ── LAMIERA ZOOM/PAN refs ────────────────────────────────
+  const [lamieraEditIdx, setLamieraEditIdx] = React.useState<number|null>(null); // indice lamiera in modifica
   const lamieraZoom = React.useRef(1);
   const lamieraPan = React.useRef({x:0,y:0});
   const lamieraTouches = React.useRef<any[]>([]);
@@ -810,28 +811,108 @@ export default function VanoDetailPanel() {
             },
             { id:"lamiera", icon:"", label:"Lamiera",
               iconSVG: "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z\"/></svg>",
-              badge: v.lamiera||null, filled: v.lamiera?1:0, total:1,
-              body: <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  <div onClick={()=>updateV("lamiera","")}
-                    style={{padding:"7px 12px",borderRadius:8,border:"1.5px solid "+(!v.lamiera?T.acc:T.bdr),
-                      background:!v.lamiera?T.accLt:T.card,fontSize:12,fontWeight:600,
-                      color:!v.lamiera?T.acc:T.sub,cursor:"pointer",
-                      boxShadow:!v.lamiera?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
-                    Nessuna
-                  </div>
-                  {lamiereDB.map(l=>{
-                    const sel=v.lamiera===l.cod;
-                    return <div key={l.id}
-                      onClick={()=>{updateV("lamiera",l.cod); setTimeout(()=>flashAndAdvance("lamiera"),200);}}
-                      style={{padding:"7px 12px",borderRadius:8,border:"1.5px solid "+(sel?T.acc:T.bdr),
-                        background:sel?T.accLt:T.card,fontSize:12,fontWeight:600,
-                        color:sel?T.acc:T.text,cursor:"pointer",
-                        boxShadow:sel?"0 2px 0 "+T.acc+"40":"0 1px 0 rgba(0,0,0,0.08)"}}>
-                      {l.cod}
-                    </div>;
+              badge: (v.lamiere?.length||0) > 0 ? String(v.lamiere.length) : (v.lamiera||null), filled: (v.lamiere?.length||0)+(v.lamiera?1:0), total:1,
+              body: (() => {
+                // Lista lamiere salvate nel vano (nuovo campo v.lamiere = array)
+                const lamList: Array<{id:string,nome:string,tipo:string,pieghe:any[],latoBuono:string,latoInfisso:string,lunghezza:string}> = (v.lamiere as any) || [];
+                const addLamiera = () => {
+                  const newL = {id: Date.now().toString(), nome: "Lamiera "+(lamList.length+1), tipo:"", pieghe:[], latoBuono:"esterno", latoInfisso:"", lunghezza:""};
+                  const updated = [...lamList, newL];
+                  updateV("lamiere", updated);
+                  // Apri editor per la nuova lamiera
+                  setLamieraPieghe([]);
+                  setLamieraLatoBuono("esterno");
+                  setLamieraLatoInfisso("");
+                  setLamieraLunghezza("");
+                  setLamieraEditIdx(updated.length - 1);
+                  lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                  setShowLamieraDisegno(true);
+                };
+                return <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {/* Lista lamiere esistenti */}
+                  {lamList.map((lam, li) => {
+                    const svilTot = lam.pieghe?.reduce((a:number,s:any)=>a+s.mm,0)||0;
+                    let preNodes:{x:number,y:number}[] = [];
+                    if(lam.pieghe?.length>0){
+                      let cx2=20,cy2=30;
+                      preNodes=[{x:cx2,y:cy2}];
+                      lam.pieghe.forEach((s:any)=>{
+                        const d=Math.min(s.mm*0.08,80);
+                        if(s.dir==='dx'){cx2+=d;}else if(s.dir==='sx'){cx2-=d;}
+                        else if(s.dir==='giu'){cy2+=d;}else if(s.dir==='su'){cy2-=d;}
+                        preNodes.push({x:Math.max(5,Math.min(cx2,195)),y:Math.max(5,Math.min(cy2,55))});
+                      });
+                    }
+                    const prePts=preNodes.map(n=>`${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
+                    return (
+                      <div key={lam.id} style={{borderRadius:10,background:"#0F766E0A",border:"1px solid #0F766E25",overflow:"hidden"}}>
+                        {/* Header lamiera */}
+                        <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #0F766E15"}}>
+                          <input
+                            value={lam.nome}
+                            onChange={e=>{
+                              const updated=[...lamList];
+                              updated[li]={...updated[li],nome:e.target.value};
+                              updateV("lamiere",updated);
+                            }}
+                            style={{flex:1,fontSize:12,fontWeight:700,border:"none",background:"transparent",color:"#0F766E",outline:"none",minWidth:0}}
+                          />
+                          <div style={{fontSize:10,color:"#0F766E80",fontWeight:600}}>{svilTot>0?svilTot+"mm svil.":""}</div>
+                          <div onClick={e=>{e.stopPropagation();
+                            setLamieraPieghe(lam.pieghe||[]);
+                            setLamieraLatoBuono((lam.latoBuono as any)||"esterno");
+                            setLamieraLatoInfisso((lam.latoInfisso as any)||"");
+                            setLamieraLunghezza(lam.lunghezza||"");
+                            setLamieraEditIdx(li);
+                            lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                            setShowLamieraDisegno(true);
+                          }} style={{padding:"5px 10px",borderRadius:6,background:"#0F766E",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                            ✏️ Modifica
+                          </div>
+                          <div onClick={e=>{e.stopPropagation();
+                            const updated=lamList.filter((_,i)=>i!==li);
+                            updateV("lamiere",updated);
+                          }} style={{padding:"5px 8px",borderRadius:6,background:"#DC444415",color:"#DC4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                            ✕
+                          </div>
+                        </div>
+                        {/* Preview SVG */}
+                        {prePts ? (
+                          <svg viewBox="0 0 200 60" width="100%" style={{display:"block",background:"#F0FDF9",cursor:"pointer"}}
+                            onClick={e=>{e.stopPropagation();
+                              setLamieraPieghe(lam.pieghe||[]);
+                              setLamieraLatoBuono((lam.latoBuono as any)||"esterno");
+                              setLamieraLatoInfisso((lam.latoInfisso as any)||"");
+                              setLamieraLunghezza(lam.lunghezza||"");
+                              setLamieraEditIdx(li);
+                              lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                              setShowLamieraDisegno(true);
+                            }}>
+                            {Array.from({length:8}).map((_,i)=>(
+                              <line key={i} x1={i*25} y1="0" x2={i*25} y2="60" stroke="#E2E8F0" strokeWidth="0.3"/>
+                            ))}
+                            <polyline points={prePts} fill="none" stroke="#0F766E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            {preNodes.map((n,i)=>(
+                              <circle key={i} cx={n.x} cy={n.y} r={i===0?3.5:2.5} fill={i===0?"#0F766E":"#fff"} stroke="#0F766E" strokeWidth="1.5"/>
+                            ))}
+                            <rect x="2" y="2" width={lam.latoBuono==='esterno'?42:38} height="13" rx="4" fill={lam.latoBuono==='esterno'?"#3B7FE0":"#D08008"}/>
+                            <text x="5" y="11" fontSize="7" fill="#fff" fontWeight="800">◐ {lam.latoBuono==='esterno'?'ESTERNO':'INTERNO'}</text>
+                            {svilTot>0 && <text x="198" y="57" textAnchor="end" fontSize="8" fill="#0F766E" fontWeight="700">{svilTot}mm</text>}
+                          </svg>
+                        ) : (
+                          <div style={{padding:"10px",textAlign:"center",fontSize:11,color:"#0F766E80"}}>Tocca Modifica per disegnare le pieghe</div>
+                        )}
+                      </div>
+                    );
                   })}
-                </div>
+                  {/* Bottone aggiungi */}
+                  <div onClick={addLamiera}
+                    style={{padding:"10px",borderRadius:10,border:"1.5px dashed #0F766E50",
+                      background:"#F0FDF9",textAlign:"center",cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                    <div style={{width:20,height:20,borderRadius:"50%",background:"#0F766E",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900}}>+</div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#0F766E"}}>Aggiungi lamiera</div>
+                  </div>
                 <div style={{marginTop:4,padding:"10px 12px",borderRadius:10,
                     background:"#0F766E10",border:"1px solid #0F766E30"}}>
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
@@ -3625,10 +3706,22 @@ export default function VanoDetailPanel() {
                   </div>
                 )}
                 <div onClick={()=>{
-                  updateV('lamieraPieghe',lamieraPieghe);
-                  updateV('lamieraLatoBuono',lamieraLatoBuono);
-                  updateV('lamieraLatoInfisso',lamieraLatoInfisso);
-                  updateV('lamieraLunghezza',lamieraLunghezza);
+                  // Salva nella lista lamiere (nuovo sistema multi-lamiera)
+                  const lamList: any[] = (selectedVano?.lamiere as any) || [];
+                  if (lamieraEditIdx !== null && lamieraEditIdx < lamList.length) {
+                    // Aggiorna lamiera esistente
+                    const updated = lamList.map((l, i) => i === lamieraEditIdx
+                      ? {...l, pieghe: lamieraPieghe, latoBuono: lamieraLatoBuono, latoInfisso: lamieraLatoInfisso, lunghezza: lamieraLunghezza}
+                      : l);
+                    updateV('lamiere', updated);
+                  } else {
+                    // Fallback: salva sui campi legacy
+                    updateV('lamieraPieghe', lamieraPieghe);
+                    updateV('lamieraLatoBuono', lamieraLatoBuono);
+                    updateV('lamieraLatoInfisso', lamieraLatoInfisso);
+                    updateV('lamieraLunghezza', lamieraLunghezza);
+                  }
+                  setLamieraEditIdx(null);
                   setShowLamieraDisegno(false);
                 }}
                   style={{flex:1,minWidth:140,padding:'13px',borderRadius:12,textAlign:'center',
