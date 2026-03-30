@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — DisegnoTecnico (Shared Drawing Module)
@@ -497,7 +497,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 cl.forEach(c => {
                                   const my1 = m.y1 !== undefined ? m.y1 : c.y;
                                   const my2 = m.y2 !== undefined ? m.y2 : c.y + c.h;
-                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + TK_FRAME*3 && my2 >= c.y + c.h - TK_FRAME*3 - TK_ZOCCOLO*3) {
+                                  if (m.x > c.x + HM + 2 && m.x < c.x + c.w - HM - 2 && my1 <= c.y + c.h * 0.4 && my2 >= c.y + c.h * 0.6) {
                                     next.push({ x: c.x, y: c.y, w: m.x - HM - c.x, h: c.h, id: c.id + "L" + mi });
                                     next.push({ x: m.x + HM, y: c.y, w: c.x + c.w - m.x - HM, h: c.h, id: c.id + "R" + mi });
                                   } else { next.push(c); }
@@ -1002,7 +1002,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 // Polygon shape handling
                                 if (cell.poly) {
                                   // Se ci sono montanti liberi, dividi il polygon per trovare la sotto-cella cliccata
-                                  const freeMontanti = els.filter(e => e.type === "freeLine" && e.subType === "montante");
+                                  const freeMontanti = els.filter(e => e.type === "montante");
                                   let cellPoly = cell.poly;
                                   if (freeMontanti.length > 0) {
                                     // Trova i montanti che attraversano il polygon verticalmente
@@ -1011,7 +1011,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const polyMaxX = Math.max(...allPolyX);
                                     // Ordina montanti per X
                                     const montX = freeMontanti
-                                      .map(m => (m.x1 + m.x2) / 2)
+                                      .map(m => m.x !== undefined ? m.x : (m.x1 + m.x2) / 2)
                                       .filter(x => x > polyMinX + 5 && x < polyMaxX - 5)
                                       .sort((a, b) => a - b);
                                     if (montX.length > 0) {
@@ -2470,7 +2470,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {dw._pendingLine && (() => {
                                     const clr = drawMode === "apertura" ? T.blue : "#333";
                                     const p = dw._pendingLine;
-                                    const gx = dw._guideX, gy = dw._guideY;
+                                    // Per Mont.Lib forza sempre gx=p.x1, per Trav.Lib forza gy=p.y1
+                                    let gx = dw._guideX, gy = dw._guideY;
+                                    const _subType = p._subType || dw._lineSubType;
+                                    if (_subType === "montante" || drawMode === "place-mont-free") gx = p.x1;
+                                    if (_subType === "traverso" || drawMode === "place-trav-free") gy = p.y1;
+                                    document.title = `sub=${_subType} dm=${drawMode} gx=${gx} px1=${p.x1}`;
                                     // Raccoglie tutti i vertici esistenti dei freeLine
                                     const existingPts = els.filter(e => e.type === "freeLine").flatMap(l => [
                                       { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
@@ -2510,6 +2515,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                               <line x1={gx} y1={gy-14} x2={gx} y2={gy+14} stroke="#1A9E73" strokeWidth={1} opacity={0.6} />
                                             </>;
                                           }
+                                          if (drawMode === "place-mont-free" || drawMode === "place-trav-free") return null;
                                           return <circle cx={gx} cy={gy} r={5} fill={clr} fillOpacity={0.7} />;
                                         })()}
                                         {/* Angle + length label */}
