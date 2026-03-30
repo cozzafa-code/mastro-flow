@@ -1471,29 +1471,29 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   /* ======= STYLES ======= */
   const fs = isDesktop ? 1.1 : isTablet ? 1.05 : 1;
   const S = {
-    app: { fontFamily: FF, background: T.bg, color: T.text, width: "100%", minHeight: "unset", position: "relative", WebkitFontSmoothing: "antialiased" },
-    header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
+    app: { fontFamily: "'Inter', sans-serif", background: "#f9f9fb", color: "#1a1c1d", width: "100%", minHeight: "unset", position: "relative", WebkitFontSmoothing: "antialiased" },
+    header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: "#ffffff", borderBottom: "1px solid rgba(197,198,206,0.25)", display: "flex", alignItems: "center", gap: 10 },
     headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
     headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
     section: { margin: `0 ${16*fs}px`, padding: "10px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" },
     sectionTitle: { fontSize: 13*fs, fontWeight: 700, color: T.text },
     sectionBtn: { fontSize: 12*fs, color: T.acc, fontWeight: 600, background: "none", border: "none", cursor: "pointer" },
-    card: { background: T.card, borderRadius: T.r, boxShadow: T.cardSh, overflow: "hidden", marginBottom: 8, cursor: "pointer", transition: "box-shadow 0.15s" },
+    card: { background: "#ffffff", borderRadius: 16, boxShadow: "0 1px 3px rgba(26,28,29,0.06), 0 4px 16px rgba(26,28,29,0.04)", overflow: "hidden", marginBottom: 8, cursor: "pointer", transition: "box-shadow 0.15s", border: "1px solid rgba(197,198,206,0.25)" },
     cardInner: { padding: `${12*fs}px ${14*fs}px` },
     chip: (active) => ({ padding: `${6*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${active ? T.acc : T.bdr}`, background: active ? T.acc : T.card, color: active ? "#fff" : T.text, fontSize: 12*fs, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s" }),
     stat: { flex: 1, textAlign: "center", padding: `${10*fs}px 4px`, background: T.card, cursor: "pointer" },
     statNum: { fontSize: 18*fs, fontWeight: 700 },
     statLabel: { fontSize: 9*fs, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3, marginTop: 1 },
     badge: (bg, color) => ({ fontSize: 11*fs, fontWeight: 600, padding: `${3*fs}px ${8*fs}px`, borderRadius: 6, background: bg, color, display: "inline-block" }),
-    input: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14*fs, color: T.text, outline: "none", fontFamily: FF, boxSizing: "border-box" },
-    select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14*fs, color: T.text, outline: "none", fontFamily: FF, boxSizing: "border-box" },
-    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF },
+    input: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 12, border: "1px solid rgba(197,198,206,0.4)", background: "#f3f3f5", fontSize: 14*fs, color: "#1a1c1d", outline: "none", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" },
+    select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 12, border: "1px solid rgba(197,198,206,0.4)", background: "#f3f3f5", fontSize: 14*fs, color: "#1a1c1d", outline: "none", fontFamily: "'Inter', sans-serif", boxSizing: "border-box" },
+    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 14, border: "none", background: "#031631", color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 6px 16px rgba(3,22,49,0.25)" },
     btnCancel: { width: "100%", padding: `${12*fs}px`, borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14*fs, fontWeight: 600, cursor: "pointer", fontFamily: FF },
     tabBar: { position: "fixed", bottom: 0, left: 0, right: 0, width: "100%", background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: `${6*fs}px 0 ${8*fs}px`, zIndex: 100 },
     tabItem: (active) => ({ flex: 1, textAlign: "center", padding: "4px 0", cursor: "pointer", opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }),
     tabLabel: (active) => ({ fontSize: 10*fs, fontWeight: 600, color: active ? T.acc : T.sub, marginTop: 1 }),
     modal: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", justifyContent: "center", alignItems: "flex-end" },
-    modalInner: { background: T.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: isDesktop ? 600 : 500, padding: `${20*fs}px ${16*fs}px ${30*fs}px`, maxHeight: "85vh", overflowY: "auto" },
+    modalInner: { background: "#ffffff", borderRadius: "24px 24px 0 0", width: "100%", maxWidth: isDesktop ? 600 : 500, padding: `${20*fs}px ${16*fs}px ${30*fs}px`, maxHeight: "85vh", overflowY: "auto" },
     modalTitle: { fontSize: 17*fs, fontWeight: 700, marginBottom: 16, color: T.text },
     fieldLabel: { fontSize: 12*fs, fontWeight: 600, color: T.sub, marginBottom: 4, display: "block" },
     pipeStep: (done, current) => ({ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 52, cursor: "pointer" }),
@@ -2968,7 +2968,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
         {tab === "commesse" && <PanelErrorBoundary name="Commesse">{renderCommesse()}</PanelErrorBoundary>}
-        {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
+        {selectedVano && tab === "commesse" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#f9f9fb",overflow:"auto"}}><PanelErrorBoundary name="VanoDetail">{renderVanoDetail()}</PanelErrorBoundary></div>}
         {tab === "clienti" && <PanelErrorBoundary name="Clienti">{renderClienti()}</PanelErrorBoundary>}
         {tab === "messaggi" && !selectedMsg && <PanelErrorBoundary name="Messaggi">{renderMessaggi()}</PanelErrorBoundary>}
 
