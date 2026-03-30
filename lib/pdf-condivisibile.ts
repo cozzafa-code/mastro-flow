@@ -301,7 +301,7 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
       </div>
       <img src="${c.firmaCliente}" alt="Firma cliente" style="max-height:70px;margin-top:12px;border:1px solid #bbf7d0;border-radius:8px;padding:6px;display:block;" />
     </div>` : `
-    <div class="firma-attesa">
+    <div class="firma-attesa" style="background:#f9f9fb">
       <div class="label">Firma cliente</div>
       <div style="border:2px dashed #d0d0d0;border-radius:10px;height:60px;margin-top:8px;display:flex;align-items:center;justify-content:center;color:#86868b;font-size:12px">
         In attesa di firma
@@ -326,63 +326,63 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conferma d'Ordine ${c.code || ""} — ${az.nome || "MASTRO"}</title>
+  <title>Conferma d'Ordine ${c.code || ""} — ${az.ragione || az.nome || "MASTRO"}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, 'Inter', sans-serif; background: #F2F1EC; padding: 24px 16px; color: #1A1A1C; }
-    .card { background: #fff; border-radius: 20px; max-width: 700px; margin: 0 auto; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.08); }
-    .topbar { background: #1A1A1C; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; }
-    .logo-wrap { display: flex; align-items: center; gap: 12px; }
-    .logo { width: 40px; height: 40px; background: #D08008; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #1A1A1C; }
-    .az-nome { color: #fff; font-size: 15px; font-weight: 700; }
-    .az-sub { color: #86868b; font-size: 11px; margin-top: 2px; }
-    .tag { background: #1A9E73; color: #fff; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 20px; letter-spacing: 0.5px; }
-    .body { padding: 28px 24px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
-    .info-box { background: #F2F1EC; border-radius: 12px; padding: 16px; }
-    .label { font-size: 10px; font-weight: 700; color: #86868b; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
-    .info-box .value { font-size: 15px; font-weight: 700; }
-    .info-box .sub { font-size: 12px; color: #86868b; margin-top: 3px; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #f9f9fb; padding: 32px 16px; color: #1a1c1d; -webkit-font-smoothing: antialiased; }
+    .card { background: #fff; border-radius: 24px; max-width: 720px; margin: 0 auto; overflow: hidden; box-shadow: 0 4px 40px rgba(3,22,49,0.10); border: 1px solid rgba(197,198,206,0.3); }
+    .topbar { background: #031631; padding: 22px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .logo-wrap { display: flex; align-items: center; gap: 14px; }
+    .logo { width: 42px; height: 42px; background: #1a2b47; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 900; color: #fff; letter-spacing: -0.04em; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; }
+    .az-nome { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+    .az-sub { color: #8293b4; font-size: 11px; margin-top: 3px; }
+    .tag { background: #fff; color: #031631; font-size: 11px; font-weight: 800; padding: 7px 16px; border-radius: 9999px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .body { padding: 32px 28px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 32px; }
+    .info-box { background: #f3f3f5; border-radius: 14px; padding: 18px; }
+    .label { font-size: 9px; font-weight: 700; color: #75777e; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.15em; }
+    .info-box .value { font-size: 16px; font-weight: 800; color: #1a1c1d; letter-spacing: -0.02em; }
+    .info-box .sub { font-size: 12px; color: #44474d; margin-top: 4px; line-height: 1.5; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 4px; }
-    th { background: #1A1A1C; color: #fff; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; }
+    th { background: #031631; color: #fff; padding: 11px 14px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
     th.num, td.num { text-align: right; }
-    td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(197,198,206,0.2); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-    tr:nth-child(even) td { background: #fafafa; }
+    tr:nth-child(even) td { background: #f9f9fb; }
     .bold { font-weight: 700; }
-    .totali { margin-top: 20px; border: 1px solid #f0f0f0; border-radius: 10px; overflow: hidden; }
-    .tot-row { display: flex; justify-content: space-between; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; background: #fff; }
+    .totali { margin-top: 24px; border: 1px solid rgba(197,198,206,0.25); border-radius: 14px; overflow: hidden; }
+    .tot-row { display: flex; justify-content: space-between; padding: 11px 16px; font-size: 13px; border-bottom: 1px solid rgba(197,198,206,0.2); background: #fff; color: #44474d; }
     .tot-row:last-child { border-bottom: none; }
-    .tot-final { background: #1A1A1C; color: #fff; padding: 14px 16px; display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; }
-    /* Condizioni */
+    .tot-final { background: #031631; color: #fff; padding: 16px 18px; display: flex; justify-content: space-between; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; font-family: 'JetBrains Mono', monospace; }
     .condizioni-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-    .cond-item { background: #F2F1EC; border-radius: 10px; padding: 12px 14px; }
-    .cond-val { font-size: 13px; font-weight: 600; margin-top: 4px; color: #1A1A1C; }
-    /* Note */
-    .note-box { background: #F2F1EC; border-radius: 10px; padding: 14px; margin-top: 16px; }
-    /* Firma */
-    .firma-box { background: #f0fdf4; border: 1.5px solid #34c759; border-radius: 12px; padding: 16px; margin-top: 20px; }
+    .cond-item { background: #f3f3f5; border-radius: 10px; padding: 12px 14px; }
+    .cond-val { font-size: 13px; font-weight: 600; margin-top: 4px; color: #1a1c1d; }
+    .note-box { background: #f3f3f5; border-radius: 12px; padding: 16px; margin-top: 16px; }
+    .firma-box { background: #f0fdf4; border: 1.5px solid #1a9e73; border-radius: 14px; padding: 18px; margin-top: 20px; }
     .firma-header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .firma-nome { font-size: 15px; font-weight: 700; color: #166534; margin-top: 4px; }
-    .firma-attesa { border: 1.5px solid #e5e5ea; border-radius: 12px; padding: 16px; margin-top: 20px; }
-    .sezione-title { font-size: 11px; font-weight: 800; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin: 24px 0 10px; }
-    .footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; text-align: center; font-size: 11px; color: #86868b; }
-    .cf-box { font-size: 11px; color: #86868b; margin-top: 4px; }
+    .firma-nome { font-size: 15px; font-weight: 700; color: #085041; margin-top: 4px; }
+    .firma-attesa { border: 1.5px dashed rgba(197,198,206,0.5); border-radius: 14px; padding: 18px; margin-top: 20px; text-align: center; color: #75777e; font-size: 13px; }
+    .sezione-title { font-size: 10px; font-weight: 700; color: #75777e; text-transform: uppercase; letter-spacing: 0.15em; margin: 28px 0 12px; }
+    .footer { padding: 18px 28px; border-top: 1px solid rgba(197,198,206,0.2); text-align: center; font-size: 11px; color: #75777e; background: #f9f9fb; }
+    .cf-box { font-size: 11px; color: #75777e; margin-top: 4px; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
     @media print { body { background: white; padding: 0; } .card { box-shadow: none; border-radius: 0; max-width: 100%; } }
-    @media (max-width: 500px) { .info-grid, .condizioni-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 500px) { .info-grid, .condizioni-grid { grid-template-columns: 1fr; } body { padding: 0; } .card { border-radius: 0; } }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="topbar">
       <div class="logo-wrap">
-        ${az.logo ? `<img src="${az.logo}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;" />` : `<div class="logo">M</div>`}
+        ${az.logo_url ? `<img src="${az.logo_url}" style="width:42px;height:42px;border-radius:12px;object-fit:cover;" />` : `<div class="logo">M</div>`}
         <div>
           <div class="az-nome">${az.ragione || az.nome || "MASTRO ERP"}</div>
-          <div class="az-sub">${[az.indirizzo, az.piva ? "P.IVA " + az.piva : ""].filter(Boolean).join(" · ")}</div>
+          <div class="az-sub">${[az.indirizzo, az.telefono, az.piva ? "P.IVA " + az.piva : ""].filter(Boolean).join(" · ")}</div>
         </div>
       </div>
-      <div class="tag">CONFERMA D'ORDINE</div>
+      <div class="tag">Conferma d'ordine</div>
     </div>
 
     <div class="body">
@@ -440,7 +440,8 @@ export async function generaPreventivoCondivisibile(c: any, ctx: any) {
     </div>
 
     <div class="footer">
-      ${az.ragione || az.nome || "MASTRO ERP"}${az.piva ? " · P.IVA " + az.piva : ""} · Documento generato il ${new Date().toLocaleString("it-IT")}
+      ${az.ragione || az.nome || "MASTRO ERP"}${az.piva ? " &nbsp;·&nbsp; P.IVA " + az.piva : ""}${az.email ? " &nbsp;·&nbsp; " + az.email : ""}<br>
+      <span style="color:#aaa">Documento generato il ${new Date().toLocaleString("it-IT")}</span>
     </div>
   </div>
 </body>
