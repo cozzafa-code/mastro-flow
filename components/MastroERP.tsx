@@ -51,7 +51,7 @@ import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 
 function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
-  const [theme, setTheme] = useState("lumina");
+  const [theme, setTheme] = useState("chiaro");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
   // Inject font link in <head> client-side to avoid SSR hydration mismatch
@@ -3446,33 +3446,42 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             { id: "settings",  ico: ICO.settings,  label: "Altro" },
           ];
           return (
-            <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-              background: T.card + "f0", borderTop: `1px solid ${T.bdr}`,
-              display: "flex", alignItems: "center",
-              backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" as any,
-              paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+            <div style={{
+              position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+              zIndex: 100, display: "flex", alignItems: "center",
+              background: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" as any,
+              borderRadius: 9999,
+              boxShadow: "0 8px 32px rgba(3,22,49,0.12), 0 2px 8px rgba(3,22,49,0.08)",
+              padding: "6px 8px",
+              gap: 2,
+              minWidth: 300,
+            }}>
               {TABS.map(t => {
                 const active = tab === t.id;
                 const badge = t.id === "messaggi" && (msgs||[]).filter((m:any) => !m.letto).length > 0
                   ? (msgs||[]).filter((m:any) => !m.letto).length : 0;
                 return (
                   <div key={t.id} onClick={() => { setTab(t.id); if (t.id !== "commesse") setSelectedCM(null); }}
-                    style={{ flex: 1, display: "flex", flexDirection: "column" as any, alignItems: "center",
-                      justifyContent: "center", padding: "8px 0 6px", cursor: "pointer", position: "relative" as any }}>
-                    {active && <div style={{ position: "absolute", top: 0, left: "20%", right: "20%",
-                      height: 2, borderRadius: "0 0 2px 2px", background: T.acc }} />}
+                    style={{
+                      flex: 1, display: "flex", flexDirection: "column" as any, alignItems: "center",
+                      justifyContent: "center", padding: active ? "10px 0" : "10px 0",
+                      cursor: "pointer", position: "relative" as any,
+                      background: active ? "#031631" : "transparent",
+                      borderRadius: 9999,
+                      transition: "all 0.2s",
+                    }}>
                     <div style={{ position: "relative" as any }}>
-                      <I d={t.ico} s={22} c={active ? T.acc : T.sub} />
+                      <I d={t.ico} s={22} c={active ? "#ffffff" : "#75777e"} />
                       {badge > 0 && (
                         <div style={{ position: "absolute", top: -4, right: -6, width: 16, height: 16,
-                          borderRadius: "50%", background: T.red, color: "#fff",
+                          borderRadius: "50%", background: "#dc4444", color: "#fff",
                           fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {badge > 9 ? "9+" : badge}
                         </div>
                       )}
                     </div>
-                    <div style={{ fontSize: 10, fontWeight: active ? 700 : 500,
-                      color: active ? T.acc : T.sub, marginTop: 3 }}>{t.label}</div>
+                    {active && <div style={{ fontSize: 9, fontWeight: 700, color: "#ffffff", marginTop: 2, letterSpacing: "0.04em" }}>{t.label}</div>}
                   </div>
                 );
               })}
