@@ -4,39 +4,6 @@
 // MASTRO ERP - RiepilogoPanel
 // Estratto S8: ~569 righe (Riepilogo commessa)
 // ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
-
-// ─── Lumina Design Tokens (iniettati automaticamente) ─────
-const L = {
-  bg:          "#f9f9fb",
-  surface:     "#ffffff",
-  surfaceLow:  "#f3f3f5",
-  surfaceMid:  "#eeeef0",
-  surfaceHigh: "#e8e8ea",
-  primary:     "#031631",
-  primaryCont: "#1a2b47",
-  onPrimary:   "#ffffff",
-  muted:       "#8293b4",
-  text:        "#1a1c1d",
-  sub:         "#44474d",
-  placeholder: "#75777e",
-  green:       "#1a9e73",
-  red:         "#dc4444",
-  amber:       "#e4c18c",
-  amberBg:     "#ffdeac",
-  border:      "rgba(197,198,206,0.25)",
-  glass:       "rgba(255,255,255,0.85)",
-  blur:        "blur(20px)",
-} as const;
-
-const SH = {
-  ambient:     "0 20px 40px rgba(26,28,29,0.04)",
-  float:       "0 20px 40px rgba(26,28,29,0.08)",
-  sm:          "0 2px 8px rgba(26,28,29,0.05)",
-  ceramic:     "inset 0 1px 0 0 rgba(255,255,255,0.2), inset 0 -1px 0 0 rgba(0,0,0,0.1), 0 10px 20px -5px rgba(3,22,49,0.28)",
-  ceramicSoft: "inset 0 1px 0 0 rgba(255,255,255,0.15), inset 0 -1px 0 0 rgba(0,0,0,0.06), 0 4px 12px rgba(3,22,49,0.06)",
-};
-// ──────────────────────────────────────────────────────────
-
 import React from "react";
 import { useMastro } from "./MastroContext";
 import { FM, ICO, Ico, TIPOLOGIE_RAPIDE } from "./mastro-constants";
@@ -588,16 +555,16 @@ export default function RiepilogoPanel() {
             const totCosto = totOre * costoOra;
             return (
               <div style={{background:"#D0800815",borderRadius:10,padding:"12px 14px",marginBottom:12,border:"1px solid #D0800830"}}>
-                <div style={{fontSize:9,fontWeight:700,color:L.amber,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>­ƒæ→ Manodopera</div>
+                <div style={{fontSize:9,fontWeight:700,color:"#D08008",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>­ƒæ→ Manodopera</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  {[["Ore stimate",vaniR.reduce((s,v)=>s+(v.oreStimate||0),0).toFixed(1),L.amber],["Ore extra",vaniR.reduce((s,v)=>s+(v.oreExtra||0),0).toFixed(1),"#E8A020"],["Costo totale","Ôé¼"+totCosto.toFixed(0),L.amber]].map(([l,val,col])=>(
+                  {[["Ore stimate",vaniR.reduce((s,v)=>s+(v.oreStimate||0),0).toFixed(1),"#D08008"],["Ore extra",vaniR.reduce((s,v)=>s+(v.oreExtra||0),0).toFixed(1),"#E8A020"],["Costo totale","Ôé¼"+totCosto.toFixed(0),"#D08008"]].map(([l,val,col])=>(
                     <div key={l} style={{textAlign:"center",padding:"8px 4px",background:"rgba(255,255,255,0.6)",borderRadius:8}}>
                       <div style={{fontSize:18,fontWeight:800,color:col,fontFamily:"'DM Mono',monospace"}}>{val}</div>
                       <div style={{fontSize:8,color:"#94a3b8",marginTop:2}}>{l}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:10,color:L.amber}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:10,color:"#D08008"}}>
                   <span>Totale: {totOre.toFixed(1)}h x é¼{costoOra}/ora</span>
                   <span style={{fontWeight:900}}>Ôé¼ {totCosto.toFixed(2)}</span>
                 </div>
