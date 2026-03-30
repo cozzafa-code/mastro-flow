@@ -2131,12 +2131,19 @@ export default function CMDetailPanel() {
 
                 {/* Scarica PDF */}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const vani = getVaniAttivi(c) || [];
-                    const snap = buildSnapshot(c, vani, aziendaInfo, sistemiDB, vetriDB, calcolaVanoPrezzo);
-                    generaFascicoloGeometraPDF(snap);
+                    // Passa cadData di ogni vano per il disegno nel PDF
+                    const vaniConDisegno = vani.map(v => ({
+                      ...v,
+                      cadData: v.cadData || (c.rilievi || [])
+                        .flatMap(r => r.vani || [])
+                        .find(rv => rv.id === v.id)?.cadData || null,
+                    }));
+                    const snap = buildSnapshot(c, vaniConDisegno, aziendaInfo, sistemiDB, vetriDB, calcolaVanoPrezzo);
+                    await generaFascicoloGeometraPDF(snap);
                   }}
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: `1.5px solid ${T.teal}`, background: `${T.teal}10`, color: T.teal, fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #031631", background: "#03163110", color: "#031631", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
                   📋 Scarica PDF Fascicolo
                 </button>

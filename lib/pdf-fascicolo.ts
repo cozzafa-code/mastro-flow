@@ -8,19 +8,21 @@ import type { FascicoloSnapshot } from "./fascicolo-service";
 
 // ─── COLORI BRAND ────────────────────────────────────────────
 const C = {
-  topbar:  [26,  26,  28],
-  teal:    [45,  122, 107],
-  amber:   [208, 128, 8],
+  topbar:  [3,   22,  49],   // navy #031631
+  teal:    [3,   22,  49],   // navy (era teal)
+  accent:  [26,  43,  71],   // primaryContainer #1a2b47
+  amber:   [26,  43,  71],   // navy dark
   green:   [26,  158, 115],
   blue:    [59,  127, 224],
   red:     [220, 68,  68],
-  bg:      [242, 241, 236],
-  text:    [26,  26,  28],
-  sub:     [134, 134, 139],
-  bdr:     [220, 220, 215],
+  bg:      [249, 249, 251],  // Lumina bg
+  text:    [26,  28,  29],
+  sub:     [68,  71,  77],
+  muted:   [130, 147, 180],
+  bdr:     [220, 220, 222],
   white:   [255, 255, 255],
-  lightbg: [248, 248, 245],
-  purple:  [120, 80,  220],
+  lightbg: [243, 243, 245],  // surfaceLow
+  purple:  [99,  102, 241],
 };
 
 const PW = 210, PH = 297;
@@ -302,8 +304,87 @@ function paginaCopertina(doc: jsPDF, snap: FascicoloSnapshot) {
   doc.text("Pag. 1", PW - MR, PH - 5, { align: "right" });
 }
 
+
+// ─── SVG → PNG (per inserire il disegno CAD nel PDF) ─────────
+// Nota: funzione async — usata solo quando cadData è disponibile
+async function svgToPngDataUrl(svgString: string, width = 400, height = 300): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = width * 2;  // retina
+    canvas.height = height * 2;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const blob = new Blob([svgString], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    await new Promise<void>((res, rej) => {
+      const img = new Image();
+      img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); URL.revokeObjectURL(url); res(); };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+      img.src = url;
+    });
+    return canvas.toDataURL("image/png");
+  } catch { return null; }
+}
+
+// ─── Ricostruisce SVG semplificato dalle elements del cadData ──
+function buildVanoSvg(cadData: any, realW: number, realH: number): string {
+  if (!cadData?.elements?.length) return "";
+  const els = cadData.elements;
+  const W = 360, H = 270;
+  const scX = realW > 0 ? W / realW : 1;
+  const scY = realH > 0 ? H / realH : 1;
+  const sc = Math.min(scX, scY) * 0.85;
+  const offX = (W - (realW * sc)) / 2;
+  const offY = (H - (realH * sc)) / 2;
+
+  let shapes = "";
+  for (const el of els) {
+    if (el.type === "rect") {
+      const x = offX + el.x * sc, y = offY + el.y * sc;
+      const w = el.w * sc, h = el.h * sc;
+      shapes += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="none" stroke="#031631" stroke-width="1.5" rx="1"/>`;
+    } else if (el.type === "montante" || el.type === "traverso") {
+      const x = offX + el.x * sc, y = offY + el.y * sc;
+      const w = Math.max(el.w * sc, 1.5), h = Math.max(el.h * sc, 1.5);
+      shapes += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="#1a1c1d" opacity="0.7"/>`;
+    } else if (el.type === "freeLine") {
+      const x1 = offX + el.x1 * sc, y1 = offY + el.y1 * sc;
+      const x2 = offX + el.x2 * sc, y2 = offY + el.y2 * sc;
+      shapes += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#031631" stroke-width="1.5"/>`;
+    } else if (el.type === "anta" || el.type === "apertura") {
+      const x = offX + el.x * sc, y = offY + el.y * sc;
+      const w = el.w * sc, h = el.h * sc;
+      shapes += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="#dbeafe" stroke="#3b7fe0" stroke-width="1" rx="1"/>`;
+      shapes += `<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+w).toFixed(1)}" y2="${(y+h/2).toFixed(1)}" stroke="#3b7fe090" stroke-width="0.5"/>`;
+      shapes += `<line x1="${x.toFixed(1)}" y1="${(y+h).toFixed(1)}" x2="${(x+w).toFixed(1)}" y2="${(y+h/2).toFixed(1)}" stroke="#3b7fe090" stroke-width="0.5"/>`;
+    } else if (el.type === "dim") {
+      const x1 = offX + el.x1 * sc, y1 = offY + el.y1 * sc;
+      const x2 = offX + el.x2 * sc, y2 = offY + el.y2 * sc;
+      shapes += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#1a9e73" stroke-width="0.8" stroke-dasharray="2,2"/>`;
+      if (el.label) {
+        const mx = ((x1+x2)/2).toFixed(1), my = ((y1+y2)/2 - 4).toFixed(1);
+        shapes += `<text x="${mx}" y="${my}" text-anchor="middle" font-size="9" fill="#085041" font-family="monospace" font-weight="bold">${el.label}</text>`;
+      }
+    } else if (el.type === "label") {
+      const x = offX + el.x * sc, y = offY + el.y * sc;
+      shapes += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="10" fill="#1a1c1d" font-family="monospace">${el.text || ""}</text>`;
+    }
+  }
+
+  // Sfondo e bordo
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="#f9f9fb" rx="4"/>
+  <rect width="${W}" height="${H}" fill="none" stroke="#c5c6ce" stroke-width="0.5" rx="4"/>
+  ${shapes}
+  <text x="${W/2}" y="${H-6}" text-anchor="middle" font-size="8" fill="#75777e" font-family="monospace">${realW}×${realH}mm</text>
+</svg>`;
+}
+
 // ─── PAGINA VANO ─────────────────────────────────────────────
-function paginaVano(doc: jsPDF, vano: FascicoloSnapshot["vani"][0], idx: number, snap: FascicoloSnapshot, pageNum: number, totalPages: number) {
+function paginaVano(doc: jsPDF, vano: FascicoloSnapshot["vani"][0], idx: number, snap: FascicoloSnapshot, pageNum: number, totalPages: number, disegnoImg?: string | null) {
   const m = vano.misure || {};
   const lmm = m.lCentro || m.lAlto || 0;
   const hmm = m.hCentro || m.hSx || 0;
@@ -465,6 +546,28 @@ function paginaVano(doc: jsPDF, vano: FascicoloSnapshot["vani"][0], idx: number,
       cy += 6;
     });
     cy += 4;
+  }
+
+  // ── DISEGNO CAD VANO ─────────────────────────────────────
+  if (disegnoImg) {
+    // Calcola altezza proporzionale al disegno (360x270 → scala per larghezza A4)
+    const imgW = tableW;
+    const imgH = imgW * (270 / 360);
+    // Controlla se c'è spazio sulla pagina corrente
+    if (cy + imgH + 8 > PH - 20) {
+      doc.addPage();
+      pageHeader(doc, snap, `Vano ${idx + 1} — Disegno`);
+      cy = 22;
+    }
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    t(doc, C.text);
+    doc.text("DISEGNO TECNICO", ML, cy);
+    cy += 3;
+    try {
+      doc.addImage(disegnoImg, "PNG", ML, cy, imgW, imgH);
+      cy += imgH + 6;
+    } catch {}
   }
 
   // ── PDF FORNITORE ────────────────────────────────────────
@@ -675,24 +778,33 @@ function paginaRiepilogo(doc: jsPDF, snap: FascicoloSnapshot, pageNum: number, t
 }
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────
-export function generaFascicoloGeometraPDF(snap: FascicoloSnapshot): void {
-  const totalPages = 2 + snap.vani.length; // copertina + n vani + riepilogo
+export async function generaFascicoloGeometraPDF(snap: FascicoloSnapshot): Promise<void> {
+  const totalPages = 2 + snap.vani.length;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  // Pagina 1: Copertina
+  // Pre-genera le immagini SVG per ogni vano
+  const disegniImg: (string | null)[] = await Promise.all(
+    snap.vani.map(async (v) => {
+      if (v.cadData?.elements?.length) {
+        const lmm = v.misure?.lCentro || v.misure?.lAlto || 1200;
+        const hmm = v.misure?.hCentro || v.misure?.hSx || 1400;
+        const svgStr = buildVanoSvg(v.cadData, lmm, hmm);
+        if (svgStr) return await svgToPngDataUrl(svgStr, 360, 270);
+      }
+      return null;
+    })
+  );
+
   paginaCopertina(doc, snap);
 
-  // Pagine 2..N: un vano per pagina
   snap.vani.forEach((v, i) => {
     doc.addPage();
-    paginaVano(doc, v, i, snap, i + 2, totalPages);
+    paginaVano(doc, v, i, snap, i + 2, totalPages, disegniImg[i]);
   });
 
-  // Ultima pagina: Riepilogo e firma
   doc.addPage();
   paginaRiepilogo(doc, snap, totalPages, totalPages);
 
-  // Download
   const clienteStr = [snap.commessa.cliente, snap.commessa.cognome]
     .filter(Boolean).join("_").replace(/\s+/g, "_") || "Cliente";
   const code = (snap.commessa.code || snap.commessa.id || "CM").replace(/\s+/g, "_");
@@ -700,13 +812,24 @@ export function generaFascicoloGeometraPDF(snap: FascicoloSnapshot): void {
 }
 
 // Export per uso nella pagina pubblica (ritorna blob)
-export function generaFascicoloBlob(snap: FascicoloSnapshot): Blob {
+export async function generaFascicoloBlob(snap: FascicoloSnapshot): Promise<Blob> {
   const totalPages = 2 + snap.vani.length;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const disegniImg: (string | null)[] = await Promise.all(
+    snap.vani.map(async (v) => {
+      if (v.cadData?.elements?.length) {
+        const lmm = v.misure?.lCentro || v.misure?.lAlto || 1200;
+        const hmm = v.misure?.hCentro || v.misure?.hSx || 1400;
+        const svgStr = buildVanoSvg(v.cadData, lmm, hmm);
+        if (svgStr) return await svgToPngDataUrl(svgStr, 360, 270);
+      }
+      return null;
+    })
+  );
   paginaCopertina(doc, snap);
   snap.vani.forEach((v, i) => {
     doc.addPage();
-    paginaVano(doc, v, i, snap, i + 2, totalPages);
+    paginaVano(doc, v, i, snap, i + 2, totalPages, disegniImg[i]);
   });
   doc.addPage();
   paginaRiepilogo(doc, snap, totalPages, totalPages);
