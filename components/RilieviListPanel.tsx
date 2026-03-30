@@ -8,6 +8,33 @@ import React from "react";
 import { useMastro } from "./MastroContext";
 import { FM, ICO, Ico, I } from "./mastro-constants";
 
+
+// ─── Lumina Design Tokens ────────────────────────────────
+const L = {
+  bg:          "#f9f9fb",
+  surface:     "#ffffff",
+  surfaceLow:  "#f3f3f5",
+  surfaceMid:  "#eeeef0",
+  primary:     "#031631",
+  primaryCont: "#1a2b47",
+  onPrimary:   "#ffffff",
+  muted:       "#8293b4",
+  text:        "#1a1c1d",
+  sub:         "#44474d",
+  placeholder: "#75777e",
+  green:       "#1a9e73",
+  red:         "#dc4444",
+  amber:       "#e4c18c",
+  amberBg:     "#ffdeac",
+  border:      "rgba(197,198,206,0.25)",
+  glass:       "rgba(255,255,255,0.85)",
+} as const;
+const SH = {
+  ambient: "0 20px 40px rgba(26,28,29,0.04)",
+  float:   "0 20px 40px rgba(26,28,29,0.08)",
+  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+} as const;
+// ─────────────────────────────────────────────────────────
 export default function RilieviListPanel() {
   const {
     T, S, PIPELINE,
@@ -69,7 +96,7 @@ export default function RilieviListPanel() {
       // Log commessa
       const logEntry = autoTipo === "modifica" 
         ? { chi: nr.rilevatore || "Fabio", cosa: `modifica misure: ${nuovoRilData.motivoModifica || "nuove misure"}`, quando: "Adesso", color: "#ff9500" }
-        : { chi: nr.rilevatore || "Fabio", cosa: `rilievo #${n} creato${vaniEreditati.length > 0 ? ` (${vaniEreditati.length} vani ereditati da R${n-1})` : ""}`, quando: "Adesso", color: T.acc };
+        : { chi: nr.rilevatore || "Fabio", cosa: `rilievo #${n} creato${vaniEreditati.length > 0 ? ` (${vaniEreditati.length} vani ereditati da R${n-1})` : ""}`, quando: "Adesso", color: L.primary };
       const updCM = { ...c, rilievi: [...rilievi, nr], aggiornato: "Oggi", log: [logEntry, ...(c.log || [])] };
       setCantieri(cs => cs.map(x => x.id === c.id ? updCM : x));
       setSelectedCM(updCM);
@@ -132,8 +159,8 @@ export default function RilieviListPanel() {
           {autoTipo === "modifica" && (
             <div style={{ padding: "16px", borderRadius: 14, border: "1.5px solid #ff950060", background: "#ff950008" }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: "#ff9500", marginBottom: 10 }}>Modifica post-firma</div>
-              <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.6 }}>Motivo della modifica *</div>
-              <input style={{ ...S.input, borderColor: !nuovoRilData.motivoModifica ? "#ff9500" : T.bdr, fontSize: 15, padding: "12px 14px" }}
+              <div style={{ fontSize: 11, color: L.sub, marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.6 }}>Motivo della modifica *</div>
+              <input style={{ ...S.input, borderColor: !nuovoRilData.motivoModifica ? "#ff9500" : L.border, fontSize: 15, padding: "12px 14px" }}
                 placeholder="Es: cliente ha richiesto modifica dimensioni..."
                 value={nuovoRilData.motivoModifica} onChange={e => setNuovoRilData(d => ({...d, motivoModifica: e.target.value}))} />
             </div>
@@ -151,7 +178,7 @@ export default function RilieviListPanel() {
                       {v.nome || `Vano ${i+1}`}
                     </span>
                   ))}
-                  {prevVani.length > 8 && <span style={{ fontSize: 11, color: T.sub }}>+{prevVani.length - 8} altri</span>}
+                  {prevVani.length > 8 && <span style={{ fontSize: 11, color: L.sub }}>+{prevVani.length - 8} altri</span>}
                 </div>
               </div>
             ) : null;
@@ -214,7 +241,7 @@ export default function RilieviListPanel() {
     // == REPORT DIFFERENZE ==
     const renderReportDiff = () => {
       if (rilievi.length < 2) return (
-        <div style={{ padding: 20, textAlign: "center", color: T.sub, fontSize: 12 }}>
+        <div style={{ padding: 20, textAlign: "center", color: L.sub, fontSize: 12 }}>
           Servono almeno 2 rilievi per generare il report differenze.
         </div>
       );
@@ -238,41 +265,41 @@ export default function RilieviListPanel() {
                   <div style={{ fontSize: 20 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>R{prev.n} → R{r.n}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>
+                    <div style={{ fontSize: 11, color: L.sub }}>
                       {new Date(prev.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short" })} → {new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short" })}
                     </div>
                   </div>
                   {aggiunti.length + rimossi.length + modificati.length === 0
-                    ? <span style={S.badge(T.grnLt, T.grn)}>Nessuna differenza</span>
-                    : <span style={S.badge(T.orangeLt, T.orange)}>{aggiunti.length + rimossi.length + modificati.length} diff</span>}
+                    ? <span style={S.badge("#d1fae5", L.green)}>Nessuna differenza</span>
+                    : <span style={S.badge("#fff7ed", L.amber)}>{aggiunti.length + rimossi.length + modificati.length} diff</span>}
                 </div>
                 <div style={{ padding: "10px 14px" }}>
                   {aggiunti.length > 0 && (
                     <div style={{ marginBottom: 8 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: T.grn, marginBottom: 4 }}>+ AGGIUNTI</div>
-                      {aggiunti.map(v => <span key={v.id} style={{ ...S.badge(T.grnLt, T.grn), marginRight: 4, marginBottom: 4, display: "inline-block" }}>+ {v.nome.replace(" ","")}</span>)}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: L.green, marginBottom: 4 }}>+ AGGIUNTI</div>
+                      {aggiunti.map(v => <span key={v.id} style={{ ...S.badge("#d1fae5", L.green), marginRight: 4, marginBottom: 4, display: "inline-block" }}>+ {v.nome.replace(" ","")}</span>)}
                     </div>
                   )}
                   {rimossi.length > 0 && (
                     <div style={{ marginBottom: 8 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: T.red, marginBottom: 4 }}>- RIMOSSI</div>
-                      {rimossi.map(v => <span key={v.id} style={{ ...S.badge(T.redLt, T.red), marginRight: 4, marginBottom: 4, display: "inline-block" }}>- {v.nome.replace(" ","")}</span>)}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: L.red, marginBottom: 4 }}>- RIMOSSI</div>
+                      {rimossi.map(v => <span key={v.id} style={{ ...S.badge("#ffdad6", L.red), marginRight: 4, marginBottom: 4, display: "inline-block" }}>- {v.nome.replace(" ","")}</span>)}
                     </div>
                   )}
                   {modificati.length > 0 && (
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: T.orange, marginBottom: 6 }}>~ MODIFICATI</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: L.amber, marginBottom: 6 }}>~ MODIFICATI</div>
                       {modificati.map(v => {
                         const match = prevVani.find(p => p.nome.replace(" ","") === v.nome.replace(" ",""));
                         const diffMisure = Object.entries(v.misure || {}).filter(([k, val]) => match?.misure?.[k] !== val);
                         return (
-                          <div key={v.id} style={{ marginBottom: 8, padding: "8px 10px", background: T.orangeLt, borderRadius: 8, border: `1px solid ${T.orange}30` }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: T.orange, marginBottom: 4 }}>~ {v.nome.replace(" ","")}</div>
-                            {v.sistema !== match?.sistema && <div style={{ fontSize: 11, color: T.text, marginBottom: 2 }}>Sistema: <strong>{match?.sistema || "—"}</strong> → <strong>{v.sistema}</strong></div>}
-                            {v.tipo !== match?.tipo && <div style={{ fontSize: 11, color: T.text, marginBottom: 2 }}>Tipo: <strong>{match?.tipo || "—"}</strong> → <strong>{v.tipo}</strong></div>}
+                          <div key={v.id} style={{ marginBottom: 8, padding: "8px 10px", background: "#fff7ed", borderRadius: 8, border: `1px solid ${T.orange}30` }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: L.amber, marginBottom: 4 }}>~ {v.nome.replace(" ","")}</div>
+                            {v.sistema !== match?.sistema && <div style={{ fontSize: 11, color: L.text, marginBottom: 2 }}>Sistema: <strong>{match?.sistema || "—"}</strong> → <strong>{v.sistema}</strong></div>}
+                            {v.tipo !== match?.tipo && <div style={{ fontSize: 11, color: L.text, marginBottom: 2 }}>Tipo: <strong>{match?.tipo || "—"}</strong> → <strong>{v.tipo}</strong></div>}
                             {diffMisure.slice(0, 5).map(([k, val]) => (
-                              <div key={k} style={{ fontSize: 11, color: T.sub }}>
-                                {k}: <span style={{ color: T.red }}>{match?.misure?.[k] || 0}</span> → <span style={{ color: T.grn }}>{val as any}</span>
+                              <div key={k} style={{ fontSize: 11, color: L.sub }}>
+                                {k}: <span style={{ color: L.red }}>{match?.misure?.[k] || 0}</span> → <span style={{ color: L.green }}>{val as any}</span>
                               </div>
                             ))}
                           </div>
@@ -281,7 +308,7 @@ export default function RilieviListPanel() {
                     </div>
                   )}
                   {aggiunti.length + rimossi.length + modificati.length === 0 && (
-                    <div style={{ fontSize: 12, color: T.sub }}>Nessuna variazione tra i due rilievi.</div>
+                    <div style={{ fontSize: 12, color: L.sub }}>Nessuna variazione tra i due rilievi.</div>
                   )}
                 </div>
               </div>
@@ -390,7 +417,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
         <div style={{ paddingBottom: 80 }}>
           {/* Header */}
           <div style={S.header}>
-            <div onClick={() => { setSelectedCM(null); setSelectedRilievo(null); }} style={{ cursor:"pointer", padding:4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+            <div onClick={() => { setSelectedCM(null); setSelectedRilievo(null); }} style={{ cursor:"pointer", padding:4 }}><Ico d={ICO.back} s={20} c={L.sub} /></div>
             <div style={{ flex:1 }}>
               <div style={S.headerTitle}>{c.code} · {c.cliente} {c.cognome||""}</div>
               <div style={S.headerSub}>{c.indirizzo}</div>
@@ -420,9 +447,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
             ].map(t => (
               <div key={t.id} onClick={() => setDossierTab(t.id)}
                 style={{ flex:1, padding:"8px 4px", borderRadius:8, textAlign:"center", fontSize:10, fontWeight:700, cursor:"pointer",
-                  background: dossierTab === t.id ? t.col + "15" : T.bg,
-                  color: dossierTab === t.id ? t.col : T.sub,
-                  border: "1.5px solid " + (dossierTab === t.id ? t.col : T.bdr),
+                  background: dossierTab === t.id ? t.col + "15" : L.bg,
+                  color: dossierTab === t.id ? t.col : L.sub,
+                  border: "1.5px solid " + (dossierTab === t.id ? t.col : L.border),
                 }}>{t.l}</div>
             ))}
           </div>
@@ -431,70 +458,70 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           {dossierTab === "storia" && (
             <div style={{ padding:"0 16px" }}>
               {/* Cliente card */}
-              <div style={{ background:T.card, borderRadius:12, border:"1px solid "+T.bdr, padding:14, marginBottom:10 }}>
-                <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:6 }}>DATI CLIENTE</div>
-                <div style={{ fontSize:14, fontWeight:700, color:T.text }}>{c.cliente} {c.cognome||""}</div>
-                {c.indirizzo && <div style={{ fontSize:12, color:T.sub, marginTop:2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> {c.indirizzo}</div>}
+              <div style={{ background:L.surface, borderRadius:12, border:"1px solid "+L.border, padding:14, marginBottom:10 }}>
+                <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:6 }}>DATI CLIENTE</div>
+                <div style={{ fontSize:14, fontWeight:700, color:L.text }}>{c.cliente} {c.cognome||""}</div>
+                {c.indirizzo && <div style={{ fontSize:12, color:L.sub, marginTop:2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> {c.indirizzo}</div>}
                 <div style={{ display:"flex", gap:12, marginTop:6, flexWrap:"wrap" as const }}>
-                  {c.telefono && <span onClick={() => window.location.href="tel:"+c.telefono} style={{ fontSize:11, color:T.acc, cursor:"pointer" }}>{c.telefono}</span>}
-                  {c.email && <span style={{ fontSize:11, color:T.acc }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>️ {c.email}</span>}
+                  {c.telefono && <span onClick={() => window.location.href="tel:"+c.telefono} style={{ fontSize:11, color:L.primary, cursor:"pointer" }}>{c.telefono}</span>}
+                  {c.email && <span style={{ fontSize:11, color:L.primary }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>️ {c.email}</span>}
                 </div>
                 <div style={{ display:"flex", gap:12, marginTop:4, flexWrap:"wrap" as const }}>
-                  {c.cf && <span style={{ fontSize:10, color:T.sub }}>CF: {c.cf}</span>}
-                  {c.piva && <span style={{ fontSize:10, color:T.sub }}>P.IVA: {c.piva}</span>}
-                  {c.pec && <span style={{ fontSize:10, color:T.sub }}>PEC: {c.pec}</span>}
-                  {c.sdi && <span style={{ fontSize:10, color:T.sub }}>SDI: {c.sdi}</span>}
+                  {c.cf && <span style={{ fontSize:10, color:L.sub }}>CF: {c.cf}</span>}
+                  {c.piva && <span style={{ fontSize:10, color:L.sub }}>P.IVA: {c.piva}</span>}
+                  {c.pec && <span style={{ fontSize:10, color:L.sub }}>PEC: {c.pec}</span>}
+                  {c.sdi && <span style={{ fontSize:10, color:L.sub }}>SDI: {c.sdi}</span>}
                 </div>
                 <div style={{ display:"flex", gap:6, marginTop:6, flexWrap:"wrap" as const }}>
-                  {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
-                  {c.tipo && <span style={S.badge(T.grnLt, T.grn)}>{c.tipo}</span>}
+                  {c.sistema && <span style={S.badge("#dbeafe", "#3b7fe0")}>{c.sistema}</span>}
+                  {c.tipo && <span style={S.badge("#d1fae5", L.green)}>{c.tipo}</span>}
                   {c.praticaFiscale && <span style={S.badge("#ff950018", "#ff9500")}>{c.praticaFiscale}</span>}
                 </div>
               </div>
 
               {/* Timeline */}
-              <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:8 }}>TIMELINE COMPLETA ({timeline.length} eventi)</div>
+              <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:8 }}>TIMELINE COMPLETA ({timeline.length} eventi)</div>
               {timeline.map((ev, i) => (
                 <div key={i} style={{ display:"flex", gap:10, marginBottom:2 }}>
                   <div style={{ display:"flex", flexDirection:"column" as const, alignItems:"center", width:24 }}>
                     <div style={{ width:24, height:24, borderRadius:12, background:ev.col+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, flexShrink:0 }}>{ev.ico}</div>
-                    {i < timeline.length - 1 && <div style={{ width:2, flex:1, background:T.bdr, marginTop:2 }}/>}
+                    {i < timeline.length - 1 && <div style={{ width:2, flex:1, background:L.border, marginTop:2 }}/>}
                   </div>
                   <div style={{ flex:1, paddingBottom:12 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:T.text, flex:1 }}>{ev.titolo}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:L.text, flex:1 }}>{ev.titolo}</div>
                       <div style={{ fontSize:9, color:ev.col, fontWeight:600, textAlign:"right" as const, flexShrink:0, marginLeft:8 }}>
                         {ev.data}{ev.ora ? " · " + ev.ora : ""}
                       </div>
                     </div>
-                    <div style={{ fontSize:10, color:T.sub, marginTop:1 }}>{ev.desc}</div>
+                    <div style={{ fontSize:10, color:L.sub, marginTop:1 }}>{ev.desc}</div>
                   </div>
                 </div>
               ))}
 
               {/* Note */}
               {c.note && (
-                <div style={{ background:T.card, borderRadius:12, border:"1px solid "+T.bdr, padding:14, marginTop:8 }}>
-                  <div style={{ fontSize:10, fontWeight:800, color:T.sub, marginBottom:4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> NOTE</div>
-                  <div style={{ fontSize:12, color:T.text, whiteSpace:"pre-wrap" as const }}>{c.note}</div>
+                <div style={{ background:L.surface, borderRadius:12, border:"1px solid "+L.border, padding:14, marginTop:8 }}>
+                  <div style={{ fontSize:10, fontWeight:800, color:L.sub, marginBottom:4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> NOTE</div>
+                  <div style={{ fontSize:12, color:L.text, whiteSpace:"pre-wrap" as const }}>{c.note}</div>
                 </div>
               )}
 
               {/* Messaggi collegati */}
               {msgsCm.length > 0 && (
                 <div style={{ marginTop:12 }}>
-                  <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:8 }}>COMUNICAZIONI ({msgsCm.length} conversazioni · {msgsCm.reduce((s,m) => s + (m.thread?.length||0), 0)} messaggi)</div>
+                  <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:8 }}>COMUNICAZIONI ({msgsCm.length} conversazioni · {msgsCm.reduce((s,m) => s + (m.thread?.length||0), 0)} messaggi)</div>
                   {msgsCm.map(m => {
                     const chIcoM = { email: "", whatsapp: "", sms: "", telegram: "️" };
                     const chColM = { email: "#5856d6", whatsapp: "#25d366", sms: "#ff9500", telegram: "#0088cc" };
                     const mcol = chColM[m.canale] || "#86868b";
                     return (
-                      <div key={m.id} style={{ background:T.card, borderRadius:12, border:"1px solid "+T.bdr, marginBottom:8, overflow:"hidden" }}>
-                        <div style={{ padding:"10px 14px", borderBottom:"1px solid "+T.bdr, display:"flex", alignItems:"center", gap:10, background:mcol+"06" }}>
+                      <div key={m.id} style={{ background:L.surface, borderRadius:12, border:"1px solid "+L.border, marginBottom:8, overflow:"hidden" }}>
+                        <div style={{ padding:"10px 14px", borderBottom:"1px solid "+L.border, display:"flex", alignItems:"center", gap:10, background:mcol+"06" }}>
                           <div style={{ width:32, height:32, borderRadius:"50%", background:mcol+"18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>{chIcoM[m.canale]||""}</div>
                           <div style={{ flex:1 }}>
-                            <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{m.from}</div>
-                            <div style={{ fontSize:9, color:T.sub }}>{m.canale} · {m.date||""} · {(m.thread||[]).length} messaggi</div>
+                            <div style={{ fontSize:12, fontWeight:700, color:L.text }}>{m.from}</div>
+                            <div style={{ fontSize:9, color:L.sub }}>{m.canale} · {m.date||""} · {(m.thread||[]).length} messaggi</div>
                           </div>
                         </div>
                         <div style={{ padding:"8px 14px" }}>
@@ -503,8 +530,8 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                             return (
                               <div key={ti} style={{ display:"flex", justifyContent:isMe?"flex-end":"flex-start", marginBottom:4 }}>
                                 <div style={{ maxWidth:"85%", padding:"8px 12px", borderRadius:isMe?"12px 12px 4px 12px":"12px 12px 12px 4px",
-                                  background:isMe?mcol+"15":T.bg, fontSize:11, color:T.text }}>
-                                  <div style={{ fontSize:9, fontWeight:700, color:isMe?mcol:T.sub, marginBottom:2 }}>{t.who} · {t.date} {t.time}</div>
+                                  background:isMe?mcol+"15":L.bg, fontSize:11, color:L.text }}>
+                                  <div style={{ fontSize:9, fontWeight:700, color:isMe?mcol:L.sub, marginBottom:2 }}>{t.who} · {t.date} {t.time}</div>
                                   {t.text}
                                 </div>
                               </div>
@@ -524,16 +551,16 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
             <div style={{ padding:"0 16px" }}>
               {/* KPI */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:12 }}>
-                {[{l:"PREVENTIVO",v:fD(totID),cl:T.text},{l:"INCASSATO",v:fD(incD),cl:"#34c759"},{l:"MARGINE",v:fD(incD-costD),cl:(incD-costD)>=0?"#34c759":"#ff3b30"}].map((k,i) => (
-                  <div key={i} style={{ padding:12, borderRadius:10, background:T.card, textAlign:"center", border:"1px solid "+T.bdr }}>
-                    <div style={{ fontSize:8, color:T.sub, fontWeight:700 }}>{k.l}</div>
+                {[{l:"PREVENTIVO",v:fD(totID),cl:L.text},{l:"INCASSATO",v:fD(incD),cl:"#34c759"},{l:"MARGINE",v:fD(incD-costD),cl:(incD-costD)>=0?"#34c759":"#ff3b30"}].map((k,i) => (
+                  <div key={i} style={{ padding:12, borderRadius:10, background:L.surface, textAlign:"center", border:"1px solid "+L.border }}>
+                    <div style={{ fontSize:8, color:L.sub, fontWeight:700 }}>{k.l}</div>
                     <div style={{ fontSize:18, fontWeight:900, color:k.cl }}>{k.v}</div>
                   </div>
                 ))}
               </div>
               {/* Detail */}
-              <div style={{ background:T.card, borderRadius:12, border:"1px solid "+T.bdr, padding:14, marginBottom:10 }}>
-                <div style={{ fontSize:10, fontWeight:800, color:T.sub, marginBottom:8 }}>DETTAGLIO</div>
+              <div style={{ background:L.surface, borderRadius:12, border:"1px solid "+L.border, padding:14, marginBottom:10 }}>
+                <div style={{ fontSize:10, fontWeight:800, color:L.sub, marginBottom:8 }}>DETTAGLIO</div>
                 {[
                   { l: "Imponibile", v: fD(totPD) },
                   { l: "IVA " + ivaP + "%", v: fD(totID - totPD) },
@@ -542,9 +569,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                   { l: "Margine lordo", v: fD(incD - costD), cl: (incD-costD) >= 0 ? "#34c759" : "#ff3b30", bold: true },
                   { l: "% Margine", v: totPD > 0 ? Math.round((incD-costD)/totPD*100) + "%" : "—" },
                 ].map((r, i) => (
-                  <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom: "1px solid " + T.bdr + "30", fontSize:12 }}>
-                    <span style={{ color:T.sub, fontWeight: r.bold ? 700 : 400 }}>{r.l}</span>
-                    <span style={{ color: r.cl || T.text, fontWeight: r.bold ? 800 : 600 }}>{r.v}</span>
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom: "1px solid " + L.border + "30", fontSize:12 }}>
+                    <span style={{ color:L.sub, fontWeight: r.bold ? 700 : 400 }}>{r.l}</span>
+                    <span style={{ color: r.cl || L.text, fontWeight: r.bold ? 800 : 600 }}>{r.v}</span>
                   </div>
                 ))}
               </div>
@@ -553,13 +580,13 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                 <div style={{ fontSize:22, fontWeight:900, color:"#ff9500" }}>{fD(restD)}</div>
               </div>}
               {/* Fatture */}
-              <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:6 }}>FATTURE ({fattD.length})</div>
+              <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:6 }}>FATTURE ({fattD.length})</div>
               {fattD.map(f => (
-                <div key={f.id} style={{ background:T.card, borderRadius:10, border:"1px solid "+T.bdr, padding:"10px 12px", marginBottom:6, borderLeft:"4px solid "+(f.pagata?"#34c759":"#ff3b30") }}>
+                <div key={f.id} style={{ background:L.surface, borderRadius:10, border:"1px solid "+L.border, padding:"10px 12px", marginBottom:6, borderLeft:"4px solid "+(f.pagata?"#34c759":"#ff3b30") }}>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
                     <div>
-                      <div style={{ fontSize:12, fontWeight:700, color:T.text }}>N.{f.numero}/{f.anno} — {f.tipo}</div>
-                      <div style={{ fontSize:10, color:T.sub }}>{f.data ? new Date(f.data+'T12:00:00').toLocaleDateString('it-IT') : f.data} · {f.cliente}</div>
+                      <div style={{ fontSize:12, fontWeight:700, color:L.text }}>N.{f.numero}/{f.anno} — {f.tipo}</div>
+                      <div style={{ fontSize:10, color:L.sub }}>{f.data ? new Date(f.data+'T12:00:00').toLocaleDateString('it-IT') : f.data} · {f.cliente}</div>
                     </div>
                     <div style={{ textAlign:"right" }}>
                       <div style={{ fontSize:14, fontWeight:900, color:f.pagata?"#34c759":"#ff3b30" }}>{fD(f.importo)}</div>
@@ -569,18 +596,18 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                 </div>
               ))}
               {/* Ordini */}
-              <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:6, marginTop:10 }}>ORDINI FORNITORI ({ordD.length})</div>
+              <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:6, marginTop:10 }}>ORDINI FORNITORI ({ordD.length})</div>
               {ordD.map(o => {
                 const st = ORDINE_STATI.find(s => s.id === o.stato) || ORDINE_STATI[0];
                 return (
-                  <div key={o.id} style={{ background:T.card, borderRadius:10, border:"1px solid "+T.bdr, padding:"10px 12px", marginBottom:6, borderLeft:"4px solid "+st.color }}>
+                  <div key={o.id} style={{ background:L.surface, borderRadius:10, border:"1px solid "+L.border, padding:"10px 12px", marginBottom:6, borderLeft:"4px solid "+st.color }}>
                     <div style={{ display:"flex", justifyContent:"space-between" }}>
                       <div>
-                        <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{st.icon} {o.fornitore?.nome||""}</div>
-                        <div style={{ fontSize:10, color:T.sub }}>Inviato: {o.dataInvio||""} · Consegna: {o.consegna?.prevista||"—"}</div>
+                        <div style={{ fontSize:12, fontWeight:700, color:L.text }}>{st.icon} {o.fornitore?.nome||""}</div>
+                        <div style={{ fontSize:10, color:L.sub }}>Inviato: {o.dataInvio||""} · Consegna: {o.consegna?.prevista||"—"}</div>
                       </div>
                       <div style={{ textAlign:"right" }}>
-                        <div style={{ fontSize:14, fontWeight:900, color:T.text }}>{fD(o.totaleIva||o.totale||0)}</div>
+                        <div style={{ fontSize:14, fontWeight:900, color:L.text }}>{fD(o.totaleIva||o.totale||0)}</div>
                         <span style={{ fontSize:8, fontWeight:700, padding:"2px 6px", borderRadius:4, background:st.color+"18", color:st.color }}>{st.label}</span>
                       </div>
                     </div>
@@ -593,7 +620,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           {/* ═══ TAB: VANI ═══ */}
           {dossierTab === "vani" && (
             <div style={{ padding:"0 16px" }}>
-              <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:8 }}>VANI RILEVATI ({allVD.length})</div>
+              <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:8 }}>VANI RILEVATI ({allVD.length})</div>
               {(c.rilievi||[]).map(r => (
                 <div key={r.id}>
                   <div onClick={() => setSelectedRilievo(r)} style={{ fontSize:11, fontWeight:700, color:"#5856d6", marginBottom:6, cursor:"pointer" }}>
@@ -603,21 +630,21 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                     const m = v.misure || {};
                     const prezzo = calcolaVanoPrezzo(v, c);
                     return (
-                      <div key={v.id} style={{ background:T.card, borderRadius:12, border:"1px solid "+T.bdr, padding:12, marginBottom:8 }}>
+                      <div key={v.id} style={{ background:L.surface, borderRadius:12, border:"1px solid "+L.border, padding:12, marginBottom:8 }}>
                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                           <div>
-                            <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{v.nome || v.tipo}</div>
-                            <div style={{ fontSize:10, color:T.sub }}>{v.stanza||""} · {v.piano||""} · {v.tipo} · {v.sistema||c.sistema||""}</div>
+                            <div style={{ fontSize:13, fontWeight:700, color:L.text }}>{v.nome || v.tipo}</div>
+                            <div style={{ fontSize:10, color:L.sub }}>{v.stanza||""} · {v.piano||""} · {v.tipo} · {v.sistema||c.sistema||""}</div>
                           </div>
                           <div style={{ textAlign:"right" }}>
-                            <div style={{ fontSize:13, fontWeight:900, color:T.acc }}>{fD(prezzo)}</div>
-                            <div style={{ fontSize:9, color:T.sub }}>{m.lCentro||"—"}×{m.hCentro||"—"} mm</div>
+                            <div style={{ fontSize:13, fontWeight:900, color:L.primary }}>{fD(prezzo)}</div>
+                            <div style={{ fontSize:9, color:L.sub }}>{m.lCentro||"—"}×{m.hCentro||"—"} mm</div>
                           </div>
                         </div>
                         {/* Colors */}
                         <div style={{ display:"flex", gap:6, marginTop:6, flexWrap:"wrap" as const }}>
-                          {v.coloreInt && <span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background:T.bg, color:T.sub }}>Int: {v.coloreInt}</span>}
-                          {v.coloreEst && <span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background:T.bg, color:T.sub }}>Est: {v.coloreEst}</span>}
+                          {v.coloreInt && <span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background:L.bg, color:L.sub }}>Int: {v.coloreInt}</span>}
+                          {v.coloreEst && <span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background:L.bg, color:L.sub }}>Est: {v.coloreEst}</span>}
                           {v.bicolore && <span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background:"#af52de18", color:"#af52de" }}>Bicolore</span>}
                         </div>
                         {/* Accessories */}
@@ -629,16 +656,16 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         </div>
                         {/* Measures detail */}
                         {Object.keys(m).length > 0 && (
-                          <div style={{ marginTop:6, padding:8, borderRadius:8, background:T.bg, display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:4 }}>
+                          <div style={{ marginTop:6, padding:8, borderRadius:8, background:L.bg, display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:4 }}>
                             {[{l:"L alto",v:m.lAlto},{l:"L centro",v:m.lCentro},{l:"L basso",v:m.lBasso},{l:"H sx",v:m.hSx},{l:"H centro",v:m.hCentro},{l:"H dx",v:m.hDx},{l:"D1",v:m.d1},{l:"D2",v:m.d2}].map((mi,idx) => mi.v ? (
                               <div key={idx} style={{ textAlign:"center" }}>
-                                <div style={{ fontSize:7, color:T.sub }}>{mi.l}</div>
-                                <div style={{ fontSize:10, fontWeight:700, color:T.text }}>{mi.v}</div>
+                                <div style={{ fontSize:7, color:L.sub }}>{mi.l}</div>
+                                <div style={{ fontSize:10, fontWeight:700, color:L.text }}>{mi.v}</div>
                               </div>
                             ) : null)}
                           </div>
                         )}
-                        {v.note && <div style={{ fontSize:10, color:T.sub, marginTop:4, fontStyle:"italic" }}>{v.note}</div>}
+                        {v.note && <div style={{ fontSize:10, color:L.sub, marginTop:4, fontStyle:"italic" }}>{v.note}</div>}
                       </div>
                     );
                   })}
@@ -657,7 +684,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                   {(c.docFiscali||[]).map((d: any, i: number) => (
                     <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #ff950020" }}>
                       <span style={{ fontSize:14 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
-                      <div><div style={{ fontSize:11, fontWeight:700, color:T.text }}>{typeof d === "string" ? d : d.nome}</div>{d.data && <div style={{ fontSize:9, color:T.sub }}>{d.data}</div>}</div>
+                      <div><div style={{ fontSize:11, fontWeight:700, color:L.text }}>{typeof d === "string" ? d : d.nome}</div>{d.data && <div style={{ fontSize:9, color:L.sub }}>{d.data}</div>}</div>
                     </div>
                   ))}
                 </div>
@@ -670,8 +697,8 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                     <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:"1px solid #5856d620" }}>
                       <div style={{ width:36, height:36, borderRadius:8, background:"#5856d618", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{d.tipo==="CI"?"":""}</div>
                       <div style={{ flex:1 }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{d.tipo==="CI"?"Carta d'Identità":"Codice Fiscale"}</div>
-                        <div style={{ fontSize:10, color:T.sub }}>{d.nome} · {d.data||""}</div>
+                        <div style={{ fontSize:12, fontWeight:700, color:L.text }}>{d.tipo==="CI"?"Carta d'Identità":"Codice Fiscale"}</div>
+                        <div style={{ fontSize:10, color:L.sub }}>{d.nome} · {d.data||""}</div>
                       </div>
                       {d.dataUrl && <img src={d.dataUrl} style={{ width:48, height:48, borderRadius:6, objectFit:"cover" as const }} />}
                     </div>
@@ -679,28 +706,28 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                 </div>
               )}
               {/* Allegati */}
-              <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:6 }}>ALLEGATI ({(c.allegati||[]).length})</div>
+              <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:6 }}>ALLEGATI ({(c.allegati||[]).length})</div>
               {(c.allegati||[]).map((a: any, i: number) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:"1px solid "+T.bdr+"20" }}>
-                  <div style={{ width:32, height:32, borderRadius:8, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:"1px solid "+L.border+"20" }}>
+                  <div style={{ width:32, height:32, borderRadius:8, background:L.bg, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14 }}>
                     {a.tipo==="firma"?"️":a.tipo==="fattura"?"":a.tipo==="ordine"?"":a.tipo==="conferma"?"":a.tipo==="verbale"?"":""}
                   </div>
                   <div style={{ flex:1 }}>
-                    <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{a.nome}</div>
-                    <div style={{ fontSize:10, color:T.sub }}>{a.tipo||"allegato"} · {a.data||""}</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:L.text }}>{a.nome}</div>
+                    <div style={{ fontSize:10, color:L.sub }}>{a.tipo||"allegato"} · {a.data||""}</div>
                   </div>
                 </div>
               ))}
-              {(c.allegati||[]).length === 0 && <div style={{ fontSize:11, color:T.sub, textAlign:"center", padding:16 }}>Nessun allegato</div>}
+              {(c.allegati||[]).length === 0 && <div style={{ fontSize:11, color:L.sub, textAlign:"center", padding:16 }}>Nessun allegato</div>}
               {/* Foto Vani */}
               {fotoVani.length > 0 && (
                 <div style={{ marginTop:12 }}>
-                  <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:6 }}>FOTO VANI ({fotoVani.length})</div>
+                  <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:6 }}>FOTO VANI ({fotoVani.length})</div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:6 }}>
                     {fotoVani.map((f, i) => (
-                      <div key={i} style={{ borderRadius:8, overflow:"hidden", border:"1px solid "+T.bdr }}>
+                      <div key={i} style={{ borderRadius:8, overflow:"hidden", border:"1px solid "+L.border }}>
                         <img src={f.url} style={{ width:"100%", height:80, objectFit:"cover" as const }} />
-                        <div style={{ padding:"3px 6px", fontSize:8, color:T.sub }}>{f.vano}</div>
+                        <div style={{ padding:"3px 6px", fontSize:8, color:L.sub }}>{f.vano}</div>
                       </div>
                     ))}
                   </div>
@@ -712,14 +739,14 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           {/* Montaggi */}
           {montD.length > 0 && (
             <div style={{ padding:"8px 16px" }}>
-              <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", marginBottom:6 }}>MONTAGGI ({montD.length})</div>
+              <div style={{ fontSize:10, fontWeight:800, color:L.sub, textTransform:"uppercase", marginBottom:6 }}>MONTAGGI ({montD.length})</div>
               {montD.map(m => { const sq=(squadreDB||[]).find(s=>s.id===m.squadraId); return (
-                <div key={m.id} style={{ background:T.card, borderRadius:10, border:"1px solid "+T.bdr, padding:"10px 12px", marginBottom:6 }}>
+                <div key={m.id} style={{ background:L.surface, borderRadius:10, border:"1px solid "+L.border, padding:"10px 12px", marginBottom:6 }}>
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <div><div style={{ fontSize:12, fontWeight:700, color:T.text }}>{m.data||"—"} · {sq?.nome||""}</div><div style={{ fontSize:10, color:T.sub }}>{m.vani||"?"} vani · {m.durata||""}</div></div>
+                    <div><div style={{ fontSize:12, fontWeight:700, color:L.text }}>{m.data||"—"} · {sq?.nome||""}</div><div style={{ fontSize:10, color:L.sub }}>{m.vani||"?"} vani · {m.durata||""}</div></div>
                     <span style={{ fontSize:10, fontWeight:700, color:m.stato==="completato"?"#34c759":"#007aff" }}>{m.stato==="completato"?"Completato":m.stato}</span>
                   </div>
-                  {m.note && <div style={{ fontSize:10, color:T.sub, marginTop:3 }}>{m.note}</div>}
+                  {m.note && <div style={{ fontSize:10, color:L.sub, marginTop:3 }}>{m.note}</div>}
                 </div>
               );})}
             </div>
@@ -732,14 +759,14 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
               style={{ padding:"10px 20px", borderRadius:10, background:"#ff950018", color:"#ff9500", fontSize:12, fontWeight:700, cursor:"pointer", border:"1px solid #ff950040" }}>↩ Riapri</div>
           </div>
           <div style={{ padding:"8px 16px", textAlign:"center" }}>
-            <span onClick={() => deleteCommessa(c.id)} style={{ fontSize:11, color:T.sub2||T.sub, cursor:"pointer", textDecoration:"underline" }}>Elimina commessa</span>
+            <span onClick={() => deleteCommessa(c.id)} style={{ fontSize:11, color:L.sub2||L.sub, cursor:"pointer", textDecoration:"underline" }}>Elimina commessa</span>
           </div>
         </div>
       );
     }
 
     // == LISTA RILIEVI ==
-    const tipoColor = { rilievo: T.blue, definitiva: T.grn, modifica: T.orange };
+    const tipoColor = { rilievo: "#3b7fe0", definitiva: L.green, modifica: L.amber };
     const tipoIco   = { rilievo: "", definitiva: "", modifica: "" };
     const [rilTab, setRilTab] = (window as any).__rilTab__ || [null, null];
     // Use local state via component trick: riutilizza cmSubTab per il tab rilievi/report
@@ -747,7 +774,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
       <div style={{ paddingBottom: 80 }}>
         {/* Header */}
         <div style={S.header}>
-          <div onClick={() => { setSelectedCM(null); setSelectedRilievo(null); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+          <div onClick={() => { setSelectedCM(null); setSelectedRilievo(null); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={L.sub} /></div>
           <div style={{ flex: 1 }}>
             <div style={S.headerTitle}>{c.code} · {c.cliente} {c.cognome || ""}</div>
             <div style={S.headerSub}>{c.indirizzo}</div>
@@ -762,11 +789,11 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           <PipelineBar fase={c.fase} cm={c} />
         </div>
         <div style={{ padding: "0 16px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
-          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>🆕 Nuova</span>}
-          {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}>Riparazione</span>}
-          {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}>{c.telefono}</span>}
-          {c.euro > 0 && <span style={S.badge(T.accLt, T.acc)}>€{c.euro.toLocaleString("it-IT")}</span>}
+          {c.sistema && <span style={S.badge("#dbeafe", "#3b7fe0")}>{c.sistema}</span>}
+          {c.tipo === "nuova" && <span style={S.badge("#d1fae5", L.green)}>🆕 Nuova</span>}
+          {c.tipo === "riparazione" && <span style={S.badge("#fff7ed", L.amber)}>Riparazione</span>}
+          {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge("#d1fae5", L.green), cursor: "pointer" }}>{c.telefono}</span>}
+          {c.euro > 0 && <span style={S.badge(L.amberBg, L.primary)}>€{c.euro.toLocaleString("it-IT")}</span>}
         </div>
 
 
@@ -783,14 +810,14 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           const costoForn = ordCm.reduce((s, o) => s + (o.totaleIva || o.totale || 0), 0);
           const fmtE = (n: number) => "€" + n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           const docs: Array<{ico:string;nome:string;detail:string;col:string}> = [];
-          rilievi.forEach(r => docs.push({ ico: "", nome: `Rilievo #${r.n} — ${r.tipo || "rilievo"}`, detail: `${(r.vani || []).length} vani · ${r.data || ""}`, col: T.blue }));
-          if (c.firmaCliente) docs.push({ ico: "️", nome: "Preventivo Firmato", detail: c.dataFirma || "", col: T.grn });
-          fattCm.forEach(f => docs.push({ ico: "", nome: `Fattura N.${f.numero}/${f.anno} — ${f.tipo}`, detail: `${fmtE(f.importo)} · ${f.pagata ? "Pagata" : "⏳ Da incassare"}`, col: f.pagata ? T.grn : T.red }));
-          ordCm.forEach(o => docs.push({ ico: "", nome: `Ordine ${o.fornitore?.nome || ""}`, detail: `${fmtE(o.totaleIva || o.totale || 0)} · ${o.conferma?.ricevuta ? "Confermato" : "⏳"}`, col: T.purple }));
+          rilievi.forEach(r => docs.push({ ico: "", nome: `Rilievo #${r.n} — ${r.tipo || "rilievo"}`, detail: `${(r.vani || []).length} vani · ${r.data || ""}`, col: "#3b7fe0" }));
+          if (c.firmaCliente) docs.push({ ico: "️", nome: "Preventivo Firmato", detail: c.dataFirma || "", col: L.green });
+          fattCm.forEach(f => docs.push({ ico: "", nome: `Fattura N.${f.numero}/${f.anno} — ${f.tipo}`, detail: `${fmtE(f.importo)} · ${f.pagata ? "Pagata" : "⏳ Da incassare"}`, col: f.pagata ? L.green : L.red }));
+          ordCm.forEach(o => docs.push({ ico: "", nome: `Ordine ${o.fornitore?.nome || ""}`, detail: `${fmtE(o.totaleIva || o.totale || 0)} · ${o.conferma?.ricevuta ? "Confermato" : "⏳"}`, col: "#6366f1" }));
           montCm.forEach(m => { const sq = (squadreDB || []).find(s => s.id === m.squadraId); docs.push({ ico: "", nome: `Montaggio ${m.data || ""}`, detail: `${sq?.nome || ""} · ${m.stato === "completato" ? "Completato" : m.stato}`, col: "#007aff" }); });
-          if (c.praticaFiscale) docs.push({ ico: "", nome: `Pratica Fiscale: ${c.praticaFiscale}`, detail: `${(c.docFiscali || []).length} documenti`, col: T.orange });
+          if (c.praticaFiscale) docs.push({ ico: "", nome: `Pratica Fiscale: ${c.praticaFiscale}`, detail: `${(c.docFiscali || []).length} documenti`, col: L.amber });
           (c.docIdentita || []).forEach(d => docs.push({ ico: d.tipo === "CI" ? "" : "", nome: d.tipo === "CI" ? "Carta d'Identità" : "Codice Fiscale", detail: `${d.nome} · ${d.data || ""}`, col: "#5856d6" }));
-          (c.docFiscali || []).forEach(d => docs.push({ ico: "", nome: d.nome, detail: d.data || "", col: T.orange }));
+          (c.docFiscali || []).forEach(d => docs.push({ ico: "", nome: d.nome, detail: d.data || "", col: L.amber }));
           (c.allegati || []).forEach(a => docs.push({ ico: a.tipo === "firma" ? "️" : a.tipo === "fattura" ? "" : a.tipo === "ordine" ? "" : a.tipo === "conferma" ? "" : a.tipo === "verbale" ? "" : "", nome: a.nome, detail: a.data || "", col: "#86868b" }));
           
           return <div style={{ margin: "0 16px 12px", background: "linear-gradient(135deg, #34c75908, #34c75912)", borderRadius: 16, border: "2px solid #34c759", overflow: "hidden" }}>
@@ -805,44 +832,44 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
             
             {/* Dati Cliente */}
             <div style={{ padding: "12px 16px", borderBottom: "1px solid #34c75920" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> CLIENTE</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{c.cliente} {c.cognome || ""}</div>
-              {c.indirizzo && <div style={{ fontSize: 11, color: T.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> {c.indirizzo}</div>}
+              <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> CLIENTE</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: L.text }}>{c.cliente} {c.cognome || ""}</div>
+              {c.indirizzo && <div style={{ fontSize: 11, color: L.sub }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> {c.indirizzo}</div>}
               <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
-                {c.telefono && <span style={{ fontSize: 11, color: T.acc }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> {c.telefono}</span>}
-                {c.email && <span style={{ fontSize: 11, color: T.acc }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>️ {c.email}</span>}
-                {c.cf && <span style={{ fontSize: 11, color: T.sub }}>CF: {c.cf}</span>}
+                {c.telefono && <span style={{ fontSize: 11, color: L.primary }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> {c.telefono}</span>}
+                {c.email && <span style={{ fontSize: 11, color: L.primary }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>️ {c.email}</span>}
+                {c.cf && <span style={{ fontSize: 11, color: L.sub }}>CF: {c.cf}</span>}
               </div>
             </div>
             
             {/* Riepilogo Economico */}
             <div style={{ padding: "12px 16px", borderBottom: "1px solid #34c75920" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> RIEPILOGO ECONOMICO</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> RIEPILOGO ECONOMICO</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
                 <div style={{ padding: 8, borderRadius: 8, background: "#fff", textAlign: "center" }}>
-                  <div style={{ fontSize: 7, color: T.sub, fontWeight: 700 }}>PREVENTIVO</div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>{fmtE(totIvaD)}</div>
+                  <div style={{ fontSize: 7, color: L.sub, fontWeight: 700 }}>PREVENTIVO</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: L.text }}>{fmtE(totIvaD)}</div>
                 </div>
                 <div style={{ padding: 8, borderRadius: 8, background: "#fff", textAlign: "center" }}>
-                  <div style={{ fontSize: 7, color: T.sub, fontWeight: 700 }}>INCASSATO</div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: T.grn }}>{fmtE(incassato)}</div>
+                  <div style={{ fontSize: 7, color: L.sub, fontWeight: 700 }}>INCASSATO</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: L.green }}>{fmtE(incassato)}</div>
                 </div>
                 <div style={{ padding: 8, borderRadius: 8, background: "#fff", textAlign: "center" }}>
-                  <div style={{ fontSize: 7, color: T.sub, fontWeight: 700 }}>MARGINE</div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: (incassato - costoForn) >= 0 ? T.grn : T.red }}>{fmtE(incassato - costoForn)}</div>
+                  <div style={{ fontSize: 7, color: L.sub, fontWeight: 700 }}>MARGINE</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: (incassato - costoForn) >= 0 ? L.green : L.red }}>{fmtE(incassato - costoForn)}</div>
                 </div>
               </div>
             </div>
             
             {/* Tutti i Documenti */}
             <div style={{ padding: "12px 16px" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg> DOCUMENTI E ATTIVITÀ ({docs.length})</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg> DOCUMENTI E ATTIVITÀ ({docs.length})</div>
               {docs.map((d, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", padding: "8px 0", borderBottom: i < docs.length - 1 ? "1px solid #34c75915" : "none" }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: d.col + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0 }}>{d.ico}</div>
                   <div style={{ flex: 1, marginLeft: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{d.nome}</div>
-                    <div style={{ fontSize: 9, color: T.sub }}>{d.detail}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: L.text }}>{d.nome}</div>
+                    <div style={{ fontSize: 9, color: L.sub }}>{d.detail}</div>
                   </div>
                 </div>
               ))}
@@ -925,12 +952,12 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           return (
             <div style={{ margin: "0 16px 12px" }}>
               {/* Header with progress */}
-              <div style={{ background: T.card, borderRadius: "16px 16px 0 0", border: `1px solid ${T.bdr}`, borderBottom: "none", padding: "14px 16px" }}>
+              <div style={{ background: L.surface, borderRadius: "16px 16px 0 0", border: `1px solid ${T.bdr}`, borderBottom: "none", padding: "14px 16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Centro Comando</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.acc, fontFamily: FM }}>{doneCount}/{steps.length} · {progress}%</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: L.text }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Centro Comando</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: L.primary, fontFamily: FM }}>{doneCount}/{steps.length} · {progress}%</div>
                 </div>
-                <div style={{ height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ height: 6, background: L.bg, borderRadius: 3, overflow: "hidden" }}>
                   <div style={{ height: "100%", background: `linear-gradient(90deg, #34c759, ${T.acc})`, width: `${progress}%`, borderRadius: 3, transition: "width 0.5s" }} />
                 </div>
                 {/* Stato misure automatico */}
@@ -956,8 +983,8 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                   {steps.map((s, i) => (
                     <div key={s.id} style={{
                       width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
-                      background: s.done ? "#34c759" : i === currentIdx ? T.acc : T.bg,
-                      color: s.done || i === currentIdx ? "#fff" : T.sub, fontWeight: 700,
+                      background: s.done ? "#34c759" : i === currentIdx ? L.primary : L.bg,
+                      color: s.done || i === currentIdx ? "#fff" : L.sub, fontWeight: 700,
                       boxShadow: i === currentIdx ? `0 0 0 3px ${T.acc}40` : "none",
                     }}>{s.done ? "" : s.icon}</div>
                   ))}
@@ -965,11 +992,11 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
               </div>
 
               {/* Timeline — ALL steps visible */}
-              <div style={{ background: T.card, border: `1px solid ${T.bdr}`, borderTop: "none", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
+              <div style={{ background: L.surface, border: `1px solid ${T.bdr}`, borderTop: "none", borderRadius: "0 0 16px 16px", overflow: "hidden" }}>
                 {steps.map((step, idx) => {
                   const isCurrent = idx === currentIdx;
                   const isFuture = !step.done && !isCurrent;
-                  const borderColor = step.done ? "#34c759" : isCurrent ? T.acc : T.bg;
+                  const borderColor = step.done ? "#34c759" : isCurrent ? L.primary : L.bg;
 
                   // Collect docs for this step
                   const stepDocs: any[] = [];
@@ -1000,10 +1027,10 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: isCurrent ? 18 : 14 }}>{step.icon}</span>
                         <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: isCurrent ? 14 : 12, fontWeight: 700, color: T.text }}>{step.label}</span>
+                          <span style={{ fontSize: isCurrent ? 14 : 12, fontWeight: 700, color: L.text }}>{step.label}</span>
                           {/* Hint per step futuri */}
                           {isFuture && step.hint && (
-                            <div style={{ fontSize: 10, color: T.sub, marginTop: 1, lineHeight: 1.3 }}>{step.hint}</div>
+                            <div style={{ fontSize: 10, color: L.sub, marginTop: 1, lineHeight: 1.3 }}>{step.hint}</div>
                           )}
                         </div>
                         {step.done && (
@@ -1011,28 +1038,28 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               Fatto {stepDocs.length > 0 && <span style={{ fontSize: 8 }}>{stepDocs.length}</span>}
                             </span>
                         )}
-                        {isCurrent && <span style={{ fontSize: 10, fontWeight: 700, color: T.acc, background: `${T.acc}15`, padding: "2px 8px", borderRadius: 6 }}>DA FARE</span>}
+                        {isCurrent && <span style={{ fontSize: 10, fontWeight: 700, color: L.primary, background: `${T.acc}15`, padding: "2px 8px", borderRadius: 6 }}>DA FARE</span>}
                       </div>
 
                       {/* Done detail */}
                       {step.done && step.detail && (
-                        <div style={{ fontSize: 10, color: T.sub, marginTop: 3, marginLeft: 26 }}>{step.detail}</div>
+                        <div style={{ fontSize: 10, color: L.sub, marginTop: 3, marginLeft: 26 }}>{step.detail}</div>
                       )}
 
                       {/* ═══ DOCUMENTI ESPANSI ═══ */}
                       {isExpanded && stepDocs.length > 0 && (
-                        <div style={{ marginTop: 8, marginLeft: 26, background: T.card, borderRadius: 10, border: "1px solid #34c75930", overflow: "hidden" }}>
+                        <div style={{ marginTop: 8, marginLeft: 26, background: L.surface, borderRadius: 10, border: "1px solid #34c75930", overflow: "hidden" }}>
                           <div style={{ padding: "8px 12px", background: "#34c75910", borderBottom: "1px solid #34c75920" }}>
                             <div style={{ fontSize: 10, fontWeight: 800, color: "#34c759" }}>DOCUMENTI — {step.label.toUpperCase()}</div>
                           </div>
                           {stepDocs.map((doc, di) => (
-                            <div key={di} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: di < stepDocs.length-1 ? "1px solid " + T.bdr + "30" : "none" }}>
+                            <div key={di} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: di < stepDocs.length-1 ? "1px solid " + L.border + "30" : "none" }}>
                               <div style={{ width: 32, height: 32, borderRadius: 8, background: "#34c75912", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
                                 {doc.tipo === "rilievo" ? "" : doc.tipo === "preventivo" ? "" : doc.tipo === "firma" ? "️" : doc.tipo === "fattura" ? "" : doc.tipo === "ordine" ? "" : doc.tipo === "conferma" ? "" : doc.tipo === "montaggio" ? "" : ""}
                               </div>
                               <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{doc.nome}</div>
-                                <div style={{ fontSize: 10, color: T.sub }}>{doc.detail}{doc.data ? " · " + doc.data : ""}</div>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: L.text }}>{doc.nome}</div>
+                                <div style={{ fontSize: 10, color: L.sub }}>{doc.detail}{doc.data ? " · " + doc.data : ""}</div>
                               </div>
                             </div>
                           ))}
@@ -1047,7 +1074,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
                           {!showRilieviForm ? (
                             <div>
-                              <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Crea il primo rilievo con i vani da misurare</div>
+                              <div style={{ fontSize: 11, color: L.sub, marginBottom: 8 }}>Crea il primo rilievo con i vani da misurare</div>
                               <button onClick={() => setShowRilieviForm(true)}
                                 style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
                                   boxShadow: "0 4px 0 #0D7C6B", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
@@ -1110,7 +1137,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
 
                       {isCurrent && step.id === "misure" && (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
-                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>
+                          <div style={{ fontSize: 11, color: L.sub, marginBottom: 6 }}>
                             {!hasVani ? "Aggiungi i vani e inserisci le misure" :
                              vaniConMisure.length < vani.length ? `${vaniConMisure.length}/${vani.length} vani misurati — completa le misure` :
                              vaniConPrezzo.length === 0 ? "Misure OK — imposta il prezzo €/mq nelle impostazioni o nella griglia" :
@@ -1121,7 +1148,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               const ril = rilievi[rilievi.length - 1];
                               setSelectedRilievo(ril);
                               if (ril.vani?.length > 0) { setSelectedVano(ril.vani[0]); }
-                            }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                            }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> {!hasVani ? "AGGIUNGI VANI →" : vaniConMisure.length < vani.length ? "COMPLETA MISURE →" : "APRI RILIEVO →"}
                             </button>
                           )}
@@ -1130,17 +1157,17 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
 
                       {isCurrent && step.id === "firma" && (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: L.primary, marginBottom: 8 }}>
                             Preventivo: €{fmt(totPreventivo)} + IVA {ivaPerc}% = <b>€{fmt(totIva)}</b>
                           </div>
                           {/* Sub-step 1: Genera e invia preventivo con firma */}
                           {firmaStep === 0 && (
                             <div>
                               <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                                <button onClick={() => generaPreventivoPDF(c)} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                <button onClick={() => generaPreventivoPDF(c)} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: L.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Scarica PDF
                                 </button>
-                                <button onClick={() => setShowPreventivoModal(true)} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                <button onClick={() => setShowPreventivoModal(true)} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: L.surface, color: L.sub, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Anteprima
                                 </button>
                               </div>
@@ -1153,18 +1180,18 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#25d366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> GENERA PDF + INVIA CON FIRMA →
                               </button>
-                              <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4, lineHeight: 1.5 }}>
+                              <div style={{ fontSize: 10, color: L.sub, textAlign: "center", marginTop: 4, lineHeight: 1.5 }}>
                                 Scarica il PDF e invia via WhatsApp il link per la firma elettronica
                               </div>
                               <div style={{ textAlign: "center", marginTop: 6 }}>
-                                <span onClick={() => setFirmaStep(1)} style={{ fontSize: 11, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Già inviato? Vai al caricamento firma</span>
+                                <span onClick={() => setFirmaStep(1)} style={{ fontSize: 11, color: L.sub, cursor: "pointer", textDecoration: "underline" }}>Già inviato? Vai al caricamento firma</span>
                               </div>
                             </div>
                           )}
                           {/* Sub-step 2: Carica documento firmato */}
                           {firmaStep === 1 && (
                             <div>
-                              <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Preventivo inviato. Ora carica il documento firmato dal cliente.</div>
+                              <div style={{ fontSize: 11, color: L.sub, marginBottom: 8 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Preventivo inviato. Ora carica il documento firmato dal cliente.</div>
                               {!firmaFileUrl ? (
                                 <div>
                                   <button onClick={() => {
@@ -1179,10 +1206,10 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                       reader.readAsDataURL(file);
                                     };
                                     inp.click();
-                                  }} style={{ width: "100%", padding: 14, borderRadius: 10, border: `2px dashed ${T.acc}`, background: `${T.acc}08`, color: T.acc, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                                  }} style={{ width: "100%", padding: 14, borderRadius: 10, border: `2px dashed ${T.acc}`, background: `${T.acc}08`, color: L.primary, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CARICA DOCUMENTO FIRMATO
                                   </button>
-                                  <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF, foto o scansione del preventivo firmato</div>
+                                  <div style={{ fontSize: 10, color: L.sub, textAlign: "center", marginTop: 4 }}>PDF, foto o scansione del preventivo firmato</div>
                                 </div>
                               ) : (
                                 <div>
@@ -1190,9 +1217,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                     <span style={{ fontSize: 20 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></span>
                                     <div style={{ flex: 1 }}>
                                       <div style={{ fontSize: 12, fontWeight: 700, color: "#34c759" }}>Documento caricato</div>
-                                      <div style={{ fontSize: 11, color: T.sub }}>{firmaFileName}</div>
+                                      <div style={{ fontSize: 11, color: L.sub }}>{firmaFileName}</div>
                                     </div>
-                                    <span onClick={() => { setFirmaFileUrl(null); setFirmaFileName(""); }} style={{ fontSize: 18, cursor: "pointer", color: T.sub }}></span>
+                                    <span onClick={() => { setFirmaFileUrl(null); setFirmaFileName(""); }} style={{ fontSize: 18, cursor: "pointer", color: L.sub }}></span>
                                   </div>
                                   <button onClick={() => {
                                     const allegato = { id: Date.now(), tipo: "firma", nome: firmaFileName, data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), dataUrl: firmaFileUrl };
@@ -1212,15 +1239,15 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
 
                       {isCurrent && step.id === "fattura" && (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 4 }}>Totale commessa: <b style={{ color: T.acc }}>€{fmt(totIva)}</b></div>
-                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 10 }}>Scegli la modalità di fatturazione:</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: L.text, marginBottom: 4 }}>Totale commessa: <b style={{ color: L.primary }}>€{fmt(totIva)}</b></div>
+                          <div style={{ fontSize: 11, color: L.sub, marginBottom: 10 }}>Scegli la modalità di fatturazione:</div>
                           {/* Percentage chips */}
                           <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" as any }}>
                             {[30, 40, 50, 60, 100].map(p => (
                               <div key={p} onClick={() => setFattPerc(p)} style={{
                                 padding: "10px 16px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: 800,
-                                background: fattPerc === p ? T.acc : T.card,
-                                color: fattPerc === p ? "#fff" : T.text,
+                                background: fattPerc === p ? L.primary : L.surface,
+                                color: fattPerc === p ? "#fff" : L.text,
                                 border: `2px solid ${fattPerc === p ? T.acc : T.bdr}`,
                                 transition: "all 0.15s",
                               }}>
@@ -1229,15 +1256,15 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                             ))}
                           </div>
                           {/* Amount preview */}
-                          <div style={{ background: T.bg, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                          <div style={{ background: L.bg, borderRadius: 10, padding: 12, marginBottom: 10 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                              <span style={{ fontSize: 12, color: T.sub }}>{fattPerc === 100 ? "Fattura unica" : `Acconto ${fattPerc}%`}</span>
-                              <span style={{ fontSize: 16, fontWeight: 900, color: T.acc }}>€{fmt(Math.round(totIva * fattPerc / 100))}</span>
+                              <span style={{ fontSize: 12, color: L.sub }}>{fattPerc === 100 ? "Fattura unica" : `Acconto ${fattPerc}%`}</span>
+                              <span style={{ fontSize: 16, fontWeight: 900, color: L.primary }}>€{fmt(Math.round(totIva * fattPerc / 100))}</span>
                             </div>
                             {fattPerc < 100 && (
                               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                <span style={{ fontSize: 11, color: T.sub }}>Saldo restante ({100 - fattPerc}%)</span>
-                                <span style={{ fontSize: 12, fontWeight: 700, color: T.sub }}>€{fmt(totIva - Math.round(totIva * fattPerc / 100))}</span>
+                                <span style={{ fontSize: 11, color: L.sub }}>Saldo restante ({100 - fattPerc}%)</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: L.sub }}>€{fmt(totIva - Math.round(totIva * fattPerc / 100))}</span>
                               </div>
                             )}
                           </div>
@@ -1245,7 +1272,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                             creaFattura(c, fattPerc === 100 ? "unica" : "acconto");
                             setCcDone(`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Fattura ${fattPerc === 100 ? "unica" : "acconto " + fattPerc + "%"} creata! €${fmt(Math.round(totIva * fattPerc / 100))}`);
                             setTimeout(() => setCcDone(null), 3000);
-                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> CREA FATTURA €{fmt(Math.round(totIva * fattPerc / 100))} →
                           </button>
                         </div>
@@ -1253,12 +1280,12 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
 
                       {isCurrent && step.id === "ordine" && (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 4 }}>
-                            Fornitore: <b style={{ color: T.acc }}>{c.sistema?.split(" ")[0] || "—"}</b> · Sistema: {c.sistema || "—"}
+                          <div style={{ fontSize: 12, fontWeight: 700, color: L.text, marginBottom: 4 }}>
+                            Fornitore: <b style={{ color: L.primary }}>{c.sistema?.split(" ")[0] || "—"}</b> · Sistema: {c.sistema || "—"}
                           </div>
                           {/* Order lines preview */}
-                          <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 10 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> RIGHE ORDINE ({vani.length} vani)</div>
+                          <div style={{ background: L.bg, borderRadius: 10, padding: 10, marginBottom: 10 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> RIGHE ORDINE ({vani.length} vani)</div>
                             {vani.map((v, vi) => {
                               const larg = v.larghezza || v.l || 0;
                               const alt = v.altezza || v.h || 0;
@@ -1266,28 +1293,28 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               return (
                                 <div key={vi} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: vi < vani.length - 1 ? `1px solid ${T.bdr}` : "none" }}>
                                   <div>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{v.nome || v.tipo || `Vano ${vi + 1}`}</div>
-                                    <div style={{ fontSize: 10, color: T.sub }}>{larg}×{alt}mm · {mq}m² · {v.apertura || "—"}</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: L.text }}>{v.nome || v.tipo || `Vano ${vi + 1}`}</div>
+                                    <div style={{ fontSize: 10, color: L.sub }}>{larg}×{alt}mm · {mq}m² · {v.apertura || "—"}</div>
                                   </div>
-                                  <div style={{ fontSize: 12, fontWeight: 800, color: T.acc }}>€{fmt(calcolaVanoPrezzo(v, c))}</div>
+                                  <div style={{ fontSize: 12, fontWeight: 800, color: L.primary }}>€{fmt(calcolaVanoPrezzo(v, c))}</div>
                                 </div>
                               );
                             })}
                             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, paddingTop: 6, borderTop: `2px solid ${T.bdr}` }}>
-                              <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Totale ordine</span>
-                              <span style={{ fontSize: 15, fontWeight: 900, color: T.acc }}>€{fmt(totPreventivo)}</span>
+                              <span style={{ fontSize: 13, fontWeight: 800, color: L.text }}>Totale ordine</span>
+                              <span style={{ fontSize: 15, fontWeight: 900, color: L.primary }}>€{fmt(totPreventivo)}</span>
                             </div>
                           </div>
-                          <div style={{ fontSize: 10, color: T.sub, marginBottom: 8, textAlign: "center" }}>Controlla le righe sopra. Se tutto OK, conferma l'ordine.</div>
+                          <div style={{ fontSize: 10, color: L.sub, marginBottom: 8, textAlign: "center" }}>Controlla le righe sopra. Se tutto OK, conferma l'ordine.</div>
                           <div style={{ display: "flex", gap: 8 }}>
-                            <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                            <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: L.surface, color: L.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>️ Modifica vani
                             </button>
                             <button onClick={() => {
                               const ord = creaOrdineFornitore(c, c.sistema?.split(" ")[0] || "");
                               if (ord) setSelectedCM(prev => ({ ...prev }));
                               setCcDone("Ordine fornitore creato!"); setTimeout(() => setCcDone(null), 3000);
-                            }} style={{ flex: 2, padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                            }} style={{ flex: 2, padding: 14, borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> CONFERMA ORDINE →
                             </button>
                           </div>
@@ -1301,7 +1328,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         const infoComplete = hasSett || hasData;
                         return (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
-                          <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, color: L.sub, marginBottom: 8 }}>
                             Ordine: {ord?.fornitore?.nome || "—"} · €{fmt(ord?.totaleIva || 0)}
                           </div>
                           {!ordineConfermato ? (
@@ -1309,7 +1336,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               <button onClick={() => apriInboxDocumento()} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#af52de", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CARICA CONFERMA (PDF/Foto) →
                               </button>
-                              <div style={{ fontSize: 10, color: T.sub, marginTop: 4, textAlign: "center" }}>Da email, WhatsApp o portale fornitore</div>
+                              <div style={{ fontSize: 10, color: L.sub, marginTop: 4, textAlign: "center" }}>Da email, WhatsApp o portale fornitore</div>
                             </div>
                           ) : ccConfirm !== "conferma_ok" ? (
                             <div>
@@ -1323,11 +1350,11 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                           ) : (
                             <div style={{ background: "#34c75912", borderRadius: 10, padding: 12, border: "1px solid #34c75930" }}>
                               <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759", marginBottom: 8 }}>Conferma approvazione</div>
-                              <div style={{ fontSize: 12, color: T.text, marginBottom: 3 }}>Fornitore: <b>{ord?.fornitore?.nome || "—"}</b></div>
-                              <div style={{ fontSize: 12, color: T.text, marginBottom: 8 }}>Importo: <b>€{fmt(ord?.totaleIva || 0)}</b></div>
+                              <div style={{ fontSize: 12, color: L.text, marginBottom: 3 }}>Fornitore: <b>{ord?.fornitore?.nome || "—"}</b></div>
+                              <div style={{ fontSize: 12, color: L.text, marginBottom: 8 }}>Importo: <b>€{fmt(ord?.totaleIva || 0)}</b></div>
                               
                               {/* Settimane / data consegna — ALWAYS show, editable */}
-                              <div style={{ background: !infoComplete ? "#ff950015" : T.bg, borderRadius: 10, padding: 10, marginBottom: 10, border: !infoComplete ? "2px solid #ff9500" : `1px solid ${T.bdr}` }}>
+                              <div style={{ background: !infoComplete ? "#ff950015" : L.bg, borderRadius: 10, padding: 10, marginBottom: 10, border: !infoComplete ? "2px solid #ff9500" : `1px solid ${T.bdr}` }}>
                                 {!infoComplete && (
                                   <div style={{ fontSize: 11, fontWeight: 700, color: "#ff9500", marginBottom: 6 }}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>️ Devi inserire i tempi di consegna prima di approvare
@@ -1335,12 +1362,12 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                 )}
                                 <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                                   <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> SETTIMANE</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> SETTIMANE</div>
                                     <input type="number" min="1" max="52" placeholder="es. 6" value={confSett} onChange={e => setConfSett(e.target.value)} style={{ width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${!confSett ? "#ff9500" : T.bdr}`, fontSize: 14, fontWeight: 800, fontFamily: "inherit", boxSizing: "border-box", textAlign: "center" }} />
                                   </div>
                                   <div style={{ flex: 2 }}>
-                                    <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> DATA PREVISTA</div>
-                                    <div style={{ padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 13, fontWeight: 700, color: T.text, textAlign: "center" }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> DATA PREVISTA</div>
+                                    <div style={{ padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: L.surface, fontSize: 13, fontWeight: 700, color: L.text, textAlign: "center" }}>
                                       {confSett ? (() => { const d = new Date(); d.setDate(d.getDate() + parseInt(confSett) * 7); return d.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "long", year: "numeric" }); })() : "Inserisci settimane →"}
                                     </div>
                                   </div>
@@ -1353,7 +1380,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               </div>
                               
                               <div style={{ display: "flex", gap: 8 }}>
-                                <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                                <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: L.surface, color: L.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                                 <button onClick={() => {
                                   if (!confSett || parseInt(confSett) < 1) { alert("Inserisci le settimane di consegna"); return; }
                                   const settNum = parseInt(confSett);
@@ -1401,20 +1428,20 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         return (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
                           {/* Context: this job info */}
-                          <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 10 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> {c.cliente} — {c.indirizzo || "—"}</div>
-                            <div style={{ fontSize: 11, color: T.sub }}>{vani.length} vani · {c.sistema || "—"} · {ordiniCommessa[0]?.consegna?.prevista ? `Materiale previsto: ${new Date(ordiniCommessa[0].consegna.prevista).toLocaleDateString("it-IT")}` : "Consegna da confermare"}</div>
+                          <div style={{ background: L.bg, borderRadius: 10, padding: 10, marginBottom: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: L.text, marginBottom: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> {c.cliente} — {c.indirizzo || "—"}</div>
+                            <div style={{ fontSize: 11, color: L.sub }}>{vani.length} vani · {c.sistema || "—"} · {ordiniCommessa[0]?.consegna?.prevista ? `Materiale previsto: ${new Date(ordiniCommessa[0].consegna.prevista).toLocaleDateString("it-IT")}` : "Consegna da confermare"}</div>
                           </div>
 
                           {!montFormOpen ? (
-                            <button onClick={() => { setMontFormOpen(true); setMontGiorni(1); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: squadreDB[0]?.id || "", note: "" }); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                            <button onClick={() => { setMontFormOpen(true); setMontGiorni(1); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: squadreDB[0]?.id || "", note: "" }); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> PIANIFICA MONTAGGIO →
                             </button>
                           ) : (
-                            <div style={{ background: T.bg, borderRadius: 10, padding: 12, border: `1px solid ${T.bdr}` }}>
+                            <div style={{ background: L.bg, borderRadius: 10, padding: 12, border: `1px solid ${T.bdr}` }}>
                               {/* Mini calendar 2 weeks */}
                               <div style={{ marginBottom: 10 }}>
-                                <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> SCEGLI DATA (prossime 4 settimane)</div>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> SCEGLI DATA (prossime 4 settimane)</div>
                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
                                   {giorniSettimana.map(g => {
                                     const dt = new Date(g);
@@ -1426,9 +1453,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                     return (
                                       <div key={g} onClick={() => !isWeekend && setMontFormData(p => ({ ...p, data: g }))} title={busyMont.map(m => m.cliente + " (" + m.gg + "g)").join(", ")} style={{
                                         padding: "6px 2px", borderRadius: 8, textAlign: "center", cursor: isWeekend ? "not-allowed" : "pointer",
-                                        background: isStart ? T.acc : isSel ? `${T.acc}30` : isBusy ? "#ff950020" : T.card,
-                                        color: isStart ? "#fff" : isSel ? T.acc : isWeekend ? T.bdr : isBusy ? "#ff9500" : T.text,
-                                        border: `2px solid ${isStart ? T.acc : isSel ? `${T.acc}60` : "transparent"}`,
+                                        background: isStart ? L.primary : isSel ? `${T.acc}30` : isBusy ? "#ff950020" : L.surface,
+                                        color: isStart ? "#fff" : isSel ? L.primary : isWeekend ? L.border : isBusy ? "#ff9500" : L.text,
+                                        border: `2px solid ${isStart ? T.acc : isSel ? `${L.primary}60` : "transparent"}`,
                                         opacity: isWeekend ? 0.4 : 1,
                                       }}>
                                         <div style={{ fontSize: 8, fontWeight: 700 }}>{nomiGiorni[dt.getDay()]}</div>
@@ -1441,7 +1468,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                 {/* Legend */}
                                 {montaggiAll.length > 0 && (
                                   <div style={{ marginTop: 6 }}>
-                                    <div style={{ fontSize: 10, color: T.sub, marginBottom: 4 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/></svg> Montaggi pianificati:</div>
+                                    <div style={{ fontSize: 10, color: L.sub, marginBottom: 4 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/></svg> Montaggi pianificati:</div>
                                     {montaggiAll.filter(m => m.data >= oggi.toISOString().split("T")[0]).slice(0, 6).map((m, mi) => {
                                       const d = new Date(m.data);
                                       const sq = squadreDB.find(s => s.id === m.squadraId);
@@ -1460,33 +1487,33 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               {/* Ora + Durata */}
                               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 3 }}>⏰ ORARIO</div>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 3 }}>⏰ ORARIO</div>
                                   <select value={montFormData.orario} onChange={e => setMontFormData(p => ({ ...p, orario: e.target.value }))} style={{ width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: "inherit" }}>
                                     {["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","14:00","15:00"].map(h => <option key={h} value={h}>{h}</option>)}
                                   </select>
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 3 }}>⏱ GIORNI</div>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 3 }}>⏱ GIORNI</div>
                                   <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-                                    <button onClick={() => setMontGiorni(Math.max(0.5, montGiorni - 0.5))} style={{ width: 36, height: 40, borderRadius: "8px 0 0 8px", border: `1px solid ${T.bdr}`, background: T.card, fontSize: 18, cursor: "pointer", fontFamily: "inherit" }}>−</button>
+                                    <button onClick={() => setMontGiorni(Math.max(0.5, montGiorni - 0.5))} style={{ width: 36, height: 40, borderRadius: "8px 0 0 8px", border: `1px solid ${T.bdr}`, background: L.surface, fontSize: 18, cursor: "pointer", fontFamily: "inherit" }}>−</button>
                                     <div style={{ flex: 1, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderTop: `1px solid ${T.bdr}`, borderBottom: `1px solid ${T.bdr}`, fontSize: 15, fontWeight: 800, background: "#fff" }}>
                                       {montGiorni === 0.5 ? "½" : montGiorni}
                                     </div>
-                                    <button onClick={() => setMontGiorni(montGiorni + 0.5)} style={{ width: 36, height: 40, borderRadius: "0 8px 8px 0", border: `1px solid ${T.bdr}`, background: T.card, fontSize: 18, cursor: "pointer", fontFamily: "inherit" }}>+</button>
+                                    <button onClick={() => setMontGiorni(montGiorni + 0.5)} style={{ width: 36, height: 40, borderRadius: "0 8px 8px 0", border: `1px solid ${T.bdr}`, background: L.surface, fontSize: 18, cursor: "pointer", fontFamily: "inherit" }}>+</button>
                                   </div>
                                 </div>
                               </div>
 
                               {/* Squadra */}
                               <div style={{ marginBottom: 8 }}>
-                                <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 18a1 1 0 001 1h18a1 1 0 001-1v-2a1 1 0 00-1-1H3a1 1 0 00-1 1v2z"/><path d="M10 15V6a1 1 0 011-1h2a1 1 0 011 1v9"/><path d="M4 15v-3a8 8 0 0116 0v3"/></svg> SQUADRA</div>
+                                <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 3 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 18a1 1 0 001 1h18a1 1 0 001-1v-2a1 1 0 00-1-1H3a1 1 0 00-1 1v2z"/><path d="M10 15V6a1 1 0 011-1h2a1 1 0 011 1v9"/><path d="M4 15v-3a8 8 0 0116 0v3"/></svg> SQUADRA</div>
                                 {squadreDB.length > 0 ? (
                                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as any }}>
                                     {squadreDB.map(sq => (
                                       <div key={sq.id} onClick={() => setMontFormData(p => ({ ...p, squadraId: sq.id }))} style={{
                                         padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700,
-                                        background: montFormData.squadraId === sq.id ? T.acc : T.card,
-                                        color: montFormData.squadraId === sq.id ? "#fff" : T.text,
+                                        background: montFormData.squadraId === sq.id ? L.primary : L.surface,
+                                        color: montFormData.squadraId === sq.id ? "#fff" : L.text,
                                         border: `1px solid ${montFormData.squadraId === sq.id ? T.acc : T.bdr}`,
                                       }}>{sq.nome || sq.id}</div>
                                     ))}
@@ -1502,17 +1529,17 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               </div>
 
                               {/* === CONTESTO SQUADRE — cosa fanno le squadre === */}
-                              <div style={{ marginBottom: 10, background: T.card, borderRadius: 10, padding: 10, border: `1px solid ${T.bdr}` }}>
-                                <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px" }}>Impegni squadre — prossime 4 settimane</div>
+                              <div style={{ marginBottom: 10, background: L.surface, borderRadius: 10, padding: 10, border: `1px solid ${T.bdr}` }}>
+                                <div style={{ fontSize: 9, fontWeight: 800, color: L.sub, textTransform: "uppercase", marginBottom: 6, letterSpacing: "0.5px" }}>Impegni squadre — prossime 4 settimane</div>
                                 {squadreDB.map(sq => {
                                   const sqMont = montaggiAll.filter(m => m.squadraId === sq.id && m.data >= oggi.toISOString().split("T")[0] && m.stato !== "completato").sort((a,b) => a.data.localeCompare(b.data));
                                   const isSel = montFormData.squadraId === sq.id;
                                   return (
-                                    <div key={sq.id} style={{ marginBottom: 6, padding: "6px 8px", borderRadius: 8, background: isSel ? T.acc + "08" : "transparent", border: isSel ? `1px solid ${T.acc}30` : `1px solid transparent` }}>
+                                    <div key={sq.id} style={{ marginBottom: 6, padding: "6px 8px", borderRadius: 8, background: isSel ? L.primary + "08" : "transparent", border: isSel ? `1px solid ${T.acc}30` : `1px solid transparent` }}>
                                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: sqMont.length > 0 ? 4 : 0 }}>
-                                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: sq.colore || T.acc, flexShrink: 0 }} />
-                                        <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? T.acc : T.text, flex: 1 }}>{sq.nome}</div>
-                                        <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>{sqMont.length === 0 ? "Libera" : `${sqMont.length} lavori`}</div>
+                                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: sq.colore || L.primary, flexShrink: 0 }} />
+                                        <div style={{ fontSize: 11, fontWeight: 700, color: isSel ? L.primary : L.text, flex: 1 }}>{sq.nome}</div>
+                                        <div style={{ fontSize: 9, color: L.sub, fontWeight: 600 }}>{sqMont.length === 0 ? "Libera" : `${sqMont.length} lavori`}</div>
                                       </div>
                                       {sqMont.map((m, mi) => {
                                         const d = new Date(m.data);
@@ -1528,10 +1555,10 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                         })();
                                         return (
                                           <div key={mi} style={{ display: "flex", gap: 6, alignItems: "center", padding: "2px 0 2px 14px", fontSize: 10 }}>
-                                            <span style={{ fontWeight: 700, color: conflitto && isSel ? "#ff3b30" : T.sub, minWidth: 38 }}>
+                                            <span style={{ fontWeight: 700, color: conflitto && isSel ? "#ff3b30" : L.sub, minWidth: 38 }}>
                                               {d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" })}
                                             </span>
-                                            <span style={{ color: conflitto && isSel ? "#ff3b30" : T.text, flex: 1 }}>
+                                            <span style={{ color: conflitto && isSel ? "#ff3b30" : L.text, flex: 1 }}>
                                               {m.cliente} · {m.giorni||1}g · {m.vani||"?"}v
                                             </span>
                                             {conflitto && isSel && <span style={{ fontSize: 8, fontWeight: 800, color: "#ff3b30", background: "#ff3b3015", padding: "1px 5px", borderRadius: 4 }}>️ CONFLITTO</span>}
@@ -1545,13 +1572,13 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
 
                               {/* Summary */}
                               {montFormData.data && (
-                                <div style={{ background: T.card, borderRadius: 8, padding: 8, marginBottom: 8, fontSize: 12, color: T.text }}>
+                                <div style={{ background: L.surface, borderRadius: 8, padding: 8, marginBottom: 8, fontSize: 12, color: L.text }}>
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg> <b>{new Date(montFormData.data).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}</b> ore {montFormData.orario} · {montGiorni === 0.5 ? "mezza giornata" : montGiorni + (montGiorni === 1 ? " giorno" : " giorni")} · {squadreDB.find(s => s.id === montFormData.squadraId)?.nome || "—"}
                                 </div>
                               )}
 
                               <div style={{ display: "flex", gap: 8 }}>
-                                <button onClick={() => setMontFormOpen(false)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                                <button onClick={() => setMontFormOpen(false)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: L.surface, color: L.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                                 <button onClick={() => {
                                   if (!montFormData.data) { alert("Scegli una data dal calendario"); return; }
                                   const durataStr = montGiorni === 0.5 ? "mezza" : montGiorni === 1 ? "giornata" : montGiorni + "giorni";
@@ -1592,10 +1619,10 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         return (
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
                           {/* Context box */}
-                          <div style={{ background: T.bg, borderRadius: 10, padding: 10, marginBottom: 10 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> Riepilogo pagamenti</div>
+                          <div style={{ background: L.bg, borderRadius: 10, padding: 10, marginBottom: 10 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: L.text, marginBottom: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> Riepilogo pagamenti</div>
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "2px 0" }}>
-                              <span style={{ color: T.sub }}>Totale commessa</span>
+                              <span style={{ color: L.sub }}>Totale commessa</span>
                               <b>€{fmt(totIva)}</b>
                             </div>
                             {incassato > 0 && (
@@ -1609,7 +1636,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               <b style={{ color: restoSaldo > 0 ? "#ff9500" : "#34c759" }}>€{fmt(restoSaldo)}</b>
                             </div>
                             {fattureCommessa.length > 0 && (
-                              <div style={{ marginTop: 6, fontSize: 10, color: T.sub }}>
+                              <div style={{ marginTop: 6, fontSize: 10, color: L.sub }}>
                                 {fattureCommessa.map(f => `Fat.${f.numero} ${f.tipo} €${fmt(f.importo)} ${f.pagata ? "" : "⏳"}`).join(" · ")}
                               </div>
                             )}
@@ -1618,21 +1645,21 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                           {/* PHASE 1: No saldo fattura yet → Create it */}
                           {!hasFatSaldo && restoSaldo > 0 && (
                             ccConfirm !== "saldo" ? (
-                              <button onClick={() => setCcConfirm("saldo")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                              <button onClick={() => setCcConfirm("saldo")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> CREA FATTURA SALDO €{fmt(restoSaldo)} →
                               </button>
                             ) : (
-                              <div style={{ background: T.acc + "10", borderRadius: 10, padding: 12, border: `1px solid ${T.acc}30` }}>
-                                <div style={{ fontSize: 13, fontWeight: 800, color: T.acc, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> Conferma fattura saldo</div>
-                                <div style={{ fontSize: 20, fontWeight: 900, color: T.acc, marginBottom: 3, textAlign: "center" }}>€{fmt(restoSaldo)}</div>
-                                <div style={{ fontSize: 11, color: T.sub, marginBottom: 10, textAlign: "center" }}>{c.cliente} {c.cognome || ""} · {c.code}</div>
+                              <div style={{ background: L.primary + "10", borderRadius: 10, padding: 12, border: `1px solid ${T.acc}30` }}>
+                                <div style={{ fontSize: 13, fontWeight: 800, color: L.primary, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> Conferma fattura saldo</div>
+                                <div style={{ fontSize: 20, fontWeight: 900, color: L.primary, marginBottom: 3, textAlign: "center" }}>€{fmt(restoSaldo)}</div>
+                                <div style={{ fontSize: 11, color: L.sub, marginBottom: 10, textAlign: "center" }}>{c.cliente} {c.cognome || ""} · {c.code}</div>
                                 <div style={{ display: "flex", gap: 8 }}>
-                                  <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                                  <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: L.surface, color: L.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                                   <button onClick={() => {
                                     creaFattura(c, restoSaldo === totIva ? "unica" : "saldo");
                                     setCcConfirm(null); setCcDone("Fattura saldo creata! €" + fmt(restoSaldo));
                                     setTimeout(() => setCcDone(null), 3000);
-                                  }} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>CREA FATTURA SALDO</button>
+                                  }} style={{ flex: 2, padding: 12, borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>CREA FATTURA SALDO</button>
                                 </div>
                               </div>
                             )
@@ -1648,25 +1675,25 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                 <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> IL CLIENTE HA PAGATO — SEGNA COME INCASSATA →
                                 </button>
-                                <div style={{ fontSize: 10, color: T.sub, marginTop: 4, textAlign: "center" }}>Oppure carica la ricevuta dal inbox</div>
+                                <div style={{ fontSize: 10, color: L.sub, marginTop: 4, textAlign: "center" }}>Oppure carica la ricevuta dal inbox</div>
                               </div>
                             ) : (
                               <div style={{ background: "#34c75912", borderRadius: 10, padding: 12, border: "1px solid #34c75930" }}>
                                 <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759", marginBottom: 6 }}>Conferma pagamento ricevuto</div>
                                 <div style={{ fontSize: 20, fontWeight: 900, color: "#34c759", marginBottom: 3, textAlign: "center" }}>€{fmt(restoSaldo)}</div>
-                                <div style={{ fontSize: 11, color: T.sub, marginBottom: 6, textAlign: "center" }}>Metodo di pagamento:</div>
+                                <div style={{ fontSize: 11, color: L.sub, marginBottom: 6, textAlign: "center" }}>Metodo di pagamento:</div>
                                 <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 10, flexWrap: "wrap" as any }}>
                                   {["Bonifico", "Assegno", "Contanti", "Carta"].map(m => (
                                     <span key={m} onClick={() => setCcConfirm("pagata_" + m)} style={{
                                       padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
-                                      background: ccConfirm === "pagata_" + m ? "#34c759" : T.card,
-                                      color: ccConfirm === "pagata_" + m ? "#fff" : T.text,
+                                      background: ccConfirm === "pagata_" + m ? "#34c759" : L.surface,
+                                      color: ccConfirm === "pagata_" + m ? "#fff" : L.text,
                                       border: `1px solid ${ccConfirm === "pagata_" + m ? "#34c759" : T.bdr}`,
                                     }}>{m}</span>
                                   ))}
                                 </div>
                                 <div style={{ display: "flex", gap: 8 }}>
-                                  <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                                  <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`, background: L.surface, color: L.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                                   <button onClick={() => {
                                     const metodo = (ccConfirm || "").replace("pagata_", "") || "Bonifico";
                                     const fat = fattureCommessa.find(f => (f.tipo === "saldo" || f.tipo === "unica") && !f.pagata);
@@ -1708,11 +1735,11 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         <div style={{ marginTop: 10, marginLeft: 26 }}>
                           <div style={{ textAlign: "center", marginBottom: 12 }}>
                             <div style={{ fontSize: 20, fontWeight: 900, color: "#34c759" }}>Commessa Completata!</div>
-                            <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>Incassato €{fmt(incassato)} · Margine €{fmt(incassato - ordiniCommessa.reduce((s, o) => s + (o.totaleIva || 0), 0))}</div>
+                            <div style={{ fontSize: 12, color: L.sub, marginTop: 2 }}>Incassato €{fmt(incassato)} · Margine €{fmt(incassato - ordiniCommessa.reduce((s, o) => s + (o.totaleIva || 0), 0))}</div>
                           </div>
                           {/* DOSSIER */}
-                          <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 10 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg> Dossier Commessa</div>
+                          <div style={{ background: L.surface, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: L.text, marginBottom: 10 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg> Dossier Commessa</div>
                             {[
                               { ico: "", l: "Rilievo", v: `${rilievi.length} rilievo · ${vani.length} vani`, d: rilievi[0]?.data || "" },
                               { ico: "", l: "Misure", v: `${vaniConMisure.length}/${vani.length} vani completi`, d: "" },
@@ -1726,8 +1753,8 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                             ].map((row, ri) => (
                               <div key={ri} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: `1px solid ${T.bdr}20` }}>
                                 <span style={{ fontSize: 14, width: 22, textAlign: "center" }}>{row.ico}</span>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: T.text, flex: 1 }}>{row.l}</span>
-                                <span style={{ fontSize: 11, color: T.sub, textAlign: "right" }}>{row.v}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: L.text, flex: 1 }}>{row.l}</span>
+                                <span style={{ fontSize: 11, color: L.sub, textAlign: "right" }}>{row.v}</span>
                               </div>
                             ))}
                           </div>
@@ -1740,25 +1767,25 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
 
               {/* <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M4 10h12M4 14h12M6 6a8 8 0 100 12"/></svg> RIEPILOGO ECONOMICO — sempre visibile */}
               {totPreventivo > 0 && (
-                <div style={{ marginTop: 8, background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase", marginBottom: 8 }}>Riepilogo Economico</div>
+                <div style={{ marginTop: 8, background: L.surface, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: L.sub, textTransform: "uppercase", marginBottom: 8 }}>Riepilogo Economico</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
-                    <div style={{ fontSize: 11, color: T.sub }}>Preventivo</div>
+                    <div style={{ fontSize: 11, color: L.sub }}>Preventivo</div>
                     <div style={{ fontSize: 12, fontWeight: 700, textAlign: "right" }}>€{fmt(totPreventivo)}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>IVA {ivaPerc}%</div>
+                    <div style={{ fontSize: 11, color: L.sub }}>IVA {ivaPerc}%</div>
                     <div style={{ fontSize: 12, fontWeight: 700, textAlign: "right" }}>€{fmt(totPreventivo * ivaPerc / 100)}</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: T.text, borderTop: `1px solid ${T.bdr}`, paddingTop: 4 }}>TOTALE</div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: T.acc, textAlign: "right", borderTop: `1px solid ${T.bdr}`, paddingTop: 4 }}>€{fmt(totIva)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: L.text, borderTop: `1px solid ${T.bdr}`, paddingTop: 4 }}>TOTALE</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: L.primary, textAlign: "right", borderTop: `1px solid ${T.bdr}`, paddingTop: 4 }}>€{fmt(totIva)}</div>
                     {incassato > 0 && <>
                       <div style={{ fontSize: 11, color: "#34c759" }}>Incassato</div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#34c759", textAlign: "right" }}>€{fmt(incassato)}</div>
                     </>}
                     {incassato > 0 && incassato < totIva && <>
-                      <div style={{ fontSize: 11, color: T.orange }}>⏳ Resta</div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: T.orange, textAlign: "right" }}>€{fmt(totIva - incassato)}</div>
+                      <div style={{ fontSize: 11, color: L.amber }}>⏳ Resta</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: L.amber, textAlign: "right" }}>€{fmt(totIva - incassato)}</div>
                     </>}
                     {hasOrdine && <>
-                      <div style={{ fontSize: 11, color: T.sub, borderTop: `1px solid ${T.bdr}`, paddingTop: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Costo fornitore</div>
+                      <div style={{ fontSize: 11, color: L.sub, borderTop: `1px solid ${T.bdr}`, paddingTop: 4 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Costo fornitore</div>
                       <div style={{ fontSize: 12, fontWeight: 700, textAlign: "right", borderTop: `1px solid ${T.bdr}`, paddingTop: 4 }}>€{fmt(ordiniCommessa.reduce((s, o) => s + (o.totaleIva || 0), 0))}</div>
                       <div style={{ fontSize: 11, color: "#34c759" }}>Margine</div>
                       <div style={{ fontSize: 12, fontWeight: 800, color: "#34c759", textAlign: "right" }}>€{fmt(totIva - ordiniCommessa.reduce((s, o) => s + (o.totaleIva || 0), 0))} ({Math.round((1 - ordiniCommessa.reduce((s, o) => s + (o.totaleIva || 0), 0) / (totIva || 1)) * 100)}%)</div>
@@ -1781,9 +1808,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           const totIvaPF = totPF * (1 + ivaPF / 100);
           const fmtPF = (n) => typeof n === "number" ? n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0,00";
           return (
-            <div style={{ margin: "8px 16px 0", background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+            <div style={{ margin: "8px 16px 0", background: L.surface, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" }}>️ Pratica Fiscale</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: L.sub, textTransform: "uppercase" }}>️ Pratica Fiscale</div>
                 {c.praticaFiscale && <span style={{ fontSize: 10, fontWeight: 700, color: "#34c759", background: "#34c75912", padding: "2px 8px", borderRadius: 6 }}>Attiva</span>}
                 <span onClick={(e) => { e.stopPropagation(); setShowGuidaFiscale(sg => !sg); }}
                   style={{ fontSize: 10, fontWeight: 700, color: "#3B7FE0", background: "#3B7FE010", padding: "2px 8px", borderRadius: 6, cursor: "pointer", border: "1px solid #3B7FE030" }}>
@@ -1860,7 +1887,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
 
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" as any, marginBottom: c.praticaFiscale ? 8 : 0 }}>
                 {[
-                  { id: "", l: "Nessuna", color: T.sub },
+                  { id: "", l: "Nessuna", color: L.sub },
                   { id: "iva4", l: "IVA 4%", color: "#3B7FE0" },
                   { id: "iva10", l: "IVA 10%", color: "#ff9500" },
                   { id: "detrazione50", l: "Detraz. 50%", color: "#007aff" },
@@ -1874,15 +1901,15 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                     setSelectedCM(prev => ({ ...prev, praticaFiscale: opt.id || undefined, ivaPerc: newIva }));
                   }} style={{
                     padding: "6px 10px", borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: "pointer",
-                    background: (c.praticaFiscale || "") === opt.id ? opt.color + "18" : T.bg,
-                    color: (c.praticaFiscale || "") === opt.id ? opt.color : T.sub,
+                    background: (c.praticaFiscale || "") === opt.id ? opt.color + "18" : L.bg,
+                    color: (c.praticaFiscale || "") === opt.id ? opt.color : L.sub,
                     border: `1.5px solid ${(c.praticaFiscale || "") === opt.id ? opt.color : T.bdr}`,
                   }}>{opt.l}</div>
                 ))}
               </div>
               {c.praticaFiscale && (
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}>Documenti necessari:</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 6 }}>Documenti necessari:</div>
                   {[
                     ...(c.praticaFiscale === "iva4" ? [
                       { l: "Dichiarazione abitazione principale", desc: "Autocertificazione cliente", key: "dich_prima_casa" },
@@ -1933,23 +1960,23 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                           {done && ""}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: done ? "#34c759" : T.text }}>{doc.l}</div>
-                          <div style={{ fontSize: 9, color: T.sub }}>{doc.desc}</div>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: done ? "#34c759" : L.text }}>{doc.l}</div>
+                          <div style={{ fontSize: 9, color: L.sub }}>{doc.desc}</div>
                         </div>
                       </div>
                     );
                   })}
                   {/* ═══ DOCUMENTI IDENTITÀ ═══ */}
-                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid " + T.bdr }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 10h2M16 14h2M7 10h.01"/><circle cx="7" cy="14" r="2"/></svg> Documenti di riconoscimento:</div>
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid " + L.border }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 6 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 10h2M16 14h2M7 10h.01"/><circle cx="7" cy="14" r="2"/></svg> Documenti di riconoscimento:</div>
                     {(c.docIdentita || []).map((doc, i) => (
-                      <div key={doc.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid " + T.bdr + "15" }}>
+                      <div key={doc.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: "1px solid " + L.border + "15" }}>
                         <div style={{ width: 28, height: 28, borderRadius: 8, background: "#5856d618", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>
                           {doc.tipo === "CI" ? "" : ""}
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{doc.tipo === "CI" ? "Carta d'Identità" : "Codice Fiscale"}</div>
-                          <div style={{ fontSize: 9, color: T.sub }}>{doc.nome} · {doc.data || ""}</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: L.text }}>{doc.tipo === "CI" ? "Carta d'Identità" : "Codice Fiscale"}</div>
+                          <div style={{ fontSize: 9, color: L.sub }}>{doc.nome} · {doc.data || ""}</div>
                         </div>
                         <div onClick={() => {
                           const newDI = (c.docIdentita || []).filter((_, idx) => idx !== i);
@@ -1980,7 +2007,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         </label>
                       ))}
                     </div>
-                    <div style={{ fontSize: 8, color: T.sub, marginTop: 3, textAlign: "center" }}>Obbligatori per pratiche fiscali con detrazione/bonus</div>
+                    <div style={{ fontSize: 8, color: L.sub, marginTop: 3, textAlign: "center" }}>Obbligatori per pratiche fiscali con detrazione/bonus</div>
                   </div>
                   {/* ═══ PRESTAMPATI COPIABILI ═══ */}
                   {(() => {
@@ -2182,7 +2209,7 @@ IVA 10% manutenzione straordinaria`,
                   }} style={{ width: "100%", marginTop: 8, padding: 11, borderRadius: 10, border: "none", background: "#007aff", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> SCARICA MODULI PRESTAMPATI
                   </button>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 3, textAlign: "center" }}>Genera dichiarazione da far compilare e firmare al cliente</div>
+                  <div style={{ fontSize: 9, color: L.sub, marginTop: 3, textAlign: "center" }}>Genera dichiarazione da far compilare e firmare al cliente</div>
                 </div>
               )}
             </div>
@@ -2195,7 +2222,7 @@ IVA 10% manutenzione straordinaria`,
             <div key={t} onClick={() => setCmSubTab(t)}
               style={{ flex: 1, padding: "9px 4px", textAlign: "center", fontSize: 12, fontWeight: 600, cursor: "pointer",
                 borderBottom: `2px solid ${cmSubTab === t ? T.acc : "transparent"}`,
-                color: cmSubTab === t ? T.acc : T.sub, textTransform: "capitalize" }}>
+                color: cmSubTab === t ? L.primary : L.sub, textTransform: "capitalize" }}>
               {t === "rilievi" ? `Rilievi (${rilievi.length})` : "Report Differenze"}
             </div>
           ))}
@@ -2210,14 +2237,14 @@ IVA 10% manutenzione straordinaria`,
             {rilievi.length === 0 && (
               <div style={{ textAlign: "center", padding: "32px 16px" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 6 }}>Nessun rilievo ancora</div>
-                <div style={{ fontSize: 12, color: T.sub }}>Usa il Centro Comando sopra per creare il primo rilievo</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: L.text, marginBottom: 6 }}>Nessun rilievo ancora</div>
+                <div style={{ fontSize: 12, color: L.sub }}>Usa il Centro Comando sopra per creare il primo rilievo</div>
               </div>
             )}
             {[...rilievi].reverse().map((r, idx) => {
               const vaniCount = (r.vani || []).length;
               const vaniMisurati = (r.vani || []).filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length >= 6).length;
-              const colore = tipoColor[r.tipo] || T.blue;
+              const colore = tipoColor[r.tipo] || "#3b7fe0";
               const ico = tipoIco[r.tipo] || "";
               const isUltimo = idx === 0;
               // Badge stato automatico basato sulla firma
@@ -2230,7 +2257,7 @@ IVA 10% manutenzione straordinaria`,
                 <div key={r.id} onClick={() => { setSelectedRilievo(r); setCmSubTab("sopralluoghi"); }}
                   style={{ ...S.card, marginBottom: 10, cursor: "pointer", overflow: "hidden",
                     border: `1.5px solid ${isUltimo ? colore + "50" : T.bdr}`,
-                    background: isUltimo ? colore + "06" : T.card }}>
+                    background: isUltimo ? colore + "06" : L.surface }}>
                   {/* Header rilievo */}
                   <div style={{ padding: "13px 14px", display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 42, height: 42, borderRadius: 10, background: colore + "15", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1.5px solid ${colore}30` }}>
@@ -2245,28 +2272,28 @@ IVA 10% manutenzione straordinaria`,
                         {isUltimo && <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: colore, color: "#fff" }}>ULTIMO</span>}
                         <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: statoBadge.bg, color: statoBadge.color }}>{statoBadge.label}</span>
                       </div>
-                      <div style={{ fontSize: 11, color: T.sub }}>
+                      <div style={{ fontSize: 11, color: L.sub }}>
                         {r.ora && `${r.ora} · `}{r.rilevatore || "—"}
                       </div>
-                      {r.motivoModifica && <div style={{ fontSize: 11, color: T.orange, marginTop: 2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> {r.motivoModifica}</div>}
+                      {r.motivoModifica && <div style={{ fontSize: 11, color: L.amber, marginTop: 2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg> {r.motivoModifica}</div>}
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: colore }}>{vaniCount}</div>
-                      <div style={{ fontSize: 10, color: T.sub }}>vani</div>
+                      <div style={{ fontSize: 10, color: L.sub }}>vani</div>
                     </div>
-                    <span style={{ transform: "rotate(180deg)", display:"inline-flex", marginLeft: 4 }}><Ico d={ICO.back} s={14} c={T.sub} /></span>
+                    <span style={{ transform: "rotate(180deg)", display:"inline-flex", marginLeft: 4 }}><Ico d={ICO.back} s={14} c={L.sub} /></span>
                   </div>
                   {/* Barra progresso vani */}
                   {vaniCount > 0 && (
                     <div style={{ padding: "0 14px 12px" }}>
-                      <div style={{ height: 4, background: T.bdr, borderRadius: 2, overflow: "hidden", marginBottom: 3 }}>
-                        <div style={{ height: "100%", width: `${Math.round(vaniMisurati / vaniCount * 100)}%`, background: vaniMisurati === vaniCount ? T.grn : colore, borderRadius: 2 }} />
+                      <div style={{ height: 4, background: L.border, borderRadius: 2, overflow: "hidden", marginBottom: 3 }}>
+                        <div style={{ height: "100%", width: `${Math.round(vaniMisurati / vaniCount * 100)}%`, background: vaniMisurati === vaniCount ? L.green : colore, borderRadius: 2 }} />
                       </div>
-                      <div style={{ fontSize: 10, color: T.sub }}>{vaniMisurati}/{vaniCount} vani con misure</div>
+                      <div style={{ fontSize: 10, color: L.sub }}>{vaniMisurati}/{vaniCount} vani con misure</div>
                     </div>
                   )}
                   {/* Note */}
-                  {r.note && <div style={{ padding: "0 14px 10px", fontSize: 11, color: T.sub, fontStyle: "italic" }}>"{r.note}"</div>}
+                  {r.note && <div style={{ padding: "0 14px 10px", fontSize: 11, color: L.sub, fontStyle: "italic" }}>"{r.note}"</div>}
                 </div>
               );
             })}
