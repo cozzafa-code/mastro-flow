@@ -345,29 +345,29 @@ function AccessoriCatalogoSection({ vano, updV, T }: any) {
 
   const removeItem = (catalogoId: string) => updV({ accessoriCatalogo: items.filter(a => a.catalogoId !== catalogoId) });
 
-  const inputBase = { padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: "Inter", background: L.bg, color: L.text, boxSizing: "border-box" as const };
+  const inputBase = { padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: "Inter", background: T.bg, color: T.text, boxSizing: "border-box" as const };
 
   return (
     <div>
       <SectionLabel>Accessori catalogo</SectionLabel>
       {items.map(a => (
-        <div key={a.catalogoId} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: L.bg, borderRadius: 10, border: `1px solid ${T.bdr}`, marginBottom: 6 }}>
+        <div key={a.catalogoId} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}`, marginBottom: 6 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: L.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</div>
-            <div style={{ fontSize: 10, color: L.sub }}>{a.codice} · {a.fornitore}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</div>
+            <div style={{ fontSize: 10, color: T.sub }}>{a.codice} · {a.fornitore}</div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", background: L.surface, borderRadius: 8, border: `1px solid ${T.bdr}` }}>
-            <div onClick={() => updateQta(a.catalogoId, -1)} style={{ padding: "6px 12px", cursor: "pointer", fontSize: 16, fontWeight: 800, color: L.sub }}>-</div>
-            <div style={{ padding: "6px 8px", fontSize: 14, fontWeight: 800, fontFamily: FM, color: L.text, minWidth: 22, textAlign: "center" }}>{a.quantita}</div>
+          <div style={{ display: "flex", alignItems: "center", background: T.card, borderRadius: 8, border: `1px solid ${T.bdr}` }}>
+            <div onClick={() => updateQta(a.catalogoId, -1)} style={{ padding: "6px 12px", cursor: "pointer", fontSize: 16, fontWeight: 800, color: T.sub }}>-</div>
+            <div style={{ padding: "6px 8px", fontSize: 14, fontWeight: 800, fontFamily: FM, color: T.text, minWidth: 22, textAlign: "center" }}>{a.quantita}</div>
             <div onClick={() => updateQta(a.catalogoId, 1)} style={{ padding: "6px 12px", cursor: "pointer", fontSize: 16, fontWeight: 800, color: ACC_COLOR }}>+</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <span style={{ fontSize: 10, color: L.sub }}>€</span>
+            <span style={{ fontSize: 10, color: T.sub }}>€</span>
             <input
               inputMode="numeric"
               value={a.prezzoUnitario || 0}
               onChange={e => updatePrezzo(a.catalogoId, Number(e.target.value))}
-              style={{ width: 58, padding: "6px 6px", borderRadius: 6, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: FM, textAlign: "right", background: L.bg, color: L.text }}
+              style={{ width: 58, padding: "6px 6px", borderRadius: 6, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: FM, textAlign: "right", background: T.bg, color: T.text }}
             />
           </div>
           <div style={{ fontSize: 12, fontWeight: 800, color: ACC_COLOR, fontFamily: FM, minWidth: 52, textAlign: "right" }}>
@@ -387,41 +387,41 @@ function AccessoriCatalogoSection({ vano, updV, T }: any) {
       </div>
       {showSearch && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1100, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end" }} onClick={() => setShowSearch(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, margin: "0 auto", background: L.surface, borderRadius: "16px 16px 0 0", maxHeight: "82vh", display: "flex", flexDirection: "column" }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: L.border, margin: "8px auto 4px" }} />
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 500, margin: "0 auto", background: T.card, borderRadius: "16px 16px 0 0", maxHeight: "82vh", display: "flex", flexDirection: "column" }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: T.bdr, margin: "8px auto 4px" }} />
             <div style={{ padding: "8px 16px 10px" }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: ACC_COLOR, marginBottom: 8 }}>Catalogo accessori</div>
               <input value={query} onChange={e => setQuery(e.target.value)} autoFocus placeholder="Cerca nome o codice..."
                 style={{ ...inputBase, width: "100%", fontSize: 15 }} />
               <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginTop: 8 }}>
-                <div onClick={() => setCatFilter("")} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", background: !catFilter ? ACC_COLOR : L.bg, color: !catFilter ? "#fff" : L.sub, border: `1px solid ${!catFilter ? ACC_COLOR : T.bdr}` }}>Tutti</div>
+                <div onClick={() => setCatFilter("")} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", background: !catFilter ? ACC_COLOR : T.bg, color: !catFilter ? "#fff" : T.sub, border: `1px solid ${!catFilter ? ACC_COLOR : T.bdr}` }}>Tutti</div>
                 {CATEGORIE_LABEL.map(c => (
-                  <div key={c.id} onClick={() => setCatFilter(catFilter === c.id ? "" : c.id)} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", background: catFilter === c.id ? ACC_COLOR + "15" : L.bg, color: catFilter === c.id ? ACC_COLOR : L.sub, border: `1px solid ${catFilter === c.id ? ACC_COLOR + "40" : T.bdr}` }}>
+                  <div key={c.id} onClick={() => setCatFilter(catFilter === c.id ? "" : c.id)} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", background: catFilter === c.id ? ACC_COLOR + "15" : T.bg, color: catFilter === c.id ? ACC_COLOR : T.sub, border: `1px solid ${catFilter === c.id ? ACC_COLOR + "40" : T.bdr}` }}>
                     {c.nome}
                   </div>
                 ))}
               </div>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "0 12px 80px" }}>
-              {filtered.length === 0 && <div style={{ textAlign: "center", padding: "24px 0", color: L.sub, fontSize: 13 }}>Nessun risultato</div>}
+              {filtered.length === 0 && <div style={{ textAlign: "center", padding: "24px 0", color: T.sub, fontSize: 13 }}>Nessun risultato</div>}
               {filtered.map(p => {
                 const already = items.some(a => a.catalogoId === p.id);
                 return (
-                  <div key={p.id} onClick={() => addItem(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px", background: already ? ACC_COLOR + "06" : L.surface, borderRadius: 10, border: `1px solid ${already ? ACC_COLOR + "30" : T.bdr}`, marginBottom: 6, cursor: "pointer" }}>
+                  <div key={p.id} onClick={() => addItem(p)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px", background: already ? ACC_COLOR + "06" : T.card, borderRadius: 10, border: `1px solid ${already ? ACC_COLOR + "30" : T.bdr}`, marginBottom: 6, cursor: "pointer" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: L.text }}>{p.nome}</div>
-                      <div style={{ fontSize: 10, color: L.sub }}>{p.codice} · {p.fornitore}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{p.nome}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>{p.codice} · {p.fornitore}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: ACC_COLOR, fontFamily: FM }}>€{p.prezzo}</div>
-                      <div style={{ fontSize: 9, color: L.sub }}>/{p.unitaMisura}</div>
+                      <div style={{ fontSize: 9, color: T.sub }}>/{p.unitaMisura}</div>
                     </div>
                     {already && <div style={{ fontSize: 11, fontWeight: 800, color: GRN, background: GRN + "15", padding: "4px 8px", borderRadius: 6 }}>OK</div>}
                   </div>
                 );
               })}
             </div>
-            <div style={{ padding: "12px 16px 28px", background: L.surface, borderTop: `1px solid ${T.bdr}` }}>
+            <div style={{ padding: "12px 16px 28px", background: T.card, borderTop: `1px solid ${T.bdr}` }}>
               <div onClick={() => setShowSearch(false)} style={{ padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: ACC_COLOR, color: "#fff", fontSize: 14, fontWeight: 900 }}>
                 Fatto ({items.length} selezionati · €{fmt(totale)})
               </div>
@@ -462,7 +462,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
 
   const inputBase = {
     padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`,
-    fontSize: 15, fontFamily: "Inter", background: L.bg, color: L.text,
+    fontSize: 15, fontFamily: "Inter", background: T.bg, color: T.text,
     width: "100%", boxSizing: "border-box" as const,
   };
 
@@ -476,7 +476,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
   );
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 900, background: L.bg, display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 900, background: T.bg, display: "flex", flexDirection: "column" }}>
 
       {/* Topbar wizard */}
       <div style={{ background: "#1A1A1C", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
@@ -489,7 +489,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
       </div>
 
       {/* Stepper */}
-      <div style={{ background: L.surface, borderBottom: `1px solid ${T.bdr}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 0, flexShrink: 0 }}>
+      <div style={{ background: T.card, borderBottom: `1px solid ${T.bdr}`, padding: "10px 16px", display: "flex", alignItems: "center", gap: 0, flexShrink: 0 }}>
         {STEPS.map((s, i) => (
           <React.Fragment key={s}>
             <div onClick={() => setStep(i)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", flex: 1 }}>
@@ -547,11 +547,11 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
             </div>
 
             {/* Tapparella */}
-            <div style={{ background: L.surface, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+            <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: tapp.attivo ? 12 : 0 }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: L.text }}>Tapparella</div>
-                  {tapp.attivo && tapp.tipo && <div style={{ fontSize: 11, color: L.sub }}>{tapp.tipo}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Tapparella</div>
+                  {tapp.attivo && tapp.tipo && <div style={{ fontSize: 11, color: T.sub }}>{tapp.tipo}</div>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <select value={tapp.tipo || "Non inclusa"}
@@ -582,11 +582,11 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
             </div>
 
             {/* Zanzariera */}
-            <div style={{ background: L.surface, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+            <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: zanz.attivo ? 12 : 0 }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: L.text }}>Zanzariera</div>
-                  {zanz.attivo && zanz.tipo && <div style={{ fontSize: 11, color: L.sub }}>{zanz.tipo}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Zanzariera</div>
+                  {zanz.attivo && zanz.tipo && <div style={{ fontSize: 11, color: T.sub }}>{zanz.tipo}</div>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <select value={zanz.tipo || "Non inclusa"}
@@ -650,7 +650,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
                 </div>
               ))}
               <div onClick={() => updV({ vociLibere: [...(vano.vociLibere || []), { desc: "", qta: 1, prezzo: 0 }] })}
-                style={{ padding: "10px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, color: L.sub }}>
+                style={{ padding: "10px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, color: T.sub }}>
                 + Aggiungi voce
               </div>
             </div>
@@ -661,7 +661,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
               {vano.infissoConfig?.tipo ? (
                 <div style={{ padding: 12, background: AMB + "10", borderRadius: 12, border: `1px solid ${AMB}30` }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: AMB }}>{vano.infissoConfig.tipId || "Configurato"}</div>
-                  <div style={{ fontSize: 11, color: L.sub, marginTop: 2 }}>{vano.misure?.lCentro || "—"}×{vano.misure?.hCentro || "—"} mm</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{vano.misure?.lCentro || "—"}×{vano.misure?.hCentro || "—"} mm</div>
                   <div onClick={() => setShowConfig(true)} style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: AMB, color: "#fff", fontSize: 13, fontWeight: 700, textAlign: "center", cursor: "pointer" }}>
                     Modifica configurazione
                   </div>
@@ -671,7 +671,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
                   style={{ padding: "32px 20px", borderRadius: 14, border: `2px dashed ${AMB}50`, textAlign: "center", cursor: "pointer", background: AMB + "05" }}>
                   <div style={{ fontSize: 30, marginBottom: 6 }}>📐</div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: AMB }}>Apri configuratore infisso</div>
-                  <div style={{ fontSize: 11, color: L.sub, marginTop: 4 }}>Tipologia, campiture, ferramenta</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Tipologia, campiture, ferramenta</div>
                 </div>
               )}
             </div>
@@ -691,15 +691,15 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
                     value={prezzoOverride !== undefined && prezzoOverride !== null ? prezzoOverride : (prezzoBase || "")}
                     placeholder={prezzoBase > 0 ? `Auto: €${fmt(prezzoBase)}` : "0"}
                     onChange={e => updV({ prevPrezzoOverride: e.target.value === "" ? null : Number(e.target.value) })}
-                    style={{ padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${prezzoOverride !== undefined && prezzoOverride !== null ? AMB : T.bdr}`, fontSize: 15, fontFamily: FM, textAlign: "right", background: L.bg, color: L.text, width: "100%", boxSizing: "border-box" }}
+                    style={{ padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${prezzoOverride !== undefined && prezzoOverride !== null ? AMB : T.bdr}`, fontSize: 15, fontFamily: FM, textAlign: "right", background: T.bg, color: T.text, width: "100%", boxSizing: "border-box" }}
                   />
                   {prezzoOverride !== null && prezzoOverride !== undefined && (
-                    <div onClick={() => updV({ prevPrezzoOverride: null })} style={{ fontSize: 10, color: L.sub, cursor: "pointer", marginTop: 3 }}>× Ripristina auto (€{fmt(prezzoBase)})</div>
+                    <div onClick={() => updV({ prevPrezzoOverride: null })} style={{ fontSize: 10, color: T.sub, cursor: "pointer", marginTop: 3 }}>× Ripristina auto (€{fmt(prezzoBase)})</div>
                   )}
                 </div>
                 <div>
                   <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: GRN + "08", fontSize: 15, fontWeight: 800, fontFamily: FM, color: GRN, textAlign: "right" }}>
-                    <div style={{ fontSize: 9, color: L.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>Subtotale infisso</div>
+                    <div style={{ fontSize: 9, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>Subtotale infisso</div>
                     €{fmt(prezzoUnitario * pezzi)}
                   </div>
                 </div>
@@ -712,7 +712,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
                 <div>
                   <label style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase", display: "block", marginBottom: 3 }}>Posa</label>
                   <select value={vano.prevPosa || "Inclusa"} onChange={e => updV({ prevPosa: e.target.value })}
-                    style={{ padding: "10px 8px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, background: L.bg, color: L.text, width: "100%" }}>
+                    style={{ padding: "10px 8px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, background: T.bg, color: T.text, width: "100%" }}>
                     <option>Inclusa</option>
                     <option>Esclusa</option>
                     <option>Personalizzata</option>
@@ -721,7 +721,7 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
                 <div>
                   <label style={{ fontSize: 9, fontWeight: 700, color: "#8e8e93", letterSpacing: 0.8, textTransform: "uppercase", display: "block", marginBottom: 3 }}>Smontaggio</label>
                   <select value={vano.prevSmontaggio || "Non richiesto"} onChange={e => updV({ prevSmontaggio: e.target.value })}
-                    style={{ padding: "10px 8px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, background: L.bg, color: L.text, width: "100%" }}>
+                    style={{ padding: "10px 8px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 14, background: T.bg, color: T.text, width: "100%" }}>
                     <option>Non richiesto</option>
                     <option>Incluso</option>
                     <option>A pagamento</option>
@@ -733,15 +733,15 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
 
             {/* Riepilogo vano */}
             <div style={{ background: GRN + "08", borderRadius: 14, border: `1px solid ${GRN}25`, padding: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: L.sub, marginBottom: 10 }}>RIEPILOGO VANO</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, marginBottom: 10 }}>RIEPILOGO VANO</div>
               {[
                 { label: `Infisso x${pezzi}`, val: prezzoUnitario * pezzi },
                 { label: "Accessori catalogo", val: accCat },
                 { label: "Posa", val: posaPrezzo },
               ].filter(r => r.val > 0).map((r, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13 }}>
-                  <span style={{ color: L.sub }}>{r.label}</span>
-                  <span style={{ fontWeight: 700, fontFamily: FM, color: L.text }}>€{fmt(r.val)}</span>
+                  <span style={{ color: T.sub }}>{r.label}</span>
+                  <span style={{ fontWeight: 700, fontFamily: FM, color: T.text }}>€{fmt(r.val)}</span>
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", borderTop: `1.5px solid ${GRN}30`, marginTop: 8, paddingTop: 8 }}>
@@ -754,13 +754,13 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
       </div>
 
       {/* Footer navigazione */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: L.surface, borderTop: `1px solid ${T.bdr}`, padding: "12px 16px 28px", display: "flex", gap: 10, zIndex: 10 }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: T.card, borderTop: `1px solid ${T.bdr}`, padding: "12px 16px 28px", display: "flex", gap: 10, zIndex: 10 }}>
         {step > 0 ? (
-          <div onClick={() => setStep(s => s - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: L.bg, border: `1px solid ${T.bdr}`, fontSize: 15, fontWeight: 700, color: L.sub }}>
+          <div onClick={() => setStep(s => s - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 15, fontWeight: 700, color: T.sub }}>
             Indietro
           </div>
         ) : (
-          <div onClick={onClose} style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: L.bg, border: `1px solid ${T.bdr}`, fontSize: 15, fontWeight: 700, color: L.sub }}>
+          <div onClick={onClose} style={{ flex: 1, padding: "14px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 15, fontWeight: 700, color: T.sub }}>
             Chiudi
           </div>
         )}
@@ -781,33 +781,6 @@ function VanoWizard({ vano, idx, updVano, calcolaVanoPrezzo, selectedCM, T, onCl
 // ============================================================
 // COMPONENTE PRINCIPALE
 // ============================================================
-
-// ─── Lumina Design Tokens ────────────────────────────────
-const L = {
-  bg:          "#f9f9fb",
-  surface:     "#ffffff",
-  surfaceLow:  "#f3f3f5",
-  surfaceMid:  "#eeeef0",
-  primary:     "#031631",
-  primaryCont: "#1a2b47",
-  onPrimary:   "#ffffff",
-  muted:       "#8293b4",
-  text:        "#1a1c1d",
-  sub:         "#44474d",
-  placeholder: "#75777e",
-  green:       "#1a9e73",
-  red:         "#dc4444",
-  amber:       "#e4c18c",
-  amberBg:     "#ffdeac",
-  border:      "rgba(197,198,206,0.25)",
-  glass:       "rgba(255,255,255,0.85)",
-} as const;
-const SH = {
-  ambient: "0 20px 40px rgba(26,28,29,0.04)",
-  float:   "0 20px 40px rgba(26,28,29,0.08)",
-  sm:      "0 2px 8px rgba(26,28,29,0.05)",
-} as const;
-// ─────────────────────────────────────────────────────────
 export default function PreventivoConfiguratoreTab() {
   const {
     T, selectedCM, setSelectedCM, setCantieri,
@@ -867,7 +840,7 @@ export default function PreventivoConfiguratoreTab() {
   const inputStyle = {
     width: "100%", padding: "10px 12px", borderRadius: 8,
     border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: "Inter",
-    background: L.bg, color: L.text, boxSizing: "border-box" as const,
+    background: T.bg, color: T.text, boxSizing: "border-box" as const,
   };
 
   // Se wizard vano aperto, mostralo fullscreen
@@ -893,8 +866,8 @@ export default function PreventivoConfiguratoreTab() {
       <GuidaDetrazioni T={T} />
 
       {/* PRATICA FISCALE */}
-      <div style={{ background: L.surface, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: L.text, marginBottom: 10 }}>Pratica fiscale</div>
+      <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 10 }}>Pratica fiscale</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {[
             { id: "nessuna", label: "Nessuna" },
@@ -903,7 +876,7 @@ export default function PreventivoConfiguratoreTab() {
             { id: "75", label: "Barriere 75%" },
           ].map(opt => (
             <div key={opt.id} onClick={() => updCM("detrazione", opt.id)}
-              style={{ padding: "8px 14px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 700, border: `1.5px solid ${c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc : T.bdr}`, background: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? L.primary + "15" : L.bg, color: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? L.primary : L.sub }}>
+              style={{ padding: "8px 14px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 700, border: `1.5px solid ${c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc : T.bdr}`, background: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc + "15" : T.bg, color: c.detrazione === opt.id || (!c.detrazione && opt.id === "nessuna") ? T.acc : T.sub }}>
               {opt.label}
             </div>
           ))}
@@ -911,13 +884,13 @@ export default function PreventivoConfiguratoreTab() {
       </div>
 
       {/* IVA + SCONTO */}
-      <div style={{ background: L.surface, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
+      <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: L.text }}>IVA Infissi</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>IVA Infissi</span>
           <div style={{ display: "flex", gap: 6 }}>
             {["4", "10", "22"].map(p => (
               <div key={p} onClick={() => updCM("iva", p)}
-                style={{ padding: "7px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 700, background: String(ivaPerc) === p ? GRN : L.bg, color: String(ivaPerc) === p ? "#fff" : L.sub, border: `1.5px solid ${String(ivaPerc) === p ? GRN : T.bdr}` }}>
+                style={{ padding: "7px 16px", borderRadius: 20, cursor: "pointer", fontSize: 13, fontWeight: 700, background: String(ivaPerc) === p ? GRN : T.bg, color: String(ivaPerc) === p ? "#fff" : T.sub, border: `1.5px solid ${String(ivaPerc) === p ? GRN : T.bdr}` }}>
                 {p}%
               </div>
             ))}
@@ -926,11 +899,11 @@ export default function PreventivoConfiguratoreTab() {
         {ivaPerc === 10 && <div style={{ fontSize: 12, color: AMB, background: AMB + "12", padding: "7px 10px", borderRadius: 8, marginBottom: 10 }}>IVA 10%: manutenzione straordinaria residenziale.</div>}
         {ivaPerc === 4 && <div style={{ fontSize: 12, color: AMB, background: AMB + "12", padding: "7px 10px", borderRadius: 8, marginBottom: 10 }}>IVA 4%: prima casa o disabilita — allegare documentazione.</div>}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 13, fontWeight: 800, color: L.text }}>Sconto globale</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Sconto globale</span>
           <div style={{ display: "flex", gap: 6 }}>
             {[{ v: 0, l: "No" }, { v: 5, l: "5%" }, { v: 10, l: "10%" }, { v: 15, l: "15%" }, { v: 20, l: "20%" }].map(opt => (
               <div key={opt.v} onClick={() => updCM("sconto", opt.v)}
-                style={{ padding: "7px 12px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, background: scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : L.bg, color: scontoPerc === opt.v ? "#fff" : L.sub, border: `1.5px solid ${scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : T.bdr}` }}>
+                style={{ padding: "7px 12px", borderRadius: 20, cursor: "pointer", fontSize: 12, fontWeight: 700, background: scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : T.bg, color: scontoPerc === opt.v ? "#fff" : T.sub, border: `1.5px solid ${scontoPerc === opt.v ? (opt.v === 0 ? GRN : AMB) : T.bdr}` }}>
                 {opt.l}
               </div>
             ))}
@@ -949,14 +922,14 @@ export default function PreventivoConfiguratoreTab() {
         const hasMisure = m.lCentro && m.hCentro;
         return (
           <div key={v.id} onClick={() => setVanoWizard(v)}
-            style={{ background: L.surface, borderRadius: 14, border: `1px solid ${T.bdr}`, marginBottom: 8, padding: "14px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", activeOpacity: 0.8 }}>
+            style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, marginBottom: 8, padding: "14px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", activeOpacity: 0.8 }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: GRN, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{i + 1}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: L.text }}>{v.nome || `Vano ${i + 1}`}
-                {v.tipo && <span style={{ fontSize: 11, fontWeight: 600, color: L.sub, marginLeft: 6 }}>{v.tipo}</span>}
+              <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{v.nome || `Vano ${i + 1}`}
+                {v.tipo && <span style={{ fontSize: 11, fontWeight: 600, color: T.sub, marginLeft: 6 }}>{v.tipo}</span>}
                 {(v.pezzi || 1) > 1 && <span style={{ fontSize: 11, fontWeight: 700, color: GRN, marginLeft: 4 }}>×{v.pezzi}</span>}
               </div>
-              <div style={{ fontSize: 12, color: hasMisure ? L.sub : AMB, marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: hasMisure ? T.sub : AMB, marginTop: 2 }}>
                 {hasMisure ? `${m.lCentro}×${m.hCentro} mm${v.coloreInt ? ` · ${v.coloreInt}` : ""}` : "Tocca per inserire misure"}
               </div>
               {((v.accessoriCatalogo?.length || 0) > 0 || v.accessori?.tapparella?.attivo || v.accessori?.zanzariera?.attivo) && (
@@ -969,9 +942,9 @@ export default function PreventivoConfiguratoreTab() {
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 900, color: GRN, fontFamily: FM }}>€{fmt(totV)}</div>
-              <div style={{ fontSize: 10, color: L.sub, fontFamily: FM }}>€{fmt(prezzoU)}/pz</div>
+              <div style={{ fontSize: 10, color: T.sub, fontFamily: FM }}>€{fmt(prezzoU)}/pz</div>
             </div>
-            <div style={{ color: L.sub, fontSize: 18 }}>›</div>
+            <div style={{ color: T.sub, fontSize: 18 }}>›</div>
           </div>
         );
       })}
@@ -996,8 +969,8 @@ export default function PreventivoConfiguratoreTab() {
       </div>
 
       {/* VOCI EXTRA COMMESSA */}
-      <div style={{ background: L.surface, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: L.text, marginBottom: 8 }}>Voci extra commessa</div>
+      <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 8 }}>Voci extra commessa</div>
         {(c.vociLibere || []).map((vl: any, vi: number) => (
           <div key={vi} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
             <input value={vl.desc || ""} placeholder="Descrizione..."
@@ -1015,27 +988,27 @@ export default function PreventivoConfiguratoreTab() {
           </div>
         ))}
         <div onClick={() => updCM("vociLibere", [...(c.vociLibere || []), { desc: "", qta: 1, importo: 0 }])}
-          style={{ padding: "10px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, color: L.sub }}>
+          style={{ padding: "10px", borderRadius: 8, textAlign: "center", cursor: "pointer", border: `1.5px dashed ${T.bdr}`, fontSize: 13, color: T.sub }}>
           + Aggiungi voce
         </div>
       </div>
 
       {/* NOTE PREVENTIVO */}
-      <div style={{ background: L.surface, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
+      <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "12px 14px", marginBottom: 10 }}>
         <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)}
           placeholder="Note aggiuntive, condizioni speciali per questa commessa..."
           style={{ ...inputStyle, minHeight: 72, resize: "vertical", lineHeight: 1.5 }} />
       </div>
 
       {/* TOTALI */}
-      <div style={{ background: L.surface, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "14px", marginBottom: 10 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: L.text, marginBottom: 10 }}>Riepilogo economico</div>
+      <div style={{ background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, padding: "14px", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 10 }}>Riepilogo economico</div>
         {[
-          { label: "Totale vani", val: totVani, color: L.text },
-          { label: "Voci extra", val: vociLib, color: L.text },
+          { label: "Totale vani", val: totVani, color: T.text },
+          { label: "Voci extra", val: vociLib, color: T.text },
           scontoPerc > 0 ? { label: `Sconto ${scontoPerc}%`, val: -scontoVal, color: AMB } : null,
-          { label: "Imponibile", val: imponibile, color: L.text, bold: true },
-          { label: `IVA ${ivaPerc}%`, val: ivaVal, color: L.sub },
+          { label: "Imponibile", val: imponibile, color: T.text, bold: true },
+          { label: `IVA ${ivaPerc}%`, val: ivaVal, color: T.sub },
           { label: "TOTALE", val: totIva, color: GRN, big: true },
         ].filter(Boolean).map((row: any, i) => (
           <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: row.big ? "8px 0" : "5px 0", borderTop: row.big ? `1.5px solid ${T.bdr}` : "none" }}>
@@ -1043,18 +1016,18 @@ export default function PreventivoConfiguratoreTab() {
             <span style={{ fontSize: row.big ? 20 : 14, fontWeight: 900, color: row.color, fontFamily: FM }}>€{fmt(Math.abs(row.val))}</span>
           </div>
         ))}
-        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: L.bg, border: `1px solid ${T.bdr}` }}>
+        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: T.bg, border: `1px solid ${T.bdr}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: L.sub }}>Acconto ricevuto</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.sub }}>Acconto ricevuto</span>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ fontSize: 12, color: L.sub }}>€</span>
+              <span style={{ fontSize: 12, color: T.sub }}>€</span>
               <input inputMode="numeric" value={acconto || ""} placeholder="0"
                 onChange={e => updCM("accontoRicevuto", Number(e.target.value))}
-                style={{ width: 100, padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: FM, textAlign: "right", background: L.surface, color: L.text }} />
+                style={{ width: 100, padding: "8px 10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 15, fontFamily: FM, textAlign: "right", background: T.card, color: T.text }} />
             </div>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: L.text }}>Saldo</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: T.text }}>Saldo</span>
             <span style={{ fontSize: 18, fontWeight: 900, color: saldo > 0 ? RED : GRN, fontFamily: FM }}>€{fmt(saldo)}</span>
           </div>
         </div>
