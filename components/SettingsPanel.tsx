@@ -496,28 +496,28 @@ function ListinoSettoreLamiere({ T, PRI, FF }: any) {
 
 // ─── Lumina Design Tokens ────────────────────────────────
 const L = {
-  bg:          "#f9f9fb",
-  surface:     "#ffffff",
-  surfaceLow:  "#f3f3f5",
-  surfaceMid:  "#eeeef0",
-  primary:     "#031631",
-  primaryCont: "#1a2b47",
-  onPrimary:   "#ffffff",
-  muted:       "#8293b4",
-  text:        "#1a1c1d",
-  sub:         "#44474d",
-  placeholder: "#75777e",
-  green:       "#1a9e73",
-  red:         "#dc4444",
-  amber:       "#e4c18c",
-  amberBg:     "#ffdeac",
-  border:      "rgba(197,198,206,0.25)",
-  glass:       "rgba(255,255,255,0.85)",
+  bg:          '#f9f9fb',
+  surface:     '#ffffff',
+  surfaceLow:  '#f3f3f5',
+  surfaceMid:  '#eeeef0',
+  primary:     '#031631',
+  primaryCont: '#1a2b47',
+  onPrimary:   '#ffffff',
+  muted:       '#8293b4',
+  text:        '#1a1c1d',
+  sub:         '#44474d',
+  placeholder: '#75777e',
+  green:       '#1a9e73',
+  red:         '#dc4444',
+  amber:       '#e4c18c',
+  amberBg:     '#ffdeac',
+  border:      'rgba(197,198,206,0.25)',
+  glass:       'rgba(255,255,255,0.85)',
 } as const;
 const SH = {
-  ambient: "0 20px 40px rgba(26,28,29,0.04)",
-  float:   "0 20px 40px rgba(26,28,29,0.08)",
-  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+  ambient: '0 20px 40px rgba(26,28,29,0.04)',
+  float:   '0 20px 40px rgba(26,28,29,0.08)',
+  sm:      '0 2px 8px rgba(26,28,29,0.05)',
 } as const;
 // ─────────────────────────────────────────────────────────
 export default function SettingsPanel() {
@@ -753,7 +753,7 @@ export default function SettingsPanel() {
                     setSettoriAttivi(prev => isOn ? prev.filter(x => x !== s.id) : [...prev, s.id]);
                   }} style={{
                     padding: "14px 16px", borderRadius: isOn && s.id === "strutture" ? "14px 14px 0 0" : 14, cursor: "pointer",
-                    border: `2px solid ${isOn ? (L.primary || "#0D7C6B") : T.bdr}`,
+                    border: `2px solid ${isOn ? (T.pri || "#0D7C6B") : T.bdr}`,
                     borderBottom: isOn && s.id === "strutture" ? "none" : undefined,
                     background: isOn ? (L.primary || "#0D7C6B") + "08" : L.surface,
                     display: "flex", alignItems: "center", gap: 12,
@@ -780,7 +780,7 @@ export default function SettingsPanel() {
                   {isOn && s.id === "strutture" && (
                     <div onClick={(e) => { e.stopPropagation(); setShowStrutture(true); }} style={{
                       padding: 16, cursor: "pointer",
-                      border: `2px solid ${L.primary || "#0D7C6B"}`, borderTop: "none",
+                      border: `2px solid ${T.pri || "#0D7C6B"}`, borderTop: "none",
                       borderRadius: "0 0 14px 14px",
                       background: L.surface, textAlign: "center",
                     }}>
@@ -3370,7 +3370,7 @@ export default function SettingsPanel() {
             {/* Card principale — apri configuratore */}
             <div onClick={() => setShowStrutture(true)} style={{
               padding: 24, borderRadius: 14, cursor: "pointer",
-              background: L.surface, border: `2px solid ${L.primary || "#0D7C6B"}`,
+              background: L.surface, border: `2px solid ${T.pri || "#0D7C6B"}`,
               textAlign: "center", marginBottom: 16,
               boxShadow: "0 2px 12px rgba(13,124,107,0.12)",
             }}>
