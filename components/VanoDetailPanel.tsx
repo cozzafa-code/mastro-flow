@@ -2293,99 +2293,6 @@ export default function VanoDetailPanel() {
                 </div>
               )}
 
-                            {/* ═══ PDF TECNICO FORNITORE ═══ */}
-              <div style={{ marginTop: 20, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "#3B7FE0", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> PDF Tecnico Fornitore
-                </div>
-                {v.pdfFornitore ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "#3B7FE010", border: "1px solid #3B7FE030" }}>
-                    <span style={{ fontSize: 20 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{v.pdfFornitoreNome || "disegno_tecnico.pdf"}</div>
-                      <div style={{ fontSize: 9, color: T.sub }}>{v.pdfFornitoreData || ""}</div>
-                    </div>
-                    <div onClick={() => { const a = document.createElement("a"); a.href = v.pdfFornitore; a.download = v.pdfFornitoreNome || "disegno.pdf"; a.click(); }}
-                      style={{ padding: "5px 12px", borderRadius: 7, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0", whiteSpace: "nowrap" as const }}>⬇ Apri</div>
-                    <div onClick={() => { updateVanoField(v.id, "pdfFornitore", null); updateVanoField(v.id, "pdfFornitoreNome", null); updateVanoField(v.id, "pdfFornitoreData", null); }}
-                      style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", border: "1px solid #DC444430", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#DC4444" }}></div>
-                  </div>
-                ) : (
-                  <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 10, background: T.card, border: `1.5px dashed #3B7FE040`, cursor: "pointer" }}>
-                    <span style={{ fontSize: 20 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></span>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0" }}>Allega PDF tecnico fornitore</div>
-                      <div style={{ fontSize: 9, color: T.sub }}>Sezioni nodi, dettagli profilo dal fornitore</div>
-                    </div>
-                    <input type="file" accept="application/pdf" style={{ display: "none" }} onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        updateVanoField(v.id, "pdfFornitore", reader.result as string);
-                        updateVanoField(v.id, "pdfFornitoreNome", file.name);
-                        updateVanoField(v.id, "pdfFornitoreData", new Date().toLocaleDateString("it-IT"));
-                      };
-                      reader.readAsDataURL(file);
-                    }} />
-                  </label>
-                )}
-              </div>
-
-              {/* ═══ BOTTONE TAVOLA TECNICA ═══ */}
-              <div style={{ marginTop: 16 }}>
-                <div
-                  onClick={() => {
-                    const ctx = {
-                      aziendaInfo: aziendaInfo,
-                      sistemiDB: sistemiDB,
-                      vetriDB: vetriDB,
-                      cliente: selectedCM?.cliente || selectedCM?.nome || "",
-                      cognome: selectedCM?.cognome || "",
-                      commessaCode: selectedCM?.code || selectedCM?.id || "",
-                      commessaData: selectedCM?.data || "",
-                    };
-                    generaTavolaTecnica(v, ctx);
-                  }}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                    padding: "14px 16px", borderRadius: 12, cursor: "pointer",
-                    background: "linear-gradient(135deg, #2D7A6B 0%, #1A9E73 100%)",
-                    border: "none", boxShadow: "0 2px 8px #2D7A6B30"
-                  }}>
-                  <span style={{ fontSize: 18 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg></span>
-                  <div style={{ textAlign: "left" as const }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Genera Tavola Tecnica</div>
-                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)" }}>Vista frontale · Nodi · Specifiche · Trasmittanza Uw</div>
-                  </div>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginLeft: "auto" }}>PDF ↓</span>
-                </div>
-
-                {/* Bottone Ordine Controtelai */}
-                {selectedRilievo?.vani?.some(vn => vn.controtelaio?.sistema && vn.controtelaio.sistema !== "nessuno") && (
-                  <div onClick={() => setShowOrdinePanel(true)}
-                    style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                      padding: "14px 16px", borderRadius: 12, cursor: "pointer",
-                      background: "#1A1A1C",
-                      border: "none", boxShadow: "0 2px 8px #1A1A1C30",
-                      marginTop: 8,
-                    }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                      <polyline points="10 9 9 9 8 9"/>
-                    </svg>
-                    <div style={{ textAlign: "left" }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Ordine Controtelai</div>
-                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>Scheda ordine generica · PDF pronto per fornitore</div>
-                    </div>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginLeft: "auto" }}>PDF ↓</span>
-                  </div>
-                )}
-              </div>
 
           </>
           )}
@@ -3205,6 +3112,71 @@ export default function VanoDetailPanel() {
                 })()}
               </div>
             </>
+          )}
+
+          {/* ═══ PDF TECNICO + TAVOLA TECNICA — solo nel riepilogo ═══ */}
+          {vanoStep === 2 && (
+            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+              {/* PDF Tecnico Fornitore */}
+              {v.pdfFornitore ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "#3B7FE010", border: "1px solid #3B7FE030" }}>
+                  <span style={{ fontSize: 16 }}>📄</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{v.pdfFornitoreNome || "disegno_tecnico.pdf"}</div>
+                    <div style={{ fontSize: 9, color: T.sub }}>{v.pdfFornitoreData || ""}</div>
+                  </div>
+                  <div onClick={() => { const a = document.createElement("a"); a.href = v.pdfFornitore; a.download = v.pdfFornitoreNome || "disegno.pdf"; a.click(); }}
+                    style={{ padding: "5px 12px", borderRadius: 7, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0" }}>⬇ Apri</div>
+                  <div onClick={() => { updateVanoField(v.id, "pdfFornitore", null); updateVanoField(v.id, "pdfFornitoreNome", null); updateVanoField(v.id, "pdfFornitoreData", null); }}
+                    style={{ padding: "5px 8px", borderRadius: 7, background: "#DC444415", color: "#DC4444", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>✕</div>
+                </div>
+              ) : (
+                <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderRadius: 10, background: T.card, border: `1.5px dashed #3B7FE040`, cursor: "pointer" }}>
+                  <span style={{ fontSize: 16 }}>📎</span>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#3B7FE0" }}>Allega PDF tecnico fornitore</div>
+                    <div style={{ fontSize: 9, color: T.sub }}>Sezioni nodi, dettagli profilo</div>
+                  </div>
+                  <input type="file" accept="application/pdf" style={{ display: "none" }} onChange={e => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => { updateVanoField(v.id, "pdfFornitore", reader.result as string); updateVanoField(v.id, "pdfFornitoreNome", file.name); updateVanoField(v.id, "pdfFornitoreData", new Date().toLocaleDateString("it-IT")); };
+                    reader.readAsDataURL(file);
+                  }} />
+                </label>
+              )}
+              {/* Genera Tavola Tecnica */}
+              <div onClick={() => {
+                const ctx = { aziendaInfo, sistemiDB, vetriDB,
+                  cliente: selectedCM?.cliente || selectedCM?.nome || "",
+                  cognome: selectedCM?.cognome || "",
+                  commessaCode: selectedCM?.code || selectedCM?.id || "",
+                  commessaData: selectedCM?.data || "" };
+                generaTavolaTecnica(v, ctx);
+              }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                padding: "14px 16px", borderRadius: 12, cursor: "pointer",
+                background: "linear-gradient(135deg, #2D7A6B 0%, #1A9E73 100%)",
+                boxShadow: "0 2px 8px #2D7A6B30" }}>
+                <div style={{ textAlign: "left" as const }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Genera Tavola Tecnica</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.75)" }}>Vista frontale · Nodi · Specifiche · Trasmittanza Uw</div>
+                </div>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginLeft: "auto" }}>PDF ↓</span>
+              </div>
+              {/* Ordine Controtelai */}
+              {selectedRilievo?.vani?.some(vn => vn.controtelaio?.sistema && vn.controtelaio.sistema !== "nessuno") && (
+                <div onClick={() => setShowOrdinePanel(true)}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                    padding: "14px 16px", borderRadius: 12, cursor: "pointer",
+                    background: "#1A1A1C", boxShadow: "0 2px 8px #1A1A1C30" }}>
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>Ordine Controtelai</div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>PDF pronto per fornitore</div>
+                  </div>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginLeft: "auto" }}>PDF ↓</span>
+                </div>
+              )}
+            </div>
           )}
 
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
