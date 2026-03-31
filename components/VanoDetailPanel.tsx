@@ -191,6 +191,11 @@ export default function VanoDetailPanel() {
   const [showFotoMisure, setShowFotoMisure] = useState(false);
   const [showSchizzo, setShowSchizzo] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
+  const [lamieraSchizzoOpen, setLamieraSchizzoOpen] = useState(false);
+  const [lamieraFullscreen, setLamieraFullscreen] = useState(false);
+  const schizzoCanvasRef = React.useRef<HTMLCanvasElement>(null);
+  const schizzoDrawing = React.useRef(false);
+  const schizzo2Touches = React.useRef<any[]>([]);
 
   const [showOrdinePanel, setShowOrdinePanel] = useState(false);
   const [lamieraPieghe, setLamieraPieghe] = useState<Array<{dir:'su'|'giu'|'sx'|'dx', mm:number}>>([]);
@@ -3301,7 +3306,7 @@ export default function VanoDetailPanel() {
         ] as const;
 
         return (
-          <div style={{position:'fixed',inset:0,zIndex:3000,background:'#F8FAFC',display:'flex',flexDirection:'column',paddingBottom:'env(safe-area-inset-bottom,0px)'}}>
+          <div style={{position:'fixed',inset:0,zIndex:3000,background:'#F8FAFC',display:'flex',flexDirection:'column',paddingBottom:'env(safe-area-inset-bottom,0px)',overflow:'hidden'}}>
             
             {/* Header compatto navy */}
             <div style={{background:'#1A2B4A',padding:'10px 14px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
@@ -3317,6 +3322,24 @@ export default function VanoDetailPanel() {
                 style={{padding:'5px 10px',borderRadius:8,background:'rgba(255,255,255,0.12)',
                   color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',border:'1px solid rgba(255,255,255,0.25)',whiteSpace:'nowrap'}}>
                 ◐ {lamieraLatoBuono==='esterno'?'Est.':'Int.'}
+              </div>
+              {/* Tasto schizzo */}
+              <div onClick={()=>setLamieraSchizzoOpen(o=>!o)}
+                style={{padding:'5px 9px',borderRadius:8,cursor:'pointer',
+                  background:lamieraSchizzoOpen?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.1)',
+                  border:'1px solid rgba(255,255,255,0.25)',fontSize:14,lineHeight:1,
+                  color:'#fff',fontWeight:700,whiteSpace:'nowrap'}}
+                title="Schizzo libero">
+                ✏️
+              </div>
+              {/* Tasto fullscreen SVG */}
+              <div onClick={()=>setLamieraFullscreen(f=>!f)}
+                style={{padding:'5px 9px',borderRadius:8,cursor:'pointer',
+                  background:lamieraFullscreen?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.1)',
+                  border:'1px solid rgba(255,255,255,0.25)',fontSize:14,lineHeight:1,
+                  color:'#fff',fontWeight:700}}
+                title="Fullscreen disegno">
+                {lamieraFullscreen?'⊡':'⊞'}
               </div>
               <div onClick={()=>setShowLamieraDisegno(false)}
                 style={{color:'rgba(255,255,255,0.6)',fontSize:24,cursor:'pointer',padding:'0 4px',lineHeight:1}}>×</div>
@@ -3504,8 +3527,8 @@ export default function VanoDetailPanel() {
               </svg>
             </div>
 
-            {/* Chips segmenti — scroll orizzontale */}
-            {allSegs.length > 0 && (
+            {/* Chips segmenti — scroll orizzontale, nascosto in fullscreen */}
+            {allSegs.length > 0 && !lamieraFullscreen && (
               <div style={{padding:'5px 10px',background:'#fff',
                 borderTop:'1px solid #E2E8F0',display:'flex',gap:4,flexShrink:0,alignItems:'center',
                 overflowX:'auto',WebkitOverflowScrolling:'touch'}}>
@@ -3551,8 +3574,8 @@ export default function VanoDetailPanel() {
               </div>
             )}
 
-            {/* Pannello aggiunta — in basso, scrollabile */}
-            <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'8px 12px 16px',flexShrink:0,overflowY:'auto'}}>
+            {/* Pannello aggiunta — nascosto in fullscreen */}
+            <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'8px 12px 16px',flexShrink:0,overflowY:'auto',display:lamieraFullscreen?'none':'block'}}>
 
               {/* Lato infisso + Lunghezza */}
               <div style={{display:'flex',gap:8,marginBottom:10}}>
@@ -3792,13 +3815,75 @@ export default function VanoDetailPanel() {
               </div>
 
             </div>
-            {/* Safe area iOS — barra navy sotto Salva */}
-            <div style={{
-              background:'#1A2B4A',
-              height:'env(safe-area-inset-bottom, 20px)',
-              flexShrink:0,
-              minHeight:0,
-            }}/>
+            {/* Safe area iOS */}
+            <div style={{background:'#1A2B4A',height:'env(safe-area-inset-bottom,0px)',flexShrink:0,minHeight:0}}/>
+
+            {/* ── TENDINA SCHIZZO LIBERO ── */}
+            {lamieraSchizzoOpen && (
+              <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:10,
+                background:'#fff',borderTop:`2px solid ${NAVY}`,
+                borderRadius:'14px 14px 0 0',
+                boxShadow:'0 -4px 20px rgba(0,0,0,0.15)',
+                display:'flex',flexDirection:'column',
+                height:'55%'}}>
+                {/* Header tendina */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+                  padding:'8px 12px',borderBottom:'1px solid #E2E8F0',flexShrink:0}}>
+                  <span style={{fontSize:12,fontWeight:800,color:'#1A2B4A'}}>✏️ Schizzo libero</span>
+                  <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                    <div onClick={()=>{
+                      const cv=schizzoCanvasRef.current;
+                      const ctx=cv?.getContext('2d');
+                      if(ctx&&cv) ctx.clearRect(0,0,cv.width,cv.height);
+                    }} style={{padding:'4px 10px',borderRadius:6,background:'#FEE2E2',
+                      color:'#DC4444',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                      Cancella
+                    </div>
+                    <div onClick={()=>setLamieraSchizzoOpen(false)}
+                      style={{fontSize:20,color:'#94A3B8',cursor:'pointer',fontWeight:300,lineHeight:1}}>×</div>
+                  </div>
+                </div>
+                {/* Canvas schizzo */}
+                <canvas ref={schizzoCanvasRef} width={800} height={600}
+                  style={{flex:1,width:'100%',height:'100%',background:'#FAFAFA',cursor:'crosshair',touchAction:'none'}}
+                  onPointerDown={e=>{
+                    const cv=schizzoCanvasRef.current;
+                    if(!cv) return;
+                    cv.setPointerCapture(e.pointerId);
+                    schizzoDrawing.current=true;
+                    const r=cv.getBoundingClientRect();
+                    const sx=cv.width/r.width, sy=cv.height/r.height;
+                    const ctx=cv.getContext('2d');
+                    if(ctx){
+                      ctx.beginPath();
+                      ctx.moveTo((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
+                      ctx.strokeStyle='#1A2B4A';
+                      ctx.lineWidth=2.5;
+                      ctx.lineCap='round';
+                      ctx.lineJoin='round';
+                    }
+                  }}
+                  onPointerMove={e=>{
+                    if(!schizzoDrawing.current) return;
+                    const cv=schizzoCanvasRef.current;
+                    const ctx=cv?.getContext('2d');
+                    if(ctx&&cv){
+                      const r=cv.getBoundingClientRect();
+                      const sx=cv.width/r.width, sy=cv.height/r.height;
+                      ctx.lineTo((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
+                      ctx.stroke();
+                    }
+                  }}
+                  onPointerUp={()=>{schizzoDrawing.current=false;}}
+                  onPointerLeave={()=>{schizzoDrawing.current=false;}}
+                />
+                {/* Hint */}
+                <div style={{padding:'4px 12px',fontSize:9,color:'#94A3B8',
+                  fontWeight:600,textAlign:'center',flexShrink:0,background:'#fff'}}>
+                  Disegna liberamente · non viene salvato
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}
