@@ -2019,8 +2019,6 @@ export default function VanoDetailPanel() {
                   onUpdate={(val: number) => updateMisura(v.id, "imbotte", val)} />}
                 </div>
               )}
-                </div>
-              )}
               {/* Davanzale + Cassonetto */}
               <div onClick={() => setDetailOpen(d => ({...d, davanzale: !d.davanzale}))} style={{ padding: "12px 16px", borderRadius: 12, border: `1px solid ${detailOpen.davanzale ? "#EF4444" : T.bdr}`, background: detailOpen.davanzale ? "#EF444408" : T.card, marginBottom: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
