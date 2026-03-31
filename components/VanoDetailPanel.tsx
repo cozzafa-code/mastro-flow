@@ -198,6 +198,7 @@ export default function VanoDetailPanel() {
   const [lamieraLatoBuono, setLamieraLatoBuono] = useState<'interno'|'esterno'>('esterno');
   const [lamieraAngoloInput, setLamieraAngoloInput] = useState(false);
   const [lamieraAngolo, setLamieraAngolo] = useState('90');
+  const [lamieraAngoloPM, setLamieraAngoloPM] = useState<1|-1>(1); // +1 o -1
   const [lastDirTap, setLastDirTap] = useState<string>('');
   const [lamieraLatoInfisso, setLamieraLatoInfisso] = useState<'alto'|'basso'|'sx'|'dx'|''>('');
   const [lamieraSelIdx, setLamieraSelIdx] = useState<number|null>(null);
@@ -3545,9 +3546,16 @@ export default function VanoDetailPanel() {
                 <div style={{marginBottom:8,display:'flex',alignItems:'center',gap:8,
                   padding:'8px 12px',background:'#FFF8EC',borderRadius:10,border:'1px solid #D0800830'}}>
                   <span style={{fontSize:12,fontWeight:700,color:'#D08008'}}>Angolo:</span>
+                  <div onClick={()=>setLamieraAngoloPM((p:any)=>p===1?-1:1)}
+                    style={{padding:'6px 12px',borderRadius:8,border:'1px solid #D0800860',
+                      background:lamieraAngoloPM===1?'#FFF8EC':'#FFE8B0',
+                      fontSize:18,fontWeight:900,color:'#D08008',cursor:'pointer',
+                      minWidth:40,textAlign:'center',userSelect:'none' as any}}>
+                    {lamieraAngoloPM===1?'+':'−'}
+                  </div>
                   <input inputMode="decimal" value={lamieraAngolo}
                     onChange={e=>setLamieraAngolo(e.target.value)}
-                    style={{width:70,padding:'6px 10px',borderRadius:8,border:'1px solid #D0800860',
+                    style={{width:60,padding:'6px 10px',borderRadius:8,border:'1px solid #D0800860',
                       fontSize:18,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
                       textAlign:'center',background:'#fff'}}/>
                   <span style={{fontSize:12,color:'#D08008',fontWeight:600}}>°</span>
@@ -3593,7 +3601,8 @@ export default function VanoDetailPanel() {
                     onChange={e=>setLamieraPMm(e.target.value)}
                     onKeyDown={e=>{
                       if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
-                        const angolo = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                        const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                        const angolo = lamieraAngoloInput && angoloAbs !== 90 ? lamieraAngoloPM * angoloAbs + (lamieraAngoloPM === -1 ? 180 : 0) : 90;
                         if(lamieraSelIdx!==null){
                           setLamieraPieghe(prev=>prev.map((s,i)=>i===lamieraSelIdx?{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}:s));
                           setLamieraSelIdx(null);
@@ -3603,6 +3612,7 @@ export default function VanoDetailPanel() {
                         setLamieraPMm('');
                         setLamieraAngoloInput(false);
                         setLamieraAngolo('90');
+                        setLamieraAngoloPM(1);
                       }
                     }}
                     placeholder="mm"
@@ -3615,7 +3625,8 @@ export default function VanoDetailPanel() {
                 </div>
                 <div onClick={()=>{
                   if(!lamieraPMm||parseFloat(lamieraPMm)<=0) return;
-                  const angolo = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                  const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                        const angolo = lamieraAngoloInput && angoloAbs !== 90 ? lamieraAngoloPM * angoloAbs + (lamieraAngoloPM === -1 ? 180 : 0) : 90;
                   if(lamieraSelIdx!==null){
                     // EDIT segmento esistente
                     setLamieraPieghe(prev=>prev.map((s,i)=>i===lamieraSelIdx?{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}:s));
