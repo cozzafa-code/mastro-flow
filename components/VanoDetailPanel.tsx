@@ -199,6 +199,9 @@ export default function VanoDetailPanel() {
   const [lamieraSchizzoFull, setLamieraSchizzoFull] = useState(false);
   const [lamieraFullscreen, setLamieraFullscreen] = useState(false);
   const [schizzoTool, setSchizzoTool] = useState<'pen'|'eraser'>('pen');
+  const [spTool, setSpTool] = useState<'pen'|'eraser'>('pen');
+  const [spColor, setSpColor] = useState('#1A2B4A');
+  const [spSize, setSpSize] = useState(2);
   const [schizzoColor, setSchizzoColor] = useState('#1A2B4A');
   const [schizzoSize, setSchizzoSize] = useState(2.5);
   const schizzoCanvasRef = React.useRef<HTMLCanvasElement>(null);
