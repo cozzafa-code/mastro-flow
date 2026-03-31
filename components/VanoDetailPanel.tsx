@@ -3324,7 +3324,7 @@ export default function VanoDetailPanel() {
 
             {/* SVG con altezza contenuta su mobile */}
             <div
-              style={{height:'36vh',minHeight:140,maxHeight:260,background:'#EEF7F5',overflow:'hidden',position:'relative',touchAction:'none',flexShrink:0}}
+              style={{flex:1,minHeight:120,background:'#EEF7F5',overflow:'hidden',position:'relative',touchAction:'none'}}
               onTouchStart={e=>{
                 const ts = Array.from(e.touches) as any;
                 lamieraTouches.current = ts;
