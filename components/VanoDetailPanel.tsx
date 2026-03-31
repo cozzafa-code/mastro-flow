@@ -3192,51 +3192,61 @@ export default function VanoDetailPanel() {
             <span style={{ fontSize: 20, color: "#fff" }}><I d={ICO.zap} /></span>
           </div>
           )}
-          {/* FAB menu lamiera — quadrato, apre popup con opzioni */}
+          {/* TAB laterale lamiera — sul bordo destro, non interferisce con i bottoni */}
           {showLamieraDisegno && (
-          <div style={{position:"fixed",bottom:20,right:14,zIndex:3100,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
-            {/* Menu opzioni — appare sopra il FAB */}
-            {lamieraFabMenu && (<>
-              {/* Overlay chiudi */}
-              <div onClick={()=>setLamieraFabMenu(false)}
-                style={{position:"fixed",inset:0,zIndex:-1}}/>
-              {/* Voci menu */}
-              {[
-                {
-                  icon: lamieraSchizzoOpen?'🔴':'🖊️',
-                  label: lamieraSchizzoOpen?'Chiudi schizzo':'Schizzo libero',
-                  action: ()=>{setLamieraSchizzoOpen(o=>!o);setLamieraFabMenu(false);}
-                },
-                {
-                  icon: lamieraFullscreen?'↙️':'↗️',
-                  label: lamieraFullscreen?'Esci fullscreen':'Fullscreen disegno',
-                  action: ()=>{setLamieraFullscreen(f=>!f);setLamieraFabMenu(false);}
-                },
-                {
-                  icon: '◐',
-                  label: 'Lato: ' + (lamieraLatoBuono==='esterno'?'Esterno':'Interno'),
-                  action: ()=>{setLamieraLatoBuono(l=>l==='esterno'?'interno':'esterno');setLamieraFabMenu(false);}
-                },
-              ].map(({icon,label,action},i)=>(
-                <div key={i} onClick={action}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
-                    background:"#fff",borderRadius:12,cursor:"pointer",
-                    boxShadow:"0 4px 16px rgba(0,0,0,0.15)",
-                    border:"1px solid #E2E8F0",whiteSpace:"nowrap"}}>
-                  <span style={{fontSize:18,lineHeight:1}}>{icon}</span>
-                  <span style={{fontSize:13,fontWeight:700,color:"#1A2B4A"}}>{label}</span>
+          <div style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",
+            zIndex:3100,display:"flex",flexDirection:"row",alignItems:"center"}}>
+            {/* Menu opzioni — scivola da destra */}
+            {lamieraFabMenu && (
+              <>
+                <div onClick={()=>setLamieraFabMenu(false)}
+                  style={{position:"fixed",inset:0,zIndex:-1}}/>
+                <div style={{display:"flex",flexDirection:"column",gap:6,
+                  padding:"8px",background:"#fff",
+                  borderRadius:"12px 0 0 12px",
+                  boxShadow:"-4px 0 20px rgba(0,0,0,0.12)",
+                  border:"1px solid #E2E8F0",borderRight:"none"}}>
+                  {[
+                    {
+                      icon: lamieraSchizzoOpen?'✕':'🖊️',
+                      label: lamieraSchizzoOpen?'Chiudi schizzo':'Schizzo',
+                      action: ()=>{setLamieraSchizzoOpen(o=>!o);setLamieraFabMenu(false);}
+                    },
+                    {
+                      icon: lamieraFullscreen?'↙':'↗',
+                      label: lamieraFullscreen?'Riduci':'Fullscreen',
+                      action: ()=>{setLamieraFullscreen(f=>!f);setLamieraFabMenu(false);}
+                    },
+                    {
+                      icon: '◐',
+                      label: lamieraLatoBuono==='esterno'?'Est.':'Int.',
+                      action: ()=>{setLamieraLatoBuono((l:any)=>l==='esterno'?'interno':'esterno');setLamieraFabMenu(false);}
+                    },
+                  ].map(({icon,label,action},i)=>(
+                    <div key={i} onClick={action}
+                      style={{display:"flex",flexDirection:"column",alignItems:"center",
+                        gap:3,padding:"10px 12px",
+                        background:"#F8FAFC",borderRadius:10,cursor:"pointer",
+                        border:"1px solid #E2E8F0",minWidth:60,textAlign:"center"}}>
+                      <span style={{fontSize:20,lineHeight:1}}>{icon}</span>
+                      <span style={{fontSize:9,fontWeight:700,color:"#1A2B4A",whiteSpace:"nowrap"}}>{label}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </>)}
-            {/* FAB principale — quadrato */}
+              </>
+            )}
+            {/* Tab laterale — lingua sul bordo */}
             <div onClick={()=>setLamieraFabMenu(m=>!m)}
-              style={{width:52,height:52,borderRadius:14,cursor:"pointer",
-                background:lamieraFabMenu?"#1A2B4A":"#1A2B4A",
+              style={{width:24,height:72,
+                background:"#1A2B4A",
+                borderRadius:"10px 0 0 10px",
+                cursor:"pointer",
                 display:"flex",alignItems:"center",justifyContent:"center",
-                boxShadow:"0 4px 18px rgba(26,43,74,0.45)",
-                transition:"all 0.15s"}}>
-              <span style={{fontSize:22,lineHeight:1,color:"#fff",fontWeight:700}}>
-                {lamieraFabMenu?'×':'⋯'}
+                boxShadow:"-3px 0 12px rgba(26,43,74,0.3)",
+                writingMode:"vertical-rl",
+                flexShrink:0}}>
+              <span style={{fontSize:16,color:"#fff",lineHeight:1,transform:"rotate(180deg)"}}>
+                {lamieraFabMenu?'›':'‹'}
               </span>
             </div>
           </div>
