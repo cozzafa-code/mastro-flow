@@ -839,15 +839,16 @@ export default function VanoDetailPanel() {
                         const raw:number[][] = [[0,0]];
                         (lam.pieghe||[]).forEach((s:any)=>{
                           // Stesso calcolo dell'editor — trigonometria completa
-                          const ang = s.angolo != null ? s.angolo : 90;
+                          // Angolo = deviazione con segno (0=dritto, +N=sx, -N=dx)
+                          const dev = s.angolo != null ? s.angolo : 0;
                           let baseAngle = 0;
                           if(s.dir==='su')  baseAngle = Math.PI/2;
                           if(s.dir==='sx')  baseAngle = Math.PI;
                           if(s.dir==='giu') baseAngle = 3*Math.PI/2;
-                          const devRad = (ang - 90) * Math.PI / 180;
+                          const devRad = dev * Math.PI / 180;
                           const finalAngle = baseAngle - devRad;
                           rx += s.mm * Math.cos(finalAngle);
-                          ry -= s.mm * Math.sin(finalAngle); // SVG y-down
+                          ry -= s.mm * Math.sin(finalAngle);
                           raw.push([rx,ry]);
                         });
                         const xs=raw.map(n=>n[0]), ys=raw.map(n=>n[1]);
@@ -921,7 +922,8 @@ export default function VanoDetailPanel() {
                                 const side = si % 2 === 0 ? -1 : 1;
                                 const lx = isH ? mx : mx + side*20;
                                 const ly = isH ? my + side*14 : my;
-                                const lbl = String(s.mm)+(s.angolo&&s.angolo!==90?'@'+s.angolo+'°':'');
+                                const devDisplay = s.angolo&&s.angolo!==0 ? (s.angolo>0?'+':'')+s.angolo+'°' : '';
+                                const lbl = String(s.mm)+(devDisplay?'@'+devDisplay:'');
                                 const tw = lbl.length * 5.5 + 8;
                                 return (
                                   <g key={"q"+si}>
@@ -3193,16 +3195,15 @@ export default function VanoDetailPanel() {
           let cx = 0, cy = 0;
           const raw: {x:number,y:number}[] = [{x:0,y:0}];
           allSegs.forEach(s => {
-            const ang = s.angolo != null ? s.angolo : 90;
-            const ar = (ang * Math.PI) / 180;
-            // Direzione base: dx=0°, su=90°, sx=180°, giu=270°
+            // Angolo = deviazione con segno (0=dritto, +N=sx, -N=dx)
+            const dev = s.angolo != null ? s.angolo : 0;
             let baseAngle = 0;
             if(s.dir==='su')  baseAngle = Math.PI/2;
             if(s.dir==='sx')  baseAngle = Math.PI;
             if(s.dir==='giu') baseAngle = 3*Math.PI/2;
             // Se angolo è diverso da 90 (default), applica rotazione relativa
             // angolo < 90 = piega verso destra della direzione, > 90 = verso sinistra
-            const devRad = (ang - 90) * Math.PI / 180;
+            const devRad = dev * Math.PI / 180;
             const finalAngle = baseAngle - devRad;
             cx += s.mm * Math.cos(finalAngle);
             cy -= s.mm * Math.sin(finalAngle); // SVG y-down
@@ -3481,7 +3482,7 @@ export default function VanoDetailPanel() {
                       }} style={{display:'flex',alignItems:'center',gap:3}}>
                         <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
                         <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
-                        {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo}°</span>}
+                        {s.angolo && s.angolo!==0 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo}°</span>}
                       </span>
                       {/* X = elimina */}
                       <span onClick={e=>{e.stopPropagation();setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i));if(isSel)setLamieraSelIdx(null);}}
@@ -3609,7 +3610,7 @@ export default function VanoDetailPanel() {
                     onChange={e=>setLamieraPMm(e.target.value)}
                     onKeyDown={e=>{
                       if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
-                        const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                        const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||0) : 0;
                         // PM=+1 → piega "avanti" (90-abs), PM=-1 → piega "indietro" (90+abs)
                         const angolo = lamieraAngoloInput && angoloAbs !== 90
                           ? (lamieraAngoloPM === 1 ? 90 - angoloAbs : 90 + angoloAbs)
@@ -3622,7 +3623,7 @@ export default function VanoDetailPanel() {
                         }
                         setLamieraPMm('');
                         setLamieraAngoloInput(false);
-                        setLamieraAngolo('90');
+                        setLamieraAngolo('');
                         setLamieraAngoloPM(1);
                       }
                     }}
@@ -3636,7 +3637,7 @@ export default function VanoDetailPanel() {
                 </div>
                 <div onClick={()=>{
                   if(!lamieraPMm||parseFloat(lamieraPMm)<=0) return;
-                  const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
+                  const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||0) : 0;
                         const angolo = lamieraAngoloInput && angoloAbs !== 90 ? (lamieraAngoloPM === 1 ? 90 - angoloAbs : 90 + angoloAbs) : 90;
                   if(lamieraSelIdx!==null){
                     // EDIT segmento esistente
