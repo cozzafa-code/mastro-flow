@@ -817,12 +817,16 @@ export default function VanoDetailPanel() {
               body: (() => {
                 const lamList: any[] = (v.lamiere as any) || [];
                 const addLamiera = () => {
-                  // NON salva subito — apre modal vuoto, salva tutto al click "Salva lamiera"
+                  // Crea lamiera nell'array con dati vuoti, poi modal aggiorna quei dati
+                  const newL = {id: Date.now().toString(), nome: "Lamiera "+(lamList.length+1), pieghe:[], latoBuono:"esterno", latoInfisso:"", lunghezza:""};
+                  const updated = [...lamList, newL];
+                  updateV("lamiere", updated);
                   setLamieraPieghe([]);
                   setLamieraLatoBuono("esterno");
                   setLamieraLatoInfisso("");
                   setLamieraLunghezza("");
-                  setLamieraEditIdx(null); // null = nuova lamiera
+                  // Imposta editIdx = indice della nuova lamiera → salvataggio usa branch if
+                  setLamieraEditIdx(updated.length - 1);
                   lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
                   setShowLamieraDisegno(true);
                 };
@@ -3733,25 +3737,30 @@ export default function VanoDetailPanel() {
                   </div>
                 )}
                 <div onClick={()=>{
-                  // Salva nella lista lamiere (nuovo sistema multi-lamiera)
-                  const lamList: any[] = (selectedVano?.lamiere as any) || [];
-                  if (lamieraEditIdx !== null && lamieraEditIdx < lamList.length) {
-                    // Aggiorna lamiera esistente
-                    const updated = lamList.map((l, i) => i === lamieraEditIdx
-                      ? {...l, pieghe: lamieraPieghe, latoBuono: lamieraLatoBuono, latoInfisso: lamieraLatoInfisso, lunghezza: lamieraLunghezza}
+                  // Salva nella lista lamiere
+                  // Usa selectedVano?.lamiere ma con fallback robusto
+                  const lamListSave: any[] = (selectedVano?.lamiere as any) || [];
+                  const editData = {
+                    pieghe: lamieraPieghe,
+                    latoBuono: lamieraLatoBuono,
+                    latoInfisso: lamieraLatoInfisso,
+                    lunghezza: lamieraLunghezza
+                  };
+                  if (lamieraEditIdx !== null && lamieraEditIdx < lamListSave.length) {
+                    // Aggiorna lamiera esistente (include latoInfisso)
+                    const updated = lamListSave.map((l: any, i: number) => i === lamieraEditIdx
+                      ? {...l, ...editData}
                       : l);
                     updateV('lamiere', updated);
+                  } else if (lamieraEditIdx !== null) {
+                    // EditIdx esiste ma lista non ancora aggiornata (race condition)
+                    // Ricostruisce la lista con la nuova lamiera all'indice corretto
+                    const newLam = {id: Date.now().toString(), nome: 'Lamiera '+(lamListSave.length+1), ...editData};
+                    updateV('lamiere', [...lamListSave, newLam]);
                   } else {
-                    // Nuova lamiera — aggiunge al array
-                    const newLam = {
-                      id: Date.now().toString(),
-                      nome: 'Lamiera ' + (lamList.length + 1),
-                      pieghe: lamieraPieghe,
-                      latoBuono: lamieraLatoBuono,
-                      latoInfisso: lamieraLatoInfisso,
-                      lunghezza: lamieraLunghezza
-                    };
-                    updateV('lamiere', [...lamList, newLam]);
+                    // Fallback: aggiunge nuova
+                    const newLam = {id: Date.now().toString(), nome: 'Lamiera '+(lamListSave.length+1), ...editData};
+                    updateV('lamiere', [...lamListSave, newLam]);
                   }
                   setLamieraEditIdx(null);
                   setShowLamieraDisegno(false);
