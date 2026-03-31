@@ -3557,19 +3557,23 @@ export default function VanoDetailPanel() {
               <div style={{display:'flex',gap:8,marginBottom:10}}>
                 {/* Lato infisso */}
                 <div style={{flex:1}}>
-                  <div style={{fontSize:9,fontWeight:800,color:'#64748B',marginBottom:4,textTransform:'uppercase'}}>Lato infisso</div>
-                  <div style={{display:'flex',gap:3}}>
-                    {([['alto','^ Alto'],['basso','v Basso'],['sx','< Sx'],['dx','> Dx']] as const).map(([val,lbl])=>(
-                      <div key={val}
-                        onClick={()=>setLamieraLatoInfisso(lamieraLatoInfisso===val?'':val)}
-                        style={{flex:1,padding:'7px 2px',borderRadius:7,textAlign:'center',cursor:'pointer',
-                          border:`1.5px solid ${lamieraLatoInfisso===val?'#1A2B4A':'#E2E8F0'}`,
-                          background:lamieraLatoInfisso===val?'#1A2B4A18':'#fff',
-                          fontSize:10,fontWeight:700,
-                          color:lamieraLatoInfisso===val?'#1A2B4A':'#94A3B8'}}>
-                        {lbl}
-                      </div>
-                    ))}
+                  <div style={{fontSize:9,fontWeight:800,color:'#64748B',marginBottom:5,textTransform:'uppercase',letterSpacing:'0.06em'}}>Lato infisso</div>
+                  <div style={{display:'flex',gap:4}}>
+                    {([['alto','↑','Alto'],['basso','↓','Basso'],['sx','←','Sx'],['dx','→','Dx']] as const).map(([val,icon,lbl])=>{
+                      const sel = lamieraLatoInfisso===val;
+                      return (
+                        <div key={val} onClick={()=>setLamieraLatoInfisso(sel?'':val)}
+                          style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+                            padding:'6px 2px',borderRadius:10,cursor:'pointer',
+                            border:`1.5px solid ${sel?'#1A2B4A':'#E2E8F0'}`,
+                            background:sel?'#1A2B4A':'#fff',
+                            transition:'all 0.12s',
+                            boxShadow:sel?'0 2px 8px #1A2B4A50':'none'}}>
+                          <span style={{fontSize:15,lineHeight:1,color:sel?'#fff':'#CBD5E1',marginBottom:2}}>{icon}</span>
+                          <span style={{fontSize:9,fontWeight:800,color:sel?'rgba(255,255,255,0.85)':'#94A3B8',letterSpacing:'0.04em'}}>{lbl}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Lunghezza */}
