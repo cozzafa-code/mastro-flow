@@ -902,49 +902,89 @@ export default function VanoDetailPanel() {
                                 lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
                                 setShowLamieraDisegno(true);
                               }}>
-                              {Array.from({length:13}).map((_,gi)=>(
-                                <line key={"gx"+gi} x1={gi*26} y1="0" x2={gi*26} y2="108" stroke="#E0F5EE" strokeWidth="0.4"/>
+                              {/* Griglia */}
+                              {Array.from({length:Math.ceil(svgVW/24)+1}).map((_,gi)=>(
+                                <line key={"gx"+gi} x1={gi*24} y1="0" x2={gi*24} y2={svgVH} stroke="#E0F5EE" strokeWidth="0.4"/>
                               ))}
-                              {Array.from({length:5}).map((_,gi)=>(
-                                <line key={"gy"+gi} x1="0" y1={gi*27} x2="316" y2={gi*27} stroke="#E0F5EE" strokeWidth="0.4"/>
+                              {Array.from({length:Math.ceil(svgVH/24)+1}).map((_,gi)=>(
+                                <line key={"gy"+gi} x1="0" y1={gi*24} x2={svgVW} y2={gi*24} stroke="#E0F5EE" strokeWidth="0.4"/>
                               ))}
-                              <polyline points={prePts} fill="none" stroke="#0F766E" strokeWidth="2.5"
+                              {/* Profilo */}
+                              <polyline points={prePts} fill="none" stroke="#0F766E" strokeWidth="2"
                                 strokeLinecap="round" strokeLinejoin="round"/>
-                              {(lam.pieghe||[]).map((s:any, si:number) => {
-                                if(si >= preNodes.length-1) return null;
-                                const n1=preNodes[si] as {x:number,y:number};
-                                const n2=preNodes[si+1] as {x:number,y:number};
-                                const mx=(n1.x+n2.x)/2, my=(n1.y+n2.y)/2;
-                                const isH=Math.abs(n2.x-n1.x)>=Math.abs(n2.y-n1.y);
-                                // Alterna sopra/sotto per i segmenti orizzontali, sx/dx per verticali
-                                const side = si % 2 === 0 ? -1 : 1;
-                                const lx = isH ? mx : mx + side*20;
-                                const ly = isH ? my + side*14 : my;
-                                const devDisplay = s.angolo&&s.angolo!==0 ? (s.angolo>0?'+':'')+s.angolo+'°' : '';
-                                const lbl = String(s.mm)+(devDisplay?'@'+devDisplay:'');
-                                const tw = lbl.length * 5.5 + 8;
-                                return (
-                                  <g key={"q"+si}>
-                                    <rect x={lx-tw/2} y={ly-7} width={tw} height="13" rx="3"
-                                      fill="rgba(3,22,49,0.9)"/>
-                                    <text x={lx} y={ly+2} textAnchor="middle"
-                                      fontSize="8" fill="#fff" fontWeight="700">{lbl}</text>
-                                  </g>
-                                );
-                              })}
-                              {preNodes.map((n:{x:number,y:number},i:number)=>(
-                                <circle key={i} cx={n.x} cy={n.y}
-                                  r={i===0||i===preNodes.length-1?4.5:2.5}
-                                  fill={i===0?"#031631":i===preNodes.length-1?"#dc4444":"#fff"}
-                                  stroke="#0F766E" strokeWidth="1.8"/>
-                              ))}
-                              <rect x="3" y="3" width="24" height="10" rx="2"
-                                fill={lam.latoBuono==='esterno'?"#3B7FE0":"#D08008"}/>
-                              <text x="15" y="10.5" textAnchor="middle" fontSize="5.5" fill="#fff" fontWeight="700">
-                                {lam.latoBuono==='esterno'?'EST':'INT'}
-                              </text>
-                              {svilTot>0 && <text x="313" y="105" textAnchor="end"
-                                fontSize="7" fill="#0F766E" fontWeight="700">{svilTot}mm</text>}
+                              {/* Quote segmenti — fontSize proporzionale */}
+                              {(() => {
+                                const fz = Math.max(5, Math.min(8, svgVW / 22));
+                                const lhalf = fz * 0.65;
+                                return (lam.pieghe||[]).map((s:any, si:number) => {
+                                  if(si >= preNodes.length-1) return null;
+                                  const n1=preNodes[si] as {x:number,y:number};
+                                  const n2=preNodes[si+1] as {x:number,y:number};
+                                  const mx=(n1.x+n2.x)/2, my=(n1.y+n2.y)/2;
+                                  const isH=Math.abs(n2.x-n1.x)>=Math.abs(n2.y-n1.y);
+                                  const side = si % 2 === 0 ? -1 : 1;
+                                  const offset = fz * 1.6;
+                                  const lx = isH ? mx : mx + side*offset;
+                                  const ly = isH ? my + side*offset : my;
+                                  // Solo deviazioni reali, non @+0° o @+90°
+                                  const dev = (s.angolo!=null && s.angolo!==90) ? Math.abs(s.angolo-90) : 0;
+                                  const lbl = dev > 0
+                                    ? `${s.mm}@${s.angolo<90?'+':'−'}${dev}°`
+                                    : String(s.mm);
+                                  const tw = lbl.length * fz * 0.62 + 5;
+                                  const th = fz + 4;
+                                  // Clamp dentro viewBox
+                                  const clx = Math.max(tw/2+1, Math.min(svgVW-tw/2-1, lx));
+                                  const cly = Math.max(th/2+1, Math.min(svgVH-th/2-1, ly));
+                                  return (
+                                    <g key={"q"+si}>
+                                      <rect x={clx-tw/2} y={cly-th/2} width={tw} height={th} rx="2"
+                                        fill="rgba(3,22,49,0.85)"/>
+                                      <text x={clx} y={cly+lhalf} textAnchor="middle"
+                                        fontSize={fz} fill="#fff" fontWeight="700">{lbl}</text>
+                                    </g>
+                                  );
+                                });
+                              })()}
+                              {/* Nodi */}
+                              {(() => {
+                                const nr = Math.max(2, svgVW / 40);
+                                return preNodes.map((n:{x:number,y:number},i:number)=>(
+                                  <circle key={i} cx={n.x} cy={n.y}
+                                    r={i===0||i===preNodes.length-1?nr:nr*0.55}
+                                    fill={i===0?"#031631":i===preNodes.length-1?"#dc4444":"#fff"}
+                                    stroke="#0F766E" strokeWidth={nr*0.45}/>
+                                ));
+                              })()}
+                              {/* Badge EST/INT — dimensioni proporzionali */}
+                              {(() => {
+                                const bfz = Math.max(4.5, Math.min(7, svgVW/18));
+                                const bw = bfz*4.5, bh = bfz*1.8;
+                                const isEst = lam.latoBuono==='esterno';
+                                return (<>
+                                  <rect x="3" y="3" width={bw} height={bh} rx="2"
+                                    fill={isEst?"#3B7FE0":"#D08008"}/>
+                                  <text x={3+bw/2} y={3+bh*0.72} textAnchor="middle"
+                                    fontSize={bfz} fill="#fff" fontWeight="700">
+                                    {isEst?'EST':'INT'}
+                                  </text>
+                                  {lam.latoInfisso && <>
+                                    <rect x={3+bw+3} y="3" width={bfz*6} height={bh} rx="2" fill="#0F766E"/>
+                                    <text x={3+bw+3+bfz*3} y={3+bh*0.72} textAnchor="middle"
+                                      fontSize={bfz} fill="#fff" fontWeight="700">
+                                      {lam.latoInfisso==='alto'?'↑ALTO':lam.latoInfisso==='basso'?'↓BASSO':lam.latoInfisso==='sx'?'←SX':'→DX'}
+                                    </text>
+                                  </>}
+                                  {svilTot>0 && <>
+                                    <rect x={svgVW-bfz*7.5-2} y={svgVH-bh-3} width={bfz*7.5} height={bh} rx="2"
+                                      fill="rgba(15,118,110,0.12)"/>
+                                    <text x={svgVW-bfz*3.75-2} y={svgVH-3-bh*0.28} textAnchor="middle"
+                                      fontSize={bfz} fill="#0F766E" fontWeight="800">
+                                      {svilTot}mm
+                                    </text>
+                                  </>}
+                                </>);
+                              })()}
                             </svg>
                           ) : (
                             <div onClick={e=>{e.stopPropagation();
