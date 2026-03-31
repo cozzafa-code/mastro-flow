@@ -2307,94 +2307,146 @@ export default function VanoDetailPanel() {
                           <span style={{fontSize:9,color:'#94A3B8'}}>trascina i handle per ridimensionare</span>
                         </div>
 
-                        {/* SVG sezione */}
-                        <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-                          style={{display:'block',cursor:'default',userSelect:'none'}}
-                          onPointerMove={e=>{
-                            const svgEl = e.currentTarget;
-                            const rect = svgEl.getBoundingClientRect();
-                            const scaleX = SVG_W / rect.width;
-                            const scaleY = SVG_H / rect.height;
-                            const mx = (e.clientX - rect.left) * scaleX;
-                            const my = (e.clientY - rect.top) * scaleY;
-                            const drag = (svgEl as any).__casDrag;
-                            if(!drag) return;
-                            if(drag==='W') handleUpdate('casP', Math.max(50,(mx-PAD)/sc));
-                            if(drag==='H') handleUpdate('casH', Math.max(30,(SVG_H-PAD-my)/sc));
-                            if(drag==='CW') handleUpdate('casPCiel', Math.max(20,(mx-PAD)/sc));
-                            if(drag==='CH') handleUpdate('casLCiel', Math.max(10,(clh+(SVG_H-PAD-my-ch+clh))/sc*3));
-                          }}
-                          onPointerUp={e=>{(e.currentTarget as any).__casDrag=null;e.currentTarget.releasePointerCapture(e.pointerId);}}
-                          onPointerLeave={e=>{(e.currentTarget as any).__casDrag=null;}}>
+                        {/* SVG sezione cassonetto — vista frontale dall'interno */}
+                        {(() => {
+                          // Coordinate nel viewBox
+                          const SW=280, SH=210, PD=36;
+                          // Scala uniforme basata su Profondità (asse X) e Altezza (asse Y)
+                          const maxW = Math.max(cP, 100);
+                          const maxH = Math.max(cH, 80);
+                          const scW = (SW-PD*2) / maxW;
+                          const scH = (SH-PD*2-20) / maxH; // 20px feritoia
+                          const sc2 = Math.min(scW, scH, 1.0);
+                          // Box cassonetto: origine in basso-sx
+                          const bx = PD, by = SH - PD - 20; // 20=feritoia
+                          const bw2 = cP * sc2;
+                          const bh2 = cH * sc2;
+                          // Parete sx (muro)
+                          const wx = bx - 8;
+                          // Feritoia (in basso, apertura tapparella)
+                          const ferH = 14;
+                          // Rullo (cerchio interno in alto al centro)
+                          const rulloR = Math.min(bw2*0.28, bh2*0.35, 28);
+                          const rulloCx = bx + bw2/2;
+                          const rulloCy = by - bh2 + rulloR + 6;
+                          // Cielino (pannello apribile in basso, lato interno)
+                          const cielW = Math.min(cLC || (cP*0.5), cP) * sc2;
+                          const cielH = Math.min(Math.max((m.casLCiel||50)*sc2*0.15, 8), 18);
+                          // Asse Y: SVG crescente verso il basso, box va da by-bh2 a by
 
-                          {/* Griglia */}
-                          {Array.from({length:7}).map((_,i)=>(
-                            <line key={'gx'+i} x1={PAD+i*40} y1={PAD} x2={PAD+i*40} y2={SVG_H-PAD}
-                              stroke="#E0EFFE" strokeWidth="0.5"/>
-                          ))}
-                          {Array.from({length:5}).map((_,i)=>(
-                            <line key={'gy'+i} x1={PAD} y1={PAD+i*35} x2={SVG_W-PAD} y2={PAD+i*35}
-                              stroke="#E0EFFE" strokeWidth="0.5"/>
-                          ))}
+                          return (
+                          <svg width="100%" viewBox={`0 0 ${SW} ${SH}`}
+                            style={{display:'block',cursor:'default',userSelect:'none',background:'#F0F9FF'}}
+                            onPointerMove={e=>{
+                              const svgEl=e.currentTarget;
+                              const rect=svgEl.getBoundingClientRect();
+                              const mx=(e.clientX-rect.left)*(SW/rect.width);
+                              const my=(e.clientY-rect.top)*(SH/rect.height);
+                              const drag=(svgEl as any).__casDrag2;
+                              if(!drag) return;
+                              if(drag==='P') handleUpdate('casP', Math.max(80,(mx-bx)/sc2));
+                              if(drag==='H') handleUpdate('casH', Math.max(80,(by-my)/sc2));
+                            }}
+                            onPointerUp={e=>{(e.currentTarget as any).__casDrag2=null;e.currentTarget.releasePointerCapture(e.pointerId);}}
+                            onPointerLeave={e=>{(e.currentTarget as any).__casDrag2=null;}}>
 
-                          {/* Cassonetto esterno */}
-                          <rect x={cx0} y={SVG_H-PAD-ch} width={cw} height={ch}
-                            fill="#3B7FE010" stroke="#3B7FE0" strokeWidth="2" rx="2"/>
+                            {/* Griglia leggera */}
+                            {Array.from({length:8}).map((_,i)=>(
+                              <line key={'gx'+i} x1={PD+i*32} y1={PD} x2={PD+i*32} y2={SH-PD} stroke="#DCF0FF" strokeWidth="0.4"/>
+                            ))}
+                            {Array.from({length:6}).map((_,i)=>(
+                              <line key={'gy'+i} x1={PD} y1={PD+i*30} x2={SW-PD} y2={PD+i*30} stroke="#DCF0FF" strokeWidth="0.4"/>
+                            ))}
 
-                          {/* Cielino */}
-                          <rect x={cx0} y={SVG_H-PAD-clh} width={clw} height={clh}
-                            fill="#3B7FE030" stroke="#3B7FE0" strokeWidth="1.5" strokeDasharray="4,2" rx="1"/>
+                            {/* Parete/muro (sx) */}
+                            <rect x={wx-6} y={by-bh2-4} width={6} height={bh2+ferH+8}
+                              fill="#CBD5E1" stroke="#94A3B8" strokeWidth="0.5"/>
+                            <text x={wx-3} y={by-bh2/2} textAnchor="middle" fontSize="7"
+                              fill="#64748B" transform={`rotate(-90,${wx-3},${by-bh2/2})`}>MURO</text>
 
-                          {/* Label Profondità */}
-                          <line x1={cx0} y1={SVG_H-PAD+10} x2={cx0+cw} y2={SVG_H-PAD+10}
-                            stroke="#3B7FE0" strokeWidth="1"/>
-                          <text x={cx0+cw/2} y={SVG_H-PAD+22} textAnchor="middle"
-                            fontSize="9" fill="#3B7FE0" fontWeight="700">{cP}mm P</text>
+                            {/* Corpo cassonetto — pareti */}
+                            {/* Parete superiore */}
+                            <rect x={bx} y={by-bh2} width={bw2} height={4}
+                              fill="#3B7FE040" stroke="#3B7FE0" strokeWidth="1.5"/>
+                            {/* Parete sx */}
+                            <rect x={bx} y={by-bh2} width={4} height={bh2}
+                              fill="#3B7FE040" stroke="#3B7FE0" strokeWidth="1.5"/>
+                            {/* Parete dx */}
+                            <rect x={bx+bw2-4} y={by-bh2} width={4} height={bh2}
+                              fill="#3B7FE040" stroke="#3B7FE0" strokeWidth="1.5"/>
+                            {/* Sfondo interno */}
+                            <rect x={bx+4} y={by-bh2+4} width={bw2-8} height={bh2-4}
+                              fill="#EFF8FF" opacity="0.6"/>
 
-                          {/* Label Altezza */}
-                          <line x1={cx0-10} y1={SVG_H-PAD-ch} x2={cx0-10} y2={SVG_H-PAD}
-                            stroke="#3B7FE0" strokeWidth="1"/>
-                          <text x={cx0-14} y={SVG_H-PAD-ch/2} textAnchor="middle"
-                            fontSize="9" fill="#3B7FE0" fontWeight="700"
-                            transform={`rotate(-90,${cx0-14},${SVG_H-PAD-ch/2})`}>{cH}mm H</text>
+                            {/* Rullo tapparella */}
+                            <circle cx={rulloCx} cy={rulloCy} r={rulloR}
+                              fill="#DBEAFE" stroke="#3B7FE0" strokeWidth="1.5" strokeDasharray="4,2"/>
+                            <circle cx={rulloCx} cy={rulloCy} r={rulloR*0.3}
+                              fill="#3B7FE0" opacity="0.4"/>
+                            <text x={rulloCx} y={rulloCy+3} textAnchor="middle"
+                              fontSize="7" fill="#3B7FE0" fontWeight="700">RULLO</text>
 
-                          {/* Label Cielino */}
-                          {clw > 20 && <text x={cx0+clw/2} y={SVG_H-PAD-clh/2+3} textAnchor="middle"
-                            fontSize="8" fill="#3B7FE0" fontWeight="700">Ciel.</text>}
+                            {/* Feritoia in basso (uscita tapparella) */}
+                            <rect x={bx} y={by} width={bw2} height={ferH}
+                              fill="#1A2B4A15" stroke="#3B7FE0" strokeWidth="1.5" strokeDasharray="3,2"/>
+                            <text x={bx+bw2/2} y={by+ferH*0.72} textAnchor="middle"
+                              fontSize="7" fill="#3B7FE0" fontWeight="700">feritoia</text>
 
-                          {/* Handle destra — Profondità */}
-                          <circle cx={cx0+cw} cy={SVG_H-PAD-ch/2} r="7"
-                            fill="#3B7FE0" stroke="#fff" strokeWidth="2"
-                            style={{cursor:'ew-resize'}}
-                            onPointerDown={e=>{
-                              e.stopPropagation();
-                              const svg=e.currentTarget.closest('svg') as any;
-                              svg.__casDrag='W';
-                              svg.setPointerCapture(e.pointerId);
-                            }}/>
+                            {/* Cielino (pannello ispezione — lato basso interno) */}
+                            <rect x={bx+4} y={by-cielH-2} width={cielW} height={cielH}
+                              fill="#FEF3C7" stroke="#D08008" strokeWidth="1.2" strokeDasharray="3,2" rx="2"/>
+                            {cielW > 30 && <text x={bx+4+cielW/2} y={by-2-cielH*0.3} textAnchor="middle"
+                              fontSize="7" fill="#D08008" fontWeight="700">cielino</text>}
 
-                          {/* Handle sopra — Altezza */}
-                          <circle cx={cx0+cw/2} cy={SVG_H-PAD-ch} r="7"
-                            fill="#3B7FE0" stroke="#fff" strokeWidth="2"
-                            style={{cursor:'ns-resize'}}
-                            onPointerDown={e=>{
-                              e.stopPropagation();
-                              const svg=e.currentTarget.closest('svg') as any;
-                              svg.__casDrag='H';
-                              svg.setPointerCapture(e.pointerId);
-                            }}/>
+                            {/* Quote Profondità (basso) */}
+                            <line x1={bx} y1={by+ferH+8} x2={bx+bw2} y2={by+ferH+8}
+                              stroke="#3B7FE0" strokeWidth="1"/>
+                            <line x1={bx} y1={by+ferH+5} x2={bx} y2={by+ferH+11} stroke="#3B7FE0" strokeWidth="1"/>
+                            <line x1={bx+bw2} y1={by+ferH+5} x2={bx+bw2} y2={by+ferH+11} stroke="#3B7FE0" strokeWidth="1"/>
+                            <text x={bx+bw2/2} y={by+ferH+20} textAnchor="middle"
+                              fontSize="9" fill="#3B7FE0" fontWeight="700">{cP}mm</text>
 
-                          {/* Handle cielino destra */}
-                          <circle cx={cx0+clw} cy={SVG_H-PAD-clh/2} r="5"
-                            fill="#fff" stroke="#3B7FE0" strokeWidth="2"
-                            style={{cursor:'ew-resize'}}
-                            onPointerDown={e=>{
-                              e.stopPropagation();
-                              const svg=e.currentTarget.closest('svg') as any;
-                              svg.__casDrag='CW';
-                              svg.setPointerCapture(e.pointerId);
-                            }}/>
-                        </svg>
+                            {/* Quote Altezza (dx) */}
+                            <line x1={bx+bw2+10} y1={by-bh2} x2={bx+bw2+10} y2={by}
+                              stroke="#3B7FE0" strokeWidth="1"/>
+                            <line x1={bx+bw2+7} y1={by-bh2} x2={bx+bw2+13} y2={by-bh2} stroke="#3B7FE0" strokeWidth="1"/>
+                            <line x1={bx+bw2+7} y1={by} x2={bx+bw2+13} y2={by} stroke="#3B7FE0" strokeWidth="1"/>
+                            <text x={bx+bw2+22} y={by-bh2/2+4} textAnchor="middle"
+                              fontSize="9" fill="#3B7FE0" fontWeight="700"
+                              transform={`rotate(90,${bx+bw2+22},${by-bh2/2+4})`}>{cH}mm</text>
+
+                            {/* Handle Profondità (dx centro) */}
+                            <circle cx={bx+bw2} cy={by-bh2/2} r="7"
+                              fill="#3B7FE0" stroke="#fff" strokeWidth="2"
+                              style={{cursor:'ew-resize'}}
+                              onPointerDown={e=>{
+                                e.stopPropagation();
+                                const svg=e.currentTarget.closest('svg') as any;
+                                svg.__casDrag2='P';
+                                svg.setPointerCapture(e.pointerId);
+                              }}/>
+                            <text x={bx+bw2} y={by-bh2/2+4} textAnchor="middle"
+                              fontSize="9" fill="#fff" fontWeight="800" style={{pointerEvents:'none'}}>↔</text>
+
+                            {/* Handle Altezza (top centro) */}
+                            <circle cx={bx+bw2/2} cy={by-bh2} r="7"
+                              fill="#3B7FE0" stroke="#fff" strokeWidth="2"
+                              style={{cursor:'ns-resize'}}
+                              onPointerDown={e=>{
+                                e.stopPropagation();
+                                const svg=e.currentTarget.closest('svg') as any;
+                                svg.__casDrag2='H';
+                                svg.setPointerCapture(e.pointerId);
+                              }}/>
+                            <text x={bx+bw2/2} y={by-bh2+4} textAnchor="middle"
+                              fontSize="9" fill="#fff" fontWeight="800" style={{pointerEvents:'none'}}>↕</text>
+
+                            {/* Label sezione */}
+                            <text x={SW/2} y={14} textAnchor="middle"
+                              fontSize="9" fill="#94A3B8" fontWeight="600">sezione laterale · interno →</text>
+                          </svg>
+                          );
+                        })()}
 
                         {/* Campi numerici compatti sotto */}
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,
