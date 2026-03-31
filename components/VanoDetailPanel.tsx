@@ -1946,16 +1946,21 @@ export default function VanoDetailPanel() {
                 <div style={{borderRadius:12,border:'1px solid #32ade640',
                   background:'#32ade605',overflow:'hidden',marginBottom:12,
                   ...(spSchizzoFull?{position:'fixed',inset:0,zIndex:4000,borderRadius:0,margin:0}:{})}}>
+                  {/* Riga titolo — sempre visibile, tap per aprire/chiudere */}
+                  <div onClick={()=>setSpSchizzoOpen(o=>!o)}
+                    style={{display:'flex',alignItems:'center',gap:6,
+                      padding:'8px 12px',background:'#fff',cursor:'pointer',
+                      borderBottom: spSchizzoOpen ? '1px solid #32ade620' : 'none'}}>
+                    <span style={{fontSize:11,fontWeight:800,color:'#32ade6'}}>✏️ Schizzo spallette</span>
+                    <span style={{fontSize:9,color:'#32ade6',opacity:0.7,marginLeft:'auto'}}>
+                      {spSchizzoOpen?'▲':'▼'}
+                    </span>
+                  </div>
+                  {/* Toolbar strumenti — solo se aperto */}
+                  {spSchizzoOpen && (
                   <div style={{display:'flex',alignItems:'center',gap:5,
-                    padding:'7px 10px',borderBottom: spSchizzoOpen ? '1px solid #32ade620' : 'none',
-                    background:'#fff',flexWrap:'wrap',cursor:'pointer'}}
-                    onClick={e=>{if((e.target as HTMLElement).closest('[data-notoggle]'))return;setSpSchizzoOpen(o=>!o);}}>
-                    <span style={{fontSize:11,fontWeight:800,color:'#32ade6',marginRight:2}}>
-                      {spSchizzoOpen?'✏️':'✏️'} Schizzo spallette
-                    </span>
-                    <span style={{fontSize:9,color:'#32ade6',marginLeft:2,opacity:0.7}}>
-                      {spSchizzoOpen?'▲ chiudi':'▼ apri'}
-                    </span>
+                    padding:'6px 10px',borderBottom:'1px solid #32ade620',
+                    background:'#FAFAFA',flexWrap:'wrap'}}>
                     {([['pen','✒️'],['eraser','⬜']] as const).map(([t,icon])=>(
                       <div key={t} onClick={()=>setSpTool(t)}
                         style={{padding:'3px 7px',borderRadius:7,cursor:'pointer',fontSize:11,
@@ -1979,17 +1984,17 @@ export default function VanoDetailPanel() {
                           border:spColor===c&&spTool==='pen'?'2.5px solid #fff':'2px solid transparent',
                           boxShadow:spColor===c&&spTool==='pen'?`0 0 0 2px ${c}`:'none',flexShrink:0}}/>
                     ))}
-                    <div data-notoggle="1" onClick={e=>{e.stopPropagation();const cv=spCanvasRef.current;const ctx=cv?.getContext('2d');if(ctx&&cv)ctx.clearRect(0,0,cv.width,cv.height);}}
-                      style={{padding:'3px 7px',borderRadius:7,
-                        background:'#FEE2E2',color:'#DC4444',fontSize:10,fontWeight:700,
-                        cursor:'pointer',border:'1px solid #FCA5A5'}}>✕</div>
-                    {/* Fullscreen */}
-                    <div data-notoggle="1" onClick={e=>{e.stopPropagation();setSpSchizzoFull(f=>!f);setSpSchizzoOpen(true);}}
+                    <div onClick={()=>{const cv=spCanvasRef.current;const ctx=cv?.getContext('2d');if(ctx&&cv)ctx.clearRect(0,0,cv.width,cv.height);}}
+                      style={{padding:'3px 7px',borderRadius:7,background:'#FEE2E2',
+                        color:'#DC4444',fontSize:10,fontWeight:700,cursor:'pointer',
+                        border:'1px solid #FCA5A5'}}>✕</div>
+                    <div onClick={()=>setSpSchizzoFull(f=>!f)}
                       style={{padding:'3px 7px',borderRadius:7,fontSize:11,cursor:'pointer',
-                        border:'1px solid #E2E8F0',background:'#fff',color:'#64748B',marginLeft:2}}>
+                        border:'1px solid #E2E8F0',background:'#fff',color:'#64748B',marginLeft:'auto'}}>
                       {spSchizzoFull?'⊡':'⊞'}
                     </div>
                   </div>
+                  )}
                   {spSchizzoOpen && <canvas ref={spCanvasRef} width={800} height={340}
                     style={{width:'100%',height:200,display:'block',
                       background:'#FAFAFA',
