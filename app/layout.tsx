@@ -1,6 +1,7 @@
-﻿import * as Sentry from '@sentry/nextjs'
+import * as Sentry from '@sentry/nextjs'
 import type { Metadata, Viewport } from 'next'
 import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
+
 export const metadata: Metadata = {
   title: 'MASTRO ERP',
   description: 'Il sistema operativo del serramentista',
@@ -10,12 +11,15 @@ export const metadata: Metadata = {
     apple: '/icon-192.png',
   },
 }
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   themeColor: '#1A1A1C',
+  viewportFit: 'cover',
 }
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it" suppressHydrationWarning>
