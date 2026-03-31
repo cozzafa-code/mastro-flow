@@ -3199,12 +3199,17 @@ export default function VanoDetailPanel() {
                   {[
                     {
                       icon: lamieraSchizzoOpen?'✕':'🖊️',
-                      label: lamieraSchizzoOpen?'Chiudi schizzo':'Schizzo',
+                      label: lamieraSchizzoOpen?'Chiudi':'Schizzo',
                       action: ()=>{setLamieraSchizzoOpen(o=>!o);setLamieraFabMenu(false);}
                     },
+                    ...(lamieraSchizzoOpen ? [{
+                      icon: (lamieraSchizzoFull||lamieraFullscreen)?'↙':'⤢',
+                      label: (lamieraSchizzoFull||lamieraFullscreen)?'Riduci':'Full schizzo',
+                      action: ()=>{setLamieraSchizzoFull((f:any)=>!f);setLamieraFabMenu(false);}
+                    }] : []),
                     {
                       icon: lamieraFullscreen?'↙':'↗',
-                      label: lamieraFullscreen?'Riduci':'Schermo intero',
+                      label: lamieraFullscreen?'Riduci':'Full lamiera',
                       action: ()=>{setLamieraFullscreen(f=>!f);setLamieraFabMenu(false);}
                     },
                     {
