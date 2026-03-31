@@ -3739,11 +3739,16 @@ export default function VanoDetailPanel() {
                       : l);
                     updateV('lamiere', updated);
                   } else {
-                    // Fallback: salva sui campi legacy
-                    updateV('lamieraPieghe', lamieraPieghe);
-                    updateV('lamieraLatoBuono', lamieraLatoBuono);
-                    updateV('lamieraLatoInfisso', lamieraLatoInfisso);
-                    updateV('lamieraLunghezza', lamieraLunghezza);
+                    // Nuova lamiera — aggiunge al array
+                    const newLam = {
+                      id: Date.now().toString(),
+                      nome: 'Lamiera ' + (lamList.length + 1),
+                      pieghe: lamieraPieghe,
+                      latoBuono: lamieraLatoBuono,
+                      latoInfisso: lamieraLatoInfisso,
+                      lunghezza: lamieraLunghezza
+                    };
+                    updateV('lamiere', [...lamList, newLam]);
                   }
                   setLamieraEditIdx(null);
                   setShowLamieraDisegno(false);
