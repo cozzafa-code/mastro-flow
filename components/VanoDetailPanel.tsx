@@ -470,7 +470,7 @@ export default function VanoDetailPanel() {
 
 
     return (
-      <div style={{ paddingBottom: 80, background: T.bg }}>
+      <div style={{ paddingBottom: showLamieraDisegno ? 0 : 80, background: T.bg }}>
         {/* Back + vano name */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: showDisegno ? `${T.purple}08` : T.card, borderBottom: `1px solid ${T.bdr}` }}>
           <div onClick={() => { setSelectedVano(null); setVanoStep(0); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
@@ -3170,7 +3170,7 @@ export default function VanoDetailPanel() {
               })()}
             </div>
           )}
-          {!detailOpen.fabOpen && (
+          {!detailOpen.fabOpen && !showLamieraDisegno && (
           <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: true }))} style={{
             position: "fixed", bottom: 260, right: 20, zIndex: 999,
             width: 52, height: 52, borderRadius: "50%",
