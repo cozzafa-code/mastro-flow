@@ -1936,6 +1936,71 @@ export default function VanoDetailPanel() {
               </div>
               {detailOpen.spallette && (
                 <div style={{ marginBottom: 12 }}>
+
+                {/* ── SCHIZZO SPALLETTE ── */}
+                <div style={{borderRadius:12,border:'1px solid #32ade640',
+                  background:'#32ade605',overflow:'hidden',marginBottom:12}}>
+                  <div style={{display:'flex',alignItems:'center',gap:5,
+                    padding:'7px 10px',borderBottom:'1px solid #32ade620',
+                    background:'#fff',flexWrap:'wrap'}}>
+                    <span style={{fontSize:11,fontWeight:800,color:'#32ade6',marginRight:2}}>✏️ Schizzo</span>
+                    {([['pen','✒️'],['eraser','⬜']] as const).map(([t,icon])=>(
+                      <div key={t} onClick={()=>setSpTool(t)}
+                        style={{padding:'3px 7px',borderRadius:7,cursor:'pointer',fontSize:11,
+                          border:`1.5px solid ${spTool===t?'#32ade6':'#E2E8F0'}`,
+                          background:spTool===t?'#32ade6':'#fff',
+                          color:spTool===t?'#fff':'#64748B',fontWeight:700}}>{icon}</div>
+                    ))}
+                    {([1.5,3,5] as const).map((s:number)=>(
+                      <div key={s} onClick={()=>setSpSize(s)}
+                        style={{width:24,height:24,borderRadius:6,cursor:'pointer',
+                          border:`1.5px solid ${spSize===s?'#32ade6':'#E2E8F0'}`,
+                          background:spSize===s?'#32ade615':'#fff',
+                          display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        <div style={{width:s*2,height:s*2,borderRadius:'50%',
+                          background:spSize===s?'#32ade6':'#94A3B8'}}/>
+                      </div>
+                    ))}
+                    {['#1A2B4A','#DC4444','#1A9E73','#D08008','#3B7FE0'].map(c=>(
+                      <div key={c} onClick={()=>{setSpColor(c);setSpTool('pen');}}
+                        style={{width:18,height:18,borderRadius:'50%',background:c,cursor:'pointer',
+                          border:spColor===c&&spTool==='pen'?'2.5px solid #fff':'2px solid transparent',
+                          boxShadow:spColor===c&&spTool==='pen'?`0 0 0 2px ${c}`:'none',flexShrink:0}}/>
+                    ))}
+                    <div onClick={()=>{const cv=spCanvasRef.current;const ctx=cv?.getContext('2d');if(ctx&&cv)ctx.clearRect(0,0,cv.width,cv.height);}}
+                      style={{marginLeft:'auto',padding:'3px 7px',borderRadius:7,
+                        background:'#FEE2E2',color:'#DC4444',fontSize:10,fontWeight:700,
+                        cursor:'pointer',border:'1px solid #FCA5A5'}}>✕</div>
+                  </div>
+                  <canvas ref={spCanvasRef} width={800} height={340}
+                    style={{width:'100%',height:200,display:'block',
+                      background:'#FAFAFA',
+                      cursor:spTool==='eraser'?'cell':'crosshair',touchAction:'none'}}
+                    onPointerDown={e=>{
+                      const cv=spCanvasRef.current;if(!cv)return;
+                      cv.setPointerCapture(e.pointerId);setSpDrawing(true);
+                      const r=cv.getBoundingClientRect();
+                      const sx=cv.width/r.width,sy=cv.height/r.height;
+                      const ctx=cv.getContext('2d');
+                      if(ctx){
+                        ctx.beginPath();ctx.moveTo((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
+                        if(spTool==='eraser'){ctx.globalCompositeOperation='destination-out';ctx.lineWidth=spSize*5;}
+                        else{ctx.globalCompositeOperation='source-over';ctx.strokeStyle=spColor;ctx.lineWidth=spSize;}
+                        ctx.lineCap='round';ctx.lineJoin='round';
+                      }
+                    }}
+                    onPointerMove={e=>{
+                      if(!spDrawing)return;
+                      const cv=spCanvasRef.current;const ctx=cv?.getContext('2d');
+                      if(ctx&&cv){const r=cv.getBoundingClientRect();
+                        const sx=cv.width/r.width,sy=cv.height/r.height;
+                        ctx.lineTo((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);ctx.stroke();}
+                    }}
+                    onPointerUp={()=>setSpDrawing(false)}
+                    onPointerLeave={()=>setSpDrawing(false)}
+                  />
+                </div>
+
               {<VanoBInput key="spSx" label={"Spalletta SINISTRA"} field="spSx"
                   value={m["spSx"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
@@ -1948,38 +2013,12 @@ export default function VanoDetailPanel() {
                   value={m["spSopra"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "spSopra", val)} />}
-              {<VanoBInput key="imbotte" label={"Profondità IMBOTTE"} field="imbotte"
+              {<VanoBInput key="imbotte" label={"Profondit\u00e0 IMBOTTE"} field="imbotte"
                   value={m["imbotte"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "imbotte", val)} />}
-              {/* DISEGNO LIBERO SPALLETTE */}
-              <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginTop: 8, overflow: "hidden" }}>
-                <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#32ade6" }}><I d={ICO.edit} /> Disegno spallette</span>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => { const ctx = spCanvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, 380, 200); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>‘ Pulisci</button>
-                    <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.grn, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}><I d={ICO.save} /> Salva</button>
-                  </div>
                 </div>
-                <canvas ref={spCanvasRef} width={380} height={200} style={{ width: "100%", height: 200, background: "#fff", touchAction: "none", cursor: "crosshair" }}
-                  onPointerDown={e=>{spCanvasRef.current?.setPointerCapture(e.pointerId);setSpDrawing(true);const cv=spCanvasRef.current;const ctx=cv?.getContext("2d");if(ctx&&cv){const r=cv.getBoundingClientRect();const sx=cv.width/r.width,sy=cv.height/r.height;ctx.beginPath();ctx.moveTo((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);ctx.strokeStyle=penColor;ctx.lineWidth=penSize;ctx.lineCap="round";ctx.lineJoin="round";}}}
-                  onPointerMove={e=>{if(!spDrawing)return;const cv=spCanvasRef.current;const ctx=cv?.getContext("2d");if(ctx&&cv){const r=cv.getBoundingClientRect();const sx=cv.width/r.width,sy=cv.height/r.height;ctx.lineTo((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);ctx.stroke();}}}
-                  onPointerUp={() => setSpDrawing(false)}
-                  onPointerLeave={() => setSpDrawing(false)}
-                />
-                <div style={{ padding: "6px 14px", display: "flex", gap: 4 }}>
-                  {["#1d1d1f", "#DC4444", "#0D7C6B", "#1A9E73", "#E8A020"].map(c => (
-                    <div key={c} onClick={() => setPenColor(c)} style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: penColor === c ? `3px solid ${T.acc}` : "2px solid transparent", cursor: "pointer" }} />
-                  ))}
-                  <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
-                    {[1, 2, 4].map(s => (
-                      <div key={s} onClick={() => setPenSize(s)} style={{ width: 22, height: 22, borderRadius: 6, background: penSize === s ? T.accLt : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                        <div style={{ width: s * 2 + 2, height: s * 2 + 2, borderRadius: "50%", background: T.text }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              )}
                 </div>
               )}
               {/* Davanzale + Cassonetto */}
