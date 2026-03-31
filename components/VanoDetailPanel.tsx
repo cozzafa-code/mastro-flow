@@ -2268,26 +2268,161 @@ export default function VanoDetailPanel() {
               </div>
               {v.cassonetto && (
                 <div style={{ marginTop: 8 }}>
-                  {<VanoBInput key="casL" label={"Cassonetto LARGHEZZA"} field="casL"
-                      value={m["casL"] as number} stepColor={step.color}
-                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-                      onUpdate={(val: number) => updateMisura(v.id, "casL", val)} />}
-                  {<VanoBInput key="casH" label={"Cassonetto ALTEZZA"} field="casH"
-                      value={m["casH"] as number} stepColor={step.color}
-                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-                      onUpdate={(val: number) => updateMisura(v.id, "casH", val)} />}
-                  {<VanoBInput key="casP" label={"Cassonetto PROFONDITÀ"} field="casP"
-                      value={m["casP"] as number} stepColor={step.color}
-                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-                      onUpdate={(val: number) => updateMisura(v.id, "casP", val)} />}
-                  {<VanoBInput key="casLCiel" label={"Cielino LARGHEZZA"} field="casLCiel"
-                      value={m["casLCiel"] as number} stepColor={step.color}
-                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-                      onUpdate={(val: number) => updateMisura(v.id, "casLCiel", val)} />}
-                  {<VanoBInput key="casPCiel" label={"Cielino PROFONDITÀ"} field="casPCiel"
-                      value={m["casPCiel"] as number} stepColor={step.color}
-                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-                      onUpdate={(val: number) => updateMisura(v.id, "casPCiel", val)} />}
+                  {/* ── DISEGNATORE CASSONETTO ── */}
+                  {(() => {
+                    // Valori correnti dai campi (mm), default se 0
+                    const cL = m.casL || 300;
+                    const cH = m.casH || 200;
+                    const cP = m.casP || 250;
+                    const cLC = m.casLCiel || Math.round(cL * 0.6);
+                    const cPC = m.casPCiel || Math.round(cP * 0.5);
+
+                    // SVG: vista sezione laterale (H x P)
+                    // Asse X = Profondità, Asse Y = Altezza
+                    const SVG_W = 280, SVG_H = 200;
+                    const PAD = 32;
+                    const scX = (SVG_W - PAD*2) / Math.max(cP, cPC + 20);
+                    const scY = (SVG_H - PAD*2) / Math.max(cH, 50);
+                    const sc = Math.min(scX, scY, 0.8);
+
+                    // Cassonetto esterno (sezione: Profondità x Altezza)
+                    const cx0 = PAD, cy0 = PAD;
+                    const cw = cP * sc, ch = cH * sc;
+                    // Cielino (interno, in basso a sx)
+                    const clw = cPC * sc, clh = Math.max(cLC * sc * 0.3, 8);
+
+                    const handleUpdate = (field: string, val: number) => {
+                      updateMisura(v.id, field, Math.max(10, Math.round(val)));
+                    };
+
+                    return (
+                      <div style={{background:'#F0F9FF',borderRadius:12,border:'1px solid #3B7FE030',
+                        marginBottom:12,overflow:'hidden'}}>
+                        {/* Header */}
+                        <div style={{padding:'8px 12px',borderBottom:'1px solid #3B7FE020',
+                          display:'flex',alignItems:'center',justifyContent:'space-between',background:'#fff'}}>
+                          <span style={{fontSize:11,fontWeight:800,color:'#3B7FE0'}}>
+                            Sezione cassonetto
+                          </span>
+                          <span style={{fontSize:9,color:'#94A3B8'}}>trascina i handle per ridimensionare</span>
+                        </div>
+
+                        {/* SVG sezione */}
+                        <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+                          style={{display:'block',cursor:'default',userSelect:'none'}}
+                          onPointerMove={e=>{
+                            const svgEl = e.currentTarget;
+                            const rect = svgEl.getBoundingClientRect();
+                            const scaleX = SVG_W / rect.width;
+                            const scaleY = SVG_H / rect.height;
+                            const mx = (e.clientX - rect.left) * scaleX;
+                            const my = (e.clientY - rect.top) * scaleY;
+                            const drag = (svgEl as any).__casDrag;
+                            if(!drag) return;
+                            if(drag==='W') handleUpdate('casP', Math.max(50,(mx-PAD)/sc));
+                            if(drag==='H') handleUpdate('casH', Math.max(30,(SVG_H-PAD-my)/sc));
+                            if(drag==='CW') handleUpdate('casPCiel', Math.max(20,(mx-PAD)/sc));
+                            if(drag==='CH') handleUpdate('casLCiel', Math.max(10,(clh+(SVG_H-PAD-my-ch+clh))/sc*3));
+                          }}
+                          onPointerUp={e=>{(e.currentTarget as any).__casDrag=null;e.currentTarget.releasePointerCapture(e.pointerId);}}
+                          onPointerLeave={e=>{(e.currentTarget as any).__casDrag=null;}}>
+
+                          {/* Griglia */}
+                          {Array.from({length:7}).map((_,i)=>(
+                            <line key={'gx'+i} x1={PAD+i*40} y1={PAD} x2={PAD+i*40} y2={SVG_H-PAD}
+                              stroke="#E0EFFE" strokeWidth="0.5"/>
+                          ))}
+                          {Array.from({length:5}).map((_,i)=>(
+                            <line key={'gy'+i} x1={PAD} y1={PAD+i*35} x2={SVG_W-PAD} y2={PAD+i*35}
+                              stroke="#E0EFFE" strokeWidth="0.5"/>
+                          ))}
+
+                          {/* Cassonetto esterno */}
+                          <rect x={cx0} y={SVG_H-PAD-ch} width={cw} height={ch}
+                            fill="#3B7FE010" stroke="#3B7FE0" strokeWidth="2" rx="2"/>
+
+                          {/* Cielino */}
+                          <rect x={cx0} y={SVG_H-PAD-clh} width={clw} height={clh}
+                            fill="#3B7FE030" stroke="#3B7FE0" strokeWidth="1.5" strokeDasharray="4,2" rx="1"/>
+
+                          {/* Label Profondità */}
+                          <line x1={cx0} y1={SVG_H-PAD+10} x2={cx0+cw} y2={SVG_H-PAD+10}
+                            stroke="#3B7FE0" strokeWidth="1"/>
+                          <text x={cx0+cw/2} y={SVG_H-PAD+22} textAnchor="middle"
+                            fontSize="9" fill="#3B7FE0" fontWeight="700">{cP}mm P</text>
+
+                          {/* Label Altezza */}
+                          <line x1={cx0-10} y1={SVG_H-PAD-ch} x2={cx0-10} y2={SVG_H-PAD}
+                            stroke="#3B7FE0" strokeWidth="1"/>
+                          <text x={cx0-14} y={SVG_H-PAD-ch/2} textAnchor="middle"
+                            fontSize="9" fill="#3B7FE0" fontWeight="700"
+                            transform={`rotate(-90,${cx0-14},${SVG_H-PAD-ch/2})`}>{cH}mm H</text>
+
+                          {/* Label Cielino */}
+                          {clw > 20 && <text x={cx0+clw/2} y={SVG_H-PAD-clh/2+3} textAnchor="middle"
+                            fontSize="8" fill="#3B7FE0" fontWeight="700">Ciel.</text>}
+
+                          {/* Handle destra — Profondità */}
+                          <circle cx={cx0+cw} cy={SVG_H-PAD-ch/2} r="7"
+                            fill="#3B7FE0" stroke="#fff" strokeWidth="2"
+                            style={{cursor:'ew-resize'}}
+                            onPointerDown={e=>{
+                              e.stopPropagation();
+                              const svg=e.currentTarget.closest('svg') as any;
+                              svg.__casDrag='W';
+                              svg.setPointerCapture(e.pointerId);
+                            }}/>
+
+                          {/* Handle sopra — Altezza */}
+                          <circle cx={cx0+cw/2} cy={SVG_H-PAD-ch} r="7"
+                            fill="#3B7FE0" stroke="#fff" strokeWidth="2"
+                            style={{cursor:'ns-resize'}}
+                            onPointerDown={e=>{
+                              e.stopPropagation();
+                              const svg=e.currentTarget.closest('svg') as any;
+                              svg.__casDrag='H';
+                              svg.setPointerCapture(e.pointerId);
+                            }}/>
+
+                          {/* Handle cielino destra */}
+                          <circle cx={cx0+clw} cy={SVG_H-PAD-clh/2} r="5"
+                            fill="#fff" stroke="#3B7FE0" strokeWidth="2"
+                            style={{cursor:'ew-resize'}}
+                            onPointerDown={e=>{
+                              e.stopPropagation();
+                              const svg=e.currentTarget.closest('svg') as any;
+                              svg.__casDrag='CW';
+                              svg.setPointerCapture(e.pointerId);
+                            }}/>
+                        </svg>
+
+                        {/* Campi numerici compatti sotto */}
+                        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,
+                          padding:'8px 10px',background:'#fff',borderTop:'1px solid #3B7FE020'}}>
+                          {[
+                            {label:'Larghezza',field:'casL',val:m.casL},
+                            {label:'Altezza',field:'casH',val:m.casH},
+                            {label:'Profondità',field:'casP',val:m.casP},
+                            {label:'Ciel. L',field:'casLCiel',val:m.casLCiel},
+                            {label:'Ciel. P',field:'casPCiel',val:m.casPCiel},
+                          ].map(({label,field,val})=>(
+                            <div key={field}>
+                              <div style={{fontSize:9,color:'#64748B',fontWeight:700,marginBottom:2}}>{label}</div>
+                              <div style={{display:'flex',alignItems:'center',gap:3}}>
+                                <input type="number" inputMode="numeric"
+                                  value={val||''}
+                                  placeholder="mm"
+                                  onChange={e=>updateMisura(v.id,field,parseInt(e.target.value)||0)}
+                                  style={{width:'100%',padding:'6px 4px',borderRadius:6,border:'1px solid #E2E8F0',
+                                    fontSize:13,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
+                                    textAlign:'center',background:'#F8FAFC',color:'#1A2B4A'}}/>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
                 </div>
