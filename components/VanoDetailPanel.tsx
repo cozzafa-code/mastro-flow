@@ -2997,8 +2997,8 @@ export default function VanoDetailPanel() {
           </div>
 
           {/* === FAB QUICK EDIT PANEL === */}
-          {detailOpen.fabOpen && <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 998 }} />}
-          {detailOpen.fabOpen && (
+          {detailOpen.fabOpen && !showLamieraDisegno && <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: false }))} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 998 }} />}
+          {detailOpen.fabOpen && !showLamieraDisegno && (
             <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 999, background: "#fff", borderRadius: "16px 16px 0 0", boxShadow: "0 -4px 30px rgba(0,0,0,0.2)", padding: "12px 16px 28px", maxHeight: "82vh", overflowY: "auto" }}>
               <div style={{ width: 36, height: 4, borderRadius: 2, background: "#ddd", margin: "0 auto 10px" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -3214,7 +3214,7 @@ export default function VanoDetailPanel() {
                     },
                     {
                       icon: lamieraFullscreen?'↙':'↗',
-                      label: lamieraFullscreen?'Riduci':'Fullscreen',
+                      label: lamieraFullscreen?'Riduci':'Schermo intero',
                       action: ()=>{setLamieraFullscreen(f=>!f);setLamieraFabMenu(false);}
                     },
                     {
@@ -3868,14 +3868,14 @@ export default function VanoDetailPanel() {
             {lamieraSchizzoOpen && (
               <div style={{position:'absolute',
                 bottom:0,left:0,right:0,
-                top: lamieraSchizzoFull ? 0 : 'auto',
+                top: (lamieraSchizzoFull || lamieraFullscreen) ? 0 : 'auto',
                 zIndex:10,
                 background:'#fff',
                 borderTop: lamieraSchizzoFull ? 'none' : '2px solid #1A2B4A',
                 borderRadius: lamieraSchizzoFull ? 0 : '14px 14px 0 0',
                 boxShadow:'0 -4px 20px rgba(0,0,0,0.15)',
                 display:'flex',flexDirection:'column',
-                height: lamieraSchizzoFull ? '100%' : '60%'}}>
+                height: (lamieraSchizzoFull || lamieraFullscreen) ? '100%' : '60%'}}>
 
                 {/* Header tendina */}
                 <div style={{display:'flex',alignItems:'center',gap:6,
