@@ -845,7 +845,8 @@ export default function VanoDetailPanel() {
                         const minY=Math.min(...ys), maxY=Math.max(...ys);
                         const rX=Math.max(maxX-minX,1), rY=Math.max(maxY-minY,1);
                         // Padding generoso per quote
-                        const PAD=28, VW=260, VH=80;
+                        // ViewBox 316x108, PAD ampio per quote
+                        const PAD=32, VW=316, VH=108;
                         const sc=Math.min((VW-PAD*2)/rX,(VH-PAD*2)/rY);
                         const ox=PAD+(VW-PAD*2-rX*sc)/2-minX*sc;
                         const oy=PAD+(VH-PAD*2-rY*sc)/2-minY*sc;
