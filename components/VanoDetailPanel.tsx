@@ -191,16 +191,7 @@ export default function VanoDetailPanel() {
   const [showFotoMisure, setShowFotoMisure] = useState(false);
   const [showSchizzo, setShowSchizzo] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
-  // Safe area iOS: colora html con il colore del modal quando è aperto
-  React.useEffect(() => {
-    const el = document.documentElement;
-    if (showLamieraDisegno) {
-      el.style.backgroundColor = '#1A2B4A';
-    } else {
-      el.style.backgroundColor = '#F2F1EC';
-    }
-    return () => { el.style.backgroundColor = '#F2F1EC'; };
-  }, [showLamieraDisegno]);
+
   const [showOrdinePanel, setShowOrdinePanel] = useState(false);
   const [lamieraPieghe, setLamieraPieghe] = useState<Array<{dir:'su'|'giu'|'sx'|'dx', mm:number}>>([]);
   const [lamieraPDir, setLamieraPDir] = useState<'sx'|'dx'|'su'|'giu'>('sx');
@@ -3561,7 +3552,7 @@ export default function VanoDetailPanel() {
             )}
 
             {/* Pannello aggiunta — in basso, scrollabile */}
-            <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'8px 12px calc(16px + env(safe-area-inset-bottom, 0px))',flexShrink:0,overflowY:'auto'}}>
+            <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'8px 12px 16px',flexShrink:0,overflowY:'auto'}}>
 
               {/* Lato infisso + Lunghezza */}
               <div style={{display:'flex',gap:8,marginBottom:10}}>
@@ -3801,6 +3792,13 @@ export default function VanoDetailPanel() {
               </div>
 
             </div>
+            {/* Safe area iOS — barra navy sotto Salva */}
+            <div style={{
+              background:'#1A2B4A',
+              height:'env(safe-area-inset-bottom, 20px)',
+              flexShrink:0,
+              minHeight:0,
+            }}/>
           </div>
         );
       })()}
