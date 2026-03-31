@@ -838,8 +838,16 @@ export default function VanoDetailPanel() {
                         let rx=0, ry=0;
                         const raw:number[][] = [[0,0]];
                         (lam.pieghe||[]).forEach((s:any)=>{
-                          if(s.dir==='dx'){rx+=s.mm;}else if(s.dir==='sx'){rx-=s.mm;}
-                          else if(s.dir==='su'){ry-=s.mm;}else{ry+=s.mm;}
+                          // Stesso calcolo dell'editor — trigonometria completa
+                          const ang = s.angolo != null ? s.angolo : 90;
+                          let baseAngle = 0;
+                          if(s.dir==='su')  baseAngle = Math.PI/2;
+                          if(s.dir==='sx')  baseAngle = Math.PI;
+                          if(s.dir==='giu') baseAngle = 3*Math.PI/2;
+                          const devRad = (ang - 90) * Math.PI / 180;
+                          const finalAngle = baseAngle - devRad;
+                          rx += s.mm * Math.cos(finalAngle);
+                          ry -= s.mm * Math.sin(finalAngle); // SVG y-down
                           raw.push([rx,ry]);
                         });
                         const xs=raw.map(n=>n[0]), ys=raw.map(n=>n[1]);
