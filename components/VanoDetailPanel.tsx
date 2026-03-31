@@ -192,7 +192,11 @@ export default function VanoDetailPanel() {
   const [showSchizzo, setShowSchizzo] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
   const [lamieraSchizzoOpen, setLamieraSchizzoOpen] = useState(false);
+  const [lamieraSchizzoFull, setLamieraSchizzoFull] = useState(false);
   const [lamieraFullscreen, setLamieraFullscreen] = useState(false);
+  const [schizzoTool, setSchizzoTool] = useState<'pen'|'eraser'>('pen');
+  const [schizzoColor, setSchizzoColor] = useState('#1A2B4A');
+  const [schizzoSize, setSchizzoSize] = useState(2.5);
   const schizzoCanvasRef = React.useRef<HTMLCanvasElement>(null);
   const schizzoDrawing = React.useRef(false);
   const schizzo2Touches = React.useRef<any[]>([]);
@@ -3820,32 +3824,81 @@ export default function VanoDetailPanel() {
 
             {/* ── TENDINA SCHIZZO LIBERO ── */}
             {lamieraSchizzoOpen && (
-              <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:10,
-                background:'#fff',borderTop:'2px solid #1A2B4A',
-                borderRadius:'14px 14px 0 0',
+              <div style={{position:'absolute',
+                bottom:0,left:0,right:0,
+                top: lamieraSchizzoFull ? 0 : 'auto',
+                zIndex:10,
+                background:'#fff',
+                borderTop: lamieraSchizzoFull ? 'none' : '2px solid #1A2B4A',
+                borderRadius: lamieraSchizzoFull ? 0 : '14px 14px 0 0',
                 boxShadow:'0 -4px 20px rgba(0,0,0,0.15)',
                 display:'flex',flexDirection:'column',
-                height:'55%'}}>
+                height: lamieraSchizzoFull ? '100%' : '60%'}}>
+
                 {/* Header tendina */}
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-                  padding:'8px 12px',borderBottom:'1px solid #E2E8F0',flexShrink:0}}>
-                  <span style={{fontSize:12,fontWeight:800,color:'#1A2B4A'}}>✏️ Schizzo libero</span>
-                  <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,
+                  padding:'7px 10px',borderBottom:'1px solid #E2E8F0',
+                  flexShrink:0,background:'#fff'}}>
+                  <span style={{fontSize:11,fontWeight:800,color:'#1A2B4A',marginRight:4}}>✏️ Schizzo</span>
+
+                  {/* Penna / Gomma */}
+                  {[{t:'pen',icon:'✒️',label:'Penna'},{t:'eraser',icon:'⬜',label:'Gomma'}].map(({t,icon,label})=>(
+                    <div key={t} onClick={()=>setSchizzoTool(t as any)}
+                      style={{padding:'4px 8px',borderRadius:7,cursor:'pointer',fontSize:10,fontWeight:700,
+                        border:`1.5px solid ${schizzoTool===t?'#1A2B4A':'#E2E8F0'}`,
+                        background:schizzoTool===t?'#1A2B4A':'#fff',
+                        color:schizzoTool===t?'#fff':'#64748B'}}>
+                      {icon}
+                    </div>
+                  ))}
+
+                  {/* Spessore */}
+                  {[{s:1.5,label:'S'},{s:3,label:'M'},{s:6,label:'L'}].map(({s,label})=>(
+                    <div key={s} onClick={()=>setSchizzoSize(s)}
+                      style={{width:28,height:28,borderRadius:7,cursor:'pointer',
+                        border:`1.5px solid ${schizzoSize===s?'#1A2B4A':'#E2E8F0'}`,
+                        background:schizzoSize===s?'#1A2B4A15':'#fff',
+                        display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <div style={{width:s*2,height:s*2,borderRadius:'50%',background:schizzoSize===s?'#1A2B4A':'#94A3B8'}}/>
+                    </div>
+                  ))}
+
+                  {/* Colori */}
+                  {['#1A2B4A','#DC4444','#1A9E73','#D08008','#3B7FE0','#000000'].map(c=>(
+                    <div key={c} onClick={()=>{setSchizzoColor(c);setSchizzoTool('pen');}}
+                      style={{width:20,height:20,borderRadius:'50%',background:c,cursor:'pointer',flexShrink:0,
+                        border:schizzoColor===c&&schizzoTool==='pen'?'2.5px solid #fff':'2px solid transparent',
+                        boxShadow:schizzoColor===c&&schizzoTool==='pen'?`0 0 0 2px ${c}`:'none'}}/>
+                  ))}
+
+                  <div style={{marginLeft:'auto',display:'flex',gap:4,alignItems:'center'}}>
+                    {/* Fullscreen toggle */}
+                    <div onClick={()=>setLamieraSchizzoFull(f=>!f)}
+                      style={{padding:'4px 7px',borderRadius:7,cursor:'pointer',fontSize:12,
+                        border:'1.5px solid #E2E8F0',background:'#fff',color:'#64748B'}}>
+                      {lamieraSchizzoFull?'⊡':'⊞'}
+                    </div>
+                    {/* Cancella */}
                     <div onClick={()=>{
                       const cv=schizzoCanvasRef.current;
                       const ctx=cv?.getContext('2d');
                       if(ctx&&cv) ctx.clearRect(0,0,cv.width,cv.height);
-                    }} style={{padding:'4px 10px',borderRadius:6,background:'#FEE2E2',
-                      color:'#DC4444',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                      Cancella
+                    }} style={{padding:'4px 8px',borderRadius:7,background:'#FEE2E2',
+                      color:'#DC4444',fontSize:10,fontWeight:700,cursor:'pointer',border:'1.5px solid #FCA5A5'}}>
+                      ✕
                     </div>
-                    <div onClick={()=>setLamieraSchizzoOpen(false)}
-                      style={{fontSize:20,color:'#94A3B8',cursor:'pointer',fontWeight:300,lineHeight:1}}>×</div>
+                    {/* Chiudi */}
+                    <div onClick={()=>{setLamieraSchizzoOpen(false);setLamieraSchizzoFull(false);}}
+                      style={{fontSize:18,color:'#94A3B8',cursor:'pointer',fontWeight:300,lineHeight:1,padding:'0 2px'}}>×</div>
                   </div>
                 </div>
+
                 {/* Canvas schizzo */}
-                <canvas ref={schizzoCanvasRef} width={800} height={600}
-                  style={{flex:1,width:'100%',height:'100%',background:'#FAFAFA',cursor:'crosshair',touchAction:'none'}}
+                <canvas ref={schizzoCanvasRef} width={1200} height={900}
+                  style={{flex:1,width:'100%',height:'100%',
+                    background:'#FAFAFA',
+                    cursor:schizzoTool==='eraser'?'cell':'crosshair',
+                    touchAction:'none'}}
                   onPointerDown={e=>{
                     const cv=schizzoCanvasRef.current;
                     if(!cv) return;
@@ -3857,8 +3910,14 @@ export default function VanoDetailPanel() {
                     if(ctx){
                       ctx.beginPath();
                       ctx.moveTo((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
-                      ctx.strokeStyle='#1A2B4A';
-                      ctx.lineWidth=2.5;
+                      if(schizzoTool==='eraser'){
+                        ctx.globalCompositeOperation='destination-out';
+                        ctx.lineWidth=schizzoSize*6;
+                      } else {
+                        ctx.globalCompositeOperation='source-over';
+                        ctx.strokeStyle=schizzoColor;
+                        ctx.lineWidth=schizzoSize;
+                      }
                       ctx.lineCap='round';
                       ctx.lineJoin='round';
                     }
@@ -3877,11 +3936,6 @@ export default function VanoDetailPanel() {
                   onPointerUp={()=>{schizzoDrawing.current=false;}}
                   onPointerLeave={()=>{schizzoDrawing.current=false;}}
                 />
-                {/* Hint */}
-                <div style={{padding:'4px 12px',fontSize:9,color:'#94A3B8',
-                  fontWeight:600,textAlign:'center',flexShrink:0,background:'#fff'}}>
-                  Disegna liberamente · non viene salvato
-                </div>
               </div>
             )}
           </div>
