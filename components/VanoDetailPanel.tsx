@@ -3181,17 +3181,7 @@ export default function VanoDetailPanel() {
               })()}
             </div>
           )}
-          {!detailOpen.fabOpen && !showLamieraDisegno && (
-          <div onClick={() => setDetailOpen(d => ({ ...d, fabOpen: true }))} style={{
-            position: "fixed", bottom: 260, right: 20, zIndex: 999,
-            width: 52, height: 52, borderRadius: "50%",
-            background: "linear-gradient(135deg, #1A9E73, #28a745)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 18px rgba(52,199,89,0.45)", cursor: "pointer",
-          }}>
-            <span style={{ fontSize: 20, color: "#fff" }}><I d={ICO.zap} /></span>
-          </div>
-          )}
+
           {/* TAB laterale lamiera — sul bordo destro, non interferisce con i bottoni */}
           {showLamieraDisegno && (
           <div style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",
