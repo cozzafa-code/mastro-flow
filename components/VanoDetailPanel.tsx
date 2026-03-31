@@ -3191,6 +3191,25 @@ export default function VanoDetailPanel() {
             <span style={{ fontSize: 20, color: "#fff" }}><I d={ICO.zap} /></span>
           </div>
           )}
+          {/* FAB quadrato schizzo — visibile solo dentro modal lamiera */}
+          {showLamieraDisegno && (
+          <div onClick={()=>setLamieraSchizzoOpen(o=>!o)} style={{
+            position: "fixed", bottom: 24, right: 16, zIndex: 3100,
+            width: 52, height: 52, borderRadius: 14,
+            background: lamieraSchizzoOpen
+              ? "#1A2B4A"
+              : "linear-gradient(135deg, #1A9E73, #28a745)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: lamieraSchizzoOpen
+              ? "0 4px 18px rgba(26,43,74,0.5)"
+              : "0 4px 18px rgba(52,199,89,0.45)",
+            cursor: "pointer", transition: "all 0.15s",
+          }}>
+            <span style={{ fontSize: 22, lineHeight: 1 }}>
+              {lamieraSchizzoOpen ? '×' : '✏️'}
+            </span>
+          </div>
+          )}
 
         </div>
       
@@ -3326,24 +3345,6 @@ export default function VanoDetailPanel() {
                 style={{padding:'5px 10px',borderRadius:8,background:'rgba(255,255,255,0.12)',
                   color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',border:'1px solid rgba(255,255,255,0.25)',whiteSpace:'nowrap'}}>
                 ◐ {lamieraLatoBuono==='esterno'?'Est.':'Int.'}
-              </div>
-              {/* Tasto schizzo */}
-              <div onClick={()=>setLamieraSchizzoOpen(o=>!o)}
-                style={{padding:'5px 9px',borderRadius:8,cursor:'pointer',
-                  background:lamieraSchizzoOpen?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.1)',
-                  border:'1px solid rgba(255,255,255,0.25)',fontSize:14,lineHeight:1,
-                  color:'#fff',fontWeight:700,whiteSpace:'nowrap'}}
-                title="Schizzo libero">
-                ✏️
-              </div>
-              {/* Tasto fullscreen SVG */}
-              <div onClick={()=>setLamieraFullscreen(f=>!f)}
-                style={{padding:'5px 9px',borderRadius:8,cursor:'pointer',
-                  background:lamieraFullscreen?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.1)',
-                  border:'1px solid rgba(255,255,255,0.25)',fontSize:14,lineHeight:1,
-                  color:'#fff',fontWeight:700}}
-                title="Fullscreen disegno">
-                {lamieraFullscreen?'⊡':'⊞'}
               </div>
               <div onClick={()=>setShowLamieraDisegno(false)}
                 style={{color:'rgba(255,255,255,0.6)',fontSize:24,cursor:'pointer',padding:'0 4px',lineHeight:1}}>×</div>
