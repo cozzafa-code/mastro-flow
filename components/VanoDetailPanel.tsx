@@ -193,6 +193,9 @@ export default function VanoDetailPanel() {
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
   const [lamieraSchizzoOpen, setLamieraSchizzoOpen] = useState(false);
   const [lamieraFabMenu, setLamieraFabMenu] = useState(false);
+  const [lamieraTabLato, setLamieraTabLato] = useState<'right'|'left'>('right');
+  const [lamieraTabY, setLamieraTabY] = useState(50); // percentuale top
+  const lamieraTabDrag = React.useRef({dragging:false, startY:0, startPct:50});
   const [lamieraSchizzoFull, setLamieraSchizzoFull] = useState(false);
   const [lamieraFullscreen, setLamieraFullscreen] = useState(false);
   const [schizzoTool, setSchizzoTool] = useState<'pen'|'eraser'>('pen');
@@ -3182,20 +3185,31 @@ export default function VanoDetailPanel() {
             </div>
           )}
 
-          {/* TAB laterale lamiera — sul bordo destro, non interferisce con i bottoni */}
+          {/* TAB laterale lamiera — draggabile su/giù, cambia lato */}
           {showLamieraDisegno && (
-          <div style={{position:"fixed",right:0,top:"50%",transform:"translateY(-50%)",
-            zIndex:3100,display:"flex",flexDirection:"row",alignItems:"center"}}>
-            {/* Menu opzioni — scivola da destra */}
+          <div style={{
+            position:"fixed",
+            [lamieraTabLato==='right'?'right':'left']: 0,
+            top: lamieraTabY+'%',
+            transform:"translateY(-50%)",
+            zIndex:3100,
+            display:"flex",
+            flexDirection: lamieraTabLato==='right' ? "row" : "row-reverse",
+            alignItems:"center",
+            touchAction:"none",
+          }}>
+            {/* Menu opzioni */}
             {lamieraFabMenu && (
               <>
                 <div onClick={()=>setLamieraFabMenu(false)}
                   style={{position:"fixed",inset:0,zIndex:-1}}/>
-                <div style={{display:"flex",flexDirection:"column",gap:6,
+                <div style={{
+                  display:"flex",flexDirection:"column",gap:6,
                   padding:"8px",background:"#fff",
-                  borderRadius:"12px 0 0 12px",
-                  boxShadow:"-4px 0 20px rgba(0,0,0,0.12)",
-                  border:"1px solid #E2E8F0",borderRight:"none"}}>
+                  borderRadius: lamieraTabLato==='right' ? "12px 0 0 12px" : "0 12px 12px 0",
+                  boxShadow: lamieraTabLato==='right' ? "-4px 0 20px rgba(0,0,0,0.12)" : "4px 0 20px rgba(0,0,0,0.12)",
+                  border:"1px solid #E2E8F0",
+                  [lamieraTabLato==='right'?'borderRight':'borderLeft']:"none"}}>
                   {[
                     {
                       icon: lamieraSchizzoOpen?'✕':'🖊️',
@@ -3217,6 +3231,11 @@ export default function VanoDetailPanel() {
                       label: lamieraLatoBuono==='esterno'?'Est.':'Int.',
                       action: ()=>{setLamieraLatoBuono((l:any)=>l==='esterno'?'interno':'esterno');setLamieraFabMenu(false);}
                     },
+                    {
+                      icon: lamieraTabLato==='right'?'◁':'▷',
+                      label: lamieraTabLato==='right'?'Sposta sx':'Sposta dx',
+                      action: ()=>{setLamieraTabLato(l=>l==='right'?'left':'right');setLamieraFabMenu(false);}
+                    },
                   ].map(({icon,label,action},i)=>(
                     <div key={i} onClick={action}
                       style={{display:"flex",flexDirection:"column",alignItems:"center",
@@ -3230,18 +3249,41 @@ export default function VanoDetailPanel() {
                 </div>
               </>
             )}
-            {/* Tab laterale — lingua sul bordo */}
-            <div onClick={()=>setLamieraFabMenu(m=>!m)}
-              style={{width:24,height:72,
+            {/* Tab — lingua draggabile */}
+            <div
+              onPointerDown={e=>{
+                // Se tocco breve = click menu, se trascino = drag
+                lamieraTabDrag.current = {dragging:false, startY:e.clientY, startPct:lamieraTabY};
+                (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+              }}
+              onPointerMove={e=>{
+                const dy = e.clientY - lamieraTabDrag.current.startY;
+                if(Math.abs(dy) > 5) lamieraTabDrag.current.dragging = true;
+                if(lamieraTabDrag.current.dragging){
+                  const pct = lamieraTabDrag.current.startPct + (dy / window.innerHeight * 100);
+                  setLamieraTabY(Math.max(10, Math.min(90, pct)));
+                }
+              }}
+              onPointerUp={e=>{
+                if(!lamieraTabDrag.current.dragging){
+                  setLamieraFabMenu(m=>!m);
+                }
+                lamieraTabDrag.current.dragging = false;
+              }}
+              style={{
+                width:24, height:72,
                 background:"#1A2B4A",
-                borderRadius:"10px 0 0 10px",
-                cursor:"pointer",
+                borderRadius: lamieraTabLato==='right' ? "10px 0 0 10px" : "0 10px 10px 0",
+                cursor:"grab",
                 display:"flex",alignItems:"center",justifyContent:"center",
-                boxShadow:"-3px 0 12px rgba(26,43,74,0.3)",
-                writingMode:"vertical-rl",
-                flexShrink:0}}>
-              <span style={{fontSize:16,color:"#fff",lineHeight:1,transform:"rotate(180deg)"}}>
-                {lamieraFabMenu?'›':'‹'}
+                boxShadow: lamieraTabLato==='right' ? "-3px 0 12px rgba(26,43,74,0.3)" : "3px 0 12px rgba(26,43,74,0.3)",
+                flexShrink:0, userSelect:"none",
+                touchAction:"none",
+              }}>
+              <span style={{fontSize:14,color:"#fff",lineHeight:1}}>
+                {lamieraFabMenu
+                  ? (lamieraTabLato==='right'?'›':'‹')
+                  : (lamieraTabLato==='right'?'‹':'›')}
               </span>
             </div>
           </div>
