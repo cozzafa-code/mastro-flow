@@ -3610,7 +3610,10 @@ export default function VanoDetailPanel() {
                     onKeyDown={e=>{
                       if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
                         const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
-                        const angolo = lamieraAngoloInput && angoloAbs !== 90 ? lamieraAngoloPM * angoloAbs + (lamieraAngoloPM === -1 ? 180 : 0) : 90;
+                        // PM=+1 → piega "avanti" (90-abs), PM=-1 → piega "indietro" (90+abs)
+                        const angolo = lamieraAngoloInput && angoloAbs !== 90
+                          ? (lamieraAngoloPM === 1 ? 90 - angoloAbs : 90 + angoloAbs)
+                          : 90;
                         if(lamieraSelIdx!==null){
                           setLamieraPieghe(prev=>prev.map((s,i)=>i===lamieraSelIdx?{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}:s));
                           setLamieraSelIdx(null);
@@ -3634,7 +3637,7 @@ export default function VanoDetailPanel() {
                 <div onClick={()=>{
                   if(!lamieraPMm||parseFloat(lamieraPMm)<=0) return;
                   const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||90) : 90;
-                        const angolo = lamieraAngoloInput && angoloAbs !== 90 ? lamieraAngoloPM * angoloAbs + (lamieraAngoloPM === -1 ? 180 : 0) : 90;
+                        const angolo = lamieraAngoloInput && angoloAbs !== 90 ? (lamieraAngoloPM === 1 ? 90 - angoloAbs : 90 + angoloAbs) : 90;
                   if(lamieraSelIdx!==null){
                     // EDIT segmento esistente
                     setLamieraPieghe(prev=>prev.map((s,i)=>i===lamieraSelIdx?{dir:lamieraPDir,mm:parseFloat(lamieraPMm),angolo}:s));
