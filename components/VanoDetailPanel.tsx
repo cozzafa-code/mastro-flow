@@ -3821,7 +3821,7 @@ export default function VanoDetailPanel() {
             {/* ── TENDINA SCHIZZO LIBERO ── */}
             {lamieraSchizzoOpen && (
               <div style={{position:'absolute',bottom:0,left:0,right:0,zIndex:10,
-                background:'#fff',borderTop:`2px solid ${NAVY}`,
+                background:'#fff',borderTop:'2px solid #1A2B4A',
                 borderRadius:'14px 14px 0 0',
                 boxShadow:'0 -4px 20px rgba(0,0,0,0.15)',
                 display:'flex',flexDirection:'column',
