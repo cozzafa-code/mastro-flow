@@ -817,14 +817,12 @@ export default function VanoDetailPanel() {
               body: (() => {
                 const lamList: any[] = (v.lamiere as any) || [];
                 const addLamiera = () => {
-                  const newL = {id: Date.now().toString(), nome: "Lamiera "+(lamList.length+1), pieghe:[], latoBuono:"esterno", latoInfisso:"", lunghezza:""};
-                  const updated = [...lamList, newL];
-                  updateV("lamiere", updated);
+                  // NON salva subito — apre modal vuoto, salva tutto al click "Salva lamiera"
                   setLamieraPieghe([]);
                   setLamieraLatoBuono("esterno");
                   setLamieraLatoInfisso("");
                   setLamieraLunghezza("");
-                  setLamieraEditIdx(updated.length - 1);
+                  setLamieraEditIdx(null); // null = nuova lamiera
                   lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
                   setShowLamieraDisegno(true);
                 };
