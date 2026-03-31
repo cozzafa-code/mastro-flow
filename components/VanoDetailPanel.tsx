@@ -1861,25 +1861,48 @@ export default function VanoDetailPanel() {
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "hDx", val)} />}
 
-              {/* DIAGONALI */}
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#E8A020", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, marginTop: 16, display: "flex", alignItems: "center", gap: 6, borderTop: `1px solid ${T.bdr}`, paddingTop: 16 }}>Diagonali</div>
-              {<VanoBInput key="d1" label={"Diagonale 1 ↗"} field="d1"
-                  value={m["d1"] as number} stepColor={step.color}
-                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-                  onUpdate={(val: number) => updateMisura(v.id, "d1", val)} />}
-              {<VanoBInput key="d2" label={"Diagonale 2 ↘"} field="d2"
-                  value={m["d2"] as number} stepColor={step.color}
-                  textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
-                  onUpdate={(val: number) => updateMisura(v.id, "d2", val)} />}
-              {fSq !== null && fSq > 3 && (
-                <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}><I d={ICO.alertTriangle} /> Fuori squadra: {fSq}mm</div>
-                  <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm — segnalare in ufficio</div>
+              {/* DIAGONALI — collassabile */}
+              <div onClick={() => setDetailOpen(d => ({...d, diagonali: !d.diagonali}))}
+                style={{ marginTop: 16, borderTop: `1px solid ${T.bdr}`, paddingTop: 14,
+                  paddingBottom: 10, cursor: "pointer", display: "flex", alignItems: "center",
+                  justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: "#E8A020",
+                    textTransform: "uppercase", letterSpacing: "0.08em" }}>Diagonali</span>
+                  {(m.d1 > 0 || m.d2 > 0) && (
+                    <span style={{ fontSize: 10, color: "#E8A020", fontWeight: 700,
+                      background: "#E8A02015", padding: "2px 8px", borderRadius: 6 }}>
+                      {[m.d1, m.d2].filter(x => x > 0).length}/2
+                      {fSq !== null && fSq > 3 && " ⚠"}
+                      {fSq !== null && fSq <= 3 && " ✓"}
+                    </span>
+                  )}
                 </div>
-              )}
-              {fSq !== null && fSq <= 3 && (
-                <div style={{ padding: "10px 14px", borderRadius: 10, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>In squadra — differenza: {fSq}mm</div>
+                <span style={{ fontSize: 13, color: T.sub,
+                  transform: detailOpen.diagonali ? "rotate(0deg)" : "rotate(-90deg)",
+                  transition: "transform 0.2s" }}>▾</span>
+              </div>
+              {detailOpen.diagonali && (
+                <div style={{ marginBottom: 8 }}>
+                  {<VanoBInput key="d1" label={"Diagonale 1 ↗"} field="d1"
+                      value={m["d1"] as number} stepColor={step.color}
+                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                      onUpdate={(val: number) => updateMisura(v.id, "d1", val)} />}
+                  {<VanoBInput key="d2" label={"Diagonale 2 ↘"} field="d2"
+                      value={m["d2"] as number} stepColor={step.color}
+                      textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
+                      onUpdate={(val: number) => updateMisura(v.id, "d2", val)} />}
+                  {fSq !== null && fSq > 3 && (
+                    <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}><I d={ICO.alertTriangle} /> Fuori squadra: {fSq}mm</div>
+                      <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm — segnalare in ufficio</div>
+                    </div>
+                  )}
+                  {fSq !== null && fSq <= 3 && (
+                    <div style={{ padding: "10px 14px", borderRadius: 10, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>In squadra — differenza: {fSq}mm</div>
+                    </div>
+                  )}
                 </div>
               )}
             </>)}
