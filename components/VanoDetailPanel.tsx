@@ -930,7 +930,7 @@ export default function VanoDetailPanel() {
                                   // Solo deviazioni reali, non @+0° o @+90°
                                   const dev = (s.angolo!=null && s.angolo!==90) ? Math.abs(s.angolo-90) : 0;
                                   const lbl = dev > 0
-                                    ? `${s.mm}@${s.angolo<90?'+':'−'}${dev}°`
+                                    ? `${s.mm} ${s.angolo<90?'+':'−'}${dev}°`
                                     : String(s.mm);
                                   const tw = lbl.length * fz * 0.62 + 5;
                                   const th = fz + 4;
@@ -3528,11 +3528,10 @@ export default function VanoDetailPanel() {
                 {allSegs.map((s,i)=>{
                   const isSel = lamieraSelIdx===i;
                   return (
-                    <div key={i} style={{display:'flex',alignItems:'center',gap:2,padding:'4px 6px',
-                      background:isSel?'#0F766E':'#F0FDF9',borderRadius:7,
-                      border:`1.5px solid ${isSel?'#0F766E':'#0F766E30'}`,cursor:'pointer',
-                      fontSize:12,fontWeight:700,color:isSel?'#fff':'#0F766E',
-                      boxShadow:isSel?'0 2px 6px #0F766E40':'none',transition:'all 0.1s'}}>
+                    <div key={i} style={{display:'flex',alignItems:'center',gap:3,padding:'5px 8px',
+                      background:isSel?'#0F766E15':''  ,borderRadius:8,
+                      border:`1.5px solid ${isSel?'#0F766E':'#0F766E50'}`,cursor:'pointer',
+                      transition:'all 0.1s'}}>
                       {/* Tap chip = seleziona per edit */}
                       <span onClick={()=>{
                         if(isSel){setLamieraSelIdx(null);}
@@ -3544,14 +3543,20 @@ export default function VanoDetailPanel() {
                           setLamieraAngoloPM(((s.angolo||90)<=90)?1:-1);
                           setLamieraAngoloInput((s.angolo||90)!==90);
                         }
-                      }} style={{display:'flex',alignItems:'center',gap:3}}>
-                        <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
-                        <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
-                        {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo<90?'+':'−'}{Math.abs(s.angolo-90)}°</span>}
+                      }} style={{display:'flex',alignItems:'center',gap:4}}>
+                        <span style={{fontSize:13,color:isSel?'#0F766E':'#0F766E'}}>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
+                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:800,color:isSel?'#0F172A':'#0F172A'}}>{s.mm}</span>
+                        {s.angolo && s.angolo!==90 && (
+                          <span style={{fontSize:10,fontWeight:700,color:'#D08008',
+                            background:'#D0800815',padding:'1px 5px',borderRadius:4,
+                            border:'1px solid #D0800840'}}>
+                            {s.angolo<90?'+':'−'}{Math.abs(s.angolo-90)}°
+                          </span>
+                        )}
                       </span>
                       {/* X = elimina */}
                       <span onClick={e=>{e.stopPropagation();setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i));if(isSel)setLamieraSelIdx(null);}}
-                        style={{fontSize:11,color:isSel?'rgba(255,255,255,0.8)':'#DC4444',fontWeight:900,marginLeft:2,padding:'0 2px'}}>×</span>
+                        style={{fontSize:12,color:'#DC4444',fontWeight:700,marginLeft:2,opacity:0.6,padding:'0 2px'}}>×</span>
                     </div>
                   );
                 })}
