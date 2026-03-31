@@ -2013,7 +2013,7 @@ export default function VanoDetailPanel() {
                   value={m["spSopra"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "spSopra", val)} />}
-              {<VanoBInput key="imbotte" label={"Profondit\u00e0 IMBOTTE"} field="imbotte"
+              {<VanoBInput key="imbotte" label={"Profondità IMBOTTE"} field="imbotte"
                   value={m["imbotte"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "imbotte", val)} />}
