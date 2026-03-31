@@ -838,14 +838,12 @@ export default function VanoDetailPanel() {
                         let rx=0, ry=0;
                         const raw:number[][] = [[0,0]];
                         (lam.pieghe||[]).forEach((s:any)=>{
-                          // Stesso calcolo dell'editor — trigonometria completa
-                          // Angolo = deviazione con segno (0=dritto, +N=sx, -N=dx)
-                          const dev = s.angolo != null ? s.angolo : 0;
+                          const ang = s.angolo != null ? s.angolo : 90;
                           let baseAngle = 0;
                           if(s.dir==='su')  baseAngle = Math.PI/2;
                           if(s.dir==='sx')  baseAngle = Math.PI;
                           if(s.dir==='giu') baseAngle = 3*Math.PI/2;
-                          const devRad = dev * Math.PI / 180;
+                          const devRad = (ang - 90) * Math.PI / 180;
                           const finalAngle = baseAngle - devRad;
                           rx += s.mm * Math.cos(finalAngle);
                           ry -= s.mm * Math.sin(finalAngle);
@@ -3195,15 +3193,12 @@ export default function VanoDetailPanel() {
           let cx = 0, cy = 0;
           const raw: {x:number,y:number}[] = [{x:0,y:0}];
           allSegs.forEach(s => {
-            // Angolo = deviazione con segno (0=dritto, +N=sx, -N=dx)
-            const dev = s.angolo != null ? s.angolo : 0;
+            const ang = s.angolo != null ? s.angolo : 90;
             let baseAngle = 0;
             if(s.dir==='su')  baseAngle = Math.PI/2;
             if(s.dir==='sx')  baseAngle = Math.PI;
             if(s.dir==='giu') baseAngle = 3*Math.PI/2;
-            // Se angolo è diverso da 90 (default), applica rotazione relativa
-            // angolo < 90 = piega verso destra della direzione, > 90 = verso sinistra
-            const devRad = dev * Math.PI / 180;
+            const devRad = (ang - 90) * Math.PI / 180;
             const finalAngle = baseAngle - devRad;
             cx += s.mm * Math.cos(finalAngle);
             cy -= s.mm * Math.sin(finalAngle); // SVG y-down
@@ -3482,7 +3477,7 @@ export default function VanoDetailPanel() {
                       }} style={{display:'flex',alignItems:'center',gap:3}}>
                         <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
                         <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
-                        {s.angolo && s.angolo!==0 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo}°</span>}
+                        {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo}°</span>}
                       </span>
                       {/* X = elimina */}
                       <span onClick={e=>{e.stopPropagation();setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i));if(isSel)setLamieraSelIdx(null);}}
@@ -3611,8 +3606,8 @@ export default function VanoDetailPanel() {
                     onKeyDown={e=>{
                       if(e.key==='Enter'&&lamieraPMm&&parseFloat(lamieraPMm)>0){
                         const angoloAbs = lamieraAngoloInput ? (parseFloat(lamieraAngolo)||0) : 0;
-                        // PM=+1 → piega "avanti" (90-abs), PM=-1 → piega "indietro" (90+abs)
-                        const angolo = lamieraAngoloInput && angoloAbs !== 90
+                        // 90=dritto, PM=+ → 90-abs (piega sx), PM=- → 90+abs (piega dx)
+                        const angolo = lamieraAngoloInput && angoloAbs > 0
                           ? (lamieraAngoloPM === 1 ? 90 - angoloAbs : 90 + angoloAbs)
                           : 90;
                         if(lamieraSelIdx!==null){
