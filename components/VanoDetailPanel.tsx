@@ -972,7 +972,7 @@ export default function VanoDetailPanel() {
                                     <rect x={3+bw+3} y="3" width={bfz*6} height={bh} rx="2" fill="#0F766E"/>
                                     <text x={3+bw+3+bfz*3} y={3+bh*0.72} textAnchor="middle"
                                       fontSize={bfz} fill="#fff" fontWeight="700">
-                                      {lam.latoInfisso==='alto'?'↑ALTO':lam.latoInfisso==='basso'?'↓BASSO':lam.latoInfisso==='sx'?'←SX':'→DX'}
+                                      {lam.latoInfisso==='alto'?'^ ALTO':lam.latoInfisso==='basso'?'v BASSO':lam.latoInfisso==='sx'?'< SX':'> DX'}
                                     </text>
                                   </>}
                                   {svilTot>0 && <>
@@ -3291,7 +3291,7 @@ export default function VanoDetailPanel() {
                         )}
                         {lamieraLatoInfisso && (
                           <span style={{background:'rgba(255,255,255,0.25)',borderRadius:6,padding:'2px 8px',fontSize:11,color:'#fff',fontWeight:800}}>
-                            {lamieraLatoInfisso==='alto'?'↑ ALTO':lamieraLatoInfisso==='basso'?'↓ BASSO':lamieraLatoInfisso==='sx'?'← SX':'→ DX'}
+                            {lamieraLatoInfisso==='alto'?'^ ALTO':lamieraLatoInfisso==='basso'?'v BASSO':lamieraLatoInfisso==='sx'?'< SX':'> DX'}
                           </span>
                         )}
                       </>
