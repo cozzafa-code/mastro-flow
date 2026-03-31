@@ -833,7 +833,9 @@ export default function VanoDetailPanel() {
                     {lamList.map((lam: any, li: number) => {
                       const svilTot = (lam.pieghe||[]).reduce((a:number,s:any)=>a+s.mm,0);
                       let preNodes:{x:number,y:number}[] = [];
-                      let svgVW=316, svgVH=108;
+                      // ViewBox fisso 300x200 — etichette sempre proporzionate alla card
+                      const PVFW=300, PVFH=200;
+                      let svgVW=PVFW, svgVH=PVFH;
                       if((lam.pieghe||[]).length > 0){
                         let rx=0, ry=0;
                         const raw:number[][] = [[0,0]];
@@ -853,13 +855,10 @@ export default function VanoDetailPanel() {
                         const minX=Math.min(...xs), maxX=Math.max(...xs);
                         const minY=Math.min(...ys), maxY=Math.max(...ys);
                         const rX=Math.max(maxX-minX,1), rY=Math.max(maxY-minY,1);
-                        const PAD=30;
-                        const scFit=Math.min((316-PAD*2)/rX,(108-PAD*2)/rY);
-                        const sc=Math.max(scFit, 1.8);
-                        svgVW=Math.ceil(rX*sc+PAD*2);
-                        svgVH=Math.ceil(rY*sc+PAD*2);
-                        const ox=PAD-minX*sc;
-                        const oy=PAD-minY*sc;
+                        const PAD=28;
+                        const sc=Math.min((PVFW-PAD*2)/rX,(PVFH-PAD*2)/rY);
+                        const ox=PAD + ((PVFW-PAD*2) - rX*sc)/2 - minX*sc;
+                        const oy=PAD + ((PVFH-PAD*2) - rY*sc)/2 - minY*sc;
                         preNodes=raw.map(([x,y])=>({
                           x:+((ox+x*sc).toFixed(1)),
                           y:+((oy+y*sc).toFixed(1))
@@ -903,18 +902,18 @@ export default function VanoDetailPanel() {
                                 setShowLamieraDisegno(true);
                               }}>
                               {/* Griglia */}
-                              {Array.from({length:Math.ceil(svgVW/24)+1}).map((_,gi)=>(
-                                <line key={"gx"+gi} x1={gi*24} y1="0" x2={gi*24} y2={svgVH} stroke="#E0F5EE" strokeWidth="0.4"/>
+                              {Array.from({length:13}).map((_,gi)=>(
+                                <line key={"gx"+gi} x1={gi*25} y1="0" x2={gi*25} y2={PVFH} stroke="#E0F5EE" strokeWidth="0.4"/>
                               ))}
-                              {Array.from({length:Math.ceil(svgVH/24)+1}).map((_,gi)=>(
-                                <line key={"gy"+gi} x1="0" y1={gi*24} x2={svgVW} y2={gi*24} stroke="#E0F5EE" strokeWidth="0.4"/>
+                              {Array.from({length:9}).map((_,gi)=>(
+                                <line key={"gy"+gi} x1="0" y1={gi*25} x2={PVFW} y2={gi*25} stroke="#E0F5EE" strokeWidth="0.4"/>
                               ))}
                               {/* Profilo */}
                               <polyline points={prePts} fill="none" stroke="#0F766E" strokeWidth="2"
                                 strokeLinecap="round" strokeLinejoin="round"/>
                               {/* Quote segmenti — fontSize proporzionale */}
                               {(() => {
-                                const fz = Math.max(5, Math.min(8, svgVW / 22));
+                                const fz = 7.5; // viewBox fisso 300x200
                                 const lhalf = fz * 0.65;
                                 return (lam.pieghe||[]).map((s:any, si:number) => {
                                   if(si >= preNodes.length-1) return null;
@@ -948,7 +947,7 @@ export default function VanoDetailPanel() {
                               })()}
                               {/* Nodi */}
                               {(() => {
-                                const nr = Math.max(2, svgVW / 40);
+                                const nr = 4; // viewBox fisso 300x200
                                 return preNodes.map((n:{x:number,y:number},i:number)=>(
                                   <circle key={i} cx={n.x} cy={n.y}
                                     r={i===0||i===preNodes.length-1?nr:nr*0.55}
@@ -958,7 +957,7 @@ export default function VanoDetailPanel() {
                               })()}
                               {/* Badge EST/INT — dimensioni proporzionali */}
                               {(() => {
-                                const bfz = Math.max(4.5, Math.min(7, svgVW/18));
+                                const bfz = 7; // viewBox fisso 300x200
                                 const bw = bfz*4.5, bh = bfz*1.8;
                                 const isEst = lam.latoBuono==='esterno';
                                 return (<>
