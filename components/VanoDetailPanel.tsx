@@ -2047,7 +2047,7 @@ export default function VanoDetailPanel() {
                 const addLamieraSp = () => {
                   const newL = {id: Date.now().toString(), nome: "Lamiera Sp."+(lamSpList.length+1), pieghe:[], latoBuono:"esterno", latoInfisso:"", lunghezza:""};
                   const updated = [...lamSpList, newL];
-                  updateV("lamiereSpallette", updated);
+                  updateVanoField(v.id, "lamiereSpallette", updated);
                   setLamieraPieghe([]);
                   setLamieraLatoBuono("esterno");
                   setLamieraLatoInfisso("");
@@ -2101,7 +2101,7 @@ export default function VanoDetailPanel() {
                         <div key={lam.id} style={{borderRadius:10,background:"#32ade60A",border:"1px solid #32ade625",overflow:"hidden"}}>
                           <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #32ade615"}}>
                             <input value={lam.nome} onChange={e=>{
-                              const upd=[...lamSpList]; upd[li]={...upd[li],nome:e.target.value}; updateV("lamiereSpallette",upd);
+                              const upd=[...lamSpList]; upd[li]={...upd[li],nome:e.target.value}; updateVanoField(v.id, "lamiereSpallette",upd);
                             }} style={{flex:1,fontSize:12,fontWeight:700,border:"none",background:"transparent",color:"#32ade6",outline:"none"}}/>
                             <div style={{fontSize:10,color:"#32ade680",fontWeight:600}}>{svilTot>0?svilTot+"mm":""}</div>
                             <div onClick={e=>{e.stopPropagation();
@@ -2117,7 +2117,7 @@ export default function VanoDetailPanel() {
                               ✏️ Modifica
                             </div>
                             <div onClick={e=>{e.stopPropagation();
-                              updateV("lamiereSpallette",lamSpList.filter((_:any,i:number)=>i!==li));
+                              updateVanoField(v.id, "lamiereSpallette",lamSpList.filter((_:any,i:number)=>i!==li));
                             }} style={{padding:"5px 8px",borderRadius:6,background:"#DC444415",color:"#DC4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>
                               ✕
                             </div>
