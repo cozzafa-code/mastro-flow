@@ -192,6 +192,7 @@ export default function VanoDetailPanel() {
   const [showSchizzo, setShowSchizzo] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
   const [lamieraSchizzoOpen, setLamieraSchizzoOpen] = useState(false);
+  const [lamieraFabMenu, setLamieraFabMenu] = useState(false);
   const [lamieraSchizzoFull, setLamieraSchizzoFull] = useState(false);
   const [lamieraFullscreen, setLamieraFullscreen] = useState(false);
   const [schizzoTool, setSchizzoTool] = useState<'pen'|'eraser'>('pen');
@@ -3191,23 +3192,53 @@ export default function VanoDetailPanel() {
             <span style={{ fontSize: 20, color: "#fff" }}><I d={ICO.zap} /></span>
           </div>
           )}
-          {/* FAB quadrato schizzo — visibile solo dentro modal lamiera */}
+          {/* FAB menu lamiera — quadrato, apre popup con opzioni */}
           {showLamieraDisegno && (
-          <div onClick={()=>setLamieraSchizzoOpen(o=>!o)} style={{
-            position: "fixed", bottom: 24, right: 16, zIndex: 3100,
-            width: 52, height: 52, borderRadius: 14,
-            background: lamieraSchizzoOpen
-              ? "#1A2B4A"
-              : "linear-gradient(135deg, #1A9E73, #28a745)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: lamieraSchizzoOpen
-              ? "0 4px 18px rgba(26,43,74,0.5)"
-              : "0 4px 18px rgba(52,199,89,0.45)",
-            cursor: "pointer", transition: "all 0.15s",
-          }}>
-            <span style={{ fontSize: 22, lineHeight: 1 }}>
-              {lamieraSchizzoOpen ? '×' : '✏️'}
-            </span>
+          <div style={{position:"fixed",bottom:20,right:14,zIndex:3100,display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+            {/* Menu opzioni — appare sopra il FAB */}
+            {lamieraFabMenu && (<>
+              {/* Overlay chiudi */}
+              <div onClick={()=>setLamieraFabMenu(false)}
+                style={{position:"fixed",inset:0,zIndex:-1}}/>
+              {/* Voci menu */}
+              {[
+                {
+                  icon: lamieraSchizzoOpen?'🔴':'🖊️',
+                  label: lamieraSchizzoOpen?'Chiudi schizzo':'Schizzo libero',
+                  action: ()=>{setLamieraSchizzoOpen(o=>!o);setLamieraFabMenu(false);}
+                },
+                {
+                  icon: lamieraFullscreen?'↙️':'↗️',
+                  label: lamieraFullscreen?'Esci fullscreen':'Fullscreen disegno',
+                  action: ()=>{setLamieraFullscreen(f=>!f);setLamieraFabMenu(false);}
+                },
+                {
+                  icon: '◐',
+                  label: 'Lato: ' + (lamieraLatoBuono==='esterno'?'Esterno':'Interno'),
+                  action: ()=>{setLamieraLatoBuono(l=>l==='esterno'?'interno':'esterno');setLamieraFabMenu(false);}
+                },
+              ].map(({icon,label,action},i)=>(
+                <div key={i} onClick={action}
+                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",
+                    background:"#fff",borderRadius:12,cursor:"pointer",
+                    boxShadow:"0 4px 16px rgba(0,0,0,0.15)",
+                    border:"1px solid #E2E8F0",whiteSpace:"nowrap"}}>
+                  <span style={{fontSize:18,lineHeight:1}}>{icon}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:"#1A2B4A"}}>{label}</span>
+                </div>
+              ))}
+            </>)}
+            {/* FAB principale — quadrato */}
+            <div onClick={()=>setLamieraFabMenu(m=>!m)}
+              style={{width:52,height:52,borderRadius:14,cursor:"pointer",
+                background:lamieraFabMenu?"#1A2B4A":"#1A2B4A",
+                display:"flex",alignItems:"center",justifyContent:"center",
+                boxShadow:"0 4px 18px rgba(26,43,74,0.45)",
+                transition:"all 0.15s"}}>
+              <span style={{fontSize:22,lineHeight:1,color:"#fff",fontWeight:700}}>
+                {lamieraFabMenu?'×':'⋯'}
+              </span>
+            </div>
           </div>
           )}
 
