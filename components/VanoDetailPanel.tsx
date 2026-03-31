@@ -3300,7 +3300,7 @@ export default function VanoDetailPanel() {
         ] as const;
 
         return (
-          <div style={{position:'fixed',inset:0,zIndex:3000,background:'#F8FAFC',display:'flex',flexDirection:'column'}}>
+          <div style={{position:'fixed',inset:0,zIndex:3000,background:'#F8FAFC',display:'flex',flexDirection:'column',paddingBottom:'env(safe-area-inset-bottom,0px)'}}>
             
             {/* Header compatto navy */}
             <div style={{background:'#1A2B4A',padding:'10px 14px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
@@ -3551,7 +3551,7 @@ export default function VanoDetailPanel() {
             )}
 
             {/* Pannello aggiunta — in basso, scrollabile */}
-            <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'8px 12px 16px',flexShrink:0,overflowY:'auto'}}>
+            <div style={{background:'#fff',borderTop:'1px solid #E2E8F0',padding:'8px 12px calc(16px + env(safe-area-inset-bottom, 0px))',flexShrink:0,overflowY:'auto'}}>
 
               {/* Lato infisso + Lunghezza */}
               <div style={{display:'flex',gap:8,marginBottom:10}}>
