@@ -191,6 +191,16 @@ export default function VanoDetailPanel() {
   const [showFotoMisure, setShowFotoMisure] = useState(false);
   const [showSchizzo, setShowSchizzo] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
+  // Safe area iOS: colora html con il colore del modal quando è aperto
+  React.useEffect(() => {
+    const el = document.documentElement;
+    if (showLamieraDisegno) {
+      el.style.backgroundColor = '#1A2B4A';
+    } else {
+      el.style.backgroundColor = '#F2F1EC';
+    }
+    return () => { el.style.backgroundColor = '#F2F1EC'; };
+  }, [showLamieraDisegno]);
   const [showOrdinePanel, setShowOrdinePanel] = useState(false);
   const [lamieraPieghe, setLamieraPieghe] = useState<Array<{dir:'su'|'giu'|'sx'|'dx', mm:number}>>([]);
   const [lamieraPDir, setLamieraPDir] = useState<'sx'|'dx'|'su'|'giu'>('sx');
