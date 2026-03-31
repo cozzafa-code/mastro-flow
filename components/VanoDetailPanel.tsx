@@ -3413,7 +3413,7 @@ export default function VanoDetailPanel() {
                             </text>
                             {seg.angolo && seg.angolo !== 90 && (
                               <text x={n.x.toFixed(1)} y={(n.y+16).toFixed(1)}
-                                textAnchor="middle" fontSize="10" fill="#D08008" fontWeight="700">{seg.angolo}°</text>
+                                textAnchor="middle" fontSize="10" fill="#D08008" fontWeight="700">{seg.angolo<90?'+':'−'}{Math.abs(seg.angolo-90)}°</text>
                             )}
                           </g>
                         );
@@ -3471,13 +3471,14 @@ export default function VanoDetailPanel() {
                           setLamieraSelIdx(i);
                           setLamieraPDir(s.dir);
                           setLamieraPMm(String(s.mm));
-                          setLamieraAngolo(String(s.angolo||90));
+                          setLamieraAngolo(String(Math.abs((s.angolo||90)-90)||''));
+                          setLamieraAngoloPM(((s.angolo||90)<=90)?1:-1);
                           setLamieraAngoloInput((s.angolo||90)!==90);
                         }
                       }} style={{display:'flex',alignItems:'center',gap:3}}>
                         <span>{s.dir==='dx'?'→':s.dir==='sx'?'←':s.dir==='giu'?'↓':'↑'}</span>
                         <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{s.mm}</span>
-                        {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo}°</span>}
+                        {s.angolo && s.angolo!==90 && <span style={{fontSize:9,color:isSel?'#FFD580':'#D08008'}}>{s.angolo<90?'+':'−'}{Math.abs(s.angolo-90)}°</span>}
                       </span>
                       {/* X = elimina */}
                       <span onClick={e=>{e.stopPropagation();setLamieraPieghe(prev=>prev.filter((_,j)=>j!==i));if(isSel)setLamieraSelIdx(null);}}
