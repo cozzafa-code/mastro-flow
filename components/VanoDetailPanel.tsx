@@ -2040,6 +2040,197 @@ export default function VanoDetailPanel() {
                   value={m["imbotte"] as number} stepColor={step.color}
                   textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
                   onUpdate={(val: number) => updateMisura(v.id, "imbotte", val)} />}
+
+              {/* ── LAMIERE SPALLETTE ── identico al sistema lamiere principale */}
+              {(() => {
+                const lamSpList: any[] = (v.lamiereSpallette as any) || [];
+                const addLamieraSp = () => {
+                  const newL = {id: Date.now().toString(), nome: "Lamiera Sp."+(lamSpList.length+1), pieghe:[], latoBuono:"esterno", latoInfisso:"", lunghezza:""};
+                  const updated = [...lamSpList, newL];
+                  updateV("lamiereSpallette", updated);
+                  setLamieraPieghe([]);
+                  setLamieraLatoBuono("esterno");
+                  setLamieraLatoInfisso("");
+                  setLamieraLunghezza("");
+                  setLamieraEditIdx(updated.length - 1);
+                  lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                  // Salva su lamiereSpallette al posto di lamiere
+                  (window as any).__mastroLamieraTarget = 'lamiereSpallette';
+                  setShowLamieraDisegno(true);
+                };
+                const PVFW=300, PVFH=200;
+                return (
+                  <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+                    <div style={{fontSize:10,fontWeight:800,color:"#32ade6",textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:2}}>
+                      Lamiere spallette
+                    </div>
+                    {lamSpList.map((lam: any, li: number) => {
+                      const svilTot = (lam.pieghe||[]).reduce((a:number,s:any)=>a+s.mm,0);
+                      let preNodes:{x:number,y:number}[] = [];
+                      let svgVW=PVFW, svgVH=PVFH;
+                      if((lam.pieghe||[]).length > 0){
+                        let rx=0, ry=0;
+                        const raw:number[][] = [[0,0]];
+                        (lam.pieghe||[]).forEach((s:any)=>{
+                          const ang = s.angolo != null ? s.angolo : 90;
+                          let baseAngle = 0;
+                          if(s.dir==='su')  baseAngle = Math.PI/2;
+                          if(s.dir==='sx')  baseAngle = Math.PI;
+                          if(s.dir==='giu') baseAngle = 3*Math.PI/2;
+                          const devRad = (ang - 90) * Math.PI / 180;
+                          const finalAngle = baseAngle - devRad;
+                          rx += s.mm * Math.cos(finalAngle);
+                          ry -= s.mm * Math.sin(finalAngle);
+                          raw.push([rx,ry]);
+                        });
+                        const xs=raw.map(n=>n[0]), ys=raw.map(n=>n[1]);
+                        const minX=Math.min(...xs), maxX=Math.max(...xs);
+                        const minY=Math.min(...ys), maxY=Math.max(...ys);
+                        const rX=Math.max(maxX-minX,1), rY=Math.max(maxY-minY,1);
+                        const PAD=28;
+                        const sc=Math.min((PVFW-PAD*2)/rX,(PVFH-PAD*2)/rY);
+                        const ox=PAD + ((PVFW-PAD*2) - rX*sc)/2 - minX*sc;
+                        const oy=PAD + ((PVFH-PAD*2) - rY*sc)/2 - minY*sc;
+                        preNodes=raw.map(([x,y])=>({
+                          x:+((ox+x*sc).toFixed(1)),
+                          y:+((oy+y*sc).toFixed(1))
+                        }));
+                      }
+                      const prePts = preNodes.map(n=>`${n.x},${n.y}`).join(' ');
+                      return (
+                        <div key={lam.id} style={{borderRadius:10,background:"#32ade60A",border:"1px solid #32ade625",overflow:"hidden"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 10px",borderBottom:"1px solid #32ade615"}}>
+                            <input value={lam.nome} onChange={e=>{
+                              const upd=[...lamSpList]; upd[li]={...upd[li],nome:e.target.value}; updateV("lamiereSpallette",upd);
+                            }} style={{flex:1,fontSize:12,fontWeight:700,border:"none",background:"transparent",color:"#32ade6",outline:"none"}}/>
+                            <div style={{fontSize:10,color:"#32ade680",fontWeight:600}}>{svilTot>0?svilTot+"mm":""}</div>
+                            <div onClick={e=>{e.stopPropagation();
+                              setLamieraPieghe(lam.pieghe||[]);
+                              setLamieraLatoBuono(lam.latoBuono||"esterno");
+                              setLamieraLatoInfisso(lam.latoInfisso||"");
+                              setLamieraLunghezza(lam.lunghezza||"");
+                              setLamieraEditIdx(li);
+                              lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                              (window as any).__mastroLamieraTarget = 'lamiereSpallette';
+                              setShowLamieraDisegno(true);
+                            }} style={{padding:"5px 10px",borderRadius:6,background:"#32ade6",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                              ✏️ Modifica
+                            </div>
+                            <div onClick={e=>{e.stopPropagation();
+                              updateV("lamiereSpallette",lamSpList.filter((_:any,i:number)=>i!==li));
+                            }} style={{padding:"5px 8px",borderRadius:6,background:"#DC444415",color:"#DC4444",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+                              ✕
+                            </div>
+                          </div>
+                          {preNodes.length > 1 ? (
+                            <svg viewBox={`0 0 ${svgVW} ${svgVH}`} width="100%"
+                              style={{display:"block",background:"#F0F9FF",cursor:"pointer",borderRadius:"0 0 8px 8px"}}
+                              onClick={e=>{e.stopPropagation();
+                                setLamieraPieghe(lam.pieghe||[]);
+                                setLamieraLatoBuono(lam.latoBuono||"esterno");
+                                setLamieraLatoInfisso(lam.latoInfisso||"");
+                                setLamieraLunghezza(lam.lunghezza||"");
+                                setLamieraEditIdx(li);
+                                lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                                (window as any).__mastroLamieraTarget = 'lamiereSpallette';
+                                setShowLamieraDisegno(true);
+                              }}>
+                              {Array.from({length:13}).map((_,gi)=>(
+                                <line key={"gx"+gi} x1={gi*25} y1="0" x2={gi*25} y2={PVFH} stroke="#E0EFFE" strokeWidth="0.4"/>
+                              ))}
+                              {Array.from({length:9}).map((_,gi)=>(
+                                <line key={"gy"+gi} x1="0" y1={gi*25} x2={PVFW} y2={gi*25} stroke="#E0EFFE" strokeWidth="0.4"/>
+                              ))}
+                              <polyline points={prePts} fill="none" stroke="#32ade6" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round"/>
+                              {(() => {
+                                const fz = 7.5;
+                                const lhalf = fz * 0.65;
+                                return (lam.pieghe||[]).map((s:any, si:number) => {
+                                  if(si >= preNodes.length-1) return null;
+                                  const n1=preNodes[si] as {x:number,y:number};
+                                  const n2=preNodes[si+1] as {x:number,y:number};
+                                  const mx=(n1.x+n2.x)/2, my=(n1.y+n2.y)/2;
+                                  const isH=Math.abs(n2.x-n1.x)>=Math.abs(n2.y-n1.y);
+                                  const side = si % 2 === 0 ? -1 : 1;
+                                  const offset = fz * 1.6;
+                                  const lx = isH ? mx : mx + side*offset;
+                                  const ly = isH ? my + side*offset : my;
+                                  const dev = (s.angolo!=null && s.angolo!==90) ? Math.abs(s.angolo-90) : 0;
+                                  const lbl = dev > 0 ? `${s.mm} ${s.angolo<90?'+':'−'}${dev}°` : String(s.mm);
+                                  const tw = lbl.length * fz * 0.62 + 5;
+                                  const th = fz + 4;
+                                  const clx = Math.max(tw/2+1, Math.min(svgVW-tw/2-1, lx));
+                                  const cly = Math.max(th/2+1, Math.min(svgVH-th/2-1, ly));
+                                  return (
+                                    <g key={"q"+si}>
+                                      <rect x={clx-tw/2} y={cly-th/2} width={tw} height={th} rx="2" fill="rgba(3,22,49,0.85)"/>
+                                      <text x={clx} y={cly+lhalf} textAnchor="middle" fontSize={fz} fill="#fff" fontWeight="700">{lbl}</text>
+                                    </g>
+                                  );
+                                });
+                              })()}
+                              {(() => {
+                                const nr = 4;
+                                return preNodes.map((n:{x:number,y:number},i:number)=>(
+                                  <circle key={i} cx={n.x} cy={n.y}
+                                    r={i===0||i===preNodes.length-1?nr:nr*0.55}
+                                    fill={i===0?"#031631":i===preNodes.length-1?"#dc4444":"#fff"}
+                                    stroke="#32ade6" strokeWidth={nr*0.45}/>
+                                ));
+                              })()}
+                              {(() => {
+                                const bfz = 7;
+                                const bw = bfz*4.5, bh = bfz*1.8;
+                                const isEst = lam.latoBuono==='esterno';
+                                return (<>
+                                  <rect x="3" y="3" width={bw} height={bh} rx="2" fill={isEst?"#3B7FE0":"#D08008"}/>
+                                  <text x={3+bw/2} y={3+bh*0.72} textAnchor="middle" fontSize={bfz} fill="#fff" fontWeight="700">
+                                    {isEst?'EST':'INT'}
+                                  </text>
+                                  {lam.latoInfisso && <>
+                                    <rect x={3+bw+3} y="3" width={bfz*6} height={bh} rx="2" fill="#32ade6"/>
+                                    <text x={3+bw+3+bfz*3} y={3+bh*0.72} textAnchor="middle" fontSize={bfz} fill="#fff" fontWeight="700">
+                                      {lam.latoInfisso==='alto'?'^ ALTO':lam.latoInfisso==='basso'?'v BASSO':lam.latoInfisso==='sx'?'< SX':'> DX'}
+                                    </text>
+                                  </>}
+                                  {svilTot>0 && <>
+                                    <rect x={svgVW-bfz*7.5-2} y={svgVH-bh-3} width={bfz*7.5} height={bh} rx="2" fill="rgba(50,173,230,0.12)"/>
+                                    <text x={svgVW-bfz*3.75-2} y={svgVH-3-bh*0.28} textAnchor="middle" fontSize={bfz} fill="#32ade6" fontWeight="800">
+                                      {svilTot}mm
+                                    </text>
+                                  </>}
+                                </>);
+                              })()}
+                            </svg>
+                          ) : (
+                            <div onClick={e=>{e.stopPropagation();
+                              setLamieraPieghe(lam.pieghe||[]);
+                              setLamieraLatoBuono(lam.latoBuono||"esterno");
+                              setLamieraLatoInfisso(lam.latoInfisso||"");
+                              setLamieraLunghezza(lam.lunghezza||"");
+                              setLamieraEditIdx(li);
+                              lamieraZoom.current=1; lamieraPan.current={x:0,y:0};
+                              (window as any).__mastroLamieraTarget = 'lamiereSpallette';
+                              setShowLamieraDisegno(true);
+                            }} style={{padding:"14px",textAlign:"center",fontSize:11,color:"#32ade6",
+                              fontWeight:600,cursor:"pointer",background:"#F0F9FF",borderRadius:"0 0 8px 8px"}}>
+                              ✏️ Tocca per disegnare le pieghe
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <div onClick={addLamieraSp} style={{padding:"10px",borderRadius:10,border:"1.5px dashed #32ade650",
+                      background:"#F0F9FF",textAlign:"center",cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                      <div style={{width:20,height:20,borderRadius:"50%",background:"#32ade6",color:"#fff",
+                        display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900}}>+</div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#32ade6"}}>Aggiungi lamiera spallette</div>
+                    </div>
+                  </div>
+                );
+              })()}
                 </div>
               )}
               {/* Davanzale + Cassonetto */}
@@ -3921,7 +4112,9 @@ export default function VanoDetailPanel() {
                 <div onClick={()=>{
                   // Salva nella lista lamiere
                   // Usa selectedVano?.lamiere ma con fallback robusto
-                  const lamListSave: any[] = (selectedVano?.lamiere as any) || [];
+                  const lamTarget = (window as any).__mastroLamieraTarget || 'lamiere';
+                  (window as any).__mastroLamieraTarget = 'lamiere'; // reset
+                  const lamListSave: any[] = (selectedVano?.[lamTarget] as any) || [];
                   const editData = {
                     pieghe: lamieraPieghe,
                     latoBuono: lamieraLatoBuono,
@@ -3929,20 +4122,16 @@ export default function VanoDetailPanel() {
                     lunghezza: lamieraLunghezza
                   };
                   if (lamieraEditIdx !== null && lamieraEditIdx < lamListSave.length) {
-                    // Aggiorna lamiera esistente (include latoInfisso)
                     const updated = lamListSave.map((l: any, i: number) => i === lamieraEditIdx
                       ? {...l, ...editData}
                       : l);
-                    updateV('lamiere', updated);
+                    updateV(lamTarget, updated);
                   } else if (lamieraEditIdx !== null) {
-                    // EditIdx esiste ma lista non ancora aggiornata (race condition)
-                    // Ricostruisce la lista con la nuova lamiera all'indice corretto
-                    const newLam = {id: Date.now().toString(), nome: 'Lamiera '+(lamListSave.length+1), ...editData};
-                    updateV('lamiere', [...lamListSave, newLam]);
+                    const newLam = {id: Date.now().toString(), nome: (lamTarget==='lamiereSpallette'?'Lamiera Sp.':'Lamiera ')+(lamListSave.length+1), ...editData};
+                    updateV(lamTarget, [...lamListSave, newLam]);
                   } else {
-                    // Fallback: aggiunge nuova
-                    const newLam = {id: Date.now().toString(), nome: 'Lamiera '+(lamListSave.length+1), ...editData};
-                    updateV('lamiere', [...lamListSave, newLam]);
+                    const newLam = {id: Date.now().toString(), nome: (lamTarget==='lamiereSpallette'?'Lamiera Sp.':'Lamiera ')+(lamListSave.length+1), ...editData};
+                    updateV(lamTarget, [...lamListSave, newLam]);
                   }
                   setLamieraEditIdx(null);
                   setShowLamieraDisegno(false);
