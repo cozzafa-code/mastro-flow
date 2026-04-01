@@ -1,15 +1,33 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-  typescript: true,
+// Lazy init — evita crash SSR/Edge durante il build
+let _stripe: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY non configurata');
+    }
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+      typescript: true,
+    });
+  }
+  return _stripe;
+}
+
+// Alias comodo per le route
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop) {
+    return (getStripe() as any)[prop];
+  },
 });
 
 export const STRIPE_PLANS = {
   base: {
     name: 'BASE',
     price: 9,
-    priceId: process.env.STRIPE_PRICE_BASE!,
+    priceId: process.env.STRIPE_PRICE_BASE ?? '',
     description: '1 utente · 20 commesse · Funzioni core',
     features: ['ERP base', '20 commesse', '1 operatore', 'PDF preventivi'],
     color: '#6B7280',
@@ -17,7 +35,7 @@ export const STRIPE_PLANS = {
   start: {
     name: 'START',
     price: 29,
-    priceId: process.env.STRIPE_PRICE_START!,
+    priceId: process.env.STRIPE_PRICE_START ?? '',
     description: '3 utenti · Commesse illimitate',
     features: ['ERP completo', 'Commesse illimitate', '3 operatori', 'MESSAGGI', 'MONTAGGI'],
     color: '#3B7FE0',
@@ -26,7 +44,7 @@ export const STRIPE_PLANS = {
   pro: {
     name: 'PRO',
     price: 59,
-    priceId: process.env.STRIPE_PRICE_PRO!,
+    priceId: process.env.STRIPE_PRICE_PRO ?? '',
     description: '10 utenti · Add-on settore incluso',
     features: ['Tutto START', '10 operatori', 'RETE agenti', 'Add-on settore', 'Assistente AI'],
     color: '#D08008',
@@ -34,7 +52,7 @@ export const STRIPE_PLANS = {
   titan: {
     name: 'TITAN',
     price: 89,
-    priceId: process.env.STRIPE_PRICE_TITAN!,
+    priceId: process.env.STRIPE_PRICE_TITAN ?? '',
     description: 'Utenti illimitati · CNC incluso',
     features: ['Tutto PRO', 'Operatori illimitati', 'CNC', 'ADMIN', 'API access', 'Priorità supporto'],
     color: '#1A1A1C',
@@ -48,17 +66,15 @@ export async function createOrRetrieveCustomer(
   email: string,
   nomeAzienda: string
 ): Promise<string> {
-  // Cerca customer esistente tramite metadata
-  const existing = await stripe.customers.search({
+  const s = getStripe();
+  const existing = await s.customers.search({
     query: `metadata['azienda_id']:'${aziendaId}'`,
     limit: 1,
   });
 
-  if (existing.data.length > 0) {
-    return existing.data[0].id;
-  }
+  if (existing.data.length > 0) return existing.data[0].id;
 
-  const customer = await stripe.customers.create({
+  const customer = await s.customers.create({
     email,
     name: nomeAzienda,
     metadata: { azienda_id: aziendaId },
@@ -73,20 +89,3 @@ export function getPlanFromPriceId(priceId: string): PlanKey | null {
   }
   return null;
 }
-
-// SQL da eseguire in Supabase:
-// CREATE TABLE subscriptions (
-//   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-//   azienda_id uuid REFERENCES aziende(id) ON DELETE CASCADE,
-//   stripe_customer_id text UNIQUE,
-//   stripe_subscription_id text UNIQUE,
-//   plan text CHECK (plan IN ('base','start','pro','titan')),
-//   status text CHECK (status IN ('active','trialing','past_due','canceled','incomplete')),
-//   trial_ends_at timestamptz,
-//   current_period_end timestamptz,
-//   created_at timestamptz DEFAULT now(),
-//   updated_at timestamptz DEFAULT now()
-// );
-// ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "tenant_isolation" ON subscriptions
-//   USING (azienda_id = (SELECT azienda_id FROM operatori WHERE auth_id = auth.uid()));
