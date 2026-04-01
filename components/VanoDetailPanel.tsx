@@ -9,6 +9,7 @@ import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
 import SkizzoTecnico from "./SkizzoTecnico";
 import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
 import CassonettoEditor from "./CassonettoEditor";
+import BoxEditor from "./BoxEditor";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
@@ -193,6 +194,7 @@ export default function VanoDetailPanel() {
   const [showSchizzo, setShowSchizzo] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
   const [showCassonettoEditor, setShowCassonettoEditor] = useState(false);
+  const [showBoxEditor, setShowBoxEditor] = useState(false);
   const [lamieraSchizzoOpen, setLamieraSchizzoOpen] = useState(false);
   const [lamieraFabMenu, setLamieraFabMenu] = useState(false);
   const [lamieraTabLato, setLamieraTabLato] = useState<'right'|'left'>('right');
@@ -2311,7 +2313,12 @@ export default function VanoDetailPanel() {
                             <div onClick={()=>setShowCassonettoEditor(true)}
                               style={{padding:'4px 10px',borderRadius:7,background:'#1A2B4A',
                                 color:'#fff',fontSize:10,fontWeight:700,cursor:'pointer'}}>
-                              ⛶ Editor
+                              ⛶ Sezione
+                            </div>
+                            <div onClick={()=>setShowBoxEditor(true)}
+                              style={{padding:'4px 10px',borderRadius:7,background:'#D08008',
+                                color:'#fff',fontSize:10,fontWeight:700,cursor:'pointer'}}>
+                              ⬡ 3D
                             </div>
                           </div>
                         </div>
@@ -4437,6 +4444,11 @@ export default function VanoDetailPanel() {
           </div>
         );
       })()}
+
+      {/* ── BOX EDITOR 3D ── */}
+      {showBoxEditor && (
+        <BoxEditor onClose={() => setShowBoxEditor(false)} />
+      )}
 
       {/* ── CASSONETTO EDITOR ── */}
       {showCassonettoEditor && (() => {
