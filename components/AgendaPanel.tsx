@@ -104,11 +104,11 @@ export default function AgendaPanel() {
             {ev._isConsegna && <div style={{ fontSize: 10, color: "#4A7070", marginTop: 2 }}>Materiale per {ev.cm}</div>}
             {ev._isScadenza && <div style={{ fontSize: 10, color: "#4A7070", marginTop: 2 }}>{ev._tipo === "incasso" ? "Da incassare" : "Da pagare"}: <b style={{ color: ev.color }}>€{(ev._importo || 0).toLocaleString("it-IT")}</b></div>}
             <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-              {ev.cm && <span onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge("rgba(40,160,160,0.1)", "#28A0A0"), cursor: "pointer" }}>{ev.cm}</span>}
+              {ev.cm && <span onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...{ padding:"2px 8px", borderRadius:20, background:"rgba(40, color:160,160,0.1, fontSize:9, fontWeight:900 }", "#28A0A0"), cursor: "pointer" }}>{ev.cm}</span>}
               {ev.persona && !ev._isMontaggio && !ev._isConsegna && <span style={{ padding:"2px 8px", borderRadius:20, background:"rgba(124,95,191,0.1)", color:"#7C5FBF", fontSize:9, fontWeight:900 }}>{ev.persona}</span>}
-              {ev._isTask && <span style={S.badge(ev.priority === "alta" ? "#FF3B3018" : ev.priority === "media" ? "#FF950018" : "#8E8E9318", ev.priority === "alta" ? "#FF3B30" : ev.priority === "media" ? "#FF9500" : "#8E8E93")}>task · {ev.priority}</span>}
-              {!ev._isTask && ev.reminder && <span style={S.badge(ev.reminderSent ? "rgba(26,158,115,0.1)" : "#FF950015", ev.reminderSent ? "#1A9E73" : "#FF9500")}>{ev.reminderSent ? "Reminder inviato" : `${ev.reminder}`}</span>}
-              {!ev._isTask && <span style={S.badge(tipoEvColor(ev.tipo) + "18", tipoEvColor(ev.tipo))}>{(TIPI_EVENTO.find(t=>t.id===ev.tipo)||{l:ev.tipo}).l}</span>}
+              {ev._isTask && <span style={{ padding:"2px 8px", borderRadius:20, background:ev.priority === "alta" ? "#FF3B3018" : ev.priority === "media" ? "#FF950018" : "#8E8E9318", color:ev.priority === "alta" ? "#FF3B30" : ev.priority === "media" ? "#FF9500" : "#8E8E93", fontSize:9, fontWeight:900 }}>task · {ev.priority}</span>}
+              {!ev._isTask && ev.reminder && <span style={{ padding:"2px 8px", borderRadius:20, background:ev.reminderSent ? "rgba(26, color:158,115,0.1, fontSize:9, fontWeight:900 }" : "#FF950015", ev.reminderSent ? "#1A9E73" : "#FF9500")}>{ev.reminderSent ? "Reminder inviato" : `${ev.reminder}`}</span>}
+              {!ev._isTask && <span style={{ padding:"2px 8px", borderRadius:20, background:tipoEvColor(ev.tipo)+"18", color:tipoEvColor(ev.tipo), fontSize:9, fontWeight:900 }}>{(TIPI_EVENTO.find(t=>t.id===ev.tipo)||{l:ev.tipo}).l}</span>}
             </div>
           </div>
           <div style={{ alignSelf: "center", transition: "transform 0.2s", transform: selectedEvent?.id === ev.id ? "rotate(90deg)" : "rotate(0deg)" }}>
@@ -166,8 +166,8 @@ Fabio Cozza
 Walter Cozza Serramenti`;
                 setMailBody(tpl);
                 setShowMailModal({ ev, cm: cmObj });
-              }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(40,160,160,0.1)", border: "1px solid rgba(40,160,160,0.3)", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#28A0A0" }}><I d={ICO.mail} /> Mail</div>
-              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(220,68,68,0.1)", border: "1px solid rgba(220,68,68,0.3)", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#DC4444" }}>‘</div>
+              }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(40,160,160,0.1)", border: `1px solid #28A0A030`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#28A0A0" }}><I d={ICO.mail} /> Mail</div>
+              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(220,68,68,0.1)", border: `1px solid #DC444430`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#DC4444" }}>‘</div>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
               <div onClick={(e) => { e.stopPropagation(); const cmObj = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cmObj) { setSelectedCM(cmObj); } else { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: ev.text }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); } setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 10, background: "linear-gradient(135deg, #0D7C6B15, #0D7C6B08)", border: "1px solid #0D7C6B25", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#0D7C6B" }}><I d={ICO.folder} s={11} c="#0D7C6B" /> Commessa</div>
@@ -328,11 +328,11 @@ Walter Cozza Serramenti`;
               )}
               {/* GRIGLIA MENSILE A RIQUADRI */}
               <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-                style={{ background: "white", borderRadius: T.r, border: `1px solid ${"#C8E4E4"}`, overflow: "hidden", marginBottom: 12 }}>
+                style={{ background: "white", borderRadius: 12, border: `1px solid #C8E4E4`, overflow: "hidden", marginBottom: 12 }}>
                 {/* Intestazione giorni */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: `1px solid ${"#C8E4E4"}` }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: `1px solid #C8E4E4` }}>
                   {["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].map((d, i) => (
-                    <div key={i} style={{ fontSize: 10, fontWeight: 700, color: "#4A7070", padding: "7px 4px", textAlign: "center", borderRight: i < 6 ? `1px solid ${"#C8E4E4"}` : "none" }}>{d}</div>
+                    <div key={i} style={{ fontSize: 10, fontWeight: 700, color: "#4A7070", padding: "7px 4px", textAlign: "center", borderRight: i < 6 ? `1px solid #C8E4E4` : "none" }}>{d}</div>
                   ))}
                 </div>
                 {/* Celle mese */}
@@ -351,11 +351,11 @@ Walter Cozza Serramenti`;
                         onDoubleClick={() => { setSelDate(new Date(d)); setNewEvent(prev => ({...prev, date: dateStr(d)})); setShowNewEvent(true); }}
                         style={{
                         minHeight: 72, padding: "5px 6px",
-                        borderRight: col < 6 ? `1px solid ${"#C8E4E4"}` : "none",
-                        borderBottom: `1px solid ${"#C8E4E4"}`,
+                        borderRight: col < 6 ? `1px solid #C8E4E4` : "none",
+                        borderBottom: `1px solid #C8E4E4`,
                         background: sel ? "#28A0A0" + "18" : isExp ? "rgba(40,160,160,0.1)" : isWeekend && inMonth ? "#EEF8F8" : "white",
                         cursor: "pointer", position: "relative",
-                        outline: sel ? `2px solid ${"#28A0A0"}` : isExp ? `1.5px solid ${"#28A0A0"}50` : "none",
+                        outline: sel ? `2px solid #28A0A0` : isExp ? `1.5px solid #28A0A050` : "none",
                         outlineOffset: -1,
                       }}>
                         {/* Numero giorno */}
@@ -399,7 +399,7 @@ Walter Cozza Serramenti`;
                     const labelData = isEvToday ? "Oggi" : isEvTomorrow ? "Domani" : evDate.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
                     return (
                       <div key={ev.id} onClick={() => { setSelDate(evDate); setSelectedEvent(ev); }}
-                        style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < prossimiEventi.length-1 ? `1px solid ${"#C8E4E4"}` : "none", cursor: "pointer", alignItems: "center" }}>
+                        style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < prossimiEventi.length-1 ? `1px solid #C8E4E4` : "none", cursor: "pointer", alignItems: "center" }}>
                         <div style={{ width: 3, alignSelf: "stretch", borderRadius: 2, background: ev.color || tipoEvColor(ev.tipo), flexShrink: 0 }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 600 }}>{ev.text}</div>
@@ -465,7 +465,7 @@ Walter Cozza Serramenti`;
                 {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
               </div>
               {dayEvents.length === 0 ? (
-                <div style={{ padding: "16px", textAlign: "center", color: "#4A7070", fontSize: 12, background: "white", borderRadius: T.r, border: `1px dashed ${"#C8E4E4"}` }}>Nessun evento. Tocca + per aggiungere.</div>
+                <div style={{ padding: "16px", textAlign: "center", color: "#4A7070", fontSize: 12, background: "white", borderRadius: 12, border: `1px dashed #C8E4E4` }}>Nessun evento. Tocca + per aggiungere.</div>
               ) : dayEvents.map(renderEventCard)}
             </>
           )}
@@ -493,7 +493,7 @@ Walter Cozza Serramenti`;
                 {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
               </div>
               {dayEvents.length === 0 ? (
-                <div style={{ padding: "16px", textAlign: "center", color: "#4A7070", fontSize: 12, background: "white", borderRadius: T.r, border: `1px dashed ${"#C8E4E4"}` }}>Nessun evento</div>
+                <div style={{ padding: "16px", textAlign: "center", color: "#4A7070", fontSize: 12, background: "white", borderRadius: 12, border: `1px dashed #C8E4E4` }}>Nessun evento</div>
               ) : dayEvents.map(renderEventCard)}
             </>
           )}
@@ -502,13 +502,13 @@ Walter Cozza Serramenti`;
           {agendaView === "giorno" && (
             <>
               {/* Timeline ore — scrollabile con dito */}
-              <div style={{ background: "white", borderRadius: T.r, border: `1px solid ${"#C8E4E4"}`, overflowY: "auto", overflowX: "hidden", marginBottom: 12, maxHeight: "60vh" } as any}>
+              <div style={{ background: "white", borderRadius: 12, border: `1px solid #C8E4E4`, overflowY: "auto", overflowX: "hidden", marginBottom: 12, maxHeight: "60vh" } as any}>
                 {Array.from({ length: 15 }, (_, i) => i + 6).map(h => {
                   const hour = `${String(h).padStart(2, "0")}:00`;
                   const hourEvents = dayEvents.filter(e => e.time && e.time.startsWith(String(h).padStart(2, "0")));
                   return (
-                    <div key={h} style={{ display: "flex", borderBottom: `1px solid ${"#C8E4E4"}`, minHeight: 48 }}>
-                      <div style={{ width: 48, padding: "4px 6px", fontSize: 10, color: "#4A7070", fontFamily: FM, fontWeight: 600, borderRight: `1px solid ${"#C8E4E4"}`, flexShrink: 0 }}>{hour}</div>
+                    <div key={h} style={{ display: "flex", borderBottom: `1px solid #C8E4E4`, minHeight: 48 }}>
+                      <div style={{ width: 48, padding: "4px 6px", fontSize: 10, color: "#4A7070", fontFamily: FM, fontWeight: 600, borderRight: `1px solid #C8E4E4`, flexShrink: 0 }}>{hour}</div>
                       <div style={{ flex: 1, padding: "4px 8px" }}>
                         {hourEvents.map(ev => (
                           <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "6px 10px", marginBottom: 2, borderRadius: 6, background: selectedEvent?.id === ev.id ? (ev.color || "#28A0A0") + "30" : (ev.color || "#28A0A0") + "18", borderLeft: `3px solid ${ev.color || "#28A0A0"}`, cursor: "pointer", transition: "all 0.15s" }}>
