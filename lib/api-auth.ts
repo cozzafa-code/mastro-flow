@@ -22,15 +22,15 @@ export async function requireAuth(req: NextRequest): Promise<AuthResult> {
 
   if (error || !user) return { ok: false, userId: '' };
 
-  const { data: operatore } = await supabase
-    .from('operatori')
+  const { data: profile } = await supabase
+    .from('profiles')
     .select('azienda_id')
-    .eq('auth_id', user.id)
+    .eq('id', user.id)
     .single();
 
   return {
     ok: true,
     userId: user.id,
-    aziendaId: operatore?.azienda_id,
+    aziendaId: profile?.azienda_id,
   };
 }
