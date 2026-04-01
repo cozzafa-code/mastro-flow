@@ -580,7 +580,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     if (tool==="oggetto" && drawing && dragStart && mousePos) {
       const x=Math.min(dragStart.x,mousePos.x), y=Math.min(dragStart.y,mousePos.y);
       const w=Math.abs(mousePos.x-dragStart.x), h=Math.abs(mousePos.y-dragStart.y);
-      if (w>4&&h>4) setShapes(s=>[...s,{id:Date.now(),type:"oggetto",x,y,w,h}]);
+      if (w>4&&h>4) setShapes(s=>[...s,{id:Date.now(),type:"oggetto",x,y,w,h,spessore}]);
       setDrawing(false); setDragStart(null);
     }
   }
@@ -660,30 +660,46 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   // ── RENDER OGGETTO ────────────────────────────────────────
   function renderOggetto(s: any) {
     const wCm=pxToCm(s.w), hCm=pxToCm(s.h);
+    // Spessore pareti in px (default 10cm = GRID px)
+    const sp = s.spessore ? s.spessore * scale : GRID;
+    const sp2 = sp * 0.5;
+    // Dimensioni interne
+    const ix=s.x+sp, iy=s.y+sp, iw=Math.max(s.w-sp*2,2), ih=Math.max(s.h-sp*2,2);
+    const wiCm=pxToCm(iw), hiCm=pxToCm(ih);
     return <g key={s.id}>
-      <rect x={s.x} y={s.y} width={s.w} height={s.h}
-        fill="rgba(59,127,224,0.1)" stroke="#3B7FE0" strokeWidth="2" strokeDasharray="8,4"/>
-      {/* Quote larghezza */}
-      <line x1={s.x} y1={s.y-10} x2={s.x+s.w} y2={s.y-10} stroke="#3B7FE0" strokeWidth="1"/>
-      <line x1={s.x} y1={s.y-6} x2={s.x} y2={s.y-14} stroke="#3B7FE0" strokeWidth="1"/>
-      <line x1={s.x+s.w} y1={s.y-6} x2={s.x+s.w} y2={s.y-14} stroke="#3B7FE0" strokeWidth="1"/>
-      <rect x={s.x+s.w/2-20} y={s.y-20} width={40} height={13} rx="3" fill="#3B7FE0"/>
-      <text x={s.x+s.w/2} y={s.y-10} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">
-        {lenLabel(s.w)}
-      </text>
-      {/* Quote altezza */}
-      <line x1={s.x+s.w+10} y1={s.y} x2={s.x+s.w+10} y2={s.y+s.h} stroke="#3B7FE0" strokeWidth="1"/>
-      <line x1={s.x+s.w+6} y1={s.y} x2={s.x+s.w+14} y2={s.y} stroke="#3B7FE0" strokeWidth="1"/>
-      <line x1={s.x+s.w+6} y1={s.y+s.h} x2={s.x+s.w+14} y2={s.y+s.h} stroke="#3B7FE0" strokeWidth="1"/>
-      <text x={s.x+s.w+22} y={s.y+s.h/2+3} textAnchor="middle" fontSize="9" fill="#3B7FE0" fontWeight="800"
-        transform={`rotate(90,${s.x+s.w+22},${s.y+s.h/2+3})`}>
-        {lenLabel(s.h)}
-      </text>
-      {/* Label centrale */}
-      <text x={s.x+s.w/2} y={s.y+s.h/2+4} textAnchor="middle" fontSize="10"
-        fill="#3B7FE0" fontWeight="700">
-        {wCm}×{hCm}cm
-      </text>
+      {/* Pareti (4 rettangoli) */}
+      {/* Top */}
+      <rect x={s.x} y={s.y} width={s.w} height={sp} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
+      {/* Bottom */}
+      <rect x={s.x} y={s.y+s.h-sp} width={s.w} height={sp} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
+      {/* Left */}
+      <rect x={s.x} y={s.y+sp} width={sp} height={s.h-sp*2} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
+      {/* Right */}
+      <rect x={s.x+s.w-sp} y={s.y+sp} width={sp} height={s.h-sp*2} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
+      {/* Interno vuoto */}
+      <rect x={ix} y={iy} width={iw} height={ih} fill="rgba(240,248,255,0.6)" stroke="#3B7FE0" strokeWidth="0.8" strokeDasharray="5,3"/>
+      {/* Diagonali interno */}
+      <line x1={ix} y1={iy} x2={ix+iw} y2={iy+ih} stroke="rgba(59,127,224,0.2)" strokeWidth="0.5"/>
+      <line x1={ix+iw} y1={iy} x2={ix} y2={iy+ih} stroke="rgba(59,127,224,0.2)" strokeWidth="0.5"/>
+      {/* Quote esterne larghezza */}
+      <line x1={s.x} y1={s.y-12} x2={s.x+s.w} y2={s.y-12} stroke="#1A2B4A" strokeWidth="1"/>
+      <line x1={s.x} y1={s.y-8} x2={s.x} y2={s.y-16} stroke="#1A2B4A" strokeWidth="1"/>
+      <line x1={s.x+s.w} y1={s.y-8} x2={s.x+s.w} y2={s.y-16} stroke="#1A2B4A" strokeWidth="1"/>
+      <rect x={s.x+s.w/2-22} y={s.y-24} width={44} height={14} rx="3" fill="#1A2B4A"/>
+      <text x={s.x+s.w/2} y={s.y-13} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">{lenLabel(s.w)}</text>
+      {/* Quote esterne altezza */}
+      <line x1={s.x+s.w+12} y1={s.y} x2={s.x+s.w+12} y2={s.y+s.h} stroke="#1A2B4A" strokeWidth="1"/>
+      <line x1={s.x+s.w+8} y1={s.y} x2={s.x+s.w+16} y2={s.y} stroke="#1A2B4A" strokeWidth="1"/>
+      <line x1={s.x+s.w+8} y1={s.y+s.h} x2={s.x+s.w+16} y2={s.y+s.h} stroke="#1A2B4A" strokeWidth="1"/>
+      <text x={s.x+s.w+24} y={s.y+s.h/2+3} textAnchor="middle" fontSize="9" fill="#1A2B4A" fontWeight="800"
+        transform={`rotate(90,${s.x+s.w+24},${s.y+s.h/2+3})`}>{lenLabel(s.h)}</text>
+      {/* Dimensioni interne */}
+      {iw>20&&ih>20&&<>
+        <text x={ix+iw/2} y={iy+ih/2-3} textAnchor="middle" fontSize="9" fill="#3B7FE0" fontWeight="700">
+          {wiCm}×{hiCm}cm
+        </text>
+        <text x={ix+iw/2} y={iy+ih/2+9} textAnchor="middle" fontSize="7" fill="#94A3B8">int.</text>
+      </>}
     </g>;
   }
 
