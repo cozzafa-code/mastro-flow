@@ -550,68 +550,66 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     return {x:p1.x+d1.x*t, y:p1.y+d1.y*t};
   }
 
-  // Genera poligono segmento con miter join agli angoli
-  // joinAtA/joinAtB: "miter" | "wins" (si estende) | "loses" (taglio dritto)
+  // Genera i 4 punti del poligono di un segmento
+  // join="miter" | "wins" (rimane intatto, si estende) | "loses" (si accorcia al bordo del vincitore)
   function segPolygon(a:any, b:any, sp:number,
     prevB:any=null, nextA:any=null,
     joinAtA="miter", joinAtB="miter") {
     const sp2 = sp*scale*0.5;
     const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
     const ux=dx/len, uy=dy/len;
-    const nx=-uy, ny=ux;
+    const nx=-uy, ny=ux; // normale (sinistra)
 
-    // Punti base (taglio dritto)
+    // Base: taglio dritto
     let aL={x:a.x+nx*sp2, y:a.y+ny*sp2};
     let aR={x:a.x-nx*sp2, y:a.y-ny*sp2};
     let bL={x:b.x+nx*sp2, y:b.y+ny*sp2};
     let bR={x:b.x-nx*sp2, y:b.y-ny*sp2};
 
-    // Lato A (connessione col segmento precedente)
+    // LATO A
     if (prevB) {
       const pdx=a.x-prevB.x, pdy=a.y-prevB.y, pl=Math.hypot(pdx,pdy)||1;
       const pux=pdx/pl, puy=pdy/pl;
       const pnx=-puy, pny=pux;
 
       if (joinAtA==="miter") {
-        // Intersezione geometrica delle due pareti
-        const iL=lineIntersect(
-          {x:prevB.x+pnx*sp2,y:prevB.y+pny*sp2},{x:pux,y:puy},
-          {x:a.x+nx*sp2,y:a.y+ny*sp2},{x:ux,y:uy}
-        );
+        // Miter: intersezione geometrica delle due pareti
+        const iL=lineIntersect({x:prevB.x+pnx*sp2,y:prevB.y+pny*sp2},{x:pux,y:puy},{x:a.x+nx*sp2,y:a.y+ny*sp2},{x:ux,y:uy});
         if(iL&&isFinite(iL.x)) aL=iL;
-        const iR=lineIntersect(
-          {x:prevB.x-pnx*sp2,y:prevB.y-pny*sp2},{x:pux,y:puy},
-          {x:a.x-nx*sp2,y:a.y-ny*sp2},{x:ux,y:uy}
-        );
+        const iR=lineIntersect({x:prevB.x-pnx*sp2,y:prevB.y-pny*sp2},{x:pux,y:puy},{x:a.x-nx*sp2,y:a.y-ny*sp2},{x:ux,y:uy});
         if(iR&&isFinite(iR.x)) aR=iR;
       } else if (joinAtA==="wins") {
-        // Vince: si estende di sp (spessore intero) coprendo completamente il perdente
-        aL={x:a.x+nx*sp2-ux*sp2*2, y:a.y+ny*sp2-uy*sp2*2};
-        aR={x:a.x-nx*sp2-ux*sp2*2, y:a.y-ny*sp2-uy*sp2*2};
+        // Vince: si estende di sp2 nella direzione opposta al segmento prev
+        // cioè nella direzione -pux,-puy di sp2
+        aL={x:a.x+nx*sp2-pux*sp2, y:a.y+ny*sp2-puy*sp2};
+        aR={x:a.x-nx*sp2-pux*sp2, y:a.y-ny*sp2-puy*sp2};
+      } else if (joinAtA==="loses") {
+        // Perde: si accorcia di sp2 nella direzione del segmento corrente
+        // Il suo bordo A si sposta avanti di sp2
+        aL={x:a.x+nx*sp2+ux*sp2, y:a.y+ny*sp2+uy*sp2};
+        aR={x:a.x-nx*sp2+ux*sp2, y:a.y-ny*sp2+uy*sp2};
       }
-      // loses: rimane taglio dritto (già impostato)
     }
 
-    // Lato B (connessione col segmento successivo)
+    // LATO B
     if (nextA) {
       const ndx=nextA.x-b.x, ndy=nextA.y-b.y, nl=Math.hypot(ndx,ndy)||1;
       const nux=ndx/nl, nuy=ndy/nl;
       const nnx=-nuy, nny=nux;
 
       if (joinAtB==="miter") {
-        const iL=lineIntersect(
-          {x:b.x+nx*sp2,y:b.y+ny*sp2},{x:ux,y:uy},
-          {x:b.x+nnx*sp2,y:b.y+nny*sp2},{x:nux,y:nuy}
-        );
+        const iL=lineIntersect({x:b.x+nx*sp2,y:b.y+ny*sp2},{x:ux,y:uy},{x:b.x+nnx*sp2,y:b.y+nny*sp2},{x:nux,y:nuy});
         if(iL&&isFinite(iL.x)) bL=iL;
-        const iR=lineIntersect(
-          {x:b.x-nx*sp2,y:b.y-ny*sp2},{x:ux,y:uy},
-          {x:b.x-nnx*sp2,y:b.y-nny*sp2},{x:nux,y:nuy}
-        );
+        const iR=lineIntersect({x:b.x-nx*sp2,y:b.y-ny*sp2},{x:ux,y:uy},{x:b.x-nnx*sp2,y:b.y-nny*sp2},{x:nux,y:nuy});
         if(iR&&isFinite(iR.x)) bR=iR;
       } else if (joinAtB==="wins") {
-        bL={x:b.x+nx*sp2+ux*sp2*2, y:b.y+ny*sp2+uy*sp2*2};
-        bR={x:b.x-nx*sp2+ux*sp2*2, y:b.y-ny*sp2+uy*sp2*2};
+        // Vince: si estende di sp2 nella direzione del segmento corrente
+        bL={x:b.x+nx*sp2+ux*sp2, y:b.y+ny*sp2+uy*sp2};
+        bR={x:b.x-nx*sp2+ux*sp2, y:b.y-ny*sp2+uy*sp2};
+      } else if (joinAtB==="loses") {
+        // Perde: si accorcia di sp2 — il bordo B arretra
+        bL={x:b.x+nx*sp2-ux*sp2, y:b.y+ny*sp2-uy*sp2};
+        bR={x:b.x-nx*sp2-ux*sp2, y:b.y-ny*sp2-uy*sp2};
       }
     }
 
@@ -622,24 +620,20 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     if (e.button===1||(e.touches?.length>=2)) {
       isPanRef.current=true;
       const ct=e.touches
-        ?{clientX:(e.touches[0].clientX+e.touches[1].clientX)/2,clientY:(e.touches[0].clientY+e.touches[1].clientY)/2}
-        :e;
+        ?{clientX:(e.touches[0].clientX+e.touches[1].clientX)/2,clientY:(e.touches[0].clientY+e.touches[1].clientY)/2}:e;
       lastPanPt.current={x:ct.clientX,y:ct.clientY};
       if(e.touches?.length===2)
         lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
       return;
     }
-    const svgPt2 = toSvg(e);
-    const pt = snapPt(svgPt2);
+    const raw = toSvg(e);
+    const pt = snapPt(raw);
 
     if (tool==="select") {
-      const join = findJoin(svgPt2);
+      const join = findJoin(raw);
       if (join) {
         const r = svgRef.current!.getBoundingClientRect();
-        setJoinMenu({...join,
-          screenX:(join.jPt.x+pan.x)*zoom,
-          screenY:(join.jPt.y+pan.y)*zoom,
-        });
+        setJoinMenu({...join, screenX:(join.jPt.x+pan.x)*zoom, screenY:(join.jPt.y+pan.y)*zoom});
       } else setJoinMenu(null);
       return;
     }
@@ -705,12 +699,20 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     return null;
   }
 
+  // A vince → A wins al suo endpoint, B loses al suo endpoint
+  // B vince → B wins al suo endpoint, A loses al suo endpoint
   function applyJoin(winner: "A"|"B") {
     if(!joinMenu) return;
     const {segA,segB,endA,endB}=joinMenu;
     setShapes(s=>s.map(sh=>{
-      if(sh.id===segA.id) return {...sh,[endA==="a"?"joinA":"joinB"]:winner==="A"?"wins":"loses"};
-      if(sh.id===segB.id) return {...sh,[endB==="a"?"joinA":"joinB"]:winner==="B"?"wins":"loses"};
+      if(sh.id===segA.id) {
+        const k=endA==="a"?"joinA":"joinB";
+        return {...sh,[k]:winner==="A"?"wins":"loses"};
+      }
+      if(sh.id===segB.id) {
+        const k=endB==="a"?"joinA":"joinB";
+        return {...sh,[k]:winner==="B"?"wins":"loses"};
+      }
       return sh;
     }));
     setJoinMenu(null);
@@ -758,11 +760,11 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const joinPoints=React.useMemo(()=>{
     const pts:any[]=[];
     for(let i=0;i<shapes.length;i++)
-      for(let j=i+1;j<shapes.length;j++) {
+      for(let j=i+1;j<shapes.length;j++){
         const si=shapes[i],sj=shapes[j];
         for(const pi of [si.a,si.b])
           for(const pj of [sj.a,sj.b])
-            if(Math.hypot(pi.x-pj.x,pi.y-pj.y)<2) pts.push({x:pi.x,y:pi.y});
+            if(Math.hypot(pi.x-pj.x,pi.y-pj.y)<2) pts.push({x:pi.x,y:pi.y,si,sj});
       }
     return pts;
   },[shapes]);
@@ -801,7 +803,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 12px",
         background:"#F8FAFC",borderBottom:"1px solid rgba(197,198,206,0.2)",flexShrink:0}}>
         <span style={{fontSize:10,color:"#64748B",fontWeight:500}}>
-          {tool==="select"?"Tap punto arancione → scegli lato vincente"
+          {tool==="select"?"Tap punto arancione → scegli quale lato vince"
            :!curPt?`Clic punto iniziale ${tool}`
            :"Clic punto finale · continua · Doppio clic per fermare"}
         </span>
@@ -849,32 +851,39 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         {joinMenu&&(
           <div style={{
             position:"absolute",
-            left:Math.min(joinMenu.screenX-70, 200),
-            top:Math.max(joinMenu.screenY-100, 10),
+            left:Math.min(Math.max(joinMenu.screenX-75,8),240),
+            top:Math.max(joinMenu.screenY-110,8),
             background:"#fff",borderRadius:12,padding:"12px",
-            boxShadow:"0 4px 20px rgba(0,0,0,0.18)",
+            boxShadow:"0 4px 24px rgba(0,0,0,0.18)",
             border:"1px solid #E2E8F0",zIndex:100,width:160,
           }}>
             <div style={{fontSize:11,fontWeight:800,color:"#1A2B4A",marginBottom:10,textAlign:"center"}}>
-              Chi vince l'angolo?
+              Chi passa sopra?
             </div>
             <div style={{display:"flex",gap:8,marginBottom:8}}>
               <div onClick={()=>applyJoin("A")}
                 style={{flex:1,padding:"10px 4px",borderRadius:8,cursor:"pointer",textAlign:"center",
                   background:"rgba(26,43,74,0.08)",border:"2px solid #1A2B4A"}}>
-                <div style={{fontSize:12,fontWeight:800,color:"#1A2B4A"}}>A</div>
-                <div style={{fontSize:9,color:"#64748B",marginTop:2}}>passa sopra</div>
+                <div style={{fontSize:13,fontWeight:800,color:"#1A2B4A"}}>A</div>
+                <div style={{fontSize:9,color:"#64748B",marginTop:2}}>vince</div>
               </div>
               <div onClick={()=>applyJoin("B")}
                 style={{flex:1,padding:"10px 4px",borderRadius:8,cursor:"pointer",textAlign:"center",
                   background:"rgba(59,127,224,0.08)",border:"2px solid #3B7FE0"}}>
-                <div style={{fontSize:12,fontWeight:800,color:"#3B7FE0"}}>B</div>
-                <div style={{fontSize:9,color:"#64748B",marginTop:2}}>passa sopra</div>
+                <div style={{fontSize:13,fontWeight:800,color:"#3B7FE0"}}>B</div>
+                <div style={{fontSize:9,color:"#64748B",marginTop:2}}>vince</div>
               </div>
             </div>
-            <div onClick={()=>setJoinMenu(null)}
-              style={{textAlign:"center",fontSize:10,color:"#94A3B8",cursor:"pointer"}}>
-              Annulla · ripristina miter
+            <div onClick={()=>{
+              const {segA,segB,endA,endB}=joinMenu;
+              setShapes(s=>s.map(sh=>{
+                if(sh.id===segA.id) return {...sh,[endA==="a"?"joinA":"joinB"]:"miter"};
+                if(sh.id===segB.id) return {...sh,[endB==="a"?"joinA":"joinB"]:"miter"};
+                return sh;
+              }));
+              setJoinMenu(null);
+            }} style={{textAlign:"center",fontSize:10,color:"#94A3B8",cursor:"pointer",padding:"4px"}}>
+              ↺ Ripristina miter
             </div>
           </div>
         )}
