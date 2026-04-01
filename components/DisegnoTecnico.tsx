@@ -561,7 +561,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     return {x:p1.x+d1.x*t, y:p1.y+d1.y*t};
   }
 
-  // join: "miter"=default, "a_wins"=A passa sopra B, "b_wins"=B passa sopra A
   function segPolygon(a:any, b:any, sp:number, prevB:any=null, nextA:any=null,
                       joinAtA:string="miter", joinAtB:string="miter") {
     const sp2 = sp*scale*0.5;
@@ -574,24 +573,53 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     let bL={x:b.x+nx*sp2, y:b.y+ny*sp2};
     let bR={x:b.x-nx*sp2, y:b.y-ny*sp2};
 
-    if (prevB && joinAtA==="miter") {
+    // Lato A
+    if (prevB) {
       const pdx=a.x-prevB.x, pdy=a.y-prevB.y, plen=Math.hypot(pdx,pdy)||1;
       const pux=pdx/plen, puy=pdy/plen;
       const pnx=-puy, pny=pux;
-      const iL=lineIntersect({x:prevB.x+pnx*sp2,y:prevB.y+pny*sp2},{x:pux,y:puy},aL,{x:ux,y:uy});
-      if(iL) aL=iL;
-      const iR=lineIntersect({x:prevB.x-pnx*sp2,y:prevB.y-pny*sp2},{x:pux,y:puy},aR,{x:ux,y:uy});
-      if(iR) aR=iR;
+      const prevSp2 = sp2; // stesso spessore per ora
+
+      if (joinAtA==="miter") {
+        // Miter: intersezione pareti
+        const iL=lineIntersect({x:prevB.x+pnx*prevSp2,y:prevB.y+pny*prevSp2},{x:pux,y:puy},aL,{x:ux,y:uy});
+        if(iL) aL=iL;
+        const iR=lineIntersect({x:prevB.x-pnx*prevSp2,y:prevB.y-pny*prevSp2},{x:pux,y:puy},aR,{x:ux,y:uy});
+        if(iR) aR=iR;
+      } else if (joinAtA==="wins") {
+        // Questo segmento vince: si estende oltre il punto di sp2 nella direzione del prev
+        aL={x:a.x+nx*sp2 - pux*prevSp2, y:a.y+ny*sp2 - puy*prevSp2};
+        aR={x:a.x-nx*sp2 - pux*prevSp2, y:a.y-ny*sp2 - puy*prevSp2};
+      } else if (joinAtA==="loses") {
+        // Questo segmento perde: si ferma al bordo esterno del vincitore
+        // Bordo esterno prev = linea perpendicolare a prevB offset di sp2 verso questo seg
+        const stopX = a.x - pux*0; // si ferma al punto A (bordo del vincitore)
+        aL={x:stopX+nx*sp2, y:a.y+ny*sp2};
+        aR={x:stopX-nx*sp2, y:a.y-ny*sp2};
+      }
     }
 
-    if (nextA && joinAtB==="miter") {
+    // Lato B
+    if (nextA) {
       const ndx=nextA.x-b.x, ndy=nextA.y-b.y, nlen=Math.hypot(ndx,ndy)||1;
       const nux=ndx/nlen, nuy=ndy/nlen;
       const nnx=-nuy, nny=nux;
-      const iL=lineIntersect(bL,{x:ux,y:uy},{x:b.x+nnx*sp2,y:b.y+nny*sp2},{x:nux,y:nuy});
-      if(iL) bL=iL;
-      const iR=lineIntersect(bR,{x:ux,y:uy},{x:b.x-nnx*sp2,y:b.y-nny*sp2},{x:nux,y:nuy});
-      if(iR) bR=iR;
+      const nextSp2 = sp2;
+
+      if (joinAtB==="miter") {
+        const iL=lineIntersect(bL,{x:ux,y:uy},{x:b.x+nnx*nextSp2,y:b.y+nny*nextSp2},{x:nux,y:nuy});
+        if(iL) bL=iL;
+        const iR=lineIntersect(bR,{x:ux,y:uy},{x:b.x-nnx*nextSp2,y:b.y-nny*nextSp2},{x:nux,y:nuy});
+        if(iR) bR=iR;
+      } else if (joinAtB==="wins") {
+        // Questo segmento vince: si estende oltre B nella direzione del next
+        bL={x:b.x+nx*sp2 + nux*nextSp2, y:b.y+ny*sp2 + nuy*nextSp2};
+        bR={x:b.x-nx*sp2 + nux*nextSp2, y:b.y-ny*sp2 + nuy*nextSp2};
+      } else if (joinAtB==="loses") {
+        // Questo segmento perde: si ferma al punto B
+        bL={x:b.x+nx*sp2, y:b.y+ny*sp2};
+        bR={x:b.x-nx*sp2, y:b.y-ny*sp2};
+      }
     }
 
     return `${aL.x},${aL.y} ${bL.x},${bL.y} ${bR.x},${bR.y} ${aR.x},${aR.y}`;
@@ -699,10 +727,15 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   function applyJoin(winner: "A"|"B") {
     if(!joinMenu) return;
     const {segA, segB, endA, endB} = joinMenu;
-    // Il vincitore non cambia, il perdente viene "tagliato" — visivamente cambiamo il join type
     setShapes(s=>s.map(sh=>{
-      if(sh.id===segA.id) return {...sh, [endA==="a"?"joinA":"joinB"]: winner==="A"?"wins":"loses"};
-      if(sh.id===segB.id) return {...sh, [endB==="a"?"joinA":"joinB"]: winner==="B"?"wins":"loses"};
+      if(sh.id===segA.id) {
+        const key = endA==="a"?"joinA":"joinB";
+        return {...sh, [key]: winner==="A"?"wins":"loses"};
+      }
+      if(sh.id===segB.id) {
+        const key = endB==="a"?"joinA":"joinB";
+        return {...sh, [key]: winner==="B"?"wins":"loses"};
+      }
       return sh;
     }));
     setJoinMenu(null);
@@ -725,10 +758,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     // Per "loses": usa taglio dritto (nessun miter), per "wins": estendi oltre
     const jA = joinA==="miter"?"miter":joinA==="wins"?"miter":"butt";
     const jB = joinB==="miter"?"miter":joinB==="wins"?"miter":"butt";
-    const poly = segPolygon(a,b,sp,
-      joinA!=="loses"?prevB:null,
-      joinB!=="loses"?nextA:null,
-    );
+    const poly = segPolygon(a,b,sp,prevB,nextA,joinA,joinB);
     const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
     const ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
     const fixAng=Math.abs(ang)>90?ang+180:ang;
