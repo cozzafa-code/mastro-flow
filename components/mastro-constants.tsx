@@ -139,7 +139,58 @@ export const THEMES = {
     cardSh: "0 1px 3px rgba(0,0,0,0.25)",
     cardShH: "0 4px 12px rgba(0,0,0,0.35)",
     r: 12, r2: 16
-  }
+  },
+  // ═══════════════════════════════════════════════
+  // fliwoX — Design System v1.0 — IMMUTABILE
+  // Approvato Apr 2026 · GALASSIA MASTRO
+  // ═══════════════════════════════════════════════
+  fliwox: {
+    name: "fliwoX", emoji: "layers",
+    // Sfondo con griglia teal — applicare come background-image in componenti
+    bg: "#D8EEEE", bg2: "#EEF8F8", card: "#FFFFFF", card2: "#F0F8F8",
+    // Border e shadow card
+    bdr: "#C8E4E4", bdrL: "#DDF0F0",
+    // Testi
+    text: "#0D1F1F", sub: "#4A7070", sub2: "#8BBCBC",
+    // Primary teal
+    pri: "#28A0A0",
+    acc: "#28A0A0", accD: "#156060", accLt: "rgba(40,160,160,0.10)", accBg: "#28A0A0",
+    // Semantici
+    grn: "#1A9E73", grnLt: "rgba(26,158,115,0.10)",
+    red: "#DC4444", redLt: "rgba(220,68,68,0.10)",
+    orange: "#D08008", orangeLt: "rgba(208,128,8,0.10)",
+    blue: "#3B7FE0", blueLt: "rgba(59,127,224,0.10)",
+    purple: "#7C5FBF", purpleLt: "rgba(124,95,191,0.10)",
+    cyan: "#28A0A0", cyanLt: "rgba(40,160,160,0.10)",
+    // Card shadow — rilievo fisico fliwoX
+    cardSh: "0 7px 0 0 #A8CCCC, 0 8px 20px rgba(0,0,0,0.06)",
+    cardShH: "0 9px 0 0 #A8CCCC, 0 12px 28px rgba(0,0,0,0.10)",
+    // Topbar
+    topbar: "#0D1F1F",
+    // Border radius
+    r: 18, r2: 14,
+    // Bottoni — rilievo fisico (usare box-shadow su bottoni)
+    btnPrimaryBg: "#28A0A0",
+    btnPrimarySh: "0 8px 0 0 #156060",
+    btnSecondaryBg: "#FFFFFF",
+    btnSecondarySh: "0 6px 0 0 #A8CCCC",
+    // Pipeline fasi — colori approvati
+    pipelineColors: {
+      sopralluogo: "#28A0A0",
+      preventivo:  "#1A7070",
+      ordine:      "#1060A0",
+      montaggio:   "#806020",
+      fattura:     "#6B4FB0",
+      da_fare:     "#D0E8E8",
+    },
+    // Avatar operatori
+    avatarColors: {
+      FC: "#28A0A0", // Fabio Cozza — titolare
+      MV: "#1A7878", // Marco Vito — montatore
+      PG: "#1060A0", // Paolo Greco — tecnico misure
+      AB: "#806020", // Antonio Bruno — magazziniere
+    },
+  },
 };
 
 /* == PIANI ABBONAMENTO == */
