@@ -81,7 +81,7 @@ export default function ContabilitaPanel() {
     const fmt = (n: number) => "€" + n.toLocaleString("it-IT", { minimumFractionDigits: 0 });
     
     return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10002, background: T.bg, overflow: "auto" }}>
+    <div style={{ position:"fixed", inset:0, zIndex:10002, backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", overflow:"auto" }}>
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", background: T.card, borderBottom: "1px solid " + T.bdr, position: "sticky", top: 0, zIndex: 10 }}>
         <div onClick={() => setTab("home")} style={{ cursor: "pointer", color: T.acc, fontWeight: 700, fontSize: 14 }}>← Indietro</div>
@@ -100,77 +100,80 @@ export default function ContabilitaPanel() {
       
       {/*  PANORAMICA  */}
       {contabTab === "panoramica" && <>
-        {/* KPI Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 12 }}>
-          <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 7, color: T.sub, textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 }}>FATTURATO</div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: T.text }}>{fmt(totEmesso)}</div>
+        {/* fliwoX KPI 6 cards */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:10, marginTop:14 }}>
+          <div style={{ background:"white", borderRadius:14, border:"1.5px solid #C8E4E4", padding:"12px 8px", textAlign:"center", boxShadow:"0 5px 0 0 #A8CCCC" }}>
+            <div style={{ fontSize:8, color:"#4A7070", textTransform:"uppercase" as const, fontWeight:900, letterSpacing:"0.05em", marginBottom:4 }}>Fatturato</div>
+            <div style={{ fontSize:20, fontWeight:900, color:"#0D1F1F" }}>{fmt(totEmesso)}</div>
           </div>
-          <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 7, color: T.sub, textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 }}>INCASSATO</div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: T.grn }}>{fmt(totIncassato)}</div>
+          <div style={{ background:"white", borderRadius:14, border:"1.5px solid #C8E4E4", padding:"12px 8px", textAlign:"center", boxShadow:"0 5px 0 0 #A8CCCC" }}>
+            <div style={{ fontSize:8, color:"#4A7070", textTransform:"uppercase" as const, fontWeight:900, letterSpacing:"0.05em", marginBottom:4 }}>Incassato</div>
+            <div style={{ fontSize:20, fontWeight:900, color:"#1A9E73" }}>{fmt(totIncassato)}</div>
           </div>
-          <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 7, color: T.sub, textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 }}>DA INCASSARE</div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: T.red }}>{fmt(totDaIncassare)}</div>
+          <div style={{ background:"white", borderRadius:14, border:"1.5px solid rgba(220,68,68,0.4)", padding:"12px 8px", textAlign:"center", boxShadow:"0 5px 0 0 #FFAAAA" }}>
+            <div style={{ fontSize:8, color:"#4A7070", textTransform:"uppercase" as const, fontWeight:900, letterSpacing:"0.05em", marginBottom:4 }}>Da inc.</div>
+            <div style={{ fontSize:20, fontWeight:900, color:"#DC4444" }}>{fmt(totDaIncassare)}</div>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginBottom: 16 }}>
-          <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 7, color: T.sub, textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 }}>COSTI</div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: T.orange }}>{fmt(totCosti)}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+          <div style={{ background:"white", borderRadius:14, border:"1.5px solid #C8E4E4", padding:"12px 8px", textAlign:"center", boxShadow:"0 5px 0 0 #A8CCCC" }}>
+            <div style={{ fontSize:8, color:"#4A7070", textTransform:"uppercase" as const, fontWeight:900, letterSpacing:"0.05em", marginBottom:4 }}>Costi</div>
+            <div style={{ fontSize:20, fontWeight:900, color:"#D08008" }}>{fmt(totCosti)}</div>
           </div>
-          <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 7, color: T.sub, textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 }}>DA PAGARE</div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: "#ff6b00" }}>{fmt(totDaPagare)}</div>
+          <div style={{ background:"white", borderRadius:14, border:"1.5px solid #C8E4E4", padding:"12px 8px", textAlign:"center", boxShadow:"0 5px 0 0 #A8CCCC" }}>
+            <div style={{ fontSize:8, color:"#4A7070", textTransform:"uppercase" as const, fontWeight:900, letterSpacing:"0.05em", marginBottom:4 }}>Da pag.</div>
+            <div style={{ fontSize:20, fontWeight:900, color:"#D08008" }}>{fmt(totDaPagare)}</div>
           </div>
-          <div style={{ background: T.card, borderRadius: T.r, border: "2px solid " + (margine >= 0 ? T.grn : T.red), padding: "10px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 7, color: T.sub, textTransform: "uppercase" as const, fontWeight: 700, letterSpacing: 0.5 }}>MARGINE</div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: margine >= 0 ? T.grn : T.red }}>{fmt(margine)}</div>
+          <div style={{ background:"white", borderRadius:14, border:`2px solid ${margine >= 0 ? "rgba(26,158,115,0.5)" : "rgba(220,68,68,0.4)"}`, padding:"12px 8px", textAlign:"center", boxShadow:`0 5px 0 0 ${margine >= 0 ? "rgba(26,158,115,0.3)" : "#FFAAAA"}` }}>
+            <div style={{ fontSize:8, color:"#4A7070", textTransform:"uppercase" as const, fontWeight:900, letterSpacing:"0.05em", marginBottom:4 }}>Margine</div>
+            <div style={{ fontSize:20, fontWeight:900, color: margine >= 0 ? "#1A9E73" : "#DC4444" }}>{fmt(margine)}</div>
           </div>
         </div>
         
-        {/* BAR CHART - Last 6 months */}
-        <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 12 }}> Andamento 6 mesi</div>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100 }}>
+        {/* fliwoX GRAFICO BARRE */}
+        <div style={{ background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", padding:16, marginBottom:12, boxShadow:"0 7px 0 0 #A8CCCC" }}>
+          <div style={{ fontSize:13, fontWeight:900, color:"#0D1F1F", marginBottom:14 }}>Andamento 6 mesi</div>
+          <div style={{ display:"flex", alignItems:"flex-end", gap:5, height:100 }}>
             {barData.map((b, i) => (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 2 }}>
-                <div style={{ width: "100%", display: "flex", gap: 2, alignItems: "flex-end", justifyContent: "center", height: 80 }}>
-                  <div style={{ width: "40%", height: Math.max(2, (b.emesso / barMax) * 80), background: T.acc, borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
-                  <div style={{ width: "40%", height: Math.max(2, (b.costi / barMax) * 80), background: T.orange, borderRadius: "3px 3px 0 0", transition: "height 0.3s" }} />
+              <div key={i} style={{ flex:1, display:"flex", flexDirection:"column" as const, alignItems:"center", gap:3 }}>
+                <div style={{ width:"100%", display:"flex", gap:3, alignItems:"flex-end", justifyContent:"center", height:78 }}>
+                  <div style={{ width:"46%", height:Math.max(3, (b.emesso / barMax) * 78), background:"#28A0A0", borderRadius:"4px 4px 0 0", boxShadow:"0 4px 0 0 #156060" }} />
+                  <div style={{ width:"46%", height:Math.max(3, (b.costi / barMax) * 78), background:"#D08008", borderRadius:"4px 4px 0 0", boxShadow:"0 3px 0 0 #7A4800" }} />
                 </div>
-                <div style={{ fontSize: 8, color: T.sub, fontWeight: 600, textTransform: "uppercase" as const }}>{b.lbl}</div>
+                <div style={{ fontSize:8, color:i === barData.length-1 ? "#28A0A0" : "#4A7070", fontWeight: i === barData.length-1 ? 900 : 700, textTransform:"uppercase" as const }}>{b.lbl}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: T.acc }} /><span style={{ fontSize: 9, color: T.sub }}>Fatturato</span></div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: T.orange }} /><span style={{ fontSize: 9, color: T.sub }}>Costi</span></div>
+          <div style={{ display:"flex", gap:16, justifyContent:"center", marginTop:10 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:5 }}><div style={{ width:12, height:12, borderRadius:3, background:"#28A0A0", boxShadow:"0 2px 0 0 #156060" }} /><span style={{ fontSize:10, color:"#4A7070", fontWeight:700 }}>Fatturato</span></div>
+            <div style={{ display:"flex", alignItems:"center", gap:5 }}><div style={{ width:12, height:12, borderRadius:3, background:"#D08008", boxShadow:"0 2px 0 0 #7A4800" }} /><span style={{ fontSize:10, color:"#4A7070", fontWeight:700 }}>Costi</span></div>
           </div>
         </div>
         
-        {/* SCADENZE PROSSIME */}
-        <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16, marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}> Prossime scadenze</div>
+        {/* fliwoX SCADENZE */}
+        <div style={{ background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", padding:16, marginBottom:12, boxShadow:"0 7px 0 0 #A8CCCC" }}>
+          <div style={{ fontSize:13, fontWeight:900, color:"#0D1F1F", marginBottom:10 }}>Scadenze urgenti</div>
           {[...allEmesse.filter(f => !f.pagata && f.scadenza).map(f => ({ ...f, dir: "incasso" as const })), 
             ...allRicevute.filter(f => !f.pagata && f.scadenza).map(f => ({ ...f, dir: "pagamento" as const }))]
             .sort((a, b) => (a.scadenza || "z").localeCompare(b.scadenza || "z")).slice(0, 6).map((f, i) => {
               const isLate = (f.scadenza || "") < today.toISOString().split("T")[0];
               const days = Math.ceil((new Date(f.scadenza || "").getTime() - today.getTime()) / 86400000);
-              return <div key={i} style={{ display: "flex", alignItems: "center", padding: "8px 0", borderBottom: i < 5 ? "1px solid " + T.bg : "none" }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: isLate ? T.redLt : f.dir === "incasso" ? T.grnLt : T.orangeLt, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
-                  {isLate ? "⚠ " : f.dir === "incasso" ? "" : ""}
+              const cardBg = isLate ? "#FFF4F4" : f.dir === "incasso" ? "#F0FBF7" : "#FFF8DC";
+              const cardBdr = isLate ? "rgba(220,68,68,0.35)" : f.dir === "incasso" ? "rgba(26,158,115,0.3)" : "rgba(208,128,8,0.3)";
+              const cardSh = isLate ? "#FFAAAA" : f.dir === "incasso" ? "rgba(26,158,115,0.3)" : "rgba(208,128,8,0.25)";
+              return <div key={i} style={{ display:"flex", alignItems:"center", padding:"11px 13px", borderRadius:12, background:cardBg, border:`1.5px solid ${cardBdr}`, boxShadow:`0 4px 0 0 ${cardSh}`, marginBottom:8 }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:isLate ? "rgba(220,68,68,0.15)" : f.dir === "incasso" ? "rgba(26,158,115,0.12)" : "rgba(208,128,8,0.12)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, boxShadow:`0 3px 0 0 ${cardSh}` }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isLate ? "#DC4444" : f.dir === "incasso" ? "#1A9E73" : "#D08008"} strokeWidth="2.2" strokeLinecap="round">{isLate ? <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/> : <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></>}</svg>
                 </div>
-                <div style={{ flex: 1, marginLeft: 10 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{typeof (f as any).fornitore === "object" ? ((f as any).fornitore?.nome || f.cliente) : ((f as any).fornitore || f.cliente)}</div>
-                  <div style={{ fontSize: 9, color: isLate ? T.red : T.sub }}>
-                    {isLate ? `Scaduta da ${Math.abs(days)} gg` : days === 0 ? "Scade oggi!" : `Tra ${days} gg`} · {new Date(f.scadenza || "").toLocaleDateString("it-IT")}
+                <div style={{ flex:1, marginLeft:10 }}>
+                  <div style={{ fontSize:13, fontWeight:900, color:isLate ? "#DC4444" : "#0D1F1F" }}>{typeof (f as any).fornitore === "object" ? ((f as any).fornitore?.nome || f.cliente) : ((f as any).fornitore || f.cliente)}</div>
+                  <div style={{ fontSize:10, fontWeight:700, color:isLate ? "#DC4444" : "#4A7070" }}>
+                    {isLate ? `Scaduta da ${Math.abs(days)} gg` : days === 0 ? "Scade oggi!" : `Tra ${days} gg`}
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: isLate ? T.red : T.text }}>{fmt(f.importo || 0)}</div>
-                  <div style={{ fontSize: 8, color: f.dir === "incasso" ? T.grn : T.orange, fontWeight: 700 }}>{f.dir === "incasso" ? "INCASSO" : "PAGAMENTO"}</div>
+                <div style={{ textAlign:"right" }}>
+                  <div style={{ fontSize:17, fontWeight:900, color:isLate ? "#DC4444" : "#0D1F1F" }}>{fmt(f.importo || 0)}</div>
+                  <div style={{ fontSize:9, fontWeight:900, padding:"2px 8px", borderRadius:20, background:f.dir === "incasso" ? "rgba(26,158,115,0.12)" : "rgba(208,128,8,0.12)", color:f.dir === "incasso" ? "#1A9E73" : "#D08008", display:"inline-block", marginTop:2 }}>{f.dir === "incasso" ? "INCASSO" : "PAGAMENTO"}</div>
                 </div>
               </div>;
             })}
@@ -179,23 +182,27 @@ export default function ContabilitaPanel() {
           )}
         </div>
         
-        {/* RIEPILOGO MESE */}
-        <div style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div onClick={prevMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>&lt;</div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, textTransform: "capitalize" as const }}>{meseLbl}</div>
-            <div onClick={nextMese} style={{ cursor: "pointer", fontSize: 16, color: T.acc }}>›</div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div style={{ padding: 10, borderRadius: 8, background: T.accLt, textAlign: "center" }}>
-              <div style={{ fontSize: 8, color: T.sub, fontWeight: 700 }}>EMESSO</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: T.acc }}>{fmt(meseEmTot)}</div>
-              <div style={{ fontSize: 9, color: T.sub }}>{meseEmesse.length} fatture</div>
+        {/* fliwoX RIEPILOGO MESE */}
+        <div style={{ background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", padding:16, boxShadow:"0 7px 0 0 #A8CCCC" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+            <div onClick={prevMese} style={{ width:38, height:38, background:"#EEF8F8", borderRadius:10, border:"1.5px solid #C8E4E4", boxShadow:"0 4px 0 0 #A8CCCC", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
             </div>
-            <div style={{ padding: 10, borderRadius: 8, background: T.orangeLt, textAlign: "center" }}>
-              <div style={{ fontSize: 8, color: T.sub, fontWeight: 700 }}>COSTI</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: T.orange }}>{fmt(meseRicTot)}</div>
-              <div style={{ fontSize: 9, color: T.sub }}>{meseRicevute.length} fatture</div>
+            <div style={{ fontSize:16, fontWeight:900, color:"#0D1F1F", textTransform:"capitalize" as const }}>{meseLbl}</div>
+            <div onClick={nextMese} style={{ width:38, height:38, background:"#EEF8F8", borderRadius:10, border:"1.5px solid #C8E4E4", boxShadow:"0 4px 0 0 #A8CCCC", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <div style={{ padding:"14px 12px", borderRadius:14, background:"rgba(40,160,160,0.1)", textAlign:"center", border:"1.5px solid rgba(40,160,160,0.25)", boxShadow:"0 5px 0 0 rgba(40,160,160,0.2)" }}>
+              <div style={{ fontSize:9, color:"#4A7070", fontWeight:900, textTransform:"uppercase" as const, marginBottom:4 }}>Emesso</div>
+              <div style={{ fontSize:24, fontWeight:900, color:"#28A0A0" }}>{fmt(meseEmTot)}</div>
+              <div style={{ fontSize:10, color:"#4A7070", fontWeight:700, marginTop:2 }}>{meseEmesse.length} fatture</div>
+            </div>
+            <div style={{ padding:"14px 12px", borderRadius:14, background:"rgba(208,128,8,0.1)", textAlign:"center", border:"1.5px solid rgba(208,128,8,0.25)", boxShadow:"0 5px 0 0 rgba(208,128,8,0.2)" }}>
+              <div style={{ fontSize:9, color:"#4A7070", fontWeight:900, textTransform:"uppercase" as const, marginBottom:4 }}>Costi</div>
+              <div style={{ fontSize:24, fontWeight:900, color:"#D08008" }}>{fmt(meseRicTot)}</div>
+              <div style={{ fontSize:10, color:"#4A7070", fontWeight:700, marginTop:2 }}>{meseRicevute.length} fatture</div>
             </div>
           </div>
         </div>
@@ -203,38 +210,43 @@ export default function ContabilitaPanel() {
       
       {/*  EMESSE  */}
       {contabTab === "emesse" && <>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Fatture emesse ({allEmesse.length})</div>
-          <div style={{ display: "flex", gap: 4 }}>
-            <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 4, background: T.grnLt, color: T.grn, fontWeight: 700 }}>✓ {allEmesse.filter(f=>f.pagata).length}</span>
-            <span style={{ fontSize: 9, padding: "3px 8px", borderRadius: 4, background: T.redLt, color: T.red, fontWeight: 700 }}> {allEmesse.filter(f=>!f.pagata).length}</span>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, marginTop:14 }}>
+          <div style={{ fontSize:14, fontWeight:900, color:"#0D1F1F" }}>{allEmesse.length} fatture emesse</div>
+          <div style={{ display:"flex", gap:6 }}>
+            <span style={{ fontSize:10, padding:"4px 11px", borderRadius:20, background:"rgba(26,158,115,0.12)", color:"#1A9E73", fontWeight:900, boxShadow:"0 2px 0 0 rgba(26,158,115,0.3)" }}>✓ {allEmesse.filter(f=>f.pagata).length}</span>
+            <span style={{ fontSize:10, padding:"4px 11px", borderRadius:20, background:"rgba(220,68,68,0.1)", color:"#DC4444", fontWeight:900, boxShadow:"0 2px 0 0 #FFAAAA" }}>{allEmesse.filter(f=>!f.pagata).length} aperte</span>
           </div>
         </div>
         {allEmesse.sort((a, b) => b.numero - a.numero).map(f => (
-          <div key={f.id} style={{ background: T.card, borderRadius: T.r, border: "1px solid " + T.bdr, padding: 12, marginBottom: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+          <div key={f.id} style={{ background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", padding:14, marginBottom:10, boxShadow:"0 6px 0 0 #A8CCCC" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>N. {f.numero}/{f.anno}</div>
-                <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} · {f.cmCode}</div>
-                <div style={{ display: "flex", gap: 4, marginTop: 3 }}>
-                  <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: f.tipo === "saldo" ? T.grnLt : f.tipo === "acconto" ? T.orangeLt : T.accLt, color: f.tipo === "saldo" ? T.grn : f.tipo === "acconto" ? T.orange : T.acc, fontWeight: 700 }}>{f.tipo?.toUpperCase()}</span>
-                  {f.inviata && <span style={{ fontSize: 8, padding: "1px 6px", borderRadius: 3, background: "#1A9E7315", color: "#1A9E73", fontWeight: 700 }}> INVIATA</span>}
-                  <span style={{ fontSize: 8, color: T.sub }}>{f.dataISO}</span>
-                  {f.scadenza && <span style={{ fontSize: 8, color: f.scadenza < today.toISOString().split("T")[0] && !f.pagata ? T.red : T.sub }}>Scade: {new Date(f.scadenza).toLocaleDateString("it-IT")}</span>}
+                <div style={{ fontSize:16, fontWeight:900, color:"#0D1F1F" }}>N. {f.numero}/{f.anno}</div>
+                <div style={{ fontSize:11, fontWeight:700, color:"#4A7070", marginTop:2 }}>{f.cliente} · {f.cmCode}</div>
+                <div style={{ display:"flex", gap:5, marginTop:6, flexWrap:"wrap" as const }}>
+                  <span style={{ fontSize:9, padding:"3px 9px", borderRadius:20, background: f.tipo === "saldo" ? "rgba(26,158,115,0.12)" : f.tipo === "acconto" ? "rgba(208,128,8,0.12)" : "rgba(40,160,160,0.10)", color: f.tipo === "saldo" ? "#1A9E73" : f.tipo === "acconto" ? "#D08008" : "#28A0A0", fontWeight:900, boxShadow: f.tipo === "saldo" ? "0 2px 0 0 rgba(26,158,115,0.3)" : "0 2px 0 0 rgba(40,160,160,0.2)" }}>{f.tipo?.toUpperCase()}</span>
+                  {f.inviata && <span style={{ fontSize:9, padding:"3px 9px", borderRadius:20, background:"rgba(26,158,115,0.12)", color:"#1A9E73", fontWeight:900 }}>✓ INVIATA</span>}
+                  {f.scadenza && <span style={{ fontSize:9, fontWeight:700, color: f.scadenza < today.toISOString().split("T")[0] && !f.pagata ? "#DC4444" : "#4A7070" }}>Scade: {new Date(f.scadenza).toLocaleDateString("it-IT")}</span>}
                 </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 18, fontWeight: 900, color: f.pagata ? T.grn : T.red }}>{fmt(f.importo)}</div>
+              <div style={{ textAlign:"right" }}>
+                <div style={{ fontSize:22, fontWeight:900, color: f.pagata ? "#1A9E73" : "#DC4444" }}>{fmt(f.importo)}</div>
                 <span onClick={() => setFattureDB(prev => prev.map(ff => ff.id === f.id ? { ...ff, pagata: !ff.pagata, dataPagamento: !ff.pagata ? today.toISOString().split("T")[0] : null } : ff))} 
-                  style={{ fontSize: 9, padding: "3px 8px", borderRadius: 6, background: f.pagata ? T.grnLt : T.redLt, color: f.pagata ? T.grn : T.red, fontWeight: 700, cursor: "pointer" }}>
-                  {f.pagata ? "Incassata" : "Da incassare"}
+                  style={{ fontSize:10, padding:"4px 11px", borderRadius:20, background: f.pagata ? "rgba(26,158,115,0.12)" : "rgba(220,68,68,0.1)", color: f.pagata ? "#1A9E73" : "#DC4444", fontWeight:900, cursor:"pointer", display:"inline-block", marginTop:4, boxShadow: f.pagata ? "0 2px 0 0 rgba(26,158,115,0.3)" : "0 2px 0 0 #FFAAAA" }}>
+                  {f.pagata ? "✓ Incassata" : "Da incassare"}
                 </span>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <div onClick={() => { generaFatturaPDF(f); setFattureDB(prev => prev.map(ff => ff.id === f.id ? { ...ff, inviata: true } : ff)); }} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.accLt, color: T.acc, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}> PDF</div>
-              <div onClick={() => generaXmlSDI(f)} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.purpleLt, color: T.purple, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer" }}> XML SDI</div>
-              <div onClick={() => { const cm = cantieri.find(c => c.code === f.cmCode); if(cm) { setSelectedCM(cm); setShowContabilita(false); setTab("commesse"); }}} style={{ flex: 1, padding: 7, borderRadius: 6, background: T.bg, color: T.sub, fontSize: 10, fontWeight: 700, textAlign: "center", cursor: "pointer", border: "1px solid " + T.bdr }}> Commessa</div>
+            <div style={{ display:"flex", gap:8 }}>
+              <div onClick={() => { generaFatturaPDF(f); setFattureDB(prev => prev.map(ff => ff.id === f.id ? { ...ff, inviata: true } : ff)); }} style={{ flex:1, padding:"11px", borderRadius:12, background:"#1A9E73", color:"white", fontSize:12, fontWeight:900, textAlign:"center" as const, cursor:"pointer", boxShadow:"0 5px 0 0 #0A5A3A", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>PDF
+              </div>
+              <div onClick={() => generaXmlSDI(f)} style={{ flex:1, padding:"11px", borderRadius:12, background:"#7C5FBF", color:"white", fontSize:12, fontWeight:900, textAlign:"center" as const, cursor:"pointer", boxShadow:"0 5px 0 0 #4A3080", display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>SDI
+              </div>
+              <div onClick={() => { const cm = cantieri.find(c => c.code === f.cmCode); if(cm) { setSelectedCM(cm); setShowContabilita(false); setTab("commesse"); }}} style={{ flex:1, padding:"11px", borderRadius:12, background:"white", color:"#0D1F1F", fontSize:12, fontWeight:900, textAlign:"center" as const, cursor:"pointer", border:"2px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC" }}>
+                Commessa
+              </div>
             </div>
           </div>
         ))}
