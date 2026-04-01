@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
-// MASTRO ERP — HomePanel v7 — Lumina Layout
+// MASTRO ERP â€” HomePanel v7 â€” Lumina Layout
 import React, { useRef } from "react";
 import { useMastro } from "./MastroContext";
 import SpesaQuick from "./SpesaQuick";
@@ -31,9 +31,9 @@ export default function HomePanel() {
 
   const adesso = (() => {
     if (problemiAperti.length > 0) return { titolo: "Problema: " + (problemiAperti[0].titolo || "da risolvere"), sotto: problemiAperti.length + " problemi aperti", color: "#dc4444", action: () => setShowProblemiView(true) };
-    if (ferme.length > 0) { const c = ferme[0]; return { titolo: "Sblocca " + c.cliente, sotto: c.code + " · ferma da " + giorniFermaCM(c) + " giorni", color: "#dc4444", action: () => { setSelectedCM(c); setTab("commesse"); } }; }
+    if (ferme.length > 0) { const c = ferme[0]; return { titolo: "Sblocca " + c.cliente, sotto: c.code + " Â· ferma da " + giorniFermaCM(c) + " giorni", color: "#dc4444", action: () => { setSelectedCM(c); setTab("commesse"); } }; }
     if (preventiviDaFare.length > 0) { const c = preventiviDaFare[0]; return { titolo: "Preventivo: " + c.cliente, sotto: preventiviDaFare.length + " in attesa", color: "#6366f1", action: () => { setSelectedCM(c); setTab("commesse"); } }; }
-    if (todayEvents.length > 0) { const e = todayEvents[0]; return { titolo: e.text, sotto: (e.time || "") + (e.persona ? " · " + e.persona : ""), color: "#031631", action: () => setSelectedEvent(e) }; }
+    if (todayEvents.length > 0) { const e = todayEvents[0]; return { titolo: e.text, sotto: (e.time || "") + (e.persona ? " Â· " + e.persona : ""), color: "#031631", action: () => setSelectedEvent(e) }; }
     return null;
   })();
 
@@ -68,7 +68,7 @@ export default function HomePanel() {
   const selISO = (() => { const d = new Date(today); d.setDate(d.getDate() + dayOffset); return d.toISOString().split("T")[0]; })();
   const selEvents = events.filter(e => e.date === selISO).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
 
-  const fmtK = (n) => "€" + (n > 999 ? Math.round(n / 1000) + "k" : n.toLocaleString("it-IT"));
+  const fmtK = (n) => "â‚¬" + (n > 999 ? Math.round(n / 1000) + "k" : n.toLocaleString("it-IT"));
 
   const onTS = (e) => { touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
   const onTE = (e) => {
@@ -91,7 +91,7 @@ export default function HomePanel() {
   return (
     <div style={{ fontFamily:"'Inter',sans-serif", backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", minHeight:"100%", paddingBottom:100 }}>
 
-      {/* ══ HEADER ══════════════════════════════════════════════ */}
+      {/* â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div style={{ padding: "28px 20px 0" }}>
         <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#75777e" }}>
           {today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -101,7 +101,7 @@ export default function HomePanel() {
         </h1>
       </div>
 
-      {/* ══ ADESSO ══════════════════════════════════════════════ */}
+      {/* â•â• ADESSO â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {adesso && (
         <div onClick={adesso.action} style={{ margin:"14px 14px 0", background:"white", borderRadius:18, border:`1.5px solid ${adesso.color}40`, boxShadow:`0 6px 0 0 ${adesso.color}30`, overflow:"hidden", cursor:"pointer", display:"flex" }}>
           <div style={{ width:5, background:adesso.color, flexShrink:0, boxShadow:`2px 0 8px ${adesso.color}40` }} />
@@ -160,7 +160,7 @@ export default function HomePanel() {
                 <div style={{ width:4, height:34, borderRadius:2, background:ev.color || "#28A0A0", flexShrink:0, boxShadow:`0 2px 0 0 ${ev.color || "#156060"}` }} />
                 <div style={{ flex:1 }}>
                   <p style={{ margin:0, fontSize:14, fontWeight:900, color:"#0D1F1F" }}>{ev.text}</p>
-                  {(ev.persona || ev.luogo) && <p style={{ margin:"2px 0 0", fontSize:11, fontWeight:700, color:"#4A7070" }}>{[ev.persona, ev.luogo].filter(Boolean).join(" · ")}</p>}
+                  {(ev.persona || ev.luogo) && <p style={{ margin:"2px 0 0", fontSize:11, fontWeight:700, color:"#4A7070" }}>{[ev.persona, ev.luogo].filter(Boolean).join(" Â· ")}</p>}
                 </div>
                 {ev.time && <span style={{ fontSize:13, fontWeight:900, color:"#28A0A0", fontFamily:"'JetBrains Mono',monospace", flexShrink:0 }}>{ev.time}</span>}
               </div>
@@ -173,7 +173,7 @@ export default function HomePanel() {
       <div style={{ margin:"14px 14px 0", background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", boxShadow:"0 7px 0 0 #A8CCCC", padding:"14px 14px 12px" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
           <span style={{ fontSize:10, fontWeight:900, letterSpacing:"0.12em", textTransform:"uppercase", color:"#4A7070" }}>Pipeline commesse</span>
-          <span onClick={() => setTab("commesse")} style={{ fontSize:12, fontWeight:900, color:"#28A0A0", cursor:"pointer", padding:"4px 10px", borderRadius:20, background:"rgba(40,160,160,0.1)", boxShadow:"0 2px 0 0 rgba(40,160,160,0.3)" }}>{totAttive} attive →</span>
+          <span onClick={() => setTab("commesse")} style={{ fontSize:12, fontWeight:900, color:"#28A0A0", cursor:"pointer", padding:"4px 10px", borderRadius:20, background:"rgba(40,160,160,0.1)", boxShadow:"0 2px 0 0 rgba(40,160,160,0.3)" }}>{totAttive} attive â†’</span>
         </div>
         <div style={{ display:"flex", height:38, borderRadius:12, overflow:"hidden", gap:3 }}>
           {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => {
@@ -216,7 +216,7 @@ export default function HomePanel() {
 
       {/* fliwoX Scorciatoie + quick counts */}
       <div style={{ margin:"10px 14px 0", display:"flex", gap:8 }}>
-        <div onClick={() => setTab("contabilita")} style={{ flex:1, padding:"13px 16px", borderRadius:14, background:"white", border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC", cursor:"pointer", fontSize:13, fontWeight:900, color:"#0D1F1F", textAlign:"center" }}>€ Contabilità</div>
+        <div onClick={() => setTab("contabilita")} style={{ flex:1, padding:"13px 16px", borderRadius:14, background:"white", border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC", cursor:"pointer", fontSize:13, fontWeight:900, color:"#0D1F1F", textAlign:"center" }}>â‚¬ ContabilitÃ </div>
         <div onClick={() => setTab("montaggi_cal")} style={{ flex:1, padding:"13px 16px", borderRadius:14, background:"rgba(26,158,115,0.1)", border:"1.5px solid rgba(26,158,115,0.3)", boxShadow:"0 5px 0 0 rgba(26,158,115,0.25)", cursor:"pointer", fontSize:13, fontWeight:900, color:"#1A9E73", textAlign:"center" }}>Cantieri</div>
       </div>
 
@@ -248,7 +248,7 @@ export default function HomePanel() {
         <p style={{ margin:"0 0 10px", fontSize:10, fontWeight:900, letterSpacing:"0.12em", textTransform:"uppercase", color:"#4A7070" }}>Azioni rapide</p>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
 
-          {/* + Commessa — teal primario 3D */}
+          {/* + Commessa â€” teal primario 3D */}
           <div onClick={() => setShowModal("commessa")} style={{ padding:"18px 16px", borderRadius:18, background:"#28A0A0", boxShadow:"0 8px 0 0 #156060", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ width:42, height:42, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
               <I d={ICO.folder} s={22} c="white" />
@@ -259,7 +259,7 @@ export default function HomePanel() {
             </div>
           </div>
 
-          {/* Spesa — amber 3D */}
+          {/* Spesa â€” amber 3D */}
           <div onClick={() => setShowSpesa(true)} style={{ padding:"18px 16px", borderRadius:18, background:"#D08008", boxShadow:"0 8px 0 0 #7A4800", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ width:42, height:42, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
               <I d={ICO.receipt || ICO.tag} s={22} c="white" />
@@ -270,7 +270,7 @@ export default function HomePanel() {
             </div>
           </div>
 
-          {/* Cliente — bianco 3D */}
+          {/* Cliente â€” bianco 3D */}
           <div onClick={() => setShowModal("contatto")} style={{ padding:"18px 16px", borderRadius:18, background:"white", border:"2px solid #C8E4E4", boxShadow:"0 7px 0 0 #A8CCCC", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ width:42, height:42, borderRadius:12, background:"rgba(40,160,160,0.1)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
               <I d={ICO.user} s={22} c="#28A0A0" />
@@ -281,7 +281,7 @@ export default function HomePanel() {
             </div>
           </div>
 
-          {/* Appuntamento — bianco 3D */}
+          {/* Appuntamento â€” bianco 3D */}
           <div onClick={() => setShowModal("evento")} style={{ padding:"18px 16px", borderRadius:18, background:"white", border:"2px solid #C8E4E4", boxShadow:"0 7px 0 0 #A8CCCC", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ width:42, height:42, borderRadius:12, background:"rgba(124,95,191,0.1)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
               <I d={ICO.calendar} s={22} c="#7C5FBF" />
@@ -298,3 +298,4 @@ export default function HomePanel() {
     </div>
   );
 }
+
