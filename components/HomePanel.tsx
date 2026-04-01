@@ -91,12 +91,11 @@ export default function HomePanel() {
   return (
     <div style={{ fontFamily:"'Inter',sans-serif", backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", minHeight:"100%", paddingBottom:100 }}>
 
-      {/* â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
-      <div style={{ padding: "28px 20px 0" }}>
-        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#75777e" }}>
-          {today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            <div style={{ background:"#0D1F1F", padding:"16px 18px 20px", position:"sticky", top:0, zIndex:20 }}>
+        <p suppressHydrationWarning style={{ margin:0, fontSize:10, fontWeight:800, letterSpacing:"0.12em", textTransform:"uppercase", color:"rgba(255,255,255,0.4)" }}>
+          {today.toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" })}
         </p>
-        <h1 suppressHydrationWarning style={{ margin: "6px 0 0", fontSize: 34, fontWeight: 800, color: "#031631", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+        <h1 suppressHydrationWarning style={{ margin:"5px 0 0", fontSize:28, fontWeight:900, color:"#fff", letterSpacing:"-0.5px", lineHeight:1.1 }}>
           {saluto}, Fabio
         </h1>
       </div>
