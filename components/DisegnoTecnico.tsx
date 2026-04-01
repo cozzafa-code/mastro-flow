@@ -747,8 +747,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       <div style={{ fontSize: 9, color: "#75777e", padding: "3px 10px", fontWeight: 600 }}>{hint[activeTool]}</div>
       <canvas
         ref={canvasRef}
-        width={600} height={700}
-        style={{ display: "block", width: "100%", flex: 1, background: "#f9f9fb", cursor: "crosshair", touchAction: "none", minHeight: 0 }}
+        width={1200} height={1600}
+        style={{ display: "block", width: "100%", background: "#f9f9fb", cursor: "crosshair", touchAction: "none" }}
       />
       {dims && <div style={{ padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#031631", borderTop: "1px solid rgba(197,198,206,0.25)" }}>Vani: {dims}</div>}
       {/* Bottone → 3D */}
