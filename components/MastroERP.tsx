@@ -3442,7 +3442,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             { id: "home",      ico: ICO.home,      label: "Home" },
             { id: "agenda",    ico: ICO.calendar,  label: "Agenda" },
             { id: "commesse",  ico: ICO.folder,    label: "Commesse" },
-            { id: "messaggi",  ico: ICO.inbox,     label: "Messaggi" },
+            { id: "messaggi",  ico: ICO.messageCircle, label: "Talk" },
             { id: "settings",  ico: ICO.settings,  label: "Altro" },
           ];
           const NAV_ICONS: Record<string, React.ReactNode> = {
@@ -3453,38 +3453,30 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             settings: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="14" cy="14" r="3"/><path d="M14 4v3M14 21v3M4 14h3M21 14h3M6.3 6.3l2.1 2.1M19.6 19.6l2.1 2.1M6.3 21.7l2.1-2.1M19.6 8.4l2.1-2.1"/></svg>,
           };
           return (
-            <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-              background: "white", borderTop: "1px solid #C8E4E4",
-              display: "flex", justifyContent: "space-around", alignItems: "center",
-              padding: "10px 16px 14px",
-              paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))" }}>
+            <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:100,
+              background:"#0D1F1F", borderTop:"1px solid rgba(40,160,160,0.15)",
+              display:"flex", justifyContent:"space-around", alignItems:"center",
+              padding:"10px 0",
+              paddingBottom:"calc(10px + env(safe-area-inset-bottom, 0px))" }}>
               {TABS.map(t => {
                 const active = tab === t.id;
                 const badge = t.id === "messaggi" && (msgs||[]).filter((m:any) => !m.letto).length > 0
                   ? (msgs||[]).filter((m:any) => !m.letto).length : 0;
                 return (
                   <div key={t.id} onClick={() => { setTab(t.id); if (t.id !== "commesse") setSelectedCM(null); }}
-                    style={{ display: "flex", flexDirection: "column" as any, alignItems: "center", gap: 4, cursor: "pointer" }}>
-                    <div style={{ position: "relative" as any }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: 10,
-                        background: active ? "#28A0A0" : "#EEF8F8",
-                        boxShadow: active ? "0 3px 0 0 #156060" : "none",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: active ? "white" : "#8BBCBC",
-                      }}>
-                        {NAV_ICONS[t.id]}
-                      </div>
+                    style={{ flex:1, display:"flex", flexDirection:"column" as any, alignItems:"center", gap:3, cursor:"pointer", padding:"2px 0" }}>
+                    <div style={{ position:"relative" as any, color: active ? "#28A0A0" : "rgba(255,255,255,0.35)" }}>
+                      {React.cloneElement(NAV_ICONS[t.id] as any, { stroke: active ? "#28A0A0" : "rgba(255,255,255,0.35)" })}
                       {badge > 0 && (
-                        <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16,
-                          borderRadius: "50%", background: "#DC4444", color: "#fff",
-                          fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ position:"absolute", top:-4, right:-6, width:16, height:16,
+                          borderRadius:"50%", background:"#DC4444", color:"#fff",
+                          fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" }}>
                           {badge > 9 ? "9+" : badge}
                         </div>
                       )}
                     </div>
-                    <div style={{ fontSize: 10, fontWeight: 900,
-                      color: active ? "#28A0A0" : "#8BBCBC" }}>{t.label}</div>
+                    <div style={{ fontSize:10, fontWeight: active ? 900 : 600,
+                      color: active ? "#28A0A0" : "rgba(255,255,255,0.35)" }}>{t.label}</div>
                   </div>
                 );
               })}
