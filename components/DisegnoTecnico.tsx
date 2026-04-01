@@ -494,306 +494,246 @@ function FormaEditor({ T, realW, realH, pts, onPtsChange, H, onHChange, sp, onSp
 // LIBERO EDITOR — disegno libero infisso con Paper.js
 // ═══════════════════════════════════════════════════════════
 function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const paperRef = React.useRef<any>(null);
-  const shapesRef = React.useRef<any[]>([]);
-  const currentPtsRef = React.useRef<any[]>([]);
-  const activeToolRef = React.useRef("muro");
-  const spessoreRef = React.useRef(12);
-  const snapOnRef = React.useRef(true);
-  const [activeTool, setActiveTool] = React.useState("muro");
-  const [spessore, setSpessore] = React.useState(12);
-  const [snapOn, setSnapOn] = React.useState(true);
-  const [dims, setDims] = React.useState("");
-  const [shapeCount, setShapeCount] = React.useState(0);
+  // SVG infinito con zoom/pan — nessun Paper.js
   const [zoom, setZoom] = React.useState(1);
-  const [liveQuote, setLiveQuote] = React.useState("");
-  const zoomRef = React.useRef(1);
-  const lastPinchRef = React.useRef<number|null>(null);
+  const [pan, setPan] = React.useState({x:0, y:0});
+  const [tool, setTool] = React.useState<"muro"|"vano"|"misura">("muro");
+  const [spessore, setSpessore] = React.useState(12);
+  const [snap, setSnap] = React.useState(true);
+  const [shapes, setShapes] = React.useState<any[]>([]);
+  const [curPts, setCurPts] = React.useState<any[]>([]);
+  const [mousePos, setMousePos] = React.useState<any>(null);
+  const [liveLen, setLiveLen] = React.useState("");
+  const svgRef = React.useRef<SVGSVGElement>(null);
+  const isPanning = React.useRef(false);
+  const lastPan = React.useRef({x:0,y:0});
+  const lastPinch = React.useRef<number|null>(null);
 
-  React.useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
-  React.useEffect(() => { spessoreRef.current = spessore; }, [spessore]);
-  React.useEffect(() => { snapOnRef.current = snapOn; }, [snapOn]);
+  const GRID = 20; // px per unità snap
+  const CM_PER_UNIT = spessore / 10; // ogni GRID px = CM_PER_UNIT cm
 
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const existing = document.getElementById("paperjs-cdn");
-    if (existing) { setTimeout(initPaper, 100); return; }
-    const script = document.createElement("script");
-    script.id = "paperjs-cdn";
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.min.js";
-    script.onload = () => setTimeout(initPaper, 100);
-    document.head.appendChild(script);
-  }, []);
-
-  function initPaper() {
-    const cnv = canvasRef.current;
-    if (!cnv || !window.paper) return;
-    const paper = window.paper;
-    paper.setup(cnv);
-    paperRef.current = paper;
-    drawGrid(paper);
-
-    const tool = new paper.Tool();
-    tool.onMouseMove = (e: any) => {
-      const pt = snapPt(e.point, paper);
-      redrawPreview(paper, pt);
-    };
-    tool.onMouseDown = (e: any) => {
-      const pt = snapPt(e.point, paper);
-      const pts = currentPtsRef.current;
-      // Chiudi su primo punto
-      if (pts.length > 1) {
-        const fp = pts[0];
-        if (Math.hypot(fp.x - pt.x, fp.y - pt.y) < 14) { doCommit(paper); return; }
-      }
-      pts.push({ x: pt.x, y: pt.y });
-      const tool2 = activeToolRef.current;
-      if (tool2 === "misura" && pts.length >= 2) { doCommit(paper); return; }
-      if (tool2 === "arco" && pts.length >= 3) { doCommit(paper); return; }
-      redrawPreview(paper, pt);
-    };
-    tool.onKeyDown = (e: any) => {
-      if (e.key === "enter") doCommit(paper);
-      if (e.key === "escape") { currentPtsRef.current = []; clearPreviews(paper); }
-    };
-  }
-
-  function snapPt(pt: any, paper: any) {
-    if (!snapOnRef.current) return pt;
-    const grid = 20;
-    const sx = Math.round(pt.x / grid) * grid;
-    const sy = Math.round(pt.y / grid) * grid;
-    for (const s of shapesRef.current) {
+  function svgPt(e: any) {
+    const svg = svgRef.current; if (!svg) return {x:0,y:0};
+    const r = svg.getBoundingClientRect();
+    const ct = e.touches ? e.touches[0] : e;
+    const sx = (ct.clientX - r.left) / zoom - pan.x;
+    const sy = (ct.clientY - r.top)  / zoom - pan.y;
+    if (!snap) return {x:Math.round(sx), y:Math.round(sy)};
+    // Snap a griglia
+    let gx = Math.round(sx/GRID)*GRID, gy = Math.round(sy/GRID)*GRID;
+    // Snap a punti esistenti
+    for (const s of shapes) {
       for (const p of s.pts) {
-        if (Math.hypot(p.x - pt.x, p.y - pt.y) < 14) return new paper.Point(p.x, p.y);
+        if (Math.hypot(p.x-sx,p.y-sy) < 14/zoom) return {x:p.x,y:p.y};
       }
     }
-    return new paper.Point(sx, sy);
+    return {x:gx, y:gy};
   }
 
-  function drawGrid(paper: any) {
-    const g = new paper.Group();
-    g.data = { grid: true };
-    for (let x = 0; x <= 600; x += 20) {
-      const l = new paper.Path.Line(new paper.Point(x, 0), new paper.Point(x, 420));
-      l.strokeColor = new paper.Color(0, 0, 0, 0.07); l.strokeWidth = 0.5; g.addChild(l);
+  function onSvgClick(e: any) {
+    if (isPanning.current) return;
+    const pt = svgPt(e);
+    // Chiudi su primo punto
+    if (curPts.length > 1) {
+      const fp = curPts[0];
+      if (Math.hypot(fp.x-pt.x,fp.y-pt.y) < 14/zoom) { commit(); return; }
     }
-    for (let y = 0; y <= 420; y += 20) {
-      const l = new paper.Path.Line(new paper.Point(0, y), new paper.Point(600, y));
-      l.strokeColor = new paper.Color(0, 0, 0, 0.07); l.strokeWidth = 0.5; g.addChild(l);
-    }
+    const next = [...curPts, pt];
+    setCurPts(next);
+    if (tool==="misura" && next.length>=2) { commitWith(next); return; }
   }
 
-  function clearPreviews(paper: any) {
-    paper.project.activeLayer.children
-      .filter((c: any) => c.data?.preview).forEach((c: any) => c.remove());
-    paper.view.draw();
+  function commit() { commitWith(curPts); }
+  function commitWith(pts: any[]) {
+    if (pts.length<2) { setCurPts([]); return; }
+    setShapes(s=>[...s,{id:Date.now(),type:tool,pts,spessore}]);
+    setCurPts([]);
   }
 
-  function redrawPreview(paper: any, mousePt?: any) {
-    clearPreviews(paper);
-    const pts = currentPtsRef.current;
-    if (pts.length === 0) return;
-    const all = mousePt ? [...pts, { x: mousePt.x, y: mousePt.y }] : pts;
-    const tool = activeToolRef.current;
-    const sp = spessoreRef.current;
-    const col = tool === "vano" ? "#3b7fe0" : tool === "arco" ? "#dc4444" : tool === "misura" ? "#1a9e73" : "#031631";
-
-    if (tool === "muro" || tool === "vano") {
-      for (let i = 0; i < all.length - 1; i++) {
-        const a = all[i], b = all[i+1];
-        const dx = b.x-a.x, dy = b.y-a.y, len = Math.hypot(dx, dy) || 1;
-        const nx = -dy/len * sp * 0.4, ny = dx/len * sp * 0.4;
-        const r = new paper.Path([
-          new paper.Point(a.x+nx,a.y+ny), new paper.Point(b.x+nx,b.y+ny),
-          new paper.Point(b.x-nx,b.y-ny), new paper.Point(a.x-nx,a.y-ny)
-        ]);
-        r.closed = true;
-        r.fillColor = tool === "vano" ? new paper.Color(0.8,0.9,1,0.3) : new paper.Color(0.88,0.88,0.88,0.6);
-        r.strokeColor = new paper.Color(col); r.strokeWidth = tool === "vano" ? 2 : 1.5;
-        r.data = { preview: true };
-      }
+  function onSvgMove(e: any) {
+    if (isPanning.current) {
+      const ct = e.touches ? e.touches[0] : e;
+      setPan(p=>({x:p.x+(ct.clientX-lastPan.current.x)/zoom, y:p.y+(ct.clientY-lastPan.current.y)/zoom}));
+      lastPan.current = {x:ct.clientX, y:ct.clientY};
+      return;
     }
-    if (tool === "arco" || tool === "muro" || tool === "vano") {
-      const path = new paper.Path();
-      path.moveTo(new paper.Point(all[0].x, all[0].y));
-      all.slice(1).forEach((p: any) => path.lineTo(new paper.Point(p.x, p.y)));
-      path.strokeColor = new paper.Color(col); path.strokeWidth = 1; path.dashArray = [4, 3];
-      path.data = { preview: true };
-    }
-
-    // Punti esistenti
-    pts.forEach((p: any, i: number) => {
-      const c = new paper.Path.Circle(new paper.Point(p.x, p.y), i === 0 ? 6 : 4);
-      c.fillColor = i === 0 ? new paper.Color("#dc4444") : new paper.Color(col);
-      c.data = { preview: true };
-    });
-    // Snap indicator
-    if (mousePt) {
-      const r = new paper.Path.Circle(new paper.Point(mousePt.x, mousePt.y), 4);
-      r.strokeColor = new paper.Color("#8293b4"); r.strokeWidth = 1; r.data = { preview: true };
-    }
-    paper.view.draw();
+    const pt = svgPt(e);
+    setMousePos(pt);
+    // Calcola quota live
+    if (curPts.length>0) {
+      const last = curPts[curPts.length-1];
+      const px = Math.hypot(pt.x-last.x, pt.y-last.y);
+      const cm = Math.round(px/GRID*CM_PER_UNIT*10)/10;
+      setLiveLen(cm>0.1?(cm<100?cm+"cm":(cm/100).toFixed(2)+"m"):"");
+    } else setLiveLen("");
   }
 
-  function doCommit(paper: any) {
-    const pts = [...currentPtsRef.current];
-    if (pts.length < 2) { currentPtsRef.current = []; clearPreviews(paper); return; }
-    clearPreviews(paper);
-    const s = { type: activeToolRef.current, pts, spessore: spessoreRef.current };
-    shapesRef.current = [...shapesRef.current, s];
-    currentPtsRef.current = [];
-    renderFinal(paper, s);
-    paper.view.draw();
-    setShapeCount(shapesRef.current.length);
-    // Aggiorna quote vani
-    const vani = shapesRef.current.filter(x => x.type === "vano");
-    if (vani.length > 0) {
-      setDims(vani.map((v, i) => {
-        const a = v.pts[0], b = v.pts[v.pts.length-1];
-        return "V"+(i+1)+": "+Math.round(Math.hypot(b.x-a.x,b.y-a.y)/20*10)+" cm";
-      }).join("  ·  "));
+  function onSvgDown(e: any) {
+    // Pan con due dita o tasto medio
+    if ((e.touches&&e.touches.length===2)||(e.button===1)) {
+      isPanning.current=true;
+      const ct = e.touches ? e.touches[0] : e;
+      lastPan.current={x:ct.clientX,y:ct.clientY};
+      return;
     }
   }
 
-  function renderFinal(paper: any, s: any) {
-    const col = s.type === "vano" ? "#3b7fe0" : s.type === "arco" ? "#dc4444" : s.type === "misura" ? "#1a9e73" : "#031631";
-    if (s.type === "muro") {
-      for (let i = 0; i < s.pts.length-1; i++) {
-        const a=s.pts[i],b=s.pts[i+1],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
-        const nx=-dy/len*s.spessore*0.4,ny=dx/len*s.spessore*0.4;
-        const r=new paper.Path([new paper.Point(a.x+nx,a.y+ny),new paper.Point(b.x+nx,b.y+ny),new paper.Point(b.x-nx,b.y-ny),new paper.Point(a.x-nx,a.y-ny)]);
-        r.closed=true; r.fillColor=new paper.Color(0.91,0.91,0.91); r.strokeColor=new paper.Color(0.12); r.strokeWidth=1.5;
-        const cl=new paper.Path.Line(new paper.Point(a.x,a.y),new paper.Point(b.x,b.y));
-        cl.strokeColor=new paper.Color(0.25); cl.strokeWidth=0.8; cl.dashArray=[4,4];
-      }
-    } else if (s.type === "vano") {
-      const a=s.pts[0],b=s.pts[s.pts.length-1],dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
-      const nx=-dy/len*s.spessore*0.4,ny=dx/len*s.spessore*0.4;
-      const r=new paper.Path([new paper.Point(a.x+nx,a.y+ny),new paper.Point(b.x+nx,b.y+ny),new paper.Point(b.x-nx,b.y-ny),new paper.Point(a.x-nx,a.y-ny)]);
-      r.closed=true; r.fillColor=new paper.Color(0.85,0.93,1,0.7); r.strokeColor=new paper.Color(col); r.strokeWidth=2;
-      // Arco apertura
-      const ang=Math.atan2(dy,dx);
-      const arc=new paper.Path.Arc(new paper.Point(a.x,a.y),new paper.Point(a.x+len*0.65*Math.cos(ang+0.7),a.y+len*0.65*Math.sin(ang+0.7)),new paper.Point(a.x+len*0.85*Math.cos(ang+Math.PI/2.2),a.y+len*0.85*Math.sin(ang+Math.PI/2.2)));
-      arc.strokeColor=new paper.Color(col); arc.strokeWidth=1; arc.dashArray=[2,2];
-      // Quota
-      const cm=Math.round(len/20*10);
-      const lbl=new paper.PointText(new paper.Point((a.x+b.x)/2,(a.y+b.y)/2-s.spessore*0.5-5));
-      lbl.content=cm+" cm"; lbl.fontSize=11; lbl.fontWeight="bold"; lbl.fillColor=new paper.Color(col); lbl.justification="center";
-    } else if (s.type === "arco") {
-      const path=new paper.Path();
-      path.moveTo(new paper.Point(s.pts[0].x,s.pts[0].y));
-      s.pts.slice(1).forEach((p: any) => path.lineTo(new paper.Point(p.x,p.y)));
-      if (s.pts.length>=3) path.smooth({type:"catmull-rom"});
-      path.strokeColor=new paper.Color(col); path.strokeWidth=3;
-    } else if (s.type === "misura") {
-      const a=s.pts[0],b=s.pts[1];
-      const ln=new paper.Path.Line(new paper.Point(a.x,a.y),new paper.Point(b.x,b.y));
-      ln.strokeColor=new paper.Color(col); ln.strokeWidth=1.5;
-      const cm=Math.round(Math.hypot(b.x-a.x,b.y-a.y)/20*10);
-      const lbl=new paper.PointText(new paper.Point((a.x+b.x)/2,(a.y+b.y)/2-7));
-      lbl.content=cm+" cm"; lbl.fontSize=11; lbl.fontWeight="bold"; lbl.fillColor=new paper.Color(col); lbl.justification="center";
+  function onSvgUp(e: any) { isPanning.current=false; }
+
+  function onWheel(e: any) {
+    e.preventDefault();
+    const nz = Math.max(0.15,Math.min(8,zoom*(e.deltaY<0?1.12:0.89)));
+    // Zoom centrato sul cursore
+    const r = svgRef.current!.getBoundingClientRect();
+    const mx=(e.clientX-r.left)/zoom, my=(e.clientY-r.top)/zoom;
+    setPan(p=>({x:p.x-(mx*(nz-zoom)/nz), y:p.y-(my*(nz-zoom)/nz)}));
+    setZoom(nz);
+  }
+
+  function onTouchStart(e: any) {
+    if(e.touches.length===2){
+      lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      isPanning.current=true;
+      lastPan.current={x:(e.touches[0].clientX+e.touches[1].clientX)/2,y:(e.touches[0].clientY+e.touches[1].clientY)/2};
     }
   }
-
-  function undoLast() {
-    const paper = paperRef.current;
-    if (!paper || shapesRef.current.length === 0) return;
-    shapesRef.current = shapesRef.current.slice(0, -1);
-    paper.project.activeLayer.removeChildren();
-    drawGrid(paper);
-    shapesRef.current.forEach(s => renderFinal(paper, s));
-    paper.view.draw();
-    setShapeCount(shapesRef.current.length);
+  function onTouchMove(e: any) {
+    if(e.touches.length===2&&lastPinch.current){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      const nz=Math.max(0.15,Math.min(8,zoom*(d/lastPinch.current)));
+      setZoom(nz); lastPinch.current=d;
+    }
   }
+  function onTouchEnd() { lastPinch.current=null; isPanning.current=false; }
 
-  function clearAll() {
-    const paper = paperRef.current;
-    if (paper) { paper.project.activeLayer.removeChildren(); drawGrid(paper); paper.view.draw(); }
-    shapesRef.current = []; currentPtsRef.current = []; setShapeCount(0); setDims("");
-  }
-
-  const bs = (active?: boolean, col?: string) => ({
-    padding: "5px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-    cursor: "pointer", flexShrink: 0,
-    background: active ? (col || "#031631") : "#ffffff",
-    color: active ? "#ffffff" : "#44474d",
-    border: "1px solid " + (active ? (col || "#031631") : "rgba(197,198,206,0.4)"),
+  const bs2 = (on=false,col="#031631") => ({
+    padding:"5px 10px", borderRadius:8, fontSize:11, fontWeight:700, cursor:"pointer", flexShrink:0,
+    background:on?col:"#fff", color:on?"#fff":"#44474d",
+    border:"1px solid "+(on?col:"rgba(197,198,206,0.4)")
   });
 
-  const hint: any = {
-    muro: "Clicca punti → Enter o clic sul 1° punto per chiudere",
-    vano: "2 punti → larghezza vano con quota automatica",
-    arco: "3 punti: inizio · controllo · fine curva",
-    misura: "2 punti → quota in cm",
-  };
+  // Disegna forma
+  function renderShape(s: any) {
+    const col = s.type==="vano"?"#3b7fe0":s.type==="misura"?"#1a9e73":"#031631";
+    const sp2 = s.spessore*0.4;
+    if (s.type==="misura") {
+      const a=s.pts[0],b=s.pts[1];
+      const px=Math.hypot(b.x-a.x,b.y-a.y);
+      const cm=Math.round(px/GRID*s.spessore/10*10)/10;
+      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      return <g key={s.id}>
+        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={col} strokeWidth="1.5" strokeDasharray="6,3"/>
+        <line x1={a.x} y1={a.y-6} x2={a.x} y2={a.y+6} stroke={col} strokeWidth="1.5"/>
+        <line x1={b.x} y1={b.y-6} x2={b.x} y2={b.y+6} stroke={col} strokeWidth="1.5"/>
+        <rect x={mx-20} y={my-9} width={40} height={14} rx="3" fill={col}/>
+        <text x={mx} y={my+3} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">{cm}cm</text>
+      </g>;
+    }
+    // muro/vano: poligono con spessore
+    const segs = s.pts.slice(0,-1).map((a:any,i:number)=>{
+      const b=s.pts[i+1];
+      const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+      const nx=-dy/len*sp2,ny=dx/len*sp2;
+      return `${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
+    });
+    return <g key={s.id}>
+      {segs.map((pts:string,i:number)=>(
+        <polygon key={i} points={pts}
+          fill={s.type==="vano"?"rgba(180,210,255,0.3)":"rgba(180,180,180,0.5)"}
+          stroke={col} strokeWidth="1.5" strokeLinejoin="round"/>
+      ))}
+      {s.pts.slice(0,-1).map((a:any,i:number)=>{
+        const b=s.pts[i+1];
+        const px=Math.hypot(b.x-a.x,b.y-a.y);
+        const cm=Math.round(px/GRID*s.spessore/10*10)/10;
+        const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+        if(px<15) return null;
+        return <g key={"q"+i}>
+          <rect x={mx-16} y={my-8} width={32} height={13} rx="2" fill="rgba(3,22,49,0.8)"/>
+          <text x={mx} y={my+3} textAnchor="middle" fontSize="8" fill="#fff" fontWeight="700">{cm}cm</text>
+        </g>;
+      })}
+    </g>;
+  }
+
+  // Preview mentre disegni
+  const previewPts = mousePos ? [...curPts, mousePos] : curPts;
+
+  // Griglia SVG
+  const GSIZE = 5000;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      <div style={{ display: "flex", gap: 4, padding: "6px 8px", flexWrap: "wrap", borderBottom: "1px solid rgba(197,198,206,0.25)", alignItems: "center" }}>
-        <div onClick={() => setActiveTool("muro")} style={bs(activeTool==="muro")}>▭ Muro</div>
-        <div onClick={() => setActiveTool("vano")} style={bs(activeTool==="vano", "#3b7fe0")}>↗ Vano</div>
-        <div onClick={() => setActiveTool("arco")} style={bs(activeTool==="arco", "#dc4444")}>∿ Arco</div>
-        <div onClick={() => setActiveTool("misura")} style={bs(activeTool==="misura", "#1a9e73")}>↔ Misura</div>
-        <div style={{ width: 1, height: 20, background: "rgba(197,198,206,0.4)", flexShrink: 0 }} />
-        <div onClick={() => setSnapOn(v => !v)} style={bs(snapOn, "#6366f1")}>Snap {snapOn?"ON":"OFF"}</div>
-        <div style={{ width: 1, height: 20, background: "rgba(197,198,206,0.4)", flexShrink: 0 }} />
-        <div onClick={()=>{const nz=Math.min(5,zoom*1.25);setZoom(nz);zoomRef.current=nz;}} style={bs(false)}>＋</div>
-        <div style={{fontSize:10,fontWeight:700,color:"#64748B",padding:"0 2px",minWidth:32,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
-        <div onClick={()=>{const nz=Math.max(0.25,zoom*0.8);setZoom(nz);zoomRef.current=nz;}} style={bs(false)}>－</div>
-        <div onClick={()=>{setZoom(1);zoomRef.current=1;}} style={bs(false)}>↺</div>
-        <select value={String(spessore)} onChange={e => setSpessore(Number(e.target.value))} style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid rgba(197,198,206,0.4)", fontSize: 11, background: "#fff", color: "#44474d" }}>
-          <option value="6">6 cm</option>
-          <option value="8">8 cm</option>
-          <option value="12">12 cm</option>
-          <option value="20">20 cm</option>
+    <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0}}>
+      {/* Toolbar */}
+      <div style={{display:"flex",gap:4,padding:"6px 8px",flexWrap:"wrap",borderBottom:"1px solid rgba(197,198,206,0.25)",alignItems:"center",background:"#fff",flexShrink:0}}>
+        {([["muro","▭ Muro","#031631"],["vano","↗ Vano","#3b7fe0"],["misura","↔ Misura","#1a9e73"]] as any).map(([id,l,c]:any)=>(
+          <div key={id} onClick={()=>{setTool(id);setCurPts([]);}} style={bs2(tool===id,c)}>{l}</div>
+        ))}
+        <div style={{width:1,height:20,background:"rgba(197,198,206,0.4)",flexShrink:0}}/>
+        <div onClick={()=>setSnap(s=>!s)} style={bs2(snap,"#6366f1")}>Snap {snap?"ON":"OFF"}</div>
+        <select value={spessore} onChange={e=>setSpessore(parseInt(e.target.value))}
+          style={{padding:"4px 6px",borderRadius:6,border:"1px solid rgba(197,198,206,0.4)",fontSize:11,fontWeight:700,cursor:"pointer"}}>
+          {[6,8,10,12,15,20,25,30].map(v=><option key={v} value={v}>{v} cm</option>)}
         </select>
-        <div style={{ flex: 1 }} />
-        <div onClick={undoLast} style={bs()}>↩ Annulla</div>
-        <div onClick={clearAll} style={{ ...bs(), color: "#dc4444", borderColor: "#dc444440" }}>Reset</div>
+        <div style={{width:1,height:20,background:"rgba(197,198,206,0.4)",flexShrink:0}}/>
+        <div onClick={()=>setZoom(z=>Math.min(8,z*1.2))} style={bs2()}>＋</div>
+        <div style={{fontSize:10,fontWeight:700,color:"#64748B",minWidth:32,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
+        <div onClick={()=>setZoom(z=>Math.max(0.15,z*0.83))} style={bs2()}>－</div>
+        <div onClick={()=>{setZoom(1);setPan({x:0,y:0});}} style={bs2()}>↺</div>
+        <div style={{flex:1}}/>
+        <div onClick={()=>{if(curPts.length>0)setCurPts([]);else setShapes(s=>s.slice(0,-1));}} style={{...bs2(),"color":"#5b4"}}> ↩ </div>
+        <div onClick={()=>{setShapes([]);setCurPts([]);}} style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
       </div>
-      <div style={{ fontSize: 9, color: "#75777e", padding: "3px 10px", fontWeight: 600 }}>{hint[activeTool]}</div>
-      <div style={{overflow:"auto", flex:1, minHeight:0, background:"#e8e8e8"}}
-        onWheel={e=>{
-          e.preventDefault();
-          const nz = Math.max(0.25, Math.min(5, zoom * (e.deltaY > 0 ? 0.88 : 1.14)));
-          setZoom(nz); zoomRef.current = nz;
-        }}
-        onTouchStart={e=>{
-          if(e.touches.length===2)
-            lastPinchRef.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-        }}
-        onTouchMove={e=>{
-          if(e.touches.length===2&&lastPinchRef.current){
-            const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-            const nz=Math.max(0.25,Math.min(5,zoom*(d/lastPinchRef.current)));
-            setZoom(nz); zoomRef.current=nz; lastPinchRef.current=d;
-          }
-        }}
-        onTouchEnd={()=>{lastPinchRef.current=null;}}>
-        <div style={{transformOrigin:"top left",transform:`scale(${zoom})`,width:1200,height:1600,flexShrink:0}}>
-          <canvas
-            ref={canvasRef}
-            width={1200} height={1600}
-            style={{ display: "block", background: "#f9f9fb", cursor: "crosshair", touchAction: "none" }}
-          />
-        </div>
+      {/* Hint */}
+      <div style={{fontSize:9,color:"#75777e",padding:"3px 10px",fontWeight:600,background:"#fff",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
+        <span>{curPts.length>0?"Clic per aggiungere punto · Enter o clic sul 1° punto per chiudere":"Clic per iniziare · 2 dita per spostarsi/zoom"}</span>
+        {liveLen && <span style={{fontWeight:800,color:"#1A2B4A",background:"#EFF8FF",padding:"1px 6px",borderRadius:4}}>{liveLen}</span>}
       </div>
-      {dims && <div style={{ padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#031631", borderTop: "1px solid rgba(197,198,206,0.25)" }}>Vani: {dims}</div>}
-      {/* Bottone → 3D */}
-      {onGoTo3D && (
-        <div onClick={onGoTo3D}
-          style={{ margin:"8px 10px", padding:"12px", borderRadius:10, cursor:"pointer",
-            background:"#1A2B4A", color:"#fff", textAlign:"center",
-            fontSize:14, fontWeight:800 }}>
-          → Vedi in 3D
-        </div>
-      )}
+      {/* SVG canvas infinito */}
+      <svg ref={svgRef}
+        style={{flex:1,minHeight:0,display:"block",background:"#f9f9fb",cursor:isPanning.current?"grab":"crosshair",touchAction:"none",userSelect:"none"}}
+        onClick={onSvgClick}
+        onMouseMove={onSvgMove}
+        onMouseDown={onSvgDown}
+        onMouseUp={onSvgUp}
+        onWheel={onWheel}
+        onTouchStart={onTouchStart}
+        onTouchMove={e=>{onSvgMove(e);onTouchMove(e);}}
+        onTouchEnd={onTouchEnd}>
+        <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
+          {/* Griglia */}
+          <defs>
+            <pattern id="lgrid" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
+              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+            </pattern>
+            <pattern id="lgrid2" width={GRID*5} height={GRID*5} patternUnits="userSpaceOnUse">
+              <rect width={GRID*5} height={GRID*5} fill="url(#lgrid)"/>
+              <path d={`M ${GRID*5} 0 L 0 0 0 ${GRID*5}`} fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.5"/>
+            </pattern>
+          </defs>
+          <rect x={-GSIZE} y={-GSIZE} width={GSIZE*3} height={GSIZE*3} fill="url(#lgrid2)"/>
+          {/* Forme */}
+          {shapes.map(s=>renderShape(s))}
+          {/* Preview */}
+          {previewPts.length>1 && previewPts.slice(0,-1).map((a:any,i:number)=>{
+            const b=previewPts[i+1];
+            return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+              stroke={tool==="vano"?"#3b7fe0":tool==="misura"?"#1a9e73":"#031631"}
+              strokeWidth="1.5" strokeDasharray="6,3" opacity="0.6"/>;
+          })}
+          {/* Punti correnti */}
+          {curPts.map((p:any,i:number)=>(
+            <circle key={i} cx={p.x} cy={p.y} r={i===0?6:4}
+              fill={i===0?"#dc4444":"#031631"} stroke="#fff" strokeWidth="1.5"/>
+          ))}
+          {/* Snap indicator */}
+          {mousePos && <circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
+            stroke="#8293b4" strokeWidth="1" fill="none"/>}
+        </g>
+      </svg>
     </div>
   );
 }
-
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
