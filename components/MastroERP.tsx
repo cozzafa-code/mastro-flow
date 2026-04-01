@@ -3445,34 +3445,46 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             { id: "messaggi",  ico: ICO.inbox,     label: "Messaggi" },
             { id: "settings",  ico: ICO.settings,  label: "Altro" },
           ];
+          const NAV_ICONS: Record<string, React.ReactNode> = {
+            home: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l11-6 11 6v13l-11 6L3 22V9z"/><path d="M14 3v19M3 9l11 6 11-6"/></svg>,
+            agenda: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="22" height="20" rx="2"/><line x1="3" y1="10" x2="25" y2="10"/><line x1="9" y1="4" x2="9" y2="10"/><line x1="19" y1="4" x2="19" y2="10"/><line x1="8" y1="15" x2="12" y2="15"/><line x1="8" y1="19" x2="12" y2="19"/><line x1="16" y1="15" x2="20" y2="15"/></svg>,
+            commesse: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="5" y="3" width="18" height="22" rx="2"/><line x1="9" y1="13" x2="19" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>,
+            messaggi: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M4 6h16a2 2 0 012 2v9a2 2 0 01-2 2H4L2 22V8a2 2 0 012-2z"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="15" x2="13" y2="15"/></svg>,
+            settings: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="14" cy="14" r="3"/><path d="M14 4v3M14 21v3M4 14h3M21 14h3M6.3 6.3l2.1 2.1M19.6 19.6l2.1 2.1M6.3 21.7l2.1-2.1M19.6 8.4l2.1-2.1"/></svg>,
+          };
           return (
             <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-              background: T.card + "f0", borderTop: `1px solid ${T.bdr}`,
-              display: "flex", alignItems: "center",
-              backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" as any,
-              paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+              background: "white", borderTop: "1px solid #C8E4E4",
+              display: "flex", justifyContent: "space-around", alignItems: "center",
+              padding: "10px 16px 14px",
+              paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))" }}>
               {TABS.map(t => {
                 const active = tab === t.id;
                 const badge = t.id === "messaggi" && (msgs||[]).filter((m:any) => !m.letto).length > 0
                   ? (msgs||[]).filter((m:any) => !m.letto).length : 0;
                 return (
                   <div key={t.id} onClick={() => { setTab(t.id); if (t.id !== "commesse") setSelectedCM(null); }}
-                    style={{ flex: 1, display: "flex", flexDirection: "column" as any, alignItems: "center",
-                      justifyContent: "center", padding: "8px 0 6px", cursor: "pointer", position: "relative" as any }}>
-                    {active && <div style={{ position: "absolute", top: 0, left: "20%", right: "20%",
-                      height: 2, borderRadius: "0 0 2px 2px", background: T.acc }} />}
+                    style={{ display: "flex", flexDirection: "column" as any, alignItems: "center", gap: 4, cursor: "pointer" }}>
                     <div style={{ position: "relative" as any }}>
-                      <I d={t.ico} s={22} c={active ? T.acc : T.sub} />
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 10,
+                        background: active ? "#28A0A0" : "#EEF8F8",
+                        boxShadow: active ? "0 3px 0 0 #156060" : "none",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: active ? "white" : "#8BBCBC",
+                      }}>
+                        {NAV_ICONS[t.id]}
+                      </div>
                       {badge > 0 && (
-                        <div style={{ position: "absolute", top: -4, right: -6, width: 16, height: 16,
-                          borderRadius: "50%", background: T.red, color: "#fff",
+                        <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16,
+                          borderRadius: "50%", background: "#DC4444", color: "#fff",
                           fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           {badge > 9 ? "9+" : badge}
                         </div>
                       )}
                     </div>
-                    <div style={{ fontSize: 10, fontWeight: active ? 700 : 500,
-                      color: active ? T.acc : T.sub, marginTop: 3 }}>{t.label}</div>
+                    <div style={{ fontSize: 10, fontWeight: 900,
+                      color: active ? "#28A0A0" : "#8BBCBC" }}>{t.label}</div>
                   </div>
                 );
               })}
