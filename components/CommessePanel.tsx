@@ -46,60 +46,68 @@ export default function CommessePanel() {
     return (
       <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
         style={{
-          background: T.card, borderRadius: 16, padding: "16px 16px 14px",
-          border: `1.5px solid ${alert ? T.red + "40" : T.bdr}`,
-          cursor: "pointer", position: "relative", overflow: "hidden",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-          transition: "box-shadow 0.15s",
+          background: "white", borderRadius: 18, padding: "14px 14px 13px",
+          border: `1.5px solid ${alert ? T.red + "50" : "#C8E4E4"}`,
+          borderLeft: `4px solid ${getFaseColor(c.fase, alert)}`,
+          cursor: "pointer", position: "relative",
+          boxShadow: `0 6px 0 0 ${alert ? "#FFAAAA" : "#A8CCCC"}`,
         }}>
 
-        {/* Striscia fase in alto */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: alert ? T.red : fase.color || T.acc, borderRadius: "16px 16px 0 0" }} />
-
-        {/* Header: avatar + codice + alert */}
+        {/* Header: avatar + nome + codice */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 12, flexShrink: 0,
-            background: alert ? T.red + "18" : (fase.color || T.acc) + "18",
+            background: getFaseColor(c.fase, alert) + "20",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 14, fontWeight: 800, color: alert ? T.red : fase.color || T.acc,
+            fontSize: 14, fontWeight: 900, color: getFaseColor(c.fase, alert),
+            boxShadow: `0 3px 0 0 ${getFaseColor(c.fase, alert)}44`,
           }}>{initials(c)}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: T.text, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: "#0D1F1F", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {c.cliente}{c.cognome ? " " + c.cognome : ""}
             </div>
-            <div style={{ fontSize: 11, color: T.sub, fontFamily: FM, marginTop: 2 }}>{c.code}</div>
+            <div style={{ fontSize: 12, color: "#28A0A0", fontFamily: FM, fontWeight: 900, marginTop: 2, letterSpacing: "0.02em" }}>{c.code}</div>
           </div>
-          {alert && (
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.red, flexShrink: 0, marginTop: 4 }} />
-          )}
+          {alert && <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.red, flexShrink: 0, marginTop: 5 }} />}
         </div>
 
         {/* Indirizzo */}
         {c.indirizzo && (
-          <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div style={{ fontSize: 11, color: "#4A7070", fontWeight: 700, marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {c.indirizzo}
           </div>
         )}
 
-        {/* Progress bar */}
-        <div style={{ height: 4, background: T.bg, borderRadius: 2, marginBottom: 10, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: prog + "%", background: alert ? T.red : fase.color || T.acc, borderRadius: 2, transition: "width 0.3s" }} />
+        {/* Pipeline dots */}
+        <div style={{ display: "flex", gap: 3, marginBottom: 10 }}>
+          {PIPELINE.filter(p => p.attiva).map(p => {
+            const isActive = p.id === c.fase;
+            const isDone = PIPELINE.findIndex(pp => pp.id === p.id) < PIPELINE.findIndex(pp => pp.id === c.fase);
+            const dotColor = PIPELINE_FLIWOX[p.id] || "#28A0A0";
+            return (
+              <div key={p.id} style={{
+                flex: 1, height: 5, borderRadius: 3,
+                background: isActive ? dotColor : isDone ? dotColor + "60" : "#D0E8E8",
+                boxShadow: isActive ? `0 2px 0 0 ${dotColor}88` : "none",
+              }} />
+            );
+          })}
         </div>
 
-        {/* Footer: fase + vani + euro */}
+        {/* Footer */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ padding: "3px 8px", borderRadius: 6, background: (alert ? T.red : fase.color || T.acc) + "15", fontSize: 10, fontWeight: 700, color: alert ? T.red : fase.color || T.acc }}>
-              {ferma ? `Ferma ${giorniFermaCM(c)}gg` : scad ? "Scaduta" : fase.nome}
-            </div>
-            {vaniA.length > 0 && (
-              <div style={{ fontSize: 10, color: T.sub }}>{vaniOk}/{vaniA.length} vani</div>
-            )}
+          <div style={{
+            padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 900,
+            background: getFaseColor(c.fase, alert) + "18",
+            color: getFaseColor(c.fase, alert),
+            boxShadow: `0 2px 0 0 ${getFaseColor(c.fase, alert)}44`,
+          }}>
+            {ferma ? `Ferma ${giorniFermaCM(c)}gg` : scad ? "Scaduta" : fase.nome}
           </div>
-          {euroVal > 0 && (
-            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{fmtEuro(euroVal)}</div>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {vaniA.length > 0 && <span style={{ fontSize: 10, color: "#4A7070", fontWeight: 700 }}>{vaniOk}/{vaniA.length} vani</span>}
+            {euroVal > 0 && <span style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", fontFamily: FM }}>{fmtEuro(euroVal)}</span>}
+          </div>
         </div>
       </div>
     );
@@ -117,42 +125,51 @@ export default function CommessePanel() {
 
     return (
       <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
-        style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", cursor: "pointer", borderBottom: `1px solid ${T.bdr}`, position: "relative" }}>
+        style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", cursor: "pointer", borderBottom: "1px solid #EEF8F8", background: "white", position: "relative" }}>
 
-        {/* Avatar */}
+        {/* Avatar fliwoX */}
         <div style={{
-          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-          background: alert ? T.red + "18" : (fase.color || T.acc) + "18",
+          width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+          background: getFaseColor(c.fase, alert) + "18",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 12, fontWeight: 800, color: alert ? T.red : fase.color || T.acc,
+          fontSize: 13, fontWeight: 900, color: getFaseColor(c.fase, alert),
+          boxShadow: `0 3px 0 0 ${getFaseColor(c.fase, alert)}40`,
         }}>{initials(c)}</div>
 
         {/* Main */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: T.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 180 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+            <span style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 160 }}>
               {c.cliente}{c.cognome ? " " + c.cognome : ""}
             </span>
-            <span style={{ fontSize: 10, color: T.sub, fontFamily: FM, flexShrink: 0 }}>{c.code}</span>
+            <span style={{ fontSize: 11, color: "#28A0A0", fontFamily: FM, fontWeight: 900, flexShrink: 0 }}>{c.code}</span>
             {alert && <div style={{ width: 6, height: 6, borderRadius: "50%", background: T.red, flexShrink: 0 }} />}
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: alert ? T.red : fase.color || T.acc }}>
+            <span style={{
+              fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 20,
+              background: getFaseColor(c.fase, alert) + "18", color: getFaseColor(c.fase, alert),
+            }}>
               {ferma ? `Ferma ${giorniFermaCM(c)}gg` : scad ? "Scaduta" : fase.nome}
             </span>
-            {vaniA.length > 0 && <span style={{ fontSize: 10, color: T.sub }}>{vaniA.length} vani</span>}
-            {c.scadenza && !scad && <span style={{ fontSize: 10, color: T.sub }}>{fmtData(c.scadenza)}</span>}
+            {vaniA.length > 0 && <span style={{ fontSize: 10, color: "#4A7070", fontWeight: 700 }}>{vaniA.length} vani</span>}
+            {c.scadenza && !scad && <span style={{ fontSize: 10, color: "#4A7070" }}>{fmtData(c.scadenza)}</span>}
           </div>
-          {/* Mini progress */}
-          <div style={{ height: 2, background: T.bg, borderRadius: 1, marginTop: 5, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: prog + "%", background: alert ? T.red : fase.color || T.acc, borderRadius: 1 }} />
+          {/* Pipeline mini dots */}
+          <div style={{ display: "flex", gap: 2, marginTop: 5 }}>
+            {PIPELINE.filter(p => p.attiva).map(p => {
+              const isActive = p.id === c.fase;
+              const isDone = PIPELINE.findIndex(pp => pp.id === p.id) < PIPELINE.findIndex(pp => pp.id === c.fase);
+              const dc = PIPELINE_FLIWOX[p.id] || "#28A0A0";
+              return <div key={p.id} style={{ flex: 1, height: 3, borderRadius: 2, background: isActive ? dc : isDone ? dc + "50" : "#D0E8E8" }} />;
+            })}
           </div>
         </div>
 
         {/* Right */}
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          {euroVal > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: T.text, fontFamily: FM }}>{fmtEuro(euroVal)}</div>}
-          <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{prog}%</div>
+          {euroVal > 0 && <div style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", fontFamily: FM }}>{fmtEuro(euroVal)}</div>}
+          <div style={{ fontSize: 10, color: "#4A7070", fontWeight: 700, marginTop: 2 }}>{prog}%</div>
         </div>
       </div>
     );
@@ -204,69 +221,75 @@ export default function CommessePanel() {
         </div>
       </div>
 
-      {/* Search */}
-      <div style={{ padding: "0 20px 10px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}` }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca cliente, codice, indirizzo..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
-          {searchQ && <div onClick={() => setSearchQ("")} style={{ cursor: "pointer", fontSize: 16, color: T.sub, lineHeight: 1 }}>×</div>}
+      {/* fliwoX Search */}
+      <div style={{ padding: "12px 14px 8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: "white", borderRadius: 14, border: "1.5px solid #C8E4E4", boxShadow: "0 5px 0 0 #A8CCCC" }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4A7070" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 14, fontWeight: 700, color: "#0D1F1F", outline: "none", fontFamily: FF }} placeholder="Cerca cliente, codice, indirizzo..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
+          {searchQ && <div onClick={() => setSearchQ("")} style={{ cursor: "pointer", fontSize: 18, color: "#4A7070", lineHeight: 1 }}>×</div>}
         </div>
       </div>
 
-      {/* Chips fase */}
-      <div style={{ display: "flex", gap: 6, padding: "0 20px 14px", overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
-        {[{ id: "tutte", nome: "Tutte", color: T.text, count: cantieri.length },
-          ...PIPELINE.filter(p => p.attiva).map(p => ({ ...p, count: cantieri.filter(c => c.fase === p.id).length })).filter(p => p.count > 0)
-        ].map(p => {
-          const sel = filterFase === p.id;
-          return (
-            <div key={p.id} onClick={() => setFilterFase(sel && p.id !== "tutte" ? "tutte" : p.id)} style={{
-              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" as any,
-              background: sel ? (p.color || T.text) + (p.id === "tutte" ? "" : "15") : "transparent",
-              color: sel ? (p.id === "tutte" ? "#fff" : p.color || T.acc) : T.sub,
-              border: `1.5px solid ${sel ? (p.color || T.text) + (p.id === "tutte" ? "" : "40") : T.bdr}`,
-            }}>{p.nome} {p.count}</div>
-          );
-        })}
-      </div>
-
-      {/* Sort + Totale */}
-      <div style={{ padding: "0 20px 10px" }}>
+      {/* fliwoX Chips fase + Sort */}
+      <div style={{ padding: "0 14px 10px" }}>
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 8 }}>
+          {[{ id: "tutte", nome: "Tutte", color: "#28A0A0", count: cantieri.length },
+            ...PIPELINE.filter(p => p.attiva).map(p => ({ ...p, count: cantieri.filter(c => c.fase === p.id).length })).filter(p => p.count > 0)
+          ].map(p => {
+            const sel = filterFase === p.id;
+            const fc = PIPELINE_FLIWOX[p.id] || "#28A0A0";
+            return (
+              <div key={p.id} onClick={() => setFilterFase(sel && p.id !== "tutte" ? "tutte" : p.id)} style={{
+                padding: "7px 13px", borderRadius: 20, fontSize: 12, fontWeight: 900, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" as any,
+                background: sel ? (p.id === "tutte" ? "#28A0A0" : fc) : "white",
+                color: sel ? "white" : "#4A7070",
+                border: `1.5px solid ${sel ? (p.id === "tutte" ? "#156060" : fc) : "#C8E4E4"}`,
+                boxShadow: sel ? `0 4px 0 0 ${p.id === "tutte" ? "#156060" : fc}88` : "0 3px 0 0 #A8CCCC",
+              }}>{p.nome} · {p.count}</div>
+            );
+          })}
+        </div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[["default","Recenti"],["nome","A-Z"],["euro","€ desc"],["data","Data"]].map(([v,l]) => (
+          {[["default","Recenti"],["nome","A-Z"],["euro","€"],["data","Data"]].map(([v,l]) => (
             <div key={v} onClick={() => setSortBy(v as any)} style={{
-              padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
-              background: sortBy === v ? T.acc : T.card,
-              color: sortBy === v ? "#fff" : T.sub,
-              border: `1.5px solid ${sortBy === v ? T.acc : T.bdr}`
+              padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 900, cursor: "pointer",
+              background: sortBy === v ? "#28A0A0" : "white",
+              color: sortBy === v ? "white" : "#4A7070",
+              border: `1.5px solid ${sortBy === v ? "#156060" : "#C8E4E4"}`,
+              boxShadow: sortBy === v ? "0 3px 0 0 #156060" : "0 3px 0 0 #A8CCCC",
             }}>{l}</div>
           ))}
+          {totaleEuro > 0 && (
+            <div style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 20, background: "white", border: "1.5px solid #C8E4E4", boxShadow: "0 3px 0 0 #A8CCCC", display: "flex", gap: 6, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "#4A7070", fontWeight: 700 }}>{filtered.length} comm.</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F", fontFamily: FM }}>€{totaleEuro.toLocaleString("it-IT", { maximumFractionDigits: 0 })}</span>
+            </div>
+          )}
         </div>
-        {totaleEuro > 0 && (
-          <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, background: T.card, border: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: T.sub, fontWeight: 600 }}>Totale {filtered.length} commesse</span>
-            <span style={{ fontSize: 15, fontWeight: 900, color: T.text, fontFamily: FM }}>€{totaleEuro.toLocaleString("it-IT", { maximumFractionDigits: 0 })}</span>
-          </div>
-        )}
       </div>
 
-      {/* Content */}
+      {/* fliwoX Content */}
       {filtered.length === 0 ? (
         <div style={{ padding: "60px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Nessuna commessa</div>
-          <div style={{ fontSize: 13, color: T.sub, marginTop: 4 }}>Modifica i filtri o crea una nuova commessa</div>
-          <div onClick={() => setShowModal("commessa")} style={{ marginTop: 16, display: "inline-block", padding: "10px 20px", borderRadius: 10, background: T.acc, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>+ Nuova commessa</div>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: "0 5px 0 0 #A8CCCC" }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.2" strokeLinecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="12" y2="15"/></svg>
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nessuna commessa</div>
+          <div style={{ fontSize: 13, color: "#4A7070", fontWeight: 700, marginTop: 4 }}>Modifica i filtri o crea una nuova commessa</div>
+          <div onClick={() => setShowModal("commessa")} style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 24px", borderRadius: 16, background: "#28A0A0", color: "#fff", fontSize: 15, fontWeight: 900, cursor: "pointer", boxShadow: "0 7px 0 0 #156060" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round"><path d="M12 4v16M4 12h16"/></svg>
+            Nuova commessa
+          </div>
         </div>
       ) : cmView === "list" ? (
-        <div style={{ margin: "0 20px", borderRadius: 14, border: `1px solid ${T.bdr}`, overflow: "hidden", background: T.card }}>
+        <div style={{ margin: "0 14px", borderRadius: 18, border: "1.5px solid #C8E4E4", overflow: "hidden", background: "white", boxShadow: "0 7px 0 0 #A8CCCC" }}>
           {filteredSorted.map(c => renderRow(c))}
         </div>
       ) : (
         <div style={{
           display: "grid",
           gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr 1fr",
-          gap: 10, padding: "0 20px"
+          gap: 10, padding: "0 14px"
         }}>
           {filteredSorted.map(c => renderCard(c))}
         </div>
