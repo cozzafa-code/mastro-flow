@@ -138,28 +138,16 @@ export default function CassonettoEditor({ misure, onUpdate, onClose }) {
   };
   const misDist = misA&&misB ? Math.round(Math.hypot(misB.x-misA.x,misB.y-misA.y)/sc) : null;
 
-  // Click dentro il box interno → mostra menu aggiungi
   const onSvgClick = e => {
     if(toolMis||dragRef.current) return;
     const {x,y} = svgPt(e);
-    // Dentro zona interna?
-    const ix0=bx+spS, iy0=by-bh+spT, iw=bw-spS-spD, ih=bh-spT-spB;
-    if(x>ix0&&x<ix0+iw&&y>iy0&&y<iy0+ih&&!selEl) {
-      // Converti in mm interni
-      const mmx = (x-ix0)/sc + intX0mm;
-      const mmy = (y-iy0)/sc + intY0mm;
-      setAddMenu({mmx,mmy,svgx:x,svgy:y});
-    } else {
-      setSelEl(null);
-      setAddMenu(null);
-      // Hit test lati
-      const tol=12;
-      if(Math.abs(y-(by-bh))<tol&&x>bx&&x<bx+bw){setSelLato("sup");return;}
-      if(Math.abs(y-by)<tol&&x>bx&&x<bx+bw){setSelLato("inf");return;}
-      if(Math.abs(x-bx)<tol&&y>by-bh&&y<by){setSelLato("sx");return;}
-      if(Math.abs(x-(bx+bw))<tol&&y>by-bh&&y<by){setSelLato("dx");return;}
-      setSelLato(null);
-    }
+    setSelEl(null); setAddMenu(null);
+    const tol=14;
+    if(Math.abs(y-(by-bh))<tol&&x>bx&&x<bx+bw){setSelLato("sup");return;}
+    if(Math.abs(y-by)<tol&&x>bx&&x<bx+bw){setSelLato("inf");return;}
+    if(Math.abs(x-bx)<tol&&y>by-bh&&y<by){setSelLato("sx");return;}
+    if(Math.abs(x-(bx+bw))<tol&&y>by-bh&&y<by){setSelLato("dx");return;}
+    setSelLato(null);
   };
 
   const addElem = tipo => {
