@@ -191,7 +191,7 @@ export default function HomePanel() {
   pipeline.forEach(f => { faseCounts[f.id] = cantieri.filter(c => c.fase === f.id).length; });
 
   // Commesse recenti (last 3)
-  const recenti = [...cantieri].sort((a, b) => (b.updatedAt || b.id || "").localeCompare(a.updatedAt || a.id || "")).slice(0, 3);
+  const recenti = [...cantieri].sort((a, b) => String(b.updatedAt || b.id || "").localeCompare(String(a.updatedAt || a.id || ""))).slice(0, 3);
 
   // Fake operatori statici (reali da Supabase non disponibili in HomePanel context)
   const operatori = [
