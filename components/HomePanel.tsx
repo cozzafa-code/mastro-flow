@@ -82,6 +82,12 @@ export default function HomePanel() {
     }
   };
 
+  // fliwoX pipeline colors
+  const PIPE_CLR: Record<string,string> = {
+    sopralluogo:"#28A0A0",preventivo:"#1A7070",conferma:"#1060A0",
+    ordini:"#806020",produzione:"#806020",posa:"#806020",collaudo:"#6B4FB0",chiusura:"#6B4FB0",
+  };
+
   return (
     <div style={{ fontFamily:"'Inter',sans-serif", backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", minHeight:"100%", paddingBottom:100 }}>
 
