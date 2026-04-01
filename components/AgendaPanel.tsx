@@ -63,6 +63,8 @@ const IcoChevR = () => (
 const dateStr = (d: Date) => d.toISOString().split("T")[0];
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 const GG = ["L","M","M","G","V","S","D"];
+// fix testo corrotto da encoding UTF-16
+const fixText = (s: string) => (s || "").replace(/â€"/g, "–").replace(/â€™/g, "'").replace(/â€œ/g, '"').replace(/â€/g, '"').replace(/Ã /g, "à").replace(/Ã©/g, "é").replace(/Ã¨/g, "è").replace(/Ã¬/g, "ì").replace(/Ã²/g, "ò").replace(/Ã¹/g, "ù");
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
 const NavBtn = ({ onClick, children }: any) => (
@@ -146,12 +148,12 @@ export default function AgendaPanel() {
     const montSq = ev._isMontaggio && ev._squadra;
     return (
       <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}
-        style={{ background: cfg.bg, borderRadius: 14, border: `1.5px solid ${cfg.border}`, padding: "12px 14px", boxShadow: `0 4px 0 0 ${cfg.shadow}`, cursor: "pointer" }}>
+        style={{ background: "white", borderRadius: 14, border: `1.5px solid ${BDR}`, padding: "12px 14px", boxShadow: "0 5px 0 0 #A8CCCC", cursor: "pointer" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: montSq ? 8 : 0 }}>
           <div style={{ flex: 1 }}>
             <TipoBadge cfg={cfg} />
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: INK }}>{ev.text}</p>
-            <p style={{ margin: "2px 0 0", fontSize: 11, color: SUB }}>{ev.persona}{ev.cm ? " · " + ev.cm : ""}{ev.time ? " · " + ev.time : ""}</p>
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: INK }}>{fixText(ev.text)}</p>
+            <p style={{ margin: "2px 0 0", fontSize: 11, color: SUB }}>{fixText(ev.persona)}{ev.cm ? " · " + ev.cm : ""}{ev.time ? " · " + ev.time : ""}</p>
           </div>
           {ev._isMontaggio && ev.durata && (
             <div style={{ background: T_CLR, borderRadius: 9, padding: "4px 8px", boxShadow: `0 3px 0 0 ${T_DARK}`, flexShrink: 0, marginLeft: 8 }}>
