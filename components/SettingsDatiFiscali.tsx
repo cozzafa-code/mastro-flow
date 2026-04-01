@@ -66,9 +66,12 @@ export default function SettingsDatiFiscali() {
         <Field label="Provincia" value={dati.provincia ?? ''} onChange={upd('provincia')} placeholder="BR" />
       </div>
 
-      <div style={{ borderTop: '1px solid #E5E3DC', paddingTop: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: 12 }}>
-          Dati Fatturazione Elettronica (SDI)
+      <div style={{ borderTop:'1.5px solid #C8E4E4', paddingTop:18, marginTop:4 }}>
+        <div style={{ fontSize:10, fontWeight:900, color:'#4A7070', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ width:24, height:24, borderRadius:7, background:'rgba(124,95,191,0.12)', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 0 0 rgba(124,95,191,0.25)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7C5FBF" strokeWidth="2.2" strokeLinecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          Fatturazione Elettronica SDI
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <Field label="Codice SDI" value={dati.codice_sdi ?? ''} onChange={upd('codice_sdi')} placeholder="es. XXXXXXX" />
@@ -84,10 +87,12 @@ export default function SettingsDatiFiscali() {
       </div>
 
       <button onClick={salva} disabled={saving} style={{
-        padding: '13px 0', background: saved ? '#1A9E73' : '#D08008',
-        color: '#fff', border: 'none', borderRadius: 10,
-        fontSize: 15, fontWeight: 700, cursor: 'pointer',
-        fontFamily: 'Inter, sans-serif', transition: 'background 0.2s',
+        padding:'16px 0', background: saved ? '#1A9E73' : '#28A0A0',
+        color:'#fff', border:'none', borderRadius:16,
+        fontSize:16, fontWeight:900, cursor:'pointer',
+        fontFamily:'Inter, sans-serif',
+        boxShadow: saved ? '0 7px 0 0 #0A5A3A' : '0 8px 0 0 #156060',
+        display:'flex', alignItems:'center', justifyContent:'center', gap:8,
       }}>
         {saving ? 'Salvataggio...' : saved ? '✓ Salvato' : 'Salva dati fiscali'}
       </button>
@@ -104,8 +109,8 @@ function Field({ label, value, onChange, placeholder, full }: { label: string; v
   );
 }
 
-const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: '#6B7280', marginBottom: 4, textTransform: 'uppercase' };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '9px 12px', border: '1px solid #E5E3DC', borderRadius: 8, fontSize: 14, fontFamily: 'Inter, sans-serif', background: '#F2F1EC', color: '#1A1A1C', outline: 'none', boxSizing: 'border-box' };
+const labelStyle: React.CSSProperties = { display:'block', fontSize:10, fontWeight:900, color:'#4A7070', marginBottom:5, textTransform:'uppercase', letterSpacing:'0.05em' };
+const inputStyle: React.CSSProperties = { width:'100%', padding:'12px 14px', border:'1.5px solid #C8E4E4', borderRadius:12, fontSize:14, fontFamily:'Inter, sans-serif', background:'#F0F8F8', color:'#0D1F1F', outline:'none', boxSizing:'border-box', fontWeight:700, boxShadow:'inset 0 2px 4px rgba(40,160,160,0.06)' };
 
 function getToken(): string {
   return typeof window !== 'undefined' ? localStorage.getItem('sb-access-token') ?? '' : '';

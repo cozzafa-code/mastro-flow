@@ -561,8 +561,8 @@ export default function SettingsPanel() {
   ];
 
   // ─── Sidebar nav groups ────────────────────────────────────────────────────
-  const AMBER = "#D08008";
-  const AMBER_BG = "#FEF3C7";
+  const AMBER = "#28A0A0";  // fliwoX: rimpiazza amber con teal per sidebar
+  const AMBER_BG = "#EEF8F8";
 
   const sidebarGroups = [
     {
@@ -619,43 +619,37 @@ export default function SettingsPanel() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: isDesktop ? "row" : "column", height: isDesktop ? "100vh" : "auto", minHeight: "100vh", overflow: isDesktop ? "hidden" : "auto", background: "#F2F1EC", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div style={{ display:"flex", flexDirection: isDesktop ? "row" : "column", height: isDesktop ? "100vh" : "auto", minHeight:"100vh", overflow: isDesktop ? "hidden" : "auto", backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", fontFamily:"Inter, system-ui, sans-serif" }}>
 
-      {/* ── SIDEBAR ──────────────────────────────────────────────────────────── */}
-      <div style={{
-        width: isDesktop ? 220 : "100%", flexShrink: 0,
-        background: "#fff", borderRight: isDesktop ? "1px solid #E5E3DC" : "none",
-        borderBottom: isDesktop ? "none" : "1px solid #E5E3DC",
-        overflowY: isDesktop ? "auto" : "hidden",
-        display: "flex", flexDirection: "column",
-      }}>
+      {/* fliwoX SIDEBAR */}
+      <div style={{ width: isDesktop ? 200 : "100%", flexShrink:0, background:"#0D1F1F", borderRight: isDesktop ? "1px solid rgba(40,160,160,0.2)" : "none", borderBottom: isDesktop ? "none" : "2px solid #C8E4E4", overflowY: isDesktop ? "auto" : "hidden", display:"flex", flexDirection:"column" }}>
         {/* Sidebar header */}
-        <div style={{ padding: "16px 16px 8px", borderBottom: "1px solid #E5E3DC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1C" }}>Impostazioni</div>
+        <div style={{ padding:"15px 16px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ fontSize:17, fontWeight:900, color:"white", letterSpacing:"-0.3px" }}>Impostazioni</div>
           <div
             onClick={async () => { try { localStorage.clear(); const { createClient } = await import("@/lib/supabase"); await createClient().auth.signOut(); } catch(e) {} window.location.href = "/login"; }}
-            style={{ fontSize: 11, color: "#9CA3AF", cursor: "pointer", padding: "3px 8px", borderRadius: 5, border: "1px solid #E5E3DC" }}
+            style={{ fontSize:11, fontWeight:800, color:"#DC4444", cursor:"pointer", padding:"5px 10px", borderRadius:9, background:"rgba(220,68,68,0.12)", border:"1px solid rgba(220,68,68,0.3)" }}
           >Esci</div>
         </div>
 
         {/* Nav groups */}
         {!isDesktop && (
-          <div style={{ padding: "8px 12px" }}>
+          <div style={{ padding:"10px 14px" }}>
             <select
               value={settingsTab}
               onChange={e => setSettingsTab(e.target.value)}
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #E5E3DC", background: "#fff", fontSize: 14, fontWeight: 600, color: "#1A1A1C", fontFamily: "inherit" }}
+              style={{ width:"100%", padding:"12px 14px", borderRadius:14, border:"1.5px solid #28A0A0", background:"rgba(40,160,160,0.08)", fontSize:14, fontWeight:900, color:"white", fontFamily:"inherit", boxShadow:"0 5px 0 0 #156060", outline:"none" }}
             >
               {sidebarGroups.flatMap(g => g.items).map(item => (
-                <option key={item.id} value={item.id}>{item.l}</option>
+                <option key={item.id} value={item.id} style={{ background:"#0D1F1F", color:"white" }}>{item.l}</option>
               ))}
             </select>
           </div>
         )}
-        <div style={{ padding: "8px 0", flex: 1, display: isDesktop ? "block" : "none" }}>
+        <div style={{ padding:"8px 0", flex:1, display: isDesktop ? "block" : "none", overflowY:"auto" }}>
           {sidebarGroups.map(group => (
             <div key={group.label}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em", padding: "10px 16px 4px" }}>
+              <div style={{ fontSize:9, fontWeight:900, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.1em", padding:"12px 16px 4px" }}>
                 {group.label}
               </div>
               {group.items.map(item => {
@@ -665,16 +659,15 @@ export default function SettingsPanel() {
                     key={item.id}
                     onClick={() => setSettingsTab(item.id)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 8,
-                      padding: "7px 16px", cursor: "pointer", fontSize: 13,
-                      fontWeight: isActive ? 600 : 400,
-                      color: isActive ? AMBER : "#4B5563",
-                      background: isActive ? AMBER_BG : "transparent",
-                      borderRight: isActive ? `3px solid ${AMBER}` : "3px solid transparent",
-                      transition: "all 0.12s",
+                      display:"flex", alignItems:"center", gap:8,
+                      padding:"9px 16px", cursor:"pointer", fontSize:13,
+                      fontWeight: isActive ? 900 : 700,
+                      color: isActive ? "#28A0A0" : "rgba(255,255,255,0.5)",
+                      background: isActive ? "rgba(40,160,160,0.12)" : "transparent",
+                      borderLeft: isActive ? "3px solid #28A0A0" : "3px solid transparent",
                     }}
                   >
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: isActive ? AMBER : "#D1D5DB", flexShrink: 0 }} />
+                    <div style={{ width:5, height:5, borderRadius:"50%", background: isActive ? "#28A0A0" : "rgba(255,255,255,0.2)", flexShrink:0 }} />
                     {item.l}
                   </div>
                 );
@@ -683,17 +676,17 @@ export default function SettingsPanel() {
           ))}
         </div>
 
-        {/* Azienda info bottom */}
-        <div style={{ padding: "12px 16px", borderTop: "1px solid #E5E3DC" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 30, height: 30, borderRadius: "50%", background: AMBER, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+        {/* fliwoX azienda info bottom */}
+        <div style={{ padding:"12px 14px", borderTop:"1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ width:32, height:32, borderRadius:10, background:"#28A0A0", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:900, color:"white", flexShrink:0, boxShadow:"0 3px 0 0 #156060" }}>
               {(aziendaInfo?.ragione || "W").charAt(0)}
             </div>
-            <div style={{ overflow: "hidden" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#1A1A1C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{ overflow:"hidden" }}>
+              <div style={{ fontSize:12, fontWeight:900, color:"white", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                 {aziendaInfo?.ragione || "La tua azienda"}
               </div>
-              <div style={{ fontSize: 10, color: "#9CA3AF" }}>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", fontWeight:700 }}>
                 {settoriAttivi.length} {settoriAttivi.length === 1 ? "settore" : "settori"}
               </div>
             </div>
@@ -701,16 +694,16 @@ export default function SettingsPanel() {
         </div>
       </div>
 
-      {/* ── CONTENT AREA ─────────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      {/* fliwoX CONTENT AREA */}
+      <div style={{ flex:1, overflowY:"auto" }}>
         {/* Content header */}
-        <div style={{ padding: isDesktop ? "20px 28px 0" : "16px 16px 0", marginBottom: 20 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "#1A1A1C" }}>
+        <div style={{ padding: isDesktop ? "18px 24px 0" : "14px 14px 0", marginBottom:16 }}>
+          <div style={{ fontSize:17, fontWeight:900, color:"#0D1F1F", letterSpacing:"-0.2px" }}>
             {sidebarGroups.flatMap(g => g.items).find(i => i.id === settingsTab)?.l || "Impostazioni"}
           </div>
         </div>
 
-      <div style={{ padding: isDesktop ? "0 28px 40px" : "0 16px 40px" }}>
+      <div style={{ padding: isDesktop ? "0 24px 40px" : "0 14px 40px" }}>
 
         {/* === AZIENDA === */}
         {/* === SETTORE === */}
