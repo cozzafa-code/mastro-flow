@@ -728,13 +728,28 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function getAdj(s:any) {
-    // Cerca tra TUTTI i segmenti (non solo stesso tipo) per trovare adiacenti
+    const EPS = 3; // tolleranza snap
     const others=shapes.filter((x:any)=>x.id!==s.id);
-    const prevSeg=others.find((x:any)=>Math.hypot(x.b.x-s.a.x,x.b.y-s.a.y)<2||Math.hypot(x.a.x-s.a.x,x.a.y-s.a.y)<2);
-    const nextSeg=others.find((x:any)=>Math.hypot(x.a.x-s.b.x,x.a.y-s.b.y)<2||Math.hypot(x.b.x-s.b.x,x.b.y-s.b.y)<2);
+
+    // Cerca segmento il cui endpoint tocca s.a
+    // prevB = il punto OPPOSTO dell'adiacente (per calcolare la direzione entrante)
+    let prevSeg:any=null, prevB:any=null;
+    for(const x of others) {
+      if(Math.hypot(x.b.x-s.a.x,x.b.y-s.a.y)<EPS) { prevSeg=x; prevB=x.a; break; }
+      if(Math.hypot(x.a.x-s.a.x,x.a.y-s.a.y)<EPS) { prevSeg=x; prevB=x.b; break; }
+    }
+
+    // Cerca segmento il cui endpoint tocca s.b
+    let nextSeg:any=null, nextA:any=null;
+    for(const x of others) {
+      if(x.id===prevSeg?.id) continue; // non riusare lo stesso
+      if(Math.hypot(x.a.x-s.b.x,x.a.y-s.b.y)<EPS) { nextSeg=x; nextA=x.b; break; }
+      if(Math.hypot(x.b.x-s.b.x,x.b.y-s.b.y)<EPS) { nextSeg=x; nextA=x.a; break; }
+    }
+
     return {
-      prevB:prevSeg?(Math.hypot(prevSeg.b.x-s.a.x,prevSeg.b.y-s.a.y)<2?prevSeg.a:prevSeg.b):null,
-      nextA:nextSeg?(Math.hypot(nextSeg.a.x-s.b.x,nextSeg.a.y-s.b.y)<2?nextSeg.b:nextSeg.a):null,
+      prevB,
+      nextA,
       prevSp:prevSeg?.spessore||s.spessore,
       nextSp:nextSeg?.spessore||s.spessore,
     };
