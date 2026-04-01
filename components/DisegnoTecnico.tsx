@@ -495,22 +495,19 @@ function FormaEditor({ T, realW, realH, pts, onPtsChange, H, onHChange, sp, onSp
 // ═══════════════════════════════════════════════════════════
 function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const [zoom, setZoom] = React.useState(1);
-  const [pan, setPan] = React.useState({x:40, y:40});
+  const [pan, setPan] = React.useState({x:60, y:60});
   const [tool, setTool] = React.useState<"muro"|"oggetto">("muro");
-  const [spessore, setSpessore] = React.useState(15); // cm
+  const [spessore, setSpessore] = React.useState(15);
   const [shapes, setShapes] = React.useState<any[]>([]);
   const [curPts, setCurPts] = React.useState<any[]>([]);
   const [mousePos, setMousePos] = React.useState<any>(null);
-  const [drawing, setDrawing] = React.useState(false); // per oggetto: drag rect
-  const [dragStart, setDragStart] = React.useState<any>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const isPanRef = React.useRef(false);
   const lastPanPt = React.useRef({x:0,y:0});
   const lastPinch = React.useRef<number|null>(null);
 
-  // 1 unità = 1 cm. GRID = pixel per 10cm a zoom=1
   const GRID = 20; // 20px = 10cm
-  const scale = GRID / 10; // px per cm
+  const scale = GRID / 10; // px/cm
 
   function toSvg(e: any) {
     const svg = svgRef.current; if (!svg) return {x:0,y:0};
@@ -524,26 +521,24 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
   function snapPt(pt: any) {
     const g = GRID;
-    let sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
-    // snap a punti esistenti
+    const sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
     for (const s of shapes) {
       for (const p of (s.pts||[])) {
-        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 16/zoom) return {x:p.x,y:p.y};
+        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 18/zoom) return {x:p.x,y:p.y};
       }
     }
     return {x:sx,y:sy};
   }
 
   function pxToCm(px: number) { return Math.round(px / scale); }
-
   function lenLabel(px: number) {
-    const cm = pxToCm(px);
+    const cm = pxToCm(Math.abs(px));
     return cm >= 100 ? (cm/100).toFixed(2)+"m" : cm+"cm";
   }
 
-  // ── CLICK sul SVG ─────────────────────────────────────────
+  // ── EVENTS ────────────────────────────────────────────────
   function onDown(e: any) {
-    if (e.button === 1) { isPanRef.current=true; lastPanPt.current={x:e.clientX,y:e.clientY}; return; }
+    if (e.button===1) { isPanRef.current=true; lastPanPt.current={x:e.clientX,y:e.clientY}; return; }
     if (e.touches?.length===2) {
       isPanRef.current=true;
       lastPanPt.current={x:(e.touches[0].clientX+e.touches[1].clientX)/2,y:(e.touches[0].clientY+e.touches[1].clientY)/2};
@@ -551,11 +546,10 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       return;
     }
     const pt = snapPt(toSvg(e));
-    if (tool==="oggetto") { setDragStart(pt); setDrawing(true); return; }
-    // muro: accumula punti
-    if (curPts.length>1) {
+    // Chiudi su primo punto (entrambi i tool)
+    if (curPts.length>2) {
       const fp=curPts[0];
-      if (Math.hypot(fp.x-pt.x,fp.y-pt.y)<16/zoom) { commitMuro([...curPts]); return; }
+      if (Math.hypot(fp.x-pt.x,fp.y-pt.y)<18/zoom) { commitShape([...curPts]); return; }
     }
     setCurPts(p=>[...p,pt]);
   }
@@ -565,7 +559,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     if (isPanRef.current) {
       if (e.touches?.length===2 && lastPinch.current) {
         const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-        setZoom(z=>Math.max(0.15,Math.min(8,z*(d/lastPinch.current))));
+        setZoom(z=>Math.max(0.1,Math.min(8,z*(d/lastPinch.current))));
         lastPinch.current=d;
       }
       setPan(p=>({x:p.x+(ct.clientX-lastPanPt.current.x)/zoom,y:p.y+(ct.clientY-lastPanPt.current.y)/zoom}));
@@ -575,22 +569,13 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     setMousePos(snapPt(toSvg(e)));
   }
 
-  function onUp(e: any) {
-    isPanRef.current=false; lastPinch.current=null;
-    if (tool==="oggetto" && drawing && dragStart && mousePos) {
-      const x=Math.min(dragStart.x,mousePos.x), y=Math.min(dragStart.y,mousePos.y);
-      const w=Math.abs(mousePos.x-dragStart.x), h=Math.abs(mousePos.y-dragStart.y);
-      if (w>4&&h>4) setShapes(s=>[...s,{id:Date.now(),type:"oggetto",x,y,w,h,spessore}]);
-      setDrawing(false); setDragStart(null);
-    }
-  }
+  function onUp() { isPanRef.current=false; lastPinch.current=null; }
 
-  function onDblClick(e: any) {
-    if (tool==="muro" && curPts.length>1) commitMuro([...curPts]);
-  }
+  function onDblClick() { if(curPts.length>1) commitShape([...curPts]); }
 
-  function commitMuro(pts: any[]) {
-    setShapes(s=>[...s,{id:Date.now(),type:"muro",pts,spessore}]);
+  function commitShape(pts: any[]) {
+    if(pts.length<2) { setCurPts([]); return; }
+    setShapes(s=>[...s,{id:Date.now(),type:tool,pts,spessore}]);
     setCurPts([]);
   }
 
@@ -604,191 +589,159 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onKeyDown(e: any) {
-    if (e.key==="Enter"&&curPts.length>1) commitMuro([...curPts]);
-    if (e.key==="Escape") { setCurPts([]); setDrawing(false); setDragStart(null); }
-    if ((e.key==="z"||e.key==="Z")&&(e.ctrlKey||e.metaKey)) {
-      setShapes(s=>s.slice(0,-1));
-    }
+    if (e.key==="Enter"&&curPts.length>1) commitShape([...curPts]);
+    if (e.key==="Escape") setCurPts([]);
+    if ((e.key==="z"||e.key==="Z")&&(e.ctrlKey||e.metaKey)) setShapes(s=>s.slice(0,-1));
+    if (e.key==="Delete"||e.key==="Backspace") { if(curPts.length>0) setCurPts(p=>p.slice(0,-1)); }
   }
 
   // ── RENDER MURO ──────────────────────────────────────────
-  function renderMuro(s: any, preview=false) {
-    const sp2 = s.spessore * scale * 0.5;
-    const pts = s.pts;
-    const segs = pts.slice(0,-1).map((a:any,i:number)=>{
-      const b=pts[i+1];
-      const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
-      const nx=-dy/len*sp2,ny=dx/len*sp2;
-      const poly=`${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
-      const cm=pxToCm(len);
-      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-      const angle=Math.atan2(dy,dx)*180/Math.PI;
-      const fixAngle=Math.abs(angle)>90?angle+180:angle;
-      return {poly,cm,mx,my,fixAngle,len,a,b};
-    });
-    return <g key={s.id}>
-      {segs.map((seg:any,i:number)=>(
-        <g key={i}>
-          {/* Muro pieno */}
-          <polygon points={seg.poly}
-            fill={preview?"rgba(60,60,60,0.12)":"rgba(60,60,60,0.18)"}
-            stroke={preview?"#666":"#222"}
-            strokeWidth={preview?"1":"1.5"}/>
-          {/* Linea asse tratteggiata */}
-          <line x1={seg.a.x} y1={seg.a.y} x2={seg.b.x} y2={seg.b.y}
-            stroke="#888" strokeWidth="0.5" strokeDasharray="6,4"/>
-          {/* Quota */}
-          {seg.len>20&&!preview&&<g>
-            <rect x={seg.mx-18} y={seg.my-8} width={36} height={14} rx="3"
-              fill="rgba(3,22,49,0.85)"/>
-            <text x={seg.mx} y={seg.my+3} textAnchor="middle" fontSize="9"
-              fill="#fff" fontWeight="800"
-              transform={`rotate(${seg.fixAngle},${seg.mx},${seg.my})`}>
-              {lenLabel(seg.len)}
-            </text>
+  function renderMuro(pts:any[], sp:number, preview=false, id:any=null) {
+    const sp2 = sp * scale * 0.5;
+    const col = "#1A2B4A";
+    return <g key={id||"prev-muro"}>
+      {pts.slice(0,-1).map((a:any,i:number)=>{
+        const b=pts[i+1];
+        const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+        const nx=-dy/len*sp2,ny=dx/len*sp2;
+        const poly=`${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
+        const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
+        const ang=Math.atan2(dy,dx)*180/Math.PI;
+        const fixAng=Math.abs(ang)>90?ang+180:ang;
+        return <g key={i}>
+          <polygon points={poly}
+            fill={preview?"rgba(26,43,74,0.08)":"rgba(26,43,74,0.15)"}
+            stroke={col} strokeWidth={preview?"1":"1.5"}
+            strokeLinejoin="round"/>
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+            stroke="#888" strokeWidth="0.5" strokeDasharray="5,4"/>
+          {!preview&&len>15&&<g>
+            <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3" fill="rgba(26,43,74,0.85)"/>
+            <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
+              transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
           </g>}
-        </g>
-      ))}
-      {/* Nodi */}
+        </g>;
+      })}
       {!preview&&pts.map((p:any,i:number)=>(
         <circle key={i} cx={p.x} cy={p.y} r={4/zoom}
-          fill={i===0?"#dc4444":"#222"} stroke="#fff" strokeWidth={1.5/zoom}/>
+          fill={i===0?"#dc4444":"#1A2B4A"} stroke="#fff" strokeWidth={1.5/zoom}/>
       ))}
     </g>;
   }
 
-  // ── RENDER OGGETTO ────────────────────────────────────────
-  function renderOggetto(s: any) {
-    const wCm=pxToCm(s.w), hCm=pxToCm(s.h);
-    // Spessore pareti in px (default 10cm = GRID px)
-    const sp = s.spessore ? s.spessore * scale : GRID;
-    const sp2 = sp * 0.5;
-    // Dimensioni interne
-    const ix=s.x+sp, iy=s.y+sp, iw=Math.max(s.w-sp*2,2), ih=Math.max(s.h-sp*2,2);
-    const wiCm=pxToCm(iw), hiCm=pxToCm(ih);
-    return <g key={s.id}>
-      {/* Pareti (4 rettangoli) */}
-      {/* Top */}
-      <rect x={s.x} y={s.y} width={s.w} height={sp} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
-      {/* Bottom */}
-      <rect x={s.x} y={s.y+s.h-sp} width={s.w} height={sp} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
-      {/* Left */}
-      <rect x={s.x} y={s.y+sp} width={sp} height={s.h-sp*2} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
-      {/* Right */}
-      <rect x={s.x+s.w-sp} y={s.y+sp} width={sp} height={s.h-sp*2} fill="rgba(40,40,40,0.18)" stroke="#1A2B4A" strokeWidth="1.5"/>
+  // ── RENDER OGGETTO (forma chiusa con pareti spesse) ───────
+  function renderOggetto(pts:any[], sp:number, preview=false, id:any=null) {
+    if(pts.length<2) return null;
+    // Chiudi il poligono
+    const closed = [...pts, pts[0]];
+    const sp2 = sp * scale * 0.5;
+    const col = "#3B7FE0";
+    // Calcola centroide per restringere verso l'interno
+    const cx2 = pts.reduce((s:number,p:any)=>s+p.x,0)/pts.length;
+    const cy2 = pts.reduce((s:number,p:any)=>s+p.y,0)/pts.length;
+    // Punti interni (spostati verso centroide di sp2*2)
+    const inner = pts.map((p:any)=>{
+      const dx=cx2-p.x,dy=cy2-p.y,d=Math.hypot(dx,dy)||1;
+      const move=Math.min(sp2*2,d*0.4);
+      return {x:p.x+dx/d*move,y:p.y+dy/d*move};
+    });
+    const outerPath = pts.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
+    const innerPath = inner.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
+    return <g key={id||"prev-oggetto"}>
+      {/* Pareti piene */}
+      <path d={outerPath} fill={preview?"rgba(59,127,224,0.08)":"rgba(59,127,224,0.15)"}
+        stroke={col} strokeWidth={preview?"1.5":"2"} strokeLinejoin="round"/>
       {/* Interno vuoto */}
-      <rect x={ix} y={iy} width={iw} height={ih} fill="rgba(240,248,255,0.6)" stroke="#3B7FE0" strokeWidth="0.8" strokeDasharray="5,3"/>
-      {/* Diagonali interno */}
-      <line x1={ix} y1={iy} x2={ix+iw} y2={iy+ih} stroke="rgba(59,127,224,0.2)" strokeWidth="0.5"/>
-      <line x1={ix+iw} y1={iy} x2={ix} y2={iy+ih} stroke="rgba(59,127,224,0.2)" strokeWidth="0.5"/>
-      {/* Quote esterne larghezza */}
-      <line x1={s.x} y1={s.y-12} x2={s.x+s.w} y2={s.y-12} stroke="#1A2B4A" strokeWidth="1"/>
-      <line x1={s.x} y1={s.y-8} x2={s.x} y2={s.y-16} stroke="#1A2B4A" strokeWidth="1"/>
-      <line x1={s.x+s.w} y1={s.y-8} x2={s.x+s.w} y2={s.y-16} stroke="#1A2B4A" strokeWidth="1"/>
-      <rect x={s.x+s.w/2-22} y={s.y-24} width={44} height={14} rx="3" fill="#1A2B4A"/>
-      <text x={s.x+s.w/2} y={s.y-13} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">{lenLabel(s.w)}</text>
-      {/* Quote esterne altezza */}
-      <line x1={s.x+s.w+12} y1={s.y} x2={s.x+s.w+12} y2={s.y+s.h} stroke="#1A2B4A" strokeWidth="1"/>
-      <line x1={s.x+s.w+8} y1={s.y} x2={s.x+s.w+16} y2={s.y} stroke="#1A2B4A" strokeWidth="1"/>
-      <line x1={s.x+s.w+8} y1={s.y+s.h} x2={s.x+s.w+16} y2={s.y+s.h} stroke="#1A2B4A" strokeWidth="1"/>
-      <text x={s.x+s.w+24} y={s.y+s.h/2+3} textAnchor="middle" fontSize="9" fill="#1A2B4A" fontWeight="800"
-        transform={`rotate(90,${s.x+s.w+24},${s.y+s.h/2+3})`}>{lenLabel(s.h)}</text>
-      {/* Dimensioni interne */}
-      {iw>20&&ih>20&&<>
-        <text x={ix+iw/2} y={iy+ih/2-3} textAnchor="middle" fontSize="9" fill="#3B7FE0" fontWeight="700">
-          {wiCm}×{hiCm}cm
-        </text>
-        <text x={ix+iw/2} y={iy+ih/2+9} textAnchor="middle" fontSize="7" fill="#94A3B8">int.</text>
-      </>}
+      {!preview&&<path d={innerPath} fill="rgba(239,248,255,0.7)"
+        stroke={col} strokeWidth="0.8" strokeDasharray="5,3" strokeLinejoin="round"/>}
+      {/* Quote lati */}
+      {!preview&&closed.slice(0,-1).map((a:any,i:number)=>{
+        const b=closed[i+1];
+        const len=Math.hypot(b.x-a.x,b.y-a.y);
+        if(len<15) return null;
+        const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
+        const dx=b.x-a.x,dy=b.y-a.y;
+        const ang=Math.atan2(dy,dx)*180/Math.PI;
+        const fixAng=Math.abs(ang)>90?ang+180:ang;
+        return <g key={i}>
+          <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3" fill="rgba(59,127,224,0.85)"/>
+          <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
+            transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
+        </g>;
+      })}
+      {!preview&&pts.map((p:any,i:number)=>(
+        <circle key={i} cx={p.x} cy={p.y} r={4/zoom}
+          fill={i===0?"#dc4444":col} stroke="#fff" strokeWidth={1.5/zoom}/>
+      ))}
     </g>;
   }
 
-  // ── MISURA LIVE ───────────────────────────────────────────
-  function liveInfo() {
-    if (!mousePos) return null;
-    if (tool==="muro"&&curPts.length>0) {
-      const last=curPts[curPts.length-1];
-      const px=Math.hypot(mousePos.x-last.x,mousePos.y-last.y);
-      return px>5 ? lenLabel(px) : null;
-    }
-    if (tool==="oggetto"&&drawing&&dragStart) {
-      const w=Math.abs(mousePos.x-dragStart.x), h=Math.abs(mousePos.y-dragStart.y);
-      return `${lenLabel(w)} × ${lenLabel(h)}`;
-    }
-    return null;
-  }
+  // ── LIVE QUOTE ─────────────────────────────────────────────
+  const live = React.useMemo(()=>{
+    if(!mousePos||curPts.length===0) return "";
+    const last=curPts[curPts.length-1];
+    const px=Math.hypot(mousePos.x-last.x,mousePos.y-last.y);
+    return px>5?lenLabel(px):"";
+  },[mousePos,curPts]);
 
-  const live = liveInfo();
+  const previewPts = mousePos ? [...curPts, mousePos] : curPts;
+  const col = tool==="muro"?"#1A2B4A":"#3B7FE0";
 
-  const bs2=(on=false,col="#031631")=>({
+  const bs2=(on=false,c="#031631")=>({
     padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,
-    background:on?col:"#fff",color:on?"#fff":"#44474d",
-    border:"1.5px solid "+(on?col:"rgba(197,198,206,0.5)"),
+    background:on?c:"#fff",color:on?"#fff":"#44474d",
+    border:"1.5px solid "+(on?c:"rgba(197,198,206,0.5)"),
   });
 
   return (
     <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0,outline:"none"}}
       tabIndex={0} onKeyDown={onKeyDown}>
-      {/* ── TOOLBAR ── */}
-      <div style={{display:"flex",gap:5,padding:"7px 10px",flexWrap:"wrap",
-        borderBottom:"1px solid rgba(197,198,206,0.3)",alignItems:"center",
-        background:"#fff",flexShrink:0}}>
-        <div onClick={()=>{setTool("muro");setCurPts([]);}} style={bs2(tool==="muro","#1A2B4A")}>
-          ▬ Muro
-        </div>
-        <div onClick={()=>{setTool("oggetto");setCurPts([]);}} style={bs2(tool==="oggetto","#3B7FE0")}>
-          ⬜ Oggetto
-        </div>
-        <div style={{width:1,height:22,background:"rgba(197,198,206,0.5)",flexShrink:0}}/>
+
+      {/* TOOLBAR */}
+      <div style={{display:"flex",gap:5,padding:"7px 10px",flexWrap:"wrap",alignItems:"center",
+        background:"#fff",borderBottom:"1px solid rgba(197,198,206,0.3)",flexShrink:0}}>
+        <div onClick={()=>{setTool("muro");setCurPts([]);}} style={bs2(tool==="muro","#1A2B4A")}>▬ Muro</div>
+        <div onClick={()=>{setTool("oggetto");setCurPts([]);}} style={bs2(tool==="oggetto","#3B7FE0")}>⬜ Oggetto</div>
+        <div style={{width:1,height:22,background:"rgba(197,198,206,0.4)"}}/>
         <select value={spessore} onChange={e=>setSpessore(parseInt(e.target.value))}
           style={{padding:"5px 8px",borderRadius:7,border:"1.5px solid rgba(197,198,206,0.5)",
             fontSize:12,fontWeight:700,cursor:"pointer",background:"#fff"}}>
           {[5,8,10,12,15,20,25,30].map(v=><option key={v} value={v}>{v}cm</option>)}
         </select>
-        <div style={{width:1,height:22,background:"rgba(197,198,206,0.5)",flexShrink:0}}/>
+        <div style={{width:1,height:22,background:"rgba(197,198,206,0.4)"}}/>
         <div onClick={()=>setZoom(z=>Math.min(8,z*1.2))} style={bs2()}>＋</div>
-        <div style={{fontSize:11,fontWeight:700,color:"#64748B",minWidth:36,textAlign:"center"}}>
-          {Math.round(zoom*100)}%
-        </div>
+        <div style={{fontSize:11,fontWeight:700,color:"#64748B",minWidth:36,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
         <div onClick={()=>setZoom(z=>Math.max(0.1,z*0.83))} style={bs2()}>－</div>
-        <div onClick={()=>{setZoom(1);setPan({x:40,y:40});}} style={bs2()}>↺</div>
+        <div onClick={()=>{setZoom(1);setPan({x:60,y:60});}} style={bs2()}>↺</div>
         <div style={{flex:1}}/>
-        <div onClick={()=>{if(curPts.length>0)setCurPts([]);else setShapes(s=>s.slice(0,-1));}}
-          style={bs2()}>↩ Annulla</div>
-        <div onClick={()=>{setShapes([]);setCurPts([]);setDragStart(null);}}
-          style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
+        <div onClick={()=>{if(curPts.length>0)setCurPts(p=>p.slice(0,-1));else setShapes(s=>s.slice(0,-1));}} style={bs2()}>↩</div>
+        <div onClick={()=>{setShapes([]);setCurPts([]);}} style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
       </div>
 
-      {/* ── HINT ── */}
-      <div style={{display:"flex",alignItems:"center",gap:10,
-        padding:"4px 12px",background:"#F8FAFC",
-        borderBottom:"1px solid rgba(197,198,206,0.2)",flexShrink:0}}>
+      {/* HINT */}
+      <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 12px",
+        background:"#F8FAFC",borderBottom:"1px solid rgba(197,198,206,0.2)",flexShrink:0}}>
         <span style={{fontSize:10,color:"#64748B",fontWeight:500}}>
-          {tool==="muro"
-            ? curPts.length>0?"Clic per continuare · Doppio clic o Enter per chiudere":"Clic per iniziare il muro"
-            : drawing?"Rilascia per confermare":"Trascina per disegnare l'oggetto"}
+          {curPts.length===0
+            ? tool==="muro"?"Clic per iniziare il muro":"Clic per iniziare l'oggetto"
+            : `${curPts.length} punti · clic sul 1° punto o Enter per chiudere · Doppio clic per terminare`}
         </span>
-        {live&&<span style={{fontSize:11,fontWeight:800,color:"#1A2B4A",
-          background:"#EFF8FF",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>
-          {live}
-        </span>}
-        <span style={{fontSize:9,color:"#94A3B8",marginLeft:"auto"}}>
-          2 dita = sposta · rotella = zoom
-        </span>
+        {live&&<span style={{fontSize:11,fontWeight:800,color:col,
+          background:tool==="muro"?"#F0F4FF":"#EFF8FF",
+          padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>{live}</span>}
+        <span style={{fontSize:9,color:"#94A3B8",marginLeft:"auto"}}>2 dita=sposta · rotella=zoom</span>
       </div>
 
-      {/* ── SVG CANVAS INFINITO ── */}
+      {/* SVG INFINITO */}
       <svg ref={svgRef}
         style={{flex:1,minHeight:0,display:"block",background:"#F9F9FB",
-          cursor:isPanRef.current?"grabbing":tool==="oggetto"&&drawing?"crosshair":"default",
-          touchAction:"none",userSelect:"none"}}
+          cursor:isPanRef.current?"grabbing":"crosshair",touchAction:"none",userSelect:"none"}}
         onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
         onDoubleClick={onDblClick}
         onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
         onWheel={onWheel}>
-
         <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
-          {/* Griglia */}
+          {/* Griglia infinita */}
           <defs>
             <pattern id="lib-sm" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
               <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="0.5"/>
@@ -798,46 +751,31 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
               <path d={`M ${GRID*5} 0 L 0 0 0 ${GRID*5}`} fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="0.5"/>
             </pattern>
           </defs>
-          <rect x={-5000} y={-5000} width={10000} height={10000} fill="url(#lib-lg)"/>
-
-          {/* Assi */}
-          <line x1={-5000} y1={0} x2={5000} y2={0} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
-          <line x1={0} y1={-5000} x2={0} y2={5000} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+          <rect x={-9999} y={-9999} width={19998} height={19998} fill="url(#lib-lg)"/>
+          <line x1={-9999} y1={0} x2={9999} y2={0} stroke="rgba(0,0,0,0.07)" strokeWidth="1"/>
+          <line x1={0} y1={-9999} x2={0} y2={9999} stroke="rgba(0,0,0,0.07)" strokeWidth="1"/>
 
           {/* Forme salvate */}
-          {shapes.map(s=>s.type==="muro"?renderMuro(s):renderOggetto(s))}
+          {shapes.map(s=>s.type==="muro"
+            ?renderMuro(s.pts,s.spessore,false,s.id)
+            :renderOggetto(s.pts,s.spessore,false,s.id)
+          )}
 
-          {/* Preview muro in corso */}
-          {tool==="muro"&&curPts.length>0&&mousePos&&
-            renderMuro({id:"prev",type:"muro",pts:[...curPts,mousePos],spessore},true)}
+          {/* Preview in corso */}
+          {previewPts.length>1&&(tool==="muro"
+            ?renderMuro(previewPts,spessore,true)
+            :renderOggetto(previewPts,spessore,true)
+          )}
 
-          {/* Punti muro in corso */}
-          {tool==="muro"&&curPts.map((p:any,i:number)=>(
+          {/* Punti in corso */}
+          {curPts.map((p:any,i:number)=>(
             <circle key={i} cx={p.x} cy={p.y} r={5/zoom}
-              fill={i===0?"#dc4444":"#1A2B4A"} stroke="#fff" strokeWidth={2/zoom}/>
+              fill={i===0?"#dc4444":col} stroke="#fff" strokeWidth={2/zoom}/>
           ))}
-
-          {/* Preview rettangolo oggetto */}
-          {tool==="oggetto"&&drawing&&dragStart&&mousePos&&(()=>{
-            const x=Math.min(dragStart.x,mousePos.x),y=Math.min(dragStart.y,mousePos.y);
-            const w=Math.abs(mousePos.x-dragStart.x),h=Math.abs(mousePos.y-dragStart.y);
-            return <g>
-              <rect x={x} y={y} width={w} height={h}
-                fill="rgba(59,127,224,0.08)" stroke="#3B7FE0"
-                strokeWidth={2/zoom} strokeDasharray={`${6/zoom},${3/zoom}`}/>
-              {w>10&&h>10&&<>
-                <rect x={x+w/2-25} y={y+h/2-9} width={50} height={16} rx="4" fill="#3B7FE0"/>
-                <text x={x+w/2} y={y+h/2+4} textAnchor="middle" fontSize="10"
-                  fill="#fff" fontWeight="800">
-                  {lenLabel(w)} × {lenLabel(h)}
-                </text>
-              </>}
-            </g>;
-          })()}
 
           {/* Snap indicator */}
           {mousePos&&<circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
-            stroke="#3B7FE0" strokeWidth={1/zoom} fill="rgba(59,127,224,0.2)"/>}
+            stroke={col} strokeWidth={1/zoom} fill="rgba(59,127,224,0.15)"/>}
         </g>
       </svg>
     </div>
