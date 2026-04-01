@@ -8,6 +8,7 @@ import DisegnoTecnico from "./DisegnoTecnico";
 import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
 import SkizzoTecnico from "./SkizzoTecnico";
 import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
+import CassonettoEditor from "./CassonettoEditor";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMastro } from "./MastroContext";
 import { FF, FM, ICO, Ico, I, TIPOLOGIE_RAPIDE, ZANZ_CATEGORIE } from "./mastro-constants";
@@ -191,6 +192,7 @@ export default function VanoDetailPanel() {
   const [showFotoMisure, setShowFotoMisure] = useState(false);
   const [showSchizzo, setShowSchizzo] = useState(false);
   const [showLamieraDisegno, setShowLamieraDisegno] = useState(false);
+  const [showCassonettoEditor, setShowCassonettoEditor] = useState(false);
   const [lamieraSchizzoOpen, setLamieraSchizzoOpen] = useState(false);
   const [lamieraFabMenu, setLamieraFabMenu] = useState(false);
   const [lamieraTabLato, setLamieraTabLato] = useState<'right'|'left'>('right');
@@ -2304,7 +2306,14 @@ export default function VanoDetailPanel() {
                           <span style={{fontSize:11,fontWeight:800,color:'#3B7FE0'}}>
                             Sezione cassonetto
                           </span>
-                          <span style={{fontSize:9,color:'#94A3B8'}}>trascina i handle per ridimensionare</span>
+                          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                            <span style={{fontSize:9,color:'#94A3B8'}}>trascina handle</span>
+                            <div onClick={()=>setShowCassonettoEditor(true)}
+                              style={{padding:'4px 10px',borderRadius:7,background:'#1A2B4A',
+                                color:'#fff',fontSize:10,fontWeight:700,cursor:'pointer'}}>
+                              ⛶ Editor
+                            </div>
+                          </div>
                         </div>
 
                         {/* SVG sezione cassonetto — vista frontale dall'interno */}
@@ -4430,6 +4439,26 @@ export default function VanoDetailPanel() {
       })()}
 
 </div>
+
+      {/* ── CASSONETTO EDITOR ── */}
+      {showCassonettoEditor && (() => {
+        const v2 = selectedVano;
+        if (!v2) return null;
+        const m2 = v2.misure || {};
+        return (
+          <CassonettoEditor
+            misure={{
+              casL: m2.casL || 0,
+              casH: m2.casH || 0,
+              casP: m2.casP || 0,
+              casLCiel: m2.casLCiel || 0,
+              casPCiel: m2.casPCiel || 0,
+            }}
+            onUpdate={(field, val) => updateMisura(v2.id, field, val)}
+            onClose={() => setShowCassonettoEditor(false)}
+          />
+        );
+      })()}
 
     );
   }; // end renderBody
