@@ -506,8 +506,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const lastPanPt = React.useRef({x:0,y:0});
   const lastPinch = React.useRef<number|null>(null);
 
-  const GRID = 20; // 20px = 10cm
-  const scale = GRID / 10; // px/cm
+  const GRID = 20;
+  const scale = GRID / 10;
 
   function toSvg(e: any) {
     const svg = svgRef.current; if (!svg) return {x:0,y:0};
@@ -515,7 +515,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     const ct = e.touches ? e.touches[0] : e;
     return {
       x: (ct.clientX - r.left) / zoom - pan.x,
-      y: (ct.clientY - r.top)  / zoom - pan.y,
+      y: (ct.clientY - r.top) / zoom - pan.y,
     };
   }
 
@@ -524,34 +524,53 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     const sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
     for (const s of shapes) {
       for (const p of (s.pts||[])) {
-        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 18/zoom) return {x:p.x,y:p.y};
+        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 16/zoom) return {x:p.x,y:p.y};
       }
     }
     return {x:sx,y:sy};
   }
 
-  function pxToCm(px: number) { return Math.round(px / scale); }
+  function pxToCm(px: number) { return Math.round(Math.abs(px) / scale); }
   function lenLabel(px: number) {
-    const cm = pxToCm(Math.abs(px));
+    const cm = pxToCm(px);
     return cm >= 100 ? (cm/100).toFixed(2)+"m" : cm+"cm";
   }
 
-  // ── EVENTS ────────────────────────────────────────────────
   function onDown(e: any) {
-    if (e.button===1) { isPanRef.current=true; lastPanPt.current={x:e.clientX,y:e.clientY}; return; }
-    if (e.touches?.length===2) {
+    if (e.button===1||(e.touches?.length===2)) {
       isPanRef.current=true;
-      lastPanPt.current={x:(e.touches[0].clientX+e.touches[1].clientX)/2,y:(e.touches[0].clientY+e.touches[1].clientY)/2};
-      lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      const ct=e.touches?{clientX:(e.touches[0].clientX+e.touches[1].clientX)/2,clientY:(e.touches[0].clientY+e.touches[1].clientY)/2}:e;
+      lastPanPt.current={x:ct.clientX,y:ct.clientY};
+      if(e.touches?.length===2) lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
       return;
     }
     const pt = snapPt(toSvg(e));
-    // Chiudi su primo punto (entrambi i tool)
-    if (curPts.length>2) {
-      const fp=curPts[0];
-      if (Math.hypot(fp.x-pt.x,fp.y-pt.y)<18/zoom) { commitShape([...curPts]); return; }
+
+    if (tool==="muro") {
+      if (curPts.length===0) {
+        // Primo punto muro
+        setCurPts([pt]);
+      } else {
+        // Secondo punto → salva segmento e ricomincia dal secondo punto (catena)
+        const newShape = {id:Date.now(),type:"muro",pts:[curPts[0],pt],spessore};
+        setShapes(s=>[...s,newShape]);
+        setCurPts([pt]); // ricomincia dal punto corrente per catena
+      }
+      return;
     }
-    setCurPts(p=>[...p,pt]);
+
+    if (tool==="oggetto") {
+      // Oggetto: accumula punti, chiudi su 1° punto o Enter
+      if (curPts.length>2) {
+        const fp=curPts[0];
+        if (Math.hypot(fp.x-pt.x,fp.y-pt.y)<18/zoom) {
+          setShapes(s=>[...s,{id:Date.now(),type:"oggetto",pts:[...curPts],spessore}]);
+          setCurPts([]);
+          return;
+        }
+      }
+      setCurPts(p=>[...p,pt]);
+    }
   }
 
   function onMove(e: any) {
@@ -571,12 +590,14 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
   function onUp() { isPanRef.current=false; lastPinch.current=null; }
 
-  function onDblClick() { if(curPts.length>1) commitShape([...curPts]); }
-
-  function commitShape(pts: any[]) {
-    if(pts.length<2) { setCurPts([]); return; }
-    setShapes(s=>[...s,{id:Date.now(),type:tool,pts,spessore}]);
-    setCurPts([]);
+  function onDblClick() {
+    // Muro: ferma la catena
+    if (tool==="muro") { setCurPts([]); return; }
+    // Oggetto: chiudi
+    if (tool==="oggetto"&&curPts.length>2) {
+      setShapes(s=>[...s,{id:Date.now(),type:"oggetto",pts:[...curPts],spessore}]);
+      setCurPts([]);
+    }
   }
 
   function onWheel(e: any) {
@@ -589,104 +610,104 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onKeyDown(e: any) {
-    if (e.key==="Enter"&&curPts.length>1) commitShape([...curPts]);
+    if (e.key==="Enter") {
+      if (tool==="muro") { setCurPts([]); return; }
+      if (tool==="oggetto"&&curPts.length>2) {
+        setShapes(s=>[...s,{id:Date.now(),type:"oggetto",pts:[...curPts],spessore}]);
+        setCurPts([]);
+      }
+    }
     if (e.key==="Escape") setCurPts([]);
-    if ((e.key==="z"||e.key==="Z")&&(e.ctrlKey||e.metaKey)) setShapes(s=>s.slice(0,-1));
-    if (e.key==="Delete"||e.key==="Backspace") { if(curPts.length>0) setCurPts(p=>p.slice(0,-1)); }
+    if ((e.key==="z"||e.key==="Z")&&(e.ctrlKey||e.metaKey)) {
+      if (curPts.length>0) setCurPts([]); else setShapes(s=>s.slice(0,-1));
+    }
   }
 
-  // ── RENDER MURO ──────────────────────────────────────────
+  // ── RENDER MURO (segmento singolo con spessore) ──────────
   function renderMuro(pts:any[], sp:number, preview=false, id:any=null) {
-    const sp2 = sp * scale * 0.5;
-    const col = "#1A2B4A";
-    return <g key={id||"prev-muro"}>
-      {pts.slice(0,-1).map((a:any,i:number)=>{
-        const b=pts[i+1];
-        const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
-        const nx=-dy/len*sp2,ny=dx/len*sp2;
-        const poly=`${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
-        const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
-        const ang=Math.atan2(dy,dx)*180/Math.PI;
-        const fixAng=Math.abs(ang)>90?ang+180:ang;
-        return <g key={i}>
-          <polygon points={poly}
-            fill={preview?"rgba(26,43,74,0.08)":"rgba(26,43,74,0.15)"}
-            stroke={col} strokeWidth={preview?"1":"1.5"}
-            strokeLinejoin="round"/>
-          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-            stroke="#888" strokeWidth="0.5" strokeDasharray="5,4"/>
-          {!preview&&len>15&&<g>
+    if(pts.length<2) return null;
+    const sp2=sp*scale*0.5;
+    const a=pts[0],b=pts[1];
+    const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len*sp2,ny=dx/len*sp2;
+    const poly=`${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
+    const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
+    const ang=Math.atan2(dy,dx)*180/Math.PI;
+    const fixAng=Math.abs(ang)>90?ang+180:ang;
+    return (
+      <g key={id||"prev-muro"}>
+        <polygon points={poly}
+          fill={preview?"rgba(26,43,74,0.06)":"rgba(26,43,74,0.15)"}
+          stroke="#1A2B4A" strokeWidth={preview?"1":"1.5"} strokeLinejoin="round"/>
+        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+          stroke="#888" strokeWidth="0.5" strokeDasharray="5,4"/>
+        {!preview&&len>15&&(
+          <g>
             <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3" fill="rgba(26,43,74,0.85)"/>
             <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
               transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
-          </g>}
-        </g>;
-      })}
-      {!preview&&pts.map((p:any,i:number)=>(
-        <circle key={i} cx={p.x} cy={p.y} r={4/zoom}
-          fill={i===0?"#dc4444":"#1A2B4A"} stroke="#fff" strokeWidth={1.5/zoom}/>
-      ))}
-    </g>;
+          </g>
+        )}
+        {!preview&&[a,b].map((p:any,i:number)=>(
+          <circle key={i} cx={p.x} cy={p.y} r={3/zoom}
+            fill="#1A2B4A" stroke="#fff" strokeWidth={1/zoom}/>
+        ))}
+      </g>
+    );
   }
 
-  // ── RENDER OGGETTO (forma chiusa con pareti spesse) ───────
+  // ── RENDER OGGETTO (forma chiusa con pareti) ──────────────
   function renderOggetto(pts:any[], sp:number, preview=false, id:any=null) {
     if(pts.length<2) return null;
-    // Chiudi il poligono
-    const closed = [...pts, pts[0]];
-    const sp2 = sp * scale * 0.5;
-    const col = "#3B7FE0";
-    // Calcola centroide per restringere verso l'interno
-    const cx2 = pts.reduce((s:number,p:any)=>s+p.x,0)/pts.length;
-    const cy2 = pts.reduce((s:number,p:any)=>s+p.y,0)/pts.length;
-    // Punti interni (spostati verso centroide di sp2*2)
-    const inner = pts.map((p:any)=>{
+    const closed=[...pts,pts[0]];
+    const col="#3B7FE0";
+    const sp2=sp*scale*0.5;
+    const cx2=pts.reduce((s:number,p:any)=>s+p.x,0)/pts.length;
+    const cy2=pts.reduce((s:number,p:any)=>s+p.y,0)/pts.length;
+    const inner=pts.map((p:any)=>{
       const dx=cx2-p.x,dy=cy2-p.y,d=Math.hypot(dx,dy)||1;
-      const move=Math.min(sp2*2,d*0.4);
-      return {x:p.x+dx/d*move,y:p.y+dy/d*move};
+      return {x:p.x+dx/d*Math.min(sp2*2,d*0.4),y:p.y+dy/d*Math.min(sp2*2,d*0.4)};
     });
-    const outerPath = pts.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
-    const innerPath = inner.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
-    return <g key={id||"prev-oggetto"}>
-      {/* Pareti piene */}
-      <path d={outerPath} fill={preview?"rgba(59,127,224,0.08)":"rgba(59,127,224,0.15)"}
-        stroke={col} strokeWidth={preview?"1.5":"2"} strokeLinejoin="round"/>
-      {/* Interno vuoto */}
-      {!preview&&<path d={innerPath} fill="rgba(239,248,255,0.7)"
-        stroke={col} strokeWidth="0.8" strokeDasharray="5,3" strokeLinejoin="round"/>}
-      {/* Quote lati */}
-      {!preview&&closed.slice(0,-1).map((a:any,i:number)=>{
-        const b=closed[i+1];
-        const len=Math.hypot(b.x-a.x,b.y-a.y);
-        if(len<15) return null;
-        const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
-        const dx=b.x-a.x,dy=b.y-a.y;
-        const ang=Math.atan2(dy,dx)*180/Math.PI;
-        const fixAng=Math.abs(ang)>90?ang+180:ang;
-        return <g key={i}>
-          <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3" fill="rgba(59,127,224,0.85)"/>
-          <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
-            transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
-        </g>;
-      })}
-      {!preview&&pts.map((p:any,i:number)=>(
-        <circle key={i} cx={p.x} cy={p.y} r={4/zoom}
-          fill={i===0?"#dc4444":col} stroke="#fff" strokeWidth={1.5/zoom}/>
-      ))}
-    </g>;
+    const outerPath=pts.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
+    const innerPath=inner.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
+    return (
+      <g key={id||"prev-ogg"}>
+        <path d={outerPath} fill={preview?"rgba(59,127,224,0.06)":"rgba(59,127,224,0.12)"}
+          stroke={col} strokeWidth={preview?"1.5":"2"} strokeLinejoin="round"/>
+        {!preview&&<path d={innerPath} fill="rgba(239,248,255,0.8)"
+          stroke={col} strokeWidth="0.8" strokeDasharray="5,3"/>}
+        {/* Quote lati */}
+        {!preview&&closed.slice(0,-1).map((a:any,i:number)=>{
+          const b=closed[i+1];
+          const len=Math.hypot(b.x-a.x,b.y-a.y);
+          if(len<15) return null;
+          const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
+          const ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+          const fixAng=Math.abs(ang)>90?ang+180:ang;
+          return (
+            <g key={i}>
+              <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3" fill="rgba(59,127,224,0.85)"/>
+              <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
+                transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
+            </g>
+          );
+        })}
+        {!preview&&pts.map((p:any,i:number)=>(
+          <circle key={i} cx={p.x} cy={p.y} r={4/zoom}
+            fill={i===0?"#dc4444":col} stroke="#fff" strokeWidth={1.5/zoom}/>
+        ))}
+      </g>
+    );
   }
 
-  // ── LIVE QUOTE ─────────────────────────────────────────────
-  const live = React.useMemo(()=>{
+  const liveLen = React.useMemo(()=>{
     if(!mousePos||curPts.length===0) return "";
     const last=curPts[curPts.length-1];
     const px=Math.hypot(mousePos.x-last.x,mousePos.y-last.y);
     return px>5?lenLabel(px):"";
-  },[mousePos,curPts]);
+  },[mousePos,curPts,zoom]);
 
-  const previewPts = mousePos ? [...curPts, mousePos] : curPts;
   const col = tool==="muro"?"#1A2B4A":"#3B7FE0";
-
   const bs2=(on=false,c="#031631")=>({
     padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,
     background:on?c:"#fff",color:on?"#fff":"#44474d",
@@ -714,7 +735,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         <div onClick={()=>setZoom(z=>Math.max(0.1,z*0.83))} style={bs2()}>－</div>
         <div onClick={()=>{setZoom(1);setPan({x:60,y:60});}} style={bs2()}>↺</div>
         <div style={{flex:1}}/>
-        <div onClick={()=>{if(curPts.length>0)setCurPts(p=>p.slice(0,-1));else setShapes(s=>s.slice(0,-1));}} style={bs2()}>↩</div>
+        <div onClick={()=>{if(curPts.length>0)setCurPts([]);else setShapes(s=>s.slice(0,-1));}} style={bs2()}>↩</div>
         <div onClick={()=>{setShapes([]);setCurPts([]);}} style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
       </div>
 
@@ -722,17 +743,16 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 12px",
         background:"#F8FAFC",borderBottom:"1px solid rgba(197,198,206,0.2)",flexShrink:0}}>
         <span style={{fontSize:10,color:"#64748B",fontWeight:500}}>
-          {curPts.length===0
-            ? tool==="muro"?"Clic per iniziare il muro":"Clic per iniziare l'oggetto"
-            : `${curPts.length} punti · clic sul 1° punto o Enter per chiudere · Doppio clic per terminare`}
+          {tool==="muro"
+            ? curPts.length===0?"Clic punto iniziale muro":"Clic punto finale · Clic ancora per continuare · Doppio clic per fermare"
+            : curPts.length===0?"Clic per iniziare l'oggetto":`${curPts.length} punti · clic sul 1° punto o Enter per chiudere`}
         </span>
-        {live&&<span style={{fontSize:11,fontWeight:800,color:col,
+        {liveLen&&<span style={{fontSize:12,fontWeight:800,color:col,
           background:tool==="muro"?"#F0F4FF":"#EFF8FF",
-          padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>{live}</span>}
-        <span style={{fontSize:9,color:"#94A3B8",marginLeft:"auto"}}>2 dita=sposta · rotella=zoom</span>
+          padding:"2px 10px",borderRadius:6,marginLeft:"auto"}}>{liveLen}</span>}
       </div>
 
-      {/* SVG INFINITO */}
+      {/* SVG */}
       <svg ref={svgRef}
         style={{flex:1,minHeight:0,display:"block",background:"#F9F9FB",
           cursor:isPanRef.current?"grabbing":"crosshair",touchAction:"none",userSelect:"none"}}
@@ -741,7 +761,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
         onWheel={onWheel}>
         <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
-          {/* Griglia infinita */}
           <defs>
             <pattern id="lib-sm" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
               <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="0.5"/>
@@ -752,8 +771,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
             </pattern>
           </defs>
           <rect x={-9999} y={-9999} width={19998} height={19998} fill="url(#lib-lg)"/>
-          <line x1={-9999} y1={0} x2={9999} y2={0} stroke="rgba(0,0,0,0.07)" strokeWidth="1"/>
-          <line x1={0} y1={-9999} x2={0} y2={9999} stroke="rgba(0,0,0,0.07)" strokeWidth="1"/>
+          <line x1={-9999} y1={0} x2={9999} y2={0} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
+          <line x1={0} y1={-9999} x2={0} y2={9999} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
 
           {/* Forme salvate */}
           {shapes.map(s=>s.type==="muro"
@@ -761,19 +780,25 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
             :renderOggetto(s.pts,s.spessore,false,s.id)
           )}
 
-          {/* Preview in corso */}
-          {previewPts.length>1&&(tool==="muro"
-            ?renderMuro(previewPts,spessore,true)
-            :renderOggetto(previewPts,spessore,true)
+          {/* Preview */}
+          {curPts.length>0&&mousePos&&(tool==="muro"
+            ?renderMuro([curPts[curPts.length-1],mousePos],spessore,true)
+            :renderOggetto([...curPts,mousePos],spessore,true)
           )}
 
-          {/* Punti in corso */}
-          {curPts.map((p:any,i:number)=>(
+          {/* Punti oggetto in corso */}
+          {tool==="oggetto"&&curPts.map((p:any,i:number)=>(
             <circle key={i} cx={p.x} cy={p.y} r={5/zoom}
               fill={i===0?"#dc4444":col} stroke="#fff" strokeWidth={2/zoom}/>
           ))}
 
-          {/* Snap indicator */}
+          {/* Punto muro corrente */}
+          {tool==="muro"&&curPts.length>0&&(
+            <circle cx={curPts[0].x} cy={curPts[0].y} r={5/zoom}
+              fill="#dc4444" stroke="#fff" strokeWidth={2/zoom}/>
+          )}
+
+          {/* Snap */}
           {mousePos&&<circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
             stroke={col} strokeWidth={1/zoom} fill="rgba(59,127,224,0.15)"/>}
         </g>
