@@ -494,241 +494,334 @@ function FormaEditor({ T, realW, realH, pts, onPtsChange, H, onHChange, sp, onSp
 // LIBERO EDITOR — disegno libero infisso con Paper.js
 // ═══════════════════════════════════════════════════════════
 function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
-  // SVG infinito con zoom/pan — nessun Paper.js
   const [zoom, setZoom] = React.useState(1);
-  const [pan, setPan] = React.useState({x:0, y:0});
-  const [tool, setTool] = React.useState<"muro"|"vano"|"misura">("muro");
-  const [spessore, setSpessore] = React.useState(12);
-  const [snap, setSnap] = React.useState(true);
+  const [pan, setPan] = React.useState({x:40, y:40});
+  const [tool, setTool] = React.useState<"muro"|"oggetto">("muro");
+  const [spessore, setSpessore] = React.useState(15); // cm
   const [shapes, setShapes] = React.useState<any[]>([]);
   const [curPts, setCurPts] = React.useState<any[]>([]);
   const [mousePos, setMousePos] = React.useState<any>(null);
-  const [liveLen, setLiveLen] = React.useState("");
+  const [drawing, setDrawing] = React.useState(false); // per oggetto: drag rect
+  const [dragStart, setDragStart] = React.useState<any>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
-  const isPanning = React.useRef(false);
-  const lastPan = React.useRef({x:0,y:0});
+  const isPanRef = React.useRef(false);
+  const lastPanPt = React.useRef({x:0,y:0});
   const lastPinch = React.useRef<number|null>(null);
 
-  const GRID = 20; // px per unità snap
-  const CM_PER_UNIT = spessore / 10; // ogni GRID px = CM_PER_UNIT cm
+  // 1 unità = 1 cm. GRID = pixel per 10cm a zoom=1
+  const GRID = 20; // 20px = 10cm
+  const scale = GRID / 10; // px per cm
 
-  function svgPt(e: any) {
+  function toSvg(e: any) {
     const svg = svgRef.current; if (!svg) return {x:0,y:0};
     const r = svg.getBoundingClientRect();
     const ct = e.touches ? e.touches[0] : e;
-    const sx = (ct.clientX - r.left) / zoom - pan.x;
-    const sy = (ct.clientY - r.top)  / zoom - pan.y;
-    if (!snap) return {x:Math.round(sx), y:Math.round(sy)};
-    // Snap a griglia
-    let gx = Math.round(sx/GRID)*GRID, gy = Math.round(sy/GRID)*GRID;
-    // Snap a punti esistenti
+    return {
+      x: (ct.clientX - r.left) / zoom - pan.x,
+      y: (ct.clientY - r.top)  / zoom - pan.y,
+    };
+  }
+
+  function snapPt(pt: any) {
+    const g = GRID;
+    let sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
+    // snap a punti esistenti
     for (const s of shapes) {
-      for (const p of s.pts) {
-        if (Math.hypot(p.x-sx,p.y-sy) < 14/zoom) return {x:p.x,y:p.y};
+      for (const p of (s.pts||[])) {
+        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 16/zoom) return {x:p.x,y:p.y};
       }
     }
-    return {x:gx, y:gy};
+    return {x:sx,y:sy};
   }
 
-  function onSvgClick(e: any) {
-    if (isPanning.current) return;
-    const pt = svgPt(e);
-    // Chiudi su primo punto
-    if (curPts.length > 1) {
-      const fp = curPts[0];
-      if (Math.hypot(fp.x-pt.x,fp.y-pt.y) < 14/zoom) { commit(); return; }
+  function pxToCm(px: number) { return Math.round(px / scale); }
+
+  function lenLabel(px: number) {
+    const cm = pxToCm(px);
+    return cm >= 100 ? (cm/100).toFixed(2)+"m" : cm+"cm";
+  }
+
+  // ── CLICK sul SVG ─────────────────────────────────────────
+  function onDown(e: any) {
+    if (e.button === 1) { isPanRef.current=true; lastPanPt.current={x:e.clientX,y:e.clientY}; return; }
+    if (e.touches?.length===2) {
+      isPanRef.current=true;
+      lastPanPt.current={x:(e.touches[0].clientX+e.touches[1].clientX)/2,y:(e.touches[0].clientY+e.touches[1].clientY)/2};
+      lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      return;
     }
-    const next = [...curPts, pt];
-    setCurPts(next);
-    if (tool==="misura" && next.length>=2) { commitWith(next); return; }
+    const pt = snapPt(toSvg(e));
+    if (tool==="oggetto") { setDragStart(pt); setDrawing(true); return; }
+    // muro: accumula punti
+    if (curPts.length>1) {
+      const fp=curPts[0];
+      if (Math.hypot(fp.x-pt.x,fp.y-pt.y)<16/zoom) { commitMuro([...curPts]); return; }
+    }
+    setCurPts(p=>[...p,pt]);
   }
 
-  function commit() { commitWith(curPts); }
-  function commitWith(pts: any[]) {
-    if (pts.length<2) { setCurPts([]); return; }
-    setShapes(s=>[...s,{id:Date.now(),type:tool,pts,spessore}]);
+  function onMove(e: any) {
+    const ct = e.touches ? e.touches[0] : e;
+    if (isPanRef.current) {
+      if (e.touches?.length===2 && lastPinch.current) {
+        const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        setZoom(z=>Math.max(0.15,Math.min(8,z*(d/lastPinch.current))));
+        lastPinch.current=d;
+      }
+      setPan(p=>({x:p.x+(ct.clientX-lastPanPt.current.x)/zoom,y:p.y+(ct.clientY-lastPanPt.current.y)/zoom}));
+      lastPanPt.current={x:ct.clientX,y:ct.clientY};
+      return;
+    }
+    setMousePos(snapPt(toSvg(e)));
+  }
+
+  function onUp(e: any) {
+    isPanRef.current=false; lastPinch.current=null;
+    if (tool==="oggetto" && drawing && dragStart && mousePos) {
+      const x=Math.min(dragStart.x,mousePos.x), y=Math.min(dragStart.y,mousePos.y);
+      const w=Math.abs(mousePos.x-dragStart.x), h=Math.abs(mousePos.y-dragStart.y);
+      if (w>4&&h>4) setShapes(s=>[...s,{id:Date.now(),type:"oggetto",x,y,w,h}]);
+      setDrawing(false); setDragStart(null);
+    }
+  }
+
+  function onDblClick(e: any) {
+    if (tool==="muro" && curPts.length>1) commitMuro([...curPts]);
+  }
+
+  function commitMuro(pts: any[]) {
+    setShapes(s=>[...s,{id:Date.now(),type:"muro",pts,spessore}]);
     setCurPts([]);
   }
 
-  function onSvgMove(e: any) {
-    if (isPanning.current) {
-      const ct = e.touches ? e.touches[0] : e;
-      setPan(p=>({x:p.x+(ct.clientX-lastPan.current.x)/zoom, y:p.y+(ct.clientY-lastPan.current.y)/zoom}));
-      lastPan.current = {x:ct.clientX, y:ct.clientY};
-      return;
-    }
-    const pt = svgPt(e);
-    setMousePos(pt);
-    // Calcola quota live
-    if (curPts.length>0) {
-      const last = curPts[curPts.length-1];
-      const px = Math.hypot(pt.x-last.x, pt.y-last.y);
-      const cm = Math.round(px/GRID*CM_PER_UNIT*10)/10;
-      setLiveLen(cm>0.1?(cm<100?cm+"cm":(cm/100).toFixed(2)+"m"):"");
-    } else setLiveLen("");
-  }
-
-  function onSvgDown(e: any) {
-    // Pan con due dita o tasto medio
-    if ((e.touches&&e.touches.length===2)||(e.button===1)) {
-      isPanning.current=true;
-      const ct = e.touches ? e.touches[0] : e;
-      lastPan.current={x:ct.clientX,y:ct.clientY};
-      return;
-    }
-  }
-
-  function onSvgUp(e: any) { isPanning.current=false; }
-
   function onWheel(e: any) {
     e.preventDefault();
-    const nz = Math.max(0.15,Math.min(8,zoom*(e.deltaY<0?1.12:0.89)));
-    // Zoom centrato sul cursore
-    const r = svgRef.current!.getBoundingClientRect();
-    const mx=(e.clientX-r.left)/zoom, my=(e.clientY-r.top)/zoom;
-    setPan(p=>({x:p.x-(mx*(nz-zoom)/nz), y:p.y-(my*(nz-zoom)/nz)}));
+    const nz=Math.max(0.1,Math.min(8,zoom*(e.deltaY<0?1.12:0.89)));
+    const r=svgRef.current!.getBoundingClientRect();
+    const mx=(e.clientX-r.left)/zoom,my=(e.clientY-r.top)/zoom;
+    setPan(p=>({x:p.x-mx*(1-zoom/nz),y:p.y-my*(1-zoom/nz)}));
     setZoom(nz);
   }
 
-  function onTouchStart(e: any) {
-    if(e.touches.length===2){
-      lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      isPanning.current=true;
-      lastPan.current={x:(e.touches[0].clientX+e.touches[1].clientX)/2,y:(e.touches[0].clientY+e.touches[1].clientY)/2};
+  function onKeyDown(e: any) {
+    if (e.key==="Enter"&&curPts.length>1) commitMuro([...curPts]);
+    if (e.key==="Escape") { setCurPts([]); setDrawing(false); setDragStart(null); }
+    if ((e.key==="z"||e.key==="Z")&&(e.ctrlKey||e.metaKey)) {
+      setShapes(s=>s.slice(0,-1));
     }
   }
-  function onTouchMove(e: any) {
-    if(e.touches.length===2&&lastPinch.current){
-      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      const nz=Math.max(0.15,Math.min(8,zoom*(d/lastPinch.current)));
-      setZoom(nz); lastPinch.current=d;
-    }
-  }
-  function onTouchEnd() { lastPinch.current=null; isPanning.current=false; }
 
-  const bs2 = (on=false,col="#031631") => ({
-    padding:"5px 10px", borderRadius:8, fontSize:11, fontWeight:700, cursor:"pointer", flexShrink:0,
-    background:on?col:"#fff", color:on?"#fff":"#44474d",
-    border:"1px solid "+(on?col:"rgba(197,198,206,0.4)")
-  });
-
-  // Disegna forma
-  function renderShape(s: any) {
-    const col = s.type==="vano"?"#3b7fe0":s.type==="misura"?"#1a9e73":"#031631";
-    const sp2 = s.spessore*0.4;
-    if (s.type==="misura") {
-      const a=s.pts[0],b=s.pts[1];
-      const px=Math.hypot(b.x-a.x,b.y-a.y);
-      const cm=Math.round(px/GRID*s.spessore/10*10)/10;
-      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-      return <g key={s.id}>
-        <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={col} strokeWidth="1.5" strokeDasharray="6,3"/>
-        <line x1={a.x} y1={a.y-6} x2={a.x} y2={a.y+6} stroke={col} strokeWidth="1.5"/>
-        <line x1={b.x} y1={b.y-6} x2={b.x} y2={b.y+6} stroke={col} strokeWidth="1.5"/>
-        <rect x={mx-20} y={my-9} width={40} height={14} rx="3" fill={col}/>
-        <text x={mx} y={my+3} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">{cm}cm</text>
-      </g>;
-    }
-    // muro/vano: poligono con spessore
-    const segs = s.pts.slice(0,-1).map((a:any,i:number)=>{
-      const b=s.pts[i+1];
+  // ── RENDER MURO ──────────────────────────────────────────
+  function renderMuro(s: any, preview=false) {
+    const sp2 = s.spessore * scale * 0.5;
+    const pts = s.pts;
+    const segs = pts.slice(0,-1).map((a:any,i:number)=>{
+      const b=pts[i+1];
       const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
       const nx=-dy/len*sp2,ny=dx/len*sp2;
-      return `${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
+      const poly=`${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
+      const cm=pxToCm(len);
+      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      const angle=Math.atan2(dy,dx)*180/Math.PI;
+      const fixAngle=Math.abs(angle)>90?angle+180:angle;
+      return {poly,cm,mx,my,fixAngle,len,a,b};
     });
     return <g key={s.id}>
-      {segs.map((pts:string,i:number)=>(
-        <polygon key={i} points={pts}
-          fill={s.type==="vano"?"rgba(180,210,255,0.3)":"rgba(180,180,180,0.5)"}
-          stroke={col} strokeWidth="1.5" strokeLinejoin="round"/>
+      {segs.map((seg:any,i:number)=>(
+        <g key={i}>
+          {/* Muro pieno */}
+          <polygon points={seg.poly}
+            fill={preview?"rgba(60,60,60,0.12)":"rgba(60,60,60,0.18)"}
+            stroke={preview?"#666":"#222"}
+            strokeWidth={preview?"1":"1.5"}/>
+          {/* Linea asse tratteggiata */}
+          <line x1={seg.a.x} y1={seg.a.y} x2={seg.b.x} y2={seg.b.y}
+            stroke="#888" strokeWidth="0.5" strokeDasharray="6,4"/>
+          {/* Quota */}
+          {seg.len>20&&!preview&&<g>
+            <rect x={seg.mx-18} y={seg.my-8} width={36} height={14} rx="3"
+              fill="rgba(3,22,49,0.85)"/>
+            <text x={seg.mx} y={seg.my+3} textAnchor="middle" fontSize="9"
+              fill="#fff" fontWeight="800"
+              transform={`rotate(${seg.fixAngle},${seg.mx},${seg.my})`}>
+              {lenLabel(seg.len)}
+            </text>
+          </g>}
+        </g>
       ))}
-      {s.pts.slice(0,-1).map((a:any,i:number)=>{
-        const b=s.pts[i+1];
-        const px=Math.hypot(b.x-a.x,b.y-a.y);
-        const cm=Math.round(px/GRID*s.spessore/10*10)/10;
-        const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
-        if(px<15) return null;
-        return <g key={"q"+i}>
-          <rect x={mx-16} y={my-8} width={32} height={13} rx="2" fill="rgba(3,22,49,0.8)"/>
-          <text x={mx} y={my+3} textAnchor="middle" fontSize="8" fill="#fff" fontWeight="700">{cm}cm</text>
-        </g>;
-      })}
+      {/* Nodi */}
+      {!preview&&pts.map((p:any,i:number)=>(
+        <circle key={i} cx={p.x} cy={p.y} r={4/zoom}
+          fill={i===0?"#dc4444":"#222"} stroke="#fff" strokeWidth={1.5/zoom}/>
+      ))}
     </g>;
   }
 
-  // Preview mentre disegni
-  const previewPts = mousePos ? [...curPts, mousePos] : curPts;
+  // ── RENDER OGGETTO ────────────────────────────────────────
+  function renderOggetto(s: any) {
+    const wCm=pxToCm(s.w), hCm=pxToCm(s.h);
+    return <g key={s.id}>
+      <rect x={s.x} y={s.y} width={s.w} height={s.h}
+        fill="rgba(59,127,224,0.1)" stroke="#3B7FE0" strokeWidth="2" strokeDasharray="8,4"/>
+      {/* Quote larghezza */}
+      <line x1={s.x} y1={s.y-10} x2={s.x+s.w} y2={s.y-10} stroke="#3B7FE0" strokeWidth="1"/>
+      <line x1={s.x} y1={s.y-6} x2={s.x} y2={s.y-14} stroke="#3B7FE0" strokeWidth="1"/>
+      <line x1={s.x+s.w} y1={s.y-6} x2={s.x+s.w} y2={s.y-14} stroke="#3B7FE0" strokeWidth="1"/>
+      <rect x={s.x+s.w/2-20} y={s.y-20} width={40} height={13} rx="3" fill="#3B7FE0"/>
+      <text x={s.x+s.w/2} y={s.y-10} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800">
+        {lenLabel(s.w)}
+      </text>
+      {/* Quote altezza */}
+      <line x1={s.x+s.w+10} y1={s.y} x2={s.x+s.w+10} y2={s.y+s.h} stroke="#3B7FE0" strokeWidth="1"/>
+      <line x1={s.x+s.w+6} y1={s.y} x2={s.x+s.w+14} y2={s.y} stroke="#3B7FE0" strokeWidth="1"/>
+      <line x1={s.x+s.w+6} y1={s.y+s.h} x2={s.x+s.w+14} y2={s.y+s.h} stroke="#3B7FE0" strokeWidth="1"/>
+      <text x={s.x+s.w+22} y={s.y+s.h/2+3} textAnchor="middle" fontSize="9" fill="#3B7FE0" fontWeight="800"
+        transform={`rotate(90,${s.x+s.w+22},${s.y+s.h/2+3})`}>
+        {lenLabel(s.h)}
+      </text>
+      {/* Label centrale */}
+      <text x={s.x+s.w/2} y={s.y+s.h/2+4} textAnchor="middle" fontSize="10"
+        fill="#3B7FE0" fontWeight="700">
+        {wCm}×{hCm}cm
+      </text>
+    </g>;
+  }
 
-  // Griglia SVG
-  const GSIZE = 5000;
+  // ── MISURA LIVE ───────────────────────────────────────────
+  function liveInfo() {
+    if (!mousePos) return null;
+    if (tool==="muro"&&curPts.length>0) {
+      const last=curPts[curPts.length-1];
+      const px=Math.hypot(mousePos.x-last.x,mousePos.y-last.y);
+      return px>5 ? lenLabel(px) : null;
+    }
+    if (tool==="oggetto"&&drawing&&dragStart) {
+      const w=Math.abs(mousePos.x-dragStart.x), h=Math.abs(mousePos.y-dragStart.y);
+      return `${lenLabel(w)} × ${lenLabel(h)}`;
+    }
+    return null;
+  }
+
+  const live = liveInfo();
+
+  const bs2=(on=false,col="#031631")=>({
+    padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,
+    background:on?col:"#fff",color:on?"#fff":"#44474d",
+    border:"1.5px solid "+(on?col:"rgba(197,198,206,0.5)"),
+  });
 
   return (
-    <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0}}>
-      {/* Toolbar */}
-      <div style={{display:"flex",gap:4,padding:"6px 8px",flexWrap:"wrap",borderBottom:"1px solid rgba(197,198,206,0.25)",alignItems:"center",background:"#fff",flexShrink:0}}>
-        {([["muro","▭ Muro","#031631"],["vano","↗ Vano","#3b7fe0"],["misura","↔ Misura","#1a9e73"]] as any).map(([id,l,c]:any)=>(
-          <div key={id} onClick={()=>{setTool(id);setCurPts([]);}} style={bs2(tool===id,c)}>{l}</div>
-        ))}
-        <div style={{width:1,height:20,background:"rgba(197,198,206,0.4)",flexShrink:0}}/>
-        <div onClick={()=>setSnap(s=>!s)} style={bs2(snap,"#6366f1")}>Snap {snap?"ON":"OFF"}</div>
+    <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0,outline:"none"}}
+      tabIndex={0} onKeyDown={onKeyDown}>
+      {/* ── TOOLBAR ── */}
+      <div style={{display:"flex",gap:5,padding:"7px 10px",flexWrap:"wrap",
+        borderBottom:"1px solid rgba(197,198,206,0.3)",alignItems:"center",
+        background:"#fff",flexShrink:0}}>
+        <div onClick={()=>{setTool("muro");setCurPts([]);}} style={bs2(tool==="muro","#1A2B4A")}>
+          ▬ Muro
+        </div>
+        <div onClick={()=>{setTool("oggetto");setCurPts([]);}} style={bs2(tool==="oggetto","#3B7FE0")}>
+          ⬜ Oggetto
+        </div>
+        <div style={{width:1,height:22,background:"rgba(197,198,206,0.5)",flexShrink:0}}/>
         <select value={spessore} onChange={e=>setSpessore(parseInt(e.target.value))}
-          style={{padding:"4px 6px",borderRadius:6,border:"1px solid rgba(197,198,206,0.4)",fontSize:11,fontWeight:700,cursor:"pointer"}}>
-          {[6,8,10,12,15,20,25,30].map(v=><option key={v} value={v}>{v} cm</option>)}
+          style={{padding:"5px 8px",borderRadius:7,border:"1.5px solid rgba(197,198,206,0.5)",
+            fontSize:12,fontWeight:700,cursor:"pointer",background:"#fff"}}>
+          {[5,8,10,12,15,20,25,30].map(v=><option key={v} value={v}>{v}cm</option>)}
         </select>
-        <div style={{width:1,height:20,background:"rgba(197,198,206,0.4)",flexShrink:0}}/>
+        <div style={{width:1,height:22,background:"rgba(197,198,206,0.5)",flexShrink:0}}/>
         <div onClick={()=>setZoom(z=>Math.min(8,z*1.2))} style={bs2()}>＋</div>
-        <div style={{fontSize:10,fontWeight:700,color:"#64748B",minWidth:32,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
-        <div onClick={()=>setZoom(z=>Math.max(0.15,z*0.83))} style={bs2()}>－</div>
-        <div onClick={()=>{setZoom(1);setPan({x:0,y:0});}} style={bs2()}>↺</div>
+        <div style={{fontSize:11,fontWeight:700,color:"#64748B",minWidth:36,textAlign:"center"}}>
+          {Math.round(zoom*100)}%
+        </div>
+        <div onClick={()=>setZoom(z=>Math.max(0.1,z*0.83))} style={bs2()}>－</div>
+        <div onClick={()=>{setZoom(1);setPan({x:40,y:40});}} style={bs2()}>↺</div>
         <div style={{flex:1}}/>
-        <div onClick={()=>{if(curPts.length>0)setCurPts([]);else setShapes(s=>s.slice(0,-1));}} style={{...bs2(),"color":"#5b4"}}> ↩ </div>
-        <div onClick={()=>{setShapes([]);setCurPts([]);}} style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
+        <div onClick={()=>{if(curPts.length>0)setCurPts([]);else setShapes(s=>s.slice(0,-1));}}
+          style={bs2()}>↩ Annulla</div>
+        <div onClick={()=>{setShapes([]);setCurPts([]);setDragStart(null);}}
+          style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
       </div>
-      {/* Hint */}
-      <div style={{fontSize:9,color:"#75777e",padding:"3px 10px",fontWeight:600,background:"#fff",flexShrink:0,display:"flex",gap:8,alignItems:"center"}}>
-        <span>{curPts.length>0?"Clic per aggiungere punto · Enter o clic sul 1° punto per chiudere":"Clic per iniziare · 2 dita per spostarsi/zoom"}</span>
-        {liveLen && <span style={{fontWeight:800,color:"#1A2B4A",background:"#EFF8FF",padding:"1px 6px",borderRadius:4}}>{liveLen}</span>}
+
+      {/* ── HINT ── */}
+      <div style={{display:"flex",alignItems:"center",gap:10,
+        padding:"4px 12px",background:"#F8FAFC",
+        borderBottom:"1px solid rgba(197,198,206,0.2)",flexShrink:0}}>
+        <span style={{fontSize:10,color:"#64748B",fontWeight:500}}>
+          {tool==="muro"
+            ? curPts.length>0?"Clic per continuare · Doppio clic o Enter per chiudere":"Clic per iniziare il muro"
+            : drawing?"Rilascia per confermare":"Trascina per disegnare l'oggetto"}
+        </span>
+        {live&&<span style={{fontSize:11,fontWeight:800,color:"#1A2B4A",
+          background:"#EFF8FF",padding:"2px 8px",borderRadius:6,marginLeft:"auto"}}>
+          {live}
+        </span>}
+        <span style={{fontSize:9,color:"#94A3B8",marginLeft:"auto"}}>
+          2 dita = sposta · rotella = zoom
+        </span>
       </div>
-      {/* SVG canvas infinito */}
+
+      {/* ── SVG CANVAS INFINITO ── */}
       <svg ref={svgRef}
-        style={{flex:1,minHeight:0,display:"block",background:"#f9f9fb",cursor:isPanning.current?"grab":"crosshair",touchAction:"none",userSelect:"none"}}
-        onClick={onSvgClick}
-        onMouseMove={onSvgMove}
-        onMouseDown={onSvgDown}
-        onMouseUp={onSvgUp}
-        onWheel={onWheel}
-        onTouchStart={onTouchStart}
-        onTouchMove={e=>{onSvgMove(e);onTouchMove(e);}}
-        onTouchEnd={onTouchEnd}>
+        style={{flex:1,minHeight:0,display:"block",background:"#F9F9FB",
+          cursor:isPanRef.current?"grabbing":tool==="oggetto"&&drawing?"crosshair":"default",
+          touchAction:"none",userSelect:"none"}}
+        onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
+        onDoubleClick={onDblClick}
+        onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
+        onWheel={onWheel}>
+
         <g transform={`scale(${zoom}) translate(${pan.x},${pan.y})`}>
           {/* Griglia */}
           <defs>
-            <pattern id="lgrid" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
-              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5"/>
+            <pattern id="lib-sm" width={GRID} height={GRID} patternUnits="userSpaceOnUse">
+              <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="0.5"/>
             </pattern>
-            <pattern id="lgrid2" width={GRID*5} height={GRID*5} patternUnits="userSpaceOnUse">
-              <rect width={GRID*5} height={GRID*5} fill="url(#lgrid)"/>
-              <path d={`M ${GRID*5} 0 L 0 0 0 ${GRID*5}`} fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.5"/>
+            <pattern id="lib-lg" width={GRID*5} height={GRID*5} patternUnits="userSpaceOnUse">
+              <rect width={GRID*5} height={GRID*5} fill="url(#lib-sm)"/>
+              <path d={`M ${GRID*5} 0 L 0 0 0 ${GRID*5}`} fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="0.5"/>
             </pattern>
           </defs>
-          <rect x={-GSIZE} y={-GSIZE} width={GSIZE*3} height={GSIZE*3} fill="url(#lgrid2)"/>
-          {/* Forme */}
-          {shapes.map(s=>renderShape(s))}
-          {/* Preview */}
-          {previewPts.length>1 && previewPts.slice(0,-1).map((a:any,i:number)=>{
-            const b=previewPts[i+1];
-            return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-              stroke={tool==="vano"?"#3b7fe0":tool==="misura"?"#1a9e73":"#031631"}
-              strokeWidth="1.5" strokeDasharray="6,3" opacity="0.6"/>;
-          })}
-          {/* Punti correnti */}
-          {curPts.map((p:any,i:number)=>(
-            <circle key={i} cx={p.x} cy={p.y} r={i===0?6:4}
-              fill={i===0?"#dc4444":"#031631"} stroke="#fff" strokeWidth="1.5"/>
+          <rect x={-5000} y={-5000} width={10000} height={10000} fill="url(#lib-lg)"/>
+
+          {/* Assi */}
+          <line x1={-5000} y1={0} x2={5000} y2={0} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+          <line x1={0} y1={-5000} x2={0} y2={5000} stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
+
+          {/* Forme salvate */}
+          {shapes.map(s=>s.type==="muro"?renderMuro(s):renderOggetto(s))}
+
+          {/* Preview muro in corso */}
+          {tool==="muro"&&curPts.length>0&&mousePos&&
+            renderMuro({id:"prev",type:"muro",pts:[...curPts,mousePos],spessore},true)}
+
+          {/* Punti muro in corso */}
+          {tool==="muro"&&curPts.map((p:any,i:number)=>(
+            <circle key={i} cx={p.x} cy={p.y} r={5/zoom}
+              fill={i===0?"#dc4444":"#1A2B4A"} stroke="#fff" strokeWidth={2/zoom}/>
           ))}
+
+          {/* Preview rettangolo oggetto */}
+          {tool==="oggetto"&&drawing&&dragStart&&mousePos&&(()=>{
+            const x=Math.min(dragStart.x,mousePos.x),y=Math.min(dragStart.y,mousePos.y);
+            const w=Math.abs(mousePos.x-dragStart.x),h=Math.abs(mousePos.y-dragStart.y);
+            return <g>
+              <rect x={x} y={y} width={w} height={h}
+                fill="rgba(59,127,224,0.08)" stroke="#3B7FE0"
+                strokeWidth={2/zoom} strokeDasharray={`${6/zoom},${3/zoom}`}/>
+              {w>10&&h>10&&<>
+                <rect x={x+w/2-25} y={y+h/2-9} width={50} height={16} rx="4" fill="#3B7FE0"/>
+                <text x={x+w/2} y={y+h/2+4} textAnchor="middle" fontSize="10"
+                  fill="#fff" fontWeight="800">
+                  {lenLabel(w)} × {lenLabel(h)}
+                </text>
+              </>}
+            </g>;
+          })()}
+
           {/* Snap indicator */}
-          {mousePos && <circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
-            stroke="#8293b4" strokeWidth="1" fill="none"/>}
+          {mousePos&&<circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
+            stroke="#3B7FE0" strokeWidth={1/zoom} fill="rgba(59,127,224,0.2)"/>}
         </g>
       </svg>
     </div>
