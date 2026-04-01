@@ -739,10 +739,10 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         <div style={{ width: 1, height: 20, background: "rgba(197,198,206,0.4)", flexShrink: 0 }} />
         <div onClick={() => setSnapOn(v => !v)} style={bs(snapOn, "#6366f1")}>Snap {snapOn?"ON":"OFF"}</div>
         <div style={{ width: 1, height: 20, background: "rgba(197,198,206,0.4)", flexShrink: 0 }} />
-        <div onClick={()=>{const paper=paperRef.current;if(!paper)return;const nz=Math.min(4,paper.view.zoom*1.25);paper.view.zoom=nz;setZoom(nz);paper.view.draw();}} style={bs(false)}>＋</div>
+        <div onClick={()=>{const nz=Math.min(5,zoom*1.25);setZoom(nz);zoomRef.current=nz;}} style={bs(false)}>＋</div>
         <div style={{fontSize:10,fontWeight:700,color:"#64748B",padding:"0 2px",minWidth:32,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
-        <div onClick={()=>{const paper=paperRef.current;if(!paper)return;const nz=Math.max(0.3,paper.view.zoom*0.8);paper.view.zoom=nz;setZoom(nz);paper.view.draw();}} style={bs(false)}>－</div>
-        <div onClick={()=>{const paper=paperRef.current;if(!paper)return;paper.view.zoom=1;paper.view.center=new paper.Point(300,400);setZoom(1);paper.view.draw();}} style={bs(false)}>↺</div>
+        <div onClick={()=>{const nz=Math.max(0.25,zoom*0.8);setZoom(nz);zoomRef.current=nz;}} style={bs(false)}>－</div>
+        <div onClick={()=>{setZoom(1);zoomRef.current=1;}} style={bs(false)}>↺</div>
         <select value={String(spessore)} onChange={e => setSpessore(Number(e.target.value))} style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid rgba(197,198,206,0.4)", fontSize: 11, background: "#fff", color: "#44474d" }}>
           <option value="6">6 cm</option>
           <option value="8">8 cm</option>
@@ -754,11 +754,32 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         <div onClick={clearAll} style={{ ...bs(), color: "#dc4444", borderColor: "#dc444440" }}>Reset</div>
       </div>
       <div style={{ fontSize: 9, color: "#75777e", padding: "3px 10px", fontWeight: 600 }}>{hint[activeTool]}</div>
-      <canvas
-        ref={canvasRef}
-        width={1200} height={1600}
-        style={{ display: "block", width: "100%", background: "#f9f9fb", cursor: "crosshair", touchAction: "none" }}
-      />
+      <div style={{overflow:"auto", flex:1, minHeight:0, background:"#e8e8e8"}}
+        onWheel={e=>{
+          e.preventDefault();
+          const nz = Math.max(0.25, Math.min(5, zoom * (e.deltaY > 0 ? 0.88 : 1.14)));
+          setZoom(nz); zoomRef.current = nz;
+        }}
+        onTouchStart={e=>{
+          if(e.touches.length===2)
+            lastPinchRef.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        }}
+        onTouchMove={e=>{
+          if(e.touches.length===2&&lastPinchRef.current){
+            const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+            const nz=Math.max(0.25,Math.min(5,zoom*(d/lastPinchRef.current)));
+            setZoom(nz); zoomRef.current=nz; lastPinchRef.current=d;
+          }
+        }}
+        onTouchEnd={()=>{lastPinchRef.current=null;}}>
+        <div style={{transformOrigin:"top left",transform:`scale(${zoom})`,width:1200,height:1600,flexShrink:0}}>
+          <canvas
+            ref={canvasRef}
+            width={1200} height={1600}
+            style={{ display: "block", background: "#f9f9fb", cursor: "crosshair", touchAction: "none" }}
+          />
+        </div>
+      </div>
       {dims && <div style={{ padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#031631", borderTop: "1px solid rgba(197,198,206,0.25)" }}>Vani: {dims}</div>}
       {/* Bottone → 3D */}
       {onGoTo3D && (
