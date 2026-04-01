@@ -734,6 +734,11 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         <div onClick={() => setActiveTool("misura")} style={bs(activeTool==="misura", "#1a9e73")}>↔ Misura</div>
         <div style={{ width: 1, height: 20, background: "rgba(197,198,206,0.4)", flexShrink: 0 }} />
         <div onClick={() => setSnapOn(v => !v)} style={bs(snapOn, "#6366f1")}>Snap {snapOn?"ON":"OFF"}</div>
+        <div style={{ width: 1, height: 20, background: "rgba(197,198,206,0.4)", flexShrink: 0 }} />
+        <div onClick={()=>{const paper=paperRef.current;if(!paper)return;const nz=Math.min(4,paper.view.zoom*1.25);paper.view.zoom=nz;setZoom(nz);paper.view.draw();}} style={bs(false)}>＋</div>
+        <div style={{fontSize:10,fontWeight:700,color:"#64748B",padding:"0 2px",minWidth:32,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
+        <div onClick={()=>{const paper=paperRef.current;if(!paper)return;const nz=Math.max(0.3,paper.view.zoom*0.8);paper.view.zoom=nz;setZoom(nz);paper.view.draw();}} style={bs(false)}>－</div>
+        <div onClick={()=>{const paper=paperRef.current;if(!paper)return;paper.view.zoom=1;paper.view.center=new paper.Point(300,400);setZoom(1);paper.view.draw();}} style={bs(false)}>↺</div>
         <select value={String(spessore)} onChange={e => setSpessore(Number(e.target.value))} style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid rgba(197,198,206,0.4)", fontSize: 11, background: "#fff", color: "#44474d" }}>
           <option value="6">6 cm</option>
           <option value="8">8 cm</option>
