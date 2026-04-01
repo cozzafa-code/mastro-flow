@@ -147,139 +147,194 @@ function FDataPanel3D({ T, faceKey, faceData, setFaceData, onClose }: any) {
 }
 
 function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
+  const [L, setL] = useState(realW || 1200);
+  const [H, setH] = useState(realH || 1400);
   const [P, setP] = useState(vanoDisegno?.profMuro || 350);
-  const [matFront, setMatFront] = useState("pvc");
-  const [matSide, setMatSide] = useState("alluminio");
-  const [matTop, setMatTop] = useState("pvc");
+  const [sp, setSp] = useState(40);
   const [selFace, setSelFace] = useState<string|null>(null);
+  const [mats, setMats] = useState<any>({
+    front:"alluminio", back:"alluminio",
+    left:"alluminio", right:"alluminio",
+    top:"pvc", bottom:"pvc"
+  });
 
   const MAT3D = [
-    {id:"pvc",      l:"PVC",      c:"#93C5FD",b:"#3B7FE0"},
     {id:"alluminio",l:"Alluminio",c:"#CBD5E1",b:"#475569"},
-    {id:"legno",    l:"Legno",    c:"#D6B896",b:"#92400E"},
+    {id:"pvc",      l:"PVC",      c:"#93C5FD",b:"#3B7FE0"},
     {id:"acciaio",  l:"Acciaio",  c:"#9CA3AF",b:"#374151"},
-    {id:"eps",      l:"Coib.",    c:"#FDE68A",b:"#D08008"},
     {id:"vetro",    l:"Vetro",    c:"#BAE6FD",b:"#0EA5E9"},
+    {id:"legno",    l:"Legno",    c:"#D6B896",b:"#92400E"},
+    {id:"eps",      l:"Coib.",    c:"#FDE68A",b:"#D08008"},
   ];
-
-  const faceToMat:any = {front:matFront, back:matFront, left:matSide, right:matSide, top:matTop, bottom:matTop};
   const getMat = (id:string) => MAT3D.find(m=>m.id===id)||MAT3D[0];
 
-  // Isometrica semplice
-  const mx = Math.max(realW, realH, P);
-  const sc3 = 100 / mx;
-  const W3=realW*sc3, H3=realH*sc3, D3=P*sc3;
+  // Isometrica
+  const mx = Math.max(L, H, P, 1);
+  const sc3 = 90/mx;
+  const W3=L*sc3, H3=H*sc3, D3=P*sc3;
+  const s3=sp*sc3;
   const c30=Math.cos(Math.PI/6), s30=0.5;
   const iX=(x:number,_y:number,z:number)=>(x-z)*c30;
   const iY=(x:number,y:number,z:number)=>(x+z)*s30-y;
-  const CX=180, CY=160;
-  const p3=(x:number,y:number,z:number)=>`${CX+iX(x,y,z)},${CY+iY(x,y,z)}`;
+  const CX=185, CY=170;
+  const p3=(x:number,y:number,z:number)=>`${(CX+iX(x,y,z)).toFixed(1)},${(CY+iY(x,y,z)).toFixed(1)}`;
 
+  // Facce del box (senza coperchio per vedere l'interno)
   const FACES = [
-    {id:"back",   pts:`${p3(0,0,D3)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, matKey:"front"},
-    {id:"bottom", pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(0,0,D3)}`,     matKey:"top"},
-    {id:"left",   pts:`${p3(0,0,0)} ${p3(0,0,D3)} ${p3(0,H3,D3)} ${p3(0,H3,0)}`,     matKey:"left"},
-    {id:"right",  pts:`${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(W3,H3,0)}`, matKey:"left"},
-    {id:"front",  pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,H3,0)} ${p3(0,H3,0)}`,     matKey:"front"},
-    {id:"top",    pts:`${p3(0,H3,0)} ${p3(W3,H3,0)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, matKey:"top"},
+    {id:"back",   pts:`${p3(0,0,D3)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, op:0.6},
+    {id:"bottom", pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(0,0,D3)}`,     op:0.7},
+    {id:"left",   pts:`${p3(0,0,0)} ${p3(0,0,D3)} ${p3(0,H3,D3)} ${p3(0,H3,0)}`,     op:0.85},
+    {id:"right",  pts:`${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(W3,H3,0)}`, op:0.9},
+    {id:"front",  pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,H3,0)} ${p3(0,H3,0)}`,     op:1.0},
+    {id:"top",    pts:`${p3(0,H3,0)} ${p3(W3,H3,0)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, op:0.95},
   ];
 
-  const faceLabels:any = {front:"Fronte",back:"Retro",left:"Sx",right:"Dx",top:"Coperchio",bottom:"Fondo"};
+  const faceLabels:any = {
+    front:"Fronte", back:"Retro", left:"Sx", right:"Dx", top:"Coperchio", bottom:"Fondo"
+  };
+  const visibleLabels = [
+    {id:"front", lx:CX+iX(W3/2,H3/2,0),     ly:CY+iY(W3/2,H3/2,0)},
+    {id:"right", lx:CX+iX(W3,H3/2,D3/2),    ly:CY+iY(W3,H3/2,D3/2)},
+    {id:"top",   lx:CX+iX(W3/2,H3,D3/2),    ly:CY+iY(W3/2,H3,D3/2)},
+  ];
+
+  const inp = { width:"100%", padding:"5px 3px", border:`1.5px solid ${T.bdr}`,
+    borderRadius:6, fontSize:13, fontWeight:800,
+    fontFamily:"'JetBrains Mono',monospace", textAlign:"center" as const,
+    color:T.text, background:T.card||"#fff", boxSizing:"border-box" as const };
 
   return (
     <div>
-      {/* SVG 3D */}
-      <div style={{display:"flex",justifyContent:"center",padding:"8px 4px",background:"#F0F8FF"}}>
-        <svg width={360} height={280} style={{maxWidth:"100%",background:"#fff",borderRadius:8,border:`1px solid ${T.bdr}`}}>
-          {/* Griglia piano */}
-          {[0,1,2,3,4].map(i=>(
+      {/* 3D SVG */}
+      <div style={{display:"flex",justifyContent:"center",padding:"10px 6px",background:"#F0F8FF"}}>
+        <svg width={370} height={290} style={{maxWidth:"100%",background:"#fff",
+          borderRadius:8,border:`1px solid ${T.bdr}`}}>
+
+          {/* Piano griglia */}
+          {[0,0.25,0.5,0.75,1].map((t,i)=>(
             <line key={"gz"+i}
-              x1={CX+iX(0,0,i/4*D3)} y1={CY+iY(0,0,i/4*D3)}
-              x2={CX+iX(W3,0,i/4*D3)} y2={CY+iY(W3,0,i/4*D3)}
-              stroke="#E8F0FF" strokeWidth="0.5"/>
+              x1={CX+iX(0,0,t*D3)} y1={CY+iY(0,0,t*D3)}
+              x2={CX+iX(W3,0,t*D3)} y2={CY+iY(W3,0,t*D3)}
+              stroke="#E8F0FF" strokeWidth="0.6"/>
+          ))}
+          {[0,0.5,1].map((t,i)=>(
+            <line key={"gx"+i}
+              x1={CX+iX(t*W3,0,0)} y1={CY+iY(t*W3,0,0)}
+              x2={CX+iX(t*W3,0,D3)} y2={CY+iY(t*W3,0,D3)}
+              stroke="#E8F0FF" strokeWidth="0.6"/>
           ))}
 
           {/* Facce */}
           {FACES.map(f=>{
-            const mat = getMat(faceToMat[f.id]);
+            const mat = getMat(mats[f.id]);
             const isSel = selFace===f.id;
-            const alpha = ["back","bottom"].includes(f.id) ? "70" : "FF";
             return (
               <polygon key={f.id} points={f.pts}
-                fill={mat.c+alpha}
+                fill={mat.c + Math.round(f.op*255).toString(16).padStart(2,"0")}
                 stroke={isSel?"#F59E0B":mat.b}
                 strokeWidth={isSel?2.5:1}
                 strokeLinejoin="round"
                 style={{cursor:"pointer"}}
-                onClick={()=>setSelFace(f.id)}/>
+                onClick={()=>setSelFace(selFace===f.id?null:f.id)}/>
             );
           })}
 
           {/* Label facce visibili */}
-          {[
-            {id:"front",  x:CX+iX(W3/2,H3/2,0),     y:CY+iY(W3/2,H3/2,0)},
-            {id:"right",  x:CX+iX(W3,H3/2,D3/2),     y:CY+iY(W3,H3/2,D3/2)},
-            {id:"top",    x:CX+iX(W3/2,H3,D3/2),      y:CY+iY(W3/2,H3,D3/2)},
-          ].map(f=>{
-            const mat=getMat(faceToMat[f.id]);
+          {visibleLabels.map(f=>{
+            const mat=getMat(mats[f.id]);
+            const isSel=selFace===f.id;
             return (
-              <g key={f.id}>
-                <text x={f.x} y={f.y-2} textAnchor="middle" fontSize="9" fontWeight="800" fill={mat.b}>{faceLabels[f.id]}</text>
-                <text x={f.x} y={f.y+9} textAnchor="middle" fontSize="8" fill={mat.b}>{mat.l}</text>
+              <g key={f.id} style={{pointerEvents:"none"}}>
+                <text x={f.lx} y={f.ly-3} textAnchor="middle" fontSize={isSel?"11":"9"}
+                  fontWeight="800" fill={isSel?"#F59E0B":mat.b}>
+                  {faceLabels[f.id]}
+                </text>
+                <text x={f.lx} y={f.ly+9} textAnchor="middle" fontSize="8" fill={mat.b}>
+                  {mat.l}
+                </text>
               </g>
             );
           })}
 
-          {/* Quote */}
-          <text x={(CX+iX(0,0,0)+CX+iX(W3,0,0))/2} y={(CY+iY(0,0,0)+CY+iY(W3,0,0))/2+18}
-            textAnchor="middle" fontSize="9" fontWeight="700" fill={T.acc||"#D08008"}>L {realW}mm</text>
-          <text x={CX+iX(W3,H3/2,0)+18} y={CY+iY(W3,H3/2,0)}
-            textAnchor="start" fontSize="9" fontWeight="700" fill={T.acc||"#D08008"}>H {realH}mm</text>
-          <text x={(CX+iX(W3,0,0)+CX+iX(W3,0,D3))/2+14} y={(CY+iY(W3,0,0)+CY+iY(W3,0,D3))/2}
-            textAnchor="start" fontSize="9" fontWeight="700" fill={T.acc||"#D08008"}>P {P}mm</text>
+          {/* Quote L */}
+          <line x1={CX+iX(0,0,0)} y1={CY+iY(0,0,0)}
+            x2={CX+iX(W3,0,0)} y2={CY+iY(W3,0,0)}
+            stroke="#D08008" strokeWidth="1" strokeDasharray="4,2"/>
+          <text x={(CX+iX(0,0,0)+CX+iX(W3,0,0))/2}
+            y={(CY+iY(0,0,0)+CY+iY(W3,0,0))/2+16}
+            textAnchor="middle" fontSize="9" fontWeight="800" fill="#D08008">L {L}mm</text>
 
-          {/* Hint */}
-          <text x={180} y={268} textAnchor="middle" fontSize="8" fill="#94A3B8">
-            Tap su una faccia per assegnare materiale
+          {/* Quote H */}
+          <line x1={CX+iX(W3,0,0)} y1={CY+iY(W3,0,0)}
+            x2={CX+iX(W3,H3,0)} y2={CY+iY(W3,H3,0)}
+            stroke="#D08008" strokeWidth="1" strokeDasharray="4,2"/>
+          <text x={CX+iX(W3,0,0)+28} y={(CY+iY(W3,0,0)+CY+iY(W3,H3,0))/2}
+            textAnchor="start" fontSize="9" fontWeight="800" fill="#D08008">H {H}mm</text>
+
+          {/* Quote P */}
+          <line x1={CX+iX(W3,0,0)} y1={CY+iY(W3,0,0)}
+            x2={CX+iX(W3,0,D3)} y2={CY+iY(W3,0,D3)}
+            stroke="#D08008" strokeWidth="1" strokeDasharray="4,2"/>
+          <text x={(CX+iX(W3,0,0)+CX+iX(W3,0,D3))/2+16}
+            y={(CY+iY(W3,0,0)+CY+iY(W3,0,D3))/2}
+            textAnchor="start" fontSize="9" fontWeight="800" fill="#D08008">P {P}mm</text>
+
+          <text x={185} y={282} textAnchor="middle" fontSize="8" fill="#94A3B8">
+            Tap faccia → assegna materiale
           </text>
         </svg>
       </div>
 
-      {/* Profondità */}
-      <div style={{padding:"6px 10px",borderTop:`1px solid ${T.bdr}`,display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:10,fontWeight:700,color:T.sub}}>Profondità (P)</span>
-        <input type="number" value={P} onChange={(e:any)=>setP(parseInt(e.target.value)||10)}
-          style={{width:64,padding:"4px",border:`1.5px solid ${T.bdr}`,borderRadius:6,
-            fontSize:13,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
-            textAlign:"center",color:T.text}}/>
-        <span style={{fontSize:9,color:T.sub}}>mm</span>
+      {/* Dimensioni compatte */}
+      <div style={{padding:"7px 10px",borderTop:`1px solid ${T.bdr}`,background:T.bg||"#F2F1EC"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:5}}>
+          {[{l:"L",v:L,set:setL},{l:"H",v:H,set:setH},{l:"P",v:P,set:setP},{l:"Sp.",v:sp,set:setSp}].map(({l,v,set})=>(
+            <div key={l}>
+              <div style={{fontSize:9,color:T.sub,fontWeight:700,marginBottom:2}}>{l} (mm)</div>
+              <input type="number" value={v}
+                onChange={(e:any)=>set(Math.max(1,parseInt(e.target.value)||1))}
+                style={inp}/>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:6,padding:"4px 8px",borderRadius:6,background:"#EFF8FF",
+          display:"flex",justifyContent:"space-around"}}>
+          <span style={{fontSize:9,fontWeight:700,color:"#3B7FE0"}}>Int. {Math.max(0,L-sp*2)}×{Math.max(0,H-sp*2)}×{Math.max(0,P-sp*2)}mm</span>
+        </div>
       </div>
 
       {/* Selezione materiale */}
       {selFace && (
-        <div style={{padding:"8px 10px",borderTop:`1px solid ${T.bdr}`,background:T.bg||"#F2F1EC"}}>
+        <div style={{padding:"8px 10px",borderTop:`1px solid ${T.bdr}`,background:"#fff"}}>
           <div style={{fontSize:11,fontWeight:800,color:T.text,marginBottom:8}}>
-            {faceLabels[selFace]} — materiale
+            {faceLabels[selFace]}
+            <span style={{fontSize:9,color:T.sub,fontWeight:400,marginLeft:6}}>
+              {["front","back"].includes(selFace)?"(stesso per fronte/retro)":
+               ["left","right"].includes(selFace)?"(stesso per sx/dx)":"(stesso per top/fondo)"}
+            </span>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5}}>
             {MAT3D.map(m=>{
-              const cur = faceToMat[selFace];
-              const isSel = cur===m.id;
-              const setter = ["front","back"].includes(selFace)?setMatFront:["left","right"].includes(selFace)?setMatSide:setMatTop;
+              const cur=mats[selFace];
+              const isSel=cur===m.id;
+              const apply = (id:string) => {
+                const pair:any = {front:["front","back"],left:["left","right"],right:["left","right"],back:["front","back"],top:["top","bottom"],bottom:["top","bottom"]};
+                const keys=pair[selFace]||[selFace];
+                const next:any={...mats};
+                keys.forEach((k:string)=>next[k]=id);
+                setMats(next);
+              };
               return (
-                <div key={m.id} onClick={()=>{setter(m.id);}}
-                  style={{padding:"8px 6px",borderRadius:8,cursor:"pointer",textAlign:"center",
-                    border:`2px solid ${isSel?m.b:"#E2E8F0"}`,background:m.c+"60"}}>
-                  <div style={{width:20,height:20,borderRadius:4,background:m.c,border:`1.5px solid ${m.b}`,margin:"0 auto 4px"}}/>
-                  <div style={{fontSize:10,fontWeight:700,color:"#0F172A"}}>{m.l}</div>
-                  {isSel&&<div style={{fontSize:8,color:m.b,marginTop:2}}>✓ selezionato</div>}
+                <div key={m.id} onClick={()=>apply(m.id)}
+                  style={{padding:"8px 5px",borderRadius:8,cursor:"pointer",textAlign:"center",
+                    border:`2px solid ${isSel?m.b:"#E2E8F0"}`,background:m.c+"80"}}>
+                  <div style={{width:18,height:18,borderRadius:4,background:m.c,
+                    border:`2px solid ${m.b}`,margin:"0 auto 4px"}}/>
+                  <div style={{fontSize:11,fontWeight:700,color:"#0F172A"}}>{m.l}</div>
+                  {isSel&&<div style={{fontSize:8,color:m.b}}>✓</div>}
                 </div>
               );
             })}
-          </div>
-          <div onClick={()=>setSelFace(null)}
-            style={{marginTop:8,padding:"6px",textAlign:"center",color:T.sub,fontSize:11,cursor:"pointer"}}>
-            Chiudi
           </div>
         </div>
       )}
@@ -304,106 +359,99 @@ function nearSegment(px: number, py: number, ax: number, ay: number, bx: number,
 const makeRectPts = (w = 1200, h = 1400) => [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }];
 
 function FormaEditor({ T, realW, realH }: any) {
-  const [forma, setForma] = useState("rett");
-  const [W, setW] = useState(realW || 1200);
+  const [L, setL] = useState(realW || 1200);
   const [H, setH] = useState(realH || 1400);
   const [P, setP] = useState(350);
+  const [sp, setSp] = useState(40); // spessore muri mm
 
-  const FORME = [
-    { id:"rett", label:"Rettangolo", icon:"▬" },
-    { id:"elle", label:"Forma L",    icon:"⌐" },
-    { id:"u",    label:"Forma U",    icon:"⊓" },
-    { id:"trap", label:"Trapezio",   icon:"⏢" },
-  ];
+  const SVW = 300, SVH = 260, PAD = 40;
+  const scL = (SVW - PAD*2) / Math.max(L, 1);
+  const scP = (SVH - PAD*2) / Math.max(P, 1);
+  const sc = Math.min(scL, scP, 0.5);
+  const bw = L*sc, bd = P*sc;
+  const ox = (SVW - bw)/2, oy = (SVH - bd)/2;
+  const spx = sp*sc;
 
-  // Genera i punti della forma in mm
-  const getPts = () => {
-    if (forma === "rett") return [{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}];
-    if (forma === "elle") return [{x:0,y:0},{x:W,y:0},{x:W,y:Math.round(H*0.45)},{x:Math.round(W*0.55),y:Math.round(H*0.45)},{x:Math.round(W*0.55),y:H},{x:0,y:H}];
-    if (forma === "u")   return [{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:Math.round(W*0.7),y:H},{x:Math.round(W*0.7),y:Math.round(H*0.4)},{x:Math.round(W*0.3),y:Math.round(H*0.4)},{x:Math.round(W*0.3),y:H},{x:0,y:H}];
-    if (forma === "trap") return [{x:Math.round(W*0.15),y:0},{x:Math.round(W*0.85),y:0},{x:W,y:H},{x:0,y:H}];
-    return [{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}];
-  };
+  const inp = { width:"100%", padding:"6px 4px", border:`1.5px solid ${T.bdr}`,
+    borderRadius:6, fontSize:14, fontWeight:800,
+    fontFamily:"'JetBrains Mono',monospace", textAlign:"center" as const, color:T.text,
+    background:T.card||"#fff", boxSizing:"border-box" as const };
 
-  const pts = getPts();
-  const pad = 50, maxSvg = 300;
-  const xs = pts.map((p:any)=>p.x), ys = pts.map((p:any)=>p.y);
-  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-  const bW=maxX-minX||1, bH=maxY-minY||1;
-  const sc = Math.min((maxSvg-pad*2)/bW, (maxSvg-pad*2)/bH, 0.2);
-  const svgW=bW*sc+pad*2, svgH=bH*sc+pad*2;
-  const ox=pad-minX*sc, oy=pad-minY*sc;
-  const toS = (p:any) => ({x:ox+p.x*sc, y:oy+p.y*sc});
-  const pathD = pts.map((p:any,i:number)=>{const s=toS(p);return `${i===0?"M":"L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`;}).join(" ")+" Z";
-
-  const inpSt = { width:60, padding:"5px 3px", border:`1.5px solid ${T.bdr}`, borderRadius:6, fontSize:13, fontWeight:800, fontFamily:"'JetBrains Mono',monospace", textAlign:"center" as const, color:T.text };
+  // Dimensioni interne
+  const Li = L - sp*2, Pi = P - sp*2;
 
   return (
     <div>
-      {/* Selezione forma */}
-      <div style={{padding:"8px",display:"flex",gap:5,borderBottom:`1px solid ${T.bdr}`}}>
-        {FORME.map((f:any)=>(
-          <div key={f.id} onClick={()=>setForma(f.id)}
-            style={{flex:1,padding:"8px 4px",borderRadius:8,textAlign:"center",cursor:"pointer",
-              border:`1.5px solid ${forma===f.id?(T.blue||"#3B7FE0"):T.bdr}`,
-              background:forma===f.id?(T.blue||"#3B7FE0")+"12":T.card||"#fff"}}>
-            <div style={{fontSize:18,marginBottom:2}}>{f.icon}</div>
-            <div style={{fontSize:9,fontWeight:700,color:forma===f.id?(T.blue||"#3B7FE0"):T.sub}}>{f.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* SVG pianta */}
-      <div style={{display:"flex",justifyContent:"center",padding:"12px 8px",background:"#FAFAF7"}}>
-        <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}
-          style={{background:"#fff",borderRadius:8,border:`1px solid ${T.bdr}`,maxWidth:"100%"}}>
+      {/* SVG pianta con spessori */}
+      <div style={{display:"flex",justifyContent:"center",padding:"12px 8px",background:"#F8FAFC"}}>
+        <svg width={SVW} height={SVH} style={{borderRadius:8,border:`1px solid ${T.bdr}`,background:"#fff",maxWidth:"100%"}}>
           {/* Griglia */}
-          <defs><pattern id="fg2" width={100*sc} height={100*sc} patternUnits="userSpaceOnUse">
-            <path d={`M ${100*sc} 0 L 0 0 0 ${100*sc}`} fill="none" stroke="#F0EEE8" strokeWidth="0.5"/>
-          </pattern></defs>
-          <rect width={svgW} height={svgH} fill="url(#fg2)"/>
-          {/* Forma */}
-          <path d={pathD} fill="#DCEEFF" stroke="#3B7FE0" strokeWidth="2" strokeLinejoin="round"/>
-          {/* Quote lati */}
-          {pts.map((p:any,i:number)=>{
-            const next=pts[(i+1)%pts.length];
-            const a=toS(p), b=toS(next);
-            const dx=b.x-a.x, dy=b.y-a.y;
-            const len=Math.round(Math.hypot(next.x-p.x,next.y-p.y));
-            const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
-            const nx=-dy/Math.hypot(dx,dy)||0, ny=dx/Math.hypot(dx,dy)||0;
-            const ang=Math.atan2(dy,dx)*180/Math.PI;
-            const fixAng=ang>90||ang<-90?ang+180:ang;
-            const tx=mx+nx*14, ty=my+ny*14;
-            return (
-              <text key={i} x={tx} y={ty+3} textAnchor="middle" fontSize="9" fontWeight="700"
-                fill={T.acc||"#D08008"} transform={`rotate(${fixAng},${tx},${ty+3})`}
-                style={{paintOrder:"stroke",stroke:"#FAFAF7",strokeWidth:2}}>
-                {len}
-              </text>
-            );
-          })}
-          {/* Centroide con dimensioni */}
-          <text x={svgW/2} y={svgH/2-4} textAnchor="middle" fontSize="11" fontWeight="800"
-            fill="#3B7FE0" opacity="0.5">{W}×{H}</text>
-          <text x={svgW/2} y={svgH/2+10} textAnchor="middle" fontSize="8"
-            fill="#3B7FE0" opacity="0.4">pianta</text>
+          {Array.from({length:7}).map((_,i)=>(
+            <line key={"gx"+i} x1={ox+i*bw/6} y1={oy} x2={ox+i*bw/6} y2={oy+bd} stroke="#F0EEE8" strokeWidth="0.4"/>
+          ))}
+          {Array.from({length:6}).map((_,i)=>(
+            <line key={"gy"+i} x1={ox} y1={oy+i*bd/5} x2={ox+bw} y2={oy+i*bd/5} stroke="#F0EEE8" strokeWidth="0.4"/>
+          ))}
+
+          {/* Muro esterno */}
+          <rect x={ox} y={oy} width={bw} height={bd}
+            fill="#CBD5E1" stroke="#475569" strokeWidth="2"/>
+
+          {/* Interno */}
+          <rect x={ox+spx} y={oy+spx} width={Math.max(bw-spx*2,2)} height={Math.max(bd-spx*2,2)}
+            fill="#EFF8FF" stroke="#3B7FE0" strokeWidth="1" strokeDasharray="4,2"/>
+
+          {/* Label interno */}
+          <text x={SVW/2} y={SVH/2-4} textAnchor="middle" fontSize="10" fontWeight="800" fill="#3B7FE0">
+            {Li > 0 ? `${Li}×${Pi}` : "—"}
+          </text>
+          <text x={SVW/2} y={SVH/2+10} textAnchor="middle" fontSize="8" fill="#94A3B8">int. mm</text>
+
+          {/* Quote esterne L */}
+          <line x1={ox} y1={oy-14} x2={ox+bw} y2={oy-14} stroke="#D08008" strokeWidth="1"/>
+          <line x1={ox} y1={oy-10} x2={ox} y2={oy-18} stroke="#D08008" strokeWidth="1"/>
+          <line x1={ox+bw} y1={oy-10} x2={ox+bw} y2={oy-18} stroke="#D08008" strokeWidth="1"/>
+          <text x={SVW/2} y={oy-18} textAnchor="middle" fontSize="10" fontWeight="800" fill="#D08008">{L}mm</text>
+
+          {/* Quote esterne P */}
+          <line x1={ox+bw+14} y1={oy} x2={ox+bw+14} y2={oy+bd} stroke="#D08008" strokeWidth="1"/>
+          <line x1={ox+bw+10} y1={oy} x2={ox+bw+18} y2={oy} stroke="#D08008" strokeWidth="1"/>
+          <line x1={ox+bw+10} y1={oy+bd} x2={ox+bw+18} y2={oy+bd} stroke="#D08008" strokeWidth="1"/>
+          <text x={ox+bw+26} y={SVH/2+4} textAnchor="middle" fontSize="10" fontWeight="800" fill="#D08008"
+            transform={`rotate(90,${ox+bw+26},${SVH/2+4})`}>{P}mm</text>
+
+          {/* Label spessore muro */}
+          <text x={ox+spx/2} y={SVH/2} textAnchor="middle" fontSize="8" fontWeight="700"
+            fill="#475569" transform={`rotate(-90,${ox+spx/2},${SVH/2})`}>{sp}mm</text>
+
+          {/* Label vista */}
+          <text x={SVW/2} y={SVH-6} textAnchor="middle" fontSize="8" fill="#94A3B8">pianta (vista dall'alto)</text>
         </svg>
       </div>
 
-      {/* Campi dimensioni */}
+      {/* Campi */}
       <div style={{padding:"8px 10px",borderTop:`1px solid ${T.bdr}`,background:T.bg||"#F2F1EC"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
-          {[{l:"Larghezza",v:W,set:setW},{l:"Altezza",v:H,set:setH},{l:"Profondità",v:P,set:setP}].map(({l,v,set})=>(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
+          {[{l:"Larghezza",v:L,set:setL},{l:"Profondità",v:P,set:setP}].map(({l,v,set})=>(
             <div key={l}>
-              <div style={{fontSize:9,color:T.sub,fontWeight:700,marginBottom:2}}>{l}</div>
-              <input type="number" value={v} onChange={(e:any)=>set(parseInt(e.target.value)||10)}
-                style={inpSt}/>
+              <div style={{fontSize:9,color:T.sub,fontWeight:700,marginBottom:3}}>{l} (mm)</div>
+              <input type="number" value={v} onChange={(e:any)=>set(Math.max(1,parseInt(e.target.value)||1))} style={inp}/>
             </div>
           ))}
         </div>
-        <div style={{marginTop:6,fontSize:9,color:T.sub,textAlign:"center"}}>
-          Dimensioni interne: {W}×{H}×{P} mm
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+          {[{l:"Altezza",v:H,set:setH},{l:"Spessore muri",v:sp,set:setSp}].map(({l,v,set})=>(
+            <div key={l}>
+              <div style={{fontSize:9,color:T.sub,fontWeight:700,marginBottom:3}}>{l} (mm)</div>
+              <input type="number" value={v} onChange={(e:any)=>set(Math.max(1,parseInt(e.target.value)||1))} style={inp}/>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:8,padding:"6px 8px",borderRadius:8,background:"#EFF8FF",
+          display:"flex",justifyContent:"space-around"}}>
+          <span style={{fontSize:10,fontWeight:700,color:"#3B7FE0"}}>Int. L: {Math.max(0,L-sp*2)}mm</span>
+          <span style={{fontSize:10,fontWeight:700,color:"#3B7FE0"}}>Int. P: {Math.max(0,P-sp*2)}mm</span>
+          <span style={{fontSize:10,fontWeight:700,color:"#3B7FE0"}}>Int. H: {Math.max(0,H-sp*2)}mm</span>
         </div>
       </div>
     </div>
