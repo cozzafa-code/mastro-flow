@@ -585,9 +585,9 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         );
         if(iR&&isFinite(iR.x)) aR=iR;
       } else if (joinAtA==="wins") {
-        // Vince: si estende di sp2 nel verso opposto (copre il perdente)
-        aL={x:a.x+nx*sp2-ux*sp2, y:a.y+ny*sp2-uy*sp2};
-        aR={x:a.x-nx*sp2-ux*sp2, y:a.y-ny*sp2-uy*sp2};
+        // Vince: si estende di sp (spessore intero) coprendo completamente il perdente
+        aL={x:a.x+nx*sp2-ux*sp2*2, y:a.y+ny*sp2-uy*sp2*2};
+        aR={x:a.x-nx*sp2-ux*sp2*2, y:a.y-ny*sp2-uy*sp2*2};
       }
       // loses: rimane taglio dritto (già impostato)
     }
@@ -610,8 +610,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         );
         if(iR&&isFinite(iR.x)) bR=iR;
       } else if (joinAtB==="wins") {
-        bL={x:b.x+nx*sp2+ux*sp2, y:b.y+ny*sp2+uy*sp2};
-        bR={x:b.x-nx*sp2+ux*sp2, y:b.y-ny*sp2+uy*sp2};
+        bL={x:b.x+nx*sp2+ux*sp2*2, y:b.y+ny*sp2+uy*sp2*2};
+        bR={x:b.x-nx*sp2+ux*sp2*2, y:b.y-ny*sp2+uy*sp2*2};
       }
     }
 
