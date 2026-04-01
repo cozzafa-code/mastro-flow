@@ -506,6 +506,10 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const [snapOn, setSnapOn] = React.useState(true);
   const [dims, setDims] = React.useState("");
   const [shapeCount, setShapeCount] = React.useState(0);
+  const [zoom, setZoom] = React.useState(1);
+  const [liveQuote, setLiveQuote] = React.useState("");
+  const zoomRef = React.useRef(1);
+  const lastPinchRef = React.useRef<number|null>(null);
 
   React.useEffect(() => { activeToolRef.current = activeTool; }, [activeTool]);
   React.useEffect(() => { spessoreRef.current = spessore; }, [spessore]);
