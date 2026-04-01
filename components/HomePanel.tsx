@@ -305,6 +305,20 @@ export default function HomePanel() {
           </div>
         </div>
 
+        {/* CONTABILITÀ — bottone full-width */}
+        <div onClick={() => setTab("contabilita")} style={{ padding: "16px 20px", borderRadius: 18, background: "white", border: `2px solid ${BDR}`, boxShadow: "0 7px 0 0 #A8CCCC", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(26,158,115,.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A9E73" strokeWidth="2.2" strokeLinecap="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: INK }}>Contabilita'</p>
+            <p style={{ margin: "2px 0 0", fontSize: 10, fontWeight: 700, color: SUB }}>Fatture · incassi · spese</p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T_CLR} strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
         {/* OPERATORI OGGI */}
         <Card>
           <SectionTitle badge={<Pill bg="#D8F2F2" color="#0A5050">3 in campo</Pill>}>Operatori oggi</SectionTitle>
