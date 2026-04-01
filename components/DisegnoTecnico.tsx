@@ -146,17 +146,12 @@ function FDataPanel3D({ T, faceKey, faceData, setFaceData, onClose }: any) {
   </div>);
 }
 
-function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
-  const [L, setL] = useState(realW || 1200);
-  const [H, setH] = useState(realH || 1400);
-  const [P, setP] = useState(vanoDisegno?.profMuro || 350);
-  const [sp, setSp] = useState(40);
+function View3D({ T, realW, realH, vanoDisegno, onUpdate, pts, H, sp, mats, onMatsChange, onHChange, onSpChange }: any) {
+  // Dimensioni dai pts condivisi
+  const xs3 = (pts||[]).map((p:any)=>p.x), ys3 = (pts||[]).map((p:any)=>p.y);
+  const L = xs3.length ? Math.max(...xs3)-Math.min(...xs3) : realW||1200;
+  const P = ys3.length ? Math.max(...ys3)-Math.min(...ys3) : 350;
   const [selFace, setSelFace] = useState<string|null>(null);
-  const [mats, setMats] = useState<any>({
-    front:"alluminio", back:"alluminio",
-    left:"alluminio", right:"alluminio",
-    top:"pvc", bottom:"pvc"
-  });
 
   const MAT3D = [
     {id:"alluminio",l:"Alluminio",c:"#CBD5E1",b:"#475569"},
@@ -179,14 +174,36 @@ function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
   const CX=185, CY=170;
   const p3=(x:number,y:number,z:number)=>`${(CX+iX(x,y,z)).toFixed(1)},${(CY+iY(x,y,z)).toFixed(1)}`;
 
-  // Facce del box (senza coperchio per vedere l'interno)
-  const FACES = [
-    {id:"back",   pts:`${p3(0,0,D3)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, op:0.6},
-    {id:"bottom", pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(0,0,D3)}`,     op:0.7},
-    {id:"left",   pts:`${p3(0,0,0)} ${p3(0,0,D3)} ${p3(0,H3,D3)} ${p3(0,H3,0)}`,     op:0.85},
-    {id:"right",  pts:`${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(W3,H3,0)}`, op:0.9},
-    {id:"front",  pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,H3,0)} ${p3(0,H3,0)}`,     op:1.0},
-    {id:"top",    pts:`${p3(0,H3,0)} ${p3(W3,H3,0)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, op:0.95},
+  // Normalizza i pts della pianta in coordinate 0..L, 0..P
+  const normPts = (pts||[]).map((p:any) => ({
+    x: (p.x - Math.min(...(pts||[{x:0}]).map((q:any)=>q.x))) / Math.max(L,1) * W3,
+    z: (p.y - Math.min(...(pts||[{y:0}]).map((q:any)=>q.y))) / Math.max(P,1) * D3,
+  }));
+  const isBox = normPts.length === 4;
+
+  // Genera le facce laterali dalla pianta estrusa
+  const sideFaces = normPts.length >= 3 ? normPts.map((np:any, i:number) => {
+    const next = normPts[(i+1)%normPts.length];
+    const pts3 = `${p3(np.x,0,np.z)} ${p3(next.x,0,next.z)} ${p3(next.x,H3,next.z)} ${p3(np.x,H3,np.z)}`;
+    return {id:`side${i}`, pts:pts3, matKey:"front", op:0.85};
+  }) : [];
+
+  // Pianta in basso e tetto
+  const bottomPts3 = normPts.map((np:any)=>p3(np.x,0,np.z)).join(" ");
+  const topPts3    = normPts.map((np:any)=>p3(np.x,H3,np.z)).join(" ");
+
+  const FACES = isBox ? [
+    {id:"back",   pts:`${p3(0,0,D3)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, op:0.6, matKey:"back"},
+    {id:"bottom", pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(0,0,D3)}`,     op:0.7, matKey:"bottom"},
+    {id:"left",   pts:`${p3(0,0,0)} ${p3(0,0,D3)} ${p3(0,H3,D3)} ${p3(0,H3,0)}`,     op:0.85,matKey:"left"},
+    {id:"right",  pts:`${p3(W3,0,0)} ${p3(W3,0,D3)} ${p3(W3,H3,D3)} ${p3(W3,H3,0)}`, op:0.9, matKey:"right"},
+    {id:"front",  pts:`${p3(0,0,0)} ${p3(W3,0,0)} ${p3(W3,H3,0)} ${p3(0,H3,0)}`,     op:1.0, matKey:"front"},
+    {id:"top",    pts:`${p3(0,H3,0)} ${p3(W3,H3,0)} ${p3(W3,H3,D3)} ${p3(0,H3,D3)}`, op:0.95,matKey:"top"},
+  ] : [
+    // Forma libera: fondo + lati laterali + tetto
+    {id:"bottom", pts:bottomPts3, op:0.7, matKey:"bottom"},
+    ...sideFaces,
+    {id:"top",    pts:topPts3,    op:0.95,matKey:"top"},
   ];
 
   const faceLabels:any = {
@@ -226,7 +243,7 @@ function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
 
           {/* Facce */}
           {FACES.map(f=>{
-            const mat = getMat(mats[f.id]);
+            const mat = getMat(mats?.[f.matKey||f.id]||"alluminio");
             const isSel = selFace===f.id;
             return (
               <polygon key={f.id} points={f.pts}
@@ -288,7 +305,7 @@ function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
       {/* Dimensioni compatte */}
       <div style={{padding:"7px 10px",borderTop:`1px solid ${T.bdr}`,background:T.bg||"#F2F1EC"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:5}}>
-          {[{l:"L",v:L,set:setL},{l:"H",v:H,set:setH},{l:"P",v:P,set:setP},{l:"Sp.",v:sp,set:setSp}].map(({l,v,set})=>(
+          {[{l:"L",v:L,set:(v:number)=>{/* readonly */}},{l:"H",v:H||280,set:onHChange},{l:"P",v:P,set:(v:number)=>{/* readonly */}},{l:"Sp.",v:sp||40,set:onSpChange}].map(({l,v,set})=>(
             <div key={l}>
               <div style={{fontSize:9,color:T.sub,fontWeight:700,marginBottom:2}}>{l} (mm)</div>
               <input type="number" value={v}
@@ -322,7 +339,7 @@ function View3D({ T, realW, realH, vanoDisegno, onUpdate }: any) {
                 const keys=pair[selFace]||[selFace];
                 const next:any={...mats};
                 keys.forEach((k:string)=>next[k]=id);
-                setMats(next);
+                onMatsChange(next);
               };
               return (
                 <div key={m.id} onClick={()=>apply(m.id)}
@@ -358,11 +375,17 @@ function nearSegment(px: number, py: number, ax: number, ay: number, bx: number,
 }
 const makeRectPts = (w = 1200, h = 1400) => [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }];
 
-function FormaEditor({ T, realW, realH }: any) {
-  const [L, setL] = useState(realW || 1200);
-  const [H, setH] = useState(realH || 1400);
-  const [P, setP] = useState(350);
-  const [sp, setSp] = useState(40); // spessore muri mm
+function FormaEditor({ T, realW, realH, pts, onPtsChange, H, onHChange, sp, onSpChange }: any) {
+  // Legge L e P dai pts condivisi
+  const xs = pts.map((p:any)=>p.x), ys = pts.map((p:any)=>p.y);
+  const L = Math.max(...xs) - Math.min(...xs) || realW || 1200;
+  const P = Math.max(...ys) - Math.min(...ys) || 350;
+  const setL = (v:number) => {
+    onPtsChange([{x:0,y:0},{x:v,y:0},{x:v,y:P},{x:0,y:P}]);
+  };
+  const setP2 = (v:number) => {
+    onPtsChange([{x:0,y:0},{x:L,y:0},{x:L,y:v},{x:0,y:v}]);
+  };
 
   const SVW = 300, SVH = 260, PAD = 40;
   const scL = (SVW - PAD*2) / Math.max(L, 1);
@@ -432,7 +455,7 @@ function FormaEditor({ T, realW, realH }: any) {
       {/* Campi */}
       <div style={{padding:"8px 10px",borderTop:`1px solid ${T.bdr}`,background:T.bg||"#F2F1EC"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:6}}>
-          {[{l:"Larghezza",v:L,set:setL},{l:"Profondità",v:P,set:setP}].map(({l,v,set})=>(
+          {[{l:"Larghezza",v:L,set:setL},{l:"Profondità",v:P,set:setP2}].map(({l,v,set})=>(
             <div key={l}>
               <div style={{fontSize:9,color:T.sub,fontWeight:700,marginBottom:3}}>{l} (mm)</div>
               <input type="number" value={v} onChange={(e:any)=>set(Math.max(1,parseInt(e.target.value)||1))} style={inp}/>
@@ -440,7 +463,7 @@ function FormaEditor({ T, realW, realH }: any) {
           ))}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-          {[{l:"Altezza",v:H,set:setH},{l:"Spessore muri",v:sp,set:setSp}].map(({l,v,set})=>(
+          {[{l:"Altezza",v:H,set:onHChange},{l:"Spessore muri",v:sp,set:onSpChange}].map(({l,v,set})=>(
             <div key={l}>
               <div style={{fontSize:9,color:T.sub,fontWeight:700,marginBottom:3}}>{l} (mm)</div>
               <input type="number" value={v} onChange={(e:any)=>set(Math.max(1,parseInt(e.target.value)||1))} style={inp}/>
@@ -452,6 +475,11 @@ function FormaEditor({ T, realW, realH }: any) {
           <span style={{fontSize:10,fontWeight:700,color:"#3B7FE0"}}>Int. L: {Math.max(0,L-sp*2)}mm</span>
           <span style={{fontSize:10,fontWeight:700,color:"#3B7FE0"}}>Int. P: {Math.max(0,P-sp*2)}mm</span>
           <span style={{fontSize:10,fontWeight:700,color:"#3B7FE0"}}>Int. H: {Math.max(0,H-sp*2)}mm</span>
+          <div style={{width:"100%",textAlign:"center",marginTop:6}}>
+            <span style={{fontSize:10,color:"#1A9E73",fontWeight:700}}>
+              → Vai al tab 3D per vedere il modello
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -465,7 +493,7 @@ function FormaEditor({ T, realW, realH }: any) {
 // ═══════════════════════════════════════════════════════════
 // LIBERO EDITOR — disegno libero infisso con Paper.js
 // ═══════════════════════════════════════════════════════════
-function LiberoEditor({ T, realW, realH }: any) {
+function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const paperRef = React.useRef<any>(null);
   const shapesRef = React.useRef<any[]>([]);
@@ -723,6 +751,15 @@ function LiberoEditor({ T, realW, realH }: any) {
         style={{ display: "block", width: "100%", background: "#f9f9fb", cursor: "crosshair", touchAction: "none" }}
       />
       {dims && <div style={{ padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#031631", borderTop: "1px solid rgba(197,198,206,0.25)" }}>Vani: {dims}</div>}
+      {/* Bottone → 3D */}
+      {onGoTo3D && (
+        <div onClick={onGoTo3D}
+          style={{ margin:"8px 10px", padding:"12px", borderRadius:10, cursor:"pointer",
+            background:"#1A2B4A", color:"#fff", textAlign:"center",
+            fontSize:14, fontWeight:800 }}>
+          → Vedi in 3D
+        </div>
+      )}
     </div>
   );
 }
@@ -730,6 +767,17 @@ function LiberoEditor({ T, realW, realH }: any) {
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
+  // ── STATO CONDIVISO tra Forma / 3D / Libero ──────────────
+  const [sharedPts, setSharedPts] = React.useState<any[]>([
+    {x:0,y:0},{x:realW||1200,y:0},{x:realW||1200,y:propRealH||350},{x:0,y:propRealH||350}
+  ]);
+  const [sharedH, setSharedH] = React.useState(propRealH || 280);
+  const [sharedSp, setSharedSp] = React.useState(40);
+  const [sharedMats, setSharedMats] = React.useState<any>({
+    front:"alluminio", back:"alluminio",
+    left:"alluminio", right:"alluminio",
+    top:"pvc", bottom:"pvc"
+  });
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
@@ -1979,16 +2027,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* ═══ TAB: FORMA ═══ */}
-                                {viewTab === "forma" && <FormaEditor T={T} realW={realW} realH={realH} />}
+                                {viewTab === "forma" && <FormaEditor T={T} realW={realW} realH={realH} pts={sharedPts} onPtsChange={setSharedPts} H={sharedH} onHChange={setSharedH} sp={sharedSp} onSpChange={setSharedSp} />}
 
                                 {/* ═══ TAB: 3D ═══ */}
-                                {viewTab === "3d" && <View3D T={T} realW={realW} realH={realH} vanoDisegno={vanoDisegno} onUpdate={onUpdate} />}
+                                {viewTab === "3d" && <View3D T={T} realW={realW} realH={realH} vanoDisegno={vanoDisegno} onUpdate={onUpdate} pts={sharedPts} H={sharedH} sp={sharedSp} mats={sharedMats} onMatsChange={setSharedMats} onHChange={setSharedH} onSpChange={setSharedSp} />}
 
                                 {/* ═══ TAB: LIBERO (Paper.js free drawing) ═══ */}
-                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
+                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} onPtsChange={setSharedPts} onGoTo3D={()=>setViewTab("3d")} />}
 
                                 {/* ═══ TAB: LIBERO (Paper.js) ═══ */}
-                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
+                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} onPtsChange={setSharedPts} onGoTo3D={()=>setViewTab("3d")} />}
 
                                 {/* ═══ TAB: DISEGNO (originale) ═══ */}
                                 {viewTab === "disegno" && <>
