@@ -6,30 +6,30 @@ import { FF, FM, ICO, Ico, I } from "./mastro-constants";
 import AiTecnicoChat from "./AiTecnicoChat";
 
 
-// ─── Lumina Design Tokens ────────────────────────────────
+// ─── fliwoX Design Tokens ───────────────────────────────
 const L = {
-  bg:          "#f9f9fb",
+  bg:          "#D8EEEE",
   surface:     "#ffffff",
-  surfaceLow:  "#f3f3f5",
-  surfaceMid:  "#eeeef0",
-  primary:     "#031631",
-  primaryCont: "#1a2b47",
+  surfaceLow:  "#EEF8F8",
+  surfaceMid:  "#D8EEEE",
+  primary:     "#28A0A0",
+  primaryCont: "#156060",
   onPrimary:   "#ffffff",
-  muted:       "#8293b4",
-  text:        "#1a1c1d",
-  sub:         "#44474d",
-  placeholder: "#75777e",
-  green:       "#1a9e73",
-  red:         "#dc4444",
-  amber:       "#e4c18c",
-  amberBg:     "#ffdeac",
-  border:      "rgba(197,198,206,0.25)",
-  glass:       "rgba(255,255,255,0.85)",
+  muted:       "#8BBCBC",
+  text:        "#0D1F1F",
+  sub:         "#4A7070",
+  placeholder: "#8BBCBC",
+  green:       "#1A9E73",
+  red:         "#DC4444",
+  amber:       "#D08008",
+  amberBg:     "rgba(208,128,8,0.12)",
+  border:      "#C8E4E4",
+  glass:       "rgba(255,255,255,0.9)",
 } as const;
 const SH = {
-  ambient: "0 20px 40px rgba(26,28,29,0.04)",
-  float:   "0 20px 40px rgba(26,28,29,0.08)",
-  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+  ambient: "0 7px 0 0 #A8CCCC",
+  float:   "0 7px 0 0 #A8CCCC",
+  sm:      "0 5px 0 0 #A8CCCC",
 } as const;
 // ─────────────────────────────────────────────────────────
 export default function MessaggiPanel() {
@@ -55,79 +55,81 @@ export default function MessaggiPanel() {
     }).sort((a, b) => (b.preferito ? 1 : 0) - (a.preferito ? 1 : 0) || a.nome.localeCompare(b.nome));
 
     return (
-      <div style={{ paddingBottom: 80 }}>
-        <div style={S.header}>
-          <div style={{ flex: 1 }}>
-            <div style={S.headerTitle}>Messaggi</div>
-            <div style={S.headerSub}>{unread > 0 ? `${unread} non letti` : "Tutti letti"} · {msgs.length} conversazioni</div>
+      <div style={{ paddingBottom:80, backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", minHeight:"100vh" }}>
+        {/* fliwoX Topbar */}
+        <div style={{ background:"#0D1F1F", padding:"13px 16px", display:"flex", alignItems:"center", gap:12, position:"sticky", top:0, zIndex:20 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:19, fontWeight:900, color:"white", letterSpacing:"-0.3px" }}>Messaggi</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", fontWeight:700, marginTop:1 }}>{unread > 0 ? `${unread} non letti` : "Tutti letti"} · {msgs.length} conversazioni</div>
           </div>
-          <div onClick={() => setShowCompose(true)} style={{ width: 36, height: 36, borderRadius: 10, background: L.primary, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <Ico d={ICO.pen} s={16} c="#fff" />
+          <div onClick={() => setShowCompose(true)} style={{ width:36, height:36, borderRadius:11, background:"rgba(40,160,160,0.2)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", border:"1px solid rgba(40,160,160,0.4)", boxShadow:"0 4px 0 0 rgba(21,96,96,0.4)" }}>
+            <Ico d={ICO.pen} s={16} c="#28A0A0" />
           </div>
         </div>
 
-        {/* Sub-tabs: Chat / Rubrica / AI */}
-        <div style={{ display: "flex", margin: "8px 16px", borderRadius: 10, border: `1px solid ${L.border}`, overflow: "hidden" }}>
+        {/* fliwoX Sub-tabs */}
+        <div style={{ display:"flex", background:"white", borderBottom:"3px solid #C8E4E4" }}>
           {[
-            { id: "chat", l: "Chat", ico: ICO.messageCircle, count: unread },
-            { id: "email", l: "Email", ico: ICO.mail, count: gmailMessages.filter(m => m.unread).length },
-            { id: "ai", l: "AI", ico: ICO.cpu, count: aiInbox.filter(m => !m.read).length },
-            { id: "rubrica", l: "Rubrica", ico: ICO.users, count: 0 },
-            { id: "tecnico", l: "Tecnico", ico: ICO.cpu, count: 0 }
+            { id:"chat", l:"Chat", ico:ICO.messageCircle, count:unread },
+            { id:"email", l:"Email", ico:ICO.mail, count:gmailMessages.filter(m => m.unread).length },
+            { id:"ai", l:"Assistente", ico:ICO.cpu, count:aiInbox.filter(m => !m.read).length },
+            { id:"rubrica", l:"Rubrica", ico:ICO.users, count:0 },
+            { id:"tecnico", l:"Tecnico", ico:ICO.cpu, count:0 }
           ].map(st => (
-            <div key={st.id} onClick={() => setMsgSubTab(st.id)} style={{ flex: 1, padding: "10px 4px", textAlign: "center", fontSize: 12, fontWeight: 700, cursor: "pointer", background: msgSubTab === st.id ? L.primary : L.surface, color: msgSubTab === st.id ? "#fff" : L.sub, transition: "all 0.2s", position: "relative" }}>
-              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><Ico d={st.ico} s={13} c={msgSubTab === st.id ? "#fff" : L.sub} /> {st.l}</span>
-              {st.count > 0 && <span style={{ marginLeft: 4, fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 8, background: msgSubTab === st.id ? "rgba(255,255,255,0.3)" : L.red, color: "#fff" }}>{st.count}</span>}
+            <div key={st.id} onClick={() => setMsgSubTab(st.id)} style={{ flex:1, padding:"11px 3px", textAlign:"center", fontSize:10, fontWeight: msgSubTab === st.id ? 900 : 700, cursor:"pointer", background: msgSubTab === st.id ? "#28A0A0" : "white", color: msgSubTab === st.id ? "white" : "#4A7070", borderBottom: msgSubTab === st.id ? "3px solid #156060" : "none", position:"relative" }}>
+              <span style={{display:"inline-flex",alignItems:"center",gap:3}}><Ico d={st.ico} s={12} c={msgSubTab === st.id ? "white" : "#4A7070"} /> {st.l}</span>
+              {st.count > 0 && <span style={{ marginLeft:3, fontSize:9, fontWeight:900, padding:"1px 5px", borderRadius:8, background: msgSubTab === st.id ? "rgba(255,255,255,0.3)" : "#DC4444", color:"white" }}>{st.count}</span>}
             </div>
           ))}
         </div>
 
         {/* == CHAT TAB == */}
         {msgSubTab === "chat" && (<>
-          <div style={{ padding: "4px 16px 8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: L.surface, borderRadius: 10, border: `1px solid ${L.border}` }}>
-              <Ico d={ICO.search} s={14} c={L.sub} />
-              <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: L.text, outline: "none", fontFamily: FF }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
-              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor: "pointer", fontSize: 14, color: L.sub }}></div>}
+          <div style={{ padding:"10px 14px 8px" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"11px 14px", background:"white", borderRadius:14, border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC" }}>
+              <Ico d={ICO.search} s={14} c="#4A7070" />
+              <input style={{ flex:1, border:"none", background:"transparent", fontSize:14, fontWeight:700, color:"#0D1F1F", outline:"none", fontFamily:FF }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
+              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#4A7070" }}>×</div>}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
+          <div style={{ display:"flex", gap:6, padding:"0 14px 10px", overflowX:"auto" }}>
             {[
-              { id: "tutti", l: "Tutti", c: L.primary },
-              { id: "whatsapp", l: "WhatsApp", ico: ICO.messageCircle, c: "#25d366" },
-              { id: "email", l: "Email", ico: ICO.mail, c: "#3b7fe0" },
-              { id: "sms", l: "SMS", ico: ICO.phone, c: L.amber },
-              { id: "telegram", l: "Telegram", ico: ICO.send, c: "#0088cc" },
+              { id:"tutti", l:"Tutti", c:"#28A0A0" },
+              { id:"whatsapp", l:"WhatsApp", ico:ICO.messageCircle, c:"#25d366" },
+              { id:"email", l:"Email", ico:ICO.mail, c:"#3B7FE0" },
+              { id:"sms", l:"SMS", ico:ICO.phone, c:"#D08008" },
+              { id:"telegram", l:"Telegram", ico:ICO.send, c:"#0088cc" },
             ].map(f => {
               const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
+              const sel = msgFilter === f.id;
               return (
-                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${msgFilter === f.id ? f.c : L.border}`, background: msgFilter === f.id ? f.c + "15" : L.surface, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: msgFilter === f.id ? f.c : L.sub, display: "flex", alignItems: "center", gap: 4 }}>
-                  {f.ico && <Ico d={f.ico} s={12} c={msgFilter === f.id ? f.c : L.sub} />}{f.l}
-                  {unr > 0 && <span style={{ width: 16, height: 16, borderRadius: "50%", background: f.c, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{unr}</span>}
+                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"7px 13px", borderRadius:20, border:`1.5px solid ${sel ? f.c : "#C8E4E4"}`, background: sel ? f.c : "white", fontSize:11, fontWeight:900, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#4A7070", display:"flex", alignItems:"center", gap:4, boxShadow: sel ? `0 4px 0 0 ${f.c}88` : "0 3px 0 0 #A8CCCC" }}>
+                  {f.ico && <Ico d={f.ico} s={12} c={sel ? "white" : "#4A7070"} />}{f.l}
+                  {unr > 0 && <span style={{ width:16, height:16, borderRadius:"50%", background: sel ? "rgba(255,255,255,0.3)" : f.c, color:"white", fontSize:9, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{unr}</span>}
                 </div>
               );
             })}
           </div>
-          <div style={{ padding: "0 16px" }}>
+          <div style={{ padding:"0 14px" }}>
             {filteredMsgs.length === 0 ? (
-              <div style={{ padding: 30, textAlign: "center", color: L.sub, fontSize: 13 }}>Nessun messaggio</div>
+              <div style={{ padding:30, textAlign:"center", color:"#4A7070", fontSize:13, fontWeight:700 }}>Nessun messaggio</div>
             ) : (
-              <div style={{ background: L.surface, borderRadius: 16, border: `1px solid ${L.border}`, overflow: "hidden" }}>
+              <div style={{ background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", overflow:"hidden", boxShadow:"0 7px 0 0 #A8CCCC" }}>
                 {filteredMsgs.map(m => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${L.bg}`, cursor: "pointer", background: m.read ? "transparent" : L.primary + "06" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
-                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: chBg[m.canale] || L.bg, border: `2px solid ${chCol[m.canale] || L.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, position: "relative" }}>
+                  <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 14px", borderBottom:"1px solid #EEF8F8", cursor:"pointer", background: m.read ? "transparent" : "rgba(40,160,160,0.05)" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
+                    <div style={{ width:44, height:44, borderRadius:12, background: chBg[m.canale] || "#EEF8F8", border:`2px solid ${chCol[m.canale] || "#C8E4E4"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:900, color: chCol[m.canale] || "#28A0A0", flexShrink:0, position:"relative", boxShadow:`0 3px 0 0 ${chCol[m.canale] || "#A8CCCC"}44` }}>
                       {m.from.charAt(0).toUpperCase()}
-                      <div style={{ position: "absolute", bottom: -2, right: -2, fontSize: 10, background: L.surface, borderRadius: "50%", padding: 1 }}>{chIco[m.canale]}</div>
+                      <div style={{ position:"absolute", bottom:-2, right:-2, background:"white", borderRadius:"50%", padding:1 }}>{chIco[m.canale]}</div>
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ fontSize: 13, fontWeight: m.read ? 500 : 700, color: L.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.from}</div>
-                        <div style={{ fontSize: 10, color: m.read ? L.sub : L.primary, fontWeight: m.read ? 400 : 700, flexShrink: 0, marginLeft: 8 }}>{m.time}</div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <div style={{ fontSize:14, fontWeight: m.read ? 700 : 900, color:"#0D1F1F", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{m.from}</div>
+                        <div style={{ fontSize:10, color: m.read ? "#4A7070" : "#28A0A0", fontWeight: m.read ? 700 : 900, flexShrink:0, marginLeft:8 }}>{m.time}</div>
                       </div>
-                      <div style={{ fontSize: 12, color: m.read ? L.sub : L.text, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: m.read ? 400 : 500 }}>{m.preview}</div>
-                      {m.cm && <div style={{ marginTop: 3 }}><span style={S.badge(L.amberBg, L.primary)}>{m.cm}</span></div>}
+                      <div style={{ fontSize:12, fontWeight: m.read ? 600 : 800, color: m.read ? "#4A7070" : "#0D1F1F", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const }}>{m.preview}</div>
+                      {m.cm && <div style={{ marginTop:4 }}><span style={{ padding:"2px 8px", borderRadius:20, background:"rgba(208,128,8,0.12)", color:"#D08008", fontSize:9, fontWeight:900, boxShadow:"0 2px 0 0 rgba(208,128,8,0.25)" }}>{m.cm}</span></div>}
                     </div>
-                    {!m.read && <div style={{ width: 10, height: 10, borderRadius: "50%", background: L.primary, flexShrink: 0 }} />}
+                    {!m.read && <div style={{ width:9, height:9, borderRadius:"50%", background:"#28A0A0", flexShrink:0, boxShadow:"0 2px 0 0 #156060" }} />}
                   </div>
                 ))}
               </div>
@@ -446,56 +448,58 @@ Grazie per il suo messaggio.
 
         {/* == RUBRICA TAB == */}
         {msgSubTab === "rubrica" && (<>
-          <div style={{ padding: "4px 16px 8px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: L.surface, borderRadius: 10, border: `1px solid ${L.border}` }}>
-              <Ico d={ICO.search} s={14} c={L.sub} />
-              <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: L.text, outline: "none", fontFamily: FF }} placeholder="Cerca nella rubrica..." value={rubricaSearch} onChange={e => setRubricaSearch(e.target.value)} />
-              {rubricaSearch && <div onClick={() => setRubricaSearch("")} style={{ cursor: "pointer", fontSize: 14, color: L.sub }}></div>}
+          <div style={{ padding:"10px 14px 8px" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"11px 14px", background:"white", borderRadius:14, border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC" }}>
+              <Ico d={ICO.search} s={14} c="#4A7070" />
+              <input style={{ flex:1, border:"none", background:"transparent", fontSize:14, fontWeight:700, color:"#0D1F1F", outline:"none", fontFamily:FF }} placeholder="Cerca nella rubrica..." value={rubricaSearch} onChange={e => setRubricaSearch(e.target.value)} />
+              {rubricaSearch && <div onClick={() => setRubricaSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#4A7070" }}>×</div>}
             </div>
           </div>
-          <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
+          <div style={{ display:"flex", gap:6, padding:"0 14px 10px", overflowX:"auto" }}>
             {[
-              { id: "tutti", l: "Tutti", c: L.primary },
-              { id: "preferiti", l: "⭐ Preferiti", c: "#ff9500" },
-              { id: "team", l: "● Team", c: "#34c759" },
-              { id: "clienti", l: "Clienti", c: "#3b7fe0" },
-              { id: "fornitori", l: "Fornitori", c: "#af52de" },
-            ].map(f => (
-              <div key={f.id} onClick={() => setRubricaFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${rubricaFilter === f.id ? f.c : L.border}`, background: rubricaFilter === f.id ? f.c + "15" : L.surface, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: rubricaFilter === f.id ? f.c : L.sub }}>
+              { id:"tutti", l:"Tutti", c:"#28A0A0" },
+              { id:"preferiti", l:"Preferiti", c:"#D08008" },
+              { id:"team", l:"Team", c:"#1A9E73" },
+              { id:"clienti", l:"Clienti", c:"#3B7FE0" },
+              { id:"fornitori", l:"Fornitori", c:"#7C5FBF" },
+            ].map(f => {
+              const sel = rubricaFilter === f.id;
+              return (
+              <div key={f.id} onClick={() => setRubricaFilter(f.id)} style={{ padding:"7px 13px", borderRadius:20, border:`1.5px solid ${sel ? f.c : "#C8E4E4"}`, background: sel ? f.c : "white", fontSize:11, fontWeight:900, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#4A7070", boxShadow: sel ? `0 4px 0 0 ${f.c}88` : "0 3px 0 0 #A8CCCC" }}>
                 {f.l}
               </div>
-            ))}
+            );})}
           </div>
-          <div style={{ padding: "0 16px" }}>
-            <div style={{ background: L.surface, borderRadius: 16, border: `1px solid ${L.border}`, overflow: "hidden" }}>
+          <div style={{ padding:"0 14px" }}>
+            <div style={{ background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", overflow:"hidden", boxShadow:"0 7px 0 0 #A8CCCC" }}>
               {filteredContatti.length === 0 ? (
-                <div style={{ padding: 30, textAlign: "center", color: L.sub, fontSize: 13 }}>Nessun contatto trovato</div>
+                <div style={{ padding:30, textAlign:"center", color:"#4A7070", fontSize:13, fontWeight:700 }}>Nessun contatto trovato</div>
               ) : filteredContatti.map(c => {
-                const tipoColor = c.tipo === "team" ? "#34c759" : c.tipo === "cliente" ? "#3b7fe0" : c.tipo === "fornitore" ? "#af52de" : "#ff9500";
+                const tipoColor = c.tipo === "team" ? "#1A9E73" : c.tipo === "cliente" ? "#3B7FE0" : c.tipo === "fornitore" ? "#7C5FBF" : "#D08008";
                 const tipoLabel = c.tipo === "team" ? "Team" : c.tipo === "cliente" ? "Cliente" : c.tipo === "fornitore" ? "Fornitore" : "Professionista";
                 return (
-                  <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${L.bg}` }}>
-                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: (c.colore || tipoColor) + "18", border: `2px solid ${c.colore || tipoColor}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: c.colore || tipoColor, flexShrink: 0, position: "relative" }}>
+                  <div key={c.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 14px", borderBottom:"1px solid #EEF8F8" }}>
+                    <div style={{ width:44, height:44, borderRadius:12, background:(c.colore || tipoColor) + "18", border:`2px solid ${c.colore || tipoColor}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, fontWeight:900, color: c.colore || tipoColor, flexShrink:0, position:"relative", boxShadow:`0 3px 0 0 ${c.colore || tipoColor}44` }}>
                       {c.nome.split(" ").map(w => w[0]).join("").substring(0, 2)}
-                      {c.preferito && <div style={{ position: "absolute", top: -4, right: -4, fontSize: 10 }}>⭐</div>}
+                      {c.preferito && <div style={{ position:"absolute", top:-3, right:-3, width:14, height:14, borderRadius:"50%", background:"#D08008", display:"flex", alignItems:"center", justifyContent:"center" }}><span style={{ fontSize:8 }}>★</span></div>}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: L.text }}>{c.nome}</div>
-                      <div style={{ display: "flex", gap: 4, marginTop: 2, alignItems: "center", flexWrap: "wrap" }}>
-                        <span style={S.badge(tipoColor + "18", tipoColor)}>{tipoLabel}</span>
-                        {c.ruolo && <span style={{ fontSize: 10, color: L.sub }}>{c.ruolo}</span>}
-                        {c.cm && <span style={S.badge(L.amberBg, L.primary)}>{c.cm}</span>}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:14, fontWeight:900, color:"#0D1F1F" }}>{c.nome}</div>
+                      <div style={{ display:"flex", gap:5, marginTop:3, alignItems:"center", flexWrap:"wrap" as const }}>
+                        <span style={{ padding:"2px 8px", borderRadius:20, background:tipoColor+"18", color:tipoColor, fontSize:9, fontWeight:900, boxShadow:`0 2px 0 0 ${tipoColor}44` }}>{tipoLabel}</span>
+                        {c.ruolo && <span style={{ fontSize:10, color:"#4A7070", fontWeight:700 }}>{c.ruolo}</span>}
+                        {c.cm && <span style={{ padding:"2px 8px", borderRadius:20, background:"rgba(208,128,8,0.12)", color:"#D08008", fontSize:9, fontWeight:900 }}>{c.cm}</span>}
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 4 }}>
+                    <div style={{ display:"flex", gap:5 }}>
                       {(c.canali || []).includes("whatsapp") && (
-                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "whatsapp", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: "#25d36618", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}><I d={ICO.messageCircle} /></div>
+                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale:"whatsapp", to:c.nome })); setShowCompose(true); }} style={{ width:32, height:32, borderRadius:9, background:"rgba(37,211,102,0.12)", border:"1px solid rgba(37,211,102,0.3)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 0 0 rgba(37,211,102,0.3)" }}><I d={ICO.messageCircle} /></div>
                       )}
                       {(c.canali || []).includes("email") && (
-                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "email", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}><I d={ICO.mail} /></div>
+                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale:"email", to:c.nome })); setShowCompose(true); }} style={{ width:32, height:32, borderRadius:9, background:"rgba(59,127,224,0.12)", border:"1px solid rgba(59,127,224,0.3)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 0 0 rgba(59,127,224,0.3)" }}><I d={ICO.mail} /></div>
                       )}
-                      <div onClick={() => { setContatti(cs => cs.map(x => x.id === c.id ? { ...x, preferito: !x.preferito } : x)); }} style={{ width: 32, height: 32, borderRadius: "50%", background: c.preferito ? "#ff950018" : L.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>
-                        {c.preferito ? "⭐" : ""}
+                      <div onClick={() => { setContatti(cs => cs.map(x => x.id === c.id ? { ...x, preferito: !x.preferito } : x)); }} style={{ width:32, height:32, borderRadius:9, background: c.preferito ? "rgba(208,128,8,0.12)" : "#EEF8F8", border:"1.5px solid #C8E4E4", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 0 0 #A8CCCC" }}>
+                        <span style={{ fontSize:14, color: c.preferito ? "#D08008" : "#8BBCBC" }}>★</span>
                       </div>
                     </div>
                   </div>
