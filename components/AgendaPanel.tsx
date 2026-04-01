@@ -1,533 +1,423 @@
 "use client";
 // @ts-nocheck
+// MASTRO ERP — AgendaPanel v3 — fliwoX Approved Mockup
 import React from "react";
 import { useMastro } from "./MastroContext";
-import { FF, FM, ICO, Ico, I, TIPI_EVENTO, tipoEvColor } from "./mastro-constants";
+import { ICO, I } from "./mastro-constants";
 
+// ─── COLORI ────────────────────────────────────────────────────────────────────
+const T_CLR = "#28A0A0";
+const T_DARK = "#156060";
+const T_LIGHT = "#EEF8F8";
+const INK = "#0D1F1F";
+const SUB = "#4A7070";
+const BDR = "#C8E4E4";
+const BLU = "#3B7FE0";
+const BLD = "#1A5AAA";
+const AMB = "#D08008";
+const AMD = "#7A4800";
+const RED = "#DC4444";
+const GRN = "#1A9E73";
+
+// ─── TIPI EVENTO → colore/label ───────────────────────────────────────────────
+const TIPO_CFG: Record<string, { label: string; bg: string; border: string; shadow: string; textColor: string }> = {
+  montaggio:   { label: "MONTAGGIO",   bg: "rgba(40,160,160,.10)",  border: "rgba(40,160,160,.25)",  shadow: "rgba(40,160,160,.2)",  textColor: T_DARK },
+  sopralluogo: { label: "SOPRALLUOGO", bg: "rgba(59,127,224,.08)",  border: "rgba(59,127,224,.20)",  shadow: "rgba(59,127,224,.2)",  textColor: BLD },
+  rilievo:     { label: "RILIEVO",     bg: "rgba(208,128,8,.08)",   border: "rgba(208,128,8,.20)",   shadow: "rgba(208,128,8,.2)",   textColor: AMD },
+  default:     { label: "EVENTO",      bg: "rgba(40,160,160,.08)",  border: "rgba(40,160,160,.20)",  shadow: "rgba(40,160,160,.2)",  textColor: T_CLR },
+};
+
+const getTipoCfg = (ev: any) => {
+  if (ev._isMontaggio) return TIPO_CFG.montaggio;
+  const tipo = (ev.tipo || ev.type || "").toLowerCase();
+  return TIPO_CFG[tipo] || TIPO_CFG.default;
+};
+
+const getTipoColor = (ev: any) => {
+  if (ev._isMontaggio) return T_CLR;
+  if (ev._isScadenza) return ev._tipo === "incasso" ? GRN : AMB;
+  const tipo = (ev.tipo || ev.type || "").toLowerCase();
+  if (tipo === "sopralluogo") return BLU;
+  if (tipo === "rilievo") return AMB;
+  return ev.color || T_CLR;
+};
+
+// ─── SVG ICONS ────────────────────────────────────────────────────────────────
+const IcoPlus = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round">
+    <path d="M12 4v16M4 12h16"/>
+  </svg>
+);
+const IcoChevL = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T_CLR} strokeWidth="2.5" strokeLinecap="round">
+    <path d="M15 18l-6-6 6-6"/>
+  </svg>
+);
+const IcoChevR = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T_CLR} strokeWidth="2.5" strokeLinecap="round">
+    <path d="M9 18l6-6-6-6"/>
+  </svg>
+);
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const dateStr = (d: Date) => d.toISOString().split("T")[0];
+const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+const GG = ["L","M","M","G","V","S","D"];
+
+// ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
+const NavBtn = ({ onClick, children }: any) => (
+  <div onClick={onClick} style={{ width: 36, height: 36, background: T_LIGHT, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", border: `1.5px solid ${BDR}`, boxShadow: `0 4px 0 0 #A8CCCC`, cursor: "pointer", flexShrink: 0 }}>
+    {children}
+  </div>
+);
+
+const TipoBadge = ({ cfg }: { cfg: typeof TIPO_CFG["default"] }) => (
+  <div style={{ display: "inline-block", background: cfg.bg, borderRadius: 20, padding: "3px 10px", boxShadow: `0 2px 0 0 ${cfg.shadow}`, marginBottom: 6 }}>
+    <span style={{ fontSize: 10, fontWeight: 800, color: cfg.textColor }}>{cfg.label}</span>
+  </div>
+);
+
+const Avatar = ({ ini, bg }: { ini: string; bg: string }) => (
+  <div style={{ width: 24, height: 24, borderRadius: 8, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: "white", border: "2px solid white", flexShrink: 0 }}>
+    {ini}
+  </div>
+);
+
+// ─── MAIN ──────────────────────────────────────────────────────────────────────
 export default function AgendaPanel() {
   const {
-    T, S, isDesktop, fs,
-    agendaFilters, agendaView, cantieri, contatti, deleteEvent, events, expandedDay, fattureDB, fatturePassive, montaggiDB, ordiniFornDB, selDate, selectedEvent, setAgendaFilters, setAgendaView, setCantieri, setEvents, setExpandedDay, setMailBody, setNewEvent, setSelDate, setSelectedCM, setSelectedEvent, setShowMailModal, setShowNewEvent, setTab, squadreDB, tasks, toggleTask,
+    agendaView, cantieri, deleteEvent, events, montaggiDB, fattureDB, fatturePassive,
+    ordiniFornDB, squadreDB, selDate, selectedEvent,
+    setAgendaView, setSelDate, setSelectedCM, setSelectedEvent, setShowNewEvent, setTab,
+    agendaFilters,
   } = useMastro();
 
-    const dateStr = (d) => d.toISOString().split("T")[0];
-    // Merge events + tasks + montaggi + consegne
-    const tasksWithDate = tasks.filter(t => t.date).map(t => ({ ...t, _isTask: true, color: t.priority === "alta" ? "#FF3B30" : t.priority === "media" ? "#FF9500" : "#8E8E93" }));
-    const montaggiItems = (montaggiDB || []).filter(m => m.data).map(m => {
-      const sq = (squadreDB || []).find(s => s.id === m.squadraId);
-      return { id: "mag_" + m.id, date: m.data, time: m.orario || "08:00", text: "Montaggio " + (m.cliente || ""), persona: m.cliente || "", cm: m.cmCode || "", color: "#0D7C6B", durata: (m.giorni || 1) * 480, _isMontaggio: true, _stato: m.stato, _squadra: sq?.nome || "", _vani: m.vani || 0 };
-    });
-    const consegneItems = (ordiniFornDB || []).filter(o => o.consegna?.prevista && o.stato !== "consegnato").map(o => ({
-      id: "cons_" + o.id, date: o.consegna.prevista, time: "09:00", text: "Consegna " + (o.fornitore?.nome || ""), persona: o.fornitore?.nome || "", cm: o.cmCode || "", color: "#af52de", durata: 60, _isConsegna: true
-    }));
-    const scadenzeItems = [
-      ...(fattureDB || []).filter(f => !f.pagata && f.scadenza).map(f => ({
-        id: "scad_e_" + f.id, date: f.scadenza, time: "", text: "Incasso " + f.cliente, persona: f.cliente, cm: f.cmCode || "", color: "#1A9E73", _isScadenza: true, _importo: f.importo, _tipo: "incasso"
-      })),
-      ...(fatturePassive || []).filter(f => !f.pagata && f.scadenza).map(f => ({
-        id: "scad_p_" + f.id, date: f.scadenza, time: "", text: "Pagamento " + (typeof f.fornitore === "object" ? (f.fornitore?.nome || "") : (f.fornitore || "")), persona: typeof f.fornitore === "object" ? (f.fornitore?.nome || "") : (f.fornitore || ""), cm: "", color: "#E8A020", _isScadenza: true, _importo: f.importo || 0, _tipo: "pagamento"
-      })),
-    ];
-    const allItemsRaw = [...events, ...tasksWithDate, ...montaggiItems, ...consegneItems, ...scadenzeItems];
-    const allItems = allItemsRaw.filter(it => {
-      if (it._isTask && !agendaFilters.tasks) return false;
-      if (it._isMontaggio && !agendaFilters.montaggi) return false;
-      if (it._isConsegna && !agendaFilters.consegne) return false;
-      if (it._isScadenza && !agendaFilters.scadenze) return false;
-      if (!it._isTask && !it._isMontaggio && !it._isConsegna && !it._isScadenza && !agendaFilters.eventi) return false;
-      return true;
-    });
-    const dayEvents = allItems.filter(e => e.date === dateStr(selDate)).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
-    const weekStart = new Date(selDate); weekStart.setDate(selDate.getDate() - selDate.getDay() + 1);
-    const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(d.getDate() + i); return d; });
-    const monthStart = new Date(selDate.getFullYear(), selDate.getMonth(), 1);
-    const monthDays = Array.from({ length: 35 }, (_, i) => { const d = new Date(monthStart); d.setDate(d.getDate() + i - monthStart.getDay() + 1); return d; });
-    const isSameDay = (a, b) => dateStr(a) === dateStr(b);
-    const isToday2 = (d) => isSameDay(d, new Date());
-    const eventsOn = (d) => allItems.filter(e => e.date === dateStr(d));
+  const todayStr = dateStr(new Date());
 
+  // merge tutti gli items
+  const montaggiItems = (montaggiDB || []).filter(m => m.data).map(m => {
+    const sq = (squadreDB || []).find(s => s.id === m.squadraId);
+    return { id: "mag_" + m.id, date: m.data, time: m.orario || "08:00", text: (m.cliente || "Montaggio"), persona: m.cliente || "", cm: m.cmCode || "", color: T_CLR, durata: (m.giorni || 1) * 480, _isMontaggio: true, _stato: m.stato, _squadra: sq, _vani: m.vani || 0 };
+  });
+  const scadenzeItems = [
+    ...(fattureDB || []).filter(f => !f.pagata && f.scadenza).map(f => ({ id: "scad_e_" + f.id, date: f.scadenza, time: "", text: "Incasso " + f.cliente, persona: f.cliente, cm: f.cmCode || "", color: GRN, _isScadenza: true, _importo: f.importo, _tipo: "incasso" })),
+    ...(fatturePassive || []).filter(f => !f.pagata && f.scadenza).map(f => ({ id: "scad_p_" + f.id, date: f.scadenza, time: "", text: "Pagamento " + (typeof f.fornitore === "object" ? f.fornitore?.nome : f.fornitore || ""), color: AMB, _isScadenza: true, _importo: f.importo || 0, _tipo: "pagamento" })),
+  ];
+  const allItems = [...events, ...montaggiItems, ...scadenzeItems];
 
-    const navDate = (dir) => {
-      const d = new Date(selDate);
-      if (agendaView === "giorno") d.setDate(d.getDate() + dir);
-      else if (agendaView === "settimana") d.setDate(d.getDate() + dir * 7);
-      else d.setMonth(d.getMonth() + dir);
-      setSelDate(d);
-    };
+  const eventsOn = (d: Date) => allItems.filter(e => e.date === dateStr(d));
+  const dayEvents = allItems.filter(e => e.date === dateStr(selDate)).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
 
-    // Swipe handlers
-    let touchStartX = 0;
-    const onTouchStart = (e) => { touchStartX = e.touches[0].clientX; };
-    const onTouchEnd = (e) => {
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      if (Math.abs(dx) > 50) navDate(dx < 0 ? 1 : -1);
-    };
+  const navDate = (dir: number) => {
+    const d = new Date(selDate);
+    if (agendaView === "giorno") d.setDate(d.getDate() + dir);
+    else if (agendaView === "settimana") d.setDate(d.getDate() + dir * 7);
+    else d.setMonth(d.getMonth() + dir);
+    setSelDate(d);
+  };
 
-    // Prossimi eventi (dal giorno di oggi in avanti, max 3)
-    const todayStr = dateStr(new Date());
-    const prossimiEventi = allItems
-      .filter(e => e.date >= todayStr)
-      .sort((a, b) => a.date.localeCompare(b.date) || (a.time||"99").localeCompare(b.time||"99"))
-      .slice(0, 3);
+  // settimana
+  const weekStart = new Date(selDate);
+  const dow = weekStart.getDay();
+  weekStart.setDate(weekStart.getDate() - (dow === 0 ? 6 : dow - 1));
+  const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(d.getDate() + i); return d; });
 
-    // Ore rimanenti agli eventi di oggi
-    const now = new Date();
-    const oraOra = now.getHours() * 60 + now.getMinutes();
-    const eventiOggi = events.filter(e => e.date === todayStr && e.time).map(e => {
-      const [hh, mm] = e.time.split(":").map(Number);
-      const minuti = hh * 60 + mm - oraOra;
-      return { ...e, minutiAlEvento: minuti };
-    }).filter(e => e.minutiAlEvento > 0).sort((a,b) => a.minutiAlEvento - b.minutiAlEvento);
+  // settimana items raggruppati per giorno (solo giorni con eventi)
+  const weekGrouped = weekDays
+    .map(d => ({ d, evts: eventsOn(d) }))
+    .filter(g => g.evts.length > 0);
 
-    const renderEventCard = (ev) => (
-      <div key={ev.id} style={{ ...S.card, margin: "0 0 8px", opacity: ev._isTask && ev.done ? 0.5 : 1, borderLeft: (ev._isMontaggio || ev._isConsegna || ev._isScadenza) ? "4px solid " + ev.color : "none" }} onClick={() => !ev._isTask && !ev._isMontaggio && !ev._isConsegna && !ev._isScadenza && setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}>
-        <div style={{ ...S.cardInner, display: "flex", gap: 10 }}>
-          {ev._isTask ? (
-            <div onClick={(e) => { e.stopPropagation(); toggleTask(ev.id); }} style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${ev.done ? T.grn : T.bdr}`, background: ev.done ? T.grn : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginTop: 2 }}>
-              {ev.done && <Ico d={ICO.check} s={13} c="#fff" sw={3} />}
-            </div>
-          ) : ev._isMontaggio ? (
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#0D7C6B15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><I d={ICO.wrench} s={16} c="#0D7C6B" /></div>
-          ) : ev._isConsegna ? (
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#af52de15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><I d={ICO.truck} s={16} c="#af52de" /></div>
-          ) : ev._isScadenza ? (
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: (ev._tipo === "incasso" ? "#1A9E73" : "#E8A020") + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><I d={ev._tipo === "incasso" ? ICO.upload : ICO.download} s={16} c={ev._tipo === "incasso" ? "#1A9E73" : "#E8A020"} /></div>
-          ) : (
-            <div style={{ width: 3, borderRadius: 2, background: ev.color, flexShrink: 0 }} />
-          )}
-          {ev.time && <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, minWidth: 38, fontFamily: FM }}>{ev.time}</div>}
+  // mese
+  const monthStart = new Date(selDate.getFullYear(), selDate.getMonth(), 1);
+  const firstDow = monthStart.getDay() === 0 ? 6 : monthStart.getDay() - 1;
+  const daysInMonth = new Date(selDate.getFullYear(), selDate.getMonth() + 1, 0).getDate();
+  const calCells = Array.from({ length: firstDow + daysInMonth }, (_, i) => {
+    if (i < firstDow) return null;
+    return new Date(selDate.getFullYear(), selDate.getMonth(), i - firstDow + 1);
+  });
+
+  // prossimi (vista mese)
+  const prossimi = allItems.filter(e => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date) || (a.time || "99").localeCompare(b.time || "99")).slice(0, 3);
+
+  // ── RENDER EVENT CARD (giorno/settimana) ──────────────────────────────────
+  const renderEventCard = (ev: any) => {
+    const cfg = getTipoCfg(ev);
+    const clr = getTipoColor(ev);
+    const montSq = ev._isMontaggio && ev._squadra;
+    return (
+      <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}
+        style={{ background: cfg.bg, borderRadius: 14, border: `1.5px solid ${cfg.border}`, padding: "12px 14px", boxShadow: `0 4px 0 0 ${cfg.shadow}`, cursor: "pointer" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: montSq ? 8 : 0 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, textDecoration: ev._isTask && ev.done ? "line-through" : "none" }}>{ev.text}</div>
-            {ev._isTask && ev.meta && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}><I d={ICO.fileText} s={11} c={T.sub} /> {ev.meta}</div>}
-            {!ev._isTask && !ev._isMontaggio && !ev._isConsegna && !ev._isScadenza && ev.addr && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}><I d={ICO.mapPin} s={11} c={T.sub} /> {ev.addr}</div>}
-            {ev._isMontaggio && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{ev._squadra} · {ev._vani} vani · {ev._stato === "completato" ? "Completato" : ev._stato === "in_corso" ? "In corso" : "Programmato"}</div>}
-            {ev._isConsegna && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>Materiale per {ev.cm}</div>}
-            {ev._isScadenza && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{ev._tipo === "incasso" ? "Da incassare" : "Da pagare"}: <b style={{ color: ev.color }}>€{(ev._importo || 0).toLocaleString("it-IT")}</b></div>}
-            <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-              {ev.cm && <span onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{ev.cm}</span>}
-              {ev.persona && !ev._isMontaggio && !ev._isConsegna && <span style={S.badge(T.purpleLt, T.purple)}>{ev.persona}</span>}
-              {ev._isTask && <span style={S.badge(ev.priority === "alta" ? "#FF3B3018" : ev.priority === "media" ? "#FF950018" : "#8E8E9318", ev.priority === "alta" ? "#FF3B30" : ev.priority === "media" ? "#FF9500" : "#8E8E93")}>task · {ev.priority}</span>}
-              {!ev._isTask && ev.reminder && <span style={S.badge(ev.reminderSent ? T.grnLt : "#FF950015", ev.reminderSent ? T.grn : "#FF9500")}>{ev.reminderSent ? "Reminder inviato" : `${ev.reminder}`}</span>}
-              {!ev._isTask && <span style={S.badge(tipoEvColor(ev.tipo) + "18", tipoEvColor(ev.tipo))}>{(TIPI_EVENTO.find(t=>t.id===ev.tipo)||{l:ev.tipo}).l}</span>}
+            <TipoBadge cfg={cfg} />
+            <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: INK }}>{ev.text}</p>
+            <p style={{ margin: "2px 0 0", fontSize: 11, color: SUB }}>{ev.persona}{ev.cm ? " · " + ev.cm : ""}{ev.time ? " · " + ev.time : ""}</p>
+          </div>
+          {ev._isMontaggio && ev.durata && (
+            <div style={{ background: T_CLR, borderRadius: 9, padding: "4px 8px", boxShadow: `0 3px 0 0 ${T_DARK}`, flexShrink: 0, marginLeft: 8 }}>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: "white" }}>{Math.round(ev.durata / 60)}h</p>
             </div>
-          </div>
-          <div style={{ alignSelf: "center", transition: "transform 0.2s", transform: selectedEvent?.id === ev.id ? "rotate(90deg)" : "rotate(0deg)" }}>
-            <Ico d={ICO.back} s={14} c={T.sub} />
-          </div>
+          )}
         </div>
-        {/* Expanded detail */}
-        {selectedEvent?.id === ev.id && (
-          <div style={{ padding: "0 14px 12px", borderTop: `1px solid ${T.bdr}`, marginTop: 4 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: "10px 0" }}>
-              <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Data</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{new Date(ev.date).toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Orario</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{ev.time || "Tutto il giorno"}</div>
-              </div>
-              {ev.persona && <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Assegnato a</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}><I d={ICO.user} s={11} c={T.purple} /> {ev.persona}</div>
-              </div>}
-              {ev.addr && <div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Luogo</div>
-                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}><I d={ICO.mapPin} s={11} c={T.sub} /> {ev.addr}</div>
-              </div>}
-            </div>
-            {ev.cm && (
-              <div style={{ padding: "8px 10px", background: T.accLt, borderRadius: 8, marginBottom: 8 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5 }}>Commessa collegata</div>
-                <div onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ fontSize: 13, fontWeight: 700, color: T.acc, marginTop: 2, cursor: "pointer" }}>{ev.cm} → Apri commessa</div>
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 6 }}>
-              <div onClick={(e) => { e.stopPropagation(); if (ev.addr) window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr)); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.blue }}>º Mappa</div>
-              <div onClick={(e) => { e.stopPropagation(); const tel = contatti.find(ct => ct.nome === ev.persona)?.telefono; if (tel) window.location.href="tel:" + tel; }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.grn }}><I d={ICO.phone} /> Chiama</div>
-              <div onClick={(e) => {
-                e.stopPropagation();
-                const cmObj = cantieri.find(c => c.code === ev.cm) || null;
-                const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : (ev.persona || "Cliente");
-                const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" });
-                const tpl = `Gentile ${cliente},
-
-Le confermo l'appuntamento:
-
-<I d={ICO.calendar} /> ${dataFmt}${ev.time ? " alle " + ev.time : ""}
-<I d={ICO.mapPin} /> ${ev.addr || "da concordare"}
-
-${ev.text}
-
-Per qualsiasi necessità non esiti a contattarmi.
-
-Cordiali saluti,
-Fabio Cozza
-Walter Cozza Serramenti`;
-                setMailBody(tpl);
-                setShowMailModal({ ev, cm: cmObj });
-              }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.accLt, border: `1px solid ${T.acc}30`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.acc }}><I d={ICO.mail} /> Mail</div>
-              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.redLt, border: `1px solid ${T.red}30`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.red }}>‘</div>
-            </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-              <div onClick={(e) => { e.stopPropagation(); const cmObj = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cmObj) { setSelectedCM(cmObj); } else { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: ev.text }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); } setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 10, background: "linear-gradient(135deg, #0D7C6B15, #0D7C6B08)", border: "1px solid #0D7C6B25", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#0D7C6B" }}><I d={ICO.folder} s={11} c="#0D7C6B" /> Commessa</div>
-              <div onClick={(e) => { e.stopPropagation(); const cmObj = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cmObj) { setSelectedCM(cmObj); } else { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "misure", vani: [], note: "Misure: " + ev.text }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); } setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 10, background: "linear-gradient(135deg, #E8A02015, #E8A02008)", border: "1px solid #E8A02025", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#E8A020" }}><I d={ICO.ruler} s={11} c="#E8A020" /> Misure</div>
-              <div onClick={(e) => { e.stopPropagation(); const code = "INT-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: "Intervento: " + ev.text }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 10, background: "linear-gradient(135deg, #1A9E7315, #1A9E7308)", border: "1px solid #1A9E7325", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#1A9E73" }}><I d={ICO.wrench} s={11} c="#1A9E73" /> Intervento</div>
+        {montSq && (
+          <div style={{ background: "rgba(255,255,255,.7)", borderRadius: 9, padding: "8px 10px", border: `1px solid rgba(40,160,160,.2)` }}>
+            <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 800, color: SUB, textTransform: "uppercase" as any }}>Squadra montaggio</p>
+            <div style={{ display: "flex", flexDirection: "column" as any, gap: 5 }}>
+              {(montSq.membri || []).slice(0, 3).map((m: any, mi: number) => (
+                <div key={mi} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Avatar ini={(m.nome || "?").slice(0, 2).toUpperCase()} bg={mi === 0 ? "#1A7878" : "#1060A0"} />
+                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: INK }}>{m.nome}</p>
+                  <div style={{ marginLeft: "auto", background: mi === 0 ? "rgba(40,160,160,.15)" : T_LIGHT, borderRadius: 6, padding: "2px 8px", border: mi === 0 ? "none" : `1px solid ${BDR}` }}>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: mi === 0 ? T_DARK : SUB }}>{mi === 0 ? "Capo squadra" : "Aiuto"}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
+        {ev._isScadenza && (
+          <p style={{ margin: "4px 0 0", fontSize: 11, color: SUB }}>{ev._tipo === "incasso" ? "Da incassare" : "Da pagare"}: <b style={{ color: clr }}>€{(ev._importo || 0).toLocaleString("it-IT")}</b></p>
+        )}
       </div>
     );
+  };
 
-    return (
-      <div style={{ paddingBottom: 80 }}>
-        <div style={S.header}>
-          <div style={{ flex: 1 }}>
-            <div style={S.headerTitle}>Agenda</div>
-            <div style={S.headerSub}>
-              {agendaView === "giorno" ? selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) :
-               agendaView === "settimana" ? `${weekDays[0].getDate()}–${weekDays[6].getDate()} ${selDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}` :
-               selDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}
-            </div>
-          </div>
-          <div onClick={() => setShowNewEvent(true)} style={{ width: 36, height: 36, borderRadius: 10, background: T.acc, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, fontWeight: 300 }}>+</div>
+  // ── VISTA MESE ────────────────────────────────────────────────────────────
+  const renderMese = () => (
+    <div style={{ display: "flex", flexDirection: "column" as any, gap: 12 }}>
+      {/* navigazione mese */}
+      <div style={{ background: "white", borderRadius: 14, border: `1.5px solid ${BDR}`, boxShadow: `0 7px 0 0 #A8CCCC`, padding: "14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <NavBtn onClick={() => navDate(-1)}><IcoChevL /></NavBtn>
+          <p style={{ margin: 0, fontSize: 17, fontWeight: 900, color: INK }}>{MESI[selDate.getMonth()]} {selDate.getFullYear()}</p>
+          <NavBtn onClick={() => navDate(1)}><IcoChevR /></NavBtn>
         </div>
-
-        {/* View switcher */}
-        <div style={{ display: "flex", gap: 0, margin: "8px 16px", borderRadius: 8, overflow: "hidden", border: `1px solid ${T.bdr}` }}>
-          {["giorno", "settimana", "mese"].map(v => (
-            <div key={v} onClick={() => setAgendaView(v)} style={{ flex: 1, padding: "8px 4px", textAlign: "center", fontSize: 12, fontWeight: 600, background: agendaView === v ? T.acc : T.card, color: agendaView === v ? "#fff" : T.sub, cursor: "pointer", textTransform: "capitalize" }}>
-              {v}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 4 }}>
+          {GG.map((g, i) => <p key={i} style={{ margin: 0, textAlign: "center", fontSize: 10, fontWeight: 800, color: i === 6 ? "rgba(220,68,68,.7)" : SUB }}>{g}</p>)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+          {calCells.map((d, i) => {
+            if (!d) return <div key={i} />;
+            const iso = dateStr(d);
+            const isToday = iso === todayStr;
+            const isSel = iso === dateStr(selDate);
+            const evts = eventsOn(d);
+            const isSun = d.getDay() === 0;
+            const isSat = d.getDay() === 6;
+            return (
+              <div key={i} onClick={() => { setSelDate(new Date(d)); setAgendaView("giorno"); }}
+                style={{ padding: 3, textAlign: "center", borderRadius: 9, cursor: "pointer",
+                  background: isToday ? T_CLR : isSel ? "rgba(40,160,160,.1)" : "transparent",
+                  boxShadow: isToday ? `0 3px 0 0 ${T_DARK}` : "none",
+                  border: isSel && !isToday ? `1.5px solid rgba(40,160,160,.25)` : "none" }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: isToday || evts.length > 0 ? 900 : 700, lineHeight: "1.5", color: isToday ? "white" : isSun ? "rgba(220,68,68,.6)" : isSat ? SUB : INK }}>{d.getDate()}</p>
+                {evts.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "center", gap: 1 }}>
+                    {evts.slice(0, 3).map((ev, ei) => {
+                      const c = ev._isMontaggio ? T_CLR : ((ev.tipo || "").toLowerCase() === "sopralluogo" ? BLU : AMB);
+                      return <span key={ei} style={{ width: 5, height: 5, borderRadius: "50%", background: isToday ? "white" : c, display: "inline-block" }} />;
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {/* legenda */}
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 10 }}>
+          {[{ c: T_CLR, l: "Montaggio" }, { c: BLU, l: "Sopralluogo" }, { c: AMB, l: "Rilievo" }].map((item, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: item.c, display: "inline-block" }} />
+              <span style={{ fontSize: 10, color: SUB, fontWeight: 600 }}>{item.l}</span>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* ═══ FILTRI AGENDA ═══ */}
-        <div style={{ display: "flex", gap: 4, padding: "6px 16px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-          {[
-            { id: "eventi", ico: "mapPin", l: "Sopralluoghi", col: "#0D7C6B" },
-            { id: "montaggi", ico: "wrench", l: "Montaggi", col: "#8B5CF6" },
-            { id: "consegne", ico: "truck", l: "Consegne", col: "#af52de" },
-            { id: "scadenze", ico: "wallet", l: "Pagamenti", col: "#E8A020" },
-            { id: "tasks", ico: "checkCircle", l: "Task", col: "#8e8e93" },
-          ].map(f => {
-            const active = agendaFilters[f.id];
-            return <div key={f.id} onClick={() => setAgendaFilters(p => ({...p, [f.id]: !p[f.id]}))}
-              style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 20, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap",
-                background: active ? f.col + "18" : T.bg, color: active ? f.col : T.sub + "80",
-                border: "1.5px solid " + (active ? f.col + "60" : T.bdr), opacity: active ? 1 : 0.5,
-                transition: "all 0.15s ease" }}>
-              <I d={ICO[f.ico]} s={12} c={active ? f.col : T.sub} /> {f.l}
-            </div>;
-          })}
-        </div>
-
-        {/* Nav arrows */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 16px" }}>
-          <div onClick={() => navDate(-1)} style={{ cursor: "pointer", padding: "4px 8px" }}><Ico d={ICO.back} s={18} c={T.sub} /></div>
-          <div onClick={() => setSelDate(new Date())} style={{ fontSize: 12, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Oggi</div>
-          <div onClick={() => navDate(1)} style={{ cursor: "pointer", padding: "4px 8px", transform: "rotate(180deg)" }}><Ico d={ICO.back} s={18} c={T.sub} /></div>
-        </div>
-
-        {/* === BANNER REMINDER PENDENTI === */}
-        {(() => {
-          const today = dateStr(new Date());
-          const tomorrow = dateStr(new Date(Date.now() + 86400000));
-          const reminderPendenti = events.filter(ev => {
-            if (!ev.reminder || ev.reminderSent) return false;
-            if (ev.reminder === "giorno" && ev.date === today) return true;
-            if (ev.reminder === "24h" && ev.date === tomorrow) return true;
-            if (ev.reminder === "1h") {
-              if (ev.date !== today) return false;
-              if (!ev.time) return true;
-              const [hh, mm] = ev.time.split(":").map(Number);
-              const evMin = hh * 60 + mm;
-              const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-              return evMin - nowMin <= 60 && evMin - nowMin > 0;
-            }
-            return false;
-          });
-          if (reminderPendenti.length === 0) return null;
-          return (
-            <div style={{ margin: "0 16px 10px", padding: "10px 12px", borderRadius: 10, background: "#FF950010", border: "1px solid #FF950040", borderLeft: "3px solid #FF9500" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 18 }}><I d={ICO.clock} /></span>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#FF9500" }}>
-                    {reminderPendenti.length} reminder da inviare
-                  </div>
-                  <div style={{ fontSize: 10, color: T.sub }}>Avvisa i clienti con 1 click</div>
-                </div>
+      {/* prossimi eventi */}
+      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: INK, padding: "0 2px" }}>Prossimi eventi</p>
+      {prossimi.length === 0 ? (
+        <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: 16 }}>Nessun evento in programma</p>
+      ) : prossimi.map(ev => {
+        const cfg = getTipoCfg(ev);
+        const clr = getTipoColor(ev);
+        return (
+          <div key={ev.id} onClick={() => setSelectedEvent(ev)}
+            style={{ background: "white", borderRadius: 16, border: `1.5px solid ${BDR}`, boxShadow: `0 5px 0 0 #A8CCCC`, padding: "14px 16px", cursor: "pointer" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: cfg.bg, border: `1px solid ${cfg.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 4px 0 0 ${cfg.shadow}` }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={clr} strokeWidth="2.2" strokeLinecap="round">
+                  {ev._isMontaggio ? <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/> : <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}
+                </svg>
               </div>
-              {reminderPendenti.map(ev => {
-                const cmObj = cantieri.find(c => c.code === ev.cm);
-                const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : ev.persona || "Cliente";
-                const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" });
-                const tpl = `Gentile ${cliente},
+              <div style={{ flex: 1 }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: INK }}>{ev.text}</p>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: SUB }}>{ev.persona}{ev.cm ? " · " + ev.cm : ""}{ev.date ? " · " + new Date(ev.date + "T00:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" }) : ""}{ev.time ? " · " + ev.time : ""}</p>
+              </div>
+              <NavBtn onClick={() => {}}><IcoChevR /></NavBtn>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
-Le ricordiamo l'appuntamento:
-
-<I d={ICO.calendar} /> ${dataFmt}${ev.time ? " alle " + ev.time : ""}
-<I d={ICO.mapPin} /> ${ev.addr || "da concordare"}
-
-${ev.text}
-
-Per qualsiasi necessità non esiti a contattarci.
-
-Cordiali saluti,
-Fabio Cozza
-Walter Cozza Serramenti`;
-                return (
-                  <div key={ev.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 8px", background:"#fff", borderRadius:8, marginBottom:4, border:"1px solid #FF950030" }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{ev.text}</div>
-                      <div style={{ fontSize:10, color:T.sub }}>{cliente} · {ev.time || "tutto il giorno"}</div>
-                    </div>
-                    <div onClick={() => {
-                      setMailBody(tpl);
-                      setShowMailModal({ ev: { ...ev, addr: ev.addr || "" }, cm: cmObj || null });
-                      setEvents(es => es.map(x => x.id === ev.id ? { ...x, reminderSent: true } : x));
-                    }} style={{ padding:"5px 10px", borderRadius:7, background:"#FF9500", color:"#fff", fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" }}>
-                      <I d={ICO.mail} />️ Invia
-                    </div>
+  // ── VISTA SETTIMANA ────────────────────────────────────────────────────────
+  const renderSettimana = () => {
+    const wLabel = `${weekDays[0].getDate()} ${MESI[weekDays[0].getMonth()].slice(0,3)} – ${weekDays[6].getDate()} ${MESI[weekDays[6].getMonth()].slice(0,3)} ${weekDays[6].getFullYear()}`;
+    return (
+      <div style={{ display: "flex", flexDirection: "column" as any, gap: 12 }}>
+        {/* header settimana */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <NavBtn onClick={() => navDate(-1)}><IcoChevL /></NavBtn>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: INK }}>{wLabel}</p>
+          <NavBtn onClick={() => navDate(1)}><IcoChevR /></NavBtn>
+        </div>
+        {/* 7 giorni */}
+        <div style={{ background: "white", borderRadius: 14, border: `1.5px solid ${BDR}`, boxShadow: `0 7px 0 0 #A8CCCC`, padding: "14px 12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
+            {weekDays.map((d, i) => {
+              const iso = dateStr(d);
+              const isToday = iso === todayStr;
+              const isSel = iso === dateStr(selDate);
+              const evts = eventsOn(d);
+              const isSun = d.getDay() === 0;
+              const isSat = d.getDay() === 6;
+              return (
+                <div key={i} onClick={() => { setSelDate(new Date(d)); }} style={{ display: "flex", flexDirection: "column" as any, alignItems: "center", gap: 5, cursor: "pointer" }}>
+                  <p style={{ margin: 0, fontSize: 10, fontWeight: isToday ? 900 : 700, color: isToday ? T_CLR : isSun ? "rgba(220,68,68,.6)" : SUB }}>{GG[i]}</p>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: isToday ? T_CLR : isSel ? T_LIGHT : T_LIGHT, border: isToday ? "none" : `1.5px solid ${BDR}`, boxShadow: isToday ? `0 4px 0 0 ${T_DARK}` : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <p style={{ margin: 0, fontSize: 13, fontWeight: isToday ? 900 : 700, color: isToday ? "white" : isSun ? "rgba(220,68,68,.5)" : INK }}>{d.getDate()}</p>
                   </div>
-                );
-              })}
+                  {evts.length > 0 ? (
+                    <div style={{ display: "flex", gap: 2 }}>
+                      {evts.slice(0, 2).map((ev, ei) => {
+                        const c = ev._isMontaggio ? T_CLR : ((ev.tipo || "").toLowerCase() === "sopralluogo" ? BLU : AMB);
+                        return <span key={ei} style={{ width: 5, height: 5, borderRadius: "50%", background: c, display: "inline-block" }} />;
+                      })}
+                    </div>
+                  ) : <div style={{ height: 5 }} />}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* eventi raggruppati per giorno */}
+        {weekGrouped.length === 0 ? (
+          <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: 16 }}>Nessun evento questa settimana</p>
+        ) : weekGrouped.map(({ d, evts }) => {
+          const iso = dateStr(d);
+          const isToday = iso === todayStr;
+          const label = d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
+          const dotClr = isToday ? T_CLR : BLU;
+          return (
+            <div key={iso}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: dotClr, boxShadow: isToday ? `0 2px 0 0 ${T_DARK}` : "none" }} />
+                <p style={{ margin: 0, fontSize: isToday ? 12 : 13, fontWeight: isToday ? 900 : 800, color: isToday ? T_CLR : INK }}>
+                  {label.charAt(0).toUpperCase() + label.slice(1)}{isToday ? " · oggi" : ""}
+                </p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" as any, gap: 8 }}>
+                {evts.map(ev => renderEventCard(ev))}
+              </div>
             </div>
           );
-        })()}
+        })}
+      </div>
+    );
+  };
 
-        <div style={{ padding: "0 16px" }}>
-
-          {/* === VISTA MESE === */}
-          {agendaView === "mese" && (
-            <>
-              {/* Banner prossimo evento di oggi */}
-              {eventiOggi.length > 0 && (
-                <div style={{ ...S.card, marginBottom: 10, padding: "10px 14px", borderLeft: `3px solid ${eventiOggi[0].color || tipoEvColor(eventiOggi[0].tipo)}`, display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, color: T.sub, fontWeight: 600 }}>
-                      Prossimo evento tra {eventiOggi[0].minutiAlEvento < 60
-                        ? `${eventiOggi[0].minutiAlEvento} min`
-                        : `${Math.floor(eventiOggi[0].minutiAlEvento/60)}h ${eventiOggi[0].minutiAlEvento%60>0?eventiOggi[0].minutiAlEvento%60+"min":""}`}
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 700 }}>{eventiOggi[0].text}</div>
-                    {eventiOggi[0].addr && <div style={{ fontSize: 11, color: T.sub }}><I d={ICO.mapPin} s={11} c={T.sub} /> {eventiOggi[0].addr}</div>}
-                  </div>
-                  {eventiOggi[0].addr && (
-                    <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(eventiOggi[0].addr))}
-                      style={{ padding: "6px 10px", borderRadius: 8, background: T.blueLt, color: T.blue, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                      <I d={ICO.lock} />º Naviga
-                    </div>
-                  )}
+  // ── VISTA GIORNO ──────────────────────────────────────────────────────────
+  const renderGiorno = () => {
+    const dayLabel = selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
+    const weekNum = Math.ceil((selDate.getDate() + new Date(selDate.getFullYear(), selDate.getMonth(), 1).getDay()) / 7);
+    return (
+      <div style={{ display: "flex", flexDirection: "column" as any, gap: 12 }}>
+        {/* nav giorno */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <NavBtn onClick={() => navDate(-1)}><IcoChevL /></NavBtn>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ margin: 0, fontSize: 16, fontWeight: 900, color: INK }}>{dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}</p>
+            <p style={{ margin: 0, fontSize: 10, color: SUB }}>settimana {weekNum}</p>
+          </div>
+          <NavBtn onClick={() => navDate(1)}><IcoChevR /></NavBtn>
+        </div>
+        {/* timeline */}
+        <div style={{ background: "white", borderRadius: 18, border: `1.5px solid ${BDR}`, boxShadow: `0 7px 0 0 #A8CCCC`, padding: 16 }}>
+          {dayEvents.length === 0 ? (
+            <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "12px 0" }}>Nessun evento oggi</p>
+          ) : dayEvents.map((ev, idx) => {
+            const clr = getTipoColor(ev);
+            const isLast = idx === dayEvents.length - 1;
+            const nextEv = dayEvents[idx + 1];
+            return (
+              <div key={ev.id} style={{ display: "flex", gap: 10, marginBottom: isLast ? 0 : 14, paddingBottom: isLast ? 0 : 14, borderBottom: isLast ? "none" : `1px solid ${T_LIGHT}` }}>
+                {/* colonna orario + barra */}
+                <div style={{ display: "flex", flexDirection: "column" as any, alignItems: "center", flexShrink: 0 }}>
+                  <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: SUB, width: 38, textAlign: "center" }}>{ev.time || "—"}</p>
+                  <div style={{ width: 2, flex: 1, background: clr, borderRadius: 2, margin: "4px 0", minHeight: ev._isMontaggio ? 70 : 44 }} />
+                  {nextEv?.time && <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: SUB, width: 38, textAlign: "center" }}>{nextEv.time}</p>}
                 </div>
-              )}
-              {/* GRIGLIA MENSILE A RIQUADRI */}
-              <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-                style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden", marginBottom: 12 }}>
-                {/* Intestazione giorni */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderBottom: `1px solid ${T.bdr}` }}>
-                  {["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].map((d, i) => (
-                    <div key={i} style={{ fontSize: 10, fontWeight: 700, color: T.sub, padding: "7px 4px", textAlign: "center", borderRight: i < 6 ? `1px solid ${T.bdr}` : "none" }}>{d}</div>
-                  ))}
-                </div>
-                {/* Celle mese */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)" }}>
-                  {monthDays.map((d, i) => {
-                    const inMonth = d.getMonth() === selDate.getMonth();
-                    const sel = isSameDay(d, selDate);
-                    const tod = isToday2(d);
-                    const evs = eventsOn(d);
-                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    const isExp = expandedDay === dateStr(d);
-                    const col = Math.floor(i % 7);
-                    return (
-                      <div key={i}
-                        onClick={() => { setSelDate(new Date(d)); setExpandedDay(isExp ? null : dateStr(d)); }}
-                        onDoubleClick={() => { setSelDate(new Date(d)); setNewEvent(prev => ({...prev, date: dateStr(d)})); setShowNewEvent(true); }}
-                        style={{
-                        minHeight: 72, padding: "5px 6px",
-                        borderRight: col < 6 ? `1px solid ${T.bdr}` : "none",
-                        borderBottom: `1px solid ${T.bdr}`,
-                        background: sel ? T.acc + "18" : isExp ? T.accLt : isWeekend && inMonth ? T.bg : T.card,
-                        cursor: "pointer", position: "relative",
-                        outline: sel ? `2px solid ${T.acc}` : isExp ? `1.5px solid ${T.acc}50` : "none",
-                        outlineOffset: -1,
-                      }}>
-                        {/* Numero giorno */}
-                        <div style={{
-                          display: "inline-flex", alignItems: "center", justifyContent: "center",
-                          width: 22, height: 22, borderRadius: "50%", fontSize: 12, fontWeight: sel || tod ? 800 : 400,
-                          background: tod ? T.acc : "transparent",
-                          color: tod ? "#fff" : !inMonth ? T.sub2 : sel ? T.acc : T.text,
-                          marginBottom: 3,
-                        }}>{d.getDate()}</div>
-                        {/* Eventi (max 3 visibili) */}
-                        {evs.slice(0, 3).map((ev, ei) => (
-                          <div key={ev.id} onClick={(e) => { e.stopPropagation(); setSelectedEvent(ev); setSelDate(new Date(d)); }} style={{
-                            display: "flex", alignItems: "center", gap: 3, marginBottom: 1,
-                            padding: "1px 4px", borderRadius: 3, fontSize: 10, fontWeight: 600,
-                            background: (ev.color || tipoEvColor(ev.tipo)) + "20",
-                            borderLeft: `2px solid ${ev.color || tipoEvColor(ev.tipo)}`,
-                            overflow: "hidden", whiteSpace: "nowrap",
-                          }}>
-                            <span style={{ color: ev.color || tipoEvColor(ev.tipo), overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
-                              {ev.time ? ev.time.slice(0,5) + " " : ""}{ev.text}
-                            </span>
-                          </div>
-                        ))}
-                        {evs.length > 3 && (
-                          <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>+{evs.length - 3} altri</div>
-                        )}
-                      </div>
-                    );
-                  })}
+                {/* card evento */}
+                <div style={{ flex: 1 }}>
+                  {renderEventCard(ev)}
                 </div>
               </div>
-              {/* Sezione prossimi eventi */}
-              {prossimiEventi.length > 0 && (
-                <div style={{ ...S.card, marginBottom: 10, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Prossimi eventi</div>
-                  {prossimiEventi.map((ev, i) => {
-                    const evDate = new Date(ev.date + "T12:00:00");
-                    const isEvToday = ev.date === todayStr;
-                    const isEvTomorrow = ev.date === dateStr(new Date(Date.now() + 86400000));
-                    const labelData = isEvToday ? "Oggi" : isEvTomorrow ? "Domani" : evDate.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
-                    return (
-                      <div key={ev.id} onClick={() => { setSelDate(evDate); setSelectedEvent(ev); }}
-                        style={{ display: "flex", gap: 10, padding: "8px 0", borderBottom: i < prossimiEventi.length-1 ? `1px solid ${T.bdr}` : "none", cursor: "pointer", alignItems: "center" }}>
-                        <div style={{ width: 3, alignSelf: "stretch", borderRadius: 2, background: ev.color || tipoEvColor(ev.tipo), flexShrink: 0 }} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>{ev.text}</div>
-                          <div style={{ display: "flex", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
-                            {ev.cm && <span style={S.badge(T.accLt, T.acc)}>{ev.cm}</span>}
-                            {ev.persona && <span style={S.badge(T.purpleLt, T.purple)}><I d={ICO.user} s={11} c={T.purple} /> {ev.persona}</span>}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: isEvToday ? T.acc : T.sub }}>{labelData}</div>
-                          {ev.time && <div style={{ fontSize: 11, color: T.sub }}>{ev.time}</div>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Pannello evento selezionato (click su evento nella griglia) */}
-              {selectedEvent && isSameDay(new Date(selectedEvent.date), selDate) && (
-                <div style={{ ...S.card, padding: "12px 14px", marginBottom: 8, borderLeft: `3px solid ${selectedEvent.color || T.acc}` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{selectedEvent.text}</div>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {selectedEvent.time && <span style={S.badge(T.bg, T.sub)}><I d={ICO.calendar} s={11} c={T.sub} /> {selectedEvent.time}</span>}
-                        {selectedEvent.cm && <span style={S.badge(T.accLt, T.acc)}>{selectedEvent.cm}</span>}
-                        {selectedEvent.persona && <span style={S.badge(T.purpleLt, T.purple)}><I d={ICO.user} s={11} c={T.purple} /> {selectedEvent.persona}</span>}
-                        {selectedEvent.addr && <span style={S.badge(T.grnLt, T.grn)}><I d={ICO.mapPin} s={11} c={T.grn} /> {selectedEvent.addr}</span>}
-                      </div>
-                    </div>
-                    <div onClick={() => setSelectedEvent(null)} style={{ padding: 4, cursor: "pointer", color: T.sub, fontSize: 16 }}>×</div>
-                  </div>
-                  <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                    {selectedEvent.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(selectedEvent.addr))} style={{ flex:1, padding:"6px", borderRadius:6, background:T.blueLt, textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:T.blue }}><I d={ICO.lock} />º Mappa</div>}
-                    <div onClick={() => {
-                      const ev = selectedEvent;
-                      const cmObj = cantieri.find(c => c.code === ev.cm) || null;
-                      const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : (ev.persona || "Cliente");
-                      const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" });
-                      const tpl = `Gentile ${cliente},
-
-Le confermo l'appuntamento:
-
-<I d={ICO.calendar} /> ${dataFmt}${ev.time ? " alle " + ev.time : ""}
-<I d={ICO.mapPin} /> ${ev.addr || "da concordare"}
-
-${ev.text}
-
-Per qualsiasi necessità non esiti a contattarmi.
-
-Cordiali saluti,
-Fabio Cozza
-Walter Cozza Serramenti`;
-                      setMailBody(tpl);
-                      setShowMailModal({ ev, cm: cmObj });
-                    }} style={{ flex:1, padding:"6px", borderRadius:6, background:T.accLt, textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:T.acc }}><I d={ICO.mail} />️ Mail</div>
-                    <div onClick={() => deleteEvent(selectedEvent.id)} style={{ flex:1, padding:"6px", borderRadius:6, background:T.redLt, textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:T.red }}><I d={ICO.lock} />‘ Elimina</div>
-                  </div>
-                </div>
-              )}
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-                {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
-              </div>
-              {dayEvents.length === 0 ? (
-                <div style={{ padding: "16px", textAlign: "center", color: T.sub, fontSize: 12, background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}` }}>Nessun evento. Tocca + per aggiungere.</div>
-              ) : dayEvents.map(renderEventCard)}
-            </>
-          )}
-
-          {/* === VISTA SETTIMANA === */}
-          {agendaView === "settimana" && (
-            <>
-              <div style={{ display: "flex", gap: 2, marginBottom: 12 }}>
-                {weekDays.map((d, i) => {
-                  const sel = isSameDay(d, selDate);
-                  const tod = isToday2(d);
-                  const n = eventsOn(d).length;
-                  return (
-                    <div key={i} onClick={() => setSelDate(new Date(d))} style={{ flex: 1, textAlign: "center", padding: "8px 2px", borderRadius: 10, background: sel ? T.acc : tod ? T.accLt : T.card, border: `1px solid ${sel ? T.acc : T.bdr}`, cursor: "pointer" }}>
-                      <div style={{ fontSize: 9, fontWeight: 600, color: sel ? "#fff" : T.sub, textTransform: "uppercase" }}>
-                        {["Lu", "Ma", "Me", "Gi", "Ve", "Sa", "Do"][i]}
-                      </div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: sel ? "#fff" : T.text, marginTop: 2 }}>{d.getDate()}</div>
-                      {n > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: sel ? "#fff" : T.red, margin: "2px auto 0" }} />}
-                    </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-                {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
-              </div>
-              {dayEvents.length === 0 ? (
-                <div style={{ padding: "16px", textAlign: "center", color: T.sub, fontSize: 12, background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}` }}>Nessun evento</div>
-              ) : dayEvents.map(renderEventCard)}
-            </>
-          )}
-
-          {/* === VISTA GIORNO === */}
-          {agendaView === "giorno" && (
-            <>
-              {/* Timeline ore — scrollabile con dito */}
-              <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflowY: "auto", overflowX: "hidden", marginBottom: 12, maxHeight: "60vh" } as any}>
-                {Array.from({ length: 15 }, (_, i) => i + 6).map(h => {
-                  const hour = `${String(h).padStart(2, "0")}:00`;
-                  const hourEvents = dayEvents.filter(e => e.time && e.time.startsWith(String(h).padStart(2, "0")));
-                  return (
-                    <div key={h} style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, minHeight: 48 }}>
-                      <div style={{ width: 48, padding: "4px 6px", fontSize: 10, color: T.sub, fontFamily: FM, fontWeight: 600, borderRight: `1px solid ${T.bdr}`, flexShrink: 0 }}>{hour}</div>
-                      <div style={{ flex: 1, padding: "4px 8px" }}>
-                        {hourEvents.map(ev => (
-                          <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "6px 10px", marginBottom: 2, borderRadius: 6, background: selectedEvent?.id === ev.id ? (ev.color || T.acc) + "30" : (ev.color || T.acc) + "18", borderLeft: `3px solid ${ev.color || T.acc}`, cursor: "pointer", transition: "all 0.15s" }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{ev.text} {ev.persona && <span style={{ fontWeight: 400, color: T.sub }}>· {ev.persona}</span>}</div>
-                            {ev.addr && <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>{ev.addr}</div>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Unscheduled */}
-              {dayEvents.filter(e => !e.time).length > 0 && (
-                <>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: T.sub }}>Senza orario</div>
-                  {dayEvents.filter(e => !e.time).map(ev => (<div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "8px 12px", marginBottom: 4, borderRadius: 8, background: selectedEvent?.id === ev.id ? (ev.color || T.acc) + "30" : (ev.color || T.acc) + "18", borderLeft: `3px solid ${ev.color || T.acc}`, cursor: "pointer" }}><div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{ev.text}</div>{ev.persona && <div style={{ fontSize: 11, color: T.sub }}>{ev.persona} {ev.addr ? "· " + ev.addr : ""}</div>}</div>))}
-                </>
-              )}
-            </>
-          )}
+            );
+          })}
         </div>
       </div>
     );
+  };
 
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  const views = ["mese", "settimana", "giorno"] as const;
+
+  return (
+    <div style={{ fontFamily: "'Inter',sans-serif", backgroundColor: "#D8EEEE", backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", minHeight: "100%", paddingBottom: 100 }}>
+
+      {/* TOPBAR */}
+      <div style={{ background: INK, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+        <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "white", flex: 1 }}>Agenda</p>
+        {dayEvents.length > 0 && agendaView === "giorno" && (
+          <div style={{ background: "rgba(40,160,160,.2)", borderRadius: 10, padding: "6px 12px", boxShadow: "0 3px 0 0 rgba(21,96,96,.4)" }}>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 900, color: T_CLR }}>{dayEvents.length} eventi</p>
+          </div>
+        )}
+        <div onClick={() => setShowNewEvent(true)} style={{ width: 36, height: 36, background: "rgba(40,160,160,.2)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 0 0 rgba(21,96,96,.4)", cursor: "pointer" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T_CLR} strokeWidth="2.2" strokeLinecap="round"><path d="M12 4v16M4 12h16"/></svg>
+        </div>
+      </div>
+
+      {/* TAB SWITCH */}
+      <div style={{ display: "flex", background: "white", borderBottom: `3px solid ${BDR}` }}>
+        {views.map(v => {
+          const active = agendaView === v;
+          const label = v.charAt(0).toUpperCase() + v.slice(1);
+          return (
+            <div key={v} onClick={() => setAgendaView(v)}
+              style={{ flex: 1, padding: "11px 4px", textAlign: "center", fontSize: 12, fontWeight: active ? 900 : 700, cursor: "pointer", background: active ? T_CLR : "white", color: active ? "white" : SUB, borderBottom: active ? `3px solid ${T_DARK}` : "none" }}>
+              {label}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* BODY */}
+      <div style={{ padding: 14 }}>
+        {agendaView === "mese" && renderMese()}
+        {agendaView === "settimana" && renderSettimana()}
+        {agendaView === "giorno" && renderGiorno()}
+
+        {/* NUOVO EVENTO */}
+        <div style={{ marginTop: 14 }}>
+          <button onClick={() => setShowNewEvent(true)} style={{ width: "100%", background: T_CLR, border: "none", borderRadius: 16, padding: 17, fontSize: 16, fontWeight: 900, color: "white", cursor: "pointer", fontFamily: "inherit", boxShadow: `0 8px 0 0 ${T_DARK}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
+            <IcoPlus />
+            Nuovo evento
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
