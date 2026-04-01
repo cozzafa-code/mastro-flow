@@ -729,7 +729,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
   function getAdj(s:any) {
     const EPS = 3; // tolleranza snap
-    const others=shapes.filter((x:any)=>x.id!==s.id);
+    // Solo segmenti dello stesso tipo — muro non si fonde con oggetto
+    const others=shapes.filter((x:any)=>x.id!==s.id && x.type===s.type);
 
     // Cerca segmento il cui endpoint tocca s.a
     // prevB = il punto OPPOSTO dell'adiacente (per calcolare la direzione entrante)
