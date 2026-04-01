@@ -767,17 +767,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
-  // ── STATO CONDIVISO tra Forma / 3D / Libero ──────────────
-  const [sharedPts, setSharedPts] = React.useState<any[]>([
-    {x:0,y:0},{x:propRealW||1200,y:0},{x:propRealW||1200,y:propRealH||350},{x:0,y:propRealH||350}
-  ]);
-  const [sharedH, setSharedH] = React.useState(propRealH || 280);
-  const [sharedSp, setSharedSp] = React.useState(40);
-  const [sharedMats, setSharedMats] = React.useState<any>({
-    front:"alluminio", back:"alluminio",
-    left:"alluminio", right:"alluminio",
-    top:"pvc", bottom:"pvc"
-  });
+
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
   const realW = propRealW || 1200;
   const realH = propRealH || 1000;
@@ -2018,7 +2008,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* ═══ TAB BAR ═══ */}
                                 <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
-                                  {[{ id: "disegno", l: "✏️ Disegno", c: "#1A9E73" }, { id: "forma", l: "🔷 Forma", c: T.blue || "#3B7FE0" }, { id: "3d", l: "🧊 3D", c: T.acc }, { id: "libero", l: "✍️ Libero", c: "#6366f1" }].map(tab => (
+                                  {[{ id: "disegno", l: "✏️ Disegno", c: "#1A9E73" }, { id: "libero", l: "✍️ Libero", c: "#6366f1" }].map(tab => (
                                     <div key={tab.id} onClick={() => setViewTab(tab.id)}
                                       style={{ flex: 1, padding: "7px 0", textAlign: "center", fontSize: 11, fontWeight: viewTab === tab.id ? 800 : 500, color: viewTab === tab.id ? tab.c : T.sub, borderBottom: viewTab === tab.id ? `2.5px solid ${tab.c}` : "2.5px solid transparent", cursor: "pointer", transition: "all 0.15s" }}>
                                       {tab.l}
@@ -2027,16 +2017,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* ═══ TAB: FORMA ═══ */}
-                                {viewTab === "forma" && <FormaEditor T={T} realW={realW} realH={realH} pts={sharedPts} onPtsChange={setSharedPts} H={sharedH} onHChange={setSharedH} sp={sharedSp} onSpChange={setSharedSp} />}
+                                
 
                                 {/* ═══ TAB: 3D ═══ */}
-                                {viewTab === "3d" && <View3D T={T} realW={realW} realH={realH} vanoDisegno={vanoDisegno} onUpdate={onUpdate} pts={sharedPts} H={sharedH} sp={sharedSp} mats={sharedMats} onMatsChange={setSharedMats} onHChange={setSharedH} onSpChange={setSharedSp} />}
+                                
 
                                 {/* ═══ TAB: LIBERO (Paper.js free drawing) ═══ */}
-                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} onPtsChange={setSharedPts} onGoTo3D={()=>setViewTab("3d")} />}
+                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
 
                                 {/* ═══ TAB: LIBERO (Paper.js) ═══ */}
-                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} onPtsChange={setSharedPts} onGoTo3D={()=>setViewTab("3d")} />}
+                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
 
                                 {/* ═══ TAB: DISEGNO (originale) ═══ */}
                                 {viewTab === "disegno" && <>
