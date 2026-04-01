@@ -79,8 +79,11 @@ export default function AgendaPanel() {
       return { ...e, minutiAlEvento: minuti };
     }).filter(e => e.minutiAlEvento > 0).sort((a,b) => a.minutiAlEvento - b.minutiAlEvento);
 
-    const renderEventCard = (ev) => (
-      <div key={ev.id} style={{ background:"white", borderRadius:16, border:"1.5px solid #C8E4E4", marginBottom:8, boxShadow:`0 5px 0 0 ${ev._isMontaggio||ev._isConsegna||ev._isScadenza ? ev.color+"44" : "#A8CCCC"}`, borderLeft: (ev._isMontaggio || ev._isConsegna || ev._isScadenza) ? "4px solid " + ev.color : "1.5px solid #C8E4E4", opacity: ev._isTask && ev.done ? 0.5 : 1 }} onClick={() => !ev._isTask && !ev._isMontaggio && !ev._isConsegna && !ev._isScadenza && setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}>
+    const renderEventCard = (ev) => {
+      const evShadow = (ev._isMontaggio || ev._isConsegna || ev._isScadenza) ? ev.color + "44" : "#A8CCCC";
+      const evBorderLeft = (ev._isMontaggio || ev._isConsegna || ev._isScadenza) ? "4px solid " + ev.color : "1.5px solid #C8E4E4";
+      return (
+      <div key={ev.id} style={{ background:"white", borderRadius:16, border:"1.5px solid #C8E4E4", marginBottom:8, boxShadow:"0 5px 0 0 " + evShadow, borderLeft: evBorderLeft, opacity: ev._isTask && ev.done ? 0.5 : 1 }} onClick={() => !ev._isTask && !ev._isMontaggio && !ev._isConsegna && !ev._isScadenza && setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}>
         <div style={{ padding:"13px 14px", display:"flex", gap:10 }}>
           {ev._isTask ? (
             <div onClick={(e) => { e.stopPropagation(); toggleTask(ev.id); }} style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${ev.done ? "#1A9E73" : "#C8E4E4"}`, background: ev.done ? "#1A9E73" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, marginTop: 2 }}>
@@ -166,8 +169,8 @@ Fabio Cozza
 Walter Cozza Serramenti`;
                 setMailBody(tpl);
                 setShowMailModal({ ev, cm: cmObj });
-              }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(40,160,160,0.1)", border: `1px solid #28A0A030`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#28A0A0" }}><I d={ICO.mail} /> Mail</div>
-              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(220,68,68,0.1)", border: `1px solid #DC444430`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#DC4444" }}>‘</div>
+              }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(40,160,160,0.1)", border: "1px solid rgba(40,160,160,0.3)", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#28A0A0" }}><I d={ICO.mail} /> Mail</div>
+              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "rgba(220,68,68,0.1)", border: "1px solid rgba(220,68,68,0.3)", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: "#DC4444" }}>‘</div>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
               <div onClick={(e) => { e.stopPropagation(); const cmObj = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cmObj) { setSelectedCM(cmObj); } else { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: ev.text }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); } setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 10, background: "linear-gradient(135deg, #0D7C6B15, #0D7C6B08)", border: "1px solid #0D7C6B25", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#0D7C6B" }}><I d={ICO.folder} s={11} c="#0D7C6B" /> Commessa</div>
@@ -177,7 +180,7 @@ Walter Cozza Serramenti`;
           </div>
         )}
       </div>
-    );
+    );};
 
     return (
       <div style={{ paddingBottom:80, backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", minHeight:"100vh" }}>
@@ -321,7 +324,7 @@ Walter Cozza Serramenti`;
                   {eventiOggi[0].addr && (
                     <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(eventiOggi[0].addr))}
                       style={{ padding: "6px 10px", borderRadius: 8, background: "rgba(59,127,224,0.1)", color: "#3B7FE0", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                      <I d={ICO.lock} />º Naviga
+                      📍 Naviga
                     </div>
                   )}
                 </div>
@@ -434,7 +437,7 @@ Walter Cozza Serramenti`;
                     <div onClick={() => setSelectedEvent(null)} style={{ padding: 4, cursor: "pointer", color: "#4A7070", fontSize: 16 }}>×</div>
                   </div>
                   <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                    {selectedEvent.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(selectedEvent.addr))} style={{ flex:1, padding:"6px", borderRadius:6, background:"rgba(59,127,224,0.1)", textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:"#3B7FE0" }}><I d={ICO.lock} />º Mappa</div>}
+                    {selectedEvent.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(selectedEvent.addr))} style={{ flex:1, padding:"6px", borderRadius:6, background:"rgba(59,127,224,0.1)", textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:"#3B7FE0" }}>🗺 Mappa</div>}
                     <div onClick={() => {
                       const ev = selectedEvent;
                       const cmObj = cantieri.find(c => c.code === ev.cm) || null;
@@ -457,7 +460,7 @@ Walter Cozza Serramenti`;
                       setMailBody(tpl);
                       setShowMailModal({ ev, cm: cmObj });
                     }} style={{ flex:1, padding:"6px", borderRadius:6, background:"rgba(40,160,160,0.1)", textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:"#28A0A0" }}><I d={ICO.mail} />️ Mail</div>
-                    <div onClick={() => deleteEvent(selectedEvent.id)} style={{ flex:1, padding:"6px", borderRadius:6, background:"rgba(220,68,68,0.1)", textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:"#DC4444" }}><I d={ICO.lock} />‘ Elimina</div>
+                    <div onClick={() => deleteEvent(selectedEvent.id)} style={{ flex:1, padding:"6px", borderRadius:6, background:"rgba(220,68,68,0.1)", textAlign:"center", cursor:"pointer", fontSize:11, fontWeight:600, color:"#DC4444" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC4444" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg> Elimina</div>
                   </div>
                 </div>
               )}
