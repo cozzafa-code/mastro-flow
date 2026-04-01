@@ -519,13 +519,23 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     };
   }
 
-  function snapPt(pt: any) {
+  function snapPt(pt: any, forceOrtho=false) {
     const g = GRID;
-    const sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
+    let sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
+    // Snap a punti esistenti (priorità massima)
     for (const s of shapes) {
       for (const p of (s.pts||[])) {
-        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 16/zoom) return {x:p.x,y:p.y};
+        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 18/zoom) return {x:p.x,y:p.y};
       }
+    }
+    // Snap ortogonale al punto precedente
+    const last = curPts.length>0 ? curPts[curPts.length-1] : null;
+    if (last) {
+      const dx=Math.abs(sx-last.x), dy=Math.abs(sy-last.y);
+      // Se molto più orizzontale che verticale → blocca Y
+      if (dx>dy*1.5) sy=last.y;
+      // Se molto più verticale che orizzontale → blocca X
+      else if (dy>dx*1.5) sx=last.x;
     }
     return {x:sx,y:sy};
   }
