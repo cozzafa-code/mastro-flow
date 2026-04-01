@@ -4438,8 +4438,6 @@ export default function VanoDetailPanel() {
         );
       })()}
 
-</div>
-
       {/* ── CASSONETTO EDITOR ── */}
       {showCassonettoEditor && (() => {
         const v2 = selectedVano;
@@ -4459,6 +4457,8 @@ export default function VanoDetailPanel() {
           />
         );
       })()}
+
+</div>
 
     );
   }; // end renderBody
