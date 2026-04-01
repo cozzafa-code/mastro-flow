@@ -32,6 +32,15 @@ export default function CommessePanel() {
   const isFerma = (c: any) => giorniFermaCM(c) >= sogliaDays && c.fase !== "chiusura";
   const isScaduta = (c: any) => c.scadenza && c.scadenza < TODAY;
 
+  // ── fliwoX colori pipeline ──
+  const PIPELINE_FLIWOX: Record<string,string> = {
+    sopralluogo:"#28A0A0", preventivo:"#1A7070", conferma:"#1060A0",
+    ordini:"#806020", produzione:"#806020", posa:"#806020",
+    collaudo:"#6B4FB0", chiusura:"#6B4FB0",
+  };
+  const getFaseColor = (fase: string, alert: boolean) =>
+    alert ? "#DC4444" : (PIPELINE_FLIWOX[fase] || "#28A0A0");
+
   // ── CARD VIEW ──
   const renderCard = (c: any) => {
     const fase = getFaseInfo(c);
