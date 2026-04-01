@@ -769,7 +769,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
   const [viewTab, setViewTab] = React.useState("disegno");
   // ── STATO CONDIVISO tra Forma / 3D / Libero ──────────────
   const [sharedPts, setSharedPts] = React.useState<any[]>([
-    {x:0,y:0},{x:realW||1200,y:0},{x:realW||1200,y:propRealH||350},{x:0,y:propRealH||350}
+    {x:0,y:0},{x:propRealW||1200,y:0},{x:propRealW||1200,y:propRealH||350},{x:0,y:propRealH||350}
   ]);
   const [sharedH, setSharedH] = React.useState(propRealH || 280);
   const [sharedSp, setSharedSp] = React.useState(40);
