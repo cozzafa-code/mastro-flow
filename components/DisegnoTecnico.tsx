@@ -552,9 +552,11 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
   // Genera i 4 punti del poligono di un segmento
   // join="miter" | "wins" (rimane intatto, si estende) | "loses" (si accorcia al bordo del vincitore)
+  // winnerSpA/winnerSpB = spessore del segmento vincitore (usato per calcolare il ritiro corretto del perdente)
   function segPolygon(a:any, b:any, sp:number,
     prevB:any=null, nextA:any=null,
-    joinAtA="miter", joinAtB="miter") {
+    joinAtA="miter", joinAtB="miter",
+    winnerSpA:number=sp, winnerSpB:number=sp) {
     const sp2 = sp*scale*0.5;
     const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
     const ux=dx/len, uy=dy/len;
@@ -574,20 +576,23 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
       if (joinAtA==="miter") {
         // Miter: intersezione geometrica delle due pareti
-        const iL=lineIntersect({x:prevB.x+pnx*sp2,y:prevB.y+pny*sp2},{x:pux,y:puy},{x:a.x+nx*sp2,y:a.y+ny*sp2},{x:ux,y:uy});
+        const prevSp2 = winnerSpA*scale*0.5;
+        const iL=lineIntersect({x:prevB.x+pnx*prevSp2,y:prevB.y+pny*prevSp2},{x:pux,y:puy},{x:a.x+nx*sp2,y:a.y+ny*sp2},{x:ux,y:uy});
         if(iL&&isFinite(iL.x)) aL=iL;
-        const iR=lineIntersect({x:prevB.x-pnx*sp2,y:prevB.y-pny*sp2},{x:pux,y:puy},{x:a.x-nx*sp2,y:a.y-ny*sp2},{x:ux,y:uy});
+        const iR=lineIntersect({x:prevB.x-pnx*prevSp2,y:prevB.y-pny*prevSp2},{x:pux,y:puy},{x:a.x-nx*sp2,y:a.y-ny*sp2},{x:ux,y:uy});
         if(iR&&isFinite(iR.x)) aR=iR;
       } else if (joinAtA==="wins") {
-        // Vince: si estende di sp2 nella direzione opposta al segmento prev
-        // cioè nella direzione -pux,-puy di sp2
-        aL={x:a.x+nx*sp2-pux*sp2, y:a.y+ny*sp2-puy*sp2};
-        aR={x:a.x-nx*sp2-pux*sp2, y:a.y-ny*sp2-puy*sp2};
+        // Vince: il segmento corrente passa sopra — si estende di metà spessore del perdente
+        // nella direzione opposta al segmento prev (cioè fuori dal punto di giunzione)
+        const retract = winnerSpA*scale*0.5;
+        aL={x:a.x+nx*sp2-pux*retract, y:a.y+ny*sp2-puy*retract};
+        aR={x:a.x-nx*sp2-pux*retract, y:a.y-ny*sp2-puy*retract};
       } else if (joinAtA==="loses") {
-        // Perde: si accorcia di sp2 nella direzione del segmento corrente
-        // Il suo bordo A si sposta avanti di sp2
-        aL={x:a.x+nx*sp2+ux*sp2, y:a.y+ny*sp2+uy*sp2};
-        aR={x:a.x-nx*sp2+ux*sp2, y:a.y-ny*sp2+uy*sp2};
+        // Perde: il segmento si ritira dentro il vincitore
+        // Il suo endpoint A si sposta di metà spessore del vincitore verso l'interno
+        const retract = winnerSpA*scale*0.5;
+        aL={x:a.x+nx*sp2+ux*retract, y:a.y+ny*sp2+uy*retract};
+        aR={x:a.x-nx*sp2+ux*retract, y:a.y-ny*sp2+uy*retract};
       }
     }
 
@@ -598,18 +603,22 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       const nnx=-nuy, nny=nux;
 
       if (joinAtB==="miter") {
-        const iL=lineIntersect({x:b.x+nx*sp2,y:b.y+ny*sp2},{x:ux,y:uy},{x:b.x+nnx*sp2,y:b.y+nny*sp2},{x:nux,y:nuy});
+        const nextSp2 = winnerSpB*scale*0.5;
+        const iL=lineIntersect({x:b.x+nx*sp2,y:b.y+ny*sp2},{x:ux,y:uy},{x:b.x+nnx*nextSp2,y:b.y+nny*nextSp2},{x:nux,y:nuy});
         if(iL&&isFinite(iL.x)) bL=iL;
-        const iR=lineIntersect({x:b.x-nx*sp2,y:b.y-ny*sp2},{x:ux,y:uy},{x:b.x-nnx*sp2,y:b.y-nny*sp2},{x:nux,y:nuy});
+        const iR=lineIntersect({x:b.x-nx*sp2,y:b.y-ny*sp2},{x:ux,y:uy},{x:b.x-nnx*nextSp2,y:b.y-nny*nextSp2},{x:nux,y:nuy});
         if(iR&&isFinite(iR.x)) bR=iR;
       } else if (joinAtB==="wins") {
-        // Vince: si estende di sp2 nella direzione del segmento corrente
-        bL={x:b.x+nx*sp2+ux*sp2, y:b.y+ny*sp2+uy*sp2};
-        bR={x:b.x-nx*sp2+ux*sp2, y:b.y-ny*sp2+uy*sp2};
+        // Vince: si estende oltre il punto B nella direzione del segmento corrente
+        // di metà spessore del perdente
+        const retract = winnerSpB*scale*0.5;
+        bL={x:b.x+nx*sp2+ux*retract, y:b.y+ny*sp2+uy*retract};
+        bR={x:b.x-nx*sp2+ux*retract, y:b.y-ny*sp2+uy*retract};
       } else if (joinAtB==="loses") {
-        // Perde: si accorcia di sp2 — il bordo B arretra
-        bL={x:b.x+nx*sp2-ux*sp2, y:b.y+ny*sp2-uy*sp2};
-        bR={x:b.x-nx*sp2-ux*sp2, y:b.y-ny*sp2-uy*sp2};
+        // Perde: il bordo B arretra di metà spessore del vincitore
+        const retract = winnerSpB*scale*0.5;
+        bL={x:b.x+nx*sp2-ux*retract, y:b.y+ny*sp2-uy*retract};
+        bR={x:b.x-nx*sp2-ux*retract, y:b.y-ny*sp2-uy*retract};
       }
     }
 
@@ -719,23 +728,28 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function getAdj(s:any) {
-    const same=shapes.filter(x=>x.id!==s.id&&x.type===s.type);
-    const prevSeg=same.find(x=>Math.hypot(x.b.x-s.a.x,x.b.y-s.a.y)<2||Math.hypot(x.a.x-s.a.x,x.a.y-s.a.y)<2);
-    const nextSeg=same.find(x=>Math.hypot(x.a.x-s.b.x,x.a.y-s.b.y)<2||Math.hypot(x.b.x-s.b.x,x.b.y-s.b.y)<2);
+    // Cerca tra TUTTI i segmenti (non solo stesso tipo) per trovare adiacenti
+    const others=shapes.filter((x:any)=>x.id!==s.id);
+    const prevSeg=others.find((x:any)=>Math.hypot(x.b.x-s.a.x,x.b.y-s.a.y)<2||Math.hypot(x.a.x-s.a.x,x.a.y-s.a.y)<2);
+    const nextSeg=others.find((x:any)=>Math.hypot(x.a.x-s.b.x,x.a.y-s.b.y)<2||Math.hypot(x.b.x-s.b.x,x.b.y-s.b.y)<2);
     return {
       prevB:prevSeg?(Math.hypot(prevSeg.b.x-s.a.x,prevSeg.b.y-s.a.y)<2?prevSeg.a:prevSeg.b):null,
       nextA:nextSeg?(Math.hypot(nextSeg.a.x-s.b.x,nextSeg.a.y-s.b.y)<2?nextSeg.b:nextSeg.a):null,
+      prevSp:prevSeg?.spessore||s.spessore,
+      nextSp:nextSeg?.spessore||s.spessore,
     };
   }
 
   function renderSeg(a:any,b:any,type:string,sp:number,preview=false,id:any=null,
-    prevB:any=null,nextA:any=null,joinA="miter",joinB="miter") {
+    prevB:any=null,nextA:any=null,joinA="miter",joinB="miter",
+    winnerSpA:number=sp,winnerSpB:number=sp) {
     const col=type==="oggetto"?"#3B7FE0":"#1A2B4A";
     const fill=type==="oggetto"?"rgba(59,127,224,0.12)":"rgba(26,43,74,0.14)";
     const len=segLen(a,b);
     const poly=segPolygon(a,b,sp,
       preview?null:prevB, preview?null:nextA,
-      preview?"miter":joinA, preview?"miter":joinB
+      preview?"miter":joinA, preview?"miter":joinB,
+      winnerSpA, winnerSpB
     );
     const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
     const ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
@@ -832,9 +846,9 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
             <rect x={-9999} y={-9999} width={19998} height={19998} fill="url(#lib-lg)"/>
             <line x1={-9999} y1={0} x2={9999} y2={0} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
             <line x1={0} y1={-9999} x2={0} y2={9999} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
-            {shapes.map(s=>{
-              const {prevB,nextA}=getAdj(s);
-              return renderSeg(s.a,s.b,s.type,s.spessore,false,s.id,prevB,nextA,s.joinA||"miter",s.joinB||"miter");
+            {shapes.map((s:any)=>{
+              const {prevB,nextA,prevSp,nextSp}=getAdj(s);
+              return renderSeg(s.a,s.b,s.type,s.spessore,false,s.id,prevB,nextA,s.joinA||"miter",s.joinB||"miter",prevSp,nextSp);
             })}
             {curPt&&mousePos&&tool!=="select"&&renderSeg(curPt,mousePos,tool==="select"?"muro":tool,spessore,true)}
             {curPt&&<circle cx={curPt.x} cy={curPt.y} r={6/zoom} fill="#dc4444" stroke="#fff" strokeWidth={2/zoom}/>}
