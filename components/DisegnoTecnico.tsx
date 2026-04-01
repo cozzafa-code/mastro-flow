@@ -2022,9 +2022,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* ═══ TAB: 3D ═══ */}
                                 
 
-                                {/* ═══ TAB: LIBERO (Paper.js free drawing) ═══ */}
-                                {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
-
                                 {/* ═══ TAB: LIBERO (Paper.js) ═══ */}
                                 {viewTab === "libero" && <LiberoEditor T={T} realW={realW} realH={realH} />}
 
