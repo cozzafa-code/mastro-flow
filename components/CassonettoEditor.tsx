@@ -119,23 +119,28 @@ export default function CassonettoEditor({ misure, onUpdate, onClose }) {
         {onClose && <div onClick={onClose} style={{color:"rgba(255,255,255,0.6)",fontSize:24,cursor:"pointer",padding:"0 4px"}}>×</div>}
       </div>
 
-      {/* LIBRERIA MATERIALI */}
+      {/* LIBRERIA MATERIALI — collassabile */}
       {showLib && (
-        <div style={{background:"#F8FAFC",borderBottom:"1px solid #E2E8F0",padding:"8px 12px",flexShrink:0}}>
-          <div style={{fontSize:10,fontWeight:800,color:"#1A2B4A",marginBottom:6,textTransform:"uppercase"}}>
-            Modifica spessori materiali
+        <div style={{background:"#F8FAFC",borderBottom:"1px solid #E2E8F0",
+          padding:"6px 10px",flexShrink:0,maxHeight:"35vh",overflowY:"auto"}}>
+          <div style={{fontSize:9,fontWeight:800,color:"#1A2B4A",marginBottom:5,
+            textTransform:"uppercase",letterSpacing:"0.06em"}}>
+            Spessori materiali
           </div>
-          <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
             {mats.map(m=>(
-              <div key={m.id} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 8px",borderRadius:7,
-                border:`1.5px solid ${m.border}`,background:m.color+"50"}}>
-                <div style={{width:10,height:10,borderRadius:2,background:m.color,border:`1px solid ${m.border}`}}/>
-                <span style={{fontSize:10,fontWeight:700,color:"#0F172A"}}>{m.label}</span>
+              <div key={m.id} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 8px",
+                borderRadius:7,border:`1.5px solid ${m.border}`,background:m.color+"50"}}>
+                <div style={{width:10,height:10,borderRadius:2,background:m.color,
+                  border:`1px solid ${m.border}`,flexShrink:0}}/>
+                <span style={{fontSize:11,fontWeight:700,color:"#0F172A",flex:1,minWidth:0,
+                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.label}</span>
                 <input type="number" value={m.sp}
                   onChange={e=>setMats(ms=>ms.map(x=>x.id===m.id?{...x,sp:parseInt(e.target.value)||0}:x))}
-                  style={{width:36,padding:"2px 3px",borderRadius:4,border:"1px solid #E2E8F0",
-                    fontSize:10,fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}/>
-                <span style={{fontSize:9,color:"#64748B"}}>mm</span>
+                  style={{width:38,padding:"3px 4px",borderRadius:5,border:"1px solid #E2E8F0",
+                    fontSize:12,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
+                    textAlign:"center",background:"#fff"}}/>
+                <span style={{fontSize:9,color:"#64748B",flexShrink:0}}>mm</span>
               </div>
             ))}
           </div>
@@ -330,25 +335,40 @@ export default function CassonettoEditor({ misure, onUpdate, onClose }) {
       )}
 
       {/* CAMPI NUMERICI */}
-      <div style={{background:"#fff",borderTop:"1px solid #E2E8F0",padding:"8px 10px",flexShrink:0,
-        display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:5}}>
+      <div style={{background:"#fff",borderTop:"1px solid #E2E8F0",padding:"8px 10px",flexShrink:0}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,marginBottom:5}}>
         {[
           {label:"Larghezza",field:"casL",val:misure.casL},
           {label:"Altezza",  field:"casH",val:misure.casH},
           {label:"Profond.", field:"casP",val:misure.casP},
-          {label:"Ciel. L",  field:"casLCiel",val:misure.casLCiel},
-          {label:"Ciel. P",  field:"casPCiel",val:misure.casPCiel},
         ].map(({label,field,val})=>(
           <div key={field}>
             <div style={{fontSize:9,color:"#64748B",fontWeight:700,marginBottom:2}}>{label}</div>
             <input type="number" inputMode="numeric" value={val||""}
               placeholder="mm"
               onChange={e=>onUpdate(field,parseInt(e.target.value)||0)}
-              style={{width:"100%",padding:"5px 3px",borderRadius:6,border:"1px solid #E2E8F0",
-                fontSize:12,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
+              style={{width:"100%",padding:"6px 3px",borderRadius:6,border:"1px solid #E2E8F0",
+                fontSize:13,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
                 textAlign:"center",background:"#F8FAFC",color:"#1A2B4A",boxSizing:"border-box"}}/>
           </div>
         ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5}}>
+        {[
+          {label:"Cielino Larghezza",field:"casLCiel",val:misure.casLCiel},
+          {label:"Cielino Profondità",field:"casPCiel",val:misure.casPCiel},
+        ].map(({label,field,val})=>(
+          <div key={field}>
+            <div style={{fontSize:9,color:"#64748B",fontWeight:700,marginBottom:2}}>{label}</div>
+            <input type="number" inputMode="numeric" value={val||""}
+              placeholder="mm"
+              onChange={e=>onUpdate(field,parseInt(e.target.value)||0)}
+              style={{width:"100%",padding:"6px 3px",borderRadius:6,border:"1px solid #E2E8F0",
+                fontSize:13,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",
+                textAlign:"center",background:"#F8FAFC",color:"#1A2B4A",boxSizing:"border-box"}}/>
+          </div>
+        ))}
+      </div>
       </div>
     </div>
   );
