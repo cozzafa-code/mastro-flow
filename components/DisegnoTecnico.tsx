@@ -501,7 +501,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const [shapes, setShapes] = React.useState<any[]>([]);
   const [curPt, setCurPt] = React.useState<any>(null);
   const [mousePos, setMousePos] = React.useState<any>(null);
-  const [joinMenu, setJoinMenu] = React.useState<any>(null); // {pt, segA, segB, svgX, svgY}
+  const [joinMenu, setJoinMenu] = React.useState<any>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const isPanRef = React.useRef(false);
   const lastPanPt = React.useRef({x:0,y:0});
@@ -517,16 +517,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     return {
       x: (ct.clientX - r.left) / zoom - pan.x,
       y: (ct.clientY - r.top)  / zoom - pan.y,
-    };
-  }
-
-  // Converti coord SVG → schermo per il popup
-  function toScreen(svgX:number, svgY:number) {
-    const svg = svgRef.current; if (!svg) return {x:0,y:0};
-    const r = svg.getBoundingClientRect();
-    return {
-      x: (svgX + pan.x) * zoom + r.left,
-      y: (svgY + pan.y) * zoom + r.top,
     };
   }
 
@@ -556,98 +546,76 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   function lineIntersect(p1:any,d1:any,p2:any,d2:any) {
     const cross = d1.x*d2.y - d1.y*d2.x;
     if (Math.abs(cross)<0.001) return null;
-    const dx=p2.x-p1.x, dy=p2.y-p1.y;
-    const t=(dx*d2.y - dy*d2.x)/cross;
+    const t=((p2.x-p1.x)*d2.y-(p2.y-p1.y)*d2.x)/cross;
     return {x:p1.x+d1.x*t, y:p1.y+d1.y*t};
   }
 
-  function segPolygon(a:any, b:any, sp:number, prevB:any=null, nextA:any=null,
-                      joinAtA:string="miter", joinAtB:string="miter") {
+  // Genera poligono segmento con miter join agli angoli
+  // joinAtA/joinAtB: "miter" | "wins" (si estende) | "loses" (taglio dritto)
+  function segPolygon(a:any, b:any, sp:number,
+    prevB:any=null, nextA:any=null,
+    joinAtA="miter", joinAtB="miter") {
     const sp2 = sp*scale*0.5;
     const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
     const ux=dx/len, uy=dy/len;
     const nx=-uy, ny=ux;
 
+    // Punti base (taglio dritto)
     let aL={x:a.x+nx*sp2, y:a.y+ny*sp2};
     let aR={x:a.x-nx*sp2, y:a.y-ny*sp2};
     let bL={x:b.x+nx*sp2, y:b.y+ny*sp2};
     let bR={x:b.x-nx*sp2, y:b.y-ny*sp2};
 
-    // Lato A
+    // Lato A (connessione col segmento precedente)
     if (prevB) {
-      const pdx=a.x-prevB.x, pdy=a.y-prevB.y, plen=Math.hypot(pdx,pdy)||1;
-      const pux=pdx/plen, puy=pdy/plen;
+      const pdx=a.x-prevB.x, pdy=a.y-prevB.y, pl=Math.hypot(pdx,pdy)||1;
+      const pux=pdx/pl, puy=pdy/pl;
       const pnx=-puy, pny=pux;
-      const prevSp2 = sp2; // stesso spessore per ora
 
       if (joinAtA==="miter") {
-        // Miter: intersezione pareti
-        const iL=lineIntersect({x:prevB.x+pnx*prevSp2,y:prevB.y+pny*prevSp2},{x:pux,y:puy},aL,{x:ux,y:uy});
-        if(iL) aL=iL;
-        const iR=lineIntersect({x:prevB.x-pnx*prevSp2,y:prevB.y-pny*prevSp2},{x:pux,y:puy},aR,{x:ux,y:uy});
-        if(iR) aR=iR;
+        // Intersezione geometrica delle due pareti
+        const iL=lineIntersect(
+          {x:prevB.x+pnx*sp2,y:prevB.y+pny*sp2},{x:pux,y:puy},
+          {x:a.x+nx*sp2,y:a.y+ny*sp2},{x:ux,y:uy}
+        );
+        if(iL&&isFinite(iL.x)) aL=iL;
+        const iR=lineIntersect(
+          {x:prevB.x-pnx*sp2,y:prevB.y-pny*sp2},{x:pux,y:puy},
+          {x:a.x-nx*sp2,y:a.y-ny*sp2},{x:ux,y:uy}
+        );
+        if(iR&&isFinite(iR.x)) aR=iR;
       } else if (joinAtA==="wins") {
-        // Questo segmento vince: si estende oltre il punto di sp2 nella direzione del prev
-        aL={x:a.x+nx*sp2 - pux*prevSp2, y:a.y+ny*sp2 - puy*prevSp2};
-        aR={x:a.x-nx*sp2 - pux*prevSp2, y:a.y-ny*sp2 - puy*prevSp2};
-      } else if (joinAtA==="loses") {
-        // Questo segmento perde: si ferma al bordo esterno del vincitore
-        // Bordo esterno prev = linea perpendicolare a prevB offset di sp2 verso questo seg
-        const stopX = a.x - pux*0; // si ferma al punto A (bordo del vincitore)
-        aL={x:stopX+nx*sp2, y:a.y+ny*sp2};
-        aR={x:stopX-nx*sp2, y:a.y-ny*sp2};
+        // Vince: si estende di sp2 nel verso opposto (copre il perdente)
+        aL={x:a.x+nx*sp2-ux*sp2, y:a.y+ny*sp2-uy*sp2};
+        aR={x:a.x-nx*sp2-ux*sp2, y:a.y-ny*sp2-uy*sp2};
       }
+      // loses: rimane taglio dritto (già impostato)
     }
 
-    // Lato B
+    // Lato B (connessione col segmento successivo)
     if (nextA) {
-      const ndx=nextA.x-b.x, ndy=nextA.y-b.y, nlen=Math.hypot(ndx,ndy)||1;
-      const nux=ndx/nlen, nuy=ndy/nlen;
+      const ndx=nextA.x-b.x, ndy=nextA.y-b.y, nl=Math.hypot(ndx,ndy)||1;
+      const nux=ndx/nl, nuy=ndy/nl;
       const nnx=-nuy, nny=nux;
-      const nextSp2 = sp2;
 
       if (joinAtB==="miter") {
-        const iL=lineIntersect(bL,{x:ux,y:uy},{x:b.x+nnx*nextSp2,y:b.y+nny*nextSp2},{x:nux,y:nuy});
-        if(iL) bL=iL;
-        const iR=lineIntersect(bR,{x:ux,y:uy},{x:b.x-nnx*nextSp2,y:b.y-nny*nextSp2},{x:nux,y:nuy});
-        if(iR) bR=iR;
+        const iL=lineIntersect(
+          {x:b.x+nx*sp2,y:b.y+ny*sp2},{x:ux,y:uy},
+          {x:b.x+nnx*sp2,y:b.y+nny*sp2},{x:nux,y:nuy}
+        );
+        if(iL&&isFinite(iL.x)) bL=iL;
+        const iR=lineIntersect(
+          {x:b.x-nx*sp2,y:b.y-ny*sp2},{x:ux,y:uy},
+          {x:b.x-nnx*sp2,y:b.y-nny*sp2},{x:nux,y:nuy}
+        );
+        if(iR&&isFinite(iR.x)) bR=iR;
       } else if (joinAtB==="wins") {
-        // Questo segmento vince: si estende oltre B nella direzione del next
-        bL={x:b.x+nx*sp2 + nux*nextSp2, y:b.y+ny*sp2 + nuy*nextSp2};
-        bR={x:b.x-nx*sp2 + nux*nextSp2, y:b.y-ny*sp2 + nuy*nextSp2};
-      } else if (joinAtB==="loses") {
-        // Questo segmento perde: si ferma al punto B
-        bL={x:b.x+nx*sp2, y:b.y+ny*sp2};
-        bR={x:b.x-nx*sp2, y:b.y-ny*sp2};
+        bL={x:b.x+nx*sp2+ux*sp2, y:b.y+ny*sp2+uy*sp2};
+        bR={x:b.x-nx*sp2+ux*sp2, y:b.y-ny*sp2+uy*sp2};
       }
     }
 
     return `${aL.x},${aL.y} ${bL.x},${bL.y} ${bR.x},${bR.y} ${aR.x},${aR.y}`;
-  }
-
-  // Trova giunzione vicino al punto cliccato
-  function findJoin(pt: any) {
-    const tol = 20/zoom;
-    for (let i=0; i<shapes.length; i++) {
-      for (let j=i+1; j<shapes.length; j++) {
-        const si=shapes[i], sj=shapes[j];
-        const pts = [
-          {pt:si.a, si, sj, endSi:"a", endSj:null},
-          {pt:si.b, si, sj, endSi:"b", endSj:null},
-        ];
-        for (const ep of [sj.a, sj.b]) {
-          for (const ep2 of [si.a, si.b]) {
-            if (Math.hypot(ep.x-ep2.x,ep.y-ep2.y)<2 &&
-                Math.hypot(pt.x-ep.x,pt.y-ep.y)<tol) {
-              return {jPt:ep, segA:si, segB:sj,
-                endA: Math.hypot(si.a.x-ep.x,si.a.y-ep.y)<2?"a":"b",
-                endB: Math.hypot(sj.a.x-ep.x,sj.a.y-ep.y)<2?"a":"b"};
-            }
-          }
-        }
-      }
-    }
-    return null;
   }
 
   function onDown(e: any) {
@@ -661,30 +629,25 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
       return;
     }
+    const svgPt2 = toSvg(e);
+    const pt = snapPt(svgPt2);
 
-    const svgPt = toSvg(e);
-    const pt = snapPt(svgPt);
-
-    // Tool select: cerca giunzione
     if (tool==="select") {
-      const join = findJoin(svgPt);
+      const join = findJoin(svgPt2);
       if (join) {
-        const screen = toScreen(join.jPt.x, join.jPt.y);
-        setJoinMenu({...join, screenX:screen.x, screenY:screen.y});
-      } else {
-        setJoinMenu(null);
-      }
+        const r = svgRef.current!.getBoundingClientRect();
+        setJoinMenu({...join,
+          screenX:(join.jPt.x+pan.x)*zoom,
+          screenY:(join.jPt.y+pan.y)*zoom,
+        });
+      } else setJoinMenu(null);
       return;
     }
-
-    // Chiudi joinMenu se aperto
     setJoinMenu(null);
-
     if (!curPt) { setCurPt(pt); }
     else {
-      if (segLen(curPt,pt)>4) {
+      if (segLen(curPt,pt)>4)
         setShapes(s=>[...s,{id:Date.now(),type:tool,a:curPt,b:pt,spessore,joinA:"miter",joinB:"miter"}]);
-      }
       setCurPt(pt);
     }
   }
@@ -706,7 +669,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
   function onUp() { isPanRef.current=false; lastPinch.current=null; }
   function onDblClick() { if(tool!=="select") setCurPt(null); }
-
   function onWheel(e: any) {
     e.preventDefault();
     const nz=Math.max(0.1,Math.min(8,zoom*(e.deltaY<0?1.12:0.89)));
@@ -715,7 +677,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     setPan(p=>({x:p.x-mx*(1-zoom/nz),y:p.y-my*(1-zoom/nz)}));
     setZoom(nz);
   }
-
   function onKeyDown(e: any) {
     if (e.key==="Escape") { setCurPt(null); setJoinMenu(null); }
     if ((e.key==="z"||e.key==="Z")&&(e.ctrlKey||e.metaKey)) {
@@ -723,86 +684,91 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     }
   }
 
-  // Applica la scelta del join
+  function findJoin(pt: any) {
+    const tol = 20/zoom;
+    for(let i=0;i<shapes.length;i++) {
+      for(let j=i+1;j<shapes.length;j++) {
+        const si=shapes[i], sj=shapes[j];
+        for(const pi of [si.a,si.b]) {
+          for(const pj of [sj.a,sj.b]) {
+            if(Math.hypot(pi.x-pj.x,pi.y-pj.y)<2 && Math.hypot(pt.x-pi.x,pt.y-pi.y)<tol) {
+              return {
+                jPt:pi, segA:si, segB:sj,
+                endA:Math.hypot(si.a.x-pi.x,si.a.y-pi.y)<2?"a":"b",
+                endB:Math.hypot(sj.a.x-pi.x,sj.a.y-pi.y)<2?"a":"b"
+              };
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   function applyJoin(winner: "A"|"B") {
     if(!joinMenu) return;
-    const {segA, segB, endA, endB} = joinMenu;
+    const {segA,segB,endA,endB}=joinMenu;
     setShapes(s=>s.map(sh=>{
-      if(sh.id===segA.id) {
-        const key = endA==="a"?"joinA":"joinB";
-        return {...sh, [key]: winner==="A"?"wins":"loses"};
-      }
-      if(sh.id===segB.id) {
-        const key = endB==="a"?"joinA":"joinB";
-        return {...sh, [key]: winner==="B"?"wins":"loses"};
-      }
+      if(sh.id===segA.id) return {...sh,[endA==="a"?"joinA":"joinB"]:winner==="A"?"wins":"loses"};
+      if(sh.id===segB.id) return {...sh,[endB==="a"?"joinA":"joinB"]:winner==="B"?"wins":"loses"};
       return sh;
     }));
     setJoinMenu(null);
   }
 
   function getAdj(s:any) {
-    const same = shapes.filter(x=>x.id!==s.id&&x.type===s.type);
-    const prevSeg = same.find(x=>Math.hypot(x.b.x-s.a.x,x.b.y-s.a.y)<2||Math.hypot(x.a.x-s.a.x,x.a.y-s.a.y)<2);
-    const nextSeg = same.find(x=>Math.hypot(x.a.x-s.b.x,x.a.y-s.b.y)<2||Math.hypot(x.b.x-s.b.x,x.b.y-s.b.y)<2);
-    const prevB = prevSeg?(Math.hypot(prevSeg.b.x-s.a.x,prevSeg.b.y-s.a.y)<2?prevSeg.a:prevSeg.b):null;
-    const nextA = nextSeg?(Math.hypot(nextSeg.a.x-s.b.x,nextSeg.a.y-s.b.y)<2?nextSeg.b:nextSeg.a):null;
-    return {prevB, nextA};
+    const same=shapes.filter(x=>x.id!==s.id&&x.type===s.type);
+    const prevSeg=same.find(x=>Math.hypot(x.b.x-s.a.x,x.b.y-s.a.y)<2||Math.hypot(x.a.x-s.a.x,x.a.y-s.a.y)<2);
+    const nextSeg=same.find(x=>Math.hypot(x.a.x-s.b.x,x.a.y-s.b.y)<2||Math.hypot(x.b.x-s.b.x,x.b.y-s.b.y)<2);
+    return {
+      prevB:prevSeg?(Math.hypot(prevSeg.b.x-s.a.x,prevSeg.b.y-s.a.y)<2?prevSeg.a:prevSeg.b):null,
+      nextA:nextSeg?(Math.hypot(nextSeg.a.x-s.b.x,nextSeg.a.y-s.b.y)<2?nextSeg.b:nextSeg.a):null,
+    };
   }
 
-  function renderSeg(a:any, b:any, type:string, sp:number, preview=false, id:any=null,
-                     prevB:any=null, nextA:any=null, joinA="miter", joinB="miter") {
-    const col = type==="oggetto"?"#3B7FE0":"#1A2B4A";
-    const fillCol = type==="oggetto"?"rgba(59,127,224,0.12)":"rgba(26,43,74,0.14)";
+  function renderSeg(a:any,b:any,type:string,sp:number,preview=false,id:any=null,
+    prevB:any=null,nextA:any=null,joinA="miter",joinB="miter") {
+    const col=type==="oggetto"?"#3B7FE0":"#1A2B4A";
+    const fill=type==="oggetto"?"rgba(59,127,224,0.12)":"rgba(26,43,74,0.14)";
     const len=segLen(a,b);
-    // Per "loses": usa taglio dritto (nessun miter), per "wins": estendi oltre
-    const jA = joinA==="miter"?"miter":joinA==="wins"?"miter":"butt";
-    const jB = joinB==="miter"?"miter":joinB==="wins"?"miter":"butt";
-    const poly = segPolygon(a,b,sp,prevB,nextA,joinA,joinB);
+    const poly=segPolygon(a,b,sp,
+      preview?null:prevB, preview?null:nextA,
+      preview?"miter":joinA, preview?"miter":joinB
+    );
     const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
     const ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
     const fixAng=Math.abs(ang)>90?ang+180:ang;
     return (
       <g key={id||"prev"}>
         <polygon points={poly}
-          fill={preview?fillCol.replace("0.12","0.04").replace("0.14","0.04"):fillCol}
-          stroke={col} strokeWidth={preview?"1":"1.5"} strokeLinejoin="miter" strokeMiterlimit="20"/>
+          fill={preview?fill.replace("0.12","0.04").replace("0.14","0.04"):fill}
+          stroke={col} strokeWidth={preview?"1":"1.5"} strokeLinejoin="miter" strokeMiterlimit="10"/>
         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-          stroke={type==="oggetto"?"#93C5FD":"#94A3B8"}
-          strokeWidth="0.5" strokeDasharray="5,4"/>
-        {!preview&&len>15&&(
-          <g>
-            <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3"
-              fill={type==="oggetto"?"rgba(59,127,224,0.9)":"rgba(26,43,74,0.9)"}/>
-            <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
-              transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
-          </g>
-        )}
+          stroke={type==="oggetto"?"#93C5FD":"#94A3B8"} strokeWidth="0.5" strokeDasharray="5,4"/>
+        {!preview&&len>15&&<g>
+          <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3"
+            fill={type==="oggetto"?"rgba(59,127,224,0.9)":"rgba(26,43,74,0.9)"}/>
+          <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
+            transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
+        </g>}
       </g>
     );
   }
 
-  // Punti di giunzione visibili in modalità select
-  const joinPoints = React.useMemo(()=>{
+  const joinPoints=React.useMemo(()=>{
     const pts:any[]=[];
-    for(let i=0;i<shapes.length;i++){
-      for(let j=i+1;j<shapes.length;j++){
+    for(let i=0;i<shapes.length;i++)
+      for(let j=i+1;j<shapes.length;j++) {
         const si=shapes[i],sj=shapes[j];
-        for(const pi of [si.a,si.b]){
-          for(const pj of [sj.a,sj.b]){
-            if(Math.hypot(pi.x-pj.x,pi.y-pj.y)<2){
-              pts.push({x:pi.x,y:pi.y,si,sj});
-            }
-          }
-        }
+        for(const pi of [si.a,si.b])
+          for(const pj of [sj.a,sj.b])
+            if(Math.hypot(pi.x-pj.x,pi.y-pj.y)<2) pts.push({x:pi.x,y:pi.y});
       }
-    }
     return pts;
   },[shapes]);
 
-  const liveLen = curPt&&mousePos&&tool!=="select" ? lenLabel(segLen(curPt,mousePos)) : "";
-  const col = tool==="muro"?"#1A2B4A":tool==="oggetto"?"#3B7FE0":"#D08008";
-
+  const liveLen=curPt&&mousePos&&tool!=="select"?lenLabel(segLen(curPt,mousePos)):"";
+  const col=tool==="muro"?"#1A2B4A":tool==="oggetto"?"#3B7FE0":"#D08008";
   const bs2=(on=false,c="#031631")=>({
     padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,
     background:on?c:"#fff",color:on?"#fff":"#44474d",
@@ -812,8 +778,6 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   return (
     <div style={{display:"flex",flexDirection:"column",flex:1,minHeight:0,outline:"none"}}
       tabIndex={0} onKeyDown={onKeyDown}>
-
-      {/* TOOLBAR */}
       <div style={{display:"flex",gap:5,padding:"7px 10px",flexWrap:"wrap",alignItems:"center",
         background:"#fff",borderBottom:"1px solid rgba(197,198,206,0.3)",flexShrink:0}}>
         <div onClick={()=>{setTool("muro");setCurPt(null);setJoinMenu(null);}} style={bs2(tool==="muro","#1A2B4A")}>▬ Muro</div>
@@ -834,22 +798,16 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         <div onClick={()=>{if(curPt)setCurPt(null);else setShapes(s=>s.slice(0,-1));}} style={bs2()}>↩</div>
         <div onClick={()=>{setShapes([]);setCurPt(null);setJoinMenu(null);}} style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
       </div>
-
-      {/* HINT */}
       <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 12px",
         background:"#F8FAFC",borderBottom:"1px solid rgba(197,198,206,0.2)",flexShrink:0}}>
         <span style={{fontSize:10,color:"#64748B",fontWeight:500}}>
-          {tool==="select"
-            ?"Tap su un angolo (punto arancione) per scegliere quale lato vince"
-            :!curPt
-            ?`Clic punto iniziale ${tool}`
-            :"Clic punto finale · continua · Doppio clic per fermare"}
+          {tool==="select"?"Tap punto arancione → scegli lato vincente"
+           :!curPt?`Clic punto iniziale ${tool}`
+           :"Clic punto finale · continua · Doppio clic per fermare"}
         </span>
         {liveLen&&<span style={{fontSize:13,fontWeight:800,color:col,
           background:"#EFF8FF",padding:"2px 10px",borderRadius:6,marginLeft:"auto"}}>{liveLen}</span>}
       </div>
-
-      {/* SVG */}
       <div style={{flex:1,minHeight:0,position:"relative"}}>
         <svg ref={svgRef}
           style={{width:"100%",height:"100%",display:"block",background:"#F9F9FB",
@@ -872,72 +830,54 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
             <rect x={-9999} y={-9999} width={19998} height={19998} fill="url(#lib-lg)"/>
             <line x1={-9999} y1={0} x2={9999} y2={0} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
             <line x1={0} y1={-9999} x2={0} y2={9999} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
-
-            {/* Segmenti */}
             {shapes.map(s=>{
               const {prevB,nextA}=getAdj(s);
               return renderSeg(s.a,s.b,s.type,s.spessore,false,s.id,prevB,nextA,s.joinA||"miter",s.joinB||"miter");
             })}
-
-            {/* Preview */}
             {curPt&&mousePos&&tool!=="select"&&renderSeg(curPt,mousePos,tool==="select"?"muro":tool,spessore,true)}
-
-            {/* Punto attivo */}
             {curPt&&<circle cx={curPt.x} cy={curPt.y} r={6/zoom} fill="#dc4444" stroke="#fff" strokeWidth={2/zoom}/>}
-
-            {/* Punti di giunzione in modalità select */}
-            {tool==="select"&&joinPoints.map((jp,i)=>(
+            {tool==="select"&&joinPoints.map((jp:any,i:number)=>(
               <circle key={i} cx={jp.x} cy={jp.y} r={8/zoom}
                 fill={joinMenu&&Math.hypot(joinMenu.jPt.x-jp.x,joinMenu.jPt.y-jp.y)<2?"#dc4444":"#D08008"}
                 stroke="#fff" strokeWidth={2/zoom} style={{cursor:"pointer"}}/>
             ))}
-
             {mousePos&&tool!=="select"&&<circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
               stroke={col} strokeWidth={1/zoom} fill="rgba(59,127,224,0.2)"/>}
           </g>
         </svg>
 
-        {/* POPUP SCELTA JOIN */}
-        {joinMenu&&(()=>{
-          const r = svgRef.current?.getBoundingClientRect();
-          if(!r) return null;
-          const px=(joinMenu.jPt.x+pan.x)*zoom+r.left-r.left;
-          const py=(joinMenu.jPt.y+pan.y)*zoom+r.top-r.top;
-          return (
-            <div style={{
-              position:"absolute",
-              left: (joinMenu.jPt.x+pan.x)*zoom - 70,
-              top:  (joinMenu.jPt.y+pan.y)*zoom - 90,
-              background:"#fff",borderRadius:12,
-              boxShadow:"0 4px 20px rgba(0,0,0,0.15)",
-              border:"1px solid #E2E8F0",
-              padding:"10px",zIndex:100,
-              width:150,
-            }}>
-              <div style={{fontSize:10,fontWeight:800,color:"#1A2B4A",marginBottom:8,textAlign:"center"}}>
-                Chi vince l'angolo?
+        {joinMenu&&(
+          <div style={{
+            position:"absolute",
+            left:Math.min(joinMenu.screenX-70, 200),
+            top:Math.max(joinMenu.screenY-100, 10),
+            background:"#fff",borderRadius:12,padding:"12px",
+            boxShadow:"0 4px 20px rgba(0,0,0,0.18)",
+            border:"1px solid #E2E8F0",zIndex:100,width:160,
+          }}>
+            <div style={{fontSize:11,fontWeight:800,color:"#1A2B4A",marginBottom:10,textAlign:"center"}}>
+              Chi vince l'angolo?
+            </div>
+            <div style={{display:"flex",gap:8,marginBottom:8}}>
+              <div onClick={()=>applyJoin("A")}
+                style={{flex:1,padding:"10px 4px",borderRadius:8,cursor:"pointer",textAlign:"center",
+                  background:"rgba(26,43,74,0.08)",border:"2px solid #1A2B4A"}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#1A2B4A"}}>A</div>
+                <div style={{fontSize:9,color:"#64748B",marginTop:2}}>passa sopra</div>
               </div>
-              <div style={{display:"flex",gap:6}}>
-                <div onClick={()=>applyJoin("A")}
-                  style={{flex:1,padding:"8px 4px",borderRadius:8,cursor:"pointer",textAlign:"center",
-                    background:"rgba(26,43,74,0.1)",border:"1.5px solid #1A2B4A"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#1A2B4A"}}>Lato A</div>
-                  <div style={{fontSize:8,color:"#64748B",marginTop:2}}>passa sopra</div>
-                </div>
-                <div onClick={()=>applyJoin("B")}
-                  style={{flex:1,padding:"8px 4px",borderRadius:8,cursor:"pointer",textAlign:"center",
-                    background:"rgba(59,127,224,0.1)",border:"1.5px solid #3B7FE0"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#3B7FE0"}}>Lato B</div>
-                  <div style={{fontSize:8,color:"#64748B",marginTop:2}}>passa sopra</div>
-                </div>
-              </div>
-              <div onClick={()=>setJoinMenu(null)}
-                style={{marginTop:6,textAlign:"center",fontSize:10,color:"#94A3B8",cursor:"pointer"}}>
-                Annulla
+              <div onClick={()=>applyJoin("B")}
+                style={{flex:1,padding:"10px 4px",borderRadius:8,cursor:"pointer",textAlign:"center",
+                  background:"rgba(59,127,224,0.08)",border:"2px solid #3B7FE0"}}>
+                <div style={{fontSize:12,fontWeight:800,color:"#3B7FE0"}}>B</div>
+                <div style={{fontSize:9,color:"#64748B",marginTop:2}}>passa sopra</div>
               </div>
             </div>
-          );
-        })()}
+            <div onClick={()=>setJoinMenu(null)}
+              style={{textAlign:"center",fontSize:10,color:"#94A3B8",cursor:"pointer"}}>
+              Annulla · ripristina miter
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
