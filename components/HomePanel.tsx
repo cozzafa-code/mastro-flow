@@ -83,7 +83,7 @@ export default function HomePanel() {
   };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: "#f9f9fb", minHeight: "100%", paddingBottom: 100 }}>
+    <div style={{ fontFamily:"'Inter',sans-serif", backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", minHeight:"100%", paddingBottom:100 }}>
 
       {/* ══ HEADER ══════════════════════════════════════════════ */}
       <div style={{ padding: "28px 20px 0" }}>
@@ -97,62 +97,48 @@ export default function HomePanel() {
 
       {/* ══ ADESSO ══════════════════════════════════════════════ */}
       {adesso && (
-        <div onClick={adesso.action} style={{
-          margin: "20px 20px 0",
-          background: "#ffffff",
-          borderRadius: 20,
-          border: "1px solid rgba(197,198,206,0.3)",
-          boxShadow: "0 2px 12px rgba(26,28,29,0.06)",
-          overflow: "hidden",
-          cursor: "pointer",
-          display: "flex",
-        }}>
-          <div style={{ width: 4, background: adesso.color, flexShrink: 0 }} />
-          <div style={{ padding: "16px 16px 16px 18px", flex: 1, display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: 0, fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: adesso.color }}>Adesso</p>
-              <p style={{ margin: "5px 0 0", fontSize: 16, fontWeight: 700, color: "#1a1c1d", letterSpacing: "-0.01em" }}>{adesso.titolo}</p>
-              <p style={{ margin: "3px 0 0", fontSize: 12, color: "#44474d" }}>{adesso.sotto}</p>
+        <div onClick={adesso.action} style={{ margin:"14px 14px 0", background:"white", borderRadius:18, border:`1.5px solid ${adesso.color}40`, boxShadow:`0 6px 0 0 ${adesso.color}30`, overflow:"hidden", cursor:"pointer", display:"flex" }}>
+          <div style={{ width:5, background:adesso.color, flexShrink:0, boxShadow:`2px 0 8px ${adesso.color}40` }} />
+          <div style={{ padding:"14px 16px 14px 16px", flex:1, display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ flex:1 }}>
+              <p style={{ margin:0, fontSize:9, fontWeight:900, letterSpacing:"0.12em", textTransform:"uppercase", color:adesso.color }}>Adesso</p>
+              <p style={{ margin:"5px 0 0", fontSize:16, fontWeight:900, color:"#0D1F1F", letterSpacing:"-0.02em" }}>{adesso.titolo}</p>
+              <p style={{ margin:"3px 0 0", fontSize:12, fontWeight:700, color:"#4A7070" }}>{adesso.sotto}</p>
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#75777e" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A7070" strokeWidth="2.2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>
       )}
 
-      {/* ══ CALENDARIO ══════════════════════════════════════════ */}
-      <div style={{ margin: "24px 20px 0" }}>
+      {/* fliwoX CALENDARIO */}
+      <div style={{ margin:"14px 14px 0", background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", boxShadow:"0 7px 0 0 #A8CCCC", padding:"14px 14px 10px" }}>
         {/* Mese + nav */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button onClick={() => setWeekOffset(w => w - 1)} style={{ width: 30, height: 30, borderRadius: "50%", border: "none", background: "#eeeef0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#44474d" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <button onClick={() => setWeekOffset(w => w - 1)} style={{ width:34, height:34, borderRadius:10, border:"1.5px solid #C8E4E4", background:"#EEF8F8", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 0 0 #A8CCCC" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <span style={{ fontSize: 18, fontWeight: 700, color: "#1a1c1d", letterSpacing: "-0.02em" }}>{wMonth} {wYear}</span>
-            <button onClick={() => setWeekOffset(w => w + 1)} style={{ width: 30, height: 30, borderRadius: "50%", border: "none", background: "#eeeef0", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#44474d" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <span style={{ fontSize:17, fontWeight:900, color:"#0D1F1F", letterSpacing:"-0.02em" }}>{wMonth} {wYear}</span>
+            <button onClick={() => setWeekOffset(w => w + 1)} style={{ width:34, height:34, borderRadius:10, border:"1.5px solid #C8E4E4", background:"#EEF8F8", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 0 0 #A8CCCC" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
-          {weekOffset !== 0 && <button onClick={() => { setWeekOffset(0); setDayOffset(0); }} style={{ border: "none", background: "none", fontSize: 12, fontWeight: 700, color: "#031631", cursor: "pointer", letterSpacing: "0.04em" }}>Oggi</button>}
+          {weekOffset !== 0 && <button onClick={() => { setWeekOffset(0); setDayOffset(0); }} style={{ border:"none", background:"rgba(40,160,160,0.1)", borderRadius:20, padding:"5px 12px", fontSize:12, fontWeight:900, color:"#28A0A0", cursor:"pointer" }}>Oggi</button>}
         </div>
 
-        {/* Griglia giorni */}
-        <div onTouchStart={onTS} onTouchEnd={onTE} style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
+        {/* fliwoX Griglia giorni */}
+        <div onTouchStart={onTS} onTouchEnd={onTE} style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4 }}>
           {week.map((d) => {
             const isSel = d.iso === selISO;
             return (
-              <div key={d.iso} onClick={() => setDayOffset(d.off)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer" }}>
-                <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", color: d.isWe ? "#e4c18c" : "#75777e" }}>{DN[(d.d.getDay() + 6) % 7]}</span>
-                <div style={{
-                  width: 36, height: 36, borderRadius: "50%",
-                  background: isSel ? "#031631" : d.isToday ? "#031631" + "15" : "transparent",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "all 0.15s",
-                }}>
-                  <span style={{ fontSize: 15, fontWeight: isSel || d.isToday ? 800 : 400, color: isSel ? "#ffffff" : d.isToday ? "#031631" : "#1a1c1d" }}>{d.day}</span>
+              <div key={d.iso} onClick={() => setDayOffset(d.off)} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:5, cursor:"pointer" }}>
+                <span style={{ fontSize:10, fontWeight:900, letterSpacing:"0.06em", color:d.isWe ? "#D08008" : "#4A7070" }}>{DN[(d.d.getDay() + 6) % 7]}</span>
+                <div style={{ width:34, height:34, borderRadius:isSel ? 10 : "50%", background:isSel ? "#28A0A0" : d.isToday ? "rgba(40,160,160,0.12)" : "transparent", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:isSel ? "0 4px 0 0 #156060" : "none" }}>
+                  <span style={{ fontSize:14, fontWeight:isSel || d.isToday ? 900 : 600, color:isSel ? "white" : d.isToday ? "#28A0A0" : "#0D1F1F" }}>{d.day}</span>
                 </div>
-                <div style={{ height: 4, display: "flex", gap: 2 }}>
+                <div style={{ height:5, display:"flex", gap:2 }}>
                   {d.evts > 0 && [...Array(Math.min(d.evts, 3))].map((_, i) => (
-                    <div key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: isSel ? "#8293b4" : "#031631" }} />
+                    <div key={i} style={{ width:4, height:4, borderRadius:"50%", background:isSel ? "white" : "#28A0A0" }} />
                   ))}
                 </div>
               </div>
@@ -160,157 +146,143 @@ export default function HomePanel() {
           })}
         </div>
 
-        {/* Eventi giorno selezionato */}
+        {/* fliwoX eventi giorno */}
         {selEvents.length > 0 && (
-          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ marginTop:12, display:"flex", flexDirection:"column", gap:7 }}>
             {selEvents.map(ev => (
-              <div key={ev.id} onClick={() => setSelectedEvent(ev)} style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "14px 16px", background: "#ffffff", borderRadius: 16,
-                border: "1px solid rgba(197,198,206,0.3)",
-                boxShadow: "0 1px 4px rgba(26,28,29,0.05)",
-                cursor: "pointer",
-              }}>
-                <div style={{ width: 3, height: 36, borderRadius: 2, background: ev.color || "#031631", flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#1a1c1d" }}>{ev.text}</p>
-                  {(ev.persona || ev.luogo) && <p style={{ margin: "3px 0 0", fontSize: 11, color: "#44474d" }}>{[ev.persona, ev.luogo].filter(Boolean).join(" · ")}</p>}
+              <div key={ev.id} onClick={() => setSelectedEvent(ev)} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px", background:"#EEF8F8", borderRadius:12, border:"1.5px solid #C8E4E4", boxShadow:"0 3px 0 0 #A8CCCC", cursor:"pointer" }}>
+                <div style={{ width:4, height:34, borderRadius:2, background:ev.color || "#28A0A0", flexShrink:0, boxShadow:`0 2px 0 0 ${ev.color || "#156060"}` }} />
+                <div style={{ flex:1 }}>
+                  <p style={{ margin:0, fontSize:14, fontWeight:900, color:"#0D1F1F" }}>{ev.text}</p>
+                  {(ev.persona || ev.luogo) && <p style={{ margin:"2px 0 0", fontSize:11, fontWeight:700, color:"#4A7070" }}>{[ev.persona, ev.luogo].filter(Boolean).join(" · ")}</p>}
                 </div>
-                {ev.time && <span style={{ fontSize: 13, fontWeight: 700, color: "#44474d", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>{ev.time}</span>}
+                {ev.time && <span style={{ fontSize:13, fontWeight:900, color:"#28A0A0", fontFamily:"'JetBrains Mono',monospace", flexShrink:0 }}>{ev.time}</span>}
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* ══ PIPELINE ════════════════════════════════════════════ */}
-      <div style={{ margin: "24px 20px 0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#75777e" }}>Pipeline</span>
-          <span onClick={() => setTab("commesse")} style={{ fontSize: 12, fontWeight: 700, color: "#031631", cursor: "pointer" }}>{totAttive} attive →</span>
+      {/* fliwoX PIPELINE */}
+      <div style={{ margin:"14px 14px 0", background:"white", borderRadius:18, border:"1.5px solid #C8E4E4", boxShadow:"0 7px 0 0 #A8CCCC", padding:"14px 14px 12px" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <span style={{ fontSize:10, fontWeight:900, letterSpacing:"0.12em", textTransform:"uppercase", color:"#4A7070" }}>Pipeline commesse</span>
+          <span onClick={() => setTab("commesse")} style={{ fontSize:12, fontWeight:900, color:"#28A0A0", cursor:"pointer", padding:"4px 10px", borderRadius:20, background:"rgba(40,160,160,0.1)", boxShadow:"0 2px 0 0 rgba(40,160,160,0.3)" }}>{totAttive} attive →</span>
         </div>
-        <div style={{ display: "flex", height: 36, borderRadius: 12, overflow: "hidden", gap: 3 }}>
-          {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => (
-            <div key={f.id} onClick={() => { setFilterFase(f.id); setTab("commesse"); }}
-              style={{ flex: Math.max(faseCounts[f.id], 1), background: f.color, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 10, minWidth: 28 }}>
-              <span style={{ fontSize: 12, fontWeight: 800, color: "#fff", fontFamily: "'JetBrains Mono', monospace" }}>{faseCounts[f.id]}</span>
-            </div>
-          ))}
+        <div style={{ display:"flex", height:38, borderRadius:12, overflow:"hidden", gap:3 }}>
+          {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => {
+            const clr = PIPE_CLR[f.id] || f.color || "#28A0A0";
+            return (
+              <div key={f.id} onClick={() => { setFilterFase(f.id); setTab("commesse"); }}
+                style={{ flex:Math.max(faseCounts[f.id],1), background:clr, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", borderRadius:10, minWidth:32, boxShadow:`0 4px 0 0 ${clr}80` }}>
+                <span style={{ fontSize:13, fontWeight:900, color:"white", fontFamily:"'JetBrains Mono',monospace" }}>{faseCounts[f.id]}</span>
+              </div>
+            );
+          })}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-          {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => (
-            <div key={f.id} onClick={() => { setFilterFase(f.id); setTab("commesse"); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 9999, background: f.color + "14", cursor: "pointer" }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: f.color }} />
-              <span style={{ fontSize: 10, fontWeight: 600, color: "#44474d" }}>{f.nome}</span>
-              <span style={{ fontSize: 10, fontWeight: 800, color: f.color, fontFamily: "'JetBrains Mono', monospace" }}>{faseCounts[f.id]}</span>
-            </div>
-          ))}
+        <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:10 }}>
+          {pipelineFasi.filter(f => faseCounts[f.id] > 0).map(f => {
+            const clr = PIPE_CLR[f.id] || f.color || "#28A0A0";
+            return (
+              <div key={f.id} onClick={() => { setFilterFase(f.id); setTab("commesse"); }} style={{ display:"flex", alignItems:"center", gap:5, padding:"5px 11px", borderRadius:20, background:clr+"18", cursor:"pointer", boxShadow:`0 3px 0 0 ${clr}44` }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:clr }} />
+                <span style={{ fontSize:11, fontWeight:900, color:"#0D1F1F" }}>{f.nome}</span>
+                <span style={{ fontSize:11, fontWeight:900, color:clr, fontFamily:"'JetBrains Mono',monospace" }}>{faseCounts[f.id]}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* ══ KPI ═════════════════════════════════════════════════ */}
-      <div style={{ margin: "16px 20px 0", display: "flex", gap: 10 }}>
+      {/* fliwoX KPI */}
+      <div style={{ margin:"14px 14px 0", display:"flex", gap:8 }}>
         {[
-          { label: "Preventivato", val: fmtK(totPrev), color: "#1a1c1d", action: () => setTab("commesse") },
-          { label: "Confermato", val: fmtK(totConf), color: "#1a9e73", action: () => { setFilterFase("conferma"); setTab("commesse"); } },
-          ...(fatAtt.length > 0 ? [{ label: "Da incassare", val: fmtK(totFat), color: "#dc4444", action: () => setShowContabilita(true) }] : []),
+          { label:"Preventivato", val:fmtK(totPrev), color:"#0D1F1F", sh:"#A8CCCC", action:() => setTab("commesse") },
+          { label:"Confermato", val:fmtK(totConf), color:"#1A9E73", sh:"rgba(26,158,115,0.3)", action:() => { setFilterFase("conferma"); setTab("commesse"); } },
+          ...(fatAtt.length > 0 ? [{ label:"Da incassare", val:fmtK(totFat), color:"#DC4444", sh:"#FFAAAA", action:() => setShowContabilita(true) }] : []),
         ].map((item, i) => (
-          <div key={i} onClick={item.action} style={{ flex: 1, padding: "14px 10px", background: "#ffffff", borderRadius: 16, border: "1px solid rgba(197,198,206,0.3)", boxShadow: "0 1px 4px rgba(26,28,29,0.05)", cursor: "pointer", textAlign: "center" }}>
-            <p style={{ margin: 0, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#75777e" }}>{item.label}</p>
-            <p style={{ margin: "6px 0 0", fontSize: 20, fontWeight: 900, color: item.color, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "-0.03em" }}>{item.val}</p>
+          <div key={i} onClick={item.action} style={{ flex:1, padding:"14px 10px", background:"white", borderRadius:16, border:`1.5px solid ${item.color === "#DC4444" ? "rgba(220,68,68,0.3)" : "#C8E4E4"}`, boxShadow:`0 6px 0 0 ${item.sh}`, cursor:"pointer", textAlign:"center" }}>
+            <p style={{ margin:0, fontSize:9, fontWeight:900, letterSpacing:"0.1em", textTransform:"uppercase", color:"#4A7070" }}>{item.label}</p>
+            <p style={{ margin:"6px 0 0", fontSize:22, fontWeight:900, color:item.color, fontFamily:"'JetBrains Mono',monospace", letterSpacing:"-0.03em" }}>{item.val}</p>
           </div>
         ))}
       </div>
 
-      {/* ══ SCORCIATOIE ═════════════════════════════════════════ */}
-      <div style={{ margin: "10px 20px 0", display: "flex", gap: 10 }}>
-        <div onClick={() => setTab("contabilita")} style={{ flex: 1, padding: "13px 16px", borderRadius: 16, background: "#ffffff", border: "1px solid rgba(197,198,206,0.3)", boxShadow: "0 1px 4px rgba(26,28,29,0.05)", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#44474d", textAlign: "center" }}>€ Contabilità</div>
-        <div onClick={() => setTab("montaggi_cal")} style={{ flex: 1, padding: "13px 16px", borderRadius: 16, background: "#1a9e7310", border: "1px solid #1a9e7330", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#1a9e73", textAlign: "center" }}>Cantieri</div>
+      {/* fliwoX Scorciatoie + quick counts */}
+      <div style={{ margin:"10px 14px 0", display:"flex", gap:8 }}>
+        <div onClick={() => setTab("contabilita")} style={{ flex:1, padding:"13px 16px", borderRadius:14, background:"white", border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC", cursor:"pointer", fontSize:13, fontWeight:900, color:"#0D1F1F", textAlign:"center" }}>€ Contabilità</div>
+        <div onClick={() => setTab("montaggi_cal")} style={{ flex:1, padding:"13px 16px", borderRadius:14, background:"rgba(26,158,115,0.1)", border:"1.5px solid rgba(26,158,115,0.3)", boxShadow:"0 5px 0 0 rgba(26,158,115,0.25)", cursor:"pointer", fontSize:13, fontWeight:900, color:"#1A9E73", textAlign:"center" }}>Cantieri</div>
       </div>
 
-      {/* ══ QUICK COUNTS ════════════════════════════════════════ */}
       {(ordAtt.length > 0 || montAtt.length > 0) && (
-        <div style={{ margin: "10px 20px 0", display: "flex", gap: 10 }}>
+        <div style={{ margin:"8px 14px 0", display:"flex", gap:8 }}>
           {ordAtt.length > 0 && (
-            <div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 16, background: "#ffffff", border: "1px solid rgba(197,198,206,0.3)", boxShadow: "0 1px 4px rgba(26,28,29,0.05)", cursor: "pointer" }}>
-              <I d={ICO.package} s={20} c="#031631" />
+            <div onClick={() => setTab("commesse")} style={{ flex:1, display:"flex", alignItems:"center", gap:12, padding:"13px 14px", borderRadius:14, background:"white", border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC", cursor:"pointer" }}>
+              <I d={ICO.package} s={20} c="#28A0A0" />
               <div>
-                <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "#1a1c1d", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{ordAtt.length}</p>
-                <p style={{ margin: "3px 0 0", fontSize: 9, fontWeight: 700, color: "#75777e", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ordini attivi</p>
+                <p style={{ margin:0, fontSize:20, fontWeight:900, color:"#0D1F1F", fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{ordAtt.length}</p>
+                <p style={{ margin:"2px 0 0", fontSize:9, fontWeight:900, color:"#4A7070", textTransform:"uppercase", letterSpacing:"0.08em" }}>Ordini attivi</p>
               </div>
             </div>
           )}
           {montAtt.length > 0 && (
-            <div onClick={() => setTab("commesse")} style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 16, background: "#ffffff", border: "1px solid rgba(197,198,206,0.3)", boxShadow: "0 1px 4px rgba(26,28,29,0.05)", cursor: "pointer" }}>
-              <I d={ICO.wrench} s={20} c="#031631" />
+            <div onClick={() => setTab("commesse")} style={{ flex:1, display:"flex", alignItems:"center", gap:12, padding:"13px 14px", borderRadius:14, background:"white", border:"1.5px solid #C8E4E4", boxShadow:"0 5px 0 0 #A8CCCC", cursor:"pointer" }}>
+              <I d={ICO.wrench} s={20} c="#28A0A0" />
               <div>
-                <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "#1a1c1d", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1 }}>{montAtt.length}</p>
-                <p style={{ margin: "3px 0 0", fontSize: 9, fontWeight: 700, color: "#75777e", textTransform: "uppercase", letterSpacing: "0.1em" }}>Montaggi</p>
+                <p style={{ margin:0, fontSize:20, fontWeight:900, color:"#0D1F1F", fontFamily:"'JetBrains Mono',monospace", lineHeight:1 }}>{montAtt.length}</p>
+                <p style={{ margin:"2px 0 0", fontSize:9, fontWeight:900, color:"#4A7070", textTransform:"uppercase", letterSpacing:"0.08em" }}>Montaggi</p>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* ══ AZIONI RAPIDE ═══════════════════════════════════════ */}
-      <div style={{ margin: "20px 20px 0" }}>
-        <p style={{ margin: "0 0 12px", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#75777e" }}>Azioni rapide</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      {/* fliwoX AZIONI RAPIDE */}
+      <div style={{ margin:"14px 14px 0" }}>
+        <p style={{ margin:"0 0 10px", fontSize:10, fontWeight:900, letterSpacing:"0.12em", textTransform:"uppercase", color:"#4A7070" }}>Azioni rapide</p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
 
-          {/* Commessa — navy */}
-          <div onClick={() => setShowModal("commessa")} style={{
-            padding: "18px 16px", borderRadius: 20,
-            background: "#031631",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 24px rgba(3,22,49,0.30)",
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 14,
-            transition: "transform 0.12s", active: { transform: "scale(0.97)" }
-          }}>
-            <I d={ICO.folder} s={24} c="#ffffff" />
+          {/* + Commessa — teal primario 3D */}
+          <div onClick={() => setShowModal("commessa")} style={{ padding:"18px 16px", borderRadius:18, background:"#28A0A0", boxShadow:"0 8px 0 0 #156060", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <I d={ICO.folder} s={22} c="white" />
+            </div>
             <div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.01em" }}>Commessa</p>
-              <p style={{ margin: "3px 0 0", fontSize: 11, color: "#8293b4" }}>Nuova pratica</p>
+              <p style={{ margin:0, fontSize:15, fontWeight:900, color:"white", letterSpacing:"-0.01em" }}>Commessa</p>
+              <p style={{ margin:"2px 0 0", fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.6)" }}>Nuova pratica</p>
             </div>
           </div>
 
-          {/* Spesa — amber */}
-          <div onClick={() => setShowSpesa(true)} style={{
-            padding: "18px 16px", borderRadius: 20,
-            background: "#d4a843",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 24px rgba(212,168,67,0.30)",
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 14,
-          }}>
-            <I d={ICO.receipt || ICO.tag} s={24} c="#ffffff" />
+          {/* Spesa — amber 3D */}
+          <div onClick={() => setShowSpesa(true)} style={{ padding:"18px 16px", borderRadius:18, background:"#D08008", boxShadow:"0 8px 0 0 #7A4800", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:"rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <I d={ICO.receipt || ICO.tag} s={22} c="white" />
+            </div>
             <div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.01em" }}>Invia spesa</p>
-              <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(255,255,255,0.65)" }}>Scontrino / nota</p>
+              <p style={{ margin:0, fontSize:15, fontWeight:900, color:"white", letterSpacing:"-0.01em" }}>Invia spesa</p>
+              <p style={{ margin:"2px 0 0", fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.6)" }}>Scontrino / nota</p>
             </div>
           </div>
 
-          {/* Cliente — ghost */}
-          <div onClick={() => setShowModal("contatto")} style={{
-            padding: "18px 16px", borderRadius: 20,
-            background: "#ffffff", border: "1px solid rgba(197,198,206,0.35)",
-            boxShadow: "0 1px 4px rgba(26,28,29,0.05)",
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 14,
-          }}>
-            <I d={ICO.user} s={24} c="#031631" />
+          {/* Cliente — bianco 3D */}
+          <div onClick={() => setShowModal("contatto")} style={{ padding:"18px 16px", borderRadius:18, background:"white", border:"2px solid #C8E4E4", boxShadow:"0 7px 0 0 #A8CCCC", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:"rgba(40,160,160,0.1)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <I d={ICO.user} s={22} c="#28A0A0" />
+            </div>
             <div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#1a1c1d", letterSpacing: "-0.01em" }}>Cliente</p>
-              <p style={{ margin: "3px 0 0", fontSize: 11, color: "#44474d" }}>Nuovo contatto</p>
+              <p style={{ margin:0, fontSize:15, fontWeight:900, color:"#0D1F1F", letterSpacing:"-0.01em" }}>Cliente</p>
+              <p style={{ margin:"2px 0 0", fontSize:11, fontWeight:700, color:"#4A7070" }}>Nuovo contatto</p>
             </div>
           </div>
 
-          {/* Appuntamento — ghost */}
-          <div onClick={() => setShowModal("evento")} style={{
-            padding: "18px 16px", borderRadius: 20,
-            background: "#ffffff", border: "1px solid rgba(197,198,206,0.35)",
-            boxShadow: "0 1px 4px rgba(26,28,29,0.05)",
-            cursor: "pointer", display: "flex", alignItems: "center", gap: 14,
-          }}>
-            <I d={ICO.calendar} s={24} c="#6366f1" />
+          {/* Appuntamento — bianco 3D */}
+          <div onClick={() => setShowModal("evento")} style={{ padding:"18px 16px", borderRadius:18, background:"white", border:"2px solid #C8E4E4", boxShadow:"0 7px 0 0 #A8CCCC", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ width:42, height:42, borderRadius:12, background:"rgba(124,95,191,0.1)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <I d={ICO.calendar} s={22} c="#7C5FBF" />
+            </div>
             <div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#1a1c1d", letterSpacing: "-0.01em" }}>Appuntamento</p>
-              <p style={{ margin: "3px 0 0", fontSize: 11, color: "#44474d" }}>Agenda</p>
+              <p style={{ margin:0, fontSize:15, fontWeight:900, color:"#0D1F1F", letterSpacing:"-0.01em" }}>Appuntamento</p>
+              <p style={{ margin:"2px 0 0", fontSize:11, fontWeight:700, color:"#4A7070" }}>Agenda</p>
             </div>
           </div>
         </div>
