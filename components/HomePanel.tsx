@@ -399,26 +399,6 @@ export default function HomePanel() {
 
       </div>
 
-      {/* ── BOTTOM NAV ── */}
-      <div style={{ background: "white", borderTop: `1px solid ${BDR}`, padding: "10px 16px 14px", display: "flex", justifyContent: "space-around", alignItems: "center", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30 }}>
-        {[
-          { icon: <IcoHome />, label: "Home", active: true, action: () => {} },
-          { icon: <IcoCalendar />, label: "Agenda", active: false, action: () => setTab("agenda") },
-          { icon: <IcoCommessa />, label: "Commesse", active: false, action: () => setTab("commesse") },
-          { icon: <IcoTalk />, label: "Talk", active: false, action: () => setTab("messaggi") },
-          { icon: <IcoSettings />, label: "Altro", active: false, action: () => setTab("settings") },
-        ].map((item, i) => (
-          <div key={i} onClick={item.action} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: item.active ? T_CLR : T_LIGHT, boxShadow: item.active ? `0 3px 0 0 ${T_DARK}` : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {item.active
-                ? React.cloneElement(item.icon, { color: "white" })
-                : item.icon}
-            </div>
-            <p style={{ margin: 0, fontSize: 10, fontWeight: 900, color: item.active ? T_CLR : "#8BBCBC" }}>{item.label}</p>
-          </div>
-        ))}
-      </div>
-
       {showSpesa && <SpesaQuick onClose={() => setShowSpesa(false)} />}
     </div>
   );
