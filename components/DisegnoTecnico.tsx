@@ -726,7 +726,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
       <div style={{ display: "flex", gap: 4, padding: "6px 8px", flexWrap: "wrap", borderBottom: "1px solid rgba(197,198,206,0.25)", alignItems: "center" }}>
         <div onClick={() => setActiveTool("muro")} style={bs(activeTool==="muro")}>▭ Muro</div>
         <div onClick={() => setActiveTool("vano")} style={bs(activeTool==="vano", "#3b7fe0")}>↗ Vano</div>
@@ -747,8 +747,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       <div style={{ fontSize: 9, color: "#75777e", padding: "3px 10px", fontWeight: 600 }}>{hint[activeTool]}</div>
       <canvas
         ref={canvasRef}
-        width={600} height={420}
-        style={{ display: "block", width: "100%", background: "#f9f9fb", cursor: "crosshair", touchAction: "none" }}
+        width={600} height={700}
+        style={{ display: "block", width: "100%", flex: 1, background: "#f9f9fb", cursor: "crosshair", touchAction: "none", minHeight: 0 }}
       />
       {dims && <div style={{ padding: "6px 10px", fontSize: 12, fontWeight: 700, color: "#031631", borderTop: "1px solid rgba(197,198,206,0.25)" }}>Vani: {dims}</div>}
       {/* Bottone → 3D */}
