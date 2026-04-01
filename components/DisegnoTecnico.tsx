@@ -499,7 +499,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const [tool, setTool] = React.useState<"muro"|"oggetto">("muro");
   const [spessore, setSpessore] = React.useState(15);
   const [shapes, setShapes] = React.useState<any[]>([]);
-  const [curPts, setCurPts] = React.useState<any[]>([]);
+  const [curPt, setCurPt] = React.useState<any>(null); // primo punto in attesa
   const [mousePos, setMousePos] = React.useState<any>(null);
   const svgRef = React.useRef<SVGSVGElement>(null);
   const isPanRef = React.useRef(false);
@@ -507,7 +507,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   const lastPinch = React.useRef<number|null>(null);
 
   const GRID = 20;
-  const scale = GRID / 10;
+  const scale = GRID / 10; // px per cm
 
   function toSvg(e: any) {
     const svg = svgRef.current; if (!svg) return {x:0,y:0};
@@ -515,71 +515,58 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
     const ct = e.touches ? e.touches[0] : e;
     return {
       x: (ct.clientX - r.left) / zoom - pan.x,
-      y: (ct.clientY - r.top) / zoom - pan.y,
+      y: (ct.clientY - r.top)  / zoom - pan.y,
     };
   }
 
-  function snapPt(pt: any, forceOrtho=false) {
+  function snapPt(pt: any) {
     const g = GRID;
     let sx = Math.round(pt.x/g)*g, sy = Math.round(pt.y/g)*g;
-    // Snap a punti esistenti (priorità massima)
+    // Snap a punti esistenti
     for (const s of shapes) {
-      for (const p of (s.pts||[])) {
-        if (Math.hypot(p.x-pt.x,p.y-pt.y) < 18/zoom) return {x:p.x,y:p.y};
+      for (const p of [s.a, s.b]) {
+        if (p && Math.hypot(p.x-pt.x,p.y-pt.y) < 18/zoom) return {x:p.x,y:p.y};
       }
     }
-    // Snap ortogonale al punto precedente
-    const last = curPts.length>0 ? curPts[curPts.length-1] : null;
-    if (last) {
-      const dx=Math.abs(sx-last.x), dy=Math.abs(sy-last.y);
-      // Se molto più orizzontale che verticale → blocca Y
-      if (dx>dy*1.5) sy=last.y;
-      // Se molto più verticale che orizzontale → blocca X
-      else if (dy>dx*1.5) sx=last.x;
+    // Snap ortogonale rispetto al primo punto
+    if (curPt) {
+      const dx=Math.abs(sx-curPt.x), dy=Math.abs(sy-curPt.y);
+      if (dx>dy*1.8) sy=curPt.y;
+      else if (dy>dx*1.8) sx=curPt.x;
     }
     return {x:sx,y:sy};
   }
 
-  function pxToCm(px: number) { return Math.round(Math.abs(px) / scale); }
+  function pxToCm(px: number) { return Math.round(Math.abs(px)/scale); }
   function lenLabel(px: number) {
     const cm = pxToCm(px);
-    return cm >= 100 ? (cm/100).toFixed(2)+"m" : cm+"cm";
+    return cm>=100?(cm/100).toFixed(2)+"m":cm+"cm";
   }
+  function segLen(a:any,b:any) { return Math.hypot(b.x-a.x,b.y-a.y); }
 
+  // ── CLICK ─────────────────────────────────────────────────
   function onDown(e: any) {
-    if (e.button===1||(e.touches?.length===2)) {
+    if (e.button===1||(e.touches?.length>=2)) {
       isPanRef.current=true;
-      const ct=e.touches?{clientX:(e.touches[0].clientX+e.touches[1].clientX)/2,clientY:(e.touches[0].clientY+e.touches[1].clientY)/2}:e;
+      const ct=e.touches
+        ?{clientX:(e.touches[0].clientX+e.touches[1].clientX)/2,clientY:(e.touches[0].clientY+e.touches[1].clientY)/2}
+        :e;
       lastPanPt.current={x:ct.clientX,y:ct.clientY};
-      if(e.touches?.length===2) lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      if(e.touches?.length===2)
+        lastPinch.current=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
       return;
     }
     const pt = snapPt(toSvg(e));
-
-    if (tool==="muro") {
-      if (curPts.length===0) {
-        // Primo punto muro
-        setCurPts([pt]);
-      } else {
-        // Secondo punto → salva segmento e ricomincia dal secondo punto (catena)
-        const newShape = {id:Date.now(),type:"muro",pts:[curPts[0],pt],spessore};
-        setShapes(s=>[...s,newShape]);
-        setCurPts([pt]); // ricomincia dal punto corrente per catena
+    if (!curPt) {
+      // Primo clic → imposta punto A
+      setCurPt(pt);
+    } else {
+      // Secondo clic → salva segmento, riparte da B (catena)
+      const len = segLen(curPt, pt);
+      if (len > 4) {
+        setShapes(s=>[...s,{id:Date.now(),type:tool,a:curPt,b:pt,spessore}]);
       }
-      return;
-    }
-
-    if (tool==="oggetto") {
-      // Oggetto: accumula punti, chiudi su 1° punto o Enter
-      if (curPts.length>2) {
-        const fp=curPts[0];
-        if (Math.hypot(fp.x-pt.x,fp.y-pt.y)<18/zoom) {
-          setShapes(s=>[...s,{id:Date.now(),type:"oggetto",pts:[...curPts],spessore}]);
-          setCurPts([]);
-          return;
-        }
-      }
-      setCurPts(p=>[...p,pt]);
+      setCurPt(pt); // catena: B diventa nuovo A
     }
   }
 
@@ -601,13 +588,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   function onUp() { isPanRef.current=false; lastPinch.current=null; }
 
   function onDblClick() {
-    // Muro: ferma la catena
-    if (tool==="muro") { setCurPts([]); return; }
-    // Oggetto: chiudi
-    if (tool==="oggetto"&&curPts.length>2) {
-      setShapes(s=>[...s,{id:Date.now(),type:"oggetto",pts:[...curPts],spessore}]);
-      setCurPts([]);
-    }
+    // Doppio clic = ferma la catena
+    setCurPt(null);
   }
 
   function onWheel(e: any) {
@@ -620,104 +602,55 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
   }
 
   function onKeyDown(e: any) {
-    if (e.key==="Enter") {
-      if (tool==="muro") { setCurPts([]); return; }
-      if (tool==="oggetto"&&curPts.length>2) {
-        setShapes(s=>[...s,{id:Date.now(),type:"oggetto",pts:[...curPts],spessore}]);
-        setCurPts([]);
-      }
-    }
-    if (e.key==="Escape") setCurPts([]);
+    if (e.key==="Escape") setCurPt(null);
     if ((e.key==="z"||e.key==="Z")&&(e.ctrlKey||e.metaKey)) {
-      if (curPts.length>0) setCurPts([]); else setShapes(s=>s.slice(0,-1));
+      if (curPt) { setCurPt(null); }
+      else { setShapes(s=>s.slice(0,-1)); }
     }
   }
 
-  // ── RENDER MURO (segmento singolo con spessore) ──────────
-  function renderMuro(pts:any[], sp:number, preview=false, id:any=null) {
-    if(pts.length<2) return null;
-    const sp2=sp*scale*0.5;
-    const a=pts[0],b=pts[1];
-    const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
-    const nx=-dy/len*sp2,ny=dx/len*sp2;
+  // ── RENDER SEGMENTO ───────────────────────────────────────
+  function renderSeg(a:any, b:any, type:string, sp:number, preview=false, id:any=null) {
+    const col = type==="oggetto"?"#3B7FE0":"#1A2B4A";
+    const fillCol = type==="oggetto"?"rgba(59,127,224,0.12)":"rgba(26,43,74,0.14)";
+    const sp2 = sp*scale*0.5;
+    const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1;
+    const nx=-dy/len*sp2, ny=dx/len*sp2;
     const poly=`${a.x+nx},${a.y+ny} ${b.x+nx},${b.y+ny} ${b.x-nx},${b.y-ny} ${a.x-nx},${a.y-ny}`;
-    const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
+    const mx2=(a.x+b.x)/2, my2=(a.y+b.y)/2;
     const ang=Math.atan2(dy,dx)*180/Math.PI;
     const fixAng=Math.abs(ang)>90?ang+180:ang;
     return (
-      <g key={id||"prev-muro"}>
+      <g key={id||"prev"}>
         <polygon points={poly}
-          fill={preview?"rgba(26,43,74,0.06)":"rgba(26,43,74,0.15)"}
-          stroke="#1A2B4A" strokeWidth={preview?"1":"1.5"} strokeLinejoin="round"/>
+          fill={preview?fillCol.replace("0.12","0.05").replace("0.14","0.05"):fillCol}
+          stroke={col} strokeWidth={preview?"1":"1.8"} strokeLinejoin="round"/>
+        {/* Asse */}
         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-          stroke="#888" strokeWidth="0.5" strokeDasharray="5,4"/>
+          stroke={type==="oggetto"?"#93C5FD":"#94A3B8"}
+          strokeWidth="0.6" strokeDasharray="5,4"/>
+        {/* Quota */}
         {!preview&&len>15&&(
           <g>
-            <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3" fill="rgba(26,43,74,0.85)"/>
+            <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3"
+              fill={type==="oggetto"?"rgba(59,127,224,0.9)":"rgba(26,43,74,0.9)"}/>
             <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
               transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
           </g>
         )}
-        {!preview&&[a,b].map((p:any,i:number)=>(
-          <circle key={i} cx={p.x} cy={p.y} r={3/zoom}
-            fill="#1A2B4A" stroke="#fff" strokeWidth={1/zoom}/>
-        ))}
+        {/* Endpoint dots */}
+        {!preview&&<>
+          <circle cx={a.x} cy={a.y} r={3/zoom} fill={col} stroke="#fff" strokeWidth={1/zoom}/>
+          <circle cx={b.x} cy={b.y} r={3/zoom} fill={col} stroke="#fff" strokeWidth={1/zoom}/>
+        </>}
       </g>
     );
   }
 
-  // ── RENDER OGGETTO (forma chiusa con pareti) ──────────────
-  function renderOggetto(pts:any[], sp:number, preview=false, id:any=null) {
-    if(pts.length<2) return null;
-    const closed=[...pts,pts[0]];
-    const col="#3B7FE0";
-    const sp2=sp*scale*0.5;
-    const cx2=pts.reduce((s:number,p:any)=>s+p.x,0)/pts.length;
-    const cy2=pts.reduce((s:number,p:any)=>s+p.y,0)/pts.length;
-    const inner=pts.map((p:any)=>{
-      const dx=cx2-p.x,dy=cy2-p.y,d=Math.hypot(dx,dy)||1;
-      return {x:p.x+dx/d*Math.min(sp2*2,d*0.4),y:p.y+dy/d*Math.min(sp2*2,d*0.4)};
-    });
-    const outerPath=pts.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
-    const innerPath=inner.map((p:any,i:number)=>`${i===0?"M":"L"}${p.x},${p.y}`).join(" ")+" Z";
-    return (
-      <g key={id||"prev-ogg"}>
-        <path d={outerPath} fill={preview?"rgba(59,127,224,0.06)":"rgba(59,127,224,0.12)"}
-          stroke={col} strokeWidth={preview?"1.5":"2"} strokeLinejoin="round"/>
-        {!preview&&<path d={innerPath} fill="rgba(239,248,255,0.8)"
-          stroke={col} strokeWidth="0.8" strokeDasharray="5,3"/>}
-        {/* Quote lati */}
-        {!preview&&closed.slice(0,-1).map((a:any,i:number)=>{
-          const b=closed[i+1];
-          const len=Math.hypot(b.x-a.x,b.y-a.y);
-          if(len<15) return null;
-          const mx2=(a.x+b.x)/2,my2=(a.y+b.y)/2;
-          const ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
-          const fixAng=Math.abs(ang)>90?ang+180:ang;
-          return (
-            <g key={i}>
-              <rect x={mx2-18} y={my2-8} width={36} height={14} rx="3" fill="rgba(59,127,224,0.85)"/>
-              <text x={mx2} y={my2+4} textAnchor="middle" fontSize="9" fill="#fff" fontWeight="800"
-                transform={`rotate(${fixAng},${mx2},${my2})`}>{lenLabel(len)}</text>
-            </g>
-          );
-        })}
-        {!preview&&pts.map((p:any,i:number)=>(
-          <circle key={i} cx={p.x} cy={p.y} r={4/zoom}
-            fill={i===0?"#dc4444":col} stroke="#fff" strokeWidth={1.5/zoom}/>
-        ))}
-      </g>
-    );
-  }
-
-  const liveLen = React.useMemo(()=>{
-    if(!mousePos||curPts.length===0) return "";
-    const last=curPts[curPts.length-1];
-    const px=Math.hypot(mousePos.x-last.x,mousePos.y-last.y);
-    return px>5?lenLabel(px):"";
-  },[mousePos,curPts,zoom]);
-
+  // Quote live
+  const liveLen = curPt&&mousePos ? lenLabel(segLen(curPt,mousePos)) : "";
   const col = tool==="muro"?"#1A2B4A":"#3B7FE0";
+
   const bs2=(on=false,c="#031631")=>({
     padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0,
     background:on?c:"#fff",color:on?"#fff":"#44474d",
@@ -731,8 +664,8 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
       {/* TOOLBAR */}
       <div style={{display:"flex",gap:5,padding:"7px 10px",flexWrap:"wrap",alignItems:"center",
         background:"#fff",borderBottom:"1px solid rgba(197,198,206,0.3)",flexShrink:0}}>
-        <div onClick={()=>{setTool("muro");setCurPts([]);}} style={bs2(tool==="muro","#1A2B4A")}>▬ Muro</div>
-        <div onClick={()=>{setTool("oggetto");setCurPts([]);}} style={bs2(tool==="oggetto","#3B7FE0")}>⬜ Oggetto</div>
+        <div onClick={()=>{setTool("muro");setCurPt(null);}} style={bs2(tool==="muro","#1A2B4A")}>▬ Muro</div>
+        <div onClick={()=>{setTool("oggetto");setCurPt(null);}} style={bs2(tool==="oggetto","#3B7FE0")}>⬜ Oggetto</div>
         <div style={{width:1,height:22,background:"rgba(197,198,206,0.4)"}}/>
         <select value={spessore} onChange={e=>setSpessore(parseInt(e.target.value))}
           style={{padding:"5px 8px",borderRadius:7,border:"1.5px solid rgba(197,198,206,0.5)",
@@ -745,19 +678,19 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
         <div onClick={()=>setZoom(z=>Math.max(0.1,z*0.83))} style={bs2()}>－</div>
         <div onClick={()=>{setZoom(1);setPan({x:60,y:60});}} style={bs2()}>↺</div>
         <div style={{flex:1}}/>
-        <div onClick={()=>{if(curPts.length>0)setCurPts([]);else setShapes(s=>s.slice(0,-1));}} style={bs2()}>↩</div>
-        <div onClick={()=>{setShapes([]);setCurPts([]);}} style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
+        <div onClick={()=>{if(curPt)setCurPt(null);else setShapes(s=>s.slice(0,-1));}} style={bs2()}>↩</div>
+        <div onClick={()=>{setShapes([]);setCurPt(null);}} style={{...bs2(),color:"#dc4444",borderColor:"#dc444440"}}>Reset</div>
       </div>
 
       {/* HINT */}
       <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 12px",
         background:"#F8FAFC",borderBottom:"1px solid rgba(197,198,206,0.2)",flexShrink:0}}>
         <span style={{fontSize:10,color:"#64748B",fontWeight:500}}>
-          {tool==="muro"
-            ? curPts.length===0?"Clic punto iniziale muro":"Clic punto finale · Clic ancora per continuare · Doppio clic per fermare"
-            : curPts.length===0?"Clic per iniziare l'oggetto":`${curPts.length} punti · clic sul 1° punto o Enter per chiudere`}
+          {!curPt
+            ? tool==="muro"?"Clic punto iniziale muro":"Clic punto iniziale oggetto"
+            : "Clic punto finale · continua in catena · Doppio clic per fermare"}
         </span>
-        {liveLen&&<span style={{fontSize:12,fontWeight:800,color:col,
+        {liveLen&&<span style={{fontSize:13,fontWeight:800,color:col,
           background:tool==="muro"?"#F0F4FF":"#EFF8FF",
           padding:"2px 10px",borderRadius:6,marginLeft:"auto"}}>{liveLen}</span>}
       </div>
@@ -784,33 +717,21 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
           <line x1={-9999} y1={0} x2={9999} y2={0} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
           <line x1={0} y1={-9999} x2={0} y2={9999} stroke="rgba(0,0,0,0.06)" strokeWidth="1"/>
 
-          {/* Forme salvate */}
-          {shapes.map(s=>s.type==="muro"
-            ?renderMuro(s.pts,s.spessore,false,s.id)
-            :renderOggetto(s.pts,s.spessore,false,s.id)
-          )}
+          {/* Segmenti salvati */}
+          {shapes.map(s=>renderSeg(s.a,s.b,s.type,s.spessore,false,s.id))}
 
-          {/* Preview */}
-          {curPts.length>0&&mousePos&&(tool==="muro"
-            ?renderMuro([curPts[curPts.length-1],mousePos],spessore,true)
-            :renderOggetto([...curPts,mousePos],spessore,true)
-          )}
+          {/* Preview segmento in corso */}
+          {curPt&&mousePos&&renderSeg(curPt,mousePos,tool,spessore,true)}
 
-          {/* Punti oggetto in corso */}
-          {tool==="oggetto"&&curPts.map((p:any,i:number)=>(
-            <circle key={i} cx={p.x} cy={p.y} r={5/zoom}
-              fill={i===0?"#dc4444":col} stroke="#fff" strokeWidth={2/zoom}/>
-          ))}
-
-          {/* Punto muro corrente */}
-          {tool==="muro"&&curPts.length>0&&(
-            <circle cx={curPts[0].x} cy={curPts[0].y} r={5/zoom}
+          {/* Punto A attivo */}
+          {curPt&&(
+            <circle cx={curPt.x} cy={curPt.y} r={6/zoom}
               fill="#dc4444" stroke="#fff" strokeWidth={2/zoom}/>
           )}
 
-          {/* Snap */}
+          {/* Snap indicator */}
           {mousePos&&<circle cx={mousePos.x} cy={mousePos.y} r={3/zoom}
-            stroke={col} strokeWidth={1/zoom} fill="rgba(59,127,224,0.15)"/>}
+            stroke={col} strokeWidth={1/zoom} fill="rgba(59,127,224,0.2)"/>}
         </g>
       </svg>
     </div>
