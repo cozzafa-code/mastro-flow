@@ -62,7 +62,7 @@ export default function OnboardingWizard() {
   const update = (partial: Partial<OnboardingData>) => setData(prev => ({ ...prev, ...partial }));
   const next = () => setStep(s => Math.min(s + 1, 5));
   const skip = () => next();
-  const complete = () => router.push('/app?onboarding=done');
+  const complete = () => router.push('/dashboard');
 
   return (
     <div style={{
