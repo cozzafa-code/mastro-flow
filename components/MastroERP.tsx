@@ -49,6 +49,7 @@ import CommessePanel from "./CommessePanel";
 import { OnboardingPanel, FirmaModalPanel } from "./OnboardingPanel";
 import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
+import { useOfflineCache } from "@/hooks/useOfflineCache";
 
 function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
   const [theme, setTheme] = useState("fliwox");
@@ -107,6 +108,8 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   // Calendario griglia espandibile
   const [expandedDay, setExpandedDay] = useState(null); // ISO string del giorno espanso
   const [cantieri, setCantieri] = useState(CANTIERI_INIT);
+  // Offline cache IndexedDB — carica al mount, salva ad ogni cambio
+  const { loadFromCache, getCacheInfo } = useOfflineCache(cantieri, setCantieri, cantieri.length > 0 || typeof window !== "undefined");
   const [tasks, setTasks] = useState(TASKS_INIT);
   const [msgs, setMsgs] = useState(MSGS_INIT);
   const [selectedMsg, setSelectedMsg] = useState(null);
