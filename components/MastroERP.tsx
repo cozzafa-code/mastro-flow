@@ -2979,6 +2979,39 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {tab === "contabilita" && <PanelErrorBoundary name="Contabilita">{renderContabilita()}</PanelErrorBoundary>}
         {tab === "montaggi_cal" && <PanelErrorBoundary name="MontaggiCal"><MontaggiCalendar /></PanelErrorBoundary>}
           {tab === "settings" && <PanelErrorBoundary name="Impostazioni">{renderSettings()}</PanelErrorBoundary>}
+        {tab === "altro" && (() => {
+          const moduli = [
+            { id:"contabilita", label:"Contabilita", desc:"Fatture e incassi", color:"#28A0A0" },
+            { id:"montaggi_cal", label:"Montaggi", desc:"Calendario installazioni", color:"#E85D24" },
+            { id:"clienti", label:"Clienti", desc:"Anagrafica e storico", color:"#7F77DD" },
+            { id:"settings", label:"Impostazioni", desc:"Azienda, team, piani", color:"#4A7070" },
+          ];
+          return (
+            <div style={{ padding:"16px 16px 100px", background:"#E8F4F4", minHeight:"100vh" }}>
+              <div style={{ fontSize:22, fontWeight:900, color:"#0D1F1F", marginBottom:6 }}>Moduli</div>
+              <div style={{ fontSize:13, color:"#4A7070", marginBottom:24 }}>Accesso rapido</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {moduli.map(m => (
+                  <div key={m.id} onClick={() => setTab(m.id)}
+                    style={{ background:"#fff", borderRadius:14, border:"1px solid #C8E4E4",
+                      boxShadow:"0 4px 0 0 #A8CCCC", padding:"16px 18px",
+                      display:"flex", alignItems:"center", gap:14, cursor:"pointer" }}>
+                    <div style={{ width:44, height:44, borderRadius:12,
+                      background:m.color+"18", display:"flex", alignItems:"center",
+                      justifyContent:"center", color:m.color, fontWeight:900, fontSize:13, flexShrink:0 }}>
+                      {m.label.slice(0,2).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize:15, fontWeight:800, color:"#0D1F1F" }}>{m.label}</div>
+                      <div style={{ fontSize:12, color:"#4A7070", marginTop:2 }}>{m.desc}</div>
+                    </div>
+                    <svg style={{ marginLeft:"auto" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8BBCBC" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         <SyncStatusBar status={sync.status} />
         {ConfirmDialog}
@@ -3446,7 +3479,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             { id: "agenda",    ico: ICO.calendar,  label: "Agenda" },
             { id: "commesse",  ico: ICO.folder,    label: "Commesse" },
             { id: "messaggi",  ico: ICO.messageCircle, label: "Talk" },
-            { id: "settings",  ico: ICO.settings,  label: "Altro" },
+            { id: "altro",     ico: ICO.settings,  label: "Altro" },
           ];
           const NAV_ICONS: Record<string, React.ReactNode> = {
             home: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l11-6 11 6v13l-11 6L3 22V9z"/><path d="M14 3v19M3 9l11 6 11-6"/></svg>,
