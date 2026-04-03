@@ -114,11 +114,11 @@ export default function LandingPage() {
           15 giorni gratis · Nessuna carta di credito
         </div>
         <h1 style={{ fontSize: "clamp(30px,6vw,50px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 18, color: T.dark }}>
-          Il gestionale che<br />
-          <span style={{ color: T.teal }}>capisce l&apos;artigiano</span>
+          Fatto per chi<br />
+          <span style={{ color: T.teal }}>lavora con le mani</span>
         </h1>
         <p style={{ fontSize: 17, color: T.sub, lineHeight: 1.6, marginBottom: 32, maxWidth: 500, margin: "0 auto 32px" }}>
-          Preventivi, commesse, montaggi, clienti, ENEA — tutto in un&apos;unica piattaforma. Per serramentisti, fabbri, falegnami e tutti gli artigiani del serramento.
+          Preventivi, commesse, montaggi e clienti — tutto in un&apos;unica cassetta. Nato per serramentisti, fabbri, falegnami e tutti gli artigiani del serramento.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
           <Link href="/app" style={{ padding: "13px 26px", borderRadius: 12, background: T.teal, color: "#fff", fontSize: 15, fontWeight: 800, textDecoration: "none", boxShadow: `0 5px 0 0 ${T.tealDark}`, display: "flex", alignItems: "center", gap: 8 }}>
