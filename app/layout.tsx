@@ -3,10 +3,10 @@ import type { Metadata, Viewport } from 'next'
 import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
 
 export const metadata: Metadata = {
-  title: 'MASTRO ERP',
-  description: 'Il sistema operativo del serramentista',
+  title: 'fliwoX',
+  description: 'Fatto per chi lavora con le mani',
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'MASTRO' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'fliwoX' },
   icons: {
     apple: '/icon-192.png',
   },
