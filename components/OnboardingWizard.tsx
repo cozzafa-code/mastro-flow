@@ -132,11 +132,11 @@ export default function OnboardingWizard() {
           boxShadow: '0 8px 32px rgba(13,31,31,0.12), inset 0 1px 0 rgba(255,255,255,0.8)',
           padding: '28px 24px',
         }}>
-          {step === 1 && <Step1Azienda data={data} update={update} onNext={next} />}
-          {step === 2 && <Step2Brand data={data} update={update} onNext={next} onSkip={skip} />}
-          {step === 3 && <Step3Team data={data} update={update} onNext={next} />}
-          {step === 4 && <Step4Import data={data} update={update} onNext={next} onSkip={skip} />}
-          {step === 5 && <Step5Piano data={data} update={update} onComplete={complete} />}
+          {step === 1 && <Step1Azienda data={data} onChange={update} onNext={next} />}
+          {step === 2 && <Step2Brand data={data} onChange={update} onNext={next} onSkip={skip} />}
+          {step === 3 && <Step3Team data={data} onChange={update} onNext={next} />}
+          {step === 4 && <Step4Import data={data} onChange={update} onNext={next} onSkip={skip} />}
+          {step === 5 && <Step5Piano data={data} onChange={update} onComplete={complete} />}
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 16, fontSize: 11, color: '#4A7070', fontWeight: 500 }}>
