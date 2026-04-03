@@ -1,269 +1,234 @@
-"use client";
-// @ts-nocheck
-// MASTRO — Landing page v4 — ottimizzata per conversione
-// app/page.tsx
-
-import { useState } from "react";
-
-const TEAL="#1A9E73", DARK="#1A1A1C", RED="#DC4444", AMBER="#E8A020", BLUE="#3B7FE0";
-
-const PIANI = [
-  { id:"start", nome:"START", prezzo:29, desc:"Per il serramentista solo o piccolo studio", features:["Commesse illimitate","Configuratore + PDF","Messaggi WhatsApp","App mobile iOS/Android","Supporto email"], colore:TEAL, top:false },
-  { id:"pro",   nome:"PRO",   prezzo:59, desc:"Per chi ha un team e vuole crescere", features:["Tutto di START","AI Agente autopilot","Trova Clienti 20 lead/mese","Ordini fornitori auto","ENEA / CAM 2026","Report analytics avanzati"], colore:DARK, top:true },
-  { id:"titan", nome:"TITAN", prezzo:89, desc:"Per aziende strutturate e produttori", features:["Tutto di PRO","Produzione barra→finestra","CNC export Emmegi","Trova Clienti 50 lead/mese","Multi-utente illimitato","Onboarding dedicato"], colore:"#1a1a2e", top:false },
-];
-
-const FEATURES = [
-  { ico:"📋", titolo:"Preventivi in 3 minuti", desc:"Configuratore professionale con U-value, margine live, PDF firmabile dal cliente." },
-  { ico:"🏭", titolo:"Produzione integrata", desc:"Dalla barra alluminio alla finestra finita. Distinte materiali, CNC Emmegi, magazzino." },
-  { ico:"🔧", titolo:"Montaggi & squadre", desc:"Calendario installatori, checklist posa, stato live cantieri. Zero telefonate." },
-  { ico:"🤖", titolo:"AI Agente 24/7", desc:"Risponde ai clienti, manda promemoria, avvisa quando una commessa è ferma." },
-  { ico:"🎯", titolo:"Trova Clienti", desc:"Scraping Habitissimo, Instapro, Subito.it per zona. Lead B2C pronti nel gestionale." },
-  { ico:"📊", titolo:"ENEA / CAM 2026", desc:"Calcolo Uw, etichetta CE, pratica ENEA automatica. Opera/FPPRO non ce l'hanno." },
-];
-
-const SETTORI = [
-  { ico:"🪟", nome:"Serramentisti", n:"6.200+ in Italia" },
-  { ico:"🪞", nome:"Tendaggi", n:"Tende, veneziane, zanzariere" },
-  { ico:"⚙️", nome:"Fabbri", n:"Cancelli, recinzioni, inferriate" },
-  { ico:"🌿", nome:"Pergole", n:"Bioclimatiche, fotovoltaiche" },
-];
-
-const TESTIMONIANZE = [
-  { nome:"Marco V.", ruolo:"Serramentista, Cosenza", txt:"Prima usavo fogli Excel. Ora faccio preventivi in 5 minuti e il cliente firma sul telefono." },
-  { nome:"Luigi B.", ruolo:"Produttore PVC, Napoli", txt:"La distinta materiali automatica mi ha fatto risparmiare 3 ore al giorno. Non tornerei indietro." },
-  { nome:"Antonio F.", ruolo:"Fabbro, Bari", txt:"L'AI risponde ai clienti WhatsApp quando sono in cantiere. I preventivi li fa lui." },
-];
+import Link from "next/link";
 
 export default function LandingPage() {
-  const [email, setEmail] = useState("");
-  const [settore, setSettore] = useState("");
-  const [sent, setSent] = useState(false);
+  const teal = "#28A0A0";
+  const dark = "#0D1F1F";
+  const bg = "#E8F4F4";
+  const card = "#FFFFFF";
+  const sub = "#4A7070";
+  const bdr = "#C8E4E4";
+  const orange = "#F59E0B";
+  const green = "#7ED957";
 
-  const handleCTA = () => { if(email) { setSent(true); } };
+  const modules = [
+    { name: "MISURE", desc: "Rilievi e misure dal cantiere, anche offline", icon: "📐" },
+    { name: "TALK", desc: "Messaggi clienti con risposta AI in 10 secondi", icon: "💬" },
+    { name: "FIELD", desc: "App installatori per montaggi e collaudi", icon: "🔧" },
+    { name: "RETE", desc: "Gestione agenti e rete commerciale", icon: "🌐" },
+    { name: "CNC", desc: "Ottimizzazione tagli per macchine Emmegi", icon: "⚙️" },
+    { name: "SPESE", desc: "Note spese operatori con foto scontrino", icon: "🧾" },
+  ];
+
+  const features = [
+    { title: "Preventivi in 3 minuti", desc: "Calcolo automatico da misure reali. Nessun foglio Excel.", icon: "⚡" },
+    { title: "Pipeline commesse S→P→O→M→F", desc: "Ogni commessa segue un flusso guidato. Zero dimenticanze.", icon: "📋" },
+    { title: "PDF professionali", desc: "Preventivo, contratto, tavola tecnica, ordine controtelai. Tutto automatico.", icon: "📄" },
+    { title: "Firma digitale cliente", desc: "Il cliente firma sul telefono. Niente carta, niente fax.", icon: "✍️" },
+    { title: "AI tecnico integrato", desc: "Risponde alle domande tecniche su sistemi e normative.", icon: "🤖" },
+    { title: "CAM compliance", desc: "Verifica automatica dei criteri ambientali minimi DM 24/11/2025.", icon: "♻️" },
+  ];
+
+  const pricing = [
+    { name: "BASE", price: 9, desc: "1 utente · 20 commesse", color: "#6B7280", features: ["ERP base", "PDF preventivi", "20 commesse"] },
+    { name: "START", price: 29, desc: "3 utenti · Commesse illimitate", color: teal, best: true, features: ["ERP completo", "Commesse illimitate", "TALK + MISURE", "3 operatori"] },
+    { name: "PRO", price: 59, desc: "10 utenti · Add-on settore", color: orange, features: ["Tutto START", "RETE agenti", "Assistente AI", "10 operatori"] },
+    { name: "TITAN", price: 89, desc: "Utenti illimitati · CNC incluso", color: dark, features: ["Tutto PRO", "CNC", "API access", "Priorità supporto"] },
+  ];
 
   return (
-    <div style={{fontFamily:"Inter,sans-serif",color:DARK,background:"#fff",overflowX:"hidden"}}>
+    <main style={{ fontFamily: "system-ui, -apple-system, sans-serif", background: bg, color: dark, minHeight: "100vh" }}>
 
       {/* NAV */}
-      <nav style={{position:"sticky" as any,top:0,background:"rgba(255,255,255,0.95)",backdropFilter:"blur(10px)",borderBottom:"1px solid #E5E3DC",padding:"0 5%",display:"flex",alignItems:"center",justifyContent:"space-between",height:60,zIndex:100}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:32,height:32,borderRadius:9,background:DARK,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#fff"}}>M</div>
-          <span style={{fontSize:13,fontWeight:800,letterSpacing:2,color:DARK}}>MASTRO</span>
+      <nav style={{ background: dark, padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div dangerouslySetInnerHTML={{ __html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="36" height="36">
+  <g>
+    <rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/>
+    <rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/>
+    <rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/>
+  </g>
+  <g transform="rotate(8 100 100)">
+    <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
+    <path d="M70 70 L130 130" stroke="#F2F1EC" stroke-width="18" stroke-linecap="round"/>
+    <path d="M130 70 L70 130" stroke="#F2F1EC" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>` }} />
+          <span style={{ color: "#fff", fontWeight: 900, fontSize: 22, letterSpacing: -0.5 }}>fliwo<span style={{ color: teal }}>X</span></span>
         </div>
-        <div style={{display:"flex",gap:24,alignItems:"center"}}>
-          {["Funzionalità","Prezzi","Settori"].map(l=>(
-            <span key={l} style={{fontSize:13,color:"#6B7280",cursor:"pointer",fontWeight:500}}>{l}</span>
-          ))}
-          <a href="/dashboard" style={{padding:"8px 18px",borderRadius:8,background:DARK,color:"#fff",fontSize:13,fontWeight:600,textDecoration:"none"}}>Accedi</a>
-          <a href="/dashboard" style={{padding:"8px 18px",borderRadius:8,background:TEAL,color:"#fff",fontSize:13,fontWeight:600,textDecoration:"none"}}>Prova gratis →</a>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/app" style={{ padding: "8px 16px", borderRadius: 8, background: "transparent", color: "#8BBCBC", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Accedi</Link>
+          <Link href="/app" style={{ padding: "8px 18px", borderRadius: 8, background: teal, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", boxShadow: "0 4px 0 0 #156060" }}>Prova gratis →</Link>
         </div>
       </nav>
 
       {/* HERO */}
-      <section style={{background:DARK,padding:"80px 5% 90px",textAlign:"center" as any,position:"relative" as any,overflow:"hidden"}}>
-        <div style={{position:"absolute" as any,top:0,left:0,right:0,bottom:0,background:"radial-gradient(ellipse at 50% 0%, rgba(26,158,115,0.15) 0%, transparent 70%)",pointerEvents:"none" as any}}/>
-        <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"5px 12px",borderRadius:100,background:"rgba(26,158,115,0.15)",border:"1px solid rgba(26,158,115,0.3)",marginBottom:24}}>
-          <div style={{width:6,height:6,borderRadius:"50%",background:TEAL}}/>
-          <span style={{fontSize:12,fontWeight:600,color:TEAL,letterSpacing:0.5}}>Lancio giugno 2026 · 30 giorni gratis</span>
+      <section style={{ padding: "80px 24px 60px", textAlign: "center", maxWidth: 680, margin: "0 auto" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${teal}18`, border: `1px solid ${teal}40`, borderRadius: 20, padding: "6px 14px", marginBottom: 24, fontSize: 12, fontWeight: 700, color: teal }}>
+          ✦ 15 giorni gratis · No carta di credito
         </div>
-        <h1 style={{fontSize:52,fontWeight:800,color:"#fff",margin:"0 0 16px",lineHeight:1.1,letterSpacing:-1.5}}>
-          Il gestionale che<br/>
-          <span style={{color:TEAL}}>capisce l'artigiano</span>
+        <h1 style={{ fontSize: "clamp(32px, 6vw, 52px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 20, color: dark }}>
+          Il gestionale che<br />
+          <span style={{ color: teal }}>capisce l'artigiano</span>
         </h1>
-        <p style={{fontSize:18,color:"rgba(255,255,255,0.6)",maxWidth:560,margin:"0 auto 40px",lineHeight:1.6}}>
-          Preventivi, produzione, montaggi, clienti, ENEA — tutto in un'unica piattaforma. Niente Excel, niente carta, niente caos.
+        <p style={{ fontSize: 18, color: sub, lineHeight: 1.6, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
+          Preventivi, commesse, montaggi, clienti, ENEA — tutto in un'unica piattaforma. Per serramentisti, fabbri, falegnami e tutti gli artigiani del serramento.
         </p>
-        {/* CTA principale */}
-        {!sent?(
-          <div style={{display:"flex",gap:8,justifyContent:"center" as any,flexWrap:"wrap" as any,maxWidth:520,margin:"0 auto"}}>
-            <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="La tua email professionale" style={{flex:1,minWidth:220,padding:"12px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.08)",color:"#fff",fontSize:14,outline:"none"}}/>
-            <select value={settore} onChange={e=>setSettore(e.target.value)} style={{padding:"12px 14px",borderRadius:10,border:"1px solid rgba(255,255,255,0.15)",background:"rgba(255,255,255,0.08)",color:settore?"#fff":"rgba(255,255,255,0.5)",fontSize:13,outline:"none"}}>
-              <option value="">Settore...</option>
-              <option value="serramenti">Serramentista</option>
-              <option value="tendaggi">Tendaggi</option>
-              <option value="fabbro">Fabbro</option>
-              <option value="pergole">Pergole</option>
-            </select>
-            <button onClick={handleCTA} style={{padding:"12px 24px",borderRadius:10,background:TEAL,color:"#fff",fontSize:14,fontWeight:700,border:"none",cursor:"pointer",whiteSpace:"nowrap" as any}}>Inizia gratis →</button>
-          </div>
-        ):(
-          <div style={{padding:"16px 28px",borderRadius:12,background:"rgba(26,158,115,0.15)",border:"1px solid rgba(26,158,115,0.3)",display:"inline-block"}}>
-            <span style={{fontSize:15,fontWeight:600,color:TEAL}}>✓ Ti contatteremo entro 24h per attivare la tua prova!</span>
-          </div>
-        )}
-        <div style={{marginTop:16,fontSize:12,color:"rgba(255,255,255,0.35)"}}>Nessuna carta di credito · 30 giorni gratis · Cancella quando vuoi</div>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/app" style={{ padding: "14px 28px", borderRadius: 12, background: teal, color: "#fff", fontSize: 16, fontWeight: 800, textDecoration: "none", boxShadow: "0 5px 0 0 #156060" }}>
+            Inizia gratis →
+          </Link>
+          <a href="#features" style={{ padding: "14px 24px", borderRadius: 12, background: card, color: dark, fontSize: 16, fontWeight: 700, textDecoration: "none", border: `1px solid ${bdr}`, boxShadow: "0 4px 0 0 #A8CCCC" }}>
+            Scopri di più
+          </a>
+        </div>
+        <p style={{ marginTop: 20, fontSize: 12, color: sub }}>Già usato da serramentisti in tutta Italia · Nessun costo di attivazione</p>
+      </section>
 
-        {/* Social proof numbers */}
-        <div style={{display:"flex",justifyContent:"center" as any,gap:48,marginTop:56,borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:40}}>
-          {[["30 min","per fare il primo preventivo"],["€4.400","MRR obiettivo Q2 2026"],["0","carta, Excel o fogli"]].map(([v,l],i)=>(
-            <div key={i} style={{textAlign:"center" as any}}>
-              <div style={{fontSize:28,fontWeight:800,color:"#fff"}}>{v}</div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginTop:4}}>{l}</div>
+      {/* STATS */}
+      <section style={{ padding: "0 24px 60px", maxWidth: 800, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          {[
+            { n: "3 min", l: "Preventivo completo" },
+            { n: "0 €", l: "Costo attivazione" },
+            { n: "15gg", l: "Trial gratuito" },
+          ].map((s) => (
+            <div key={s.n} style={{ background: card, border: `1px solid ${bdr}`, borderRadius: 16, padding: "24px 16px", textAlign: "center", boxShadow: "0 4px 0 0 #A8CCCC" }}>
+              <div style={{ fontSize: 32, fontWeight: 900, color: teal, fontVariantNumeric: "tabular-nums" }}>{s.n}</div>
+              <div style={{ fontSize: 12, color: sub, marginTop: 4, fontWeight: 600 }}>{s.l}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section id="features" style={{ padding: "60px 24px", background: dark }}>
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#fff", textAlign: "center", marginBottom: 8 }}>Tutto quello che ti serve</h2>
+          <p style={{ color: "#8BBCBC", textAlign: "center", marginBottom: 40, fontSize: 15 }}>Nessun altro software ti dà questo</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+            {features.map((f) => (
+              <div key={f.title} style={{ background: "#162828", border: "1px solid #2A4040", borderRadius: 14, padding: "20px 18px" }}>
+                <div style={{ fontSize: 28, marginBottom: 10 }}>{f.icon}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{f.title}</div>
+                <div style={{ fontSize: 13, color: "#8BBCBC", lineHeight: 1.5 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* MODULI */}
+      <section style={{ padding: "60px 24px" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontSize: 28, fontWeight: 900, textAlign: "center", marginBottom: 8 }}>I moduli fliwoX</h2>
+          <p style={{ color: sub, textAlign: "center", marginBottom: 40, fontSize: 15 }}>Un ecosistema completo per il tuo cantiere</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+            {modules.map((m) => (
+              <div key={m.name} style={{ background: card, border: `1px solid ${bdr}`, borderRadius: 14, padding: "18px 16px", boxShadow: "0 3px 0 0 #A8CCCC" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <span style={{ fontSize: 20 }}>{m.icon}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: dark, letterSpacing: 0.5 }}>{m.name}</span>
+                </div>
+                <div style={{ fontSize: 12, color: sub, lineHeight: 1.5 }}>{m.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section style={{ padding: "60px 24px", background: dark }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <h2 style={{ fontSize: 28, fontWeight: 900, color: "#fff", textAlign: "center", marginBottom: 8 }}>Prezzi chiari</h2>
+          <p style={{ color: "#8BBCBC", textAlign: "center", marginBottom: 40, fontSize: 15 }}>15 giorni gratis · Disdici quando vuoi</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+            {pricing.map((p) => (
+              <div key={p.name} style={{ background: p.best ? teal : "#162828", border: `2px solid ${p.best ? teal : "#2A4040"}`, borderRadius: 16, padding: "24px 18px", position: "relative" }}>
+                {p.best && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: orange, color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 10 }}>BEST SELLER</div>}
+                <div style={{ fontSize: 13, fontWeight: 800, color: p.best ? "#fff" : "#8BBCBC", marginBottom: 4 }}>{p.name}</div>
+                <div style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>€{p.price}<span style={{ fontSize: 13, fontWeight: 400 }}>/mese</span></div>
+                <div style={{ fontSize: 11, color: p.best ? "rgba(255,255,255,0.7)" : "#8BBCBC", marginBottom: 16 }}>{p.desc}</div>
+                {p.features.map((f) => (
+                  <div key={f} style={{ fontSize: 12, color: p.best ? "#fff" : "#8BBCBC", marginBottom: 4, display: "flex", gap: 6 }}>
+                    <span style={{ color: p.best ? "#fff" : teal }}>✓</span> {f}
+                  </div>
+                ))}
+                <Link href="/app" style={{ display: "block", marginTop: 20, padding: "10px", borderRadius: 10, background: p.best ? "#fff" : teal, color: p.best ? teal : "#fff", fontSize: 13, fontWeight: 800, textDecoration: "none", textAlign: "center" }}>
+                  Inizia gratis
+                </Link>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* SETTORI */}
-      <section style={{padding:"60px 5%",background:"#F8FAFC",textAlign:"center" as any}}>
-        <div style={{fontSize:12,fontWeight:700,letterSpacing:2,color:TEAL,textTransform:"uppercase" as any,marginBottom:12}}>Costruito per</div>
-        <h2 style={{fontSize:32,fontWeight:700,color:DARK,margin:"0 0 40px"}}>Chi lavora con le mani</h2>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,maxWidth:800,margin:"0 auto"}}>
-          {SETTORI.map((s,i)=>(
-            <div key={i} style={{background:"#fff",borderRadius:16,padding:"24px 16px",border:"1px solid #E5E3DC",textAlign:"center" as any}}>
-              <div style={{fontSize:36,marginBottom:12}}>{s.ico}</div>
-              <div style={{fontSize:15,fontWeight:700,color:DARK,marginBottom:4}}>{s.nome}</div>
-              <div style={{fontSize:12,color:"#6B7280"}}>{s.n}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FUNZIONALITÀ */}
-      <section style={{padding:"80px 5%"}}>
-        <div style={{textAlign:"center" as any,marginBottom:56}}>
-          <div style={{fontSize:12,fontWeight:700,letterSpacing:2,color:TEAL,textTransform:"uppercase" as any,marginBottom:12}}>Funzionalità</div>
-          <h2 style={{fontSize:36,fontWeight:700,color:DARK,margin:0}}>Tutto quello che ti serve</h2>
-          <p style={{fontSize:16,color:"#6B7280",marginTop:12}}>Opera e FPPRO costano migliaia di euro, girano solo su Windows e non hanno niente di questo.</p>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,maxWidth:960,margin:"0 auto"}}>
-          {FEATURES.map((f,i)=>(
-            <div key={i} style={{background:"#fff",borderRadius:16,padding:"24px 20px",border:"1px solid #E5E3DC"}}>
-              <div style={{fontSize:32,marginBottom:14}}>{f.ico}</div>
-              <div style={{fontSize:16,fontWeight:700,color:DARK,marginBottom:8}}>{f.titolo}</div>
-              <div style={{fontSize:14,color:"#6B7280",lineHeight:1.6}}>{f.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FLUSSO VISIVO */}
-      <section style={{padding:"80px 5%",background:DARK}}>
-        <div style={{textAlign:"center" as any,marginBottom:48}}>
-          <h2 style={{fontSize:36,fontWeight:700,color:"#fff",margin:"0 0 12px"}}>Dal sopralluogo alla fattura</h2>
-          <p style={{fontSize:16,color:"rgba(255,255,255,0.5)"}}>8 fasi, tutto automatizzato</p>
-        </div>
-        <div style={{display:"flex",gap:0,maxWidth:1000,margin:"0 auto",flexWrap:"wrap" as any}}>
-          {[
-            {n:"01",l:"Lead",s:"Cliente chiede preventivo",c:TEAL},
-            {n:"02",l:"Sopralluogo",s:"Misure su tablet",c:BLUE},
-            {n:"03",l:"Preventivo",s:"Configuratore + PDF",c:BLUE},
-            {n:"04",l:"Conferma",s:"Firma digitale",c:AMBER},
-            {n:"05",l:"Ordine",s:"Auto al fornitore",c:"#F97316"},
-            {n:"06",l:"Produzione",s:"Barre → finestra",c:"#F97316"},
-            {n:"07",l:"Montaggio",s:"Squadra + checklist",c:"#8B5CF6"},
-            {n:"08",l:"Fattura",s:"SDI + ENEA auto",c:TEAL},
-          ].map((step,i)=>(
-            <div key={i} style={{flex:"1 1 120px",padding:"16px 10px",textAlign:"center" as any,position:"relative" as any}}>
-              <div style={{width:36,height:36,borderRadius:10,background:step.c+"20",border:`1px solid ${step.c}40`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 10px",fontSize:11,fontWeight:800,color:step.c}}>{step.n}</div>
-              <div style={{fontSize:13,fontWeight:700,color:"#fff",marginBottom:4}}>{step.l}</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.4)"}}>{step.s}</div>
-              {i<7&&<div style={{position:"absolute" as any,top:24,right:-4,width:8,height:2,background:"rgba(255,255,255,0.15)"}}/>}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* PREZZI */}
-      <section style={{padding:"80px 5%",textAlign:"center" as any}} id="prezzi">
-        <div style={{fontSize:12,fontWeight:700,letterSpacing:2,color:TEAL,textTransform:"uppercase" as any,marginBottom:12}}>Prezzi</div>
-        <h2 style={{fontSize:36,fontWeight:700,color:DARK,margin:"0 0 12px"}}>Semplici e trasparenti</h2>
-        <p style={{fontSize:16,color:"#6B7280",marginBottom:48}}>30 giorni gratis. Nessun costo di attivazione. Cancella quando vuoi.</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,maxWidth:860,margin:"0 auto"}}>
-          {PIANI.map((p,i)=>(
-            <div key={p.id} style={{borderRadius:20,padding:"28px 24px",border:p.top?`2px solid ${TEAL}`:"1px solid #E5E3DC",background:p.top?DARK:"#fff",position:"relative" as any}}>
-              {p.top&&<div style={{position:"absolute" as any,top:-12,left:"50%",transform:"translateX(-50%)",background:TEAL,color:"#fff",fontSize:11,fontWeight:700,padding:"3px 14px",borderRadius:100,whiteSpace:"nowrap" as any}}>Più scelto</div>}
-              <div style={{fontSize:14,fontWeight:700,color:p.top?"rgba(255,255,255,0.5)":"#6B7280",letterSpacing:1,marginBottom:8}}>{p.nome}</div>
-              <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:8}}>
-                <span style={{fontSize:40,fontWeight:800,color:p.top?"#fff":DARK}}>€{p.prezzo}</span>
-                <span style={{fontSize:14,color:p.top?"rgba(255,255,255,0.4)":"#6B7280"}}>/mese</span>
-              </div>
-              <div style={{fontSize:13,color:p.top?"rgba(255,255,255,0.5)":"#6B7280",marginBottom:24,lineHeight:1.5}}>{p.desc}</div>
-              <div style={{display:"flex",flexDirection:"column" as any,gap:8,marginBottom:28}}>
-                {p.features.map((f,j)=>(
-                  <div key={j} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:p.top?"rgba(255,255,255,0.7)":DARK}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEAL} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                    {f}
-                  </div>
-                ))}
-              </div>
-              <a href="/dashboard" style={{display:"block",padding:"12px",borderRadius:10,background:p.top?TEAL:"transparent",border:p.top?`1px solid ${TEAL}`:`1px solid ${DARK}`,color:p.top?"#fff":DARK,fontSize:14,fontWeight:700,textDecoration:"none",textAlign:"center" as any}}>
-                Inizia gratis →
-              </a>
-            </div>
-          ))}
-        </div>
-        <div style={{marginTop:20,fontSize:13,color:"#6B7280"}}>Add-on settore: +€10/mese · SDI fatture: incluso da PRO</div>
-      </section>
-
-      {/* TESTIMONIANZE */}
-      <section style={{padding:"60px 5%",background:"#F8FAFC"}}>
-        <h2 style={{fontSize:28,fontWeight:700,color:DARK,textAlign:"center" as any,marginBottom:40}}>Chi lo usa già</h2>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,maxWidth:860,margin:"0 auto"}}>
-          {TESTIMONIANZE.map((t,i)=>(
-            <div key={i} style={{background:"#fff",borderRadius:16,padding:"24px",border:"1px solid #E5E3DC"}}>
-              <div style={{fontSize:22,color:AMBER,marginBottom:10}}>★★★★★</div>
-              <p style={{fontSize:14,color:"#374151",lineHeight:1.7,margin:"0 0 16px",fontStyle:"italic" as any}}>"{t.txt}"</p>
-              <div style={{fontSize:13,fontWeight:700,color:DARK}}>{t.nome}</div>
-              <div style={{fontSize:12,color:"#6B7280"}}>{t.ruolo}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* VS COMPETITOR */}
-      <section style={{padding:"60px 5%"}}>
-        <h2 style={{fontSize:28,fontWeight:700,color:DARK,textAlign:"center" as any,marginBottom:40}}>MASTRO vs Opera / FPPRO</h2>
-        <div style={{maxWidth:760,margin:"0 auto"}}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px",gap:0,borderRadius:14,overflow:"hidden",border:"1px solid #E5E3DC"}}>
-            <div style={{padding:"10px 16px",background:"#F8FAFC",fontWeight:700,fontSize:12,color:"#6B7280",borderBottom:"1px solid #E5E3DC"}}>Funzionalità</div>
-            {["MASTRO","Opera","FPPRO"].map((h,i)=>(
-              <div key={i} style={{padding:"10px",textAlign:"center" as any,background:i===0?TEAL+"10":"#F8FAFC",fontWeight:700,fontSize:12,color:i===0?TEAL:"#6B7280",borderBottom:"1px solid #E5E3DC",borderLeft:"1px solid #E5E3DC"}}>{h}</div>
-            ))}
-            {[
-              ["Cloud + mobile","✓","✗","✗"],
-              ["AI Agente 24/7","✓","✗","✗"],
-              ["ENEA/CAM 2026","✓","✗","Parziale"],
-              ["Trova Clienti","✓","✗","✗"],
-              ["Portale cliente B2C","✓","✗","✗"],
-              ["Firma digitale","✓","✗","✗"],
-              ["Produzione CNC","✓","Parziale","✓"],
-              ["Prezzo mensile","€29–89","€1.500+ licenza","€600+ licenza"],
-            ].map(([feat,...vals],i)=>(
-              <>
-                <div key={feat} style={{padding:"10px 16px",borderBottom:"1px solid #E5E3DC",fontSize:13,color:DARK}}>{feat}</div>
-                {vals.map((v,j)=>(
-                  <div key={j} style={{padding:"10px",textAlign:"center" as any,borderBottom:"1px solid #E5E3DC",borderLeft:"1px solid #E5E3DC",fontSize:12,fontWeight:v==="✓"?600:400,color:v==="✓"?TEAL:v==="✗"?RED:"#6B7280",background:j===0&&v==="✓"?TEAL+"06":"transparent"}}>{v}</div>
-                ))}
-              </>
+      <section style={{ padding: "60px 24px" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>Per ogni artigiano del serramento</h2>
+          <p style={{ color: sub, marginBottom: 32, fontSize: 15 }}>fliwoX si adatta al tuo settore</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+            {["Serramentisti", "Fabbri", "Falegnami", "Tendaggi", "Pergole", "Cancelli", "Box doccia", "Zanzariere", "Mobili su misura"].map((s) => (
+              <span key={s} style={{ padding: "8px 16px", borderRadius: 20, background: card, border: `1px solid ${bdr}`, fontSize: 13, fontWeight: 600, color: dark }}>
+                {s}
+              </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA FINALE */}
-      <section style={{padding:"80px 5%",background:DARK,textAlign:"center" as any}}>
-        <h2 style={{fontSize:40,fontWeight:800,color:"#fff",margin:"0 0 16px",lineHeight:1.1}}>Inizia oggi.<br/><span style={{color:TEAL}}>30 giorni gratis.</span></h2>
-        <p style={{fontSize:16,color:"rgba(255,255,255,0.5)",marginBottom:36}}>Nessun vincolo. Nessuna carta di credito. Setup in 5 minuti.</p>
-        <a href="/dashboard" style={{display:"inline-block",padding:"16px 40px",borderRadius:12,background:TEAL,color:"#fff",fontSize:16,fontWeight:700,textDecoration:"none"}}>Crea il tuo account gratis →</a>
-        <div style={{marginTop:16,fontSize:12,color:"rgba(255,255,255,0.3)"}}>Già usato da serramentisti, fabbri, tendaggi e produttori di pergole in tutta Italia</div>
+      {/* CTA */}
+      <section style={{ padding: "60px 24px 80px", textAlign: "center", background: teal }}>
+        <h2 style={{ fontSize: 32, fontWeight: 900, color: "#fff", marginBottom: 12 }}>Pronto a semplificare il tuo lavoro?</h2>
+        <p style={{ color: "rgba(255,255,255,0.8)", marginBottom: 32, fontSize: 16 }}>15 giorni gratis · Nessuna carta di credito · Setup in 5 minuti</p>
+        <Link href="/app" style={{ display: "inline-block", padding: "16px 36px", borderRadius: 14, background: "#fff", color: teal, fontSize: 18, fontWeight: 900, textDecoration: "none", boxShadow: "0 5px 0 0 #156060" }}>
+          Inizia gratis →
+        </Link>
       </section>
 
       {/* FOOTER */}
-      <footer style={{padding:"32px 5%",borderTop:"1px solid #E5E3DC",display:"flex",justifyContent:"space-between" as any,alignItems:"center",flexWrap:"wrap" as any,gap:12}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:24,height:24,borderRadius:6,background:DARK,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:900,color:"#fff"}}>M</div>
-          <span style={{fontSize:12,fontWeight:700,letterSpacing:1.5,color:DARK}}>MASTRO</span>
-          <span style={{fontSize:11,color:"#6B7280"}}>by GALASSIA MASTRO</span>
+      <footer style={{ background: dark, padding: "32px 24px", textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
+          <div dangerouslySetInnerHTML={{ __html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="36" height="36">
+  <g>
+    <rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/>
+    <rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/>
+    <rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/>
+    <rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/>
+    <rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/>
+  </g>
+  <g transform="rotate(8 100 100)">
+    <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
+    <path d="M70 70 L130 130" stroke="#F2F1EC" stroke-width="18" stroke-linecap="round"/>
+    <path d="M130 70 L70 130" stroke="#F2F1EC" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>` }} />
+          <span style={{ color: "#fff", fontWeight: 900, fontSize: 18 }}>fliwo<span style={{ color: teal }}>X</span></span>
         </div>
-        <div style={{display:"flex",gap:20}}>
-          {["Privacy Policy","Termini di Servizio","Contatti"].map(l=>(
-            <a key={l} href="#" style={{fontSize:12,color:"#6B7280",textDecoration:"none"}}>{l}</a>
-          ))}
+        <div style={{ display: "flex", gap: 20, justifyContent: "center", marginBottom: 16 }}>
+          <a href="/privacy" style={{ color: "#8BBCBC", fontSize: 12, textDecoration: "none" }}>Privacy Policy</a>
+          <a href="/termini" style={{ color: "#8BBCBC", fontSize: 12, textDecoration: "none" }}>Termini di Servizio</a>
+          <a href="mailto:info@fliwox.com" style={{ color: "#8BBCBC", fontSize: 12, textDecoration: "none" }}>info@fliwox.com</a>
         </div>
-        <div style={{fontSize:11,color:"#9CA3AF"}}>© {new Date().getFullYear()} GALASSIA MASTRO. Tutti i diritti riservati.</div>
+        <p style={{ color: "#4A7070", fontSize: 11 }}>© 2026 fliwoX · Tutti i diritti riservati · P.IVA registrata in Italia</p>
       </footer>
-    </div>
+
+    </main>
   );
 }
