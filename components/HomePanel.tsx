@@ -115,7 +115,7 @@ export default function HomePanel() {
   const FASI = ["sopralluogo", "preventivo", "ordini", "montaggio", "fattura"];
 
   return (
-    <div style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: "#D8EEEE", backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", minHeight: "100%", paddingBottom: 100 }}>
+    <div style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: "#D8EEEE", overflowX: "hidden", backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", minHeight: "100%", paddingBottom: 100 }}>
 
       {/* TOPBAR */}
       <div style={{ background: "linear-gradient(160deg, rgba(5,20,20,0.75) 0%, rgba(15,45,45,0.65) 60%, rgba(40,160,160,0.15) 100%)", backdropFilter: "blur(40px) saturate(180%)", WebkitBackdropFilter: "blur(40px) saturate(180%)", paddingTop: "calc(env(safe-area-inset-top) + 14px)", paddingBottom: 14, paddingLeft: 18, paddingRight: 18, position: "relative", overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(40,160,160,0.15)", borderBottom: "1px solid rgba(40,160,160,0.25)" }}>
@@ -159,15 +159,15 @@ export default function HomePanel() {
         </div>
         {/* Mini KPI */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-          <div onClick={() => setTab("commesse")} style={{ background: "rgba(0,0,0,0.25)", border: "2px solid #28A0A0", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 0 12px rgba(40,160,160,0.4), 0 6px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+          <div onClick={() => setTab("commesse")} style={{ background: "rgba(40,160,160,.2)", border: "1px solid rgba(40,160,160,.45)", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
             <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: T_CLR, fontFamily: "monospace" }}>{commesseAttive}</p>
             <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>commesse</p>
           </div>
-          <div onClick={() => setTab("altro")} style={{ background: "rgba(0,0,0,0.25)", border: "2px solid #28A0A0", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: "0 0 12px rgba(40,160,160,0.4), 0 6px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
+          <div onClick={() => setTab("altro")} style={{ background: "rgba(40,160,160,.2)", border: "1px solid rgba(40,160,160,.45)", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
             <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: T_CLR, fontFamily: "monospace" }}>{onlineCount}</p>
             <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>in campo</p>
           </div>
-          <div onClick={() => setTab("contabilita")} style={{ background: totFat > 0 ? "rgba(26,158,115,.22)" : "rgba(40,160,160,.2)", border: `2px solid ${totFat > 0 ? "#1A9E73" : "#28A0A0"}`, borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", boxShadow: `0 0 12px ${totFat > 0 ? "rgba(26,158,115,0.4)" : "rgba(40,160,160,0.4)"}, 0 6px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)` }}>
+          <div onClick={() => setTab("contabilita")} style={{ background: totFat > 0 ? "rgba(26,158,115,.22)" : "rgba(40,160,160,.2)", border: `1px solid ${totFat > 0 ? "rgba(26,158,115,.45)" : "rgba(40,160,160,.45)"}`, borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
             <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: totFat > 0 ? GRN : T_CLR, fontFamily: "monospace" }}>{fmtK(totFat)}</p>
             <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>da incassare</p>
           </div>
