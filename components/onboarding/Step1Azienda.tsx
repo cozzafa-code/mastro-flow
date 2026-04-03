@@ -50,7 +50,7 @@ export default function Step1Azienda({ data, onChange, onNext }: Props) {
               style={{
                 padding: '12px 14px',
                 borderRadius: 10,
-                border: `2px solid ${data.settore === s.value ? '#D08008' : '#E5E3DC'}`,
+                border: `2px solid ${data.settore === s.value ? '#28A0A0' : '#E5E3DC'}`,
                 background: data.settore === s.value ? '#FEF3C7' : '#fff',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
@@ -104,7 +104,7 @@ const inputStyle: React.CSSProperties = {
 const btnStyle: React.CSSProperties = {
   width: '100%',
   padding: '13px 0',
-  background: '#D08008',
+  background: '#28A0A0',
   color: '#fff',
   border: 'none',
   borderRadius: 10,

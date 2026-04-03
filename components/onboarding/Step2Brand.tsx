@@ -2,7 +2,7 @@
 // Step2Brand.tsx
 import { OnboardingData } from './types';
 
-const COLORI = ['#D08008', '#3B7FE0', '#1A9E73', '#DC4444', '#7C3AED', '#1A1A1C'];
+const COLORI = ['#28A0A0', '#3B7FE0', '#1A9E73', '#DC4444', '#7C3AED', '#1A1A1C'];
 
 interface Props { data: OnboardingData; onChange: (d: Partial<OnboardingData>) => void; onNext: () => void; onSkip: () => void; }
 
@@ -77,5 +77,5 @@ export default function Step2Brand({ data, onChange, onNext, onSkip }: Props) {
 }
 
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 };
-const btnPrimary: React.CSSProperties = { padding: '13px 0', background: '#D08008', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'Inter, sans-serif', cursor: 'pointer' };
+const btnPrimary: React.CSSProperties = { padding: '13px 0', background: '#28A0A0', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'Inter, sans-serif', cursor: 'pointer' };
 const btnSecondary: React.CSSProperties = { ...btnPrimary, background: '#F2F1EC', color: '#6B7280', border: '1px solid #E5E3DC' };

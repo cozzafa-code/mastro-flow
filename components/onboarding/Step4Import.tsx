@@ -75,5 +75,5 @@ export default function Step4Import({ data, onChange, onNext, onSkip }: Props) {
   );
 }
 
-const btnPrimary: React.CSSProperties = { padding: '13px 0', background: '#D08008', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'Inter, sans-serif', cursor: 'pointer' };
+const btnPrimary: React.CSSProperties = { padding: '13px 0', background: '#28A0A0', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'Inter, sans-serif', cursor: 'pointer' };
 const btnSecondary: React.CSSProperties = { ...btnPrimary, background: '#F2F1EC', color: '#6B7280', border: '1px solid #E5E3DC' };

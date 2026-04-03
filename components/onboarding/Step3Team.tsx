@@ -31,7 +31,7 @@ export default function Step3Team({ data, onChange, onNext }: Props) {
               flex: 1,
               padding: '12px 0',
               borderRadius: 10,
-              border: `2px solid ${data.teamMode === mode ? '#D08008' : '#E5E3DC'}`,
+              border: `2px solid ${data.teamMode === mode ? '#28A0A0' : '#E5E3DC'}`,
               background: data.teamMode === mode ? '#FEF3C7' : '#fff',
               cursor: 'pointer',
               fontSize: 14,
@@ -91,4 +91,4 @@ export default function Step3Team({ data, onChange, onNext }: Props) {
 }
 
 const inputStyle: React.CSSProperties = { padding: '9px 12px', border: '1px solid #E5E3DC', borderRadius: 8, fontSize: 14, fontFamily: 'Inter, sans-serif', background: '#fff', color: '#1A1A1C', outline: 'none', width: '100%', boxSizing: 'border-box' };
-const btnPrimary: React.CSSProperties = { width: '100%', padding: '13px 0', background: '#D08008', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'Inter, sans-serif', cursor: 'pointer' };
+const btnPrimary: React.CSSProperties = { width: '100%', padding: '13px 0', background: '#28A0A0', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: 'Inter, sans-serif', cursor: 'pointer' };
