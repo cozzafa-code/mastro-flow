@@ -118,7 +118,7 @@ export default function HomePanel() {
     <div style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: "#D8EEEE", backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", minHeight: "100%", paddingBottom: 100 }}>
 
       {/* TOPBAR */}
-      <div style={{ background: INK, padding: "14px 18px", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(135deg, rgba(13,31,31,0.92) 0%, rgba(20,50,50,0.88) 100%)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "14px 18px", position: "relative", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(40,160,160,0.2)" }}>
         {/* fliwoX logo watermark */}
         <div style={{ position: "absolute", right: -8, top: "50%", transform: "translateY(-50%)", opacity: 0.08, pointerEvents: "none" }}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="110" height="110">
@@ -137,7 +137,7 @@ export default function HomePanel() {
             <p style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 900, color: "white", lineHeight: 1.2 }}>{saluto}, Fabio</p>
           </div>
           {/* Meteo Brindisi */}
-          <div style={{ background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, padding: "8px 12px", textAlign: "center" }}>
+          <div style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.15)", borderRadius: 12, padding: "8px 12px", textAlign: "center", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
             <IcoSun />
             <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 900, color: "white" }}>22°</p>
             <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)" }}>Brindisi</p>
@@ -145,15 +145,15 @@ export default function HomePanel() {
         </div>
         {/* Mini KPI */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-          <div style={{ background: "rgba(40,160,160,.15)", border: "1px solid rgba(40,160,160,.25)", borderRadius: 10, padding: "9px 10px", textAlign: "center" }}>
+          <div style={{ background: "rgba(40,160,160,.12)", border: "1px solid rgba(40,160,160,.3)", borderRadius: 10, padding: "9px 10px", textAlign: "center", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
             <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: T_CLR }}>{commesseAttive}</p>
             <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>commesse</p>
           </div>
-          <div style={{ background: "rgba(40,160,160,.15)", border: "1px solid rgba(40,160,160,.25)", borderRadius: 10, padding: "9px 10px", textAlign: "center" }}>
+          <div style={{ background: "rgba(40,160,160,.12)", border: "1px solid rgba(40,160,160,.3)", borderRadius: 10, padding: "9px 10px", textAlign: "center", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
             <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: T_CLR }}>{onlineCount}</p>
             <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>oggi in campo</p>
           </div>
-          <div style={{ background: "rgba(40,160,160,.15)", border: "1px solid rgba(40,160,160,.25)", borderRadius: 10, padding: "9px 10px", textAlign: "center" }}>
+          <div style={{ background: "rgba(40,160,160,.12)", border: "1px solid rgba(40,160,160,.3)", borderRadius: 10, padding: "9px 10px", textAlign: "center", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
             <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: totFat > 0 ? GRN : T_CLR }}>{fmtK(totFat)}</p>
             <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>da incassare</p>
           </div>
