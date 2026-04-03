@@ -159,20 +159,22 @@ export default function HomePanel() {
         </div>
         {/* Mini KPI */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-          <div style={{ background: "rgba(40,160,160,.12)", border: "1px solid rgba(40,160,160,.3)", borderRadius: 10, padding: "9px 10px", textAlign: "center", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
-            <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: T_CLR }}>{commesseAttive}</p>
-            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>commesse</p>
+          <div onClick={() => setTab("commesse")} style={{ background: "rgba(40,160,160,.2)", border: "1px solid rgba(40,160,160,.45)", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
+            <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: T_CLR, fontFamily: "monospace" }}>{commesseAttive}</p>
+            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>commesse</p>
           </div>
-          <div style={{ background: "rgba(40,160,160,.12)", border: "1px solid rgba(40,160,160,.3)", borderRadius: 10, padding: "9px 10px", textAlign: "center", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
-            <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: T_CLR }}>{onlineCount}</p>
-            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>oggi in campo</p>
+          <div onClick={() => setTab("altro")} style={{ background: "rgba(40,160,160,.2)", border: "1px solid rgba(40,160,160,.45)", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
+            <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: T_CLR, fontFamily: "monospace" }}>{onlineCount}</p>
+            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>in campo</p>
           </div>
-          <div style={{ background: "rgba(40,160,160,.12)", border: "1px solid rgba(40,160,160,.3)", borderRadius: 10, padding: "9px 10px", textAlign: "center", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
-            <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: totFat > 0 ? GRN : T_CLR }}>{fmtK(totFat)}</p>
-            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>da incassare</p>
+          <div onClick={() => setTab("contabilita")} style={{ background: totFat > 0 ? "rgba(26,158,115,.22)" : "rgba(40,160,160,.2)", border: `1px solid ${totFat > 0 ? "rgba(26,158,115,.45)" : "rgba(40,160,160,.45)"}`, borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
+            <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: totFat > 0 ? GRN : T_CLR, fontFamily: "monospace" }}>{fmtK(totFat)}</p>
+            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>da incassare</p>
           </div>
         </div>
       </div>
+      {/* Stacco sfumato */}
+      <div style={{ height: 20, background: "linear-gradient(to bottom, rgba(13,31,31,0.35) 0%, transparent 100%)", pointerEvents: "none" }} />
 
       <div style={{ padding: 12, display: "flex", flexDirection: "column" as any, gap: 10 }}>
 
