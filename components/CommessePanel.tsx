@@ -15,7 +15,7 @@ export default function CommessePanel() {
     cantieri, filtered, selectedCM, setSelectedCM, selectedRilievo, selectedVano,
     showRiepilogo, cmView, setCmView, filterFase, setFilterFase,
     searchQ, setSearchQ, setShowModal, setTab,
-    getVaniAttivi, giorniFermaCM, sogliaDays,
+    getVaniAttivi, giorniFermaCM, sogliaDays, fattureDB,
   } = useMastro();
 
   const TODAY = new Date().toISOString().split("T")[0];
@@ -116,6 +116,16 @@ export default function CommessePanel() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {vaniA.length > 0 && <span style={{ fontSize: 10, color: "#4A7070", fontWeight: 700 }}>{vaniOk}/{vaniA.length} vani</span>}
             {euroVal > 0 && <span style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", fontFamily: FM }}>{fmtEuro(euroVal)}</span>}
+            {(() => {
+              const fatture = (fattureDB || []).filter((f: any) => f.cmId === c.id);
+              if (fatture.length === 0) return null;
+              const tuttePagate = fatture.every((f: any) => f.pagata);
+              return (
+                <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5, background: tuttePagate ? "#1A9E7320" : "#D0800820", color: tuttePagate ? "#1A9E73" : "#D08008", flexShrink: 0 }}>
+                  {tuttePagate ? "✓ Pagata" : "📋 Fattura"}
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -179,6 +189,16 @@ export default function CommessePanel() {
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           {euroVal > 0 && <div style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", fontFamily: FM }}>{fmtEuro(euroVal)}</div>}
           <div style={{ fontSize: 10, color: "#4A7070", fontWeight: 700, marginTop: 2 }}>{prog}%</div>
+          {(() => {
+            const fatture = (fattureDB || []).filter((f: any) => f.cmId === c.id);
+            if (fatture.length === 0) return null;
+            const tuttePagate = fatture.every((f: any) => f.pagata);
+            return (
+              <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 5, background: tuttePagate ? "#1A9E7320" : "#D0800820", color: tuttePagate ? "#1A9E73" : "#D08008", marginTop: 2, display: "block", textAlign: "right" }}>
+                {tuttePagate ? "✓ Pag." : "📋"}
+              </span>
+            );
+          })()}
         </div>
       </div>
     );
