@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { stripe, STRIPE_PLANS, createOrRetrieveCustomer, PlanKey } from '@/lib/stripe';
+import { stripe, getStripe, STRIPE_PLANS, createOrRetrieveCustomer, PlanKey } from '@/lib/stripe';
 import { requireAuth } from '@/lib/api-auth';
 
 const supabase = createClient(
@@ -20,22 +20,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Recupera dati azienda
-    const { data: operatore } = await supabase
-      .from('operatori')
-      .select('azienda_id, email, aziende(nome)')
-      .eq('auth_id', auth.userId)
-      .single();
-
-    if (!operatore) {
-      return NextResponse.json({ error: 'Operatore non trovato' }, { status: 404 });
+    let customerId: string;
+    if (isOnboarding) {
+      const s = getStripe();
+      const customer = await s.customers.create({ metadata: { onboarding: 'true' } });
+      customerId = customer.id;
+    } else {
+      const { data: operatore } = await supabase
+        .from('operatori')
+        .select('azienda_id, email, aziende(nome)')
+        .eq('auth_id', auth.userId)
+        .single();
+      if (!operatore) {
+        return NextResponse.json({ error: 'Operatore non trovato' }, { status: 404 });
+      }
+      const aziendaId = operatore.azienda_id;
+      const email = operatore.email;
+      const nomeAzienda = (operatore.aziende as any)?.nome ?? 'Azienda';
+      customerId = await createOrRetrieveCustomer(aziendaId, email, nomeAzienda);
     }
-
-    const aziendaId = operatore.azienda_id;
-    const email = operatore.email;
-    const nomeAzienda = (operatore.aziende as any)?.nome ?? 'Azienda';
-
-    const customerId = await createOrRetrieveCustomer(aziendaId, email, nomeAzienda);
-
     const planConfig = STRIPE_PLANS[plan as PlanKey];
 
     const session = await stripe.checkout.sessions.create({
