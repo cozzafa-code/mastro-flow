@@ -10,34 +10,41 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireAuth(req);
-    const isOnboarding = !auth.ok;
+    const { plan, successUrl, cancelUrl, aziendaId: bodyAziendaId } = await req.json();
 
-    const { plan, successUrl, cancelUrl } = await req.json();
     if (!plan || !(plan in STRIPE_PLANS)) {
       return NextResponse.json({ error: 'Piano non valido' }, { status: 400 });
     }
 
+    const auth = await requireAuth(req);
     let customerId: string;
-    let aziendaId: string = 'onboarding';
+    let aziendaId: string = bodyAziendaId || 'onboarding';
 
-    if (isOnboarding) {
+    if (!auth.ok) {
+      // Onboarding senza auth — customer anonimo
       const s = getStripe();
-      const customer = await s.customers.create({ metadata: { onboarding: 'true' } });
+      const customer = await s.customers.create({
+        metadata: { onboarding: 'true', azienda_id: aziendaId }
+      });
       customerId = customer.id;
     } else {
+      // Utente loggato
       const { data: operatore } = await supabase
         .from('operatori')
         .select('azienda_id, email, aziende(nome)')
         .eq('auth_id', auth.userId)
         .single();
-      if (!operatore) {
-        return NextResponse.json({ error: 'Operatore non trovato' }, { status: 404 });
+
+      if (operatore) {
+        aziendaId = operatore.azienda_id;
+        const email = operatore.email;
+        const nomeAzienda = (operatore.aziende as any)?.nome ?? 'Azienda';
+        customerId = await createOrRetrieveCustomer(aziendaId, email, nomeAzienda);
+      } else {
+        const s = getStripe();
+        const customer = await s.customers.create({ metadata: { azienda_id: aziendaId } });
+        customerId = customer.id;
       }
-      aziendaId = operatore.azienda_id;
-      const email = operatore.email;
-      const nomeAzienda = (operatore.aziende as any)?.nome ?? 'Azienda';
-      customerId = await createOrRetrieveCustomer(aziendaId, email, nomeAzienda);
     }
 
     const planConfig = STRIPE_PLANS[plan as PlanKey];
@@ -51,11 +58,10 @@ export async function POST(req: NextRequest) {
         metadata: { azienda_id: aziendaId, plan },
       },
       metadata: { azienda_id: aziendaId, plan },
-      success_url: successUrl ?? `${process.env.NEXT_PUBLIC_APP_URL}/app?stripe=success&plan=${plan}`,
-      cancel_url: cancelUrl ?? `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?step=5&stripe=cancel`,
+      success_url: successUrl ?? `${process.env.NEXT_PUBLIC_APP_URL}/stripe-success`,
+      cancel_url: cancelUrl ?? `${process.env.NEXT_PUBLIC_APP_URL}/onboarding`,
       locale: 'it',
       allow_promotion_codes: true,
-      customer_update: { address: 'auto', name: 'auto' },
       billing_address_collection: 'required',
       tax_id_collection: { enabled: true },
     });
