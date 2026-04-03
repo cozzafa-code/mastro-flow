@@ -118,24 +118,38 @@ export default function HomePanel() {
     <div style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: "#D8EEEE", backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", minHeight: "100%", paddingBottom: 100 }}>
 
       {/* TOPBAR */}
-      <div style={{ background: "linear-gradient(135deg, rgba(13,31,31,0.92) 0%, rgba(20,50,50,0.88) 100%)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", padding: "14px 18px", position: "relative", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(40,160,160,0.2)" }}>
-        {/* fliwoX logo watermark */}
-        <div style={{ position: "absolute", right: -8, top: "50%", transform: "translateY(-50%)", opacity: 0.08, pointerEvents: "none" }}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="110" height="110">
-            <g transform="rotate(8 100 100)">
-              <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
-              <path d="M70 70 L130 130" stroke="#fff" strokeWidth="18" strokeLinecap="round"/>
-              <path d="M130 70 L70 130" stroke="#fff" strokeWidth="18" strokeLinecap="round"/>
-            </g>
-          </svg>
-        </div>
+      <div style={{ background: "linear-gradient(160deg, rgba(5,20,20,0.75) 0%, rgba(15,45,45,0.65) 60%, rgba(40,160,160,0.15) 100%)", backdropFilter: "blur(40px) saturate(180%)", WebkitBackdropFilter: "blur(40px) saturate(180%)", paddingTop: "calc(env(safe-area-inset-top) + 14px)", paddingBottom: 14, paddingLeft: 18, paddingRight: 18, position: "relative", overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(40,160,160,0.15)", borderBottom: "1px solid rgba(40,160,160,0.25)" }}>
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="32" height="32" style={{ flexShrink: 0 }}>
+              <g>
+                <rect x="95" y="15" width="8" height="8" rx="2" fill="#2FA7A2"/>
+                <rect x="128" y="24" width="8" height="8" rx="2" fill="#7ED957"/>
+                <rect x="152" y="48" width="8" height="8" rx="2" fill="#F59E0B"/>
+                <rect x="162" y="93" width="8" height="8" rx="2" fill="#7ED957"/>
+                <rect x="152" y="138" width="8" height="8" rx="2" fill="#F59E0B"/>
+                <rect x="128" y="162" width="8" height="8" rx="2" fill="#7ED957"/>
+                <rect x="95" y="172" width="8" height="8" rx="2" fill="#2FA7A2"/>
+                <rect x="62" y="162" width="8" height="8" rx="2" fill="#F59E0B"/>
+                <rect x="38" y="138" width="8" height="8" rx="2" fill="#7ED957"/>
+                <rect x="28" y="93" width="8" height="8" rx="2" fill="#F59E0B"/>
+                <rect x="38" y="48" width="8" height="8" rx="2" fill="#7ED957"/>
+                <rect x="62" y="24" width="8" height="8" rx="2" fill="#F59E0B"/>
+              </g>
+              <g transform="rotate(8 100 100)">
+                <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
+                <path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
+                <path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
+              </g>
+            </svg>
+            <div>
             <p suppressHydrationWarning style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 600 }}>
               {dataLabel.charAt(0).toUpperCase() + dataLabel.slice(1)}
             </p>
             <p style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 900, color: "white", lineHeight: 1.2 }}>{saluto}, Fabio</p>
-          </div>
+            </div>
+            </div>
           {/* Meteo Brindisi */}
           <div style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.15)", borderRadius: 12, padding: "8px 12px", textAlign: "center", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
             <IcoSun />
