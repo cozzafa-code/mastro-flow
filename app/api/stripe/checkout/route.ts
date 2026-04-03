@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ['card'],
       line_items: [{ price: planConfig.priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 30,
+        trial_period_days: 15,
         metadata: { azienda_id: aziendaId, plan },
       },
       metadata: { azienda_id: aziendaId, plan },
