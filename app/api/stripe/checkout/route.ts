@@ -11,16 +11,16 @@ const supabase = createClient(
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req);
-    if (!auth.ok) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+    const isOnboarding = !auth.ok;
 
     const { plan, successUrl, cancelUrl } = await req.json();
-
     if (!plan || !(plan in STRIPE_PLANS)) {
       return NextResponse.json({ error: 'Piano non valido' }, { status: 400 });
     }
 
-    // Recupera dati azienda
     let customerId: string;
+    let aziendaId: string = 'onboarding';
+
     if (isOnboarding) {
       const s = getStripe();
       const customer = await s.customers.create({ metadata: { onboarding: 'true' } });
@@ -34,13 +34,13 @@ export async function POST(req: NextRequest) {
       if (!operatore) {
         return NextResponse.json({ error: 'Operatore non trovato' }, { status: 404 });
       }
-      const aziendaId = operatore.azienda_id;
+      aziendaId = operatore.azienda_id;
       const email = operatore.email;
       const nomeAzienda = (operatore.aziende as any)?.nome ?? 'Azienda';
       customerId = await createOrRetrieveCustomer(aziendaId, email, nomeAzienda);
     }
-    const planConfig = STRIPE_PLANS[plan as PlanKey];
 
+    const planConfig = STRIPE_PLANS[plan as PlanKey];
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       allow_promotion_codes: true,
       customer_update: { address: 'auto', name: 'auto' },
       billing_address_collection: 'required',
-      tax_id_collection: { enabled: true }, // P.IVA italiana
+      tax_id_collection: { enabled: true },
     });
 
     return NextResponse.json({ url: session.url, sessionId: session.id });
