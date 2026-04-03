@@ -22,8 +22,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#F2F1EC' }}>
-      <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#F2F1EC' }}>
+    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#F2F1EC', overflowX: 'hidden' }}>
+      <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#F2F1EC', overflowX: 'hidden', maxWidth: '100vw' }}>
         {children}
         <CookieBanner />
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')" }} />
