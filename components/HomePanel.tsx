@@ -118,7 +118,17 @@ export default function HomePanel() {
     <div style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: "#D8EEEE", backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", minHeight: "100%", paddingBottom: 100 }}>
 
       {/* TOPBAR */}
-      <div style={{ background: INK, padding: "14px 18px" }}>
+      <div style={{ background: INK, padding: "14px 18px", position: "relative", overflow: "hidden" }}>
+        {/* fliwoX logo watermark */}
+        <div style={{ position: "absolute", right: -8, top: "50%", transform: "translateY(-50%)", opacity: 0.08, pointerEvents: "none" }}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="110" height="110">
+            <g transform="rotate(8 100 100)">
+              <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
+              <path d="M70 70 L130 130" stroke="#fff" strokeWidth="18" strokeLinecap="round"/>
+              <path d="M130 70 L70 130" stroke="#fff" strokeWidth="18" strokeLinecap="round"/>
+            </g>
+          </svg>
+        </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
           <div>
             <p suppressHydrationWarning style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 600 }}>
