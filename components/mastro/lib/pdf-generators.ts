@@ -64,7 +64,7 @@ export const generaPreventivoPDF = (c: any, deps: PdfDeps) => {
     return { tot, mq, perim, sysRec, vetroRec, copRec, lamRec };
   };
   const vaniPDF = getVaniAttivi(c);
-  const totale = vaniPDF.reduce((s,v)=>s+calcolaVanoPDF(v).tot, 0);
+  const totale = vaniPDF.reduce((s,v)=>s+calcolaVanoPDF(v).tot, 0) + (c.vociLibere || []).reduce((s: number, vl: any) => s + ((vl.importo || vl.prezzo || 0) * (vl.qta || 1)), 0);
   const sconto = parseFloat(c.sconto||0);
   const scontoVal = totale * sconto / 100;
   const imponibile = totale - scontoVal;
@@ -280,6 +280,27 @@ export const generaPreventivoPDF = (c: any, deps: PdfDeps) => {
     </div>`;
   }
 
+  // ── Voci libere commessa ──────────────────────────────────────────────────
+  let vociLibereHtml = '';
+  if (c.vociLibere && c.vociLibere.length > 0) {
+    const righe = c.vociLibere.map((vl: any) => {
+      const vlTot = (vl.importo || vl.prezzo || 0) * (vl.qta || 1);
+      const unitaMap: Record<string,string> = { pz:"pz", mq:"mq", ml:"ml", kg:"kg", forfait:"forfait" };
+      const uLabel = unitaMap[vl.unita] || (typeof vl.unita === "string" ? vl.unita : "pz");
+      return `<div style="margin-top:6px;padding:10px 14px;background:#f9f9f9;border:1px solid #ddd;border-radius:4px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;font-weight:700">${vl.descrizione || "Voce extra"}</div>
+          <div style="font-size:9px;color:#666">${(vl.importo || vl.prezzo || 0).toFixed(2)} &euro;/${uLabel} &times; ${vl.qta || 1}</div>
+        </div>
+        <div style="font-size:12px;font-weight:900">&euro; ${fmt(vlTot)}</div>
+      </div>`;
+    }).join('');
+    vociLibereHtml = `<div style="margin-top:8px">
+      <div style="font-size:9px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;padding:0 2px">Accessori e voci aggiuntive</div>
+      ${righe}
+    </div>`;
+  }
+
   const scontoRow = sconto > 0 ? `<tr><td class="tl" style="color:#D08008">Sconto ${sconto}%</td><td class="tv" style="color:#D08008">&minus; ${fmt(scontoVal)}</td></tr>` : '';
   const noteHtml = c.notePreventivo ? `<div style="border:1px solid #ddd;padding:10px 12px;margin:10px 0;font-size:9.5px;color:#444;line-height:1.5"><b>Note:</b> ${c.notePreventivo}</div>` : '';
   const firmaHtml = c.firmaCliente ? `<img src="${c.firmaCliente}" style="max-height:55px;max-width:100%;display:block;margin:0 auto 4px"/>` : '<div style="border-bottom:1px solid #666;height:45px;margin-bottom:4px"></div>';
@@ -376,6 +397,7 @@ body{font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#1a1a1c;font-size:1
 
 ${sectionsHtml}
 ${extraHtml}
+${vociLibereHtml}
 
 <div class="ts">
 <div class="qi">Quadratura: <b>${totalMq.toFixed(2).replace(".",",")} m&sup2;</b></div>
