@@ -1159,7 +1159,7 @@ export default function SettingsPanel() {
                 <Ico d={ICO.pen} s={14} c={T.sub} />
               </div></div>
             ))}
-            <div onClick={() => { setSettingsModal("membro"); setSettingsForm({ nome: "", ruolo: "Posatore", compiti: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.bdr}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600 }}>+ Aggiungi membro</div>
+            <div onClick={() => { setSettingsModal("membro"); setSettingsForm({ nome: "", ruolo: "Posatore", compiti: "" }); }} style={{ padding: "16px", borderRadius: 14, border: "none", background: "#28A0A0", textAlign: "center", cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 800, boxShadow: "0 4px 0 0 #156060", marginTop: 8 }}>+ Aggiungi membro al team</div>
           </>
         )}
 
