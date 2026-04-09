@@ -556,7 +556,7 @@ export default function SettingsPanel() {
   const [mNota, setMNota] = React.useState("");
   const [mTab, setMTab] = React.useState("info");
 
-  // ── Colori Supabase state (top-level) ──
+  // ── Colori Supabase state ──
   const [coloriSupa, setColoriSupa] = React.useState<any[]>([]);
   const [categorieSupa, setCategorieSupa] = React.useState<any[]>([]);
   const [fornitoriSupa, setFornitoriSupa] = React.useState<any[]>([]);
@@ -570,13 +570,6 @@ export default function SettingsPanel() {
   const [showAddColore, setShowAddColore] = React.useState(false);
   const [newColore, setNewColore] = React.useState({ nome:"", codice_ral:"", hex:"#888888", fornitore_id:"", categoria_id:"", interno:true, esterno:true });
   const [coloriLoaded, setColoriLoaded] = React.useState(false);
-  const [sistemiExpanded, setSistemiExpanded] = React.useState<string|null>(null);
-  const [importAIFile, setImportAIFile] = React.useState<File|null>(null);
-  const [importAILoading, setImportAILoading] = React.useState(false);
-  const [importAIResult, setImportAIResult] = React.useState<any[]|null>(null);
-  const [libExpanded, setLibExpanded] = React.useState<string|null>(null);
-  const [libSearch, setLibSearch] = React.useState("");
-  const [libCatFilter, setLibCatFilter] = React.useState("tutti");
   const [coloriSistemiSupa, setColoriSistemiSupa] = React.useState<any[]>([]);
   const [sistemiProfiloSupa, setSistemiProfiloSupa] = React.useState<any[]>([]);
   const [profiliSupa, setProfiliSupa] = React.useState<any[]>([]);
@@ -584,7 +577,6 @@ export default function SettingsPanel() {
   const [profiliExpanded, setProfiliExpanded] = React.useState<string|null>(null);
   const [profiliSearch, setProfiliSearch] = React.useState("");
 
-  // ── Fetch colori da Supabase (solo quando si entra nella tab) ──
   React.useEffect(() => {
     if (settingsTab !== "colori" || coloriLoaded) return;
     setLoadingColori(true);
@@ -611,7 +603,6 @@ export default function SettingsPanel() {
     })();
   }, [settingsTab, coloriLoaded]);
 
-  // ── Fetch profili da Supabase ──
   React.useEffect(() => {
     if (settingsTab !== "profili_arch" || profiliLoaded) return;
     (async () => {
@@ -916,77 +907,6 @@ export default function SettingsPanel() {
               <input value={profiliSearch} onChange={e => setProfiliSearch(e.target.value)}
                 placeholder="Cerca profilo per nome o codice..."
                 style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, boxSizing:"border-box", marginBottom:12 }} />
-
-              {/* Import AI da PDF/Immagine */}
-              <div style={{ ...S.card, marginBottom:14 }}><div style={S.cardInner}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-                  <div>
-                    <div style={{ fontSize:13, fontWeight:800, color:T.text }}>Importa profilo con AI</div>
-                    <div style={{ fontSize:10, color:T.sub }}>Carica PDF catalogo, immagine o screenshot \u2014 MASTRO estrae i dati tecnici automaticamente</div>
-                  </div>
-                </div>
-                <div style={{ position:"relative", marginBottom:8 }}>
-                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
-                    style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0]; if (!file) return;
-                      e.target.value = "";
-                      // Mostra loading
-                      const loadingId = "ai_loading_" + Date.now();
-                      const loadEl = document.createElement("div");
-                      loadEl.id = loadingId;
-                      loadEl.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;";
-                      loadEl.innerHTML = '<div style="background:#fff;padding:30px 40px;border-radius:16px;text-align:center"><div style="font-size:14px;font-weight:800;margin-bottom:8px">Analisi AI in corso...</div><div style="font-size:11px;color:#6B7280">Claude sta leggendo il profilo dal file</div></div>';
-                      document.body.appendChild(loadEl);
-                      try {
-                        const formData = new FormData();
-                        formData.append("file", file);
-                        const res = await fetch("/api/profilo-extract", { method: "POST", body: formData });
-                        const data = await res.json();
-                        document.getElementById(loadingId)?.remove();
-                        if (data.error) { alert("Errore: " + data.error); return; }
-                        if (data.profili && data.profili.length > 0) {
-                          // Inserisci ogni profilo estratto
-                          const { supabase: sb } = await import("@/lib/supabase");
-                          let count = 0;
-                          for (const p of data.profili) {
-                            const ins = {
-                              nome: p.nome || "Profilo estratto",
-                              codice: p.codice || null,
-                              marca: p.marca || null,
-                              materiale: p.materiale || "PVC",
-                              tipo: p.tipo || "Rahmen",
-                              bautiefe_mm: p.bautiefe_mm || null,
-                              uf: p.uf || null,
-                              peso_kg_ml: p.peso_kg_ml || null,
-                              note: (p.note || "") + (p.quote_mm?.length ? " Quote: " + p.quote_mm.join(", ") + "mm" : "") + (p.ferramenta?.length ? " Ferr: " + p.ferramenta.join(", ") : ""),
-                              attivo: true,
-                              azienda_id: aziendaInfo?.id || "demo",
-                            };
-                            const { data: row } = await sb.from("profili_catalogo").insert([ins]).select().single();
-                            if (row) { setProfiliSupa(prev => [...prev, row]); count++; }
-                          }
-                          const costo = data.usage?.costo_usd ? ` (costo: $${data.usage.costo_usd})` : "";
-                          alert(count + " profil" + (count > 1 ? "i estratti" : "o estratto") + " con successo!" + costo + "\nConfidenza: " + (data.confidenza || "n/d"));
-                        } else {
-                          alert("Nessun profilo trovato nel file. Prova con un'immagine pi\u00F9 chiara del disegno tecnico.");
-                        }
-                      } catch (err: any) {
-                        document.getElementById(loadingId)?.remove();
-                        alert("Errore: " + (err.message || "Errore di rete"));
-                      }
-                    }} />
-                  <div style={{ border:`1.5px dashed ${PRI}`, borderRadius:8, padding:"16px", textAlign:"center",
-                    background: PRI + "08", cursor:"pointer" }}>
-                    <div style={{ fontSize:12, fontWeight:700, color:PRI, marginBottom:4 }}>
-                      Trascina PDF catalogo, foto o screenshot qui
-                    </div>
-                    <div style={{ fontSize:9, color:T.sub }}>
-                      PDF \u00B7 PNG \u00B7 JPG \u00B7 WEBP \u2014 Claude AI analizza il disegno ed estrae codice, bautiefe, Uf, peso, camere, quote
-                    </div>
-                  </div>
-                </div>
-              </div></div>
 
               {profiliFiltrati.length === 0 ? (
                 <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>
@@ -1663,810 +1583,356 @@ export default function SettingsPanel() {
         })()}
 
         {/* === SISTEMI E SOTTOSISTEMI === */}
-        {/* === SISTEMI PROFILO === 3 metodi pricing + colori fascia + import AI */}
-        {settingsTab === "sistemi" && (() => {
-          // State locali per la sezione sistemi avanzata
-            marca:"", sistema:"", materiale:"PVC", metodoPricing:"mq", // mq | fisso | griglia
-            prezzoMq:0, prezzoFisso:{}, // { tipologia: prezzo }
-            sovRAL:0, sovLegno:0, pesoKgMl:0, // per alluminio: kg, per PVC: ml
-            unitaPrezzo:"ml", // ml | kg | mq
-            sottosistemi:"", colori:[] as string[], immagineProfilo:"",
-            fasciaColore: {} as Record<string,string>, // { colore_code: "A" | "B" | "C" }
-          });
-
-          // Materiali e unità prezzo
-          const MATERIALI = ["PVC","Alluminio","Legno","Legno-Alluminio","Acciaio"];
-          const getUnitaDefault = (mat: string) => {
-            if (mat === "Alluminio") return "kg";
-            if (mat === "PVC") return "ml";
-            return "mq";
-          };
-
-          // Import AI — carica qualsiasi file e propone mapping
-          const handleImportAI = async () => {
-            if (!importAIFile) return;
-            setImportAILoading(true);
-            try {
-              const reader = new FileReader();
-              reader.onload = async (ev) => {
-                const text = ev.target?.result as string;
-                // Parse CSV/TXT: estrai le prime 30 righe come anteprima
-                const lines = text.split(/\r?\n/).slice(0, 30);
-                const rows = lines.map(l => l.split(/[;\t,]/).map(c => c.trim()));
-                // Auto-detect colonne
-                const header = rows[0] || [];
-                const mapping: any = { sistema:null, marca:null, prezzo:null, larghezza:null, altezza:null, colore:null };
-                header.forEach((h, i) => {
-                  const hl = h.toLowerCase();
-                  if (hl.includes("sistema") || hl.includes("serie") || hl.includes("profilo")) mapping.sistema = i;
-                  if (hl.includes("marca") || hl.includes("fornitore") || hl.includes("brand")) mapping.marca = i;
-                  if (hl.includes("prezzo") || hl.includes("euro") || hl.includes("price") || hl === "e" || hl === "\u20ac") mapping.prezzo = i;
-                  if (hl.includes("largh") || hl.includes("width") || hl === "l") mapping.larghezza = i;
-                  if (hl.includes("altez") || hl.includes("height") || hl === "h") mapping.altezza = i;
-                  if (hl.includes("color") || hl.includes("ral") || hl.includes("finitur")) mapping.colore = i;
-                });
-                // Proponi risultato
-                const preview = rows.slice(1, 10).map(r => ({
-                  sistema: mapping.sistema !== null ? r[mapping.sistema] : "",
-                  marca: mapping.marca !== null ? r[mapping.marca] : "",
-                  prezzo: mapping.prezzo !== null ? r[mapping.prezzo] : "",
-                  larghezza: mapping.larghezza !== null ? r[mapping.larghezza] : "",
-                  altezza: mapping.altezza !== null ? r[mapping.altezza] : "",
-                }));
-                setImportAIResult(preview);
-                setImportAILoading(false);
-              };
-              reader.readAsText(importAIFile, "utf-8");
-            } catch (e) {
-              console.error(e);
-              setImportAILoading(false);
-              alert("Errore nel parsing del file");
-            }
-          };
-
-          return (
-            <>
-              <div style={{ fontSize:11, color:T.sub, marginBottom:12 }}>
-                Configura sistemi, metodo prezzo, colori per fascia. Alluminio prezzato a kg, PVC a metro lineare.
-              </div>
-
-              {/* Stats */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
-                {[
-                  { n: sistemiDB.length, l:"Sistemi", c: PRI },
-                  { n: sistemiDB.filter((s:any) => s.materiale === "PVC").length, l:"PVC", c:"#3B7FE0" },
-                  { n: sistemiDB.filter((s:any) => s.materiale === "Alluminio").length, l:"Alluminio", c:"#D08008" },
-                  { n: sistemiDB.filter((s:any) => s.griglia?.length > 0).length, l:"Con griglia", c:"#1A9E73" },
-                ].map((s,i) => (
-                  <div key={i} style={{ background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, padding:"12px 8px", textAlign:"center" }}>
-                    <div style={{ fontSize:22, fontWeight:700, color:s.c, fontFamily:FM }}>{s.n}</div>
-                    <div style={{ fontSize:9, color:T.sub, marginTop:2, fontWeight:600 }}>{s.l}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Import listino AI */}
-              <div style={{ ...S.card, marginBottom:16 }}><div style={S.cardInner}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+        {settingsTab === "sistemi" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Configura marche, sistemi e sottosistemi con colori collegati</div>
+            {sistemiDB.map(s => (
+              <div key={s.id} style={{ ...S.card, marginBottom: 8 }}><div style={S.cardInner}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:800, color:T.text }}>Import listino AI</div>
-                    <div style={{ fontSize:10, color:T.sub }}>Carica qualsiasi file (CSV, TXT, PDF) \u2014 MASTRO legge e propone il mapping</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: PRI }}>{s.marca}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600 }}>{s.sistema}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", marginBottom: 3 }}>
+                      <span style={{ fontSize: 9, color: T.sub }}>€/mq</span>
+                      <input type="number" defaultValue={s.euroMq || ""} onBlur={e => setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, euroMq: parseFloat(e.target.value)||0, prezzoMq: parseFloat(e.target.value)||0 } : x))} style={{ width: 60, padding: "3px 6px", borderRadius: 4, border: `1px solid ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.grn, textAlign: "right", fontFamily: FM }} />
+                    </div>
+                    <div style={{ fontSize: 9, color: T.sub }}>+{s.sovRAL}% RAL · +{s.sovLegno}% Legno</div>
+                    {s.griglia?.length > 0 && <div style={{ fontSize: 9, color: PRI, fontWeight: 600, marginTop: 2 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg> Griglia {s.griglia.length} prezzi</div>}
                   </div>
                 </div>
-                <div style={{ position:"relative", marginBottom:8 }}>
-                  <input type="file" accept=".csv,.txt,.xlsx,.pdf"
-                    style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
-                    onChange={e => { setImportAIFile(e.target.files?.[0] || null); setImportAIResult(null); }} />
-                  <div style={{ border:`1.5px dashed ${PRI}`, borderRadius:8, padding:"14px", textAlign:"center",
-                    background: PRI + "08", cursor:"pointer" }}>
-                    <div style={{ fontSize:11, fontWeight:600, color:PRI }}>
-                      {importAIFile ? `Selezionato: ${importAIFile.name}` : "Trascina un listino fornitore o clicca per selezionare"}
+                {/* Profile image upload */}
+                <div style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: T.bg, border: `1px dashed ${T.bdr}` }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 4 }}>Sezione profilo (per preventivo PDF)</div>
+                  {s.immagineProfilo ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <img src={s.immagineProfilo} style={{ height: 48, maxWidth: 120, objectFit: "contain", borderRadius: 4, background: "#fff", border: `1px solid ${T.bdr}` }} alt="profilo" />
+                      <div onClick={() => setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, immagineProfilo: undefined } : x))} style={{ fontSize: 10, color: T.red, cursor: "pointer", fontWeight: 600 }}>Rimuovi</div>
                     </div>
-                    <div style={{ fontSize:9, color:T.sub, marginTop:4 }}>CSV, Excel, TXT, PDF \u2014 qualsiasi formato</div>
-                  </div>
+                  ) : (
+                    <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 6, background: PRI + "15", color: PRI, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Carica PNG
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = ev => { setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, immagineProfilo: ev.target?.result as string } : x)); };
+                        reader.readAsDataURL(file);
+                      }} />
+                    </label>
+                  )}
                 </div>
-                {importAIFile && !importAIResult && (
-                  <div onClick={handleImportAI}
-                    style={{ padding:"10px 20px", borderRadius:8, background:PRI, color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", textAlign:"center", opacity: importAILoading ? 0.6 : 1 }}>
-                    {importAILoading ? "Analisi in corso..." : "Analizza e proponi mapping"}
-                  </div>
-                )}
-                {importAIResult && (
-                  <div style={{ marginTop:8 }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:T.grn, marginBottom:6 }}>Anteprima mapping ({importAIResult.length} righe)</div>
-                    <div style={{ overflowX:"auto" }}>
-                      <table style={{ width:"100%", borderCollapse:"collapse", fontSize:10 }}>
-                        <thead>
-                          <tr style={{ background:T.card }}>
-                            <th style={{ padding:"4px 8px", textAlign:"left", fontWeight:700, color:T.sub }}>Sistema</th>
-                            <th style={{ padding:"4px 8px", textAlign:"left", fontWeight:700, color:T.sub }}>Marca</th>
-                            <th style={{ padding:"4px 8px", textAlign:"right", fontWeight:700, color:T.sub }}>Prezzo</th>
-                            <th style={{ padding:"4px 8px", textAlign:"right", fontWeight:700, color:T.sub }}>L(mm)</th>
-                            <th style={{ padding:"4px 8px", textAlign:"right", fontWeight:700, color:T.sub }}>H(mm)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {importAIResult.map((r,i) => (
-                            <tr key={i} style={{ borderBottom:`1px solid ${T.bdr}20` }}>
-                              <td style={{ padding:"3px 8px" }}>{r.sistema || "\u2014"}</td>
-                              <td style={{ padding:"3px 8px" }}>{r.marca || "\u2014"}</td>
-                              <td style={{ padding:"3px 8px", textAlign:"right", fontWeight:700, color:PRI }}>{r.prezzo || "\u2014"}</td>
-                              <td style={{ padding:"3px 8px", textAlign:"right" }}>{r.larghezza || "\u2014"}</td>
-                              <td style={{ padding:"3px 8px", textAlign:"right" }}>{r.altezza || "\u2014"}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                      <div onClick={() => {
-                        // Importa come griglia nel primo sistema o crea nuovo
-                        const righe = importAIResult || [];
-                        if (righe.length > 0 && righe[0].sistema) {
-                          const nomeS = righe[0].sistema;
-                          const nuovoSistema = {
-                            id: Date.now().toString(), marca: righe[0].marca || "Importato",
-                            sistema: nomeS, materiale:"PVC", metodoPricing:"griglia",
-                            euroMq:0, sovRAL:0, sovLegno:0, colori:[], sottosistemi:[],
-                            griglia: righe.filter(r => r.larghezza && r.altezza && r.prezzo).map(r => ({
-                              l: parseInt(r.larghezza), h: parseInt(r.altezza), prezzo: parseFloat(r.prezzo.replace(",","."))
-                            })).filter(g => g.l > 0 && g.h > 0 && g.prezzo > 0)
+                {/* Griglia prezzi */}
+                <div style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: T.bg, border: `1px dashed ${T.bdr}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" }}>Griglia prezzi L×H {s.griglia?.length > 0 ? `(${s.griglia.length} prezzi)` : ""}</div>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      <label style={{ padding: "3px 8px", borderRadius: 4, background: PRI + "15", color: PRI, fontSize: 9, fontWeight: 600, cursor: "pointer" }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> CSV / TXT
+                        <input type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={e => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => {
+                            const text = ev.target?.result as string;
+                            const lines = text.split(/\r?\n/).filter(l => l.trim());
+                            const newGrid: any[] = [];
+                            // Skip header line if it contains letters
+                            const start = /[a-zA-Z]/.test(lines[0] || "") ? 1 : 0;
+                            for (let i = start; i < lines.length; i++) {
+                              const line = lines[i];
+                              // Split by ; , or tab
+                              const parts = line.split(/[;\t,]/).map(p => p.trim());
+                              if (parts.length >= 3) {
+                                // Handle Italian format: "1.200" or "1200" for mm, "350,50" or "350.50" for price
+                                const parseMM = (v: string) => parseInt(v.replace(/\./g, "").replace(",", "."));
+                                const parsePrice = (v: string) => {
+                                  // If has both . and , : "1.350,50" → remove dots, comma→dot
+                                  if (v.includes(".") && v.includes(",")) return parseFloat(v.replace(/\./g, "").replace(",", "."));
+                                  // If only comma: "350,50" → comma→dot
+                                  if (v.includes(",")) return parseFloat(v.replace(",", "."));
+                                  return parseFloat(v);
+                                };
+                                const l = parseMM(parts[0]); const h = parseMM(parts[1]); const p = parsePrice(parts[2]);
+                                if (l > 0 && h > 0 && p > 0) newGrid.push({ l, h, prezzo: Math.round(p * 100) / 100 });
+                              }
+                            }
+                            if (newGrid.length > 0) {
+                              newGrid.sort((a,b) => a.l - b.l || a.h - b.h);
+                              setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: newGrid } : x));
+                              alert(`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${newGrid.length} prezzi importati!`);
+                            } else {
+                              alert(" Nessun prezzo trovato.\n\nFormato accettato:\nLarghezza;Altezza;Prezzo\n1000;1200;350\n1200;1400;420,50");
+                            }
                           };
-                          setSistemiDB((prev: any[]) => [...prev, nuovoSistema]);
-                          setImportAIResult(null); setImportAIFile(null);
-                          alert(`Sistema "${nomeS}" importato con ${nuovoSistema.griglia.length} prezzi`);
+                          reader.readAsText(file);
+                        }} />
+                      </label>
+                      <div onClick={() => {
+                        const txt = prompt("Incolla da Excel (L;H;Prezzo, una riga per combinazione):\n\nEsempio:\n1000;1200;350\n1200;1400;420");
+                        if (!txt) return;
+                        const lines = txt.split(/\r?\n/).filter(l => l.trim());
+                        const newGrid: any[] = [...(s.griglia || [])];
+                        let added = 0;
+                        lines.forEach(line => {
+                          const parts = line.split(/[;\t,]/).map(p => p.trim());
+                          if (parts.length >= 3) {
+                            const l = parseInt(parts[0].replace(/\./g,"")); 
+                            const h = parseInt(parts[1].replace(/\./g,""));
+                            let pv = parts[2]; if (pv.includes(".") && pv.includes(",")) pv = pv.replace(/\./g,""); pv = pv.replace(",",".");
+                            const p = parseFloat(pv);
+                            if (l > 0 && h > 0 && p > 0) { newGrid.push({ l, h, prezzo: Math.round(p*100)/100 }); added++; }
+                          }
+                        });
+                        if (added > 0) {
+                          newGrid.sort((a,b) => a.l - b.l || a.h - b.h);
+                          setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: newGrid } : x));
+                          alert(`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${added} prezzi aggiunti!`);
                         }
-                      }} style={{ padding:"8px 16px", borderRadius:8, background:T.grn, color:"#fff", fontSize:11, fontWeight:700, cursor:"pointer" }}>
-                        Conferma import
+                      }} style={{ padding: "3px 8px", borderRadius: 4, background: "#8B5CF615", color: "#8B5CF6", fontSize: 9, fontWeight: 600, cursor: "pointer" }}>Incolla</div>
+                      <div onClick={() => {
+                        const l = prompt("Larghezza (mm):", "1000");
+                        const h = prompt("Altezza (mm):", "1200");
+                        const p = prompt("Prezzo €:", "300");
+                        if (l && h && p && parseInt(l) > 0 && parseInt(h) > 0 && parseFloat(p.replace(",",".")) > 0) {
+                          setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: [...(x.griglia||[]), { l: parseInt(l), h: parseInt(h), prezzo: parseFloat(p.replace(",",".")) }].sort((a,b) => a.l - b.l || a.h - b.h) } : x));
+                        }
+                      }} style={{ padding: "3px 8px", borderRadius: 4, background: T.grn + "15", color: T.grn, fontSize: 9, fontWeight: 600, cursor: "pointer" }}>+ Aggiungi</div>
+                      {s.griglia?.length > 0 && <div onClick={() => {
+                        const csv = "Larghezza;Altezza;Prezzo\n" + s.griglia.map(g => `${g.l};${g.h};${g.prezzo}`).join("\n");
+                        const blob = new Blob([csv], { type: "text/csv" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a"); a.href = url; a.download = `listino_${s.nome.replace(/\s/g,"_")}.csv`; a.click();
+                      }} style={{ padding: "3px 8px", borderRadius: 4, background: "#E8A02015", color: "#E8A020", fontSize: 9, fontWeight: 600, cursor: "pointer" }}>Esporta</div>}
+                    </div>
+                  </div>
+                  {s.griglia?.length > 0 ? (() => {
+                    // Build matrix view: unique L values as columns, H as rows
+                    const uniqueL = [...new Set(s.griglia.map(g => g.l))].sort((a,b) => a - b);
+                    const uniqueH = [...new Set(s.griglia.map(g => g.h))].sort((a,b) => a - b);
+                    const showMatrix = uniqueL.length > 1 && uniqueH.length > 1 && uniqueL.length <= 12;
+                    return (
+                    <div>
+                      <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontStyle: "italic" }}>
+                        Il prezzo viene preso dalla combinazione L×H più vicina (per eccesso). {s.griglia.length} combinazioni · {uniqueL.length}L × {uniqueH.length}H
                       </div>
-                      <div onClick={() => { setImportAIResult(null); setImportAIFile(null); }}
-                        style={{ padding:"8px 16px", borderRadius:8, border:`1px solid ${T.bdr}`, color:T.sub, fontSize:11, fontWeight:600, cursor:"pointer" }}>
-                        Annulla
+                      {showMatrix ? (
+                        <div style={{ overflowX: "auto", borderRadius: 4, border: `1px solid ${T.bdr}` }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+                            <thead><tr style={{ background: T.bg }}>
+                              <th style={{ padding: "3px 4px", fontWeight: 700, color: T.sub, position: "sticky", left: 0, background: T.bg, borderRight: `1px solid ${T.bdr}`, fontSize: 8 }}>L→<br/>H↓</th>
+                              {uniqueL.map(l => <th key={l} style={{ padding: "3px 4px", fontWeight: 700, color: PRI, textAlign: "center", fontSize: 8, minWidth: 40 }}>{l}</th>)}
+                            </tr></thead>
+                            <tbody>{uniqueH.map(h => (
+                              <tr key={h} style={{ borderTop: `1px solid ${T.bdr}15` }}>
+                                <td style={{ padding: "2px 4px", fontWeight: 700, color: PRI, position: "sticky", left: 0, background: T.card, borderRight: `1px solid ${T.bdr}`, fontSize: 8 }}>{h}</td>
+                                {uniqueL.map(l => {
+                                  const g = s.griglia.find(x => x.l === l && x.h === h);
+                                  return <td key={l} style={{ padding: "2px 4px", textAlign: "center", fontWeight: g ? 700 : 400, color: g ? T.grn : T.bdr, fontSize: 8 }}>
+                                    {g ? `€${g.prezzo}` : "—"}
+                                  </td>;
+                                })}
+                              </tr>
+                            ))}</tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div style={{ maxHeight: 150, overflowY: "auto", borderRadius: 4, border: `1px solid ${T.bdr}` }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
+                            <thead><tr style={{ background: T.bg, position: "sticky", top: 0 }}>
+                              <th style={{ padding: "3px 6px", textAlign: "left", fontWeight: 700, color: T.sub }}>L (mm)</th>
+                              <th style={{ padding: "3px 6px", textAlign: "left", fontWeight: 700, color: T.sub }}>H (mm)</th>
+                              <th style={{ padding: "3px 6px", textAlign: "right", fontWeight: 700, color: T.sub }}>Prezzo €</th>
+                              <th style={{ width: 20 }}></th>
+                            </tr></thead>
+                            <tbody>{s.griglia.map((g, gi) => (
+                              <tr key={gi} style={{ borderTop: `1px solid ${T.bdr}20` }}>
+                                <td style={{ padding: "2px 6px" }}>{g.l}</td>
+                                <td style={{ padding: "2px 6px" }}>{g.h}</td>
+                                <td style={{ padding: "2px 6px", textAlign: "right", fontWeight: 700, color: T.grn }}>€{g.prezzo}</td>
+                                <td style={{ padding: "2px 4px", cursor: "pointer", color: T.red, textAlign: "center" }} onClick={() => {
+                                  setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: x.griglia.filter((_, i) => i !== gi) } : x));
+                                }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+                              </tr>
+                            ))}</tbody>
+                          </table>
+                        </div>
+                      )}
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                        <div style={{ fontSize: 8, color: T.sub }}>Min: €{Math.min(...s.griglia.map(g=>g.prezzo))} · Max: €{Math.max(...s.griglia.map(g=>g.prezzo))}</div>
+                        <div onClick={() => { if(confirm("Cancellare tutta la griglia?")) setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: [] } : x)); }} style={{ fontSize: 9, color: T.red, cursor: "pointer" }}>Svuota</div>
                       </div>
+                    </div>);
+                  })() : (
+                    <div style={{ fontSize: 10, color: T.sub, fontStyle: "italic" }}>Nessuna griglia inserita — il prezzo viene calcolato a €/mq.<br/>Puoi caricare il listino del fornitore (CSV: Larghezza;Altezza;Prezzo per riga) oppure aggiungere i prezzi a mano.</div>
+                  )}
+                </div>
+                {/* Minimi mq per tipologia */}
+                <div style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: T.bg, border: `1px dashed ${T.bdr}` }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 6 }}>Minimo mq fatturazione per tipologia</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginBottom: 6, fontStyle: "italic" }}>Attiva solo le categorie che vuoi — se la finestra è più piccola, il prezzo viene calcolato sulla metratura minima</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {[
+                      { key: "1anta", label: "1 Anta" },
+                      { key: "2ante", label: "2 Ante" },
+                      { key: "3ante", label: "3+ Ante" },
+                      { key: "scorrevole", label: "Scorrevole" },
+                      { key: "fisso", label: "Fisso" },
+                    ].map(cat => {
+                      const isActive = (s.minimiMq?.[cat.key] || 0) > 0;
+                      return (
+                        <div key={cat.key} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 6, background: isActive ? PRI + "10" : T.card, border: `1px solid ${isActive ? PRI + "40" : T.bdr}`, opacity: isActive ? 1 : 0.6 }}>
+                          <div onClick={() => {
+                            if (isActive) {
+                              setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, minimiMq: { ...(x.minimiMq || {}), [cat.key]: 0 } } : x));
+                            } else {
+                              const def = { "1anta": 1.5, "2ante": 2.0, "3ante": 2.8, "scorrevole": 3.5, "fisso": 1.0 }[cat.key] || 1.5;
+                              setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, minimiMq: { ...(x.minimiMq || {}), [cat.key]: def } } : x));
+                            }
+                          }} style={{ width: 18, height: 18, borderRadius: 4, border: `2px solid ${isActive ? PRI : T.bdr}`, background: isActive ? PRI : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", fontWeight: 900, flexShrink: 0 }}>
+                            {isActive && ""}
+                          </div>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: T.text, minWidth: 52 }}>{cat.label}</span>
+                          {isActive && (
+                            <>
+                              <input type="number" step="0.1" defaultValue={s.minimiMq?.[cat.key] || ""} onBlur={e => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, minimiMq: { ...(x.minimiMq || {}), [cat.key]: val } } : x));
+                              }} style={{ width: 45, padding: "2px 4px", borderRadius: 4, border: `1px solid ${PRI}40`, fontSize: 11, fontWeight: 700, color: PRI, textAlign: "center", fontFamily: FM }} />
+                              <span style={{ fontSize: 9, color: T.sub }}>mq</span>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {s.sottosistemi && (
+                  <div style={{ marginBottom: 6 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>Sottosistemi</div>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {s.sottosistemi.map(ss => <span key={ss} style={S.badge(T.blueLt, T.blue)}>{ss}</span>)}
                     </div>
                   </div>
                 )}
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>Colori disponibili</div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {s.colori.map(c => {
+                    const col = coloriDB.find(x => x.code === c);
+                    return <span key={c} style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600, background: col?.hex + "20", color: T.text, border: `1px solid ${col?.hex || T.bdr}40` }}>{col?.hex && <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: col.hex, marginRight: 4, verticalAlign: "middle" }} />}{c}</span>;
+                  })}
+                </div>
               </div></div>
-
-              {/* Lista sistemi */}
-              {sistemiDB.map((s: any) => {
-                const isExp = sistemiExpanded === s.id;
-                const matIcon = s.materiale === "Alluminio" ? "AL" : s.materiale === "PVC" ? "PVC" : s.materiale?.substring(0,2) || "?";
-                const matColor = s.materiale === "Alluminio" ? "#D08008" : s.materiale === "PVC" ? "#3B7FE0" : "#1A9E73";
-                const metodo = s.metodoPricing || (s.griglia?.length > 0 ? "griglia" : "mq");
-                const unitaLabel = s.materiale === "Alluminio" ? "\u20AC/kg" : s.materiale === "PVC" ? "\u20AC/ml" : "\u20AC/mq";
-
-                return (
-                  <div key={s.id} style={{ ...S.card, marginBottom:10, overflow:"hidden" }}>
-                    {/* Header sistema */}
-                    <div onClick={() => setSistemiExpanded(isExp ? null : s.id)}
-                      style={{ ...S.cardInner, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
-                      {/* Badge materiale */}
-                      <div style={{ width:36, height:36, borderRadius:8, background:matColor + "15", display:"flex",
-                        alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:900, color:matColor, flexShrink:0 }}>
-                        {matIcon}
-                      </div>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:14, fontWeight:700, color:PRI }}>{s.marca}</div>
-                        <div style={{ fontSize:12, fontWeight:600, color:T.text }}>{s.sistema}</div>
-                        <div style={{ display:"flex", gap:6, marginTop:3 }}>
-                          {/* Metodo pricing badge */}
-                          <span style={{ padding:"1px 6px", borderRadius:4, fontSize:8, fontWeight:700,
-                            background: metodo === "griglia" ? "#FEF3C7" : metodo === "fisso" ? "#E0F2FE" : "#D1FAE5",
-                            color: metodo === "griglia" ? "#92400E" : metodo === "fisso" ? "#0369A1" : "#065F46" }}>
-                            {metodo === "griglia" ? "DA LISTINO" : metodo === "fisso" ? "PREZZO FISSO" : "A MQ"}
-                          </span>
-                          {s.sovRAL > 0 && <span style={{ fontSize:8, color:T.sub, fontWeight:600 }}>+{s.sovRAL}% RAL</span>}
-                          {s.sovLegno > 0 && <span style={{ fontSize:8, color:T.sub, fontWeight:600 }}>+{s.sovLegno}% Legno</span>}
-                        </div>
-                      </div>
-                      <div style={{ textAlign:"right" }}>
-                        {metodo === "mq" && <div style={{ fontSize:16, fontWeight:800, color:T.grn, fontFamily:FM }}>\u20AC{s.euroMq || s.prezzoMq || 0}</div>}
-                        {metodo === "griglia" && <div style={{ fontSize:11, fontWeight:700, color:PRI }}>Griglia {s.griglia?.length || 0} prezzi</div>}
-                        {metodo === "fisso" && <div style={{ fontSize:11, fontWeight:700, color:"#0369A1" }}>Prezzo fisso</div>}
-                        <div style={{ fontSize:9, color:T.sub }}>{unitaLabel}</div>
-                      </div>
-                      <div style={{ fontSize:10, color:T.sub }}>{isExp ? "\u25B2" : "\u25BC"}</div>
-                    </div>
-
-                    {/* Dettaglio espanso */}
-                    {isExp && (
-                      <div style={{ padding:"12px 14px", borderTop:`1px solid ${T.bdr}`, background:T.bg }}>
-                        {/* Metodo pricing selector */}
-                        <div style={{ marginBottom:12 }}>
-                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, textTransform:"uppercase", marginBottom:6 }}>Metodo prezzo</div>
-                          <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}` }}>
-                            {[
-                              {k:"mq", l:"A metro quadro"},
-                              {k:"griglia", l:"Da listino CSV/griglia"},
-                              {k:"fisso", l:"Prezzo fisso per tipologia"},
-                            ].map(opt => (
-                              <div key={opt.k} onClick={() => setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, metodoPricing:opt.k} : x))}
-                                style={{ flex:1, padding:"8px 6px", fontSize:10, fontWeight:700, cursor:"pointer", textAlign:"center",
-                                  background: metodo === opt.k ? PRI : T.card,
-                                  color: metodo === opt.k ? "#fff" : T.text }}>
-                                {opt.l}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Prezzo a mq */}
-                        {metodo === "mq" && (
-                          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-                            <div style={{ flex:1 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>{unitaLabel}</div>
-                              <input type="number" defaultValue={s.euroMq || s.prezzoMq || ""} onBlur={e => {
-                                const v = parseFloat(e.target.value) || 0;
-                                setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, euroMq:v, prezzoMq:v} : x));
-                              }} style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`,
-                                fontSize:16, fontWeight:700, color:T.grn, textAlign:"right", fontFamily:FM, background:T.card }} />
-                            </div>
-                            <div style={{ flex:1 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Sovrapprezzo RAL %</div>
-                              <input type="number" defaultValue={s.sovRAL || ""} onBlur={e => {
-                                setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, sovRAL:parseFloat(e.target.value)||0} : x));
-                              }} style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`,
-                                fontSize:13, fontWeight:700, textAlign:"right", fontFamily:FM, background:T.card, color:T.text }} />
-                            </div>
-                            <div style={{ flex:1 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Sovrapprezzo Legno %</div>
-                              <input type="number" defaultValue={s.sovLegno || ""} onBlur={e => {
-                                setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, sovLegno:parseFloat(e.target.value)||0} : x));
-                              }} style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`,
-                                fontSize:13, fontWeight:700, textAlign:"right", fontFamily:FM, background:T.card, color:T.text }} />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Griglia prezzi (da listino) */}
-                        {metodo === "griglia" && (
-                          <div style={{ marginBottom:12, padding:10, borderRadius:8, background:T.card, border:`1px solid ${T.bdr}` }}>
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                              <div style={{ fontSize:10, fontWeight:700, color:T.text }}>Griglia L\u00D7H ({s.griglia?.length || 0} prezzi)</div>
-                              <div style={{ display:"flex", gap:4 }}>
-                                <label style={{ padding:"3px 8px", borderRadius:4, background:PRI+"15", color:PRI, fontSize:9, fontWeight:600, cursor:"pointer" }}>
-                                  Importa CSV
-                                  <input type="file" accept=".csv,.txt" style={{ display:"none" }} onChange={e => {
-                                    const file = e.target.files?.[0]; if (!file) return;
-                                    const rd = new FileReader();
-                                    rd.onload = ev => {
-                                      const txt = ev.target?.result as string;
-                                      const ls = txt.split(/\r?\n/).filter(l => l.trim());
-                                      const ng: any[] = [];
-                                      const start = /[a-zA-Z]/.test(ls[0] || "") ? 1 : 0;
-                                      for (let i = start; i < ls.length; i++) {
-                                        const p = ls[i].split(/[;\t,]/).map(v => v.trim());
-                                        if (p.length >= 3) {
-                                          const l = parseInt(p[0].replace(/\./g,"")); const h = parseInt(p[1].replace(/\./g,""));
-                                          const pr = parseFloat(p[2].replace(/\./g,"").replace(",","."));
-                                          if (l > 0 && h > 0 && pr > 0) ng.push({l,h,prezzo:Math.round(pr*100)/100});
-                                        }
-                                      }
-                                      if (ng.length) {
-                                        ng.sort((a,b) => a.l-b.l || a.h-b.h);
-                                        setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, griglia:ng} : x));
-                                        alert(`${ng.length} prezzi importati`);
-                                      }
-                                    };
-                                    rd.readAsText(file); e.target.value = "";
-                                  }} />
-                                </label>
-                              </div>
-                            </div>
-                            {s.griglia?.length > 0 && (
-                              <div style={{ overflowX:"auto", maxHeight:200 }}>
-                                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:10 }}>
-                                  <thead><tr style={{ background:T.bg }}>
-                                    <th style={{ padding:"4px 8px", textAlign:"left", fontWeight:700 }}>L (mm)</th>
-                                    <th style={{ padding:"4px 8px", textAlign:"left", fontWeight:700 }}>H (mm)</th>
-                                    <th style={{ padding:"4px 8px", textAlign:"right", fontWeight:700 }}>Prezzo \u20AC</th>
-                                    <th style={{ width:20 }}></th>
-                                  </tr></thead>
-                                  <tbody>
-                                    {s.griglia.slice(0,20).map((g: any, gi: number) => (
-                                      <tr key={gi} style={{ borderBottom:`1px solid ${T.bdr}20` }}>
-                                        <td style={{ padding:"3px 8px" }}>{g.l}</td>
-                                        <td style={{ padding:"3px 8px" }}>{g.h}</td>
-                                        <td style={{ padding:"3px 8px", textAlign:"right", fontWeight:700, color:PRI }}>\u20AC{g.prezzo}</td>
-                                        <td><div onClick={() => setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, griglia: x.griglia.filter((_:any,i:number) => i !== gi)} : x))}
-                                          style={{ color:"#DC4444", cursor:"pointer", fontSize:12, textAlign:"center" }}>\u00D7</div></td>
-                                      </tr>
-                                    ))}
-                                    {s.griglia.length > 20 && <tr><td colSpan={4} style={{ padding:"4px 8px", fontSize:9, color:T.sub, textAlign:"center" }}>...e altri {s.griglia.length - 20} prezzi</td></tr>}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Prezzo fisso per tipologia */}
-                        {metodo === "fisso" && (
-                          <div style={{ marginBottom:12 }}>
-                            <div style={{ fontSize:10, fontWeight:700, color:T.text, marginBottom:6 }}>Prezzo fisso per tipologia</div>
-                            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                              {["1 Anta","2 Ante","3+ Ante","Scorrevole","Fisso","Portafinestra","Vasistas"].map(tip => (
-                                <div key={tip} style={{ display:"flex", alignItems:"center", gap:4, padding:"6px 8px", borderRadius:6,
-                                  background:T.card, border:`1px solid ${T.bdr}` }}>
-                                  <span style={{ fontSize:10, fontWeight:600, color:T.text, minWidth:70 }}>{tip}</span>
-                                  <input type="number" step="0.01"
-                                    defaultValue={(s.prezzoFisso || {})[tip] || ""}
-                                    onBlur={e => {
-                                      const v = parseFloat(e.target.value) || 0;
-                                      setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, prezzoFisso:{...(x.prezzoFisso||{}), [tip]:v}} : x));
-                                    }}
-                                    placeholder="\u20AC"
-                                    style={{ width:70, padding:"4px 6px", borderRadius:4, border:`1px solid ${T.bdr}`,
-                                      fontSize:12, fontWeight:700, textAlign:"right", fontFamily:FM, color:T.grn, background:T.bg }} />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Materiale e peso */}
-                        <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
-                          <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                            <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Materiale</div>
-                            <select value={s.materiale || "PVC"} onChange={e => {
-                              const mat = e.target.value;
-                              setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, materiale:mat, unitaPrezzo:getUnitaDefault(mat)} : x));
-                            }} style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
-                              {MATERIALI.map(m => <option key={m}>{m}</option>)}
-                            </select>
-                          </div>
-                          {(s.materiale === "Alluminio" || s.materiale === "PVC") && (
-                            <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>
-                                {s.materiale === "Alluminio" ? "Peso profilo (kg/ml)" : "Prezzo profilo (\u20AC/ml)"}
-                              </div>
-                              <input type="number" step="0.01" defaultValue={s.pesoKgMl || ""} onBlur={e => {
-                                setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, pesoKgMl:parseFloat(e.target.value)||0} : x));
-                              }} style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`,
-                                fontSize:12, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Immagine profilo */}
-                        <div style={{ marginBottom:10, padding:8, borderRadius:8, background:T.card, border:`1px dashed ${T.bdr}` }}>
-                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, textTransform:"uppercase", marginBottom:4 }}>Sezione profilo (per preventivo PDF)</div>
-                          {s.immagineProfilo ? (
-                            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                              <img src={s.immagineProfilo} style={{ height:48, maxWidth:120, objectFit:"contain", borderRadius:4, background:"#fff", border:`1px solid ${T.bdr}` }} alt="profilo" />
-                              <div onClick={() => setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, immagineProfilo:undefined} : x))} style={{ fontSize:10, color:T.red, cursor:"pointer", fontWeight:600 }}>Rimuovi</div>
-                            </div>
-                          ) : (
-                            <label style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:6, background:PRI+"15", color:PRI, fontSize:11, fontWeight:600, cursor:"pointer" }}>
-                              Carica PNG sezione
-                              <input type="file" accept="image/*" style={{ display:"none" }} onChange={e => {
-                                const file = e.target.files?.[0]; if (!file) return;
-                                const reader = new FileReader();
-                                reader.onload = ev => { setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, immagineProfilo:ev.target?.result as string} : x)); };
-                                reader.readAsDataURL(file);
-                              }} />
-                            </label>
-                          )}
-                        </div>
-
-                        {/* Colori collegati con fascia */}
-                        <div style={{ marginBottom:10 }}>
-                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, textTransform:"uppercase", marginBottom:4 }}>Colori disponibili \u2014 fascia prezzo</div>
-                          <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-                            {(s.colori || []).map((c: string) => {
-                              const col = coloriDB.find((x: any) => x.code === c);
-                              const fascia = (s.fasciaColore || {})[c] || "\u2014";
-                              return (
-                                <div key={c} style={{ display:"flex", alignItems:"center", gap:4, padding:"3px 8px", borderRadius:6,
-                                  background: col?.hex ? col.hex + "15" : T.card, border:`1px solid ${col?.hex || T.bdr}40` }}>
-                                  {col?.hex && <span style={{ display:"inline-block", width:10, height:10, borderRadius:"50%", background:col.hex }} />}
-                                  <span style={{ fontSize:10, fontWeight:600, color:T.text }}>{c}</span>
-                                  <select value={fascia} onChange={e => {
-                                    setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, fasciaColore:{...(x.fasciaColore||{}), [c]:e.target.value}} : x));
-                                  }} style={{ padding:"1px 4px", borderRadius:3, border:`1px solid ${T.bdr}`, fontSize:9, fontWeight:700, background:T.card, color:"#7C5FBF" }}>
-                                    <option value="\u2014">\u2014</option>
-                                    <option value="A">A</option>
-                                    <option value="B">B</option>
-                                    <option value="C">C</option>
-                                    <option value="D">D</option>
-                                  </select>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Sottosistemi */}
-                        {s.sottosistemi?.length > 0 && (
-                          <div style={{ marginBottom:6 }}>
-                            <div style={{ fontSize:9, fontWeight:700, color:T.sub, textTransform:"uppercase", marginBottom:3 }}>Sottosistemi</div>
-                            <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
-                              {s.sottosistemi.map((ss: string) => <span key={ss} style={S.badge(T.blueLt, T.blue)}>{ss}</span>)}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Minimi mq per tipologia */}
-                        <div style={{ marginBottom:8 }}>
-                          <div style={{ fontSize:9, fontWeight:700, color:T.sub, textTransform:"uppercase", marginBottom:4 }}>Minimo mq per tipologia</div>
-                          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                            {["1anta","2ante","3ante","scorrevole","fisso"].map(cat => {
-                              const labels: Record<string,string> = {"1anta":"1 Anta","2ante":"2 Ante","3ante":"3+ Ante","scorrevole":"Scorrevole","fisso":"Fisso"};
-                              const isActive = (s.minimiMq?.[cat] || 0) > 0;
-                              return (
-                                <div key={cat} style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 8px", borderRadius:6,
-                                  background:isActive ? PRI+"10" : T.card, border:`1px solid ${isActive ? PRI+"40" : T.bdr}`, opacity:isActive?1:0.6 }}>
-                                  <div onClick={() => {
-                                    if (isActive) setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, minimiMq:{...(x.minimiMq||{}), [cat]:0}} : x));
-                                    else {
-                                      const def: Record<string,number> = {"1anta":1.5,"2ante":2.0,"3ante":2.8,"scorrevole":3.5,"fisso":1.0};
-                                      setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, minimiMq:{...(x.minimiMq||{}), [cat]:def[cat]||1.5}} : x));
-                                    }
-                                  }} style={{ width:18, height:18, borderRadius:4, border:`2px solid ${isActive ? PRI : T.bdr}`,
-                                    background:isActive ? PRI : "transparent", cursor:"pointer", display:"flex", alignItems:"center",
-                                    justifyContent:"center", fontSize:10, color:"#fff", fontWeight:900, flexShrink:0 }}>
-                                    {isActive && "\u2713"}
-                                  </div>
-                                  <span style={{ fontSize:10, fontWeight:600, color:T.text, minWidth:52 }}>{labels[cat]}</span>
-                                  {isActive && (
-                                    <>
-                                      <input type="number" step="0.1" defaultValue={s.minimiMq?.[cat] || ""} onBlur={e => {
-                                        setSistemiDB((prev: any[]) => prev.map(x => x.id === s.id ? {...x, minimiMq:{...(x.minimiMq||{}), [cat]:parseFloat(e.target.value)||0}} : x));
-                                      }} style={{ width:45, padding:"2px 4px", borderRadius:4, border:`1px solid ${PRI}40`, fontSize:11, fontWeight:700, color:PRI, textAlign:"center", fontFamily:FM }} />
-                                      <span style={{ fontSize:9, color:T.sub }}>mq</span>
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Elimina sistema */}
-                        <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:8, borderTop:`1px solid ${T.bdr}` }}>
-                          <div onClick={() => { if (confirm(`Eliminare ${s.marca} ${s.sistema}?`)) setSistemiDB((prev: any[]) => prev.filter(x => x.id !== s.id)); }}
-                            style={{ padding:"6px 14px", borderRadius:6, background:"rgba(220,68,68,0.1)", color:"#DC4444", fontSize:11, fontWeight:700, cursor:"pointer" }}>
-                            Elimina sistema
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Aggiungi sistema */}
-              <div onClick={() => { setSettingsModal("sistema"); setSettingsForm({ marca:"", sistema:"", euroMq:"", sovRAL:"", sovLegno:"", sottosistemi:"" }); }}
-                style={{ padding:"14px", borderRadius:T.r, border:`1px dashed ${PRI}`, textAlign:"center", cursor:"pointer", color:PRI, fontSize:12, fontWeight:600, marginTop:8 }}>
-                + Aggiungi sistema
-              </div>
-            </>
-          );
-        })()}
-
+            ))}
+            <div onClick={() => { setSettingsModal("sistema"); setSettingsForm({ marca: "", sistema: "", euroMq: "", sovRAL: "", sovLegno: "", sottosistemi: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600 }}>+ Aggiungi sistema</div>
+          </>
+        )}
 
         {/* === COLORI === */}
-        {/* === COLORI & RAL === fetch da Supabase colori_catalogo + categorie_colore + fornitori_colore */}
+        {/* === COLORI & RAL === */}
         {settingsTab === "colori" && (() => {
-          // State per la sezione colori avanzata
-          // Fetch da Supabase al mount
-
-          // Filtra colori
+          const getFornitoreId = (c: any) => {
+            const cat = categorieSupa.find(x => x.id === c.categoria_id);
+            return cat?.fornitore_id || "senza_fornitore";
+          };
           const coloriFiltrati = coloriSupa.filter(c => {
-            if (filtroFornitore !== "tutti" && getFornitoreId(c) !== filtroFornitore) return false;
-            if (filtroLato === "interno" && !c.interno) return false;
-            if (filtroLato === "esterno" && !c.esterno) return false;
-            if (cercaColore && !c.nome.toLowerCase().includes(cercaColore.toLowerCase()) && !(c.codice_ral||"").toLowerCase().includes(cercaColore.toLowerCase())) return false;
+            const fId = getFornitoreId(c);
+            if (filtroFornitore !== "tutti" && fId !== filtroFornitore) return false;
+            if (filtroLato === "interno" && c.uso === "esterno") return false;
+            if (filtroLato === "esterno" && c.uso === "interno") return false;
+            if (cercaColore && !c.nome.toLowerCase().includes(cercaColore.toLowerCase()) && !(c.codice||"").toLowerCase().includes(cercaColore.toLowerCase())) return false;
             return true;
           });
-
-          // Raggruppa per fornitore → categoria
           const grouped: Record<string, Record<string, any[]>> = {};
           coloriFiltrati.forEach(c => {
-            const fId = c.fornitore_id || "senza_fornitore";
+            const fId = getFornitoreId(c);
             const cId = c.categoria_id || "senza_categoria";
             if (!grouped[fId]) grouped[fId] = {};
             if (!grouped[fId][cId]) grouped[fId][cId] = [];
             grouped[fId][cId].push(c);
           });
-
-          // Helper: nome fornitore
           const nomeForn = (id: string) => fornitoriSupa.find(f => f.id === id)?.nome || "Senza fornitore";
-          const nomeCat = (id: string) => categorieSupa.find(c => c.id === id)?.nome || "Senza categoria";
-
-          // Salva nuovo colore
-          const salvaColore = async () => {
-            if (!newColore.nome) return;
-            try {
-              const { supabase: sb } = await import("@/lib/supabase");
-              const { data, error } = await sb.from("colori_catalogo").insert([{
-                nome: newColore.nome,
-                codice_ral: newColore.codice_ral || null,
-                hex: newColore.hex,
-                fornitore_id: newColore.fornitore_id || null,
-                categoria_id: newColore.categoria_id || null,
-                interno: newColore.interno,
-                esterno: newColore.esterno,
-              }]).select().single();
-              if (data) {
-                setColoriSupa(prev => [...prev, data]);
-                setNewColore({ nome:"", codice_ral:"", hex:"#888888", fornitore_id:"", categoria_id:"", interno:true, esterno:true });
-                setShowAddColore(false);
-              }
-              if (error) alert("Errore: " + error.message);
-            } catch (e) { console.error(e); }
+          const nomeCat = (id: string) => categorieSupa.find(c => c.id === id)?.nome || id;
+          const getSistemiColore = (coloreId: number) => {
+            const sIds = coloriSistemiSupa.filter(cs => cs.colore_id === coloreId).map(cs => cs.sistema_id);
+            return sistemiProfiloSupa.filter(s => sIds.includes(s.id));
           };
 
-          // Elimina colore
-          const eliminaColore = async (id: string) => {
-            if (!confirm("Eliminare questo colore?")) return;
-            try {
-              const { supabase: sb } = await import("@/lib/supabase");
-              await sb.from("colori_catalogo").delete().eq("id", id);
-              setColoriSupa(prev => prev.filter(c => c.id !== id));
-            } catch (e) { console.error(e); }
-          };
-
-          if (loadingColori) return (
-            <div style={{ textAlign:"center", padding:"40px 0", color: T.sub }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Caricamento colori da Supabase...</div>
-            </div>
-          );
+          if (loadingColori) return (<div style={{ textAlign:"center", padding:"40px 0", color: T.sub }}><div style={{ fontSize:13, fontWeight:600 }}>Caricamento colori...</div></div>);
 
           return (
             <>
-              {/* Stats */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:14 }}>
                 {[
-                  { n: coloriSupa.length, l:"Colori totali", c: PRI },
+                  { n: coloriSupa.length, l:"Colori", c: PRI },
                   { n: fornitoriSupa.length, l:"Fornitori", c:"#3B7FE0" },
                   { n: categorieSupa.length, l:"Categorie", c:"#D08008" },
-                  { n: fasceSupa.length, l:"Fasce prezzo", c:"#7C5FBF" },
+                  { n: Object.keys(grouped).length, l:"Gruppi", c:"#7C5FBF" },
                 ].map((s,i) => (
-                  <div key={i} style={{ background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, padding:"12px 8px", textAlign:"center" }}>
-                    <div style={{ fontSize:22, fontWeight:700, color:s.c, fontFamily:FM }}>{s.n}</div>
-                    <div style={{ fontSize:9, color:T.sub, marginTop:2, fontWeight:600 }}>{s.l}</div>
+                  <div key={i} style={{ background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, padding:"10px 8px", textAlign:"center" }}>
+                    <div style={{ fontSize:20, fontWeight:700, color:s.c, fontFamily:FM }}>{s.n}</div>
+                    <div style={{ fontSize:9, color:T.sub, fontWeight:600 }}>{s.l}</div>
                   </div>
                 ))}
               </div>
-
-              {/* Filtri */}
-              <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
-                {/* Cerca */}
-                <div style={{ flex:"1 1 180px", position:"relative" }}>
-                  <I d={ICO.search} s={14} c={T.sub} />
-                  <input value={cercaColore} onChange={e => setCercaColore(e.target.value)}
-                    placeholder="Cerca colore o RAL..."
-                    style={{ width:"100%", padding:"8px 10px 8px 30px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
-                </div>
-                {/* Fornitore */}
-                <select value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}
-                  style={{ padding:"8px 10px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
-                  <option value="tutti">Tutti i fornitori</option>
-                  {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
-                </select>
-                {/* Interno/Esterno */}
-                <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}` }}>
-                  {[{k:"tutti",l:"Tutti"},{k:"interno",l:"Interno"},{k:"esterno",l:"Esterno"}].map(opt => (
-                    <div key={opt.k} onClick={() => setFiltroLato(opt.k)}
-                      style={{ padding:"7px 12px", fontSize:10, fontWeight:700, cursor:"pointer",
-                        background: filtroLato === opt.k ? PRI : T.card,
-                        color: filtroLato === opt.k ? "#fff" : T.text }}>
-                      {opt.l}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Info risultati */}
-              <div style={{ fontSize:10, color:T.sub, marginBottom:12, fontWeight:600 }}>
-                {coloriFiltrati.length} colori {filtroFornitore !== "tutti" ? `di ${nomeForn(filtroFornitore)}` : ""} {filtroLato !== "tutti" ? `(${filtroLato})` : ""}
-              </div>
-
-              {/* Raggruppamento Fornitore → Categoria */}
-              {Object.keys(grouped).length === 0 ? (
-                <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>
-                  Nessun colore trovato con i filtri selezionati
-                </div>
-              ) : (
-                Object.entries(grouped).map(([fId, catMap]) => {
-                  const fNome = nomeForn(fId);
-                  const forn = fornitoriSupa.find(f => f.id === fId);
-                  const isOpen = expandedFornitore === fId || expandedFornitore === null;
-                  const totalInForn = Object.values(catMap).flat().length;
-
-                  return (
-                    <div key={fId} style={{ marginBottom:12 }}>
-                      {/* Header fornitore */}
-                      <div onClick={() => setExpandedFornitore(expandedFornitore === fId ? null : fId)}
-                        style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px", borderRadius:isOpen ? "12px 12px 0 0" : 12,
-                          background:"#0D1F1F", cursor:"pointer" }}>
-                        <div style={{ width:32, height:32, borderRadius:8, background:PRI, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:13, fontWeight:900, flexShrink:0 }}>
-                          {fNome.charAt(0)}
-                        </div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:13, fontWeight:800, color:"#fff" }}>{fNome}</div>
-                          {forn?.codice && <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>{forn.codice}</div>}
-                        </div>
-                        <div style={{ fontSize:11, fontWeight:700, color:PRI }}>{totalInForn} colori</div>
-                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)" }}>{isOpen ? "\u25B2" : "\u25BC"}</div>
-                      </div>
-
-                      {/* Categorie dentro il fornitore */}
-                      {isOpen && (
-                        <div style={{ border:`1px solid ${T.bdr}`, borderTop:"none", borderRadius:"0 0 12px 12px", overflow:"hidden" }}>
-                          {Object.entries(catMap).map(([cId, colori]) => {
-                            const cNome = nomeCat(cId);
-                            const catOpen = expandedCategoria === `${fId}_${cId}` || expandedCategoria === null;
-                            return (
-                              <div key={cId}>
-                                {/* Header categoria */}
-                                <div onClick={() => setExpandedCategoria(expandedCategoria === `${fId}_${cId}` ? null : `${fId}_${cId}`)}
-                                  style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 14px",
-                                    background:T.card, borderBottom:`1px solid ${T.bdr}`, cursor:"pointer" }}>
-                                  <div style={{ fontSize:11, fontWeight:700, color:T.text, flex:1 }}>{cNome}</div>
-                                  <div style={{ fontSize:10, color:T.sub }}>{colori.length}</div>
-                                  <div style={{ fontSize:9, color:T.sub }}>{catOpen ? "\u25B2" : "\u25BC"}</div>
-                                </div>
-
-                                {/* Griglia colori */}
-                                {catOpen && (
-                                  <div style={{ padding:"8px 12px", display:"flex", flexWrap:"wrap", gap:6 }}>
-                                    {colori.map((col: any) => {
-                                      // Sistemi collegati
-                                      const sistemiCollegati = sistemiDB.filter((s: any) => (s.colori||[]).includes(col.codice || col.nome));
-                                      // Fascia prezzo per questa azienda
-                                      const fascia = fasceSupa.find(f => f.colore_id === col.id);
-
-                                      return (
-                                        <div key={col.id} style={{ width:120, padding:"8px", borderRadius:8, border:`1px solid ${T.bdr}`,
-                                          background:T.card, position:"relative" }}>
-                                          {/* Preview hex */}
-                                          <div style={{ width:"100%", height:40, borderRadius:6, background: col.hex || "#ccc",
-                                            border:`1px solid ${T.bdr}`, marginBottom:6,
-                                            boxShadow:"inset 0 -10px 20px rgba(0,0,0,0.08)" }} />
-                                          {/* Nome + codice */}
-                                          <div style={{ fontSize:10, fontWeight:700, color:T.text, lineHeight:1.3, marginBottom:2 }}>{col.nome}</div>
-                                          <div style={{ fontSize:9, color:T.sub }}>{col.codice || "\u2014"}</div>
-                                          {/* Interno/Esterno badges */}
-                                          <div style={{ display:"flex", gap:3, marginTop:4 }}>
-                                            {col.interno && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#E0F2FE", color:"#0369A1" }}>INT</span>}
-                                            {col.esterno && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>EST</span>}
-                                          </div>
-                                          {/* Sistemi collegati */}
-                                          {sistemiCollegati.length > 0 && (
-                                            <div style={{ marginTop:4, fontSize:8, color:PRI, fontWeight:600 }}>
-                                              {sistemiCollegati.map(s => s.marca).join(", ")}
-                                            </div>
-                                          )}
-                                          {/* Fascia prezzo */}
-                                          {fascia && (
-                                            <div style={{ marginTop:3, fontSize:9, fontWeight:700, color:"#7C5FBF" }}>
-                                              Fascia {fascia.fascia} {fascia.sovrapprezzo_pct ? `+${fascia.sovrapprezzo_pct}%` : ""}
-                                            </div>
-                                          )}
-                                          {/* Elimina */}
-                                          <div onClick={(e) => { e.stopPropagation(); eliminaColore(col.id); }}
-                                            style={{ position:"absolute", top:4, right:4, width:18, height:18, borderRadius:4,
-                                              background:"rgba(220,68,68,0.1)", display:"flex", alignItems:"center", justifyContent:"center",
-                                              cursor:"pointer", fontSize:10, color:"#DC4444", fontWeight:900 }}>\u00D7</div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-
-              {/* Fasce prezzo azienda */}
-              {fasceSupa.length > 0 && (
-                <div style={{ marginTop:16, ...S.card }}>
-                  <div style={S.cardInner}>
-                    <div style={{ fontSize:12, fontWeight:800, color:T.text, marginBottom:8 }}>Fasce prezzo colore</div>
-                    <div style={{ fontSize:10, color:T.sub, marginBottom:10 }}>Sovrapprezzo applicato per fascia colore ai sistemi collegati</div>
-                    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                      {[...new Set(fasceSupa.map(f => f.fascia))].sort().map(fascia => {
-                        const items = fasceSupa.filter(f => f.fascia === fascia);
-                        const sov = items[0]?.sovrapprezzo_pct || 0;
-                        return (
-                          <div key={fascia} style={{ padding:"10px 14px", borderRadius:10, border:`1px solid ${T.bdr}`,
-                            background:T.card, minWidth:100, textAlign:"center" }}>
-                            <div style={{ fontSize:16, fontWeight:900, color:"#7C5FBF", fontFamily:FM }}>{fascia}</div>
-                            <div style={{ fontSize:11, fontWeight:700, color:T.grn, marginTop:2 }}>+{sov}%</div>
-                            <div style={{ fontSize:9, color:T.sub, marginTop:4 }}>{items.length} colori</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Form aggiungi colore */}
-              {showAddColore ? (
-                <div style={{ ...S.card, marginTop:12 }}><div style={S.cardInner}>
-                  <div style={{ fontSize:12, fontWeight:800, color:T.text, marginBottom:10 }}>Nuovo colore</div>
-                  <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Nome</div>
-                      <input value={newColore.nome} onChange={e => setNewColore(p => ({...p, nome:e.target.value}))}
-                        placeholder="es. Grigio Antracite"
-                        style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
-                    </div>
-                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Codice RAL</div>
-                      <input value={newColore.codice_ral} onChange={e => setNewColore(p => ({...p, codice_ral:e.target.value}))}
-                        placeholder="es. 7016"
-                        style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
-                    </div>
-                    <div style={{ flex:"0 0 80px" }}>
-                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Hex</div>
-                      <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                        <input type="color" value={newColore.hex} onChange={e => setNewColore(p => ({...p, hex:e.target.value}))}
-                          style={{ width:32, height:32, border:"none", borderRadius:6, cursor:"pointer" }} />
-                        <input value={newColore.hex} onChange={e => setNewColore(p => ({...p, hex:e.target.value}))}
-                          style={{ width:70, padding:"7px 6px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FM, background:T.card, color:T.text }} />
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Fornitore</div>
-                      <select value={newColore.fornitore_id} onChange={e => setNewColore(p => ({...p, fornitore_id:e.target.value}))}
-                        style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
-                        <option value="">Seleziona...</option>
-                        {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
-                      </select>
-                    </div>
-                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Categoria</div>
-                      <select value={newColore.categoria_id} onChange={e => setNewColore(p => ({...p, categoria_id:e.target.value}))}
-                        style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
-                        <option value="">Seleziona...</option>
-                        {categorieSupa.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  {/* Interno/Esterno toggles */}
-                  <div style={{ display:"flex", gap:12, marginBottom:12 }}>
-                    {[{k:"interno",l:"Uso interno"},{k:"esterno",l:"Uso esterno"}].map(opt => (
-                      <div key={opt.k} onClick={() => setNewColore(p => ({...p, [opt.k]:!(p as any)[opt.k]}))}
-                        style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer" }}>
-                        <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${(newColore as any)[opt.k] ? PRI : T.bdr}`,
-                          background:(newColore as any)[opt.k] ? PRI : "transparent", display:"flex", alignItems:"center", justifyContent:"center",
-                          fontSize:10, color:"#fff", fontWeight:900 }}>
-                          {(newColore as any)[opt.k] && "\u2713"}
-                        </div>
-                        <span style={{ fontSize:11, fontWeight:600, color:T.text }}>{opt.l}</span>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:12 }}>
+                <input value={cercaColore} onChange={e => setCercaColore(e.target.value)} placeholder="Cerca colore o codice..."
+                  style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, boxSizing:"border-box" }} />
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  <select value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}
+                    style={{ flex:"1 1 140px", padding:"8px 10px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
+                    <option value="tutti">Tutti i fornitori</option>
+                    {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                  </select>
+                  <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}`, flexShrink:0 }}>
+                    {[{k:"tutti",l:"Tutti"},{k:"interno",l:"INT"},{k:"esterno",l:"EST"}].map(opt => (
+                      <div key={opt.k} onClick={() => setFiltroLato(opt.k)}
+                        style={{ padding:"8px 12px", fontSize:10, fontWeight:700, cursor:"pointer", background: filtroLato === opt.k ? PRI : T.card, color: filtroLato === opt.k ? "#fff" : T.text }}>
+                        {opt.l}
                       </div>
                     ))}
                   </div>
-                  {/* Azioni */}
-                  <div style={{ display:"flex", gap:8 }}>
-                    <div onClick={salvaColore}
-                      style={{ padding:"8px 18px", borderRadius:8, background:PRI, color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer" }}>Salva</div>
-                    <div onClick={() => setShowAddColore(false)}
-                      style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${T.bdr}`, color:T.sub, fontSize:12, fontWeight:600, cursor:"pointer" }}>Annulla</div>
-                  </div>
-                </div></div>
-              ) : (
-                <div onClick={() => setShowAddColore(true)}
-                  style={{ padding:"14px", borderRadius:T.r, border:`1px dashed ${PRI}`, textAlign:"center", cursor:"pointer", color:PRI, fontSize:12, fontWeight:600, marginTop:12 }}>
-                  + Aggiungi colore
                 </div>
-              )}
+              </div>
+              <div style={{ fontSize:10, color:T.sub, marginBottom:10, fontWeight:600 }}>{coloriFiltrati.length} colori</div>
+              {Object.entries(grouped).map(([fId, catMap]) => {
+                const fNome = nomeForn(fId);
+                const tot = Object.values(catMap).flat().length;
+                const isOpen = expandedFornitore === fId || expandedFornitore === null;
+                return (
+                  <div key={fId} style={{ marginBottom:10 }}>
+                    <div onClick={() => setExpandedFornitore(expandedFornitore === fId ? null : fId)}
+                      style={{ display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:isOpen?"10px 10px 0 0":"10px", background:"#0D1F1F", cursor:"pointer" }}>
+                      <div style={{ width:28, height:28, borderRadius:7, background:PRI, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:11, fontWeight:900, flexShrink:0 }}>{fNome.charAt(0)}</div>
+                      <div style={{ flex:1 }}><div style={{ fontSize:12, fontWeight:800, color:"#fff" }}>{fNome}</div></div>
+                      <div style={{ fontSize:10, fontWeight:700, color:PRI }}>{tot}</div>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>{isOpen?"\u25B2":"\u25BC"}</div>
+                    </div>
+                    {isOpen && <div style={{ border:`1px solid ${T.bdr}`, borderTop:"none", borderRadius:"0 0 10px 10px" }}>
+                      {Object.entries(catMap).map(([cId, colori]) => (
+                        <div key={cId}>
+                          <div style={{ padding:"6px 12px", background:T.card, borderBottom:`1px solid ${T.bdr}`, fontSize:11, fontWeight:700, color:T.text }}>{nomeCat(cId)} <span style={{ fontWeight:400, color:T.sub }}>({colori.length})</span></div>
+                          <div style={{ padding:"6px 10px", display:"flex", flexWrap:"wrap", gap:5 }}>
+                            {colori.map((col: any) => {
+                              const sistemi = getSistemiColore(col.id);
+                              return (
+                                <div key={col.id} style={{ width:90, padding:"6px", borderRadius:6, border:`1px solid ${T.bdr}`, background:T.card, textAlign:"center" }}>
+                                  <div style={{ width:"100%", height:28, borderRadius:4, background:col.hex||"#ccc", border:`1px solid ${T.bdr}`, marginBottom:4 }} />
+                                  <div style={{ fontSize:9, fontWeight:700, color:T.text, lineHeight:1.2 }}>{col.nome}</div>
+                                  <div style={{ fontSize:8, color:T.sub }}>{col.codice||""}</div>
+                                  {sistemi.length > 0 && <div style={{ fontSize:7, color:PRI, marginTop:2 }}>{sistemi.map(s=>s.marca).filter((v,i,a)=>a.indexOf(v)===i).join(", ")}</div>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>}
+                  </div>
+                );
+              })}
             </>
           );
         })()}
-
 
         {/* === VETRI === */}
         {settingsTab === "vetri" && (
@@ -2688,6 +2154,66 @@ export default function SettingsPanel() {
 
         {/* === PIPELINE === */}
         {/* === LIBRERIA PRODOTTI === */}
+        {settingsTab === "libreria" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Crea una libreria di prodotti/servizi da usare nelle Voci libere dei vani. Clicca sui campi per modificarli.</div>
+            {libreriaDB.map(item => (
+              <div key={item.id} style={{ ...S.card, marginBottom: 8 }}><div style={{ ...S.cardInner }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  {/* Foto */}
+                  <div style={{ flexShrink: 0 }}>
+                    {item.foto ? (
+                      <div style={{ position: "relative" }}>
+                        <img src={item.foto} style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: `1px solid ${T.bdr}` }} alt="" />
+                        <div onClick={() => setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, foto: undefined } : x))} style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: T.red, color: "#fff", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontWeight: 900 }}></div>
+                      </div>
+                    ) : (
+                      <label style={{ width: 56, height: 56, borderRadius: 8, background: T.bg, border: `1px dashed ${T.bdr}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", gap: 2 }}>
+                        <span style={{ fontSize: 18 }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+                        <span style={{ fontSize: 7, color: T.sub }}>Foto</span>
+                        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, foto: ev.target?.result as string } : x));
+                          reader.readAsDataURL(file);
+                        }} />
+                      </label>
+                    )}
+                  </div>
+                  {/* Campi editabili */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input style={{ width: "100%", padding: "4px 6px", fontSize: 13, fontWeight: 700, border: `1px solid transparent`, borderRadius: 4, background: "transparent", marginBottom: 3 }} defaultValue={item.nome || ""} placeholder="Nome prodotto..." onFocus={e => e.target.style.borderColor = PRI} onBlur={e => { e.target.style.borderColor = "transparent"; setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, nome: e.target.value } : x)); }} />
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                        <span style={{ fontSize: 9, color: T.sub }}>Cat:</span>
+                        <input style={{ width: 80, padding: "2px 4px", fontSize: 10, border: `1px solid ${T.bdr}`, borderRadius: 4, background: T.bg }} defaultValue={item.categoria || ""} placeholder="Categoria" onBlur={e => setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, categoria: e.target.value } : x))} />
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                        <span style={{ fontSize: 9, color: T.sub }}>€</span>
+                        <input type="number" step="0.01" style={{ width: 60, padding: "2px 4px", fontSize: 12, fontWeight: 700, fontFamily: FM, color: T.grn, border: `1px solid ${T.bdr}`, borderRadius: 4, textAlign: "right" }} defaultValue={item.prezzo || 0} onBlur={e => setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, prezzo: parseFloat(e.target.value) || 0 } : x))} />
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                        <span style={{ fontSize: 9, color: T.sub }}>/</span>
+                        <select style={{ padding: "2px 4px", fontSize: 10, border: `1px solid ${T.bdr}`, borderRadius: 4, background: T.bg }} value={item.unita || "pz"} onChange={e => setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, unita: e.target.value } : x))}>
+                          <option value="pz">Pezzo</option>
+                          <option value="mq">mq</option>
+                          <option value="ml">ml</option>
+                          <option value="kg">kg</option>
+                          <option value="forfait">Forfait</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Delete */}
+                  <div onClick={() => setLibreriaDB(prev => prev.filter(x => x.id !== item.id))} style={{ padding: "6px", cursor: "pointer", color: T.sub, fontSize: 12, flexShrink: 0 }}></div>
+                </div>
+              </div></div>
+            ))}
+            <div onClick={() => {
+              setLibreriaDB(prev => [...prev, { id: Date.now(), nome: "", categoria: "", prezzo: 0, unita: "pz" }]);
+            }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600 }}>+ Aggiungi prodotto alla libreria</div>
+          </>
+        )}
 
         {/* === SQUADRE MONTAGGIO === */}
         {settingsTab === "squadre" && (
@@ -3194,261 +2720,6 @@ export default function SettingsPanel() {
             </div>
           </div>)}
         </div>}
-
-
-        {/* === LIBRERIA ACCESSORI === stessa logica semplificata dei sistemi */}
-        {settingsTab === "libreria" && (() => {
-
-          // Categorie accessori
-          const CATEGORIE_ACC = ["tutti","ferramenta","guarnizioni","accessori","viteria","sigillanti","altro"];
-
-          const libFiltrata = (libreriaDB || []).filter((a: any) => {
-            if (libCatFilter !== "tutti" && a.categoria !== libCatFilter) return false;
-            if (libSearch && !a.nome?.toLowerCase().includes(libSearch.toLowerCase()) && !a.codice?.toLowerCase().includes(libSearch.toLowerCase())) return false;
-            return true;
-          });
-
-          return (
-            <>
-              <div style={{ fontSize:11, color:T.sub, marginBottom:12 }}>
-                Accessori, ferramenta, guarnizioni e consumabili con prezzo unitario o a griglia.
-              </div>
-
-              {/* Stats */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:14 }}>
-                {[
-                  { n: (libreriaDB||[]).length, l:"Articoli", c: PRI },
-                  { n: (libreriaDB||[]).filter((a:any) => a.prezzo > 0 || a.griglia?.length > 0).length, l:"Con prezzo", c:"#1A9E73" },
-                  { n: [...new Set((libreriaDB||[]).map((a:any) => a.fornitore).filter(Boolean))].length, l:"Fornitori", c:"#3B7FE0" },
-                ].map((s,i) => (
-                  <div key={i} style={{ background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, padding:"12px 8px", textAlign:"center" }}>
-                    <div style={{ fontSize:22, fontWeight:700, color:s.c, fontFamily:FM }}>{s.n}</div>
-                    <div style={{ fontSize:9, color:T.sub, marginTop:2, fontWeight:600 }}>{s.l}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Filtri */}
-              <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
-                <input value={libSearch} onChange={e => setLibSearch(e.target.value)}
-                  placeholder="Cerca per nome o codice..."
-                  style={{ flex:"1 1 180px", padding:"8px 10px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
-                <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}` }}>
-                  {CATEGORIE_ACC.map(cat => (
-                    <div key={cat} onClick={() => setLibCatFilter(cat)}
-                      style={{ padding:"7px 10px", fontSize:9, fontWeight:700, cursor:"pointer", textTransform:"capitalize",
-                        background: libCatFilter === cat ? PRI : T.card,
-                        color: libCatFilter === cat ? "#fff" : T.text }}>
-                      {cat}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Lista accessori */}
-              {libFiltrata.length === 0 ? (
-                <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>Nessun accessorio trovato</div>
-              ) : (
-                libFiltrata.map((acc: any) => {
-                  const isExp = libExpanded === acc.id;
-                  const metodo = acc.metodoPricing || (acc.griglia?.length > 0 ? "griglia" : "unitario");
-
-                  return (
-                    <div key={acc.id} style={{ ...S.card, marginBottom:8, overflow:"hidden" }}>
-                      {/* Header */}
-                      <div onClick={() => setLibExpanded(isExp ? null : acc.id)}
-                        style={{ ...S.cardInner, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{acc.nome}</div>
-                          <div style={{ display:"flex", gap:4, marginTop:2 }}>
-                            {acc.codice && <span style={{ fontSize:9, color:T.sub, fontFamily:FM }}>{acc.codice}</span>}
-                            {acc.fornitore && <span style={{ fontSize:9, color:T.sub }}>\u00B7 {acc.fornitore}</span>}
-                            {acc.categoria && <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:700,
-                              background:PRI+"10", color:PRI, textTransform:"capitalize" }}>{acc.categoria}</span>}
-                          </div>
-                        </div>
-                        <div style={{ textAlign:"right" }}>
-                          {metodo === "unitario" && acc.prezzo > 0 && (
-                            <div style={{ fontSize:15, fontWeight:800, color:T.grn, fontFamily:FM }}>\u20AC{acc.prezzo}</div>
-                          )}
-                          {metodo === "griglia" && (
-                            <div style={{ fontSize:11, fontWeight:700, color:PRI }}>Griglia {acc.griglia?.length || 0}</div>
-                          )}
-                          <div style={{ fontSize:9, color:T.sub }}>{acc.unita || "pz"}</div>
-                        </div>
-                        <div style={{ fontSize:10, color:T.sub }}>{isExp ? "\u25B2" : "\u25BC"}</div>
-                      </div>
-
-                      {/* Dettaglio */}
-                      {isExp && (
-                        <div style={{ padding:"12px 14px", borderTop:`1px solid ${T.bdr}`, background:T.bg }}>
-                          {/* Metodo pricing */}
-                          <div style={{ marginBottom:10 }}>
-                            <div style={{ fontSize:9, fontWeight:700, color:T.sub, textTransform:"uppercase", marginBottom:4 }}>Metodo prezzo</div>
-                            <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}` }}>
-                              {[{k:"unitario",l:"Prezzo unitario"},{k:"griglia",l:"Griglia quantit\u00E0"},{k:"fisso",l:"Prezzo fisso"}].map(opt => (
-                                <div key={opt.k} onClick={() => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, metodoPricing:opt.k} : x))}
-                                  style={{ flex:1, padding:"7px 6px", fontSize:10, fontWeight:700, cursor:"pointer", textAlign:"center",
-                                    background: metodo === opt.k ? PRI : T.card,
-                                    color: metodo === opt.k ? "#fff" : T.text }}>
-                                  {opt.l}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Campi base */}
-                          <div style={{ display:"flex", gap:8, marginBottom:8, flexWrap:"wrap" }}>
-                            <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Nome</div>
-                              <input value={acc.nome || ""} onChange={e => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, nome:e.target.value} : x))}
-                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
-                            </div>
-                            <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Codice articolo</div>
-                              <input value={acc.codice || ""} onChange={e => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, codice:e.target.value} : x))}
-                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, background:T.card, color:T.text }} />
-                            </div>
-                            <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Fornitore</div>
-                              <input value={acc.fornitore || ""} onChange={e => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, fornitore:e.target.value} : x))}
-                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
-                            </div>
-                            <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Categoria</div>
-                              <select value={acc.categoria || "accessori"} onChange={e => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, categoria:e.target.value} : x))}
-                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
-                                {CATEGORIE_ACC.filter(c => c !== "tutti").map(c => <option key={c} value={c} style={{ textTransform:"capitalize" }}>{c}</option>)}
-                              </select>
-                            </div>
-                          </div>
-
-                          {/* Prezzo unitario */}
-                          {metodo === "unitario" && (
-                            <div style={{ display:"flex", gap:8, marginBottom:8 }}>
-                              <div style={{ flex:1 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Prezzo \u20AC</div>
-                                <input type="number" step="0.01" value={acc.prezzo || ""} onChange={e => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, prezzo:parseFloat(e.target.value)||0} : x))}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`,
-                                    fontSize:16, fontWeight:700, color:T.grn, textAlign:"right", fontFamily:FM, background:T.card }} />
-                              </div>
-                              <div style={{ flex:1 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Unit\u00E0</div>
-                                <select value={acc.unita || "pz"} onChange={e => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, unita:e.target.value} : x))}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`,
-                                    fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
-                                  {["pz","ml","mq","kg","set","coppia","rotolo","confezione"].map(u => <option key={u}>{u}</option>)}
-                                </select>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Griglia quantit\u00E0 */}
-                          {metodo === "griglia" && (
-                            <div style={{ marginBottom:8, padding:8, borderRadius:8, background:T.card, border:`1px solid ${T.bdr}` }}>
-                              <div style={{ fontSize:10, fontWeight:700, color:T.text, marginBottom:6 }}>Griglia quantit\u00E0-prezzo ({acc.griglia?.length || 0} scaglioni)</div>
-                              {(acc.griglia || []).map((g: any, gi: number) => (
-                                <div key={gi} style={{ display:"flex", gap:6, alignItems:"center", marginBottom:4 }}>
-                                  <span style={{ fontSize:10, color:T.sub, minWidth:20 }}>{gi+1}.</span>
-                                  <span style={{ fontSize:10, fontWeight:600, color:T.text }}>da {g.qta} {acc.unita || "pz"}</span>
-                                  <span style={{ fontSize:10, color:T.sub }}>\u2192</span>
-                                  <span style={{ fontSize:11, fontWeight:700, color:T.grn, fontFamily:FM }}>\u20AC{g.prezzo}</span>
-                                  <div onClick={() => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, griglia:(x.griglia||[]).filter((_:any,i:number) => i !== gi)} : x))}
-                                    style={{ color:"#DC4444", cursor:"pointer", fontSize:12, marginLeft:"auto" }}>\u00D7</div>
-                                </div>
-                              ))}
-                              <div style={{ display:"flex", gap:4, marginTop:6 }}>
-                                <input type="number" placeholder="Qta" id={`acc_qta_${acc.id}`}
-                                  style={{ flex:1, padding:"5px 6px", borderRadius:6, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FM, background:T.bg }} />
-                                <input type="number" step="0.01" placeholder="\u20AC" id={`acc_pz_${acc.id}`}
-                                  style={{ flex:1, padding:"5px 6px", borderRadius:6, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FM, background:T.bg }} />
-                                <div onClick={() => {
-                                  const qEl = document.getElementById(`acc_qta_${acc.id}`) as HTMLInputElement;
-                                  const pEl = document.getElementById(`acc_pz_${acc.id}`) as HTMLInputElement;
-                                  const qta = parseInt(qEl?.value || "0"); const pr = parseFloat(pEl?.value || "0");
-                                  if (qta > 0 && pr > 0) {
-                                    setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, griglia:[...(x.griglia||[]), {qta, prezzo:pr}].sort((a:any,b:any) => a.qta-b.qta)} : x));
-                                    if (qEl) qEl.value = ""; if (pEl) pEl.value = "";
-                                  }
-                                }} style={{ padding:"5px 10px", borderRadius:6, background:PRI, color:"#fff", fontSize:10, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>+ Scaglione</div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Note */}
-                          <div style={{ marginBottom:8 }}>
-                            <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Note</div>
-                            <textarea value={acc.note || ""} onChange={e => setLibreriaDB((prev: any[]) => prev.map(x => x.id === acc.id ? {...x, note:e.target.value} : x))}
-                              rows={2} placeholder="Note, specifiche tecniche..."
-                              style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text, resize:"vertical" }} />
-                          </div>
-
-                          {/* Elimina */}
-                          <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:8, borderTop:`1px solid ${T.bdr}` }}>
-                            <div onClick={() => { if (confirm(`Eliminare ${acc.nome}?`)) setLibreriaDB((prev: any[]) => prev.filter(x => x.id !== acc.id)); }}
-                              style={{ padding:"6px 14px", borderRadius:6, background:"rgba(220,68,68,0.1)", color:"#DC4444", fontSize:11, fontWeight:700, cursor:"pointer" }}>
-                              Elimina
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-
-              {/* Import CSV */}
-              <div style={{ position:"relative", marginTop:10, marginBottom:8 }}>
-                <input type="file" accept=".csv,.txt,.xlsx"
-                  style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
-                  onChange={e => {
-                    const file = e.target.files?.[0]; if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = ev => {
-                      const text = ev.target?.result as string;
-                      const rows = text.split(/\r?\n/).map(r => r.split(/[;\t,]/));
-                      const start = rows[0]?.some(c => /[a-zA-Z]/.test(c)) ? 1 : 0;
-                      const nuovi: any[] = [];
-                      for (let i = start; i < rows.length; i++) {
-                        const r = rows[i];
-                        if (r.length >= 2 && r[0]?.trim()) {
-                          nuovi.push({
-                            id: Date.now().toString() + Math.random(),
-                            nome: r[0].trim(),
-                            codice: r[1]?.trim() || "",
-                            fornitore: r[2]?.trim() || "",
-                            categoria: r[3]?.trim() || "accessori",
-                            prezzo: parseFloat((r[4] || "0").replace(",",".")) || 0,
-                            unita: r[5]?.trim() || "pz",
-                            metodoPricing: "unitario",
-                          });
-                        }
-                      }
-                      if (nuovi.length) {
-                        setLibreriaDB((prev: any[]) => [...prev, ...nuovi]);
-                        alert(`${nuovi.length} accessori importati`);
-                      }
-                    };
-                    reader.readAsText(file, "utf-8");
-                    e.target.value = "";
-                  }} />
-                <div style={{ border:`1.5px dashed ${PRI}`, borderRadius:8, padding:"10px", textAlign:"center", background:PRI+"08", cursor:"pointer" }}>
-                  <div style={{ fontSize:10, fontWeight:600, color:PRI }}>Importa accessori da CSV (Nome ; Codice ; Fornitore ; Categoria ; Prezzo ; Unit\u00E0)</div>
-                </div>
-              </div>
-
-              {/* Aggiungi */}
-              <div onClick={() => setLibreriaDB((prev: any[]) => [...prev, {
-                id: Date.now().toString(), nome:"Nuovo accessorio", codice:"", fornitore:"", categoria:"accessori",
-                prezzo:0, unita:"pz", metodoPricing:"unitario", griglia:[], note:""
-              }])}
-                style={{ padding:"14px", borderRadius:T.r, border:`1px dashed ${PRI}`, textAlign:"center", cursor:"pointer", color:PRI, fontSize:12, fontWeight:600 }}>
-                + Aggiungi accessorio
-              </div>
-            </>
-          );
-        })()}
-
 
         {settingsTab === "marketplace" && <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
