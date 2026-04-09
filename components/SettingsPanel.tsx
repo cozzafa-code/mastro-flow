@@ -556,7 +556,7 @@ export default function SettingsPanel() {
   const [mNota, setMNota] = React.useState("");
   const [mTab, setMTab] = React.useState("info");
 
-  // ── Colori Supabase state (top-level per evitare React #310) ──
+  // ── Colori Supabase state (top-level) ──
   const [coloriSupa, setColoriSupa] = React.useState<any[]>([]);
   const [categorieSupa, setCategorieSupa] = React.useState<any[]>([]);
   const [fornitoriSupa, setFornitoriSupa] = React.useState<any[]>([]);
@@ -570,20 +570,19 @@ export default function SettingsPanel() {
   const [showAddColore, setShowAddColore] = React.useState(false);
   const [newColore, setNewColore] = React.useState({ nome:"", codice_ral:"", hex:"#888888", fornitore_id:"", categoria_id:"", interno:true, esterno:true });
   const [coloriLoaded, setColoriLoaded] = React.useState(false);
-
-  // ── Sistemi state (top-level) ──
   const [sistemiExpanded, setSistemiExpanded] = React.useState<string|null>(null);
   const [importAIFile, setImportAIFile] = React.useState<File|null>(null);
   const [importAILoading, setImportAILoading] = React.useState(false);
   const [importAIResult, setImportAIResult] = React.useState<any[]|null>(null);
-
-  // ── Libreria state (top-level) ──
   const [libExpanded, setLibExpanded] = React.useState<string|null>(null);
   const [libSearch, setLibSearch] = React.useState("");
   const [libCatFilter, setLibCatFilter] = React.useState("tutti");
-
   const [coloriSistemiSupa, setColoriSistemiSupa] = React.useState<any[]>([]);
   const [sistemiProfiloSupa, setSistemiProfiloSupa] = React.useState<any[]>([]);
+  const [profiliSupa, setProfiliSupa] = React.useState<any[]>([]);
+  const [profiliLoaded, setProfiliLoaded] = React.useState(false);
+  const [profiliExpanded, setProfiliExpanded] = React.useState<string|null>(null);
+  const [profiliSearch, setProfiliSearch] = React.useState("");
 
   // ── Fetch colori da Supabase (solo quando si entra nella tab) ──
   React.useEffect(() => {
@@ -611,6 +610,27 @@ export default function SettingsPanel() {
       setLoadingColori(false);
     })();
   }, [settingsTab, coloriLoaded]);
+
+  // ── Fetch profili da Supabase ──
+  React.useEffect(() => {
+    if (settingsTab !== "profili_arch" || profiliLoaded) return;
+    (async () => {
+      try {
+        const { supabase: sb } = await import("@/lib/supabase");
+        const { data } = await sb.from("profili_catalogo").select("*").order("nome");
+        if (data) setProfiliSupa(data);
+        if (sistemiProfiloSupa.length === 0) {
+          const { data: sp } = await sb.from("sistemi_profilo").select("*");
+          if (sp) setSistemiProfiloSupa(sp);
+        }
+        if (fornitoriSupa.length === 0) {
+          const { data: forn } = await sb.from("fornitori_colore").select("*").order("nome");
+          if (forn) setFornitoriSupa(forn);
+        }
+        setProfiliLoaded(true);
+      } catch (e) { console.error("Errore fetch profili:", e); }
+    })();
+  }, [settingsTab, profiliLoaded]);
 
   // Plan from PLANS
   const plan = PLANS[activePlan] || PLANS.free || { nome: "Free", prezzo: 0, maxCommesse: 5, maxUtenti: 1, sync: false, pdf: false };
@@ -842,161 +862,258 @@ export default function SettingsPanel() {
         {/* ═══════════════════════════════════════════════════════ */}
         {/* ARCHIVIO PROFILI DXF                                   */}
         {/* ═══════════════════════════════════════════════════════ */}
-        {settingsTab === "profili_arch" && (
-          <div>
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
-              {[
-                { n: sistemiDB?.length || 0, l: "Sistemi totali", c: "#D08008" },
-                { n: 3, l: "Fornitori", c: "#D08008" },
-                { n: sistemiDB?.filter((s: any) => s.attivo !== false).length || 0, l: "Attivi", c: "#1A9E73" },
-                { n: sistemiDB?.filter((s: any) => !s.grMl).length || 0, l: "Senza gr/ml", c: "#DC4444" },
-              ].map((s, i) => (
-                <div key={i} style={{ background: "#fff", border: "1px solid #E5E3DC", borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: s.c }}>{s.n}</div>
-                  <div style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
+        {/* === ARCHIVIO PROFILI === fetch da Supabase profili_catalogo */}
+        {settingsTab === "profili_arch" && (() => {
+          const TIPI_PROFILO = ["Rahmen","Fl\u00FCgel","Pfosten","Stulp","Soglia","Traverso","Montante","Altro"];
+          const MATERIALI_P = ["PVC","Alluminio","Legno","Legno-Alluminio"];
 
-            {/* Upload DXF */}
-            <div style={{ background: "#fff", border: "1px solid #E5E3DC", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid #E5E3DC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1C" }}>Importa profilo da DXF</div>
-                <div style={{ fontSize: 11, color: "#9CA3AF" }}>Parser automatico layer 15 · Kömmerling / aluplast</div>
-              </div>
-              <div style={{ padding: 16 }}>
-                <div style={{ position: "relative" }}>
-                  <input type="file" accept=".dxf"
-                    style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", zIndex: 2 }}
-                    onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = ev => {
-                        const text = ev.target?.result as string;
-                        // Parser DXF — estrae da layer 15 MTEXT e testi numerici
-                        const lines = text.split(/\r?\n/);
-                        let codice = ""; let bautiefe = 0; let camere = 0;
-                        const ferramenta: string[] = [];
-                        const quote: number[] = [];
-                        // Cerca codice profilo (pattern 040x / 140x / 120x / ecc.)
-                        const codiceMatch = text.match(/\b(0[14][04]x\d{2}|1[0-9]{2}x\d{2})\b/i);
-                        if (codiceMatch) codice = codiceMatch[1];
-                        // Cerca MTEXT nel layer 15 — \A1;NN = quota costruttiva
-                        const mtextPattern = /\\A1;(\d+)/g;
-                        let m;
-                        while ((m = mtextPattern.exec(text)) !== null) {
-                          const v = parseInt(m[1]);
-                          if (v >= 40 && v <= 200) quote.push(v);
-                        }
-                        // Bautiefe = quota principale (55,65,70,80,85,95,100,120mm)
-                        const bautiefen = [55,65,70,80,85,95,100,120];
-                        bautiefe = quote.find(q => bautiefen.includes(q)) || quote[0] || 0;
-                        // Cerca codici ferramenta (6 cifre nel testo)
-                        const fermPattern = /\b([2-9]\d{5})\b/g;
-                        let fm;
-                        const fermSet = new Set<string>();
-                        while ((fm = fermPattern.exec(text)) !== null) fermSet.add(fm[1]);
-                        fermSet.forEach(f => ferramenta.push(f));
-                        // Determina tipo da codice
-                        const tipo = codice.startsWith("14") || codice.startsWith("04") ?
-                          (codice.match(/x[2-3]/) ? "Flügel" :
-                           codice.match(/x[4-5]/) ? "Pfosten" :
-                           codice.match(/x[6-9]/) ? "Stulp" : "Rahmen") : "Rahmen";
-                        // Salva in sistemiDB
-                        const newProfilo = {
-                          id: Date.now().toString(),
-                          codice: codice || file.name.replace(".dxf",""),
-                          nome: `${tipo} ${bautiefe}mm`,
-                          fornitore: text.includes("OHNE_DICHTUNGEN") || text.includes("aluplast") ? "Kömmerling / aluplast" : "Generico",
-                          tipo, bautiefe, camere,
-                          quote, ferramenta,
-                          attivo: true, grMl: "",
-                        };
-                        setSistemiDB((prev: any[]) => [...(prev||[]), newProfilo]);
-                        alert(`Profilo importato: ${newProfilo.codice} — ${newProfilo.tipo} ${newProfilo.bautiefe}mm\nFerramenta trovata: ${ferramenta.slice(0,5).join(", ")}${ferramenta.length > 5 ? "..." : ""}`);
-                      };
-                      reader.readAsText(file);
-                      e.target.value = "";
-                    }}
-                  />
-                  <div style={{ border: "1.5px dashed #D08008", borderRadius: 8, padding: "18px", textAlign: "center", background: "#FFFBF5", cursor: "pointer" }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "#92400E", marginBottom: 4 }}>Trascina un file .dxf o clicca per selezionare</div>
-                    <div style={{ fontSize: 10, color: "#9CA3AF" }}>Il parser estrae automaticamente: codice, bautiefe, tipo, quote layer 15, codici ferramenta</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          const profiliFiltrati = profiliSupa.filter(p => {
+            if (profiliSearch && !p.nome?.toLowerCase().includes(profiliSearch.toLowerCase()) && !(p.codice||"").toLowerCase().includes(profiliSearch.toLowerCase())) return false;
+            return true;
+          });
 
-            {/* Tabella profili */}
-            <div style={{ background: "#fff", border: "1px solid #E5E3DC", borderRadius: 10, overflow: "hidden" }}>
-              <div style={{ padding: "12px 16px", borderBottom: "1px solid #E5E3DC", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1C" }}>Profili nel sistema</div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <select style={{ padding: "5px 10px", border: "1px solid #E5E3DC", borderRadius: 6, fontSize: 12, background: "#F9F8F5", color: "#1A1A1C" }}>
-                    <option>Tutti i tipi</option>
-                    <option>Rahmen</option>
-                    <option>Flügel</option>
-                    <option>Pfosten</option>
-                    <option>Stulp</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{ padding: "0 16px" }}>
-                {/* Header tabella */}
-                <div style={{ display: "grid", gridTemplateColumns: "90px 1fr 80px 80px 70px 110px", gap: 8, padding: "8px 0", borderBottom: "1px solid #E5E3DC", fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                  <span>Codice</span><span>Nome / Fornitore</span><span>Tipo</span><span>Bautiefe</span><span>Gr/ml</span><span>Azioni</span>
-                </div>
-                {/* Profili da sistemiDB */}
-                {(sistemiDB || []).length === 0 ? (
-                  <div style={{ padding: "20px 0", textAlign: "center", fontSize: 12, color: "#9CA3AF" }}>
-                    Nessun profilo — importa un DXF o aggiungilo manualmente
+          const salvaProfilo = async (profilo: any) => {
+            try {
+              const { supabase: sb } = await import("@/lib/supabase");
+              if (profilo.id && typeof profilo.id === "number") {
+                const { error } = await sb.from("profili_catalogo").update(profilo).eq("id", profilo.id);
+                if (error) { alert("Errore: " + error.message); return; }
+                setProfiliSupa(prev => prev.map(p => p.id === profilo.id ? {...p, ...profilo} : p));
+              } else {
+                const ins = {...profilo}; delete ins.id;
+                if (!ins.azienda_id) ins.azienda_id = aziendaInfo?.id || "demo";
+                const { data, error } = await sb.from("profili_catalogo").insert([ins]).select().single();
+                if (error) { alert("Errore: " + error.message); return; }
+                if (data) { setProfiliSupa(prev => [...prev, data]); setProfiliExpanded(String(data.id)); }
+              }
+            } catch (e) { console.error(e); }
+          };
+
+          const eliminaProfilo = async (id: number) => {
+            if (!confirm("Eliminare questo profilo?")) return;
+            try {
+              const { supabase: sb } = await import("@/lib/supabase");
+              await sb.from("profili_catalogo").delete().eq("id", id);
+              setProfiliSupa(prev => prev.filter(p => p.id !== id));
+            } catch (e) { console.error(e); }
+          };
+
+          return (
+            <>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+                {[
+                  { n: profiliSupa.length, l:"Profili", c: PRI },
+                  { n: profiliSupa.filter(p => p.attivo !== false).length, l:"Attivi", c:"#1A9E73" },
+                  { n: profiliSupa.filter(p => p.dxf_url || p.pdf_url || p.immagine_url).length, l:"Con file", c:"#3B7FE0" },
+                ].map((s,i) => (
+                  <div key={i} style={{ background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, padding:"12px 8px", textAlign:"center" }}>
+                    <div style={{ fontSize:22, fontWeight:700, color:s.c, fontFamily:FM }}>{s.n}</div>
+                    <div style={{ fontSize:9, color:T.sub, marginTop:2, fontWeight:600 }}>{s.l}</div>
                   </div>
-                ) : (
-                  (sistemiDB || []).map((p: any) => {
-                    const tipoColors: Record<string,string[]> = {
-                      "Rahmen": ["#DBEAFE","#1E40AF"],
-                      "Flügel": ["#D1FAE5","#065F46"],
-                      "Pfosten": ["#FEF3C7","#92400E"],
-                      "Stulp":  ["#FCE7F3","#9D174D"],
-                    };
-                    const [bg, fg] = tipoColors[p.tipo] || ["#F2F1EC","#6B7280"];
-                    return (
-                      <div key={p.id} style={{ display: "grid", gridTemplateColumns: "90px 1fr 80px 80px 70px 110px", gap: 8, alignItems: "center", padding: "10px 0", borderBottom: "1px solid #F2F1EC", fontSize: 13 }}>
-                        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12, fontWeight: 700, color: "#1A1A1C" }}>{p.codice || p.id}</span>
-                        <div>
-                          <div style={{ fontSize: 13, color: "#1A1A1C" }}>{p.nome || `${p.tipo} ${p.bautiefe}mm`}</div>
-                          <div style={{ fontSize: 11, color: "#9CA3AF" }}>{p.fornitore || "—"}</div>
+                ))}
+              </div>
+
+              <input value={profiliSearch} onChange={e => setProfiliSearch(e.target.value)}
+                placeholder="Cerca profilo per nome o codice..."
+                style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, boxSizing:"border-box", marginBottom:12 }} />
+
+              {profiliFiltrati.length === 0 ? (
+                <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>
+                  Nessun profilo inserito. Clicca + per aggiungere il primo.
+                </div>
+              ) : (
+                profiliFiltrati.map((p: any) => {
+                  const isExp = profiliExpanded === String(p.id);
+                  const sistema = sistemiProfiloSupa.find(s => s.id === p.sistema_id);
+                  const fornColore = fornitoriSupa.find(f => f.id === p.fornitore_colore_id);
+                  const matColor = p.materiale === "Alluminio" ? "#D08008" : p.materiale === "PVC" ? "#3B7FE0" : "#1A9E73";
+
+                  return (
+                    <div key={p.id} style={{ ...S.card, marginBottom:8, overflow:"hidden" }}>
+                      <div onClick={() => setProfiliExpanded(isExp ? null : String(p.id))}
+                        style={{ ...S.cardInner, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
+                        <div style={{ width:44, height:44, borderRadius:8, flexShrink:0, overflow:"hidden", border:`1px solid ${T.bdr}`, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          {p.immagine_url ? (
+                            <img src={p.immagine_url} style={{ width:"100%", height:"100%", objectFit:"contain" }} alt="" />
+                          ) : (
+                            <span style={{ fontSize:10, fontWeight:900, color:matColor }}>{(p.materiale||"?").substring(0,3)}</span>
+                          )}
                         </div>
-                        <span>
-                          <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, background: bg, color: fg }}>
-                            {p.tipo || "—"}
-                          </span>
-                        </span>
-                        <span style={{ fontSize: 13, color: "#1A1A1C" }}>{p.bautiefe ? `${p.bautiefe} mm` : "—"}</span>
-                        <span>
-                          <input
-                            value={p.grMl || ""}
-                            placeholder="kg/ml"
-                            onChange={e => setSistemiDB((prev: any[]) => prev.map((x: any) => x.id === p.id ? {...x, grMl: e.target.value} : x))}
-                            style={{ width: "100%", padding: "4px 8px", border: "1px solid #E5E3DC", borderRadius: 5, fontSize: 12, background: "#F9F8F5", color: "#1A1A1C" }}
-                          />
-                        </span>
-                        <div style={{ display: "flex", gap: 4 }}>
-                          <div
-                            onClick={() => setSistemiDB((prev: any[]) => prev.filter((x: any) => x.id !== p.id))}
-                            style={{ padding: "4px 10px", border: "1px solid #FCA5A5", background: "#FEF2F2", borderRadius: 5, fontSize: 11, cursor: "pointer", color: "#DC4444" }}
-                          >Rimuovi</div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{p.nome}</div>
+                          <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginTop:2 }}>
+                            {p.codice && <span style={{ fontSize:9, color:T.sub, fontFamily:FM }}>{p.codice}</span>}
+                            {p.marca && <span style={{ fontSize:9, color:T.sub }}>{p.marca}</span>}
+                            <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:700, background:matColor+"15", color:matColor }}>{p.materiale}</span>
+                          </div>
+                          {sistema && <div style={{ fontSize:9, color:PRI, fontWeight:600, marginTop:2 }}>{sistema.marca} {sistema.sistema}</div>}
+                          {fornColore && <div style={{ fontSize:8, color:"#7C5FBF", fontWeight:600, marginTop:1 }}>Colori: {fornColore.nome}</div>}
                         </div>
+                        <div style={{ textAlign:"right", flexShrink:0 }}>
+                          {p.uf && <div style={{ fontSize:14, fontWeight:800, color: p.uf <= 1.0 ? "#1A9E73" : p.uf <= 1.4 ? "#D08008" : "#DC4444", fontFamily:FM }}>Uf {p.uf}</div>}
+                          {p.peso_kg_ml && <div style={{ fontSize:9, color:T.sub }}>{p.peso_kg_ml} kg/ml</div>}
+                          {p.bautiefe_mm && <div style={{ fontSize:9, color:T.sub }}>{p.bautiefe_mm}mm</div>}
+                        </div>
+                        <div style={{ fontSize:10, color:T.sub }}>{isExp ? "\u25B2" : "\u25BC"}</div>
                       </div>
-                    );
-                  })
-                )}
+
+                      {isExp && (
+                        <div style={{ padding:"12px 14px", borderTop:`1px solid ${T.bdr}`, background:T.bg }}>
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Nome</div>
+                              <input defaultValue={p.nome||""} onBlur={e => salvaProfilo({...p, nome:e.target.value})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
+                            </div>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Codice</div>
+                              <input defaultValue={p.codice||""} onBlur={e => salvaProfilo({...p, codice:e.target.value})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, background:T.card, color:T.text }} />
+                            </div>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Marca / Fornitore</div>
+                              <input defaultValue={p.marca||""} onBlur={e => salvaProfilo({...p, marca:e.target.value})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
+                            </div>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Materiale</div>
+                              <select defaultValue={p.materiale||"PVC"} onChange={e => salvaProfilo({...p, materiale:e.target.value})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
+                                {MATERIALI_P.map(m => <option key={m}>{m}</option>)}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+                            <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Tipo profilo</div>
+                              <select defaultValue={p.tipo||"Rahmen"} onChange={e => salvaProfilo({...p, tipo:e.target.value})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
+                                {TIPI_PROFILO.map(t => <option key={t}>{t}</option>)}
+                              </select>
+                            </div>
+                            <div style={{ flex:"1 1 20%", minWidth:70 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Bautiefe mm</div>
+                              <input type="number" defaultValue={p.bautiefe_mm||""} onBlur={e => salvaProfilo({...p, bautiefe_mm:parseFloat(e.target.value)||null})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
+                            </div>
+                            <div style={{ flex:"1 1 20%", minWidth:70 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Uf W/m\u00B2K</div>
+                              <input type="number" step="0.01" defaultValue={p.uf||""} onBlur={e => salvaProfilo({...p, uf:parseFloat(e.target.value)||null})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
+                            </div>
+                            <div style={{ flex:"1 1 20%", minWidth:70 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Peso kg/ml</div>
+                              <input type="number" step="0.01" defaultValue={p.peso_kg_ml||""} onBlur={e => salvaProfilo({...p, peso_kg_ml:parseFloat(e.target.value)||null})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
+                            </div>
+                          </div>
+
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+                            <div style={{ flex:"1 1 45%", minWidth:140 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Sistema profilo</div>
+                              <select defaultValue={p.sistema_id||""} onChange={e => salvaProfilo({...p, sistema_id:e.target.value||null})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
+                                <option value="">Nessun sistema</option>
+                                {sistemiProfiloSupa.map(s => <option key={s.id} value={s.id}>{s.marca} {s.sistema}</option>)}
+                              </select>
+                            </div>
+                            <div style={{ flex:"1 1 45%", minWidth:140 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Colori collegati (fornitore)</div>
+                              <select defaultValue={p.fornitore_colore_id||""} onChange={e => salvaProfilo({...p, fornitore_colore_id:e.target.value||null})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
+                                <option value="">Nessun collegamento</option>
+                                {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome} ({f.materiale})</option>)}
+                              </select>
+                              {p.fornitore_colore_id && <div style={{ fontSize:8, color:"#7C5FBF", marginTop:3, fontWeight:600 }}>
+                                Tutti i colori {fornitoriSupa.find(f => f.id === p.fornitore_colore_id)?.nome} collegati
+                              </div>}
+                            </div>
+                          </div>
+
+                          <div style={{ display:"flex", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+                            <div style={{ flex:"1 1 30%", minWidth:100 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Disegno sezione</div>
+                              {p.immagine_url ? (
+                                <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                  <img src={p.immagine_url} style={{ height:40, maxWidth:80, objectFit:"contain", borderRadius:4, border:`1px solid ${T.bdr}` }} alt="" />
+                                  <div onClick={() => salvaProfilo({...p, immagine_url:null})} style={{ fontSize:9, color:"#DC4444", cursor:"pointer", fontWeight:600 }}>x</div>
+                                </div>
+                              ) : (
+                                <label style={{ display:"inline-flex", padding:"5px 10px", borderRadius:6, background:PRI+"15", color:PRI, fontSize:9, fontWeight:600, cursor:"pointer" }}>
+                                  PNG/JPG
+                                  <input type="file" accept="image/*" style={{ display:"none" }} onChange={e => {
+                                    const file = e.target.files?.[0]; if (!file) return;
+                                    const r = new FileReader(); r.onload = ev => salvaProfilo({...p, immagine_url:ev.target?.result}); r.readAsDataURL(file);
+                                  }} />
+                                </label>
+                              )}
+                            </div>
+                            <div style={{ flex:"1 1 30%", minWidth:100 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>File DXF/CAD</div>
+                              {p.dxf_url ? (
+                                <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                  <span style={{ padding:"2px 6px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>DXF</span>
+                                  <div onClick={() => salvaProfilo({...p, dxf_url:null})} style={{ fontSize:9, color:"#DC4444", cursor:"pointer", fontWeight:600 }}>x</div>
+                                </div>
+                              ) : (
+                                <label style={{ display:"inline-flex", padding:"5px 10px", borderRadius:6, background:"#FEF3C7", color:"#92400E", fontSize:9, fontWeight:600, cursor:"pointer" }}>
+                                  DXF/DWG
+                                  <input type="file" accept=".dxf,.dwg" style={{ display:"none" }} onChange={e => {
+                                    const file = e.target.files?.[0]; if (!file) return;
+                                    const r = new FileReader(); r.onload = ev => salvaProfilo({...p, dxf_url:ev.target?.result}); r.readAsDataURL(file);
+                                  }} />
+                                </label>
+                              )}
+                            </div>
+                            <div style={{ flex:"1 1 30%", minWidth:100 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Scheda tecnica</div>
+                              {p.pdf_url ? (
+                                <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                                  <span style={{ padding:"2px 6px", borderRadius:4, fontSize:8, fontWeight:700, background:"#DBEAFE", color:"#1E40AF" }}>PDF</span>
+                                  <div onClick={() => salvaProfilo({...p, pdf_url:null})} style={{ fontSize:9, color:"#DC4444", cursor:"pointer", fontWeight:600 }}>x</div>
+                                </div>
+                              ) : (
+                                <label style={{ display:"inline-flex", padding:"5px 10px", borderRadius:6, background:"#DBEAFE", color:"#1E40AF", fontSize:9, fontWeight:600, cursor:"pointer" }}>
+                                  PDF
+                                  <input type="file" accept=".pdf" style={{ display:"none" }} onChange={e => {
+                                    const file = e.target.files?.[0]; if (!file) return;
+                                    const r = new FileReader(); r.onload = ev => salvaProfilo({...p, pdf_url:ev.target?.result}); r.readAsDataURL(file);
+                                  }} />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ marginBottom:8 }}>
+                            <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Note</div>
+                            <textarea defaultValue={p.note||""} rows={2} onBlur={e => salvaProfilo({...p, note:e.target.value})}
+                              style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text, resize:"vertical" }} />
+                          </div>
+
+                          <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:8, borderTop:`1px solid ${T.bdr}` }}>
+                            <div onClick={() => eliminaProfilo(p.id)}
+                              style={{ padding:"6px 14px", borderRadius:6, background:"rgba(220,68,68,0.1)", color:"#DC4444", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                              Elimina
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+
+              <div onClick={() => {
+                salvaProfilo({ nome:"Nuovo profilo", materiale:"PVC", tipo:"Rahmen", attivo:true });
+              }}
+                style={{ padding:"14px", borderRadius:T.r, border:`1px dashed ${PRI}`, textAlign:"center", cursor:"pointer", color:PRI, fontSize:12, fontWeight:600, marginTop:8 }}>
+                + Aggiungi profilo
               </div>
-            </div>
-          </div>
-        )}
+            </>
+          );
+        })()}
+
 
         {settingsTab === "azienda" && (
           <div style={{background:"#fff",borderRadius:12,overflow:"hidden",border:`1px solid ${T.bdr}`}}>
@@ -1477,6 +1594,15 @@ export default function SettingsPanel() {
         {/* === SISTEMI E SOTTOSISTEMI === */}
         {/* === SISTEMI PROFILO === 3 metodi pricing + colori fascia + import AI */}
         {settingsTab === "sistemi" && (() => {
+          // State locali per la sezione sistemi avanzata
+            marca:"", sistema:"", materiale:"PVC", metodoPricing:"mq", // mq | fisso | griglia
+            prezzoMq:0, prezzoFisso:{}, // { tipologia: prezzo }
+            sovRAL:0, sovLegno:0, pesoKgMl:0, // per alluminio: kg, per PVC: ml
+            unitaPrezzo:"ml", // ml | kg | mq
+            sottosistemi:"", colori:[] as string[], immagineProfilo:"",
+            fasciaColore: {} as Record<string,string>, // { colore_code: "A" | "B" | "C" }
+          });
+
           // Materiali e unità prezzo
           const MATERIALI = ["PVC","Alluminio","Legno","Legno-Alluminio","Acciaio"];
           const getUnitaDefault = (mat: string) => {
@@ -1534,7 +1660,7 @@ export default function SettingsPanel() {
               </div>
 
               {/* Stats */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
                 {[
                   { n: sistemiDB.length, l:"Sistemi", c: PRI },
                   { n: sistemiDB.filter((s:any) => s.materiale === "PVC").length, l:"PVC", c:"#3B7FE0" },
@@ -1952,74 +2078,60 @@ export default function SettingsPanel() {
         {/* === COLORI === */}
         {/* === COLORI & RAL === fetch da Supabase colori_catalogo + categorie_colore + fornitori_colore */}
         {settingsTab === "colori" && (() => {
+          // State per la sezione colori avanzata
+          // Fetch da Supabase al mount
 
-          // Helper: trova fornitore_id di un colore tramite categoria
-          const getFornitoreId = (c: any) => {
-            const cat = categorieSupa.find(x => x.id === c.categoria_id);
-            return cat?.fornitore_id || "senza_fornitore";
-          };
-
-          // Filtra colori (usa campi reali: codice, uso)
+          // Filtra colori
           const coloriFiltrati = coloriSupa.filter(c => {
-            const fId = getFornitoreId(c);
-            if (filtroFornitore !== "tutti" && fId !== filtroFornitore) return false;
-            if (filtroLato === "interno" && c.uso === "esterno") return false;
-            if (filtroLato === "esterno" && c.uso === "interno") return false;
-            if (cercaColore && !c.nome.toLowerCase().includes(cercaColore.toLowerCase()) && !(c.codice||"").toLowerCase().includes(cercaColore.toLowerCase())) return false;
+            if (filtroFornitore !== "tutti" && getFornitoreId(c) !== filtroFornitore) return false;
+            if (filtroLato === "interno" && !c.interno) return false;
+            if (filtroLato === "esterno" && !c.esterno) return false;
+            if (cercaColore && !c.nome.toLowerCase().includes(cercaColore.toLowerCase()) && !(c.codice_ral||"").toLowerCase().includes(cercaColore.toLowerCase())) return false;
             return true;
           });
 
-          // Raggruppa per fornitore (da categoria) → categoria → colori
+          // Raggruppa per fornitore → categoria
           const grouped: Record<string, Record<string, any[]>> = {};
           coloriFiltrati.forEach(c => {
-            const fId = getFornitoreId(c);
+            const fId = c.fornitore_id || "senza_fornitore";
             const cId = c.categoria_id || "senza_categoria";
             if (!grouped[fId]) grouped[fId] = {};
             if (!grouped[fId][cId]) grouped[fId][cId] = [];
             grouped[fId][cId].push(c);
           });
 
-          // Helpers
+          // Helper: nome fornitore
           const nomeForn = (id: string) => fornitoriSupa.find(f => f.id === id)?.nome || "Senza fornitore";
-          const nomeCat = (id: string) => categorieSupa.find(c => c.id === id)?.nome || id;
-          const getSistemiColore = (coloreId: number) => {
-            const sIds = coloriSistemiSupa.filter(cs => cs.colore_id === coloreId).map(cs => cs.sistema_id);
-            return sistemiProfiloSupa.filter(s => sIds.includes(s.id));
-          };
+          const nomeCat = (id: string) => categorieSupa.find(c => c.id === id)?.nome || "Senza categoria";
 
-          // Salva nuovo colore (campi reali: codice, uso, categoria_id)
+          // Salva nuovo colore
           const salvaColore = async () => {
             if (!newColore.nome) return;
             try {
               const { supabase: sb } = await import("@/lib/supabase");
               const { data, error } = await sb.from("colori_catalogo").insert([{
                 nome: newColore.nome,
-                codice: newColore.codice_ral || null,
+                codice_ral: newColore.codice_ral || null,
                 hex: newColore.hex,
+                fornitore_id: newColore.fornitore_id || null,
                 categoria_id: newColore.categoria_id || null,
-                uso: newColore.interno && newColore.esterno ? "universale" : newColore.interno ? "interno" : "esterno",
+                interno: newColore.interno,
+                esterno: newColore.esterno,
               }]).select().single();
               if (data) {
                 setColoriSupa(prev => [...prev, data]);
-                // Se sistema selezionato, collega
-                if (newColore.fornitore_id && data.id) {
-                  // fornitore_id qui è usato come sistema_id nel form
-                  await sb.from("colori_sistemi").insert([{ colore_id: data.id, sistema_id: newColore.fornitore_id }]);
-                }
                 setNewColore({ nome:"", codice_ral:"", hex:"#888888", fornitore_id:"", categoria_id:"", interno:true, esterno:true });
                 setShowAddColore(false);
-                setColoriLoaded(false); // force reload
               }
               if (error) alert("Errore: " + error.message);
             } catch (e) { console.error(e); }
           };
 
           // Elimina colore
-          const eliminaColore = async (id: number) => {
+          const eliminaColore = async (id: string) => {
             if (!confirm("Eliminare questo colore?")) return;
             try {
               const { supabase: sb } = await import("@/lib/supabase");
-              await sb.from("colori_sistemi").delete().eq("colore_id", id);
               await sb.from("colori_catalogo").delete().eq("id", id);
               setColoriSupa(prev => prev.filter(c => c.id !== id));
             } catch (e) { console.error(e); }
@@ -2034,7 +2146,7 @@ export default function SettingsPanel() {
           return (
             <>
               {/* Stats */}
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
                 {[
                   { n: coloriSupa.length, l:"Colori totali", c: PRI },
                   { n: fornitoriSupa.length, l:"Fornitori", c:"#3B7FE0" },
@@ -2049,29 +2161,30 @@ export default function SettingsPanel() {
               </div>
 
               {/* Filtri */}
-              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:12 }}>
-                {/* Riga 1: Cerca */}
-                <input value={cercaColore} onChange={e => setCercaColore(e.target.value)}
-                  placeholder="Cerca colore o RAL..."
-                  style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, boxSizing:"border-box" }} />
-                {/* Riga 2: Fornitore + Interno/Esterno */}
-                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                  <select value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}
-                    style={{ flex:"1 1 140px", padding:"8px 10px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
-                    <option value="tutti">Tutti i fornitori</option>
-                    {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
-                  </select>
-                  {/* Interno/Esterno */}
-                  <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}`, flexShrink:0 }}>
-                    {[{k:"tutti",l:"Tutti"},{k:"interno",l:"INT"},{k:"esterno",l:"EST"}].map(opt => (
-                      <div key={opt.k} onClick={() => setFiltroLato(opt.k)}
-                        style={{ padding:"8px 12px", fontSize:10, fontWeight:700, cursor:"pointer",
-                          background: filtroLato === opt.k ? PRI : T.card,
-                          color: filtroLato === opt.k ? "#fff" : T.text }}>
-                        {opt.l}
-                      </div>
-                    ))}
-                  </div>
+              <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
+                {/* Cerca */}
+                <div style={{ flex:"1 1 180px", position:"relative" }}>
+                  <I d={ICO.search} s={14} c={T.sub} />
+                  <input value={cercaColore} onChange={e => setCercaColore(e.target.value)}
+                    placeholder="Cerca colore o RAL..."
+                    style={{ width:"100%", padding:"8px 10px 8px 30px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
+                </div>
+                {/* Fornitore */}
+                <select value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}
+                  style={{ padding:"8px 10px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
+                  <option value="tutti">Tutti i fornitori</option>
+                  {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                </select>
+                {/* Interno/Esterno */}
+                <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}` }}>
+                  {[{k:"tutti",l:"Tutti"},{k:"interno",l:"Interno"},{k:"esterno",l:"Esterno"}].map(opt => (
+                    <div key={opt.k} onClick={() => setFiltroLato(opt.k)}
+                      style={{ padding:"7px 12px", fontSize:10, fontWeight:700, cursor:"pointer",
+                        background: filtroLato === opt.k ? PRI : T.card,
+                        color: filtroLato === opt.k ? "#fff" : T.text }}>
+                      {opt.l}
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -2131,7 +2244,7 @@ export default function SettingsPanel() {
                                   <div style={{ padding:"8px 12px", display:"flex", flexWrap:"wrap", gap:6 }}>
                                     {colori.map((col: any) => {
                                       // Sistemi collegati
-                                      const sistemiCollegati = getSistemiColore(col.id);
+                                      const sistemiCollegati = sistemiDB.filter((s: any) => (s.colori||[]).includes(col.codice || col.nome));
                                       // Fascia prezzo per questa azienda
                                       const fascia = fasceSupa.find(f => f.colore_id === col.id);
 
@@ -2147,8 +2260,8 @@ export default function SettingsPanel() {
                                           <div style={{ fontSize:9, color:T.sub }}>{col.codice || "\u2014"}</div>
                                           {/* Interno/Esterno badges */}
                                           <div style={{ display:"flex", gap:3, marginTop:4 }}>
-                                            {(col.uso === "interno" || col.uso === "universale") && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#E0F2FE", color:"#0369A1" }}>INT</span>}
-                                            {(col.uso === "esterno" || col.uso === "universale") && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>EST</span>}
+                                            {col.interno && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#E0F2FE", color:"#0369A1" }}>INT</span>}
+                                            {col.esterno && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>EST</span>}
                                           </div>
                                           {/* Sistemi collegati */}
                                           {sistemiCollegati.length > 0 && (
@@ -2234,20 +2347,20 @@ export default function SettingsPanel() {
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                    <div style={{ flex:"1 1 30%", minWidth:120 }}>
-                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Sistema</div>
+                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
+                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Fornitore</div>
                       <select value={newColore.fornitore_id} onChange={e => setNewColore(p => ({...p, fornitore_id:e.target.value}))}
                         style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
-                        <option value="">Seleziona sistema...</option>
-                        {sistemiProfiloSupa.map(s => <option key={s.id} value={s.id}>{s.marca} — {s.sistema} ({s.materiale})</option>)}
+                        <option value="">Seleziona...</option>
+                        {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
                       </select>
                     </div>
-                    <div style={{ flex:"1 1 30%", minWidth:120 }}>
+                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
                       <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Categoria</div>
                       <select value={newColore.categoria_id} onChange={e => setNewColore(p => ({...p, categoria_id:e.target.value}))}
                         style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
                         <option value="">Seleziona...</option>
-                        {categorieSupa.map(c => <option key={c.id} value={c.id}>{c.nome} ({nomeForn(c.fornitore_id)})</option>)}
+                        {categorieSupa.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                       </select>
                     </div>
                   </div>
