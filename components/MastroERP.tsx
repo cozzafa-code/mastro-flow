@@ -105,25 +105,18 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [nvVani, setNvVani] = useState([]);
   const [nvBlocchi, setNvBlocchi] = useState({});
   const [nvNote, setNvNote] = useState("");
-  // Helper: if cleanSlate active OR localStorage has saved data, use that instead of demo defaults
-  const _cs = typeof window !== "undefined" && localStorage.getItem("mastro:cleanSlate") === "true";
-  const _lsArr = (key: string, fallback: any) => {
-    if (typeof window === "undefined") return fallback;
-    if (_cs) return [];
-    try { const v = localStorage.getItem("mastro:" + key); if (v) return JSON.parse(v); } catch {}
-    return fallback;
-  };
+  // NO DEMO DATA — production mode, all empty by default
   // Calendario griglia espandibile
   const [expandedDay, setExpandedDay] = useState(null); // ISO string del giorno espanso
-  const [cantieri, setCantieri] = useState(() => _lsArr("cantieri", CANTIERI_INIT));
+  const [cantieri, setCantieri] = useState<any[]>([]);
   // Offline cache IndexedDB — carica al mount, salva ad ogni cambio
   const { loadFromCache, getCacheInfo } = useOfflineCache(cantieri, setCantieri, cantieri.length > 0 || typeof window !== "undefined");
-  const [tasks, setTasks] = useState(() => _lsArr("tasks", TASKS_INIT));
-  const [msgs, setMsgs] = useState(() => _lsArr("msgs", MSGS_INIT));
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [msgs, setMsgs] = useState<any[]>([]);
   const [selectedMsg, setSelectedMsg] = useState(null);
   const [replyText, setReplyText] = useState("");
   // === MODULO PROBLEMI ===
-  const [problemi, setProblemi] = useState<any[]>(() => _lsArr("problemi", []));
+  const [problemi, setProblemi] = useState<any[]>([]);
   const [showProblemaModal, setShowProblemaModal] = useState(false);
   const [selectedProblema, setSelectedProblema] = useState<any>(null);
   const [problemaForm, setProblemaForm] = useState({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
@@ -131,7 +124,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [showStrutture, setShowStrutture] = useState(false);
   // Save problemi to localStorage
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "problemi", problemi), [problemi]);
-  const [team, setTeam] = useState(() => _lsArr("team", TEAM_INIT));
+  const [team, setTeam] = useState<any[]>([]);
   const [coloriDB, setColoriDB] = useState(COLORI_INIT);
   const [sistemiDB, setSistemiDB] = useState(SISTEMI_INIT);
   const [vetriDB, setVetriDB] = useState(VETRI_INIT);
@@ -189,7 +182,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [favTipologie, setFavTipologie] = useState(["F1A", "F2A", "PF2A", "SC2A", "FISDX", "VAS"]);
   
   // Fatturazione
-  const [fattureDB, setFattureDB] = useState<any[]>(() => _lsArr("fatture", FATTURE_INIT));
+  const [fattureDB, setFattureDB] = useState<any[]>([]);
 
   //  FATTURE PASSIVE (ricevute da fornitori) 
   const [fatturePassive, setFatturePassive] = useState<any[]>(() => {
@@ -242,7 +235,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   useEffect(()=>{try{localStorage.setItem("mastro:fornitori",JSON.stringify(fornitori));}catch(e){}},[fornitori]);
   useEffect(()=>{try{localStorage.setItem("mastro:kit",JSON.stringify(kitAccessori));}catch(e){}},[kitAccessori]);
   useEffect(()=>{try{localStorage.setItem("mastro:customThemes",JSON.stringify(customThemes));}catch(e){}},[customThemes]);
-  const [ordiniFornDB, setOrdiniFornDB] = useState<any[]>(() => _lsArr("ordiniForn", ORDINI_INIT));
+  const [ordiniFornDB, setOrdiniFornDB] = useState<any[]>([]);
   const [showFatturaModal, setShowFatturaModal] = useState(false);
   const [fatturaEdit, setFatturaEdit] = useState<any>(null);
   
@@ -251,7 +244,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     { id: "sq1", nome: "Squadra A", membri: ["Mario", "Giuseppe"], colore: "#0D7C6B" },
     { id: "sq2", nome: "Squadra B", membri: ["Paolo", "Andrea"], colore: "#1A9E73" },
   ]);
-  const [montaggiDB, setMontaggiDB] = useState<any[]>(() => _lsArr("montaggi", MONTAGGI_INIT));
+  const [montaggiDB, setMontaggiDB] = useState<any[]>([]);
   
   // Settori attivi + Onboarding
   const [settoriAttivi, setSettoriAttivi] = useState<string[]>(SETTORI_DEFAULT);
@@ -374,20 +367,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [emailCorpo, setEmailCorpo] = useState("");
   const [mailBody, setMailBody] = useState("");
   const [newEvent, setNewEvent] = useState({ text: "", time: "", tipo: "sopralluogo", cm: "", persona: "", date: "", reminder: "", addr: "" });
-  const [events, setEvents] = useState(() => {
-    if (_cs) return [];
-    try { const v = localStorage.getItem("mastro:events"); if (v) return JSON.parse(v); } catch {}
-    const t = new Date(); const td = t.toISOString().split("T")[0];
-    const tm = new Date(t); tm.setDate(tm.getDate() + 1); const tmStr = tm.toISOString().split("T")[0];
-    const t2 = new Date(t); t2.setDate(t2.getDate() + 2); const t2Str = t2.toISOString().split("T")[0];
-    const t3 = new Date(t); t3.setDate(t3.getDate() + 3); const t3Str = t3.toISOString().split("T")[0];
-    return [
-      { id: "ev1", date: td, time: "09:00", text: "Sopralluogo Verdi", tipo: "sopralluogo", persona: "Giuseppe Verdi", addr: "Via Garibaldi 12, Rende", cm: "S-0001", color: "#0D7C6B", durata: 60 },
-      { id: "ev2", date: td, time: "15:00", text: "Telefonata Bianchi - preventivo", tipo: "controllo", persona: "Anna Bianchi", addr: "", cm: "S-0002", color: "#E8A020", durata: 30 },
-      { id: "ev3", date: tmStr, time: "10:00", text: "Firma contratto Rossi", tipo: "sopralluogo", persona: "Mario Rossi", addr: "Via Roma 42, Cosenza", cm: "S-0003", color: "#1A9E73", durata: 45 },
-      { id: "ev4", date: t3Str, time: "08:30", text: "Consegna materiale Esposito", tipo: "consegna", persona: "Laura Esposito", addr: "Viale Trieste 5, Rende", cm: "S-0004", color: "#af52de", durata: 120 },
-    ];
-  });
+  const [events, setEvents] = useState<any[]>([]);
   
     // Advance fase notification
   const [faseNotif, setFaseNotif] = useState(null);
@@ -481,9 +461,9 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     });
   };
   const [showVoice, setShowVoice] = useState(false);
-  const [contatti, setContatti] = useState(() => _lsArr("contatti", CONTATTI_INIT));
+  const [contatti, setContatti] = useState<any[]>([]);
   const [msgSubTab, setMsgSubTab] = useState("chat"); // "chat" | "rubrica" | "ai" | "email"
-  const [aiInbox, setAiInbox] = useState(AI_INBOX_INIT);
+  const [aiInbox, setAiInbox] = useState<any[]>([]);
   const [selectedAiMsg, setSelectedAiMsg] = useState(null);
   // Gmail integration
   const [gmailStatus, setGmailStatus] = useState<{connected:boolean, email?:string}>({ connected: false });
@@ -562,17 +542,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         localStorage.setItem("mastro:cleanSlate", "true");
         return;
       }
-      const savedVer = localStorage.getItem("mastro:demoVer");
-      if (false && savedVer !== DEMO_VER) {
-        // FORCE RESET - version changed or first load
-        console.log("â†» MASTRO: Reset demo >", DEMO_VER);
-        Object.keys(localStorage).filter(k => k.startsWith("mastro:")).forEach(k => {
-          try { localStorage.removeItem(k); } catch(e) {}
-        });
-        localStorage.setItem("mastro:demoVer", DEMO_VER);
-        // Demo data already loaded from useState defaults - skip localStorage loading
-        return;
-      }
+      // Load saved data from localStorage
       try{const _v=localStorage.getItem("mastro:cantieri");if(_v){const p=JSON.parse(_v);setCantieri(p);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:tasks");if(_v){const p=JSON.parse(_v);setTasks(p);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:events");if(_v){const p=JSON.parse(_v);setEvents(p);}}catch(e){}
