@@ -299,7 +299,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     try { if (!localStorage.getItem("mastro:onboarded")) setTutoStep(1); } catch(e){}
   }, []);
   const closeTuto = () => { setTutoStep(0); try { localStorage.setItem("mastro:onboarded", "1"); } catch(e){} };
-  const nextTuto = () => { if (tutoStep >= 5) closeTuto(); else setTutoStep(tutoStep + 1); };
+  const nextTuto = () => { if (tutoStep >= 4) closeTuto(); else setTutoStep(tutoStep + 1); };
 
   const [aziendaInfo, setAziendaInfo] = useState({
     ragione: aziendaInit?.ragione || "Walter Cozza Serramenti SRL",
@@ -3523,7 +3523,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
       {/* === TUTORIAL INTERATTIVO === */}
             {/* â•â•â• ONBOARDING 5 STEP â•â•â• */}
-      {tutoStep >= 1 && tutoStep <= 5 && (() => {
+      {tutoStep >= 1 && tutoStep <= 4 && (() => {
         const ACC = "#D08008";
         const DARK = "#1A1A1C";
 
@@ -3551,7 +3551,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           if (tutoStep === 4) {
             setAziendaInfo(prev => ({ ...prev, prezzoMqDefault: obPrezzoMq, prezzoPosaVano: obPosa, includePosaInPreventivo: parseFloat(obPosa) > 0 }));
           }
-          if (tutoStep >= 5) { closeTuto(); return; }
+          if (tutoStep >= 4) { closeTuto(); return; }
           setTutoStep(tutoStep + 1);
         };
 
@@ -3575,10 +3575,12 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
             <div style={{ flex: 1, padding: "24px 20px", maxWidth: 480, margin: "0 auto", width: "100%", boxSizing: "border-box" as any }}>
 
-              {/* STEP 1 â€” BENVENUTO */}
+              {/* STEP 1 - BENVENUTO */}
               {tutoStep === 1 && (
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 60, marginBottom: 16 }}>ðŸ‘‹</div>
+                  <div style={{ width: 64, height: 64, borderRadius: 16, background: DARK, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                    <span style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>M</span>
+                  </div>
                   <div style={{ fontSize: 26, fontWeight: 900, color: DARK, marginBottom: 10 }}>Benvenuto in MASTRO</div>
                   <div style={{ fontSize: 15, color: "#555", lineHeight: 1.7, marginBottom: 32 }}>
                     Il gestionale pensato per artigiani italiani.<br />
@@ -3587,13 +3589,15 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, textAlign: "left", marginBottom: 32, background: "#fff", borderRadius: 16, padding: 20 }}>
                     {[
-                      { icon: "ðŸ“‹", t: "Commesse", d: "Ogni lavoro dalla richiesta alla posa" },
-                      { icon: "ðŸ“", t: "Misure dal cantiere", d: "Rilievi vano per vano con il telefono" },
-                      { icon: "ðŸ“„", t: "Preventivi PDF", d: "Professionale, con logo e firma digitale" },
-                      { icon: "ðŸ¤–", t: "Assistente AI", d: "Di' Mastro e gestisci tutto a voce" },
+                      { t: "Commesse", d: "Ogni lavoro dalla richiesta alla posa" },
+                      { t: "Misure dal cantiere", d: "Rilievi vano per vano con il telefono" },
+                      { t: "Preventivi PDF", d: "Professionale, con logo e firma digitale" },
+                      { t: "Assistente", d: "Gestisci tutto a voce" },
                     ].map((s, i) => (
                       <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                        <div style={{ fontSize: 22, width: 36, textAlign: "center" }}>{s.icon}</div>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: ACC + "15", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ width: 10, height: 10, borderRadius: 3, background: ACC }} />
+                        </div>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: DARK }}>{s.t}</div>
                           <div style={{ fontSize: 12, color: "#777" }}>{s.d}</div>
@@ -3602,13 +3606,13 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                     ))}
                   </div>
                   <button onClick={saveAndNext} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: ACC, color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                    Inizia la configurazione â†’
+                    Inizia la configurazione
                   </button>
-                  <div onClick={closeTuto} style={{ marginTop: 14, fontSize: 12, color: "#999", cursor: "pointer" }}>Salta â€” configura dopo dalle Impostazioni</div>
+                  <div onClick={closeTuto} style={{ marginTop: 14, fontSize: 12, color: "#999", cursor: "pointer" }}>Salta - configura dopo dalle Impostazioni</div>
                 </div>
               )}
 
-              {/* STEP 2 â€” DATI AZIENDA */}
+              {/* STEP 2 - DATI AZIENDA */}
               {tutoStep === 2 && (
                 <div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: DARK, marginBottom: 6 }}>La tua azienda</div>
@@ -3620,23 +3624,23 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                   {inp(obEmail, setObEmail, "Email (es. info@rossiserramenti.it)", "email")}
                   {inp(obIndirizzo, setObIndirizzo, "Indirizzo (es. Via Roma 1, Lecce)")}
                   <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                    <button onClick={() => setTutoStep(1)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>â† Indietro</button>
-                    <button onClick={saveAndNext} disabled={!obNome.trim()} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: obNome.trim() ? ACC : "#ccc", color: "#fff", fontSize: 15, fontWeight: 800, cursor: obNome.trim() ? "pointer" : "default", fontFamily: "inherit" }}>Continua â†’</button>
+                    <button onClick={() => setTutoStep(1)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Indietro</button>
+                    <button onClick={saveAndNext} disabled={!obNome.trim()} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: obNome.trim() ? ACC : "#ccc", color: "#fff", fontSize: 15, fontWeight: 800, cursor: obNome.trim() ? "pointer" : "default", fontFamily: "inherit" }}>Continua</button>
                   </div>
                 </div>
               )}
 
-              {/* STEP 3 â€” SETTORI */}
+              {/* STEP 3 - SETTORI */}
               {tutoStep === 3 && (
                 <div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: DARK, marginBottom: 6 }}>In che settore lavori?</div>
-                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Seleziona uno o piÃ¹ settori. Puoi cambiare in qualsiasi momento.</div>
+                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Seleziona uno o piu settori. Puoi cambiare in qualsiasi momento.</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
                     {SETTORI_OPT.map(s => {
                       const sel = obSettori.includes(s.id);
                       return (
                         <div key={s.id} onClick={() => toggleSettore(s.id)}
-                          style={{ padding: "14px 18px", borderRadius: 14, border: `2px solid ${sel ? ACC : "#E2E8F0"}`, background: sel ? "#FFF8EC" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+                          style={{ padding: "14px 18px", borderRadius: 14, border: `2px solid ${sel ? ACC : "#E2E8F0"}`, background: sel ? ACC + "10" : "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
                           <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${sel ? ACC : "#E2E8F0"}`, background: sel ? ACC : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             {sel && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>}
                           </div>
@@ -3646,51 +3650,29 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                     })}
                   </div>
                   <div style={{ display: "flex", gap: 10 }}>
-                    <button onClick={() => setTutoStep(2)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>â† Indietro</button>
-                    <button onClick={saveAndNext} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: ACC, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Continua â†’</button>
+                    <button onClick={() => setTutoStep(2)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Indietro</button>
+                    <button onClick={saveAndNext} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: ACC, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Continua</button>
                   </div>
                 </div>
               )}
 
-              {/* STEP 4 â€” PREZZI BASE */}
+              {/* STEP 4 - TUTTO PRONTO */}
               {tutoStep === 4 && (
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: DARK, marginBottom: 6 }}>Prezzi base</div>
-                  <div style={{ fontSize: 13, color: "#666", marginBottom: 24 }}>Usati per calcolare automaticamente i preventivi. Puoi modificarli per ogni commessa.</div>
-                  <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 16 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: DARK, marginBottom: 6 }}>Prezzo vendita infissi (â‚¬/mq)</div>
-                    <div style={{ fontSize: 11, color: "#888", marginBottom: 10 }}>Prezzo medio di vendita al cliente per mq di infisso installato</div>
-                    <input value={obPrezzoMq} onChange={e => setObPrezzoMq(e.target.value)} type="number" placeholder="es. 350"
-                      style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 18, fontWeight: 700, outline: "none", boxSizing: "border-box" as any, fontFamily: "inherit" }} />
-                  </div>
-                  <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 24 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: DARK, marginBottom: 6 }}>Prezzo posa per vano (â‚¬/vano)</div>
-                    <div style={{ fontSize: 11, color: "#888", marginBottom: 10 }}>Inserito automaticamente nel preventivo. Metti 0 se non addebiti la posa separatamente.</div>
-                    <input value={obPosa} onChange={e => setObPosa(e.target.value)} type="number" placeholder="es. 80"
-                      style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #E2E8F0", fontSize: 18, fontWeight: 700, outline: "none", boxSizing: "border-box" as any, fontFamily: "inherit" }} />
-                  </div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button onClick={() => setTutoStep(3)} style={{ flex: 1, padding: 14, borderRadius: 12, border: "1.5px solid #E2E8F0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>â† Indietro</button>
-                    <button onClick={saveAndNext} style={{ flex: 2, padding: 14, borderRadius: 12, border: "none", background: ACC, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>Continua â†’</button>
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 5 â€” TUTTO PRONTO */}
-              {tutoStep === 5 && (
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 64, marginBottom: 16 }}>ðŸš€</div>
+                  <div style={{ width: 64, height: 64, borderRadius: 16, background: ACC, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
                   <div style={{ fontSize: 26, fontWeight: 900, color: DARK, marginBottom: 10 }}>Tutto pronto!</div>
                   <div style={{ fontSize: 14, color: "#555", lineHeight: 1.7, marginBottom: 32 }}>
-                    Il tuo MASTRO Ã¨ configurato.<br />
+                    Il tuo MASTRO e configurato.<br />
                     Ecco come iniziare subito:
                   </div>
                   <div style={{ background: "#fff", borderRadius: 16, padding: 20, marginBottom: 28, textAlign: "left" }}>
                     {[
-                      { n: "1", t: "Crea la prima commessa", d: "Vai in Commesse â†’ tocca + â†’ inserisci cliente" },
+                      { n: "1", t: "Crea la prima commessa", d: "Vai in Commesse, tocca + e inserisci il cliente" },
                       { n: "2", t: "Aggiungi i vani", d: "Dentro la commessa, aggiungi finestre e porte" },
                       { n: "3", t: "Misura dal cantiere", d: "Apri la commessa sul telefono e misura vano per vano" },
-                      { n: "4", t: "Invia il preventivo", d: "DÃ¬ Mastro, manda il preventivo a [cliente] e il gioco Ã¨ fatto" },
+                      { n: "4", t: "Invia il preventivo", d: "Manda il preventivo al cliente e il gioco e fatto" },
                     ].map((s, i) => (
                       <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
                         <div style={{ width: 26, height: 26, borderRadius: 8, background: ACC, color: "#fff", fontSize: 13, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{s.n}</div>
@@ -3702,48 +3684,12 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                     ))}
                   </div>
                   <button onClick={saveAndNext} style={{ width: "100%", padding: 16, borderRadius: 14, border: "none", background: ACC, color: "#fff", fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                    Entra in MASTRO â†’
+                    Entra in MASTRO
                   </button>
                 </div>
               )}
 
-            </div>
-          </div>
-        );
-      })()}
-
-        {/* Modals */}
-        {<PanelErrorBoundary name="Modal">{renderModal()}</PanelErrorBoundary>}
-        {showPreventivoModal && <PanelErrorBoundary name="Preventivo"><PreventivoModal /></PanelErrorBoundary>}
-        {/* renderFirmaModal â€” TODO */}
-        {/* renderOnboarding â€” TODO */}
-
-        {/* SEND COMMESSA MODAL */}
-        {showSendModal && selectedCM && (
-          <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowSendModal(false)}>
-            <div style={S.modalInner}>
-              {sendConfirm === "sent" ? (
-                <div style={{ textAlign: "center", padding: "30px 0" }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}></div>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: T.grn }}>Commessa inviata!</div>
-                  <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Email inviata con tutti i dati selezionati</div>
-                </div>
-              ) : (
-                <>
-                  <div style={S.modalTitle}><I d={ICO.mail} /> Invia Commessa â€” {selectedCM.code}</div>
-                  <div style={{ fontSize: 12, color: T.sub, marginBottom: 14 }}>Scegli cosa includere nell'invio:</div>
-                  {[
-                    { key: "misure", label: "Misure tutti i vani", ico: <I d={ICO.ruler} /> },
-                    { key: "foto", label: "Foto scattate", ico: <I d={ICO.camera} /> },
-                    { key: "disegno", label: "Disegni mano libera", ico: <I d={ICO.edit} /> },
-                    { key: "accessori", label: "Accessori (tapparelle, zanzariere...)", ico: <I d={ICO.grid} /> },
-                    { key: "note", label: "Note e annotazioni", ico: <I d={ICO.fileText} /> },
-                  ].map(opt => (
-                    <div key={opt.key} onClick={() => setSendOpts(o => ({ ...o, [opt.key]: !o[opt.key] }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: sendOpts[opt.key] ? T.accLt : T.card, border: `1px solid ${sendOpts[opt.key] ? T.acc : T.bdr}`, borderRadius: 10, marginBottom: 6, cursor: "pointer" }}>
-                      <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${sendOpts[opt.key] ? T.acc : T.bdr}`, background: sendOpts[opt.key] ? T.acc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700 }}>
-                        {sendOpts[opt.key] && ""}
-                      </div>
-                      <span style={{ fontSize: 16 }}>{opt.ico}</span>
+            </div>                      <span style={{ fontSize: 16 }}>{opt.ico}</span>
                       <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{opt.label}</span>
                     </div>
                   ))}
