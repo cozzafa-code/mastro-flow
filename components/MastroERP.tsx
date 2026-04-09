@@ -1691,6 +1691,72 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       </div>
     );
 
+    // === ASSEGNAZIONE COMPITI PER FASE ===
+    const AssegnaCompito = ({ faseId }: { faseId: string }) => {
+      const ass = (c.assegnazioni || {})[faseId] || {};
+      const updateAss = (field: string, val: any) => {
+        const newAss = { ...(c.assegnazioni || {}), [faseId]: { ...ass, [field]: val } };
+        updateCM("assegnazioni", newAss);
+      };
+      const statoColors = { da_fare: T.orange, in_corso: T.blue, completato: T.grn, bloccato: T.red };
+      const statoLabels = { da_fare: "Da fare", in_corso: "In corso", completato: "Completato", bloccato: "Bloccato" };
+      return (
+        <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 10, background: T.bg, border: "1px solid " + T.bdr }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: T.sub, textTransform: "uppercase", marginBottom: 8, letterSpacing: "0.05em" }}>
+            <I d={ICO.users} s={10} c={T.sub} /> Assegnazione
+          </div>
+          {/* Persona / Squadra */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 3 }}>Responsabile</div>
+              <select value={ass.persona || ""} onChange={e => updateAss("persona", e.target.value)}
+                style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 12, fontFamily: FF, color: T.text }}>
+                <option value="">— Nessuno —</option>
+                <optgroup label="Team">
+                  {team.map(m => <option key={m.id} value={m.nome}>{m.nome} ({m.ruolo})</option>)}
+                </optgroup>
+                <optgroup label="Squadre">
+                  {squadreDB.map(sq => <option key={sq.id} value={"sq:" + sq.nome}>{sq.nome} ({(sq.membri || []).length} membri)</option>)}
+                </optgroup>
+              </select>
+            </div>
+            <div style={{ width: 100 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 3 }}>Scadenza</div>
+              <input type="date" value={ass.scadenza || ""} onChange={e => updateAss("scadenza", e.target.value)}
+                style={{ width: "100%", padding: "8px 6px", borderRadius: 8, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 11, fontFamily: FF, color: T.text }} />
+            </div>
+          </div>
+          {/* Stato */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+            {(["da_fare","in_corso","completato","bloccato"] as const).map(s => (
+              <button key={s} onClick={() => updateAss("stato", s)}
+                style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: (ass.stato || "da_fare") === s ? "none" : "1px solid " + T.bdr,
+                  background: (ass.stato || "da_fare") === s ? statoColors[s] : "transparent",
+                  color: (ass.stato || "da_fare") === s ? "#fff" : T.sub,
+                  fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: FF }}>
+                {statoLabels[s]}
+              </button>
+            ))}
+          </div>
+          {/* Note compito */}
+          <input placeholder="Note compito..." value={ass.note || ""} onChange={e => updateAss("note", e.target.value)}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid " + T.bdr, background: T.card, fontSize: 11, fontFamily: FF, color: T.text, boxSizing: "border-box" }} />
+          {/* Show assigned person badge */}
+          {ass.persona && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
+              <div style={{ width: 22, height: 22, borderRadius: "50%", background: (team.find(m => m.nome === ass.persona)?.colore || T.acc), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 800 }}>
+                {(ass.persona || "?").replace("sq:", "").charAt(0).toUpperCase()}
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{ass.persona.replace("sq:", "")}</span>
+              {ass.scadenza && <span style={{ fontSize: 9, color: new Date(ass.scadenza) < new Date() && (ass.stato || "da_fare") !== "completato" ? T.red : T.sub, marginLeft: "auto" }}>
+                <I d={ICO.calendar} s={9} c={T.sub} /> {new Date(ass.scadenza).toLocaleDateString("it-IT", {day:"2-digit",month:"short"})}
+              </span>}
+            </div>
+          )}
+        </div>
+      );
+    };
+
     const panelStyle = {
       margin:"0 16px 12px", borderRadius:12, border:`1.5px solid ${fase?.color}30`,
       background:T.card, overflow:"hidden"
@@ -1704,28 +1770,39 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     const isOpen = (id) => fasePanelOpen[id] !== false; // default aperto
     const togglePanel = (id) => setFasePanelOpen(s => ({...s, [id]: !isOpen(id)}));
 
-    // Wrapper accordion semplice - stessa UI di prima, solo con toggle
-    const FasePanel = ({ id, children, taskNonFatti = 0 }) => (
-      <div style={panelStyle}>
-        <div onClick={() => togglePanel(id)} style={{ ...headerStyle, cursor:"pointer",
-          borderBottom: isOpen(id) ? `1px solid ${fase?.color}25` : "none", userSelect:"none" }}>
-          {/* Contenuto header originale passato come primo child */}
-          <div style={{display:"flex",alignItems:"center",gap:8,flex:1,pointerEvents:"none"}}>
-            {(children as any[])[0]}
+    // Wrapper accordion semplice - stessa UI di prima, solo con toggle + assegnazione
+    const FasePanel = ({ id, children, taskNonFatti = 0 }) => {
+      const ass = (c.assegnazioni || {})[id] || {};
+      return (
+        <div style={panelStyle}>
+          <div onClick={() => togglePanel(id)} style={{ ...headerStyle, cursor:"pointer",
+            borderBottom: isOpen(id) ? `1px solid ${fase?.color}25` : "none", userSelect:"none" }}>
+            {/* Contenuto header originale passato come primo child */}
+            <div style={{display:"flex",alignItems:"center",gap:8,flex:1,pointerEvents:"none"}}>
+              {(children as any[])[0]}
+            </div>
+            {/* Assigned person badge in header */}
+            {ass.persona && (
+              <span style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:6,
+                background:(ass.stato==="completato"?T.grn:ass.stato==="in_corso"?T.blue:ass.stato==="bloccato"?T.red:T.orange)+"18",
+                color:ass.stato==="completato"?T.grn:ass.stato==="in_corso"?T.blue:ass.stato==="bloccato"?T.red:T.orange,
+                marginRight:4,flexShrink:0}}>{ass.persona.replace("sq:","").split(" ")[0]}</span>
+            )}
+            {/* Badge alert se task non completati */}
+            {taskNonFatti > 0 && (
+              <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6,flexShrink:0}}/>
+            )}
+            <span style={{fontSize:13,color:T.sub,transform:isOpen(id)?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s",flexShrink:0}}>â–¾</span>
           </div>
-          {/* Badge alert se task non completati */}
-          {taskNonFatti > 0 && (
-            <span style={{width:8,height:8,borderRadius:"50%",background:T.red,display:"inline-block",marginRight:6,flexShrink:0}}/>
+          {isOpen(id) && (
+            <div style={{padding:"12px 14px"}}>
+              {(children as any[]).slice(1)}
+              <AssegnaCompito faseId={id} />
+            </div>
           )}
-          <span style={{fontSize:13,color:T.sub,transform:isOpen(id)?"rotate(0deg)":"rotate(-90deg)",transition:"transform 0.2s",flexShrink:0}}>â–¾</span>
         </div>
-        {isOpen(id) && (
-          <div style={{padding:"12px 14px"}}>
-            {(children as any[]).slice(1)}
-          </div>
-        )}
-      </div>
-    );
+      );
+    };
 
     // === SOPRALLUOGO ===
     if (c.fase === "sopralluogo") {
@@ -1748,6 +1825,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             <Chip label="Riepilogo inviato al cliente" done={c.ck_riepilogo_inviato} onClick={()=>updateCM("ck_riepilogo_inviato",!c.ck_riepilogo_inviato)}/>
             <Chip label={`Tutte le misure inserite (${vaniCompletati}/${vaniAttivi2.length})`} done={tuttiCompletati} onClick={()=>{}}/>
             <Field label="Data sopralluogo" field="dataSopralluogo" type="date"/>
+            <AssegnaCompito faseId="sopralluogo" />
             <Field label="Note sopralluogo" field="noteSopralluogo" placeholder="Annotazioni rapide..."/>
             {tuttiCompletati && (
               <div style={{marginTop:8,padding:"10px 12px",borderRadius:8,background:T.grn+"15",border:`1px solid ${T.grn}30`,fontSize:12,color:T.grn,fontWeight:600,textAlign:"center"}}>
