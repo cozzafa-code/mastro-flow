@@ -1,6 +1,5 @@
 "use client";
 // @ts-nocheck
-// S4v3
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — SettingsPanel
 // Estratto S1: ~2.060 righe (Impostazioni complete)
@@ -1176,14 +1175,72 @@ export default function SettingsPanel() {
                               {p.dxf_url ? (
                                 <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                                   <span style={{ padding:"2px 6px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>DXF</span>
-                                  <div onClick={() => salvaProfilo({...p, dxf_url:null})} style={{ fontSize:9, color:"#DC4444", cursor:"pointer", fontWeight:600 }}>x</div>
+                                  <div onClick={() => salvaProfilo({...p, dxf_url:null, immagine_url:null})} style={{ fontSize:9, color:"#DC4444", cursor:"pointer", fontWeight:600 }}>x</div>
                                 </div>
                               ) : (
                                 <label style={{ display:"inline-flex", padding:"5px 10px", borderRadius:6, background:"#FEF3C7", color:"#92400E", fontSize:9, fontWeight:600, cursor:"pointer" }}>
                                   DXF/DWG
-                                  <input type="file" accept=".dxf,.dwg" style={{ display:"none" }} onChange={e => {
+                                  <input type="file" accept=".dxf,.dwg" style={{ display:"none" }} onChange={async e => {
                                     const file = e.target.files?.[0]; if (!file) return;
-                                    const r = new FileReader(); r.onload = ev => salvaProfilo({...p, dxf_url:ev.target?.result}); r.readAsDataURL(file);
+                                    const text = await file.text();
+                                    try {
+                                      // Parser DXF inline — estrae misure dalla geometria
+                                      const pts: {x:number,y:number}[] = [];
+                                      const polys: {x:number,y:number}[][] = [];
+                                      let curPoly: {x:number,y:number}[] = [];
+                                      const txts: string[] = [];
+                                      let eType = "", cx = 0, cy = 0;
+                                      const dxfLines = text.split(/\r?\n/);
+                                      for (let i = 0; i < dxfLines.length - 1; i++) {
+                                        const code = dxfLines[i].trim(), val = dxfLines[i+1]?.trim();
+                                        if (code === "0") {
+                                          if (eType === "LWPOLYLINE" && curPoly.length > 0) { polys.push([...curPoly]); curPoly = []; }
+                                          eType = val;
+                                        }
+                                        if (code === "10") cx = parseFloat(val) || 0;
+                                        if (code === "20") { cy = parseFloat(val) || 0; pts.push({x:cx,y:cy}); if (eType === "LWPOLYLINE") curPoly.push({x:cx,y:cy}); }
+                                        if (code === "11" && eType === "LINE") cx = parseFloat(val) || 0;
+                                        if (code === "21" && eType === "LINE") { cy = parseFloat(val) || 0; pts.push({x:cx,y:cy}); }
+                                        if ((code === "1" || code === "3") && (eType === "MTEXT" || eType === "TEXT")) txts.push(val);
+                                      }
+                                      if (curPoly.length > 0) polys.push(curPoly);
+                                      // Bounding box
+                                      let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
+                                      pts.forEach(pt => { if(pt.x<mnX)mnX=pt.x; if(pt.x>mxX)mxX=pt.x; if(pt.y<mnY)mnY=pt.y; if(pt.y>mxY)mxY=pt.y; });
+                                      const w = mxX - mnX, h = mxY - mnY;
+                                      // Camere
+                                      let camere = 0;
+                                      polys.forEach(poly => { if (poly.length >= 3) { let a=0; for(let i=0;i<poly.length;i++){const j=(i+1)%poly.length;a+=poly[i].x*poly[j].y-poly[j].x*poly[i].y;} a=Math.abs(a/2); if(a>w*h*0.02&&a<w*h*0.4)camere++; } });
+                                      // Codice + peso dai testi
+                                      let codice = null as string|null, peso = null as number|null, sviluppo = null as number|null;
+                                      txts.forEach(t => {
+                                        const cm = t.match(/\b(CX\d{2,3}\.\d{2,3}|[A-Z]{2}\d{2,3}\.\d{2,3})\b/i); if(cm&&!codice) codice=cm[1];
+                                        const pm = t.match(/([\d.,]+)\s*[Kk]g/); if(pm) peso=parseFloat(pm[1].replace(",","."));
+                                        const sm = t.match(/mm\.?\s*([\d.,]+)/i); if(sm) sviluppo=parseFloat(sm[1].replace(",","."));
+                                      });
+                                      // SVG
+                                      const sc = Math.min(180/(w||1), 120/(h||1)), pd = 8;
+                                      const svgW = w*sc+pd*2, svgH = h*sc+pd*2;
+                                      let svgP = "";
+                                      polys.forEach(poly => { if(poly.length<2)return; svgP += '<path d="'+poly.map((pt,i)=>(i===0?"M":"L")+(((pt.x-mnX)*sc+pd).toFixed(1))+","+(svgH-((pt.y-mnY)*sc+pd)).toFixed(1)).join(" ")+' Z" fill="none" stroke="#2c3e50" stroke-width="0.8"/>'; });
+                                      const svgStr = '<svg viewBox="0 0 '+svgW.toFixed(0)+' '+svgH.toFixed(0)+'" xmlns="http://www.w3.org/2000/svg">'+svgP+'</svg>';
+                                      // Tipo stimato
+                                      const tipo_s = w > 55 ? "Anta" : h < 25 ? "Fermavetro" : "Telaio";
+                                      // Pre-compila
+                                      const upd: any = {...p, dxf_url:"dxf_loaded"};
+                                      if(w>0) upd.profondita_mm = Math.round(w*10)/10;
+                                      if(h>0) upd.frontale = Math.round(h*10)/10;
+                                      if(codice) upd.codice = codice;
+                                      if(peso) upd.peso_kg_ml = peso;
+                                      if(sviluppo) upd.sviluppo = sviluppo;
+                                      if(camere>0) upd.camere = camere;
+                                      upd.tipo = tipo_s;
+                                      upd.immagine_url = "data:image/svg+xml;base64," + btoa(svgStr);
+                                      salvaProfilo(upd);
+                                      alert("DXF importato!\nProf: "+w.toFixed(0)+"mm, Front: "+h.toFixed(0)+"mm"+(codice?" Cod: "+codice:"")+(camere?" Camere: "+camere:""));
+                                    } catch(err) {
+                                      const r = new FileReader(); r.onload = ev => salvaProfilo({...p, dxf_url:ev.target?.result}); r.readAsDataURL(file);
+                                    }
                                   }} />
                                 </label>
                               )}
