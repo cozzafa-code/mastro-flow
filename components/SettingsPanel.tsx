@@ -1184,52 +1184,71 @@ export default function SettingsPanel() {
                                     const file = e.target.files?.[0]; if (!file) return;
                                     const text = await file.text();
                                     try {
-                                      // Parser DXF inline — estrae misure dalla geometria
-                                      const pts: {x:number,y:number}[] = [];
+                                      // Parser DXF v2 — legge EXTMIN/EXTMAX + polyline da BLOCKS
+                                      const dxfLines = text.split(/\r?\n/);
+                                      let extMinX=0,extMinY=0,extMaxX=0,extMaxY=0;
+                                      const geomPts: {x:number,y:number}[] = [];
                                       const polys: {x:number,y:number}[][] = [];
                                       let curPoly: {x:number,y:number}[] = [];
                                       const txts: string[] = [];
-                                      let eType = "", cx = 0, cy = 0;
-                                      const dxfLines = text.split(/\r?\n/);
+                                      let eType = "", cx = 0, lastVar = "";
+                                      const GEOM = new Set(["LWPOLYLINE","LINE","POLYLINE","ARC","CIRCLE"]);
                                       for (let i = 0; i < dxfLines.length - 1; i++) {
-                                        const code = dxfLines[i].trim(), val = dxfLines[i+1]?.trim();
+                                        const code = dxfLines[i].trim(), val = dxfLines[i+1]?.trim() || "";
+                                        // Header EXTMIN/EXTMAX
+                                        if (code === "9") lastVar = val;
+                                        if (lastVar === "$EXTMIN" && code === "10") extMinX = parseFloat(val);
+                                        if (lastVar === "$EXTMIN" && code === "20") { extMinY = parseFloat(val); lastVar = ""; }
+                                        if (lastVar === "$EXTMAX" && code === "10") extMaxX = parseFloat(val);
+                                        if (lastVar === "$EXTMAX" && code === "20") { extMaxY = parseFloat(val); lastVar = ""; }
+                                        // Entita
                                         if (code === "0") {
                                           if (eType === "LWPOLYLINE" && curPoly.length > 0) { polys.push([...curPoly]); curPoly = []; }
                                           eType = val;
                                         }
+                                        // Solo geometria — ignora DIMENSION, LEADER, HATCH ecc
+                                        if (!GEOM.has(eType)) {
+                                          if ((code === "1" || code === "3") && (eType === "MTEXT" || eType === "TEXT")) txts.push(val);
+                                          continue;
+                                        }
                                         if (code === "10") cx = parseFloat(val) || 0;
-                                        if (code === "20") { cy = parseFloat(val) || 0; pts.push({x:cx,y:cy}); if (eType === "LWPOLYLINE") curPoly.push({x:cx,y:cy}); }
-                                        if (code === "11" && eType === "LINE") cx = parseFloat(val) || 0;
-                                        if (code === "21" && eType === "LINE") { cy = parseFloat(val) || 0; pts.push({x:cx,y:cy}); }
-                                        if ((code === "1" || code === "3") && (eType === "MTEXT" || eType === "TEXT")) txts.push(val);
+                                        if (code === "20") { const cy2 = parseFloat(val) || 0; geomPts.push({x:cx,y:cy2}); if (eType === "LWPOLYLINE") curPoly.push({x:cx,y:cy2}); }
                                       }
                                       if (curPoly.length > 0) polys.push(curPoly);
-                                      // Bounding box
-                                      let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
-                                      pts.forEach(pt => { if(pt.x<mnX)mnX=pt.x; if(pt.x>mxX)mxX=pt.x; if(pt.y<mnY)mnY=pt.y; if(pt.y>mxY)mxY=pt.y; });
-                                      const w = mxX - mnX, h = mxY - mnY;
+                                      // Dimensioni da EXTMIN/EXTMAX (affidabile)
+                                      let w = extMaxX - extMinX, h = extMaxY - extMinY;
+                                      let mnX = extMinX, mnY = extMinY;
+                                      // Fallback a bbox geometria se header non valido
+                                      if (w <= 0 || h <= 0 || w > 10000) {
+                                        if (geomPts.length > 0) {
+                                          mnX=Infinity; let mxX2=-Infinity; mnY=Infinity; let mxY2=-Infinity;
+                                          geomPts.forEach(pt => { if(pt.x<mnX)mnX=pt.x; if(pt.x>mxX2)mxX2=pt.x; if(pt.y<mnY)mnY=pt.y; if(pt.y>mxY2)mxY2=pt.y; });
+                                          w = mxX2 - mnX; h = mxY2 - mnY;
+                                        }
+                                      }
                                       // Camere
                                       let camere = 0;
-                                      polys.forEach(poly => { if (poly.length >= 3) { let a=0; for(let i=0;i<poly.length;i++){const j=(i+1)%poly.length;a+=poly[i].x*poly[j].y-poly[j].x*poly[i].y;} a=Math.abs(a/2); if(a>w*h*0.02&&a<w*h*0.4)camere++; } });
+                                      polys.forEach(poly => { if (poly.length >= 3) { let a=0; for(let ii=0;ii<poly.length;ii++){const jj=(ii+1)%poly.length;a+=poly[ii].x*poly[jj].y-poly[jj].x*poly[ii].y;} a=Math.abs(a/2); if(a>w*h*0.02&&a<w*h*0.4)camere++; } });
                                       // Codice + peso dai testi
                                       let codice = null as string|null, peso = null as number|null, sviluppo = null as number|null;
                                       txts.forEach(t => {
-                                        const cm = t.match(/\b(CX\d{2,3}\.\d{2,3}|[A-Z]{2}\d{2,3}\.\d{2,3})\b/i); if(cm&&!codice) codice=cm[1];
+                                        const cm = t.match(/\b(CX\d{2,3}\.\d{2,3}|[A-Z]{2}\d{2,3}\.\d{2,3}|\d{2}[xX]{2}\d{2})\b/i); if(cm&&!codice) codice=cm[1];
                                         const pm = t.match(/([\d.,]+)\s*[Kk]g/); if(pm) peso=parseFloat(pm[1].replace(",","."));
                                         const sm = t.match(/mm\.?\s*([\d.,]+)/i); if(sm) sviluppo=parseFloat(sm[1].replace(",","."));
                                       });
-                                      // SVG
-                                      const sc = Math.min(180/(w||1), 120/(h||1)), pd = 8;
+                                      // SVG dalla geometria
+                                      const sc = Math.min(180/(w||1), 140/(h||1)), pd = 8;
                                       const svgW = w*sc+pd*2, svgH = h*sc+pd*2;
                                       let svgP = "";
-                                      polys.forEach(poly => { if(poly.length<2)return; svgP += '<path d="'+poly.map((pt,i)=>(i===0?"M":"L")+(((pt.x-mnX)*sc+pd).toFixed(1))+","+(svgH-((pt.y-mnY)*sc+pd)).toFixed(1)).join(" ")+' Z" fill="none" stroke="#2c3e50" stroke-width="0.8"/>'; });
-                                      const svgStr = '<svg viewBox="0 0 '+svgW.toFixed(0)+' '+svgH.toFixed(0)+'" xmlns="http://www.w3.org/2000/svg">'+svgP+'</svg>';
+                                      polys.forEach(poly => { if(poly.length<2)return; svgP += '<path d="'+poly.map((pt,ii)=>(ii===0?"M":"L")+(((pt.x-mnX)*sc+pd).toFixed(1))+","+(svgH-((pt.y-mnY)*sc+pd)).toFixed(1)).join(" ")+' Z" fill="none" stroke="#2c3e50" stroke-width="0.8"/>'; });
+                                      if (!svgP) svgP = '<rect x="'+pd+'" y="'+pd+'" width="'+(w*sc).toFixed(0)+'" height="'+(h*sc).toFixed(0)+'" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="4,2"/>';
+                                      const svgStr = '<svg viewBox="0 0 '+svgW.toFixed(0)+' '+svgH.toFixed(0)+'" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#fafbfc" rx="4"/>'+svgP+'<text x="'+(svgW/2).toFixed(0)+'" y="'+(svgH-2)+'" text-anchor="middle" font-size="8" fill="#666">'+w.toFixed(0)+'x'+h.toFixed(0)+'mm</text></svg>';
                                       // Tipo stimato
-                                      const tipo_s = w > 55 ? "Anta" : h < 25 ? "Fermavetro" : "Telaio";
+                                      const tipo_s = w > 60 ? "Anta" : h < 25 ? "Fermavetro" : "Telaio";
                                       // Pre-compila
                                       const upd: any = {...p, dxf_url:"dxf_loaded"};
-                                      if(w>0) upd.profondita_mm = Math.round(w*10)/10;
-                                      if(h>0) upd.frontale = Math.round(h*10)/10;
+                                      if(w>0 && w<1000) upd.profondita_mm = Math.round(w*10)/10;
+                                      if(h>0 && h<1000) upd.frontale = Math.round(h*10)/10;
                                       if(codice) upd.codice = codice;
                                       if(peso) upd.peso_kg_ml = peso;
                                       if(sviluppo) upd.sviluppo = sviluppo;
@@ -1237,7 +1256,7 @@ export default function SettingsPanel() {
                                       upd.tipo = tipo_s;
                                       upd.immagine_url = "data:image/svg+xml;base64," + btoa(svgStr);
                                       salvaProfilo(upd);
-                                      alert("DXF importato!\nProf: "+w.toFixed(0)+"mm, Front: "+h.toFixed(0)+"mm"+(codice?" Cod: "+codice:"")+(camere?" Camere: "+camere:""));
+                                      alert("DXF importato!\nProf: "+w.toFixed(1)+"mm x Front: "+h.toFixed(1)+"mm"+(codice?" Cod: "+codice:"")+(camere?" Camere: "+camere:"")+(polys.length?" Polyline: "+polys.length:""));
                                     } catch(err) {
                                       const r = new FileReader(); r.onload = ev => salvaProfilo({...p, dxf_url:ev.target?.result}); r.readAsDataURL(file);
                                     }
