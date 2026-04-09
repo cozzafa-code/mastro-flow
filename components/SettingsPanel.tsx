@@ -1054,19 +1054,19 @@ export default function SettingsPanel() {
                           <div style={{ fontSize:10, fontWeight:800, color:"#DC4444", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6, marginTop:4 }}>Misure per distinta taglio</div>
                           <div style={{ padding:10, borderRadius:10, border:`2px solid ${PRI}30`, background:PRI+"05", marginBottom:12 }}>
                             <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                              <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
                                 <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Battuta (mm)</div>
                                 <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Sovrapposizione con profilo accoppiato</div>
                                 <input type="number" step="0.1" defaultValue={p.battuta||""} onBlur={e => salvaProfilo({...p, battuta:parseFloat(e.target.value)||null})}
                                   style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${p.battuta ? PRI : "#DC4444"}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                               </div>
-                              <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
                                 <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Aria (mm)</div>
                                 <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Gioco tra profili accoppiati</div>
                                 <input type="number" step="0.1" defaultValue={p.aria||""} onBlur={e => salvaProfilo({...p, aria:parseFloat(e.target.value)||null})}
                                   style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${p.aria !== null && p.aria !== undefined ? PRI : "#DC4444"}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                               </div>
-                              <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
                                 <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Frontale (mm)</div>
                                 <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Faccia vista del profilo</div>
                                 <input type="number" step="0.1" defaultValue={p.frontale||""} onBlur={e => salvaProfilo({...p, frontale:parseFloat(e.target.value)||null})}
@@ -1074,21 +1074,21 @@ export default function SettingsPanel() {
                               </div>
                             </div>
                             <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                              <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
                                 <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Sede fermavetro (mm)</div>
                                 <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Alloggio vetro (anta/fisso)</div>
                                 <input type="number" step="0.1" defaultValue={p.sede_fermavetro||""} onBlur={e => salvaProfilo({...p, sede_fermavetro:parseFloat(e.target.value)||null})}
                                   style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                               </div>
-                              <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
                                 <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Tubolare (mm)</div>
                                 <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Altezza parte strutturale</div>
                                 <input type="number" step="0.1" defaultValue={p.tubolare||""} onBlur={e => salvaProfilo({...p, tubolare:parseFloat(e.target.value)||null})}
                                   style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                               </div>
-                              <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
                                 <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Spessore lama (mm)</div>
-                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Taglio 45\u00B0</div>
+                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Taglio 45°</div>
                                 <input type="number" step="0.1" defaultValue={p.spessore_lama||3.5} onBlur={e => salvaProfilo({...p, spessore_lama:parseFloat(e.target.value)||3.5})}
                                   style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                               </div>
@@ -1096,7 +1096,7 @@ export default function SettingsPanel() {
                             {/* Quota fusione solo per PVC */}
                             {(p.materiale === "PVC" || p.materiale === "Legno-Alluminio") && (
                               <div style={{ display:"flex", gap:8 }}>
-                                <div style={{ flex:"1 1 30%", minWidth:80 }}>
+                                <div style={{ flex:"1 1 30%", minWidth:110 }}>
                                   <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Quota fusione (mm)</div>
                                   <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Materiale perso in saldatura — dipende dalla saldatrice</div>
                                   <input type="number" step="0.1" defaultValue={p.quota_fusione||0} onBlur={e => salvaProfilo({...p, quota_fusione:parseFloat(e.target.value)||0})}
@@ -1110,12 +1110,12 @@ export default function SettingsPanel() {
                           <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 }}>Dati fisici</div>
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
                             <div style={{ flex:"1 1 22%", minWidth:70 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Profondit\u00E0 (mm)</div>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Profondità (mm)</div>
                               <input type="number" defaultValue={p.profondita_mm||""} onBlur={e => salvaProfilo({...p, profondita_mm:parseFloat(e.target.value)||null})}
                                 style={{ width:"100%", padding:"7px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                             </div>
                             <div style={{ flex:"1 1 22%", minWidth:70 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Uf (W/m\u00B2K)</div>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Uf (W/m²K)</div>
                               <input type="number" step="0.01" defaultValue={p.uf||""} onBlur={e => salvaProfilo({...p, uf:parseFloat(e.target.value)||null})}
                                 style={{ width:"100%", padding:"7px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:p.uf <= 1.0 ? "#1A9E73" : p.uf <= 1.4 ? "#D08008" : T.text }} />
                             </div>
