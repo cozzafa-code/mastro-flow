@@ -4456,7 +4456,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       )}
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
-    </div>{/* close S.app */}
     </>
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
     </MastroContext.Provider>
