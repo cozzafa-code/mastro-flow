@@ -44,7 +44,7 @@ import AgendaPanel from "./AgendaPanel";
 import MessaggiPanel from "./MessaggiPanel";
 import AssistentePanel from "./AssistentePanel";
 import ContabilitaPanel from "./ContabilitaPanel";
-import ClientiPanel from "./ClientiPanel";
+// ClientiPanel inline (was external)
 import CommessePanel from "./CommessePanel";
 import { OnboardingPanel, FirmaModalPanel } from "./OnboardingPanel";
 import MastroStrutture from "./MastroStrutture";
@@ -2008,7 +2008,114 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
 
-  const renderClienti = () => <ClientiPanel />;
+  const renderClienti = () => {
+    const flt = contatti.filter((c: any) => {
+      if (clientiFilter !== "tutti" && c.tipo !== clientiFilter) return false;
+      if (clientiSearch) {
+        const q = clientiSearch.toLowerCase();
+        return (c.nome||"").toLowerCase().includes(q) || (c.cognome||"").toLowerCase().includes(q) || (c.telefono||"").includes(q) || (c.email||"").toLowerCase().includes(q);
+      }
+      return true;
+    });
+    const tipi = ["tutti","clienti","fornitori","professionisti"];
+    return (
+      <div style={{ padding: "16px 16px 120px", minHeight: "100vh" }}>
+        {/* Search */}
+        <div style={{ position:"relative", marginBottom:12 }}>
+          <I d={ICO.search} s={16} c={T.sub} style={{position:"absolute",left:12,top:12}} />
+          <input value={clientiSearch} onChange={e => setClientiSearch(e.target.value)}
+            placeholder="Cerca..." style={{ width:"100%", padding:"12px 12px 12px 38px", borderRadius:14, border:`1.5px solid ${T.bdr}`, background:T.card, fontSize:14, fontFamily:FF, color:T.text, outline:"none" }} />
+        </div>
+        {/* Filter pills */}
+        <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" as any }}>
+          {tipi.map(t => (
+            <button key={t} onClick={() => setClientiFilter(t)}
+              style={{ padding:"6px 14px", borderRadius:20, border: clientiFilter===t ? "none" : `1.5px solid ${T.bdr}`,
+                background: clientiFilter===t ? T.acc : T.card, color: clientiFilter===t ? "#fff" : T.text,
+                fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FF,
+                boxShadow: clientiFilter===t ? `0 3px 0 0 ${T.accDk}` : "none",
+                textTransform:"capitalize" as any }}>
+              {t} {t !== "tutti" ? flt.filter((c:any) => t === "tutti" || c.tipo === t.slice(0,-1)).length : flt.length}
+            </button>
+          ))}
+        </div>
+        {/* Empty state */}
+        {flt.length === 0 && (
+          <div style={{ textAlign:"center", padding:"60px 20px", color:T.sub }}>
+            <I d={ICO.userPlus} s={40} c={T.bdr} />
+            <div style={{ fontSize:16, fontWeight:800, color:T.text, marginTop:16 }}>Nessun contatto</div>
+            <div style={{ fontSize:13, marginTop:4 }}>Aggiungi il tuo primo cliente</div>
+          </div>
+        )}
+        {/* Contact list */}
+        {flt.map((c: any) => (
+          <div key={c.id} onClick={() => setSelectedCliente(c)}
+            style={{ background:T.card, borderRadius:14, border:`1.5px solid ${T.bdr}`, padding:"14px 16px",
+              marginBottom:8, display:"flex", alignItems:"center", gap:12, cursor:"pointer",
+              boxShadow:`0 3px 0 0 ${T.bdr}` }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:T.accLt,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:15, fontWeight:900, color:T.acc }}>
+              {(c.nome||"?")[0].toUpperCase()}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:T.text }}>{c.nome}{c.cognome ? " " + c.cognome : ""}</div>
+              {c.telefono && <div style={{ fontSize:12, color:T.sub }}>{c.telefono}</div>}
+            </div>
+            <span style={{ fontSize:10, fontWeight:700, color:T.acc, background:T.accLt, padding:"3px 8px", borderRadius:6, textTransform:"capitalize" as any }}>{c.tipo || "cliente"}</span>
+          </div>
+        ))}
+        {/* FAB add */}
+        <div onClick={() => setShowNewCliente(true)}
+          style={{ position:"fixed", bottom:90, right:20, width:56, height:56, borderRadius:16,
+            background:T.acc, display:"flex", alignItems:"center", justifyContent:"center",
+            boxShadow:`0 6px 0 0 ${T.accDk}, 0 8px 20px rgba(0,0,0,.15)`, cursor:"pointer", zIndex:50 }}>
+          <I d={ICO.plus} s={24} c="#fff" sw={3} />
+        </div>
+        {/* New contact modal */}
+        {showNewCliente && (
+          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:300, display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+            onClick={() => setShowNewCliente(false)}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background:T.card, borderRadius:"20px 20px 0 0", width:"100%", maxWidth:480, padding:"24px 20px", maxHeight:"85vh", overflow:"auto" }}>
+              <div style={{ fontSize:18, fontWeight:900, color:T.text, marginBottom:16 }}>Nuovo contatto</div>
+              {["nome","cognome","telefono","email","indirizzo","piva","note"].map(f => (
+                <div key={f} style={{ marginBottom:12 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:T.sub, marginBottom:4, textTransform:"capitalize" as any }}>{f === "piva" ? "P.IVA" : f}</div>
+                  <input value={(newCliente as any)[f] || ""} onChange={e => setNewCliente(prev => ({...prev, [f]: e.target.value}))}
+                    style={{ width:"100%", padding:"12px 14px", borderRadius:12, border:`1.5px solid ${T.bdr}`, background:T.bg, fontSize:14, fontFamily:FF, color:T.text, outline:"none" }} />
+                </div>
+              ))}
+              <div style={{ marginBottom:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:T.sub, marginBottom:6 }}>Tipo</div>
+                <div style={{ display:"flex", gap:8 }}>
+                  {["cliente","fornitore","professionista"].map(t => (
+                    <button key={t} onClick={() => setNewCliente(prev => ({...prev, tipo: t}))}
+                      style={{ flex:1, padding:"10px 8px", borderRadius:12, border: newCliente.tipo===t ? "none" : `1.5px solid ${T.bdr}`,
+                        background: newCliente.tipo===t ? T.acc : T.card, color: newCliente.tipo===t ? "#fff" : T.text,
+                        fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FF,
+                        boxShadow: newCliente.tipo===t ? `0 3px 0 0 ${T.accDk}` : "none",
+                        textTransform:"capitalize" as any }}>{t}</button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={() => {
+                if (!newCliente.nome.trim()) return;
+                const nc = { ...newCliente, id: "CT-" + Date.now(), preferito: false, diario: [] };
+                setContatti(prev => [...prev, nc]);
+                setNewCliente({ nome:"", cognome:"", tipo:"cliente", telefono:"", email:"", indirizzo:"", piva:"", note:"" });
+                setShowNewCliente(false);
+              }} style={{ width:"100%", padding:"16px", borderRadius:14, border:"none", background:T.acc, color:"#fff",
+                fontSize:15, fontWeight:900, cursor:"pointer", fontFamily:FF,
+                boxShadow:`0 6px 0 0 ${T.accDk}`, marginTop:8 }}>
+                Salva contatto
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderAgenda = () => <AgendaPanel />;
 
@@ -4447,8 +4554,8 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       )}
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
-    </>
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
+    </>
     </MastroContext.Provider>
   );
 }
