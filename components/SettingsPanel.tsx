@@ -538,7 +538,8 @@ export default function SettingsPanel() {
     // Helpers
     addSettingsItem, deleteSettingsItem, countVani,
     // Piano & onboarding
-    setSubPlan, setTutoStep, setAiInbox,
+    subPlan, setSubPlan, setTutoStep, setAiInbox,
+    activePlan, trialDaysLeft,
     // Business logic
     generaFatturaPDF,
     // Strutture configuratore
@@ -547,6 +548,9 @@ export default function SettingsPanel() {
 
   // Ref per upload logo azienda
   const logoInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Plan from PLANS
+  const plan = PLANS[activePlan] || PLANS.free || { nome: "Free", prezzo: 0, maxCommesse: 5, maxUtenti: 1, sync: false, pdf: false };
 
   // DS v2.0 — primary from theme (teal for chiaro)
   const PRI = T.acc || "#0D7C6B";
