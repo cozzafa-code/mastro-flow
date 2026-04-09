@@ -917,6 +917,77 @@ export default function SettingsPanel() {
                 placeholder="Cerca profilo per nome o codice..."
                 style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, boxSizing:"border-box", marginBottom:12 }} />
 
+              {/* Import AI da PDF/Immagine */}
+              <div style={{ ...S.card, marginBottom:14 }}><div style={S.cardInner}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:800, color:T.text }}>Importa profilo con AI</div>
+                    <div style={{ fontSize:10, color:T.sub }}>Carica PDF catalogo, immagine o screenshot \u2014 MASTRO estrae i dati tecnici automaticamente</div>
+                  </div>
+                </div>
+                <div style={{ position:"relative", marginBottom:8 }}>
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
+                    style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]; if (!file) return;
+                      e.target.value = "";
+                      // Mostra loading
+                      const loadingId = "ai_loading_" + Date.now();
+                      const loadEl = document.createElement("div");
+                      loadEl.id = loadingId;
+                      loadEl.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;";
+                      loadEl.innerHTML = '<div style="background:#fff;padding:30px 40px;border-radius:16px;text-align:center"><div style="font-size:14px;font-weight:800;margin-bottom:8px">Analisi AI in corso...</div><div style="font-size:11px;color:#6B7280">Claude sta leggendo il profilo dal file</div></div>';
+                      document.body.appendChild(loadEl);
+                      try {
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        const res = await fetch("/api/profilo-extract", { method: "POST", body: formData });
+                        const data = await res.json();
+                        document.getElementById(loadingId)?.remove();
+                        if (data.error) { alert("Errore: " + data.error); return; }
+                        if (data.profili && data.profili.length > 0) {
+                          // Inserisci ogni profilo estratto
+                          const { supabase: sb } = await import("@/lib/supabase");
+                          let count = 0;
+                          for (const p of data.profili) {
+                            const ins = {
+                              nome: p.nome || "Profilo estratto",
+                              codice: p.codice || null,
+                              marca: p.marca || null,
+                              materiale: p.materiale || "PVC",
+                              tipo: p.tipo || "Rahmen",
+                              bautiefe_mm: p.bautiefe_mm || null,
+                              uf: p.uf || null,
+                              peso_kg_ml: p.peso_kg_ml || null,
+                              note: (p.note || "") + (p.quote_mm?.length ? " Quote: " + p.quote_mm.join(", ") + "mm" : "") + (p.ferramenta?.length ? " Ferr: " + p.ferramenta.join(", ") : ""),
+                              attivo: true,
+                              azienda_id: aziendaInfo?.id || "demo",
+                            };
+                            const { data: row } = await sb.from("profili_catalogo").insert([ins]).select().single();
+                            if (row) { setProfiliSupa(prev => [...prev, row]); count++; }
+                          }
+                          const costo = data.usage?.costo_usd ? ` (costo: $${data.usage.costo_usd})` : "";
+                          alert(count + " profil" + (count > 1 ? "i estratti" : "o estratto") + " con successo!" + costo + "\nConfidenza: " + (data.confidenza || "n/d"));
+                        } else {
+                          alert("Nessun profilo trovato nel file. Prova con un'immagine pi\u00F9 chiara del disegno tecnico.");
+                        }
+                      } catch (err: any) {
+                        document.getElementById(loadingId)?.remove();
+                        alert("Errore: " + (err.message || "Errore di rete"));
+                      }
+                    }} />
+                  <div style={{ border:`1.5px dashed ${PRI}`, borderRadius:8, padding:"16px", textAlign:"center",
+                    background: PRI + "08", cursor:"pointer" }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:PRI, marginBottom:4 }}>
+                      Trascina PDF catalogo, foto o screenshot qui
+                    </div>
+                    <div style={{ fontSize:9, color:T.sub }}>
+                      PDF \u00B7 PNG \u00B7 JPG \u00B7 WEBP \u2014 Claude AI analizza il disegno ed estrae codice, bautiefe, Uf, peso, camere, quote
+                    </div>
+                  </div>
+                </div>
+              </div></div>
+
               {profiliFiltrati.length === 0 ? (
                 <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>
                   Nessun profilo inserito. Clicca + per aggiungere il primo.
