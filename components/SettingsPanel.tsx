@@ -1012,20 +1012,23 @@ export default function SettingsPanel() {
                           if(!best2&&bns2.length>0){let ba2=Infinity;for(const b of bns2){const pp=bkPts[b];const bw2=Math.max(...pp.map(q=>q.x))-Math.min(...pp.map(q=>q.x));const bh2=Math.max(...pp.map(q=>q.y))-Math.min(...pp.map(q=>q.y));if(bw2>5&&bw2<200&&bh2>5&&bh2<200&&bw2*bh2<ba2){ba2=bw2*bh2;best2=b;}}}
                           let w4=eMaxX-eMinX,h4=eMaxY-eMinY;
                           if(best2&&bkPts[best2]?.length>0){const bp2=bkPts[best2];w4=Math.max(...bp2.map(q=>q.x))-Math.min(...bp2.map(q=>q.x));h4=Math.max(...bp2.map(q=>q.y))-Math.min(...bp2.map(q=>q.y));}
+                          // Skip se dimensioni invalide
+                          if(w4<=0||h4<=0||w4>2000||h4>2000){ fail++; continue; }
                           const ins = {
-                            nome: best2 || fName, codice: fName.toUpperCase(), marca: "Aluplast",
+                            nome: best2 || fName, codice: fName.toUpperCase(), marca: "Importato",
                             materiale: "PVC", tipo: w4 > 60 ? "Anta" : h4 < 30 ? "Fermavetro" : "Telaio",
                             utilizzo: w4 > 60 ? "anta_battente" : h4 < 30 ? "fermavetro" : "telaio_fisso",
                             profondita_mm: Math.round(w4*10)/10, frontale: Math.round(h4*10)/10,
                             spessore_lama: 3.5, quota_fusione: 0,
                             attivo: true, azienda_id: aziendaInfo?.id || "demo",
                           };
-                          const { data: row } = await sb.from("profili_catalogo").insert([ins]).select().single();
-                          if (row) { setProfiliSupa(prev => [...prev, row]); ok++; }
-                        } catch (err) { fail++; }
+                          const { data: row, error: insErr } = await sb.from("profili_catalogo").insert([ins]).select().single();
+                          if (insErr) { console.error("Insert error:", fName, insErr.message); fail++; }
+                          else if (row) { setProfiliSupa(prev => [...prev, row]); ok++; }
+                        } catch (err: any) { console.error("DXF error:", f.name, err?.message); fail++; }
                       }
                       document.getElementById("bulk_load")?.remove();
-                      alert(ok + " profili importati" + (fail > 0 ? ", " + fail + " errori" : "") + "!\nOra entra in ogni profilo per completare battuta, aria, sede fermavetro.");
+                      alert(ok + " profili importati" + (fail > 0 ? ", " + fail + " non importati (vedi Console per dettagli)" : "") + ".\nOra entra in ogni profilo per completare battuta, aria, sede fermavetro.");
                     }} />
                   <div style={{ border:`1.5px dashed #D08008`, borderRadius:8, padding:"14px", textAlign:"center", background:"#D0800808", cursor:"pointer" }}>
                     <div style={{ fontSize:11, fontWeight:700, color:"#D08008" }}>Seleziona pi\u00F9 file DXF/DWG</div>
