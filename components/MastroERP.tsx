@@ -3393,10 +3393,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
         {tab === "agenda" && <PanelErrorBoundary name="Agenda">{renderAgenda()}</PanelErrorBoundary>}
         {tab === "contabilita" && <PanelErrorBoundary name="Contabilita">{renderContabilita()}</PanelErrorBoundary>}
-        {tab === "montaggi_cal" && <PanelErrorBoundary name="Team">{(() => {
-          // Team states at component level
-
+        {tab === "montaggi_cal" && <PanelErrorBoundary name="Cantiere">{(() => {
+          // === CENTRO OPERATIVO CANTIERE ===
           const today = new Date().toISOString().split("T")[0];
+          const todayDate = new Date();
           
           // Collect ALL tasks from commesse assignments + standalone tasks
           const tuttiCompiti: any[] = [];
@@ -3404,446 +3404,562 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             Object.entries(cm.assegnazioni || {}).forEach(([faseId, ass]: [string, any]) => {
               if (ass.persona) {
                 tuttiCompiti.push({
-                  id: cm.id + "-" + faseId,
-                  persona: ass.persona,
-                  tipo: faseId,
-                  descrizione: (PIPELINE.find(p => p.id === faseId)?.nome || faseId) + " — " + (cm.cliente || cm.titolo || cm.code || ""),
-                  stato: ass.stato || "da_fare",
-                  scadenza: ass.scadenza || "",
-                  note: ass.note || "",
-                  commessaId: cm.id,
-                  commessa: cm,
-                  color: PIPELINE.find(p => p.id === faseId)?.color || T.acc,
-                  data: ass.scadenza || "",
+                  id: cm.id + "-" + faseId, persona: ass.persona, tipo: faseId,
+                  descrizione: (PIPELINE.find(p => p.id === faseId)?.nome || faseId) + " - " + (cm.cliente || cm.titolo || cm.code || ""),
+                  stato: ass.stato || "da_fare", scadenza: ass.scadenza || "", note: ass.note || "",
+                  commessaId: cm.id, commessa: cm, color: PIPELINE.find(p => p.id === faseId)?.color || T.acc,
+                  data: ass.scadenza || "", ora: ass.ora || "",
                 });
               }
             });
           });
-          // Add standalone tasks
           tasks.forEach((t: any) => {
             if (t.persona) {
               tuttiCompiti.push({
-                id: "task-" + t.id,
-                persona: t.persona,
-                tipo: "task",
-                descrizione: t.text || "",
-                stato: t.done ? "completato" : "da_fare",
-                scadenza: t.date || "",
-                notes: t.meta || "",
-                color: "#D08008",
-                data: t.date || "",
+                id: t.id, persona: t.persona, tipo: t.tipo || "task",
+                descrizione: t.text || t.descrizione || "",
+                stato: t.done ? "completato" : "da_fare", scadenza: t.date || "", notes: t.meta || "",
+                commessaId: "", commessa: null,
+                color: t.priority === "alta" ? T.red : t.priority === "media" ? T.orange : T.acc,
+                data: t.date || "", ora: t.time || "",
               });
             }
           });
+          const eventsAsCompiti = (events || []).map((ev: any) => ({
+            id: "ev-" + ev.id, persona: ev.persona || "", tipo: ev.tipo || "evento",
+            descrizione: ev.text || "", stato: "evento", scadenza: "", notes: "",
+            commessaId: "", commessa: ev.cm ? cantieri.find((c:any) => c.code === ev.cm) : null,
+            color: tipoEvColor(ev.tipo || "sopralluogo"), data: ev.date || "", ora: ev.time || "",
+            _isEvent: true, _event: ev,
+          }));
+          const allItems = [...tuttiCompiti, ...eventsAsCompiti];
 
           const compitiPersona = (nome: string) => tuttiCompiti.filter(c => c.persona === nome || c.persona === "sq:" + nome);
+          const itemsForDay = (dayStr: string) => allItems.filter(c => c.data === dayStr || c.scadenza === dayStr);
           const compitiOggi = tuttiCompiti.filter(c => c.data === today || c.scadenza === today);
           const compitiScaduti = tuttiCompiti.filter(c => c.scadenza && c.scadenza < today && c.stato !== "completato");
           const compitiInCorso = tuttiCompiti.filter(c => c.stato === "in_corso");
-          
-          const statoColors: any = { da_fare: T.orange || "#D08008", in_corso: T.blue || "#3B7FE0", completato: T.grn || "#1A9E73", bloccato: T.red || "#DC4444" };
-          const statoLabels: any = { da_fare: "Da fare", in_corso: "In corso", completato: "Fatto", bloccato: "Bloccato" };
-          const statoIco: any = { da_fare: "clock", in_corso: "zap", completato: "check", bloccato: "alert" };
+          const eventiOggi = eventsAsCompiti.filter(c => c.data === today);
+          const compitiDomani = allItems.filter(c => { const d = new Date(); d.setDate(d.getDate()+1); return c.data === d.toISOString().split("T")[0]; });
 
-          // Week days helper
-          const getWeekDaysFromOffset = (offset: number) => {
-            const d = new Date(); d.setDate(d.getDate() + offset * 7);
+          const [calViewLocal, setCalViewLocal] = useState<"giorno"|"settimana"|"mese">("giorno");
+          const [teamFilterPerson, setTeamFilterPerson] = useState("");
+          const [calDate, setCalDate] = useState(new Date());
+          const [expandedItem, setExpandedItem] = useState<string|null>(null);
+
+          const getWeekDaysFrom = (d: Date) => {
             const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            const mon = new Date(d.setDate(diff));
+            const mon = new Date(new Date(d).setDate(diff));
             return Array.from({length: 7}, (_, i) => { const dd = new Date(mon); dd.setDate(mon.getDate() + i); return dd; });
           };
+          const weekDays = getWeekDaysFrom(calDate);
+          const calMonth = calDate.getMonth();
+          const calYear = calDate.getFullYear();
+          const monthDays: Date[] = [];
+          const firstOfMonth = new Date(calYear, calMonth, 1);
+          const startDay = firstOfMonth.getDay() === 0 ? 6 : firstOfMonth.getDay() - 1;
+          for (let i = -startDay; i < 42 - startDay; i++) {
+            const d = new Date(calYear, calMonth, 1 + i);
+            monthDays.push(d);
+          }
 
-          const weekDays = getWeekDaysFromOffset(teamWeek);
+          const filterItems = (items: any[]) => teamFilterPerson ? items.filter(c => c.persona === teamFilterPerson) : items;
+          const statoColors: Record<string,string> = { completato: T.grn, in_corso: T.blue || "#3B7FE0", da_fare: T.orange || "#E8A020", bloccato: T.red, evento: "#8B5CF6" };
+          const tipoEmoji: Record<string,string> = { Sopralluogo: "S", Misure: "M", Preventivo: "P", Montaggio: "Mt", Collaudo: "Co", Consegna: "Cn", Acquisti: "Ac", Ufficio: "Uf", sopralluogo: "S", montaggio: "Mt", consegna: "Cn", misure: "M", task: "T", evento: "Ev" };
+
+          const navigateDay = (offset: number) => setCalDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + offset); return d; });
+          const navigateWeek = (offset: number) => setCalDate(prev => { const d = new Date(prev); d.setDate(d.getDate() + offset * 7); return d; });
+          const navigateMonth = (offset: number) => setCalDate(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
+          const goToday = () => setCalDate(new Date());
+          const isToday = (d: Date) => d.toISOString().split("T")[0] === today;
+          const selectedDayStr = calDate.toISOString().split("T")[0];
+
+          const quickComplete = (c: any) => {
+            if (c._isEvent) return;
+            if (c.commessaId) {
+              setCantieri(prev => prev.map(cm => cm.id === c.commessaId ? {...cm, assegnazioni: {...(cm.assegnazioni||{}), [c.tipo]: {...((cm.assegnazioni||{})[c.tipo]||{}), stato: "completato"}}} : cm));
+            } else {
+              setTasks(prev => prev.map(t => t.id === c.id ? {...t, done: true} : t));
+            }
+          };
+          const quickStart = (c: any) => {
+            if (c._isEvent) return;
+            if (c.commessaId) {
+              setCantieri(prev => prev.map(cm => cm.id === c.commessaId ? {...cm, assegnazioni: {...(cm.assegnazioni||{}), [c.tipo]: {...((cm.assegnazioni||{})[c.tipo]||{}), stato: "in_corso"}}} : cm));
+            }
+          };
+
+          // === RENDER ITEM CARD ===
+          const renderItemCard = (c: any, compact?: boolean) => {
+            const isExp = expandedItem === c.id;
+            const isEvt = c._isEvent;
+            return (
+              <div key={c.id} style={{ marginBottom: compact ? 3 : 6 }}>
+                <div onClick={() => setExpandedItem(isExp ? null : c.id)}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: compact ? "6px 8px" : "10px 12px",
+                    background: T.card, borderRadius: compact ? 8 : 12, border: "1.5px solid " + T.bdr,
+                    borderLeft: "4px solid " + (c.color || T.acc), cursor: "pointer",
+                    boxShadow: isExp ? "0 4px 12px rgba(0,0,0,.08)" : "none" }}>
+                  {!isEvt && !compact && (
+                    <div onClick={(e) => { e.stopPropagation(); c.stato === "da_fare" ? quickStart(c) : quickComplete(c); }}
+                      style={{ width: 22, height: 22, borderRadius: 7, border: "2px solid " + (statoColors[c.stato] || T.bdr),
+                        background: c.stato === "completato" ? T.grn : c.stato === "in_corso" ? T.blue + "15" : "transparent",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}>
+                      {c.stato === "completato" && <I d={ICO.check} s={12} c="#fff" sw={3} />}
+                      {c.stato === "in_corso" && <div style={{ width: 8, height: 8, borderRadius: 2, background: T.blue }} />}
+                    </div>
+                  )}
+                  {isEvt && <div style={{ width: 8, height: 8, borderRadius: "50%", background: c.color, flexShrink: 0 }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: compact ? 10 : 12, fontWeight: 700, color: c.stato === "completato" ? T.sub : T.text,
+                      textDecoration: c.stato === "completato" ? "line-through" : "none",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {c.descrizione}
+                    </div>
+                    {!compact && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
+                        {c.ora && <span style={{ fontSize: 9, fontWeight: 800, color: T.acc }}>{c.ora}</span>}
+                        {c.persona && <span style={{ fontSize: 9, color: T.sub }}>{c.persona}</span>}
+                        <span style={{ fontSize: 8, fontWeight: 800, padding: "1px 5px", borderRadius: 4, background: (c.color || T.acc) + "18", color: c.color || T.acc }}>{tipoEmoji[c.tipo] || c.tipo}</span>
+                      </div>
+                    )}
+                  </div>
+                  {compact && c.ora && <span style={{ fontSize: 9, fontWeight: 800, color: T.acc, flexShrink: 0 }}>{c.ora}</span>}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2"><path d={isExp ? "M18 15l-6-6-6 6" : "M6 9l6 6 6-6"}/></svg>
+                </div>
+                {isExp && (
+                  <div style={{ padding: "10px 12px", background: T.card, borderRadius: "0 0 12px 12px", borderLeft: "4px solid " + (c.color || T.acc), borderRight: "1.5px solid " + T.bdr, borderBottom: "1.5px solid " + T.bdr, marginTop: -2 }}>
+                    {c.notes && <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, padding: "6px 8px", background: T.bg, borderRadius: 6 }}>{c.notes}</div>}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {!isEvt && c.stato !== "completato" && (
+                        <div onClick={() => quickComplete(c)} style={{ padding: "8px 12px", borderRadius: 8, background: T.grn, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 0 0 #147A55" }}>Fatto</div>
+                      )}
+                      {!isEvt && c.stato === "da_fare" && (
+                        <div onClick={() => quickStart(c)} style={{ padding: "8px 12px", borderRadius: 8, background: T.blue || "#3B7FE0", color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 0 0 #2563EB" }}>Inizia</div>
+                      )}
+                      {c.commessa && (
+                        <div onClick={() => { setSelectedCM(c.commessa); setTab("commesse"); }} style={{ padding: "8px 12px", borderRadius: 8, background: T.accLt, color: T.acc, fontSize: 11, fontWeight: 800, cursor: "pointer" }}>
+                          <I d={ICO.folder} s={10} c={T.acc} /> {c.commessa.code}
+                        </div>
+                      )}
+                      {c.persona && (() => {
+                        const member = team.find((m:any) => m.nome === c.persona);
+                        if (!member?.telefono) return null;
+                        return (<>
+                          <div onClick={() => window.location.href = "tel:" + member.telefono} style={{ padding: "8px 12px", borderRadius: 8, background: T.grn + "15", color: T.grn, fontSize: 11, fontWeight: 800, cursor: "pointer" }}>
+                            <I d={ICO.phone} s={10} c={T.grn} /> Chiama
+                          </div>
+                          <div onClick={() => window.open("https://wa.me/" + (member.telefono||"").replace(/\D/g,""))} style={{ padding: "8px 12px", borderRadius: 8, background: "#25d36615", color: "#25d366", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>
+                            <I d={ICO.messageCircle} s={10} c="#25d366" /> WA
+                          </div>
+                        </>);
+                      })()}
+                      {c.commessa?.indirizzo && (
+                        <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(c.commessa.indirizzo))} style={{ padding: "8px 12px", borderRadius: 8, background: T.blueLt || "#EFF6FF", color: T.blue || "#3B7FE0", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>
+                          <I d={ICO.mapPin} s={10} c={T.blue || "#3B7FE0"} /> Mappa
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          };
 
           return (
-            <div style={{ minHeight: "100vh", paddingBottom: 100 }}>
+            <div style={{ minHeight: "100vh", paddingBottom: 100, background: T.bg }}>
               {/* HEADER */}
-              <div style={{ background: "#0D1F1F", padding: "20px 16px 16px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
-                <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Team & Compiti</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{team.length} membri · {tuttiCompiti.filter(c => c.stato !== "completato").length} compiti attivi</div>
-                {/* KPI row */}
-                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <div style={{ background: "#0D1F1F", padding: "16px 16px 12px", paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>Centro Operativo</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,.4)" }}>{team.length} persone - {tuttiCompiti.filter(c => c.stato !== "completato").length} attivi - {eventiOggi.length} eventi oggi</div>
+                  </div>
+                  <div onClick={() => setTab("home")} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <I d={ICO.home} s={16} c="rgba(255,255,255,.5)" />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
                   {[
-                    { label: "Oggi", val: compitiOggi.length, color: T.acc || "#28A0A0" },
+                    { label: "Oggi", val: compitiOggi.length + eventiOggi.length, color: T.acc || "#28A0A0" },
+                    { label: "Domani", val: compitiDomani.length, color: T.blue || "#3B7FE0" },
+                    { label: "Scaduti", val: compitiScaduti.length, color: compitiScaduti.length > 0 ? "#DC4444" : "rgba(255,255,255,.2)" },
                     { label: "In corso", val: compitiInCorso.length, color: T.blue || "#3B7FE0" },
-                    { label: "Scaduti", val: compitiScaduti.length, color: T.red || "#DC4444" },
                     { label: "Fatti", val: tuttiCompiti.filter(c => c.stato === "completato").length, color: T.grn || "#1A9E73" },
                   ].map(k => (
-                    <div key={k.label} style={{ flex: 1, padding: "10px 6px", borderRadius: 12, background: "rgba(255,255,255,.06)", textAlign: "center" }}>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: k.color }}>{k.val}</div>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.35)" }}>{k.label}</div>
+                    <div key={k.label} style={{ flex: 1, padding: "8px 2px", borderRadius: 10, background: "rgba(255,255,255,.06)", textAlign: "center" }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: k.color }}>{k.val}</div>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,.3)" }}>{k.label}</div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* TAB BAR */}
-              <div style={{ display: "flex", background: T.card, borderBottom: "1.5px solid " + T.bdr }}>
-                {([
-                  { id: "compiti", label: "Compiti", ico: "checkCircle" },
-                  { id: "calendario", label: "Calendario", ico: "calendar" },
-                  { id: "persone", label: "Persone", ico: "users" },
-                  { id: "report", label: "Report", ico: "barChart" },
-                ] as const).map(t => (
-                  <div key={t.id} onClick={() => setTeamView(t.id)}
-                    style={{ flex: 1, padding: "12px 4px", textAlign: "center", cursor: "pointer",
-                      borderBottom: teamView === t.id ? "3px solid " + (T.acc || "#28A0A0") : "3px solid transparent" }}>
-                    <I d={ICO[t.ico]} s={14} c={teamView === t.id ? (T.acc || "#28A0A0") : (T.sub || "#999")} />
-                    <div style={{ fontSize: 10, fontWeight: teamView === t.id ? 900 : 600, color: teamView === t.id ? (T.acc || "#28A0A0") : (T.sub || "#999"), marginTop: 2 }}>{t.label}</div>
+              {/* VIEW SWITCHER + FILTERS */}
+              <div style={{ padding: "8px 16px", background: T.card, borderBottom: "1.5px solid " + T.bdr }}>
+                <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                  {(["giorno","settimana","mese"] as const).map(v => (
+                    <div key={v} onClick={() => setCalViewLocal(v)}
+                      style={{ flex: 1, padding: "8px 4px", borderRadius: 10, textAlign: "center", cursor: "pointer",
+                        background: calViewLocal === v ? (T.acc || "#28A0A0") : "transparent",
+                        color: calViewLocal === v ? "#fff" : T.text,
+                        fontSize: 12, fontWeight: calViewLocal === v ? 900 : 600,
+                        border: calViewLocal === v ? "none" : "1.5px solid " + T.bdr,
+                        boxShadow: calViewLocal === v ? "0 3px 0 0 " + (T.accDk || "#156060") : "none" }}>
+                      {v === "giorno" ? "Giorno" : v === "settimana" ? "Settimana" : "Mese"}
+                    </div>
+                  ))}
+                </div>
+                {team.length > 0 && (
+                  <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 2 }}>
+                    <div onClick={() => setTeamFilterPerson("")}
+                      style={{ padding: "5px 10px", borderRadius: 8, whiteSpace: "nowrap", cursor: "pointer", fontSize: 11, fontWeight: 800,
+                        background: !teamFilterPerson ? T.acc : "transparent", color: !teamFilterPerson ? "#fff" : T.sub,
+                        border: !teamFilterPerson ? "none" : "1px solid " + T.bdr, flexShrink: 0 }}>Tutti</div>
+                    {team.map(m => (
+                      <div key={m.id} onClick={() => setTeamFilterPerson(teamFilterPerson === m.nome ? "" : m.nome)}
+                        style={{ padding: "5px 10px", borderRadius: 8, whiteSpace: "nowrap", cursor: "pointer", fontSize: 11, fontWeight: 700,
+                          background: teamFilterPerson === m.nome ? m.colore : "transparent",
+                          color: teamFilterPerson === m.nome ? "#fff" : T.text,
+                          border: teamFilterPerson === m.nome ? "none" : "1px solid " + T.bdr, flexShrink: 0,
+                          display: "flex", alignItems: "center", gap: 4 }}>
+                        <div style={{ width: 14, height: 14, borderRadius: "50%", background: teamFilterPerson === m.nome ? "rgba(255,255,255,.3)" : m.colore,
+                          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 7, fontWeight: 800 }}>
+                          {(m.nome||"?")[0]}
+                        </div>
+                        {m.nome.split(" ")[0]}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
 
-              <div style={{ padding: "12px 16px" }}>
-
-              {/* ═══ COMPITI TAB ═══ */}
-              {teamView === "compiti" && (<>
-                {/* FAB nuovo compito */}
-                <div onClick={() => setShowNewCompito(true)}
-                  style={{ position: "fixed", bottom: 90, right: 20, width: 56, height: 56, borderRadius: 16,
-                    background: T.acc || "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 6px 0 0 " + (T.accDk || "#156060") + ", 0 8px 20px rgba(0,0,0,.15)", cursor: "pointer", zIndex: 50 }}>
-                  <I d={ICO.plus} s={24} c="#fff" sw={3} />
+              {/* NAV BAR */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px" }}>
+                <div onClick={() => calViewLocal === "giorno" ? navigateDay(-1) : calViewLocal === "settimana" ? navigateWeek(-1) : navigateMonth(-1)}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: T.card, border: "1.5px solid " + T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <I d={ICO.chevronLeft} s={16} c={T.text} />
                 </div>
-
-                {/* Scaduti alert */}
-                {compitiScaduti.length > 0 && (
-                  <div style={{ padding: "10px 14px", borderRadius: 12, background: "#FFE4E4", border: "1.5px solid #DC444430", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
-                    <I d={ICO.alert} s={16} c="#DC4444" />
-                    <span style={{ fontSize: 12, fontWeight: 800, color: "#DC4444" }}>{compitiScaduti.length} compiti scaduti</span>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: T.text }}>
+                    {calViewLocal === "giorno" && calDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+                    {calViewLocal === "settimana" && (weekDays[0].toLocaleDateString("it-IT", {day:"numeric",month:"short"}) + " - " + weekDays[6].toLocaleDateString("it-IT", {day:"numeric",month:"short",year:"numeric"}))}
+                    {calViewLocal === "mese" && calDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}
                   </div>
-                )}
-
-                {/* Group by person */}
-                {team.map(m => {
-                  const mc = compitiPersona(m.nome);
-                  if (mc.length === 0) return null;
-                  const daFare = mc.filter(c => c.stato === "da_fare").length;
-                  const inCorso = mc.filter(c => c.stato === "in_corso").length;
-                  return (
-                    <div key={m.id} style={{ marginBottom: 12 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 800 }}>
-                          {(m.nome || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase()}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{m.nome}</span>
-                          <span style={{ fontSize: 10, color: T.sub, marginLeft: 6 }}>{m.ruolo}</span>
-                        </div>
-                        {daFare > 0 && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: T.orange + "18", color: T.orange }}>{daFare} da fare</span>}
-                        {inCorso > 0 && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: T.blue + "18", color: T.blue }}>{inCorso} in corso</span>}
-                      </div>
-                      {mc.filter(c => c.stato !== "completato").map(c => (
-                        <div key={c.id} style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "10px 14px",
-                          marginBottom: 4, marginLeft: 36, boxShadow: "0 2px 0 0 " + T.bdr,
-                          borderLeft: "4px solid " + (c.color || T.acc) }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                            <I d={ICO[statoIco[c.stato]] || ICO.clock} s={12} c={statoColors[c.stato]} />
-                            <span style={{ fontSize: 12, fontWeight: 800, color: T.text, flex: 1 }}>{c.descrizione}</span>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: statoColors[c.stato] + "15", color: statoColors[c.stato] }}>{statoLabels[c.stato]}</span>
-                            {c.scadenza && <span style={{ fontSize: 9, color: c.scadenza < today && c.stato !== "completato" ? T.red : T.sub }}><I d={ICO.calendar} s={9} c={T.sub} /> {new Date(c.scadenza + "T12:00:00").toLocaleDateString("it-IT", {day:"2-digit",month:"short"})}</span>}
-                            {c.commessa && <span onClick={() => { setSelectedCM(c.commessa); setTab("commesse"); }} style={{ fontSize: 9, color: T.acc, fontWeight: 700, cursor: "pointer" }}>{c.commessa.code}</span>}
-                          </div>
-                          {c.notes && <div style={{ fontSize: 10, color: T.sub, marginTop: 4, fontStyle: "italic" }}>{c.notes}</div>}
-                          {/* Quick status change */}
-                          <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                            {(["da_fare","in_corso","completato","bloccato"] as const).map(s => (
-                              <button key={s} onClick={() => {
-                                if (c.commessaId && c.tipo !== "task") {
-                                  const faseId = c.tipo;
-                                  setCantieri(cs => cs.map(cm => cm.id === c.commessaId ? {...cm, assegnazioni: {...(cm.assegnazioni||{}), [faseId]: {...((cm.assegnazioni||{})[faseId]||{}), stato: s}}} : cm));
-                                  if (selectedCM?.id === c.commessaId) setSelectedCM((prev: any) => ({...prev, assegnazioni: {...(prev?.assegnazioni||{}), [faseId]: {...((prev?.assegnazioni||{})[faseId]||{}), stato: s}}}));
-                                }
-                              }} style={{ flex: 1, padding: "5px 2px", borderRadius: 6, border: c.stato === s ? "none" : "1px solid " + T.bdr,
-                                background: c.stato === s ? statoColors[s] : "transparent",
-                                color: c.stato === s ? "#fff" : T.sub,
-                                fontSize: 9, fontWeight: 800, cursor: "pointer", fontFamily: FF }}>{statoLabels[s]}</button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-
-                {/* Unassigned members */}
-                {team.filter(m => compitiPersona(m.nome).length === 0).length > 0 && (
-                  <div style={{ marginTop: 16 }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, marginBottom: 8, textTransform: "uppercase" }}>Senza compiti assegnati</div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {team.filter(m => compitiPersona(m.nome).length === 0).map(m => (
-                        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr }}>
-                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 800 }}>
-                            {(m.nome || "?")[0].toUpperCase()}
-                          </div>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{m.nome}</span>
-                          <span style={{ fontSize: 9, color: T.sub }}>{m.ruolo}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {tuttiCompiti.filter(c => c.stato !== "completato").length === 0 && (
-                  <div style={{ textAlign: "center", padding: "40px 20px", color: T.sub }}>
-                    <I d={ICO.checkCircle} s={40} c={T.bdr} />
-                    <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginTop: 12 }}>Tutto fatto!</div>
-                    <div style={{ fontSize: 12, marginTop: 4 }}>Nessun compito attivo. Assegna compiti dalle commesse.</div>
-                  </div>
-                )}
-
-                {/* NEW COMPITO MODAL */}
-                {showNewCompito && (
-                  <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
-                    onClick={() => setShowNewCompito(false)}>
-                    <div onClick={e => e.stopPropagation()}
-                      style={{ background: T.card, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px", maxHeight: "85vh", overflow: "auto" }}>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: T.text, marginBottom: 16 }}>Nuovo compito</div>
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Assegna a</div>
-                        <select value={newCompito.persona} onChange={e => setNewCompito(p => ({...p, persona: e.target.value}))}
-                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 14, fontFamily: FF, color: T.text }}>
-                          <option value="">— Seleziona —</option>
-                          {team.map(m => <option key={m.id} value={m.nome}>{m.nome} ({m.ruolo})</option>)}
-                        </select>
-                      </div>
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Tipo</div>
-                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                          {["Sopralluogo","Misure","Preventivo","Montaggio","Collaudo","Consegna","Acquisti","Ufficio","Pulizia","Manutenzione","Altro"].map(tipo => (
-                            <button key={tipo} onClick={() => setNewCompito(p => ({...p, tipo}))}
-                              style={{ padding: "6px 10px", borderRadius: 8, border: newCompito.tipo === tipo ? "none" : "1px solid " + T.bdr,
-                                background: newCompito.tipo === tipo ? (T.acc || "#28A0A0") : "transparent",
-                                color: newCompito.tipo === tipo ? "#fff" : T.text,
-                                fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{tipo}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Descrizione</div>
-                        <input value={newCompito.descrizione} onChange={e => setNewCompito(p => ({...p, descrizione: e.target.value}))}
-                          placeholder="es. Pulire ufficio, Portare materiale a cantiere..."
-                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
-                      </div>
-                      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Data</div>
-                          <input type="date" value={newCompito.data} onChange={e => setNewCompito(p => ({...p, data: e.target.value}))}
-                            style={{ width: "100%", padding: "12px 10px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }} />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Ora</div>
-                          <input type="time" value={newCompito.ora} onChange={e => setNewCompito(p => ({...p, ora: e.target.value}))}
-                            style={{ width: "100%", padding: "12px 10px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }} />
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Priorita</div>
-                        <div style={{ display: "flex", gap: 6 }}>
-                          {[{id:"bassa",c:T.grn},{id:"normale",c:T.orange},{id:"urgente",c:T.red}].map(pr => (
-                            <button key={pr.id} onClick={() => setNewCompito(p => ({...p, priorita: pr.id}))}
-                              style={{ flex: 1, padding: "10px", borderRadius: 10, border: newCompito.priorita === pr.id ? "none" : "1px solid " + T.bdr,
-                                background: newCompito.priorita === pr.id ? pr.c : "transparent",
-                                color: newCompito.priorita === pr.id ? "#fff" : T.text,
-                                fontSize: 12, fontWeight: 800, cursor: "pointer", textTransform: "capitalize",
-                                boxShadow: newCompito.priorita === pr.id ? "0 3px 0 0 " + pr.c + "80" : "none" }}>{pr.id}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Commessa collegata (opzionale)</div>
-                        <select value={newCompito.commessaId} onChange={e => setNewCompito(p => ({...p, commessaId: e.target.value}))}
-                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }}>
-                          <option value="">— Nessuna —</option>
-                          {cantieri.map(cm => <option key={cm.id} value={cm.id}>{cm.code} — {cm.cliente}</option>)}
-                        </select>
-                      </div>
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Note</div>
-                        <input value={newCompito.note} onChange={e => setNewCompito(p => ({...p, note: e.target.value}))}
-                          placeholder="Istruzioni aggiuntive..."
-                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text, outline: "none" }} />
-                      </div>
-                      <button onClick={() => {
-                        if (!newCompito.persona || !newCompito.descrizione) return;
-                        const t = { id: "t" + Date.now(), text: newCompito.descrizione, persona: newCompito.persona, date: newCompito.data, time: newCompito.ora, priority: newCompito.priorita, cm: newCompito.commessaId, meta: newCompito.note, done: false, tipo: newCompito.tipo };
-                        setTasks(prev => [...prev, t]);
-                        setShowNewCompito(false);
-                        setNewCompito({ persona: "", tipo: "", descrizione: "", data: new Date().toISOString().split("T")[0], ora: "09:00", scadenza: "", priorita: "normale", note: "", commessaId: "" });
-                      }} style={{ width: "100%", padding: "16px", borderRadius: 14, border: "none", background: T.acc || "#28A0A0", color: "#fff",
-                        fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF,
-                        boxShadow: "0 6px 0 0 " + (T.accDk || "#156060") }}>
-                        Assegna compito
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>)}
-
-              {/* ═══ CALENDARIO TAB ═══ */}
-              {teamView === "calendario" && (<>
-                {/* Week navigation */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <div onClick={() => setTeamWeek(w => w - 1)} style={{ width: 36, height: 36, borderRadius: 10, background: T.card, border: "1.5px solid " + T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <I d={ICO.chevronLeft} s={16} c={T.text} />
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>
-                    {weekDays[0].toLocaleDateString("it-IT", {day:"numeric",month:"short"})} — {weekDays[6].toLocaleDateString("it-IT", {day:"numeric",month:"short",year:"numeric"})}
-                  </div>
-                  <div onClick={() => setTeamWeek(w => w + 1)} style={{ width: 36, height: 36, borderRadius: 10, background: T.card, border: "1.5px solid " + T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <I d={ICO.chevronRight} s={16} c={T.text} />
-                  </div>
+                  {!isToday(calDate) && <div onClick={goToday} style={{ fontSize: 10, color: T.acc, fontWeight: 800, cursor: "pointer", marginTop: 2 }}>Torna a oggi</div>}
                 </div>
-                {teamWeek !== 0 && <div onClick={() => setTeamWeek(0)} style={{ textAlign: "center", fontSize: 11, color: T.acc, fontWeight: 700, marginBottom: 8, cursor: "pointer" }}>Torna a questa settimana</div>}
-
-                {/* Calendar grid - rows = team members, cols = days */}
-                <div style={{ overflowX: "auto" }}>
-                  <div style={{ minWidth: 600 }}>
-                    {/* Day headers */}
-                    <div style={{ display: "flex", borderBottom: "1.5px solid " + T.bdr, paddingBottom: 6, marginBottom: 4 }}>
-                      <div style={{ width: 100, flexShrink: 0 }} />
-                      {weekDays.map((d, i) => {
-                        const isToday = d.toISOString().split("T")[0] === today;
-                        const isSun = d.getDay() === 0;
-                        return (
-                          <div key={i} style={{ flex: 1, textAlign: "center", padding: "4px 2px" }}>
-                            <div style={{ fontSize: 9, fontWeight: 700, color: isSun ? T.red : T.sub }}>{["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][d.getDay()]}</div>
-                            <div style={{ fontSize: 14, fontWeight: isToday ? 900 : 600, color: isToday ? "#fff" : T.text,
-                              background: isToday ? (T.acc || "#28A0A0") : "transparent", borderRadius: "50%", width: 28, height: 28,
-                              display: "flex", alignItems: "center", justifyContent: "center", margin: "2px auto" }}>{d.getDate()}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Member rows */}
-                    {team.map(m => (
-                      <div key={m.id} style={{ display: "flex", borderBottom: "1px solid " + T.bdr + "60", minHeight: 48 }}>
-                        <div style={{ width: 100, flexShrink: 0, display: "flex", alignItems: "center", gap: 4, padding: "4px 0" }}>
-                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 8, fontWeight: 800, flexShrink: 0 }}>
-                            {(m.nome || "?")[0].toUpperCase()}
-                          </div>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.nome.split(" ")[0]}</div>
-                        </div>
-                        {weekDays.map((d, i) => {
-                          const dayStr = d.toISOString().split("T")[0];
-                          const dayCompiti = compitiPersona(m.nome).filter(c => c.data === dayStr || c.scadenza === dayStr);
-                          const isSun = d.getDay() === 0;
-                          return (
-                            <div key={i} style={{ flex: 1, padding: "3px 2px", background: isSun ? T.bdr + "30" : "transparent", minHeight: 44, display: "flex", flexDirection: "column", gap: 2 }}>
-                              {dayCompiti.map(c => (
-                                <div key={c.id} style={{ padding: "2px 4px", borderRadius: 4, background: (c.color || T.acc) + "20", borderLeft: "3px solid " + (c.color || T.acc),
-                                  fontSize: 8, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {c.descrizione.substring(0, 15)}
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
+                <div onClick={() => calViewLocal === "giorno" ? navigateDay(1) : calViewLocal === "settimana" ? navigateWeek(1) : navigateMonth(1)}
+                  style={{ width: 36, height: 36, borderRadius: 10, background: T.card, border: "1.5px solid " + T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <I d={ICO.chevronRight} s={16} c={T.text} />
                 </div>
-              </>)}
+              </div>
 
-              {/* ═══ PERSONE TAB ═══ */}
-              {teamView === "persone" && (<>
-                {team.map(m => {
-                  const mc = compitiPersona(m.nome);
-                  const fatti = mc.filter(c => c.stato === "completato").length;
-                  const attivi = mc.filter(c => c.stato !== "completato").length;
-                  return (
-                    <div key={m.id} style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "14px 16px",
-                      marginBottom: 8, boxShadow: "0 3px 0 0 " + T.bdr }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 14, background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 900 }}>
-                          {(m.nome || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase()}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>{m.nome}</div>
-                          <div style={{ fontSize: 11, color: T.sub }}>{m.ruolo}</div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: 18, fontWeight: 900, color: attivi > 0 ? T.acc : T.grn }}>{attivi}</div>
-                          <div style={{ fontSize: 9, color: T.sub }}>attivi</div>
-                        </div>
-                      </div>
-                      {/* Progress bar */}
-                      <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-                        {mc.length > 0 ? (["completato","in_corso","da_fare","bloccato"] as const).map(s => {
-                          const count = mc.filter(c => c.stato === s).length;
-                          if (count === 0) return null;
-                          return <div key={s} style={{ flex: count, height: 6, borderRadius: 3, background: statoColors[s] }} />;
-                        }) : <div style={{ flex: 1, height: 6, borderRadius: 3, background: T.bdr }} />}
-                      </div>
-                      <div style={{ display: "flex", gap: 8, fontSize: 10, color: T.sub }}>
-                        <span><b style={{color:T.grn}}>{fatti}</b> fatti</span>
-                        <span><b style={{color:T.blue}}>{mc.filter(c=>c.stato==="in_corso").length}</b> in corso</span>
-                        <span><b style={{color:T.orange}}>{mc.filter(c=>c.stato==="da_fare").length}</b> da fare</span>
-                        {mc.filter(c=>c.stato==="bloccato").length > 0 && <span><b style={{color:T.red}}>{mc.filter(c=>c.stato==="bloccato").length}</b> bloccati</span>}
-                      </div>
-                      {m.telefono && (
-                        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                          <div onClick={() => window.location.href = "tel:" + m.telefono} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.grn + "12", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: T.grn }}><I d={ICO.phone} s={11} c={T.grn} /> Chiama</div>
-                          <div onClick={() => window.open("https://wa.me/" + (m.telefono||"").replace(/\D/g,""))} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#25d36612", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#25d366" }}><I d={ICO.messageCircle} s={11} c="#25d366" /> WhatsApp</div>
-                        </div>
-                      )}
+              <div style={{ padding: "0 16px" }}>
+
+              {/* VISTA GIORNO */}
+              {calViewLocal === "giorno" && (() => {
+                const dayItems = filterItems(itemsForDay(selectedDayStr));
+                const hours = Array.from({length: 14}, (_, i) => i + 7);
+                const itemsByHour: Record<number, any[]> = {};
+                hours.forEach(h => { itemsByHour[h] = []; });
+                dayItems.forEach(c => {
+                  const hour = c.ora ? parseInt(c.ora.split(":")[0]) : -1;
+                  if (hour >= 7 && hour <= 20 && itemsByHour[hour]) { itemsByHour[hour].push(c); }
+                  else { if (!itemsByHour[-1]) itemsByHour[-1] = []; itemsByHour[-1].push(c); }
+                });
+                const noTimeItems = itemsByHour[-1] || [];
+                return (<>
+                  {compitiScaduti.length > 0 && isToday(calDate) && (
+                    <div style={{ background: "#DC444412", borderRadius: 10, padding: "8px 12px", marginBottom: 8, display: "flex", alignItems: "center", gap: 8, border: "1px solid #DC444425" }}>
+                      <I d={ICO.alertTriangle} s={14} c="#DC4444" />
+                      <span style={{ fontSize: 12, fontWeight: 800, color: "#DC4444" }}>{compitiScaduti.length} scaduti</span>
+                      <span style={{ fontSize: 10, color: T.sub, marginLeft: "auto" }}>da risolvere</span>
                     </div>
-                  );
-                })}
-              </>)}
-
-              {/* ═══ REPORT TAB ═══ */}
-              {teamView === "report" && (<>
-                <div style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "16px", marginBottom: 12, boxShadow: "0 3px 0 0 " + T.bdr }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Riepilogo compiti</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {[
-                      { label: "Totale compiti", val: tuttiCompiti.length, color: T.text },
-                      { label: "Completati", val: tuttiCompiti.filter(c=>c.stato==="completato").length, color: T.grn },
-                      { label: "In corso", val: tuttiCompiti.filter(c=>c.stato==="in_corso").length, color: T.blue },
-                      { label: "Da fare", val: tuttiCompiti.filter(c=>c.stato==="da_fare").length, color: T.orange },
-                      { label: "Bloccati", val: tuttiCompiti.filter(c=>c.stato==="bloccato").length, color: T.red },
-                      { label: "Scaduti", val: compitiScaduti.length, color: T.red },
-                    ].map(s => (
-                      <div key={s.label} style={{ padding: "12px 10px", borderRadius: 10, background: s.color + "08", border: "1px solid " + s.color + "20", textAlign: "center" }}>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.val}</div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.sub }}>{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Productivity per person */}
-                <div style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "16px", boxShadow: "0 3px 0 0 " + T.bdr }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Produttivita per persona</div>
-                  {team.map(m => {
-                    const mc = compitiPersona(m.nome);
-                    const fatti = mc.filter(c => c.stato === "completato").length;
-                    const tot = mc.length;
-                    const perc = tot > 0 ? Math.round(fatti / tot * 100) : 0;
+                  )}
+                  {noTimeItems.length > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: T.sub, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>Senza orario</div>
+                      {noTimeItems.map(c => renderItemCard(c))}
+                    </div>
+                  )}
+                  {hours.map(h => {
+                    const items = itemsByHour[h] || [];
+                    const isPast = isToday(calDate) && h < todayDate.getHours();
+                    const isNow = isToday(calDate) && h === todayDate.getHours();
                     return (
-                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
-                          {(m.nome||"?")[0].toUpperCase()}
+                      <div key={h} style={{ display: "flex", gap: 8, minHeight: items.length > 0 ? "auto" : 32, opacity: isPast && items.length === 0 ? 0.4 : 1 }}>
+                        <div style={{ width: 42, flexShrink: 0, textAlign: "right", paddingTop: 2 }}>
+                          <div style={{ fontSize: 11, fontWeight: isNow ? 900 : 600, color: isNow ? T.acc : T.sub, fontFamily: FM }}>{h.toString().padStart(2,"0")}:00</div>
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{m.nome}</span>
-                            <span style={{ fontSize: 11, fontWeight: 800, color: perc >= 80 ? T.grn : perc >= 50 ? T.orange : T.red }}>{perc}%</span>
-                          </div>
-                          <div style={{ height: 6, borderRadius: 3, background: T.bdr }}>
-                            <div style={{ height: 6, borderRadius: 3, background: perc >= 80 ? T.grn : perc >= 50 ? T.orange : T.red, width: perc + "%", transition: "width 0.3s" }} />
-                          </div>
-                          <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>{fatti}/{tot} completati</div>
+                        <div style={{ flex: 1, borderLeft: "2px solid " + (isNow ? T.acc : T.bdr), paddingLeft: 10, paddingBottom: 4, position: "relative" }}>
+                          {isNow && <div style={{ position: "absolute", left: -5, top: 4, width: 8, height: 8, borderRadius: "50%", background: T.acc }} />}
+                          {items.length > 0 ? items.map(c => renderItemCard(c)) : (
+                            <div onClick={() => { setNewCompito(p => ({...p, data: selectedDayStr, ora: h.toString().padStart(2,"0") + ":00"})); setShowNewCompito(true); }}
+                              style={{ height: 28, borderRadius: 6, border: "1px dashed " + T.bdr + "60", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <span style={{ fontSize: 9, color: T.bdr }}>+</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
                   })}
+                  {dayItems.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "30px 20px" }}>
+                      <div style={{ fontSize: 32, marginBottom: 8 }}>&#128203;</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>Giornata libera</div>
+                      <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Tocca un orario per aggiungere</div>
+                    </div>
+                  )}
+                </>);
+              })()}
+
+              {/* VISTA SETTIMANA */}
+              {calViewLocal === "settimana" && (<>
+                <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                  <div style={{ display: "flex", gap: 0, marginBottom: 6, minWidth: 600 }}>
+                    {weekDays.map((d, i) => {
+                      const dayStr = d.toISOString().split("T")[0];
+                      const isTd = dayStr === today;
+                      const isSun = d.getDay() === 0;
+                      const dayCount = filterItems(itemsForDay(dayStr)).length;
+                      return (
+                        <div key={i} onClick={() => { setCalDate(d); setCalViewLocal("giorno"); }}
+                          style={{ flex: 1, textAlign: "center", padding: "6px 2px", cursor: "pointer", borderRadius: 10,
+                            background: isTd ? (T.acc || "#28A0A0") + "15" : "transparent" }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: isSun ? T.red : T.sub }}>{["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][d.getDay()]}</div>
+                          <div style={{ fontSize: 16, fontWeight: isTd ? 900 : 700, color: isTd ? "#fff" : T.text,
+                            background: isTd ? (T.acc || "#28A0A0") : "transparent", borderRadius: "50%", width: 30, height: 30,
+                            display: "flex", alignItems: "center", justifyContent: "center", margin: "2px auto" }}>{d.getDate()}</div>
+                          {dayCount > 0 && <div style={{ fontSize: 8, fontWeight: 800, color: T.acc, marginTop: 1 }}>{dayCount}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {team.length > 0 && !teamFilterPerson ? (
+                    <div style={{ minWidth: 600 }}>
+                      {team.map(m => {
+                        const weekItems = weekDays.map(d => filterItems(itemsForDay(d.toISOString().split("T")[0])).filter(c => c.persona === m.nome));
+                        const hasAny = weekItems.some(items => items.length > 0);
+                        if (!hasAny) return null;
+                        return (
+                          <div key={m.id} style={{ display: "flex", borderBottom: "1px solid " + T.bdr + "50", minHeight: 44 }}>
+                            <div style={{ width: 72, flexShrink: 0, display: "flex", alignItems: "flex-start", gap: 3, padding: "6px 0" }}>
+                              <div style={{ width: 20, height: 20, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 8, fontWeight: 800, flexShrink: 0 }}>
+                                {(m.nome||"?")[0]}
+                              </div>
+                              <div style={{ fontSize: 9, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.nome.split(" ")[0]}</div>
+                            </div>
+                            {weekDays.map((d, i) => {
+                              const dayStr = d.toISOString().split("T")[0];
+                              const items = filterItems(itemsForDay(dayStr)).filter(c => c.persona === m.nome);
+                              const isSun = d.getDay() === 0;
+                              return (
+                                <div key={i} onClick={() => { setCalDate(d); setCalViewLocal("giorno"); }}
+                                  style={{ flex: 1, padding: "3px 2px", background: isSun ? T.bdr + "20" : "transparent", minHeight: 40, cursor: "pointer", display: "flex", flexDirection: "column", gap: 2 }}>
+                                  {items.slice(0, 3).map(c => (
+                                    <div key={c.id} style={{ padding: "2px 3px", borderRadius: 4, background: (c.color || T.acc) + "20", borderLeft: "2px solid " + (c.color || T.acc),
+                                      fontSize: 7, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {c.ora ? c.ora.substring(0,5) + " " : ""}{c.descrizione.substring(0, 12)}
+                                    </div>
+                                  ))}
+                                  {items.length > 3 && <div style={{ fontSize: 7, fontWeight: 800, color: T.acc, textAlign: "center" }}>+{items.length - 3}</div>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    weekDays.map(d => {
+                      const dayStr = d.toISOString().split("T")[0];
+                      const items = filterItems(itemsForDay(dayStr));
+                      if (items.length === 0) return null;
+                      return (
+                        <div key={dayStr} style={{ marginBottom: 8 }}>
+                          <div onClick={() => { setCalDate(d); setCalViewLocal("giorno"); }}
+                            style={{ fontSize: 11, fontWeight: 800, color: isToday(d) ? T.acc : T.text, marginBottom: 4, cursor: "pointer" }}>
+                            {d.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })}
+                            {isToday(d) && <span style={{ color: T.acc, marginLeft: 6, fontSize: 9 }}>OGGI</span>}
+                          </div>
+                          {items.map(c => renderItemCard(c, true))}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </>)}
 
+              {/* VISTA MESE */}
+              {calViewLocal === "mese" && (<>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0 }}>
+                  {["L","M","M","G","V","S","D"].map((d, i) => (
+                    <div key={i} style={{ textAlign: "center", padding: "4px 0", fontSize: 10, fontWeight: 700, color: i === 6 ? T.red : T.sub }}>{d}</div>
+                  ))}
+                  {monthDays.map((d, i) => {
+                    const dayStr = d.toISOString().split("T")[0];
+                    const isThisMonth = d.getMonth() === calMonth;
+                    const isTd = dayStr === today;
+                    const dayItems2 = filterItems(itemsForDay(dayStr));
+                    const hasScaduti = dayItems2.some(c => c.scadenza && c.scadenza < today && c.stato !== "completato");
+                    return (
+                      <div key={i} onClick={() => { setCalDate(d); setCalViewLocal("giorno"); }}
+                        style={{ padding: "4px 2px", minHeight: 44, cursor: "pointer", borderRadius: 6,
+                          background: isTd ? (T.acc || "#28A0A0") + "12" : "transparent",
+                          opacity: isThisMonth ? 1 : 0.3, position: "relative" }}>
+                        <div style={{ fontSize: 12, fontWeight: isTd ? 900 : 600, textAlign: "center",
+                          color: isTd ? "#fff" : T.text,
+                          background: isTd ? (T.acc || "#28A0A0") : "transparent",
+                          borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
+                          {d.getDate()}
+                        </div>
+                        {dayItems2.length > 0 && (
+                          <div style={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 2, flexWrap: "wrap" }}>
+                            {dayItems2.slice(0, 4).map((c, j) => (
+                              <div key={j} style={{ width: 5, height: 5, borderRadius: "50%", background: c.color || T.acc }} />
+                            ))}
+                            {dayItems2.length > 4 && <div style={{ fontSize: 7, fontWeight: 800, color: T.sub }}>+{dayItems2.length - 4}</div>}
+                          </div>
+                        )}
+                        {hasScaduti && <div style={{ position: "absolute", top: 2, right: 2, width: 6, height: 6, borderRadius: "50%", background: T.red }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+                {(() => {
+                  const selItems = filterItems(itemsForDay(selectedDayStr));
+                  return selItems.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 6 }}>
+                        {calDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+                        <span style={{ fontSize: 10, color: T.sub, marginLeft: 6 }}>{selItems.length} elementi</span>
+                      </div>
+                      {selItems.map(c => renderItemCard(c))}
+                    </div>
+                  );
+                })()}
+              </>)}
+
               </div>
+
+              {/* QUICK ACTIONS BAR */}
+              <div style={{ position: "fixed", bottom: 70, left: 0, right: 0, zIndex: 50, padding: "0 12px" }}>
+                <div style={{ display: "flex", gap: 6, background: "#0D1F1F", borderRadius: 16, padding: "8px 10px", boxShadow: "0 -4px 20px rgba(0,0,0,.15)" }}>
+                  <div onClick={() => { setNewCompito(p => ({...p, data: selectedDayStr})); setShowNewCompito(true); }}
+                    style={{ flex: 1, padding: "10px 4px", borderRadius: 12, background: T.acc || "#28A0A0", textAlign: "center", cursor: "pointer",
+                      boxShadow: "0 3px 0 0 " + (T.accDk || "#156060") }}>
+                    <I d={ICO.plus} s={14} c="#fff" sw={2.5} />
+                    <div style={{ fontSize: 9, fontWeight: 800, color: "#fff", marginTop: 1 }}>Compito</div>
+                  </div>
+                  <div onClick={() => { setNewEvent({...newEvent, date: selectedDayStr}); setShowNewEvent(true); }}
+                    style={{ flex: 1, padding: "10px 4px", borderRadius: 12, background: "rgba(255,255,255,.08)", textAlign: "center", cursor: "pointer" }}>
+                    <I d={ICO.calendar} s={14} c={T.acc} />
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.6)", marginTop: 1 }}>Evento</div>
+                  </div>
+                  <div onClick={() => setShowModal("commessa")}
+                    style={{ flex: 1, padding: "10px 4px", borderRadius: 12, background: "rgba(255,255,255,.08)", textAlign: "center", cursor: "pointer" }}>
+                    <I d={ICO.folder} s={14} c={T.orange || "#E8A020"} />
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.6)", marginTop: 1 }}>Commessa</div>
+                  </div>
+                  <div onClick={() => setShowModal("contatto")}
+                    style={{ flex: 1, padding: "10px 4px", borderRadius: 12, background: "rgba(255,255,255,.08)", textAlign: "center", cursor: "pointer" }}>
+                    <I d={ICO.userPlus} s={14} c={T.blue || "#3B7FE0"} />
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.6)", marginTop: 1 }}>Cliente</div>
+                  </div>
+                  <div onClick={() => setShowVoice(true)}
+                    style={{ flex: 1, padding: "10px 4px", borderRadius: 12, background: "rgba(255,255,255,.08)", textAlign: "center", cursor: "pointer" }}>
+                    <I d={ICO.mic} s={14} c="#DC4444" />
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.6)", marginTop: 1 }}>Voce</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* NEW COMPITO MODAL */}
+              {showNewCompito && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+                  onClick={() => setShowNewCompito(false)}>
+                  <div onClick={e => e.stopPropagation()}
+                    style={{ background: T.card, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px", maxHeight: "85vh", overflow: "auto" }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: T.text, marginBottom: 16 }}>Nuovo compito</div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Assegna a</div>
+                      <select value={newCompito.persona} onChange={e => setNewCompito(p => ({...p, persona: e.target.value}))}
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 14, fontFamily: FF, color: T.text }}>
+                        <option value="">-- Seleziona --</option>
+                        {team.map(m => <option key={m.id} value={m.nome}>{m.nome} ({m.ruolo})</option>)}
+                      </select>
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Tipo</div>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        {["Sopralluogo","Misure","Preventivo","Montaggio","Collaudo","Consegna","Acquisti","Ufficio","Pulizia","Manutenzione","Altro"].map(tipo => (
+                          <button key={tipo} onClick={() => setNewCompito(p => ({...p, tipo}))}
+                            style={{ padding: "6px 10px", borderRadius: 8, border: newCompito.tipo === tipo ? "none" : "1px solid " + T.bdr,
+                              background: newCompito.tipo === tipo ? (T.acc || "#28A0A0") : "transparent",
+                              color: newCompito.tipo === tipo ? "#fff" : T.text,
+                              fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{tipo}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Descrizione</div>
+                      <input value={newCompito.descrizione} onChange={e => setNewCompito(p => ({...p, descrizione: e.target.value}))}
+                        placeholder="es. Pulire ufficio, Portare materiale..."
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Data</div>
+                        <input type="date" value={newCompito.data} onChange={e => setNewCompito(p => ({...p, data: e.target.value}))}
+                          style={{ width: "100%", padding: "12px 10px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Ora</div>
+                        <input type="time" value={newCompito.ora} onChange={e => setNewCompito(p => ({...p, ora: e.target.value}))}
+                          style={{ width: "100%", padding: "12px 10px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }} />
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Priorita</div>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        {[{id:"bassa",c:T.grn},{id:"normale",c:T.orange},{id:"urgente",c:T.red}].map(pr => (
+                          <button key={pr.id} onClick={() => setNewCompito(p => ({...p, priorita: pr.id}))}
+                            style={{ flex: 1, padding: "10px", borderRadius: 10, border: newCompito.priorita === pr.id ? "none" : "1px solid " + T.bdr,
+                              background: newCompito.priorita === pr.id ? pr.c : "transparent",
+                              color: newCompito.priorita === pr.id ? "#fff" : T.text,
+                              fontSize: 12, fontWeight: 800, cursor: "pointer", textTransform: "capitalize",
+                              boxShadow: newCompito.priorita === pr.id ? "0 3px 0 0 " + pr.c + "80" : "none" }}>{pr.id}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Commessa collegata</div>
+                      <select value={newCompito.commessaId} onChange={e => setNewCompito(p => ({...p, commessaId: e.target.value}))}
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }}>
+                        <option value="">-- Nessuna --</option>
+                        {cantieri.map(cm => <option key={cm.id} value={cm.id}>{cm.code} - {cm.cliente}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Note</div>
+                      <input value={newCompito.note} onChange={e => setNewCompito(p => ({...p, note: e.target.value}))}
+                        placeholder="Istruzioni aggiuntive..."
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text, outline: "none" }} />
+                    </div>
+                    <button onClick={() => {
+                      if (!newCompito.persona || !newCompito.descrizione) return;
+                      const t = { id: "t" + Date.now(), text: newCompito.descrizione, persona: newCompito.persona, date: newCompito.data, time: newCompito.ora, priority: newCompito.priorita, cm: newCompito.commessaId, meta: newCompito.note, done: false, tipo: newCompito.tipo };
+                      setTasks(prev => [...prev, t]);
+                      setShowNewCompito(false);
+                      setNewCompito({ persona: "", tipo: "", descrizione: "", data: new Date().toISOString().split("T")[0], ora: "09:00", scadenza: "", priorita: "normale", note: "", commessaId: "" });
+                    }} style={{ width: "100%", padding: "16px", borderRadius: 14, border: "none", background: T.acc || "#28A0A0", color: "#fff",
+                      fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF,
+                      boxShadow: "0 6px 0 0 " + (T.accDk || "#156060") }}>
+                      Assegna compito
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}</PanelErrorBoundary>}
