@@ -358,6 +358,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [teamWeek, setTeamWeek] = useState(0);
   const [showNewCompito, setShowNewCompito] = useState(false);
   const [newCompito, setNewCompito] = useState({ persona: "", tipo: "", descrizione: "", data: new Date().toISOString().split("T")[0], ora: "09:00", scadenza: "", priorita: "normale", note: "", commessaId: "" });
+  const [calViewLocal, setCalViewLocal] = useState<"giorno"|"settimana"|"mese">("giorno");
+  const [teamFilterPerson, setTeamFilterPerson] = useState("");
+  const [calDateCO, setCalDateCO] = useState(new Date());
+  const [expandedItem, setExpandedItem] = useState<string|null>(null);
   const [cmView, setCmView] = useState<"card"|"list">("card"); // vista commesse: card grande | lista compatta
   const [fasePanelOpen, setFasePanelOpen] = useState<Record<string,boolean>>({}); // accordion checklist per fase
   const [catIdx, setCatIdx] = useState(0); // categoria widget allerte dashboard
@@ -3442,10 +3446,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           const eventiOggi = eventsAsCompiti.filter(c => c.data === today);
           const compitiDomani = allItems.filter(c => { const d = new Date(); d.setDate(d.getDate()+1); return c.data === d.toISOString().split("T")[0]; });
 
-          const [calViewLocal, setCalViewLocal] = useState<"giorno"|"settimana"|"mese">("giorno");
-          const [teamFilterPerson, setTeamFilterPerson] = useState("");
-          const [calDate, setCalDate] = useState(new Date());
-          const [expandedItem, setExpandedItem] = useState<string|null>(null);
+          const [calDate, setCalDate] = [calDateCO, setCalDateCO];
 
           const getWeekDaysFrom = (d: Date) => {
             const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1);
