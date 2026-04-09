@@ -2981,31 +2981,26 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           {tab === "settings" && <PanelErrorBoundary name="Impostazioni">{renderSettings()}</PanelErrorBoundary>}
         {tab === "altro" && (() => {
           const moduli = [
-            { id:"contabilita", label:"Contabilita", desc:"Fatture e incassi", color:"#28A0A0" },
-            { id:"montaggi_cal", label:"Montaggi", desc:"Calendario installazioni", color:"#E85D24" },
-            { id:"clienti", label:"Clienti", desc:"Anagrafica e storico", color:"#7F77DD" },
-            { id:"settings", label:"Impostazioni", desc:"Azienda, team, piani", color:"#4A7070" },
+            { id:"contabilita", label:"Contabilita", ico: ICO.wallet, color:"#28A0A0" },
+            { id:"montaggi_cal", label:"Montaggi", ico: ICO.tool, color:"#E85D24" },
+            { id:"clienti", label:"Clienti", ico: ICO.users, color:"#7F77DD" },
+            { id:"settings", label:"Impostazioni", ico: ICO.settings, color:"#4A7070" },
           ];
           return (
-            <div style={{ padding:"16px 16px 100px", background:"#E8F4F4", minHeight:"100vh" }}>
-              <div style={{ fontSize:22, fontWeight:900, color:"#0D1F1F", marginBottom:6 }}>Moduli</div>
-              <div style={{ fontSize:13, color:"#4A7070", marginBottom:24 }}>Accesso rapido</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            <div style={{ padding:"20px 16px 100px", minHeight:"100vh" }}>
+              <div style={{ fontSize:20, fontWeight:900, color:"#0D1F1F", marginBottom:20 }}>Altro</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                 {moduli.map(m => (
                   <div key={m.id} onClick={() => setTab(m.id)}
-                    style={{ background:"#fff", borderRadius:14, border:"1px solid #C8E4E4",
-                      boxShadow:"0 4px 0 0 #A8CCCC", padding:"16px 18px",
-                      display:"flex", alignItems:"center", gap:14, cursor:"pointer" }}>
-                    <div style={{ width:44, height:44, borderRadius:12,
-                      background:m.color+"18", display:"flex", alignItems:"center",
-                      justifyContent:"center", color:m.color, fontWeight:900, fontSize:13, flexShrink:0 }}>
-                      {m.label.slice(0,2).toUpperCase()}
+                    style={{ background:"#fff", borderRadius:16, border:"1px solid #C8E4E4",
+                      boxShadow:"0 4px 0 0 #A8CCCC", padding:"20px 14px",
+                      display:"flex", flexDirection:"column", alignItems:"center", gap:8, cursor:"pointer", textAlign:"center" }}>
+                    <div style={{ width:48, height:48, borderRadius:14,
+                      background:m.color+"15", display:"flex", alignItems:"center",
+                      justifyContent:"center" }}>
+                      <I d={m.ico} s={22} c={m.color} />
                     </div>
-                    <div>
-                      <div style={{ fontSize:15, fontWeight:800, color:"#0D1F1F" }}>{m.label}</div>
-                      <div style={{ fontSize:12, color:"#4A7070", marginTop:2 }}>{m.desc}</div>
-                    </div>
-                    <svg style={{ marginLeft:"auto" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8BBCBC" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                    <div style={{ fontSize:13, fontWeight:800, color:"#0D1F1F" }}>{m.label}</div>
                   </div>
                 ))}
               </div>
@@ -3021,6 +3016,8 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         <style>{`
           @keyframes fabPulse { 0%,100% { box-shadow: 0 4px 20px rgba(13,124,107,0.4); } 50% { box-shadow: 0 4px 30px rgba(13,124,107,0.6); } }
           @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          body { background: #E8F4F4; background-image: linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px); background-size: 24px 24px; color: transparent; font-size: 0; }
+          body > div { font-size: initial; color: initial; }
         `}</style>
         {/* EVENT POPUP OVERLAY - Google Calendar style */}
         {selectedEvent && !selectedEvent._isTask && (tab === "agenda" || tab === "home") && (() => {
