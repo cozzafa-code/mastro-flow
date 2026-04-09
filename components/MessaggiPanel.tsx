@@ -51,6 +51,8 @@ export default function MessaggiPanel() {
       ]; } catch(e) { return []; }
     });
     const [emailCartellaAttiva, setEmailCartellaAttiva] = React.useState("inbox");
+    const [imapForm, setImapForm] = React.useState<any>(null);
+    const [imapConnecting, setImapConnecting] = React.useState(false);
     const [showNuovaCartella, setShowNuovaCartella] = React.useState(false);
     const [showRegolaModal, setShowRegolaModal] = React.useState<string|null>(null);
     const [nuovaRegola, setNuovaRegola] = React.useState("");
@@ -178,17 +180,132 @@ export default function MessaggiPanel() {
         {/* == EMAIL TAB == */}
         {msgSubTab === "email" && (<>
           {!gmailStatus.connected ? (
-            <div style={{ margin: "20px 16px", textAlign: "center" }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}><I d={ICO.mail} /></div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: L.text, marginBottom: 8 }}>Collega la tua email</div>
-              <div style={{ fontSize: 12, color: L.sub, marginBottom: 20, lineHeight: 1.6 }}>
-                Collegando Gmail, riceverai le email dei clienti e fornitori direttamente nell'Inbox di MASTRO.
-                Le email vengono automaticamente associate alle commesse.
+            <div style={{ padding: "20px 16px" }}>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, background: L.primary + "15", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                  <I d={ICO.mail} s={32} c={L.primary} />
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: L.text, marginBottom: 6 }}>Collega la tua email</div>
+                <div style={{ fontSize: 12, color: L.sub, lineHeight: 1.6 }}>
+                  Tutte le email dei clienti, fornitori e consulenti organizzate in cartelle automatiche.
+                </div>
               </div>
-              <div onClick={() => window.location.href = "/api/gmail/auth"} style={{ display: "inline-block", padding: "14px 32px", borderRadius: 12, background: "#ea4335", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
-                <span style={{ marginRight: 8 }}><I d={ICO.mail} /></span> Collega Gmail
+
+              {/* Gmail OAuth - one click */}
+              <div onClick={() => window.location.href = "/api/gmail/auth"}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", borderRadius: 16,
+                  background: L.surface, border: "1.5px solid " + L.border, marginBottom: 10, cursor: "pointer",
+                  boxShadow: SH.ambient }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: "#ea433512", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <I d={ICO.mail} s={22} c="#ea4335" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: L.text }}>Gmail / Google Workspace</div>
+                  <div style={{ fontSize: 11, color: L.sub }}>Collegamento con un click</div>
+                </div>
+                <I d={ICO.chevronRight} s={16} c={L.sub} />
               </div>
-              <div style={{ fontSize: 10, color: L.sub, marginTop: 12 }}>Supporta Gmail e Google Workspace. I dati restano sul tuo dispositivo.</div>
+
+              {/* IMAP - any email */}
+              {!imapForm ? (
+                <div onClick={() => setImapForm({ email: "", password: "", server: "", porta: "993", ssl: true })}
+                  style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", borderRadius: 16,
+                    background: L.surface, border: "1.5px solid " + L.border, marginBottom: 10, cursor: "pointer",
+                    boxShadow: SH.ambient }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: L.primary + "12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <I d={ICO.settings} s={22} c={L.primary} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: L.text }}>Altra email (PEC, Outlook, Libero...)</div>
+                    <div style={{ fontSize: 11, color: L.sub }}>Collegamento IMAP — funziona con tutti</div>
+                  </div>
+                  <I d={ICO.chevronRight} s={16} c={L.sub} />
+                </div>
+              ) : (
+                <div style={{ padding: 18, borderRadius: 16, background: L.surface, border: "1.5px solid " + L.primary + "40", boxShadow: SH.ambient }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: L.text, marginBottom: 4 }}>Configura email</div>
+                  <div style={{ fontSize: 11, color: L.sub, marginBottom: 14 }}>Inserisci i dati del tuo account. Li trovi nelle impostazioni del tuo provider email.</div>
+                  
+                  {/* Provider presets */}
+                  <div style={{ fontSize: 10, fontWeight: 700, color: L.sub, marginBottom: 6, textTransform: "uppercase" }}>Provider rapido</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+                    {[
+                      { n: "PEC Aruba", s: "imaps.pec.aruba.it", p: "993" },
+                      { n: "PEC Legalmail", s: "mail.legalmail.it", p: "993" },
+                      { n: "PEC Register", s: "imaps.pec.register.it", p: "993" },
+                      { n: "Outlook", s: "outlook.office365.com", p: "993" },
+                      { n: "Libero", s: "imapmail.libero.it", p: "993" },
+                      { n: "Aruba", s: "imaps.aruba.it", p: "993" },
+                      { n: "Yahoo", s: "imap.mail.yahoo.com", p: "993" },
+                    ].map(pr => (
+                      <div key={pr.n} onClick={() => setImapForm((prev: any) => ({...prev, server: pr.s, porta: pr.p}))}
+                        style={{ padding: "6px 10px", borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: "pointer",
+                          background: imapForm.server === pr.s ? L.primary : L.bg, color: imapForm.server === pr.s ? "#fff" : L.text,
+                          border: "1px solid " + (imapForm.server === pr.s ? L.primary : L.border) }}>{pr.n}</div>
+                    ))}
+                  </div>
+
+                  {[
+                    { key: "email", label: "Indirizzo email", placeholder: "es. mario@pec.it", type: "email" },
+                    { key: "password", label: "Password", placeholder: "Password dell'account", type: "password" },
+                    { key: "server", label: "Server IMAP", placeholder: "es. imaps.pec.aruba.it", type: "text" },
+                    { key: "porta", label: "Porta", placeholder: "993", type: "number" },
+                  ].map(f => (
+                    <div key={f.key} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: L.sub, marginBottom: 4 }}>{f.label}</div>
+                      <input type={f.type} value={(imapForm as any)[f.key] || ""} onChange={e => setImapForm((prev: any) => ({...prev, [f.key]: e.target.value}))}
+                        placeholder={f.placeholder}
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + L.border, background: L.bg, fontSize: 14, fontFamily: FF, color: L.text, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+                  ))}
+
+                  <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                    <button onClick={async () => {
+                      if (!imapForm.email || !imapForm.password || !imapForm.server) { alert("Compila tutti i campi"); return; }
+                      setImapConnecting(true);
+                      try {
+                        const res = await fetch("/api/imap/connect", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(imapForm),
+                        });
+                        const data = await res.json();
+                        if (data.connected) {
+                          setGmailStatus({ connected: true, email: imapForm.email });
+                          setGmailMessages(data.messages || []);
+                          setImapForm(null);
+                          localStorage.setItem("mastro:imapConfig", JSON.stringify({ email: imapForm.email, server: imapForm.server, porta: imapForm.porta }));
+                        } else {
+                          alert("Errore: " + (data.error || "Impossibile connettersi. Verifica i dati."));
+                        }
+                      } catch(e) {
+                        alert("Errore di connessione. Verifica i dati e riprova.");
+                      }
+                      setImapConnecting(false);
+                    }} disabled={imapConnecting}
+                      style={{ flex: 1, padding: "14px", borderRadius: 14, border: "none", background: L.primary, color: "#fff",
+                        fontSize: 14, fontWeight: 900, cursor: "pointer", boxShadow: "0 5px 0 0 #156060",
+                        opacity: imapConnecting ? 0.6 : 1 }}>
+                      {imapConnecting ? "Connessione..." : "Collega email"}
+                    </button>
+                    <button onClick={() => setImapForm(null)}
+                      style={{ padding: "14px 18px", borderRadius: 14, border: "1.5px solid " + L.border, background: L.surface,
+                        fontSize: 13, fontWeight: 700, cursor: "pointer", color: L.sub }}>Annulla</button>
+                  </div>
+                  
+                  <div style={{ fontSize: 10, color: L.sub, marginTop: 12, lineHeight: 1.5, padding: "8px 10px", background: L.bg, borderRadius: 8 }}>
+                    <I d={ICO.shield} s={12} c={L.primary} /> Le credenziali sono criptate e salvate solo sul tuo account. MASTRO non legge ne archivia le tue email — le mostra e basta.
+                  </div>
+                </div>
+              )}
+
+              {/* Help */}
+              <div style={{ marginTop: 16, padding: "12px 14px", borderRadius: 12, background: L.bg, border: "1px solid " + L.border }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: L.text, marginBottom: 6 }}>Dove trovo i dati IMAP?</div>
+                <div style={{ fontSize: 11, color: L.sub, lineHeight: 1.6 }}>
+                  Cerca "impostazioni IMAP" nel tuo provider email. I dati tipici sono: server (es. imaps.pec.aruba.it), porta (993), SSL attivo. La password e quella del tuo account email.
+                </div>
+              </div>
             </div>
           ) : gmailSelected ? (
             /* === EMAIL DETAIL VIEW === */
