@@ -548,6 +548,13 @@ export default function SettingsPanel() {
 
   // Ref per upload logo azienda
   const logoInputRef = React.useRef<HTMLInputElement>(null);
+  
+  // Team member detail states
+  const [selMembro, setSelMembro] = React.useState<any>(null);
+  const [mEditMode, setMEditMode] = React.useState(false);
+  const [mEditData, setMEditData] = React.useState<any>({});
+  const [mNota, setMNota] = React.useState("");
+  const [mTab, setMTab] = React.useState("info");
 
   // Plan from PLANS
   const plan = PLANS[activePlan] || PLANS.free || { nome: "Free", prezzo: 0, maxCommesse: 5, maxUtenti: 1, sync: false, pdf: false };
@@ -1151,21 +1158,252 @@ export default function SettingsPanel() {
         )}
 
         {/* === TEAM === */}
-        {settingsTab === "team" && (
-          <>
-            {team.map(m => (
-              <div key={m.id} style={{ ...S.card, marginBottom: 8 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{m.nome.split(" ").map(n => n[0]).join("")}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{m.nome}</div>
-                  <div style={{ fontSize: 11, color: T.sub }}>{m.ruolo} — {m.compiti}</div>
+        {settingsTab === "team" && (() => {
+          // states moved to component level
+
+          if (selMembro) {
+            const m = selMembro;
+            // Find member's work history
+            const mMontaggi = (montaggiDB || []).filter((mt: any) => mt.squadra?.some?.((s: any) => s.nome === m.nome || s.id === m.id));
+            const mCommesse = cantieri.filter((c: any) => (c.team || []).includes(m.nome) || (c.rilevatore || "") === m.nome);
+            const mEvents = (ctx.events || []).filter((e: any) => (e.persona || "").toLowerCase().includes((m.nome || "").toLowerCase()));
+            const tabs = ["info","storia","documenti","note"];
+
+            return (
+              <div>
+                {/* Header */}
+                <div style={{ background: "#0D1F1F", margin: "-16px -16px 16px -16px", padding: "20px 16px 24px", borderRadius: "0 0 20px 20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                    <div onClick={() => { setSelMembro(null); setMEditMode(false); setMTab("info"); }}
+                      style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                      <I d={ICO.arrowLeft || ICO.back} s={18} c="#fff" />
+                    </div>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: m.colore || PRI, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 900 }}>
+                      {(m.nome || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>{m.nome}</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)" }}>{m.ruolo}</div>
+                    </div>
+                  </div>
+                  {/* Quick stats */}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {[
+                      { label: "Montaggi", val: mMontaggi.length, color: "#F97316" },
+                      { label: "Commesse", val: mCommesse.length, color: PRI },
+                      { label: "Eventi", val: mEvents.length, color: "#3B7FE0" },
+                    ].map(s => (
+                      <div key={s.label} style={{ flex: 1, padding: "10px 8px", borderRadius: 12, background: "rgba(255,255,255,.06)", textAlign: "center" }}>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: s.color }}>{s.val}</div>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.4)" }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <Ico d={ICO.pen} s={14} c={T.sub} />
-              </div></div>
-            ))}
-            <div onClick={() => { setSettingsModal("membro"); setSettingsForm({ nome: "", ruolo: "Posatore", compiti: "" }); }} style={{ padding: "16px", borderRadius: 14, border: "none", background: "#28A0A0", textAlign: "center", cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 800, boxShadow: "0 4px 0 0 #156060", marginTop: 8 }}>+ Aggiungi membro al team</div>
-          </>
-        )}
+                {/* Tab bar */}
+                <div style={{ display: "flex", gap: 0, marginBottom: 16, background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, overflow: "hidden" }}>
+                  {tabs.map(t => (
+                    <div key={t} onClick={() => setMTab(t)}
+                      style={{ flex: 1, padding: "10px 6px", textAlign: "center", fontSize: 12, fontWeight: mTab === t ? 900 : 600,
+                        color: mTab === t ? PRI : T.sub, cursor: "pointer",
+                        background: mTab === t ? PRI + "10" : "transparent",
+                        textTransform: "capitalize" as any }}>{t}</div>
+                  ))}
+                </div>
+
+                {/* INFO TAB */}
+                {mTab === "info" && (
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+                      <button onClick={() => {
+                        if (mEditMode) {
+                          const updated = {...m, ...mEditData};
+                          ctx.setTeam((prev: any) => prev.map((t: any) => t.id === m.id ? updated : t));
+                          setSelMembro(updated);
+                          setMEditData({});
+                        }
+                        setMEditMode(!mEditMode);
+                      }} style={{ padding: "8px 16px", borderRadius: 10, border: "none", background: mEditMode ? PRI : PRI + "15",
+                        color: mEditMode ? "#fff" : PRI, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                        boxShadow: mEditMode ? "0 3px 0 0 #156060" : "none" }}>
+                        {mEditMode ? "Salva" : "Modifica"}
+                      </button>
+                    </div>
+                    {[
+                      { key: "nome", label: "Nome completo" },
+                      { key: "ruolo", label: "Ruolo" },
+                      { key: "compiti", label: "Mansioni" },
+                      { key: "telefono", label: "Telefono" },
+                      { key: "email", label: "Email" },
+                      { key: "cf", label: "Codice Fiscale" },
+                      { key: "dataAssunzione", label: "Data assunzione" },
+                      { key: "contratto", label: "Tipo contratto" },
+                      { key: "livello", label: "Livello/Qualifica" },
+                      { key: "stipendio", label: "Retribuzione" },
+                      { key: "scadenzaVisita", label: "Scad. visita medica" },
+                      { key: "patente", label: "Patente" },
+                    ].map(f => (
+                      <div key={f.key} style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" as any }}>{f.label}</div>
+                        {mEditMode ? (
+                          <input value={mEditData[f.key] !== undefined ? mEditData[f.key] : (m[f.key] || "")}
+                            onChange={e => setMEditData((prev: any) => ({...prev, [f.key]: e.target.value}))}
+                            style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + PRI, background: T.card, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
+                        ) : (
+                          <div style={{ padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 14, color: m[f.key] ? T.text : T.sub, minHeight: 44 }}>
+                            {m[f.key] || "—"}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {/* Color picker */}
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" as any }}>Colore</div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as any }}>
+                        {["#0D7C6B","#3B7FE0","#F97316","#EF4444","#8B5CF6","#F59E0B","#10B981","#EC4899","#6366F1","#14B8A6"].map(c => (
+                          <div key={c} onClick={() => {
+                            const updated = {...m, colore: c};
+                            ctx.setTeam((prev: any) => prev.map((t: any) => t.id === m.id ? updated : t));
+                            setSelMembro(updated);
+                          }}
+                            style={{ width: 36, height: 36, borderRadius: 10, background: c, cursor: "pointer",
+                              border: m.colore === c ? "3px solid #0D1F1F" : "2px solid transparent",
+                              boxShadow: m.colore === c ? "0 0 0 2px " + c : "none" }} />
+                        ))}
+                      </div>
+                    </div>
+                    {/* Delete */}
+                    <button onClick={() => {
+                      if (confirm("Rimuovere " + m.nome + " dal team?")) {
+                        ctx.setTeam((prev: any) => prev.filter((t: any) => t.id !== m.id));
+                        setSelMembro(null);
+                      }
+                    }} style={{ width: "100%", marginTop: 16, padding: "14px", borderRadius: 14, border: "none", background: "#FFE4E4", color: "#DC4444",
+                      fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 0 0 #F0B0B0" }}>
+                      Rimuovi dal team
+                    </button>
+                  </div>
+                )}
+
+                {/* STORIA TAB */}
+                {mTab === "storia" && (
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Lavori eseguiti</div>
+                    {mMontaggi.length === 0 && mCommesse.length === 0 && mEvents.length === 0 && (
+                      <div style={{ textAlign: "center", padding: "40px 20px", color: T.sub }}>
+                        <div style={{ fontSize: 14, fontWeight: 700 }}>Nessun lavoro registrato</div>
+                        <div style={{ fontSize: 12, marginTop: 4 }}>I montaggi e le commesse assegnate appariranno qui</div>
+                      </div>
+                    )}
+                    {mMontaggi.map((mt: any, i: number) => (
+                      <div key={i} style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "12px 14px", marginBottom: 8, boxShadow: "0 2px 0 0 " + T.bdr }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <I d={ICO.hammer} s={14} c="#F97316" />
+                          <span style={{ fontSize: 10, fontWeight: 800, color: "#F97316", textTransform: "uppercase" as any }}>Montaggio</span>
+                          <span style={{ fontSize: 10, color: T.sub, marginLeft: "auto" }}>{mt.data || ""}</span>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginTop: 4 }}>{mt.commessa || mt.titolo || "Montaggio"}</div>
+                        {mt.note && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{mt.note}</div>}
+                      </div>
+                    ))}
+                    {mCommesse.map((c: any, i: number) => (
+                      <div key={"c"+i} style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "12px 14px", marginBottom: 8, boxShadow: "0 2px 0 0 " + T.bdr }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <I d={ICO.briefcase || ICO.folder} s={14} c={PRI} />
+                          <span style={{ fontSize: 10, fontWeight: 800, color: PRI, textTransform: "uppercase" as any }}>Commessa</span>
+                          <span style={{ fontSize: 10, color: T.sub, marginLeft: "auto" }}>{c.fase || ""}</span>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginTop: 4 }}>{c.titolo || c.nome || c.code || "Commessa"}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* DOCUMENTI TAB */}
+                {mTab === "documenti" && (
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Documenti operatore</div>
+                    <div style={{ fontSize: 12, color: T.sub, marginBottom: 16 }}>Carica documenti come CI, patente, attestati sicurezza, visita medica.</div>
+                    {(m.documenti || []).map((d: any, i: number) => (
+                      <div key={i} style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "12px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                        <I d={ICO.fileText} s={16} c={PRI} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{d.nome}</div>
+                          <div style={{ fontSize: 10, color: T.sub }}>{d.tipo} {d.scadenza ? " · Scade: " + d.scadenza : ""}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {(m.documenti || []).length === 0 && <div style={{ textAlign: "center", padding: "30px", color: T.sub, fontSize: 13 }}>Nessun documento caricato</div>}
+                    <button onClick={() => {
+                      const nome = prompt("Nome documento (es. Attestato sicurezza):");
+                      if (!nome) return;
+                      const doc = { nome, tipo: "documento", data: new Date().toISOString().split("T")[0] };
+                      const updated = {...m, documenti: [...(m.documenti || []), doc]};
+                      ctx.setTeam((prev: any) => prev.map((t: any) => t.id === m.id ? updated : t));
+                      setSelMembro(updated);
+                    }} style={{ width: "100%", padding: "14px", borderRadius: 14, border: "none", background: PRI, color: "#fff",
+                      fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 0 0 #156060", marginTop: 8 }}>
+                      + Aggiungi documento
+                    </button>
+                  </div>
+                )}
+
+                {/* NOTE TAB */}
+                {mTab === "note" && (
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Appunti sull'operatore</div>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                      <input value={mNota} onChange={e => setMNota(e.target.value)} placeholder="Scrivi una nota..."
+                        style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
+                      <button onClick={() => {
+                        if (!mNota.trim()) return;
+                        const entry = { data: new Date().toISOString(), testo: mNota.trim() };
+                        const updated = {...m, note_diario: [...(m.note_diario || []), entry]};
+                        ctx.setTeam((prev: any) => prev.map((t: any) => t.id === m.id ? updated : t));
+                        setSelMembro(updated);
+                        setMNota("");
+                      }} style={{ width: 48, height: 48, borderRadius: 12, border: "none", background: PRI, display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", boxShadow: "0 4px 0 0 #156060", flexShrink: 0 }}>
+                        <I d={ICO.plus} s={20} c="#fff" sw={3} />
+                      </button>
+                    </div>
+                    {(m.note_diario || []).slice().reverse().map((d: any, i: number) => (
+                      <div key={i} style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "14px 16px", marginBottom: 8, boxShadow: "0 2px 0 0 " + T.bdr }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: T.sub }}>{d.data ? new Date(d.data).toLocaleDateString("it-IT", {day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : ""}</span>
+                          <span onClick={() => {
+                            const updated = {...m, note_diario: (m.note_diario || []).filter((_: any, idx: number) => idx !== (m.note_diario || []).length - 1 - i)};
+                            ctx.setTeam((prev: any) => prev.map((t: any) => t.id === m.id ? updated : t));
+                            setSelMembro(updated);
+                          }} style={{ fontSize: 10, color: "#DC4444", cursor: "pointer", fontWeight: 700 }}>Elimina</span>
+                        </div>
+                        <div style={{ fontSize: 13, color: T.text, lineHeight: 1.5 }}>{d.testo}</div>
+                      </div>
+                    ))}
+                    {(m.note_diario || []).length === 0 && <div style={{ textAlign: "center", padding: "30px", color: T.sub, fontSize: 13 }}>Nessuna nota. Scrivi la prima!</div>}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // === LIST VIEW ===
+          return (
+            <>
+              {team.map(m => (
+                <div key={m.id} onClick={() => setSelMembro(m)} style={{ ...S.card, marginBottom: 8, cursor: "pointer" }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{(m.nome || "?").split(" ").map((n: string) => n[0]).join("")}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{m.nome}</div>
+                    <div style={{ fontSize: 11, color: T.sub }}>{m.ruolo} — {m.compiti}</div>
+                  </div>
+                  <I d={ICO.chevronRight || ICO.back} s={16} c={T.sub} />
+                </div></div>
+              ))}
+              <div onClick={() => { setSettingsModal("membro"); setSettingsForm({ nome: "", ruolo: "Posatore", compiti: "" }); }} style={{ padding: "16px", borderRadius: 14, border: "none", background: "#28A0A0", textAlign: "center", cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 800, boxShadow: "0 4px 0 0 #156060", marginTop: 8 }}>+ Aggiungi membro al team</div>
+            </>
+          );
+        })()}
 
         {/* === SISTEMI E SOTTOSISTEMI === */}
         {settingsTab === "sistemi" && (
