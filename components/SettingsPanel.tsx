@@ -638,7 +638,7 @@ export default function SettingsPanel() {
         <div style={{ padding:"15px 16px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ fontSize:17, fontWeight:900, color:"white", letterSpacing:"-0.3px" }}>Impostazioni</div>
           <div
-            onClick={async () => { try { localStorage.clear(); const { createClient } = await import("@/lib/supabase"); await createClient().auth.signOut(); } catch(e) {} window.location.href = "/login"; }}
+            onClick={async () => { try { localStorage.clear(); const { supabase: sb } = await import("@/lib/supabase"); await sb.auth.signOut(); } catch(e) {} window.location.href = "/login"; }}
             style={{ fontSize:11, fontWeight:800, color:"#DC4444", cursor:"pointer", padding:"5px 10px", borderRadius:9, background:"rgba(220,68,68,0.12)", border:"1px solid rgba(220,68,68,0.3)" }}
           >Esci</div>
         </div>
@@ -1493,7 +1493,7 @@ export default function SettingsPanel() {
               </div>
 
               {/* Stats */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
                 {[
                   { n: sistemiDB.length, l:"Sistemi", c: PRI },
                   { n: sistemiDB.filter((s:any) => s.materiale === "PVC").length, l:"PVC", c:"#3B7FE0" },
@@ -1929,12 +1929,7 @@ export default function SettingsPanel() {
           React.useEffect(() => {
             (async () => {
               try {
-                const mod = await import("@/lib/supabase");
-                // Gestisce: export { createClient }, export default createClient, export { supabase }
-                const sb = typeof mod.createClient === "function" ? mod.createClient()
-                  : typeof mod.default === "function" ? mod.default()
-                  : mod.supabase || mod.default || null;
-                if (!sb || !sb.from) { console.warn("Supabase client non trovato in @/lib/supabase"); setLoadingColori(false); return; }
+                const { supabase: sb } = await import("@/lib/supabase");
                 const [rColori, rCat, rForn, rFasce] = await Promise.all([
                   sb.from("colori_catalogo").select("*").order("nome"),
                   sb.from("categorie_colore").select("*").order("ordine"),
@@ -1977,8 +1972,7 @@ export default function SettingsPanel() {
           const salvaColore = async () => {
             if (!newColore.nome) return;
             try {
-              const mod = await import("@/lib/supabase");
-              const sb = typeof mod.createClient === "function" ? mod.createClient() : mod.supabase || mod.default;
+              const { supabase: sb } = await import("@/lib/supabase");
               const { data, error } = await sb.from("colori_catalogo").insert([{
                 nome: newColore.nome,
                 codice_ral: newColore.codice_ral || null,
@@ -2001,8 +1995,7 @@ export default function SettingsPanel() {
           const eliminaColore = async (id: string) => {
             if (!confirm("Eliminare questo colore?")) return;
             try {
-              const mod = await import("@/lib/supabase");
-              const sb = typeof mod.createClient === "function" ? mod.createClient() : mod.supabase || mod.default;
+              const { supabase: sb } = await import("@/lib/supabase");
               await sb.from("colori_catalogo").delete().eq("id", id);
               setColoriSupa(prev => prev.filter(c => c.id !== id));
             } catch (e) { console.error(e); }
@@ -2017,7 +2010,7 @@ export default function SettingsPanel() {
           return (
             <>
               {/* Stats */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:16 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
                 {[
                   { n: coloriSupa.length, l:"Colori totali", c: PRI },
                   { n: fornitoriSupa.length, l:"Fornitori", c:"#3B7FE0" },
@@ -2032,30 +2025,29 @@ export default function SettingsPanel() {
               </div>
 
               {/* Filtri */}
-              <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
-                {/* Cerca */}
-                <div style={{ flex:"1 1 180px", position:"relative" }}>
-                  <I d={ICO.search} s={14} c={T.sub} />
-                  <input value={cercaColore} onChange={e => setCercaColore(e.target.value)}
-                    placeholder="Cerca colore o RAL..."
-                    style={{ width:"100%", padding:"8px 10px 8px 30px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
-                </div>
-                {/* Fornitore */}
-                <select value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}
-                  style={{ padding:"8px 10px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
-                  <option value="tutti">Tutti i fornitori</option>
-                  {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
-                </select>
-                {/* Interno/Esterno */}
-                <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}` }}>
-                  {[{k:"tutti",l:"Tutti"},{k:"interno",l:"Interno"},{k:"esterno",l:"Esterno"}].map(opt => (
-                    <div key={opt.k} onClick={() => setFiltroLato(opt.k)}
-                      style={{ padding:"7px 12px", fontSize:10, fontWeight:700, cursor:"pointer",
-                        background: filtroLato === opt.k ? PRI : T.card,
-                        color: filtroLato === opt.k ? "#fff" : T.text }}>
-                      {opt.l}
-                    </div>
-                  ))}
+              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:12 }}>
+                {/* Riga 1: Cerca */}
+                <input value={cercaColore} onChange={e => setCercaColore(e.target.value)}
+                  placeholder="Cerca colore o RAL..."
+                  style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, boxSizing:"border-box" }} />
+                {/* Riga 2: Fornitore + Interno/Esterno */}
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                  <select value={filtroFornitore} onChange={e => setFiltroFornitore(e.target.value)}
+                    style={{ flex:"1 1 140px", padding:"8px 10px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
+                    <option value="tutti">Tutti i fornitori</option>
+                    {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                  </select>
+                  {/* Interno/Esterno */}
+                  <div style={{ display:"flex", gap:0, borderRadius:8, overflow:"hidden", border:`1px solid ${T.bdr}`, flexShrink:0 }}>
+                    {[{k:"tutti",l:"Tutti"},{k:"interno",l:"INT"},{k:"esterno",l:"EST"}].map(opt => (
+                      <div key={opt.k} onClick={() => setFiltroLato(opt.k)}
+                        style={{ padding:"8px 12px", fontSize:10, fontWeight:700, cursor:"pointer",
+                          background: filtroLato === opt.k ? PRI : T.card,
+                          color: filtroLato === opt.k ? "#fff" : T.text }}>
+                        {opt.l}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
