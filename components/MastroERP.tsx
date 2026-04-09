@@ -518,10 +518,11 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       // Check if user chose "clean slate" - skip demo data
       const cleanSlate = localStorage.getItem("mastro:cleanSlate");
       if (cleanSlate === "true") {
-        // NUKE: clear ALL mastro keys, force empty state, show onboarding
+        // NUKE: clear ALL mastro keys first
         Object.keys(localStorage).filter(k => k.startsWith("mastro:")).forEach(k => {
           try { localStorage.removeItem(k); } catch(e) {}
         });
+        // Force empty state
         setCantieri([]);
         setTasks([]);
         setEvents([]);
@@ -535,7 +536,20 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         setTeam([]);
         setShowOnboarding(true);
         setTutoStep(1);
+        // PERSIST empty arrays so reload doesn't bring back demo
+        localStorage.setItem("mastro:cantieri", "[]");
+        localStorage.setItem("mastro:tasks", "[]");
+        localStorage.setItem("mastro:events", "[]");
+        localStorage.setItem("mastro:fatture", "[]");
+        localStorage.setItem("mastro:ordiniForn", "[]");
+        localStorage.setItem("mastro:montaggi", "[]");
+        localStorage.setItem("mastro:msgs", "[]");
+        localStorage.setItem("mastro:contatti", "[]");
+        localStorage.setItem("mastro:problemi", "[]");
+        localStorage.setItem("mastro:team", "[]");
+        localStorage.setItem("mastro:pipeline", JSON.stringify(PIPELINE_DEFAULT));
         localStorage.setItem("mastro:demoVer", DEMO_VER);
+        localStorage.setItem("mastro:cleanSlate", "true");
         return;
       }
       const savedVer = localStorage.getItem("mastro:demoVer");
@@ -549,9 +563,9 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         // Demo data already loaded from useState defaults - skip localStorage loading
         return;
       }
-      try{const _v=localStorage.getItem("mastro:cantieri");if(_v){const p=JSON.parse(_v);if(p.length>0)setCantieri(p);}}catch(e){}
-      try{const _v=localStorage.getItem("mastro:tasks");if(_v){const p=JSON.parse(_v);if(p.length>0)setTasks(p);}}catch(e){}
-      try{const _v=localStorage.getItem("mastro:events");if(_v){const p=JSON.parse(_v);if(p.length>0)setEvents(p);}}catch(e){}
+      try{const _v=localStorage.getItem("mastro:cantieri");if(_v){const p=JSON.parse(_v);setCantieri(p);}}catch(e){}
+      try{const _v=localStorage.getItem("mastro:tasks");if(_v){const p=JSON.parse(_v);setTasks(p);}}catch(e){}
+      try{const _v=localStorage.getItem("mastro:events");if(_v){const p=JSON.parse(_v);setEvents(p);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:colori");if(_v)setColoriDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:sistemi");if(_v){
         let parsed=JSON.parse(_v);
@@ -584,10 +598,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       try{const _v=localStorage.getItem("mastro:coprifili");if(_v)setCoprifiliDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:lamiere");if(_v)setLamiereDB(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:libreria");if(_v)setLibreriaDB(JSON.parse(_v));}catch(e){}
-      try{const _v=localStorage.getItem("mastro:fatture");if(_v){const p=JSON.parse(_v);if(p.length>0)setFattureDB(p);}}catch(e){}
-      try{const _v=localStorage.getItem("mastro:ordiniForn");if(_v){const p=JSON.parse(_v);if(p.length>0)setOrdiniFornDB(p);}}catch(e){}
+      try{const _v=localStorage.getItem("mastro:fatture");if(_v){const p=JSON.parse(_v);setFattureDB(p);}}catch(e){}
+      try{const _v=localStorage.getItem("mastro:ordiniForn");if(_v){const p=JSON.parse(_v);setOrdiniFornDB(p);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:squadre");if(_v)setSquadreDB(JSON.parse(_v));}catch(e){}
-      try{const _v=localStorage.getItem("mastro:montaggi");if(_v){const p=JSON.parse(_v);if(p.length>0)setMontaggiDB(p);}}catch(e){}
+      try{const _v=localStorage.getItem("mastro:montaggi");if(_v){const p=JSON.parse(_v);setMontaggiDB(p);}}catch(e){}
       try{const _v=localStorage.getItem("mastro:settori");if(_v)setSettoriAttivi(JSON.parse(_v));else setShowOnboarding(true);}catch(e){setShowOnboarding(true);}
       try{const _v=localStorage.getItem("mastro:piano");if(_v)setPianoAttivo(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:team");if(_v)setTeam(JSON.parse(_v));}catch(e){}
