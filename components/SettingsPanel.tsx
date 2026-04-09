@@ -962,7 +962,68 @@ export default function SettingsPanel() {
                 </div>
               </div></div>
 
-              {/* Lista profili */}
+              {/* Import massivo DXF */}
+              <div style={{ ...S.card, marginBottom:14 }}><div style={S.cardInner}>
+                <div style={{ fontSize:13, fontWeight:800, color:T.text, marginBottom:4 }}>Importa multipli DXF</div>
+                <div style={{ fontSize:10, color:T.sub, marginBottom:8 }}>Seleziona pi\u00F9 file DXF — MASTRO crea un profilo per ogni file</div>
+                <div style={{ position:"relative" }}>
+                  <input type="file" accept=".dxf,.dwg" multiple
+                    style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
+                    onChange={async (ev) => {
+                      const files = ev.target.files; if (!files || files.length === 0) return;
+                      ev.target.value = "";
+                      const loadEl = document.createElement("div");
+                      loadEl.id = "bulk_load";
+                      loadEl.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;";
+                      loadEl.innerHTML = '<div style="background:#fff;padding:30px 40px;border-radius:16px;text-align:center"><div id="bulk_msg" style="font-size:14px;font-weight:800;margin-bottom:8px">Importazione...</div><div id="bulk_count" style="font-size:11px;color:#6B7280">0 / '+files.length+'</div></div>';
+                      document.body.appendChild(loadEl);
+                      const { supabase: sb } = await import("@/lib/supabase");
+                      let ok = 0, fail = 0;
+                      for (let fi = 0; fi < files.length; fi++) {
+                        const f = files[fi];
+                        const el = document.getElementById("bulk_count");
+                        if (el) el.textContent = (fi+1) + " / " + files.length + " — " + f.name;
+                        try {
+                          const text = await f.text();
+                          const fName = f.name.replace(/\.[^.]+$/, "");
+                          const dl = text.split(/\r?\n/);
+                          // EXTMIN/EXTMAX
+                          let eMinX=0,eMinY=0,eMaxX=0,eMaxY=0,lv2="";
+                          for(let i=0;i<dl.length-1;i++){const c=dl[i].trim(),v=dl[i+1]?.trim()||"";if(c==="9")lv2=v;if(lv2==="$EXTMIN"&&c==="10")eMinX=parseFloat(v);if(lv2==="$EXTMIN"&&c==="20"){eMinY=parseFloat(v);lv2="";}if(lv2==="$EXTMAX"&&c==="10")eMaxX=parseFloat(v);if(lv2==="$EXTMAX"&&c==="20"){eMaxY=parseFloat(v);lv2="";}}
+                          // Blocchi
+                          let inBk=false,bName="",cx4=0;
+                          const bkPts:Record<string,{x:number,y:number}[]>={};
+                          for(let i=0;i<dl.length-1;i++){const c=dl[i].trim(),v=dl[i+1]?.trim()||"";if(c==="0"&&v==="BLOCK"){inBk=true;bName="";}if(c==="0"&&v==="ENDBLK")inBk=false;if(c==="2"&&inBk&&bName==="")bName=v;if(inBk&&bName){if(c==="10")try{cx4=parseFloat(v)}catch(e2){}if(c==="20")try{const y4=parseFloat(v);if(!bkPts[bName])bkPts[bName]=[];bkPts[bName].push({x:cx4,y:y4})}catch(e2){}}}
+                          // Trova blocco target
+                          const fc2=fName.replace(/xx/gi,"00").replace(/[^0-9a-zA-Z]/g,"");
+                          const bns2=Object.keys(bkPts).filter(n=>!n.startsWith("*")&&(bkPts[n]?.length||0)>10);
+                          let best2="";
+                          for(const b of bns2){if(b.toLowerCase()===fc2.toLowerCase()){best2=b;break;}}
+                          if(!best2){for(const b of bns2){if(b.includes(fc2)||fc2.includes(b)){best2=b;break;}}}
+                          if(!best2&&bns2.length>0){let ba2=Infinity;for(const b of bns2){const pp=bkPts[b];const bw2=Math.max(...pp.map(q=>q.x))-Math.min(...pp.map(q=>q.x));const bh2=Math.max(...pp.map(q=>q.y))-Math.min(...pp.map(q=>q.y));if(bw2>5&&bw2<200&&bh2>5&&bh2<200&&bw2*bh2<ba2){ba2=bw2*bh2;best2=b;}}}
+                          let w4=eMaxX-eMinX,h4=eMaxY-eMinY;
+                          if(best2&&bkPts[best2]?.length>0){const bp2=bkPts[best2];w4=Math.max(...bp2.map(q=>q.x))-Math.min(...bp2.map(q=>q.x));h4=Math.max(...bp2.map(q=>q.y))-Math.min(...bp2.map(q=>q.y));}
+                          const ins = {
+                            nome: best2 || fName, codice: fName.toUpperCase(), marca: "Aluplast",
+                            materiale: "PVC", tipo: w4 > 60 ? "Anta" : h4 < 30 ? "Fermavetro" : "Telaio",
+                            utilizzo: w4 > 60 ? "anta_battente" : h4 < 30 ? "fermavetro" : "telaio_fisso",
+                            profondita_mm: Math.round(w4*10)/10, frontale: Math.round(h4*10)/10,
+                            spessore_lama: 3.5, quota_fusione: 0,
+                            attivo: true, azienda_id: aziendaInfo?.id || "demo",
+                          };
+                          const { data: row } = await sb.from("profili_catalogo").insert([ins]).select().single();
+                          if (row) { setProfiliSupa(prev => [...prev, row]); ok++; }
+                        } catch (err) { fail++; }
+                      }
+                      document.getElementById("bulk_load")?.remove();
+                      alert(ok + " profili importati" + (fail > 0 ? ", " + fail + " errori" : "") + "!\nOra entra in ogni profilo per completare battuta, aria, sede fermavetro.");
+                    }} />
+                  <div style={{ border:`1.5px dashed #D08008`, borderRadius:8, padding:"14px", textAlign:"center", background:"#D0800808", cursor:"pointer" }}>
+                    <div style={{ fontSize:11, fontWeight:700, color:"#D08008" }}>Seleziona pi\u00F9 file DXF/DWG</div>
+                    <div style={{ fontSize:9, color:T.sub, marginTop:4 }}>Estrae profondit\u00E0, frontale, codice da ogni file</div>
+                  </div>
+                </div>
+              </div></div>
               {profiliFiltrati.length === 0 ? (
                 <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>Nessun profilo inserito.</div>
               ) : (
@@ -980,7 +1041,8 @@ export default function SettingsPanel() {
                         style={{ ...S.cardInner, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
                         <div style={{ width:44, height:44, borderRadius:8, flexShrink:0, overflow:"hidden", border:`1px solid ${T.bdr}`, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
                           {p.immagine_url ? (
-                            <img src={p.immagine_url} style={{ width:"100%", height:"100%", objectFit:"contain" }} alt="" />
+                            <img src={p.immagine_url} style={{ width:"100%", height:"100%", objectFit:"contain", cursor:"pointer" }} alt=""
+                              onClick={(ev) => { ev.stopPropagation(); const m=document.createElement("div"); m.id="dxf_preview_modal"; m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;"; m.innerHTML='<div style="background:#fff;border-radius:16px;padding:20px;max-width:90vw;max-height:90vh;overflow:auto;text-align:center" onclick="event.stopPropagation()"><div style="font-size:14px;font-weight:800;margin-bottom:10px;color:#0D1F1F">'+(p.nome||"Profilo")+" — "+(p.codice||"")+'</div><img src="'+p.immagine_url+'" style="max-width:80vw;max-height:70vh;object-fit:contain"/><div style="margin-top:10px;font-size:12px;color:#666">'+(p.profondita_mm?p.profondita_mm+"mm prof. ":"")+(p.frontale?p.frontale+"mm front. ":"")+(p.peso_kg_ml?p.peso_kg_ml+" kg/ml":"")+'</div></div>'; m.onclick=()=>m.remove(); document.body.appendChild(m); }} />
                           ) : (
                             <span style={{ fontSize:9, fontWeight:900, color:matColor }}>{(p.materiale||"?").substring(0,3)}</span>
                           )}
@@ -1183,82 +1245,57 @@ export default function SettingsPanel() {
                                   <input type="file" accept=".dxf,.dwg" style={{ display:"none" }} onChange={async e => {
                                     const file = e.target.files?.[0]; if (!file) return;
                                     const text = await file.text();
+                                    const fName = file.name.replace(/\.[^.]+$/, "");
                                     try {
-                                      // Parser DXF v2 — legge EXTMIN/EXTMAX + polyline da BLOCKS
-                                      const dxfLines = text.split(/\r?\n/);
-                                      let extMinX=0,extMinY=0,extMaxX=0,extMaxY=0;
-                                      const geomPts: {x:number,y:number}[] = [];
-                                      const polys: {x:number,y:number}[][] = [];
-                                      let curPoly: {x:number,y:number}[] = [];
-                                      const txts: string[] = [];
-                                      let eType = "", cx = 0, lastVar = "";
-                                      const GEOM = new Set(["LWPOLYLINE","LINE","POLYLINE","ARC","CIRCLE"]);
-                                      for (let i = 0; i < dxfLines.length - 1; i++) {
-                                        const code = dxfLines[i].trim(), val = dxfLines[i+1]?.trim() || "";
-                                        // Header EXTMIN/EXTMAX
-                                        if (code === "9") lastVar = val;
-                                        if (lastVar === "$EXTMIN" && code === "10") extMinX = parseFloat(val);
-                                        if (lastVar === "$EXTMIN" && code === "20") { extMinY = parseFloat(val); lastVar = ""; }
-                                        if (lastVar === "$EXTMAX" && code === "10") extMaxX = parseFloat(val);
-                                        if (lastVar === "$EXTMAX" && code === "20") { extMaxY = parseFloat(val); lastVar = ""; }
-                                        // Entita
-                                        if (code === "0") {
-                                          if (eType === "LWPOLYLINE" && curPoly.length > 0) { polys.push([...curPoly]); curPoly = []; }
-                                          eType = val;
-                                        }
-                                        // Solo geometria — ignora DIMENSION, LEADER, HATCH ecc
-                                        if (!GEOM.has(eType)) {
-                                          if ((code === "1" || code === "3") && (eType === "MTEXT" || eType === "TEXT")) txts.push(val);
-                                          continue;
-                                        }
-                                        if (code === "10") cx = parseFloat(val) || 0;
-                                        if (code === "20") { const cy2 = parseFloat(val) || 0; geomPts.push({x:cx,y:cy2}); if (eType === "LWPOLYLINE") curPoly.push({x:cx,y:cy2}); }
+                                      const dl = text.split(/\r?\n/);
+                                      let eMinX=0,eMinY=0,eMaxX=0,eMaxY=0,lv="";
+                                      for(let i=0;i<dl.length-1;i++){const c=dl[i].trim(),v=dl[i+1]?.trim()||"";if(c==="9")lv=v;if(lv==="$EXTMIN"&&c==="10")eMinX=parseFloat(v);if(lv==="$EXTMIN"&&c==="20"){eMinY=parseFloat(v);lv="";}if(lv==="$EXTMAX"&&c==="10")eMaxX=parseFloat(v);if(lv==="$EXTMAX"&&c==="20"){eMaxY=parseFloat(v);lv="";}}
+                                      let inB=false,bn="",cx3=0,eT2="";
+                                      const bPolys:Record<string,{x:number,y:number}[][]>={};
+                                      const bPts:Record<string,{x:number,y:number}[]>={};
+                                      let cP2:{x:number,y:number}[]=[];
+                                      const tx2:string[]=[];
+                                      for(let i=0;i<dl.length-1;i++){
+                                        const c=dl[i].trim(),v=dl[i+1]?.trim()||"";
+                                        if(c==="0"&&v==="BLOCK"){inB=true;bn="";}
+                                        if(c==="0"&&v==="ENDBLK"){if(eT2==="LWPOLYLINE"&&cP2.length>0&&bn){if(!bPolys[bn])bPolys[bn]=[];bPolys[bn].push([...cP2]);cP2=[];}inB=false;}
+                                        if(c==="2"&&inB&&bn==="")bn=v;
+                                        if(c==="0"){if(eT2==="LWPOLYLINE"&&cP2.length>0&&bn){if(!bPolys[bn])bPolys[bn]=[];bPolys[bn].push([...cP2]);cP2=[];}eT2=v;}
+                                        if(inB&&bn){if(c==="10"){try{cx3=parseFloat(v)}catch(e2){}}if(c==="20"){try{const y3=parseFloat(v);if(!bPts[bn])bPts[bn]=[];bPts[bn].push({x:cx3,y:y3});if(eT2==="LWPOLYLINE")cP2.push({x:cx3,y:y3})}catch(e2){}}}
+                                        if((c==="1"||c==="3")&&(eT2==="MTEXT"||eT2==="TEXT"))tx2.push(v);
                                       }
-                                      if (curPoly.length > 0) polys.push(curPoly);
-                                      // Dimensioni da EXTMIN/EXTMAX (affidabile)
-                                      let w = extMaxX - extMinX, h = extMaxY - extMinY;
-                                      let mnX = extMinX, mnY = extMinY;
-                                      // Fallback a bbox geometria se header non valido
-                                      if (w <= 0 || h <= 0 || w > 10000) {
-                                        if (geomPts.length > 0) {
-                                          mnX=Infinity; let mxX2=-Infinity; mnY=Infinity; let mxY2=-Infinity;
-                                          geomPts.forEach(pt => { if(pt.x<mnX)mnX=pt.x; if(pt.x>mxX2)mxX2=pt.x; if(pt.y<mnY)mnY=pt.y; if(pt.y>mxY2)mxY2=pt.y; });
-                                          w = mxX2 - mnX; h = mxY2 - mnY;
-                                        }
-                                      }
-                                      // Camere
-                                      let camere = 0;
-                                      polys.forEach(poly => { if (poly.length >= 3) { let a=0; for(let ii=0;ii<poly.length;ii++){const jj=(ii+1)%poly.length;a+=poly[ii].x*poly[jj].y-poly[jj].x*poly[ii].y;} a=Math.abs(a/2); if(a>w*h*0.02&&a<w*h*0.4)camere++; } });
-                                      // Codice + peso dai testi
-                                      let codice = null as string|null, peso = null as number|null, sviluppo = null as number|null;
-                                      txts.forEach(t => {
-                                        const cm = t.match(/\b(CX\d{2,3}\.\d{2,3}|[A-Z]{2}\d{2,3}\.\d{2,3}|\d{2}[xX]{2}\d{2})\b/i); if(cm&&!codice) codice=cm[1];
-                                        const pm = t.match(/([\d.,]+)\s*[Kk]g/); if(pm) peso=parseFloat(pm[1].replace(",","."));
-                                        const sm = t.match(/mm\.?\s*([\d.,]+)/i); if(sm) sviluppo=parseFloat(sm[1].replace(",","."));
-                                      });
-                                      // SVG dalla geometria
-                                      const sc = Math.min(180/(w||1), 140/(h||1)), pd = 8;
-                                      const svgW = w*sc+pd*2, svgH = h*sc+pd*2;
-                                      let svgP = "";
-                                      polys.forEach(poly => { if(poly.length<2)return; svgP += '<path d="'+poly.map((pt,ii)=>(ii===0?"M":"L")+(((pt.x-mnX)*sc+pd).toFixed(1))+","+(svgH-((pt.y-mnY)*sc+pd)).toFixed(1)).join(" ")+' Z" fill="none" stroke="#2c3e50" stroke-width="0.8"/>'; });
-                                      if (!svgP) svgP = '<rect x="'+pd+'" y="'+pd+'" width="'+(w*sc).toFixed(0)+'" height="'+(h*sc).toFixed(0)+'" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="4,2"/>';
-                                      const svgStr = '<svg viewBox="0 0 '+svgW.toFixed(0)+' '+svgH.toFixed(0)+'" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#fafbfc" rx="4"/>'+svgP+'<text x="'+(svgW/2).toFixed(0)+'" y="'+(svgH-2)+'" text-anchor="middle" font-size="8" fill="#666">'+w.toFixed(0)+'x'+h.toFixed(0)+'mm</text></svg>';
-                                      // Tipo stimato
-                                      const tipo_s = w > 60 ? "Anta" : h < 25 ? "Fermavetro" : "Telaio";
-                                      // Pre-compila
-                                      const upd: any = {...p, dxf_url:"dxf_loaded"};
-                                      if(w>0 && w<1000) upd.profondita_mm = Math.round(w*10)/10;
-                                      if(h>0 && h<1000) upd.frontale = Math.round(h*10)/10;
-                                      if(codice) upd.codice = codice;
-                                      if(peso) upd.peso_kg_ml = peso;
-                                      if(sviluppo) upd.sviluppo = sviluppo;
-                                      if(camere>0) upd.camere = camere;
-                                      upd.tipo = tipo_s;
-                                      upd.immagine_url = "data:image/svg+xml;base64," + btoa(svgStr);
-                                      salvaProfilo(upd);
-                                      alert("DXF importato!\nProf: "+w.toFixed(1)+"mm x Front: "+h.toFixed(1)+"mm"+(codice?" Cod: "+codice:"")+(camere?" Camere: "+camere:"")+(polys.length?" Polyline: "+polys.length:""));
-                                    } catch(err) {
-                                      const r = new FileReader(); r.onload = ev => salvaProfilo({...p, dxf_url:ev.target?.result}); r.readAsDataURL(file);
+                                      // Trova blocco: XXxxYY -> XX00YY
+                                      const fc=fName.replace(/xx/gi,"00").replace(/[^0-9a-zA-Z]/g,"");
+                                      const bns=Object.keys(bPts).filter(n=>!n.startsWith("*")&&(bPts[n]?.length||0)>10);
+                                      let best="";
+                                      for(const b of bns){if(b.toLowerCase()===fc.toLowerCase()){best=b;break;}}
+                                      if(!best){for(const b of bns){if(b.includes(fc)||fc.includes(b)){best=b;break;}}}
+                                      if(!best){let ba=Infinity;for(const b of bns){const pp=bPts[b];if(pp.length<10)continue;const bw=Math.max(...pp.map(q=>q.x))-Math.min(...pp.map(q=>q.x));const bh=Math.max(...pp.map(q=>q.y))-Math.min(...pp.map(q=>q.y));if(bw>5&&bw<200&&bh>5&&bh<200&&bw*bh<ba){ba=bw*bh;best=b;}}}
+                                      let w3=eMaxX-eMinX,h3=eMaxY-eMinY,mx3=eMinX,my3=eMinY;
+                                      const uP=bPolys[best]||[];
+                                      if(best&&bPts[best]?.length>0){const bp=bPts[best];mx3=Math.min(...bp.map(q=>q.x));my3=Math.min(...bp.map(q=>q.y));w3=Math.max(...bp.map(q=>q.x))-mx3;h3=Math.max(...bp.map(q=>q.y))-my3;}
+                                      const s3=Math.min(220/(w3||1),180/(h3||1)),pd3=10;
+                                      const sw3=w3*s3+pd3*2,sh3=h3*s3+pd3*2;
+                                      let sp3="";
+                                      uP.forEach(poly=>{if(poly.length<2)return;sp3+='<path d="'+poly.map((pt,ii)=>(ii===0?"M":"L")+(((pt.x-mx3)*s3+pd3).toFixed(1))+","+(sh3-((pt.y-my3)*s3+pd3)).toFixed(1)).join(" ")+' Z" fill="none" stroke="#2c3e50" stroke-width="0.6"/>';});
+                                      if(!sp3)sp3='<rect x="'+pd3+'" y="'+pd3+'" width="'+(w3*s3).toFixed(0)+'" height="'+(h3*s3).toFixed(0)+'" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="4,2"/>';
+                                      const svg3='<svg viewBox="0 0 '+sw3.toFixed(0)+' '+sh3.toFixed(0)+'" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#fafbfc" rx="4"/>'+sp3+'<text x="'+(sw3/2).toFixed(0)+'" y="'+(sh3-3)+'" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">'+(best||fName)+' '+w3.toFixed(0)+'x'+h3.toFixed(0)+'mm</text></svg>';
+                                      let cod3=null as string|null,pes3=null as number|null,svi3=null as number|null;
+                                      tx2.forEach(t=>{const cm3=t.match(/\b(\d{2}[xX]{2}\d{2})\b/);if(cm3&&!cod3)cod3=cm3[1];const pm3=t.match(/([\d.,]+)\s*[Kk]g/);if(pm3)pes3=parseFloat(pm3[1].replace(",","."));const sm3=t.match(/mm\.?\s*([\d.,]+)/i);if(sm3)svi3=parseFloat(sm3[1].replace(",","."));});
+                                      let cam3=0;uP.forEach(poly=>{if(poly.length>=3){let a3=0;for(let ii=0;ii<poly.length;ii++){const jj=(ii+1)%poly.length;a3+=poly[ii].x*poly[jj].y-poly[jj].x*poly[ii].y;}a3=Math.abs(a3/2);if(a3>w3*h3*0.02&&a3<w3*h3*0.4)cam3++;}});
+                                      if(!cod3)cod3=best||fName;
+                                      const u3:any={...p,dxf_url:"dxf_loaded"};
+                                      if(w3>0&&w3<1000)u3.profondita_mm=Math.round(w3*10)/10;
+                                      if(h3>0&&h3<1000)u3.frontale=Math.round(h3*10)/10;
+                                      if(cod3)u3.codice=cod3;
+                                      if(!u3.nome||u3.nome==="Nuovo profilo")u3.nome=cod3||fName;
+                                      if(pes3)u3.peso_kg_ml=pes3;
+                                      if(svi3)u3.sviluppo=svi3;
+                                      if(cam3>0)u3.camere=cam3;
+                                      u3.tipo=w3>60?"Anta":h3<30?"Fermavetro":"Telaio";
+                                      u3.immagine_url="data:image/svg+xml;base64,"+btoa(svg3);
+                                      salvaProfilo(u3);
+                                      alert("DXF: "+(best||"auto")+"\n"+w3.toFixed(1)+"x"+h3.toFixed(1)+"mm"+(cam3?" Cam:"+cam3:"")+"\nBlocchi: "+bns.join(", "));
                                     }
                                   }} />
                                 </label>
