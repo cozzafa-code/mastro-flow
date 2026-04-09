@@ -38,6 +38,44 @@ export default function MessaggiPanel() {
     aiInbox, cantieri, contatti, fornitori, gmailLoading, gmailMessages, gmailNextPage, gmailReply, gmailSearch, gmailSelected, gmailSending, gmailStatus, msgFilter, msgSearch, msgSubTab, msgs, rubricaFilter, rubricaSearch, selectedAiMsg, setAiInbox, setComposeMsg, setContatti, setGmailMessages, setGmailReply, setGmailSearch, setGmailSelected, setGmailStatus, setMailBody, setMsgFilter, setMsgSearch, setMsgSubTab, setMsgs, setNewCM, setNewEvent, setNewTask, setRubricaFilter, setRubricaSearch, setSelectedAiMsg, setSelectedCM, setSelectedMsg, setShowCompose, setShowMailModal, setShowModal, setShowNewEvent, setTab, team, gmailFetchMessages, gmailSendReply, gmailMatchCommessa,
   } = useMastro();
 
+    // === EMAIL FOLDERS ===
+    const [emailCartelle, setEmailCartelle] = React.useState<any[]>(() => {
+      try { const v = localStorage.getItem("mastro:emailCartelle"); return v ? JSON.parse(v) : [
+        { id: "inbox", nome: "Inbox", icon: "inbox", color: "#28A0A0", regole: [], system: true },
+        { id: "clienti", nome: "Clienti", icon: "users", color: "#1A9E73", regole: [] },
+        { id: "fornitori", nome: "Fornitori", icon: "package", color: "#F97316", regole: [] },
+        { id: "commercialista", nome: "Commercialista", icon: "wallet", color: "#3B7FE0", regole: [] },
+        { id: "consulente", nome: "Consulente Lavoro", icon: "fileText", color: "#8B5CF6", regole: [] },
+        { id: "banca", nome: "Banca", icon: "creditCard", color: "#D08008", regole: [] },
+        { id: "cantieri", nome: "Cantieri", icon: "hammer", color: "#F97316", regole: [] },
+      ]; } catch(e) { return []; }
+    });
+    const [emailCartellaAttiva, setEmailCartellaAttiva] = React.useState("inbox");
+    const [showNuovaCartella, setShowNuovaCartella] = React.useState(false);
+    const [showRegolaModal, setShowRegolaModal] = React.useState<string|null>(null);
+    const [nuovaRegola, setNuovaRegola] = React.useState("");
+    React.useEffect(() => { try { localStorage.setItem("mastro:emailCartelle", JSON.stringify(emailCartelle)); } catch(e){} }, [emailCartelle]);
+
+    // Classify email into folder based on rules
+    const classificaEmail = (email: any) => {
+      const from = (email.from || "").toLowerCase();
+      for (const c of emailCartelle) {
+        if (c.id === "inbox") continue;
+        for (const r of (c.regole || [])) {
+          if (from.includes(r.toLowerCase())) return c.id;
+        }
+      }
+      return "inbox";
+    };
+    const emailFiltrate = gmailMessages.filter(m => {
+      if (emailCartellaAttiva === "inbox") return true; // inbox shows all
+      return classificaEmail(m) === emailCartellaAttiva;
+    });
+    const contaPerCartella = (cId: string) => {
+      if (cId === "inbox") return gmailMessages.length;
+      return gmailMessages.filter(m => classificaEmail(m) === cId).length;
+    };
+
     const chCol = { email: "#3b7fe0", whatsapp: "#25d366", sms: L.amber, telegram: "#0088cc" };
     const chIco = { email: <Ico d={ICO.mail} s={14} c={chCol.email} />, whatsapp: <Ico d={ICO.messageCircle} s={14} c={chCol.whatsapp} />, sms: <Ico d={ICO.phone} s={14} c={chCol.sms} />, telegram: <Ico d={ICO.send} s={14} c={chCol.telegram} /> };
     const chBg = { email: "#dbeafe", whatsapp: "#25d36618", sms: "#fff7ed", telegram: "#0088cc18" };
@@ -267,8 +305,101 @@ export default function MessaggiPanel() {
               </div>
             </div>
           ) : (
-            /* === EMAIL LIST VIEW === */
+            /* === EMAIL LIST VIEW WITH FOLDERS === */
             <div style={{ padding: "0 16px" }}>
+              {/* Folder bar */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 10, overflowX: "auto", paddingBottom: 4 }}>
+                {emailCartelle.map(c => {
+                  const count = contaPerCartella(c.id);
+                  const active = emailCartellaAttiva === c.id;
+                  return (
+                    <div key={c.id} onClick={() => setEmailCartellaAttiva(c.id)}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "8px 12px", borderRadius: 12,
+                        background: active ? c.color : L.surface, color: active ? "#fff" : L.text,
+                        border: active ? "none" : "1.5px solid " + L.border, cursor: "pointer", flexShrink: 0,
+                        boxShadow: active ? "0 3px 0 0 " + c.color + "80" : "none", whiteSpace: "nowrap" }}>
+                      <I d={ICO[c.icon] || ICO.folder} s={12} c={active ? "#fff" : c.color} />
+                      <span style={{ fontSize: 11, fontWeight: 800 }}>{c.nome}</span>
+                      {count > 0 && <span style={{ fontSize: 9, fontWeight: 900, padding: "1px 5px", borderRadius: 8,
+                        background: active ? "rgba(255,255,255,0.25)" : c.color + "20", color: active ? "#fff" : c.color }}>{count}</span>}
+                    </div>
+                  );
+                })}
+                {/* Add folder button */}
+                <div onClick={() => setShowNuovaCartella(true)}
+                  style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 12px", borderRadius: 12,
+                    border: "1.5px dashed " + L.border, cursor: "pointer", flexShrink: 0 }}>
+                  <I d={ICO.plus} s={12} c={L.sub} /><span style={{ fontSize: 11, fontWeight: 700, color: L.sub }}>Cartella</span>
+                </div>
+              </div>
+
+              {/* Folder actions bar */}
+              {emailCartellaAttiva !== "inbox" && (() => {
+                const cart = emailCartelle.find(c => c.id === emailCartellaAttiva);
+                return cart ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, padding: "8px 10px", borderRadius: 10, background: (cart.color || L.primary) + "08", border: "1px solid " + (cart.color || L.primary) + "20" }}>
+                    <I d={ICO[cart.icon] || ICO.folder} s={14} c={cart.color} />
+                    <span style={{ fontSize: 12, fontWeight: 800, color: cart.color, flex: 1 }}>{cart.nome}</span>
+                    <div onClick={() => setShowRegolaModal(cart.id)} style={{ padding: "4px 10px", borderRadius: 8, background: cart.color + "15", fontSize: 10, fontWeight: 700, color: cart.color, cursor: "pointer" }}>
+                      <I d={ICO.settings} s={10} c={cart.color} /> Regole ({(cart.regole || []).length})
+                    </div>
+                    {!cart.system && <div onClick={() => { if (confirm("Eliminare cartella " + cart.nome + "?")) { setEmailCartelle(prev => prev.filter(c => c.id !== cart.id)); setEmailCartellaAttiva("inbox"); }}}
+                      style={{ padding: "4px 8px", borderRadius: 8, background: "#FFE4E4", fontSize: 10, fontWeight: 700, color: "#DC4444", cursor: "pointer" }}>
+                      <I d={ICO.trash} s={10} c="#DC4444" />
+                    </div>}
+                  </div>
+                ) : null;
+              })()}
+
+              {/* New folder modal */}
+              {showNuovaCartella && (
+                <div style={{ padding: 14, marginBottom: 10, borderRadius: 14, background: L.surface, border: "1.5px solid " + L.border, boxShadow: SH.ambient }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: L.text, marginBottom: 10 }}>Nuova cartella</div>
+                  <input id="nc-nome" placeholder="Nome cartella (es. Assicurazione)"
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + L.border, background: L.bg, fontSize: 13, fontFamily: FF, color: L.text, outline: "none", marginBottom: 8, boxSizing: "border-box" }} />
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => {
+                      const input = document.getElementById("nc-nome") as HTMLInputElement;
+                      const nome = input?.value?.trim();
+                      if (!nome) return;
+                      setEmailCartelle(prev => [...prev, { id: "c" + Date.now(), nome, icon: "folder", color: "#" + Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,"0"), regole: [] }]);
+                      setShowNuovaCartella(false);
+                    }} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", boxShadow: "0 3px 0 0 #156060" }}>Crea</button>
+                    <button onClick={() => setShowNuovaCartella(false)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid " + L.border, background: L.surface, fontSize: 13, fontWeight: 700, cursor: "pointer", color: L.sub }}>Annulla</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Rules modal */}
+              {showRegolaModal && (() => {
+                const cart = emailCartelle.find(c => c.id === showRegolaModal);
+                if (!cart) return null;
+                return (
+                  <div style={{ padding: 14, marginBottom: 10, borderRadius: 14, background: L.surface, border: "1.5px solid " + (cart.color || L.primary), boxShadow: SH.ambient }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: L.text, marginBottom: 4 }}>Regole per "{cart.nome}"</div>
+                    <div style={{ fontSize: 11, color: L.sub, marginBottom: 10 }}>Le email da questi indirizzi vanno automaticamente in questa cartella.</div>
+                    {(cart.regole || []).map((r: string, ri: number) => (
+                      <div key={ri} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 8, background: L.bg, marginBottom: 4 }}>
+                        <I d={ICO.mail} s={12} c={cart.color} />
+                        <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: L.text }}>{r}</span>
+                        <span onClick={() => setEmailCartelle(prev => prev.map(c => c.id === cart.id ? {...c, regole: c.regole.filter((_: string, i: number) => i !== ri)} : c))}
+                          style={{ fontSize: 10, color: "#DC4444", cursor: "pointer", fontWeight: 700 }}>Rimuovi</span>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                      <input value={nuovaRegola} onChange={e => setNuovaRegola(e.target.value)} placeholder="es. studio.rossi@pec.it"
+                        style={{ flex: 1, padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + L.border, background: L.bg, fontSize: 12, fontFamily: FF, color: L.text, outline: "none" }} />
+                      <button onClick={() => {
+                        if (!nuovaRegola.trim()) return;
+                        setEmailCartelle(prev => prev.map(c => c.id === cart.id ? {...c, regole: [...(c.regole || []), nuovaRegola.trim()]} : c));
+                        setNuovaRegola("");
+                      }} style={{ padding: "10px 14px", borderRadius: 10, border: "none", background: cart.color || L.primary, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", boxShadow: "0 3px 0 0 " + (cart.color || "#156060") + "80" }}>+ Aggiungi</button>
+                    </div>
+                    <button onClick={() => setShowRegolaModal(null)} style={{ width: "100%", marginTop: 8, padding: "10px", borderRadius: 10, border: "1.5px solid " + L.border, background: L.surface, fontSize: 12, fontWeight: 700, cursor: "pointer", color: L.sub }}>Chiudi</button>
+                  </div>
+                );
+              })()}
+
               {/* Connected status + search */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: L.surface, borderRadius: 10, border: `1px solid ${L.border}` }}>
@@ -282,7 +413,7 @@ export default function MessaggiPanel() {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <div style={{ fontSize: 10, color: L.sub }}><I d={ICO.mail} /> {gmailStatus.email} · {gmailMessages.length} email</div>
+                <div style={{ fontSize: 10, color: L.sub }}><I d={ICO.mail} /> {gmailStatus.email} · {emailFiltrate.length} email{emailCartellaAttiva !== "inbox" ? " in " + (emailCartelle.find(c => c.id === emailCartellaAttiva)?.nome || "") : ""}</div>
                 <div onClick={async () => { if(confirm("Disconnettere Gmail?")) { await fetch("/api/gmail/disconnect", { method: "POST" }); setGmailStatus({ connected: false }); setGmailMessages([]); }}} style={{ fontSize: 10, color: L.red, cursor: "pointer" }}>Disconnetti</div>
               </div>
 
@@ -292,7 +423,7 @@ export default function MessaggiPanel() {
                 <div style={{ textAlign: "center", padding: 40, color: L.sub }}>Nessuna email trovata</div>
               ) : (
                 <>
-                  {gmailMessages.map(m => {
+                  {emailFiltrate.map(m => {
                     const match = gmailMatchCommessa(m);
                     const fromName = m.from?.replace(/<.*>/, "").trim() || "—";
                     const fromShort = fromName.length > 25 ? fromName.substring(0, 25) + "…" : fromName;
