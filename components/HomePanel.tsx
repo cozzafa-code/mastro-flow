@@ -173,18 +173,6 @@ export default function HomePanel() {
 
       <div style={{ padding: 12, display: "flex", flexDirection: "column" as any, gap: 10 }}>
 
-        {/* AZIONI RAPIDE */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          <div onClick={() => setShowModal("commessa")} style={{ padding: "18px 16px", borderRadius: 18, background: T_CLR, boxShadow: `0 8px 0 0 ${T_DARK}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.folder} s={22} c="white" /></div>
-            <div><p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: "white" }}>Commessa</p><p style={{ margin: "2px 0 0", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>Nuova pratica</p></div>
-          </div>
-          <div onClick={() => setShowSpesa(true)} style={{ padding: "18px 16px", borderRadius: 18, background: AMB, boxShadow: "0 8px 0 0 #7A4800", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.receipt || ICO.tag} s={22} c="white" /></div>
-            <div><p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: "white" }}>Invia spesa</p><p style={{ margin: "2px 0 0", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>Scontrino / nota</p></div>
-          </div>
-        </div>
-
         {/* DA FARE ORA */}
         <Card>
           <SecTitle badge={<Pill bg="#FFF0DC" color="#7A4000">{tasks.length} azioni</Pill>}>Da fare ora</SecTitle>
@@ -295,27 +283,50 @@ export default function HomePanel() {
           </div>
         </Card>
 
-        {/* MODULI RAPIDI — bottoni 3D colorati */}
+        {/* AZIONI + MODULI — 5 bottoni 3D colorati */}
         <div style={{ marginTop: 4 }}>
-          <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 800, color: SUB, textTransform: "uppercase" as any, letterSpacing: "0.07em" }}>Moduli</p>
+          <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 800, color: SUB, textTransform: "uppercase" as any, letterSpacing: "0.07em" }}>Azioni rapide</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {[
-              { id: "contabilita", label: "Contabilità", ico: "wallet", color: "#28A0A0", shadow: "#156060" },
-              { id: "montaggi_cal", label: "Montaggi", ico: "tool", color: "#E85D24", shadow: "#8A3716" },
-              { id: "clienti", label: "Clienti", ico: "users", color: "#7F77DD", shadow: "#4A4490" },
-            ].map(m => (
-              <div key={m.id} onClick={() => setTab(m.id)}
-                style={{ background: m.color, borderRadius: 16,
-                  boxShadow: `0 6px 0 0 ${m.shadow}`, padding: "16px 14px",
-                  display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10,
-                  background: "rgba(255,255,255,.15)", display: "flex", alignItems: "center",
-                  justifyContent: "center", flexShrink: 0 }}>
-                  <I d={ICO[m.ico]} s={18} c="#fff" />
-                </div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: "#fff" }}>{m.label}</p>
+            <div onClick={() => setShowModal("commessa")}
+              style={{ background: T_CLR, borderRadius: 14, boxShadow: `0 5px 0 0 ${T_DARK}`, padding: "14px 12px",
+                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <I d={ICO.folder} s={17} c="#fff" />
               </div>
-            ))}
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Commessa</p>
+            </div>
+            <div onClick={() => setShowSpesa(true)}
+              style={{ background: AMB, borderRadius: 14, boxShadow: "0 5px 0 0 #7A4800", padding: "14px 12px",
+                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <I d={ICO.receipt || ICO.tag} s={17} c="#fff" />
+              </div>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Spesa</p>
+            </div>
+            <div onClick={() => setTab("contabilita")}
+              style={{ background: "#1A7070", borderRadius: 14, boxShadow: "0 5px 0 0 #0E4040", padding: "14px 12px",
+                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <I d={ICO.wallet} s={17} c="#fff" />
+              </div>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Contabilità</p>
+            </div>
+            <div onClick={() => setTab("montaggi_cal")}
+              style={{ background: "#E85D24", borderRadius: 14, boxShadow: "0 5px 0 0 #8A3716", padding: "14px 12px",
+                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <I d={ICO.tool} s={17} c="#fff" />
+              </div>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Montaggi</p>
+            </div>
+            <div onClick={() => setTab("clienti")}
+              style={{ background: "#7F77DD", borderRadius: 14, boxShadow: "0 5px 0 0 #4A4490", padding: "14px 12px",
+                display: "flex", alignItems: "center", gap: 10, cursor: "pointer", gridColumn: "1 / -1" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <I d={ICO.users} s={17} c="#fff" />
+              </div>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Clienti</p>
+            </div>
           </div>
         </div>
 
