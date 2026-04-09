@@ -295,6 +295,31 @@ export default function HomePanel() {
           </div>
         </Card>
 
+        {/* MODULI RAPIDI */}
+        <div style={{ marginTop: 4 }}>
+          <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 800, color: SUB, textTransform: "uppercase" as any, letterSpacing: "0.07em" }}>Moduli</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {[
+              { id: "contabilita", label: "Contabilità", ico: "wallet", color: "#28A0A0" },
+              { id: "montaggi_cal", label: "Montaggi", ico: "tool", color: "#E85D24" },
+              { id: "clienti", label: "Clienti", ico: "users", color: "#7F77DD" },
+              { id: "settings", label: "Impostazioni", ico: "settings", color: "#4A7070" },
+            ].map(m => (
+              <div key={m.id} onClick={() => setTab(m.id)}
+                style={{ background: "#fff", borderRadius: 14, border: `1px solid ${BDR}`,
+                  boxShadow: "0 3px 0 0 #A8CCCC", padding: "14px 12px",
+                  display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10,
+                  background: m.color + "15", display: "flex", alignItems: "center",
+                  justifyContent: "center", flexShrink: 0 }}>
+                  <I d={ICO[m.ico]} s={18} c={m.color} />
+                </div>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: INK }}>{m.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       {showSpesa && <SpesaQuick onClose={() => setShowSpesa(false)} />}
