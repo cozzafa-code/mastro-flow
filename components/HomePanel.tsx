@@ -66,7 +66,7 @@ export default function HomePanel() {
     cantieri, events, problemi, fattureDB, operatori: operatoriDB,
     sogliaDays, setTab, setSelectedCM,
     setShowProblemiView, setShowModal,
-    giorniFermaCM, today,
+    giorniFermaCM, today, aziendaInfo,
   } = useMastro();
 
   const [showSpesa, setShowSpesa] = useState(false);
@@ -92,7 +92,7 @@ export default function HomePanel() {
   if (prevDaFare.length > 0) { const c = prevDaFare[0]; tasks.push({ titolo: "Preventivo: " + c.cliente, sotto: prevDaFare.length + " in attesa", color: AMB, icon: <IcoMeas color={AMB} />, action: () => { setSelectedCM(c); setTab("commesse"); } }); }
   if (todayEvs.length > 0) { const e = todayEvs[0]; tasks.push({ titolo: e.text, sotto: (e.time || "") + (e.persona ? " · " + e.persona : ""), color: T_CLR, icon: <IcoCal color={T_CLR} />, action: () => setTab("agenda") }); }
 
-  // OPERATORI — usa dati DB se disponibili, altrimenti placeholder visivo
+  // OPERATORI — usa dati DB, nessun fallback demo
   const ops = (operatoriDB && operatoriDB.length > 0) ? operatoriDB.map((op: any) => ({
     ini: ((op.nome || "?")[0] + (op.cognome || "?")[0]).toUpperCase(),
     bg: ["#1A7878", "#1060A0", "#6B4FB0", "#806020"][op.id?.charCodeAt(0) % 4] || "#1A7878",
@@ -101,12 +101,7 @@ export default function HomePanel() {
     status: op.stato_oggi || "offline",
     dot: op.stato_oggi === "online" || op.stato_oggi === "in cantiere" ? GRN : op.stato_oggi === "in rilievo" ? AMB : "#8BBCBC",
     opacity: op.stato_oggi === "offline" ? 0.55 : 1,
-  })) : [
-    { ini: "FC", bg: "#1A7878", nome: "Fabio Cozza",  ruolo: "Titolare · ufficio",       status: "online",      dot: GRN,      opacity: 1 },
-    { ini: "MV", bg: "#1060A0", nome: "Marco Vito",   ruolo: "Montatore · Via Roma 14",  status: "in cantiere", dot: GRN,      opacity: 1 },
-    { ini: "PG", bg: "#6B4FB0", nome: "Paolo Greco",  ruolo: "Tecnico misure · in giro", status: "in rilievo",  dot: AMB,      opacity: 1 },
-    { ini: "AB", bg: "#806020", nome: "Antonio Bruno",ruolo: "Magazziniere",              status: "offline",     dot: "#8BBCBC", opacity: 0.55 },
-  ];
+  })) : [];
   const onlineCount = ops.filter(o => o.status !== "offline").length;
   const sPill = (s: string) => s === "online" || s === "in cantiere" ? { bg: "#D8F2F2", color: "#0A5050" } : s === "in rilievo" ? { bg: "#FFF0DC", color: "#7A4000" } : { bg: "#F0F8F8", color: "#8BBCBC" };
 
@@ -147,7 +142,7 @@ export default function HomePanel() {
             <p suppressHydrationWarning style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 600 }}>
               {dataLabel.charAt(0).toUpperCase() + dataLabel.slice(1)}
             </p>
-            <p style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 900, color: "white", lineHeight: 1.2 }}>{saluto}, Fabio</p>
+            <p style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 900, color: "white", lineHeight: 1.2 }}>{saluto}{aziendaInfo?.nome ? ", " + aziendaInfo.nome.split(" ")[0] : ""}</p>
             </div>
             </div>
           {/* Meteo Brindisi */}
@@ -213,7 +208,9 @@ export default function HomePanel() {
         {/* OPERATORI OGGI */}
         <Card>
           <SecTitle badge={<Pill bg="#D8F2F2" color="#0A5050">{onlineCount} in campo</Pill>}>Operatori oggi</SecTitle>
-          <div style={{ display: "flex", flexDirection: "column" as any, gap: 7 }}>
+          {ops.length === 0
+            ? <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>Nessun operatore configurato</p>
+            : <div style={{ display: "flex", flexDirection: "column" as any, gap: 7 }}>
             {ops.map((op, i) => {
               const p = sPill(op.status);
               return (
@@ -230,7 +227,7 @@ export default function HomePanel() {
                 </div>
               );
             })}
-          </div>
+          </div>}
         </Card>
 
         {/* AGENDA OGGI */}
