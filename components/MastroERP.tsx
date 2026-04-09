@@ -1254,7 +1254,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       TIPOLOGIE_RAPIDE.push({ code: f.code, label: f.label, icon: f.icon || "âŠž", cat: f.cat || "Altro", forma: f.forma || "rettangolare" });
     } else if (settingsModal === "membro" && f.nome) {
       const colori = ["#0D7C6B","#1A9E73","#af52de","#E8A020","#DC4444","#5ac8fa"];
-      setTeam(t => [...t, { id: Date.now(), nome: f.nome, ruolo: f.ruolo || "Posatore", compiti: f.compiti || "", colore: colori[t.length % colori.length] }]);
+      setTeam(t => [...t, { id: Date.now(), nome: f.nome, ruolo: f.ruolo || "Posatore", compiti: f.compiti || "", telefono: f.telefono || "", email: f.email || "", colore: colori[t.length % colori.length], documenti: [], note_diario: [] }]);
     } else return;
     setSettingsModal(null); setSettingsForm({});
   };
@@ -3545,8 +3545,17 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
               {settingsModal === "membro" && (<>
                 <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Nome e cognome</label><input style={S.input} placeholder="es. Marco Ferraro" value={settingsForm.nome || ""} onChange={e => setSettingsForm(f => ({ ...f, nome: e.target.value }))} /></div>
-                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Ruolo</label><select style={S.select} value={settingsForm.ruolo || "Posatore"} onChange={e => setSettingsForm(f => ({ ...f, ruolo: e.target.value }))}><option>Titolare</option><option>Posatore</option><option>Ufficio</option><option>Magazzino</option></select></div>
-                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Compiti</label><input style={S.input} placeholder="es. Misure, installazione" value={settingsForm.compiti || ""} onChange={e => setSettingsForm(f => ({ ...f, compiti: e.target.value }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Ruolo</label><select style={S.select} value={settingsForm.ruolo || "Posatore"} onChange={e => setSettingsForm(f => ({ ...f, ruolo: e.target.value }))}>
+                  <optgroup label="Direzione"><option>Titolare</option><option>Socio</option><option>Direttore generale</option></optgroup>
+                  <optgroup label="Cantiere"><option>Capo squadra</option><option>Posatore</option><option>Aiuto montatore</option><option>Tecnico misure</option><option>Tecnico assistenza</option></optgroup>
+                  <optgroup label="Produzione"><option>Resp. produzione</option><option>Operatore CNC</option><option>Assemblatore</option><option>Vetraio</option><option>Magazziniere</option></optgroup>
+                  <optgroup label="Ufficio"><option>Resp. commerciale</option><option>Preventivista</option><option>Amministrazione</option><option>Contabile</option><option>Segreteria</option><option>Resp. acquisti</option></optgroup>
+                  <optgroup label="Vendita"><option>Agente</option><option>Consulente showroom</option><option>Progettista</option></optgroup>
+                  <optgroup label="Altro"><option>Autista</option><option>Apprendista</option><option>Stagista</option><option>Consulente esterno</option></optgroup>
+                </select></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Compiti principali</label><input style={S.input} placeholder="es. Misure, installazione, assistenza" value={settingsForm.compiti || ""} onChange={e => setSettingsForm(f => ({ ...f, compiti: e.target.value }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Telefono</label><input style={S.input} type="tel" placeholder="es. 347 123 4567" value={settingsForm.telefono || ""} onChange={e => setSettingsForm(f => ({ ...f, telefono: e.target.value }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Email</label><input style={S.input} type="email" placeholder="es. marco@azienda.it" value={settingsForm.email || ""} onChange={e => setSettingsForm(f => ({ ...f, email: e.target.value }))} /></div>
               </>)}
 
               {settingsModal === "sistema" && (<>

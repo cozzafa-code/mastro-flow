@@ -1231,7 +1231,7 @@ export default function SettingsPanel() {
                     </div>
                     {[
                       { key: "nome", label: "Nome completo" },
-                      { key: "ruolo", label: "Ruolo" },
+                      { key: "ruolo", label: "Ruolo", type: "select" },
                       { key: "compiti", label: "Mansioni" },
                       { key: "telefono", label: "Telefono" },
                       { key: "email", label: "Email" },
@@ -1246,9 +1246,22 @@ export default function SettingsPanel() {
                       <div key={f.key} style={{ marginBottom: 12 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" as any }}>{f.label}</div>
                         {mEditMode ? (
+                          f.type === "select" ? (
+                            <select value={mEditData[f.key] !== undefined ? mEditData[f.key] : (m[f.key] || "")}
+                              onChange={e => setMEditData((prev: any) => ({...prev, [f.key]: e.target.value}))}
+                              style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + PRI, background: T.card, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }}>
+                              <optgroup label="Direzione"><option>Titolare</option><option>Socio</option><option>Direttore generale</option></optgroup>
+                              <optgroup label="Cantiere"><option>Capo squadra</option><option>Posatore</option><option>Aiuto montatore</option><option>Tecnico misure</option><option>Tecnico assistenza</option></optgroup>
+                              <optgroup label="Produzione"><option>Resp. produzione</option><option>Operatore CNC</option><option>Assemblatore</option><option>Vetraio</option><option>Magazziniere</option></optgroup>
+                              <optgroup label="Ufficio"><option>Resp. commerciale</option><option>Preventivista</option><option>Amministrazione</option><option>Contabile</option><option>Segreteria</option><option>Resp. acquisti</option></optgroup>
+                              <optgroup label="Vendita"><option>Agente</option><option>Consulente showroom</option><option>Progettista</option></optgroup>
+                              <optgroup label="Altro"><option>Autista</option><option>Apprendista</option><option>Stagista</option><option>Consulente esterno</option></optgroup>
+                            </select>
+                          ) : (
                           <input value={mEditData[f.key] !== undefined ? mEditData[f.key] : (m[f.key] || "")}
                             onChange={e => setMEditData((prev: any) => ({...prev, [f.key]: e.target.value}))}
                             style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + PRI, background: T.card, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
+                          )
                         ) : (
                           <div style={{ padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 14, color: m[f.key] ? T.text : T.sub, minHeight: 44 }}>
                             {m[f.key] || "—"}
@@ -1953,20 +1966,78 @@ export default function SettingsPanel() {
         {/* === SQUADRE MONTAGGIO === */}
         {settingsTab === "squadre" && (
           <>
-            <div style={{ fontSize: 12, color: T.sub, padding: "0 4px 10px", lineHeight: 1.5 }}>Configura le squadre di montaggio. Ogni squadra ha un nome, membri e colore.</div>
+            <div style={{ fontSize: 12, color: T.sub, padding: "0 4px 10px", lineHeight: 1.5 }}>Configura le squadre operative. Ogni squadra ha un tipo, un capo squadra e dei membri selezionati dal team.</div>
             {squadreDB.map((sq, i) => (
-              <div key={sq.id} style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, padding: 12, marginBottom: 8 }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                  <input type="color" value={sq.colore} onChange={e => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, colore: e.target.value } : s))} style={{ width: 32, height: 32, border: "none", borderRadius: 6, cursor: "pointer" }} />
-                  <input style={{ ...S.input, flex: 1, fontSize: 14, fontWeight: 700 }} value={sq.nome} onChange={e => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, nome: e.target.value } : s))} />
-                  <div onClick={() => setSquadreDB(prev => prev.filter((_, j) => j !== i))} style={{ fontSize: 16, cursor: "pointer", color: T.red }}></div>
+              <div key={sq.id} style={{ background: T.card, borderRadius: 16, border: "1.5px solid " + T.bdr, padding: 14, marginBottom: 10, boxShadow: "0 3px 0 0 " + T.bdr }}>
+                {/* Header */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                  <input type="color" value={sq.colore} onChange={e => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, colore: e.target.value } : s))} style={{ width: 32, height: 32, border: "none", borderRadius: 8, cursor: "pointer" }} />
+                  <input style={{ ...S.input, flex: 1, fontSize: 15, fontWeight: 800, border: "none", background: "transparent", padding: 0 }} value={sq.nome} onChange={e => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, nome: e.target.value } : s))} />
+                  <div onClick={() => { if (confirm("Eliminare la squadra " + sq.nome + "?")) setSquadreDB(prev => prev.filter((_, j) => j !== i)); }} style={{ width: 28, height: 28, borderRadius: 8, background: "#FFE4E4", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <I d={ICO.trash} s={14} c="#DC4444" />
+                  </div>
                 </div>
-                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, marginBottom: 3 }}>MEMBRI (uno per riga)</div>
-                <textarea style={{ ...S.input, width: "100%", minHeight: 50, fontSize: 11, boxSizing: "border-box" }} value={sq.membri.join("\n")} onChange={e => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, membri: e.target.value.split("\n").filter(x => x.trim()) } : s))} />
-                <div style={{ fontSize: 9, color: T.sub, marginTop: 4 }}>Montaggi assegnati: {montaggiDB.filter(m => m.squadraId === sq.id).length}</div>
+                {/* Tipo squadra */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" as any }}>Tipo</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as any }}>
+                    {["Montaggio","Misure","Assistenza","Consegne","Produzione"].map(tipo => (
+                      <button key={tipo} onClick={() => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, tipo } : s))}
+                        style={{ padding: "6px 12px", borderRadius: 10, border: (sq.tipo || "Montaggio") === tipo ? "none" : "1.5px solid " + T.bdr,
+                          background: (sq.tipo || "Montaggio") === tipo ? PRI : T.card,
+                          color: (sq.tipo || "Montaggio") === tipo ? "#fff" : T.text,
+                          fontSize: 11, fontWeight: 700, cursor: "pointer",
+                          boxShadow: (sq.tipo || "Montaggio") === tipo ? "0 2px 0 0 #156060" : "none" }}>{tipo}</button>
+                    ))}
+                  </div>
+                </div>
+                {/* Capo squadra */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" as any }}>Capo squadra</div>
+                  <select value={sq.capo || ""} onChange={e => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, capo: e.target.value } : s))}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 13, fontFamily: FF, color: T.text }}>
+                    <option value="">— Seleziona —</option>
+                    {team.map(m => <option key={m.id} value={m.nome}>{m.nome} ({m.ruolo})</option>)}
+                  </select>
+                </div>
+                {/* Membri - checkboxes from team */}
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" as any }}>Membri ({(sq.membri || []).length})</div>
+                  <div style={{ display: "flex", flexDirection: "column" as any, gap: 4 }}>
+                    {team.map(m => {
+                      const isIn = (sq.membri || []).includes(m.nome);
+                      return (
+                        <div key={m.id} onClick={() => {
+                          setSquadreDB(prev => prev.map((s, j) => j === i ? {
+                            ...s, membri: isIn ? (s.membri || []).filter((x: string) => x !== m.nome) : [...(s.membri || []), m.nome]
+                          } : s));
+                        }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10,
+                          background: isIn ? PRI + "10" : "transparent", border: "1px solid " + (isIn ? PRI + "40" : T.bdr),
+                          cursor: "pointer" }}>
+                          <div style={{ width: 22, height: 22, borderRadius: 6, border: "2px solid " + (isIn ? PRI : T.bdr),
+                            background: isIn ? PRI : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            {isIn && <I d={ICO.check} s={12} c="#fff" sw={3} />}
+                          </div>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{(m.nome || "?").split(" ").map((n: string) => n[0]).join("")}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{m.nome}</div>
+                            <div style={{ fontSize: 10, color: T.sub }}>{m.ruolo}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div style={{ fontSize: 10, color: T.sub, padding: "6px 0", borderTop: "1px solid " + T.bdr }}>
+                  <I d={ICO.hammer} s={11} c={T.sub} /> {montaggiDB.filter(m => m.squadraId === sq.id).length} lavori assegnati
+                </div>
               </div>
             ))}
-            <button onClick={() => setSquadreDB(prev => [...prev, { id: "sq" + Date.now(), nome: "Nuova Squadra", membri: [], colore: "#E8A020" }])} style={{ width: "100%", padding: 12, borderRadius: 10, border: `1.5px dashed ${T.bdr}`, background: "transparent", color: PRI, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Aggiungi squadra</button>
+            <button onClick={() => setSquadreDB(prev => [...prev, { id: "sq" + Date.now(), nome: "Nuova Squadra", membri: [], colore: "#E8A020", tipo: "Montaggio", capo: "" }])}
+              style={{ width: "100%", padding: "16px", borderRadius: 14, border: "none", background: PRI, color: "#fff",
+                fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 0 0 #156060" }}>
+              + Nuova squadra
+            </button>
           </>
         )}
 
