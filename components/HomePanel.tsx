@@ -296,12 +296,12 @@ export default function HomePanel() {
               <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Commessa</p>
             </div>
             <div onClick={() => setShowSpesa(true)}
-              style={{ background: AMB, borderRadius: 14, boxShadow: "0 5px 0 0 #7A4800", padding: "14px 12px",
+              style={{ background: "#7C5FBF", borderRadius: 14, boxShadow: "0 5px 0 0 #4A3870", padding: "14px 12px",
                 display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
               <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <I d={ICO.receipt || ICO.tag} s={17} c="#fff" />
+                <span style={{ fontSize: 18 }}>&#128478;</span>
               </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Spesa</p>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Spese</p>
             </div>
             <div onClick={() => setTab("contabilita")}
               style={{ background: "#1A7070", borderRadius: 14, boxShadow: "0 5px 0 0 #0E4040", padding: "14px 12px",
@@ -312,12 +312,12 @@ export default function HomePanel() {
               <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Contabilità</p>
             </div>
             <div onClick={() => setTab("montaggi_cal")}
-              style={{ background: "#E85D24", borderRadius: 14, boxShadow: "0 5px 0 0 #8A3716", padding: "14px 12px",
+              style={{ background: "#2563EB", borderRadius: 14, boxShadow: "0 5px 0 0 #1742A0", padding: "14px 12px",
                 display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
               <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <I d={ICO.tool} s={17} c="#fff" />
+                <span style={{ fontSize: 18 }}>&#128736;</span>
               </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Montaggi</p>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Squadra</p>
             </div>
             <div onClick={() => setTab("clienti")}
               style={{ background: "#7F77DD", borderRadius: 14, boxShadow: "0 5px 0 0 #4A4490", padding: "14px 12px",
