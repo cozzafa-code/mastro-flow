@@ -556,6 +556,55 @@ export default function SettingsPanel() {
   const [mNota, setMNota] = React.useState("");
   const [mTab, setMTab] = React.useState("info");
 
+  // ── Colori Supabase state (top-level per evitare React #310) ──
+  const [coloriSupa, setColoriSupa] = React.useState<any[]>([]);
+  const [categorieSupa, setCategorieSupa] = React.useState<any[]>([]);
+  const [fornitoriSupa, setFornitoriSupa] = React.useState<any[]>([]);
+  const [fasceSupa, setFasceSupa] = React.useState<any[]>([]);
+  const [loadingColori, setLoadingColori] = React.useState(false);
+  const [filtroFornitore, setFiltroFornitore] = React.useState<string>("tutti");
+  const [filtroLato, setFiltroLato] = React.useState<string>("tutti");
+  const [cercaColore, setCercaColore] = React.useState("");
+  const [expandedFornitore, setExpandedFornitore] = React.useState<string|null>(null);
+  const [expandedCategoria, setExpandedCategoria] = React.useState<string|null>(null);
+  const [showAddColore, setShowAddColore] = React.useState(false);
+  const [newColore, setNewColore] = React.useState({ nome:"", codice_ral:"", hex:"#888888", fornitore_id:"", categoria_id:"", interno:true, esterno:true });
+  const [coloriLoaded, setColoriLoaded] = React.useState(false);
+
+  // ── Sistemi state (top-level) ──
+  const [sistemiExpanded, setSistemiExpanded] = React.useState<string|null>(null);
+  const [importAIFile, setImportAIFile] = React.useState<File|null>(null);
+  const [importAILoading, setImportAILoading] = React.useState(false);
+  const [importAIResult, setImportAIResult] = React.useState<any[]|null>(null);
+
+  // ── Libreria state (top-level) ──
+  const [libExpanded, setLibExpanded] = React.useState<string|null>(null);
+  const [libSearch, setLibSearch] = React.useState("");
+  const [libCatFilter, setLibCatFilter] = React.useState("tutti");
+
+  // ── Fetch colori da Supabase (solo quando si entra nella tab) ──
+  React.useEffect(() => {
+    if (settingsTab !== "colori" || coloriLoaded) return;
+    setLoadingColori(true);
+    (async () => {
+      try {
+        const { supabase: sb } = await import("@/lib/supabase");
+        const [rColori, rCat, rForn, rFasce] = await Promise.all([
+          sb.from("colori_catalogo").select("*").order("nome"),
+          sb.from("categorie_colore").select("*").order("ordine"),
+          sb.from("fornitori_colore").select("*").order("nome"),
+          sb.from("fasce_prezzo_colore").select("*"),
+        ]);
+        if (rColori.data) setColoriSupa(rColori.data);
+        if (rCat.data) setCategorieSupa(rCat.data);
+        if (rForn.data) setFornitoriSupa(rForn.data);
+        if (rFasce.data) setFasceSupa(rFasce.data);
+        setColoriLoaded(true);
+      } catch (e) { console.error("Errore fetch colori:", e); }
+      setLoadingColori(false);
+    })();
+  }, [settingsTab, coloriLoaded]);
+
   // Plan from PLANS
   const plan = PLANS[activePlan] || PLANS.free || { nome: "Free", prezzo: 0, maxCommesse: 5, maxUtenti: 1, sync: false, pdf: false };
 
@@ -1421,21 +1470,6 @@ export default function SettingsPanel() {
         {/* === SISTEMI E SOTTOSISTEMI === */}
         {/* === SISTEMI PROFILO === 3 metodi pricing + colori fascia + import AI */}
         {settingsTab === "sistemi" && (() => {
-          // State locali per la sezione sistemi avanzata
-          const [sistemiExpanded, setSistemiExpanded] = React.useState<string|null>(null);
-          const [showAddSistema, setShowAddSistema] = React.useState(false);
-          const [importAIFile, setImportAIFile] = React.useState<File|null>(null);
-          const [importAILoading, setImportAILoading] = React.useState(false);
-          const [importAIResult, setImportAIResult] = React.useState<any[]|null>(null);
-          const [newSistema, setNewSistema] = React.useState({
-            marca:"", sistema:"", materiale:"PVC", metodoPricing:"mq", // mq | fisso | griglia
-            prezzoMq:0, prezzoFisso:{}, // { tipologia: prezzo }
-            sovRAL:0, sovLegno:0, pesoKgMl:0, // per alluminio: kg, per PVC: ml
-            unitaPrezzo:"ml", // ml | kg | mq
-            sottosistemi:"", colori:[] as string[], immagineProfilo:"",
-            fasciaColore: {} as Record<string,string>, // { colore_code: "A" | "B" | "C" }
-          });
-
           // Materiali e unità prezzo
           const MATERIALI = ["PVC","Alluminio","Legno","Legno-Alluminio","Acciaio"];
           const getUnitaDefault = (mat: string) => {
@@ -1911,39 +1945,6 @@ export default function SettingsPanel() {
         {/* === COLORI === */}
         {/* === COLORI & RAL === fetch da Supabase colori_catalogo + categorie_colore + fornitori_colore */}
         {settingsTab === "colori" && (() => {
-          // State per la sezione colori avanzata
-          const [coloriSupa, setColoriSupa] = React.useState<any[]>([]);
-          const [categorieSupa, setCategorieSupa] = React.useState<any[]>([]);
-          const [fornitoriSupa, setFornitoriSupa] = React.useState<any[]>([]);
-          const [fasceSupa, setFasceSupa] = React.useState<any[]>([]);
-          const [loadingColori, setLoadingColori] = React.useState(true);
-          const [filtroFornitore, setFiltroFornitore] = React.useState<string>("tutti");
-          const [filtroLato, setFiltroLato] = React.useState<string>("tutti"); // interno/esterno/tutti
-          const [cercaColore, setCercaColore] = React.useState("");
-          const [expandedFornitore, setExpandedFornitore] = React.useState<string|null>(null);
-          const [expandedCategoria, setExpandedCategoria] = React.useState<string|null>(null);
-          const [showAddColore, setShowAddColore] = React.useState(false);
-          const [newColore, setNewColore] = React.useState({ nome:"", codice_ral:"", hex:"#888888", fornitore_id:"", categoria_id:"", interno:true, esterno:true });
-
-          // Fetch da Supabase al mount
-          React.useEffect(() => {
-            (async () => {
-              try {
-                const { supabase: sb } = await import("@/lib/supabase");
-                const [rColori, rCat, rForn, rFasce] = await Promise.all([
-                  sb.from("colori_catalogo").select("*").order("nome"),
-                  sb.from("categorie_colore").select("*").order("ordine"),
-                  sb.from("fornitori_colore").select("*").order("nome"),
-                  sb.from("fasce_prezzo_colore").select("*"),
-                ]);
-                if (rColori.data) setColoriSupa(rColori.data);
-                if (rCat.data) setCategorieSupa(rCat.data);
-                if (rForn.data) setFornitoriSupa(rForn.data);
-                if (rFasce.data) setFasceSupa(rFasce.data);
-              } catch (e) { console.error("Errore fetch colori:", e); }
-              setLoadingColori(false);
-            })();
-          }, []);
 
           // Filtra colori
           const coloriFiltrati = coloriSupa.filter(c => {
@@ -2990,9 +2991,6 @@ export default function SettingsPanel() {
 
         {/* === LIBRERIA ACCESSORI === stessa logica semplificata dei sistemi */}
         {settingsTab === "libreria" && (() => {
-          const [libExpanded, setLibExpanded] = React.useState<string|null>(null);
-          const [libSearch, setLibSearch] = React.useState("");
-          const [libCatFilter, setLibCatFilter] = React.useState("tutti");
 
           // Categorie accessori
           const CATEGORIE_ACC = ["tutti","ferramenta","guarnizioni","accessori","viteria","sigillanti","altro"];
