@@ -2009,6 +2009,229 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
   const renderClienti = () => {
+    // === DETAIL VIEW ===
+    if (selectedCliente) {
+      const cl = selectedCliente;
+      const clCM = cantieri.filter((c: any) => {
+        const nome = (cl.nome + (cl.cognome ? " " + cl.cognome : "")).toLowerCase();
+        return (c.cliente||"").toLowerCase() === nome || (c.clienteId||"") === cl.id;
+      });
+      const clEvents = events.filter((e: any) => (e.persona||"").toLowerCase().includes((cl.nome||"").toLowerCase()));
+      const clMsgs = msgs.filter((m: any) => (m.from||"").toLowerCase().includes((cl.nome||"").toLowerCase()) || (m.to||"").toLowerCase().includes((cl.nome||"").toLowerCase()));
+      const clFatture = fattureDB.filter((f: any) => (f.cliente||"").toLowerCase().includes((cl.nome||"").toLowerCase()));
+      const tabs = ["info","storia","commesse","note"];
+      // editMode uses clienteNotes["_editMode"] as workaround
+      const editMode = clienteNotes["_editMode"] === "1";
+      const setEditMode = (v: boolean) => setClienteNotes(prev => ({...prev, _editMode: v ? "1" : "0"}));
+      const nota = clienteNotes["_nota"] || "";
+      const setNota = (v: string) => setClienteNotes(prev => ({...prev, _nota: v}));
+
+      // Build timeline
+      const timeline: any[] = [];
+      clCM.forEach((c: any) => timeline.push({ tipo: "commessa", data: c.dataCreazione || c.data || "", label: c.titolo || c.nome || "Commessa", sub: c.fase || "", color: T.acc, ico: "briefcase" }));
+      clEvents.forEach((e: any) => timeline.push({ tipo: "evento", data: e.data || e.date || "", label: e.text || e.titolo || "Evento", sub: e.tipo || "", color: T.blue, ico: "calendar" }));
+      clMsgs.forEach((m: any) => timeline.push({ tipo: "messaggio", data: m.data || m.date || "", label: m.oggetto || m.text || "Messaggio", sub: m.canale || "", color: "#25d366", ico: "messageCircle" }));
+      clFatture.forEach((f: any) => timeline.push({ tipo: "fattura", data: f.data || "", label: "Fattura " + (f.numero || ""), sub: f.stato || "", color: T.orange, ico: "wallet" }));
+      (cl.diario || []).forEach((d: any) => timeline.push({ tipo: "nota", data: d.data || "", label: d.testo || "", sub: "Nota manuale", color: T.purple || "#7C5FBF", ico: "fileText" }));
+      timeline.sort((a: any, b: any) => (b.data || "").localeCompare(a.data || ""));
+
+      return (
+        <div style={{ minHeight: "100vh", background: T.bg, backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px" }}>
+          {/* Header */}
+          <div style={{ background: "#0D1F1F", padding: "20px 16px 24px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div onClick={() => { setSelectedCliente(null); setClienteDetailTab("info"); }}
+                style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                <I d={ICO.arrowLeft} s={18} c="#fff" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>{cl.nome}{cl.cognome ? " " + cl.cognome : ""}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)" }}>{cl.tipo || "cliente"}</div>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#0D1F1F", background: T.acc, padding: "4px 10px", borderRadius: 8, textTransform: "uppercase" as any }}>{cl.tipo || "cliente"}</span>
+            </div>
+            {/* Quick actions */}
+            <div style={{ display: "flex", gap: 8 }}>
+              {cl.telefono && <div onClick={() => window.location.href = "tel:" + cl.telefono}
+                style={{ flex: 1, padding: "10px 8px", borderRadius: 12, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}>
+                <I d={ICO.phone} s={14} c={T.acc} /><span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Chiama</span>
+              </div>}
+              {cl.telefono && <div onClick={() => window.open("https://wa.me/" + (cl.telefono.replace(/\D/g,"").startsWith("39") ? cl.telefono.replace(/\D/g,"") : "39" + cl.telefono.replace(/\D/g,"")))}
+                style={{ flex: 1, padding: "10px 8px", borderRadius: 12, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}>
+                <I d={ICO.messageCircle} s={14} c="#25d366" /><span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>WhatsApp</span>
+              </div>}
+              {cl.email && <div onClick={() => window.location.href = "mailto:" + cl.email}
+                style={{ flex: 1, padding: "10px 8px", borderRadius: 12, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}>
+                <I d={ICO.mail} s={14} c={T.blue} /><span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>Email</span>
+              </div>}
+            </div>
+          </div>
+
+          {/* Tab bar */}
+          <div style={{ display: "flex", gap: 0, background: T.card, borderBottom: "1.5px solid " + T.bdr }}>
+            {tabs.map(t => (
+              <div key={t} onClick={() => setClienteDetailTab(t)}
+                style={{ flex: 1, padding: "12px 8px", textAlign: "center", fontSize: 13, fontWeight: clienteDetailTab === t ? 900 : 600,
+                  color: clienteDetailTab === t ? T.acc : T.sub, cursor: "pointer",
+                  borderBottom: clienteDetailTab === t ? "3px solid " + T.acc : "3px solid transparent",
+                  textTransform: "capitalize" as any }}>{t}</div>
+            ))}
+          </div>
+
+          <div style={{ padding: "16px 16px 120px" }}>
+            {/* INFO TAB */}
+            {clienteDetailTab === "info" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+                  <button onClick={() => { 
+                    if (editMode) { 
+                      const edits: any = {}; 
+                      ["nome","cognome","telefono","email","indirizzo","piva","note"].forEach(f => { if (clienteNotes["_edit_" + f] !== undefined) edits[f] = clienteNotes["_edit_" + f]; });
+                      setContatti(prev => prev.map(c => c.id === cl.id ? {...c, ...edits} : c)); 
+                      setSelectedCliente({...cl, ...edits}); 
+                      setClienteNotes(prev => { const n = {...prev}; Object.keys(n).filter(k => k.startsWith("_edit_")).forEach(k => delete n[k]); return {...n, _editMode: "0"}; });
+                    } else { setEditMode(true); } 
+                  }}
+                    style={{ padding: "8px 16px", borderRadius: 10, border: "none", background: editMode ? T.acc : T.accLt,
+                      color: editMode ? "#fff" : T.acc, fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: FF,
+                      boxShadow: editMode ? "0 3px 0 0 " + T.accDk : "none" }}>
+                    {editMode ? "Salva" : "Modifica"}
+                  </button>
+                </div>
+                {["nome","cognome","telefono","email","indirizzo","piva","note"].map(f => (
+                  <div key={f} style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" as any }}>{f === "piva" ? "P.IVA" : f}</div>
+                    {editMode ? (
+                      <input value={(clienteNotes["_edit_" + f] !== undefined ? clienteNotes["_edit_" + f] : (cl as any)[f]) || ""} 
+                        onChange={e => setClienteNotes(prev => ({...prev, ["_edit_" + f]: e.target.value}))}
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.acc, background: T.card, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
+                    ) : (
+                      <div style={{ padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 14, color: (cl as any)[f] ? T.text : T.sub, minHeight: 44 }}>
+                        {(cl as any)[f] || "—"}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {/* Stats */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 16 }}>
+                  {[
+                    { label: "Commesse", val: clCM.length, color: T.acc },
+                    { label: "Fatture", val: clFatture.length, color: T.orange },
+                    { label: "Messaggi", val: clMsgs.length, color: "#25d366" },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "14px 10px", textAlign: "center", boxShadow: "0 3px 0 0 " + T.bdr }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.val}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: T.sub }}>{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Delete */}
+                <button onClick={() => { if (confirm("Eliminare " + cl.nome + "?")) { setContatti(prev => prev.filter(c => c.id !== cl.id)); setSelectedCliente(null); } }}
+                  style={{ width: "100%", marginTop: 24, padding: "14px", borderRadius: 14, border: "none", background: "#FFE4E4", color: "#DC4444",
+                    fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FF, boxShadow: "0 4px 0 0 #F0B0B0" }}>
+                  Elimina contatto
+                </button>
+              </div>
+            )}
+
+            {/* STORIA TAB - Timeline */}
+            {clienteDetailTab === "storia" && (
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Cronologia completa</div>
+                {timeline.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "40px 20px", color: T.sub }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Nessuna attivita ancora</div>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>Le commesse, messaggi ed eventi appariranno qui</div>
+                  </div>
+                )}
+                {timeline.map((item: any, i: number) => (
+                  <div key={i} style={{ display: "flex", gap: 12, marginBottom: 2 }}>
+                    {/* Timeline line */}
+                    <div style={{ display: "flex", flexDirection: "column" as any, alignItems: "center", width: 24 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: item.color, flexShrink: 0, marginTop: 6 }} />
+                      {i < timeline.length - 1 && <div style={{ width: 2, flex: 1, background: T.bdr, minHeight: 30 }} />}
+                    </div>
+                    {/* Content */}
+                    <div style={{ flex: 1, paddingBottom: 16 }}>
+                      <div style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "12px 14px", boxShadow: "0 2px 0 0 " + T.bdr }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <I d={ICO[item.ico] || ICO.fileText} s={13} c={item.color} />
+                          <span style={{ fontSize: 10, fontWeight: 800, color: item.color, textTransform: "uppercase" as any }}>{item.tipo}</span>
+                          <span style={{ fontSize: 10, color: T.sub, marginLeft: "auto" }}>{item.data ? new Date(item.data).toLocaleDateString("it-IT") : ""}</span>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{item.label}</div>
+                        {item.sub && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{item.sub}</div>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* COMMESSE TAB */}
+            {clienteDetailTab === "commesse" && (
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Commesse ({clCM.length})</div>
+                {clCM.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: T.sub, fontSize: 13 }}>Nessuna commessa per questo cliente</div>}
+                {clCM.map((c: any) => (
+                  <div key={c.id} onClick={() => { setSelectedCliente(null); setSelectedCM(c); setTab("commesse"); }}
+                    style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "14px 16px",
+                      marginBottom: 8, cursor: "pointer", boxShadow: "0 3px 0 0 " + T.bdr }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>{c.titolo || c.nome || "Commessa"}</div>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: T.acc, background: T.accLt, padding: "3px 8px", borderRadius: 6 }}>{c.fase || "—"}</span>
+                    </div>
+                    {c.indirizzo && <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}><I d={ICO.mapPin} s={11} c={T.sub} /> {c.indirizzo}</div>}
+                    <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>{countVani(c)} vani</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* NOTE TAB */}
+            {clienteDetailTab === "note" && (
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Diario</div>
+                {/* Add note */}
+                <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                  <input value={nota} onChange={e => setNota(e.target.value)} placeholder="Scrivi una nota..."
+                    style={{ flex: 1, padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.card, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
+                  <button onClick={() => {
+                    if (!nota.trim()) return;
+                    const entry = { data: new Date().toISOString(), testo: nota.trim() };
+                    const updated = {...cl, diario: [...(cl.diario || []), entry]};
+                    setContatti(prev => prev.map(c => c.id === cl.id ? updated : c));
+                    setSelectedCliente(updated);
+                    setNota("");
+                  }} style={{ width: 48, height: 48, borderRadius: 12, border: "none", background: T.acc, display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", boxShadow: "0 4px 0 0 " + T.accDk, flexShrink: 0 }}>
+                    <I d={ICO.plus} s={20} c="#fff" sw={3} />
+                  </button>
+                </div>
+                {/* Notes list */}
+                {(cl.diario || []).slice().reverse().map((d: any, i: number) => (
+                  <div key={i} style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "14px 16px",
+                    marginBottom: 8, boxShadow: "0 2px 0 0 " + T.bdr }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: T.sub }}>{d.data ? new Date(d.data).toLocaleDateString("it-IT", {day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}) : ""}</span>
+                      <span onClick={() => {
+                        const updated = {...cl, diario: (cl.diario || []).filter((_: any, idx: number) => idx !== (cl.diario || []).length - 1 - i)};
+                        setContatti(prev => prev.map(c => c.id === cl.id ? updated : c));
+                        setSelectedCliente(updated);
+                      }} style={{ fontSize: 10, color: T.red, cursor: "pointer", fontWeight: 700 }}>Elimina</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: T.text, lineHeight: 1.5 }}>{d.testo}</div>
+                  </div>
+                ))}
+                {(cl.diario || []).length === 0 && <div style={{ textAlign: "center", padding: "40px", color: T.sub, fontSize: 13 }}>Nessuna nota ancora. Scrivi la prima!</div>}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // === LIST VIEW ===
     const flt = contatti.filter((c: any) => {
       if (clientiFilter !== "tutti" && c.tipo !== clientiFilter) return false;
       if (clientiSearch) {
@@ -2024,20 +2247,23 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         <div style={{ position:"relative", marginBottom:12 }}>
           <I d={ICO.search} s={16} c={T.sub} style={{position:"absolute",left:12,top:12}} />
           <input value={clientiSearch} onChange={e => setClientiSearch(e.target.value)}
-            placeholder="Cerca..." style={{ width:"100%", padding:"12px 12px 12px 38px", borderRadius:14, border:`1.5px solid ${T.bdr}`, background:T.card, fontSize:14, fontFamily:FF, color:T.text, outline:"none" }} />
+            placeholder="Cerca..." style={{ width:"100%", padding:"12px 12px 12px 38px", borderRadius:14, border:"1.5px solid " + T.bdr, background:T.card, fontSize:14, fontFamily:FF, color:T.text, outline:"none" }} />
         </div>
         {/* Filter pills */}
         <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" as any }}>
-          {tipi.map(t => (
-            <button key={t} onClick={() => setClientiFilter(t)}
-              style={{ padding:"6px 14px", borderRadius:20, border: clientiFilter===t ? "none" : `1.5px solid ${T.bdr}`,
-                background: clientiFilter===t ? T.acc : T.card, color: clientiFilter===t ? "#fff" : T.text,
-                fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FF,
-                boxShadow: clientiFilter===t ? `0 3px 0 0 ${T.accDk}` : "none",
-                textTransform:"capitalize" as any }}>
-              {t} {t !== "tutti" ? flt.filter((c:any) => t === "tutti" || c.tipo === t.slice(0,-1)).length : flt.length}
-            </button>
-          ))}
+          {tipi.map(t => {
+            const count = t === "tutti" ? contatti.length : contatti.filter((c:any) => c.tipo === t.replace(/i$/,"e").replace(/ori$/,"ore")).length;
+            return (
+              <button key={t} onClick={() => setClientiFilter(t)}
+                style={{ padding:"6px 14px", borderRadius:20, border: clientiFilter===t ? "none" : "1.5px solid " + T.bdr,
+                  background: clientiFilter===t ? T.acc : T.card, color: clientiFilter===t ? "#fff" : T.text,
+                  fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FF,
+                  boxShadow: clientiFilter===t ? "0 3px 0 0 " + T.accDk : "none",
+                  textTransform:"capitalize" as any }}>
+                {t} {count}
+              </button>
+            );
+          })}
         </div>
         {/* Empty state */}
         {flt.length === 0 && (
@@ -2050,9 +2276,9 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         {/* Contact list */}
         {flt.map((c: any) => (
           <div key={c.id} onClick={() => setSelectedCliente(c)}
-            style={{ background:T.card, borderRadius:14, border:`1.5px solid ${T.bdr}`, padding:"14px 16px",
+            style={{ background:T.card, borderRadius:14, border:"1.5px solid " + T.bdr, padding:"14px 16px",
               marginBottom:8, display:"flex", alignItems:"center", gap:12, cursor:"pointer",
-              boxShadow:`0 3px 0 0 ${T.bdr}` }}>
+              boxShadow:"0 3px 0 0 " + T.bdr }}>
             <div style={{ width:40, height:40, borderRadius:12, background:T.accLt,
               display:"flex", alignItems:"center", justifyContent:"center",
               fontSize:15, fontWeight:900, color:T.acc }}>
@@ -2069,7 +2295,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         <div onClick={() => setShowNewCliente(true)}
           style={{ position:"fixed", bottom:90, right:20, width:56, height:56, borderRadius:16,
             background:T.acc, display:"flex", alignItems:"center", justifyContent:"center",
-            boxShadow:`0 6px 0 0 ${T.accDk}, 0 8px 20px rgba(0,0,0,.15)`, cursor:"pointer", zIndex:50 }}>
+            boxShadow:"0 6px 0 0 " + T.accDk + ", 0 8px 20px rgba(0,0,0,.15)", cursor:"pointer", zIndex:50 }}>
           <I d={ICO.plus} s={24} c="#fff" sw={3} />
         </div>
         {/* New contact modal */}
@@ -2083,7 +2309,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <div key={f} style={{ marginBottom:12 }}>
                   <div style={{ fontSize:11, fontWeight:700, color:T.sub, marginBottom:4, textTransform:"capitalize" as any }}>{f === "piva" ? "P.IVA" : f}</div>
                   <input value={(newCliente as any)[f] || ""} onChange={e => setNewCliente(prev => ({...prev, [f]: e.target.value}))}
-                    style={{ width:"100%", padding:"12px 14px", borderRadius:12, border:`1.5px solid ${T.bdr}`, background:T.bg, fontSize:14, fontFamily:FF, color:T.text, outline:"none" }} />
+                    style={{ width:"100%", padding:"12px 14px", borderRadius:12, border:"1.5px solid " + T.bdr, background:T.bg, fontSize:14, fontFamily:FF, color:T.text, outline:"none" }} />
                 </div>
               ))}
               <div style={{ marginBottom:12 }}>
@@ -2091,10 +2317,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <div style={{ display:"flex", gap:8 }}>
                   {["cliente","fornitore","professionista"].map(t => (
                     <button key={t} onClick={() => setNewCliente(prev => ({...prev, tipo: t}))}
-                      style={{ flex:1, padding:"10px 8px", borderRadius:12, border: newCliente.tipo===t ? "none" : `1.5px solid ${T.bdr}`,
+                      style={{ flex:1, padding:"10px 8px", borderRadius:12, border: newCliente.tipo===t ? "none" : "1.5px solid " + T.bdr,
                         background: newCliente.tipo===t ? T.acc : T.card, color: newCliente.tipo===t ? "#fff" : T.text,
                         fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FF,
-                        boxShadow: newCliente.tipo===t ? `0 3px 0 0 ${T.accDk}` : "none",
+                        boxShadow: newCliente.tipo===t ? "0 3px 0 0 " + T.accDk : "none",
                         textTransform:"capitalize" as any }}>{t}</button>
                   ))}
                 </div>
@@ -2107,7 +2333,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 setShowNewCliente(false);
               }} style={{ width:"100%", padding:"16px", borderRadius:14, border:"none", background:T.acc, color:"#fff",
                 fontSize:15, fontWeight:900, cursor:"pointer", fontFamily:FF,
-                boxShadow:`0 6px 0 0 ${T.accDk}`, marginTop:8 }}>
+                boxShadow:"0 6px 0 0 " + T.accDk, marginTop:8 }}>
                 Salva contatto
               </button>
             </div>
