@@ -17,35 +17,43 @@ RISPONDI SOLO con un oggetto JSON valido (nessun testo prima o dopo), con questi
 {
   "profili": [
     {
-      "codice": "codice profilo se visibile (es. 040x12, CX700, IDEAL 4000)",
-      "nome": "nome descrittivo (es. Rahmen 70mm, Telaio fisso)",
-      "tipo": "Rahmen|Flügel|Pfosten|Stulp|Soglia|Traverso|Montante|Altro",
+      "codice": "codice profilo se visibile (es. 14XX07, CX60.101, IDEAL 4000)",
+      "nome": "nome descrittivo (es. Telaio 70mm, Anta battente CX600)",
+      "tipo": "Anta|Telaio|Riporto Centrale|Traverso|Montante|Multiuso|Complementare|Fermavetro|Zoccolo|Fascia|Zoccolo Riportato|Compensatore|Colonna|Tubolare|Profilo Tondo|Angolare|Binario|Scattino|Altro",
+      "utilizzo": "telaio_fisso|anta_battente|anta_scorrevole|fermavetro|riporto|traverso|montante|soglia|fascia|complementare",
       "materiale": "PVC|Alluminio|Legno|Legno-Alluminio|Acciaio",
-      "marca": "marca/fornitore se visibile (es. Aluplast, Twin Systems, Rehau)",
-      "bautiefe_mm": numero_bautiefe_in_mm_o_null,
-      "camere": numero_camere_o_null,
-      "uf": valore_trasmittanza_Uf_o_null,
-      "peso_kg_ml": peso_al_metro_lineare_o_null,
-      "quote_mm": [lista_quote_costruttive_visibili],
-      "ferramenta": ["codici_ferramenta_se_visibili"],
-      "guarnizioni": numero_guarnizioni_o_null,
-      "classe_sicurezza": "RC1|RC2|RC3|null",
-      "note": "altre info tecniche visibili"
+      "marca": "marca/fornitore se visibile (es. Aluplast, Twin Systems, Rehau, Schuco)",
+      "profondita_mm": "profondita del profilo in mm (la dimensione orizzontale della sezione, tipicamente 55-120mm)",
+      "frontale": "faccia vista del profilo in mm (altezza visibile da davanti, la dimensione verticale)",
+      "battuta": "sovrapposizione con profilo accoppiato in mm — la parte che si sovrappone al telaio (per anta) o all'anta (per telaio). Cerca quote che indicano quanto un profilo copre l'altro",
+      "sede_fermavetro": "profondita alloggio vetro in mm — la rientranza dove si inserisce il vetro/fermavetro. Nei disegni tecnici spesso quotata con una freccia verso la scanalatura interna",
+      "tubolare": "altezza della parte strutturale chiusa (il rettangolo pieno/chiuso piu grande nella sezione) in mm",
+      "aria": "gioco libero tra profili accoppiati in mm — lo spazio vuoto tra telaio e anta visibile nella sezione del nodo",
+      "camere": "numero camere interne (solo PVC — gli spazi vuoti dentro il profilo)",
+      "uf": "valore trasmittanza termica Uf in W/m2K",
+      "peso_kg_ml": "peso al metro lineare in kg/ml",
+      "sviluppo": "sviluppo lineare del profilo in mm (spesso scritto come 'mm. XX' o '-- mm XX')",
+      "quote_mm": ["lista di TUTTE le quote costruttive visibili nel disegno in mm"],
+      "ferramenta": ["codici ferramenta se visibili"],
+      "note": "altre info tecniche"
     }
   ],
-  "pagina_tipo": "disegno_tecnico|scheda_prodotto|catalogo_generale|foto|altro",
+  "pagina_tipo": "disegno_tecnico|scheda_prodotto|catalogo_generale|distinta_taglio|nodo_sezione|foto|altro",
   "confidenza": "alta|media|bassa"
 }
 
-REGOLE:
-- Se vedi PIÙ profili nella stessa immagine, elencali tutti separatamente
-- La bautiefe è la profondità del profilo (tipicamente 55-120mm per finestre)
-- Le camere sono gli spazi vuoti interni al profilo PVC
-- Se un dato non è visibile, usa null
-- I codici ferramenta hanno 6 cifre
-- Cerca quote in mm sui disegni tecnici (numeri con frecce/linee di quota)
-- Per i profili Twin Systems cerca le sigle: CX, MX, RX, DX, DW, SX, WF, WX, EW, HX, HM, VL, PX, PC, PS, SW, DF, E
-- Per Aluplast cerca: IDEAL 4000/5000/7000/8000, ENERGETO, ENERGETO NEO`;
+REGOLE IMPORTANTI:
+- MISURE PER DISTINTA TAGLIO: battuta, sede_fermavetro, tubolare, aria sono CRITICHE per il calcolo dei tagli. Cercale nelle quote del disegno tecnico.
+- La BATTUTA e la parte del profilo che sporge lateralmente e si sovrappone all'altro profilo accoppiato
+- La SEDE FERMAVETRO e la scanalatura dove si inserisce il vetro, spesso quotata separatamente
+- Il TUBOLARE e il rettangolo chiuso strutturale piu grande nella sezione
+- L'ARIA e il gioco tra telaio e anta visibile nei nodi (sezioni con 2 profili accoppiati)
+- Se vedi un NODO (2 profili accoppiati), estrai entrambi i profili separatamente e calcola l'aria tra loro
+- Se vedi PIU profili nella stessa immagine, elencali tutti separatamente
+- Se un dato non e visibile, usa null
+- Per Twin Systems cerca sigle: CX, MX, RX, DX, DW, SX, WF, WX, EW, HX, HM
+- Per Aluplast cerca: IDEAL 4000/5000/7000/8000, ENERGETO, ENERGETO NEO
+- I codici Aluplast tipo 14XX07 significano serie 4000 profilo 07`;
 
 export async function POST(req: NextRequest) {
   try {

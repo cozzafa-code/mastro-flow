@@ -944,7 +944,16 @@ export default function SettingsPanel() {
                             const ins = {
                               nome: p.nome || "Profilo estratto", codice: p.codice || null, marca: p.marca || null,
                               materiale: p.materiale || "PVC", tipo: p.tipo || "Telaio",
-                              profondita_mm: p.bautiefe_mm || null, uf: p.uf || null, peso_kg_ml: p.peso_kg_ml || null,
+                              utilizzo: p.utilizzo || "telaio_fisso",
+                              profondita_mm: p.profondita_mm || p.bautiefe_mm || null,
+                              frontale: p.frontale || null,
+                              battuta: p.battuta || null,
+                              sede_fermavetro: p.sede_fermavetro || null,
+                              tubolare: p.tubolare || null,
+                              aria: p.aria || null,
+                              uf: p.uf || null, peso_kg_ml: p.peso_kg_ml || null,
+                              sviluppo: p.sviluppo || null,
+                              camere: p.camere || null,
                               note: (p.note || "") + (p.quote_mm?.length ? " Quote: " + p.quote_mm.join(", ") + "mm" : ""),
                               attivo: true, azienda_id: aziendaInfo?.id || "demo",
                             };
