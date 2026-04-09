@@ -217,140 +217,141 @@ export default function MastroAuth({ onAuth }: Props) {
   // —— Onboarding screen ——
   if (step === "onboarding") {
     return (
-      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FF, padding: 20 }}>
-        <div style={{ width: "100%", maxWidth: 440, background: T.card, borderRadius: 20, padding: 32, boxShadow: "0 8px 40px rgba(0,0,0,0.08)" }}>
+      <div style={{ minHeight: "100vh", background: "#E8F4F4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FF, padding: 20 }}>
+        <div style={{ width: "100%", maxWidth: 440, background: "#fff", borderRadius: 20, padding: 32, boxShadow: "0 8px 40px rgba(0,0,0,0.08)", border: "1px solid #28A0A022" }}>
           {/* Header */}
           <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, background: `linear-gradient(135deg, ${T.acc}, #B8860B)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 28 }}>🔧</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: T.text }}>Benvenuto in MASTRO</div>
-            <div style={{ fontSize: 13, color: T.sub, marginTop: 4 }}>Configura la tua azienda in 2 minuti</div>
+            <div style={{ width: 56, height: 56, borderRadius: 14, background: "#0D1F1F", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+              <span style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: FF }}>M</span>
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#0D1F1F" }}>Benvenuto in MASTRO</div>
+            <div style={{ fontSize: 13, color: "#888", marginTop: 4 }}>Configura la tua azienda in 2 minuti</div>
           </div>
 
           {/* Progress */}
           <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
             {[1, 2, 3].map(s => (
-              <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: onbStep >= s ? T.acc : T.bdr, transition: "all 0.3s" }} />
+              <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: onbStep >= s ? "#28A0A0" : "#e0e0e0", transition: "all 0.3s" }} />
             ))}
           </div>
 
           {onbStep === 1 ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 16 }}>🏢 La tua azienda</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0D1F1F", marginBottom: 16 }}>La tua azienda</div>
 
-              <label style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Ragione sociale *</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Ragione sociale *</label>
               <input value={onbRagione} onChange={e => setOnbRagione(e.target.value)} placeholder="Es. Rossi Serramenti SRL"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: FF, marginBottom: 14, boxSizing: "border-box", outline: "none" }}
-                onFocus={e => e.target.style.borderColor = T.acc} onBlur={e => e.target.style.borderColor = T.bdr} />
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: FF, marginBottom: 14, boxSizing: "border-box", outline: "none" }}
+                onFocus={e => e.target.style.borderColor = "#28A0A0"} onBlur={e => e.target.style.borderColor = "#e0e0e0"} />
 
-              <label style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Partita IVA</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Partita IVA</label>
               <input value={onbPiva} onChange={e => setOnbPiva(e.target.value)} placeholder="IT01234567890"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: FM, marginBottom: 14, boxSizing: "border-box", outline: "none", letterSpacing: 1 }}
-                onFocus={e => e.target.style.borderColor = T.acc} onBlur={e => e.target.style.borderColor = T.bdr} />
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: FM, marginBottom: 14, boxSizing: "border-box", outline: "none", letterSpacing: 1 }}
+                onFocus={e => e.target.style.borderColor = "#28A0A0"} onBlur={e => e.target.style.borderColor = "#e0e0e0"} />
 
-              <label style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Telefono azienda</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Telefono azienda</label>
               <input value={onbTelefono} onChange={e => setOnbTelefono(e.target.value)} placeholder="+39 0984 123456"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: FF, marginBottom: 20, boxSizing: "border-box", outline: "none" }}
-                onFocus={e => e.target.style.borderColor = T.acc} onBlur={e => e.target.style.borderColor = T.bdr} />
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: FF, marginBottom: 20, boxSizing: "border-box", outline: "none" }}
+                onFocus={e => e.target.style.borderColor = "#28A0A0"} onBlur={e => e.target.style.borderColor = "#e0e0e0"} />
             </>
           ) : onbStep === 2 ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 8 }}>🏗️ Il tuo settore</div>
-              <div style={{ fontSize: 12, color: T.sub, marginBottom: 20 }}>Determina i moduli e i campi attivi nel tuo account.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0D1F1F", marginBottom: 8 }}>Il tuo settore</div>
+              <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>Determina i moduli e i campi attivi nel tuo account.</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
                 {[
-                  { id: "serramentista", label: "Serramentista", icon: "🪟", desc: "Finestre, porte, infissi" },
-                  { id: "fabbro", label: "Fabbro", icon: "⚙️", desc: "Cancelli, ringhiere, ferro" },
-                  { id: "tendaggi", label: "Tendaggi", icon: "🪄", desc: "Tende, tessuti, decorazioni" },
-                  { id: "zanzariere", label: "Zanzariere", icon: "🕸️", desc: "Reti, sistemi antiinsetto" },
-                  { id: "pergole", label: "Pergole", icon: "🌿", desc: "Pergole, gazebo, coperture" },
-                  { id: "altro", label: "Altro", icon: "🔧", desc: "Lavori generali" },
+                  { id: "serramentista", label: "Serramentista", desc: "Finestre, porte, infissi", color: "#28A0A0" },
+                  { id: "fabbro", label: "Fabbro", desc: "Cancelli, ringhiere, ferro", color: "#F97316" },
+                  { id: "tendaggi", label: "Tendaggi", desc: "Tende, tessuti, decorazioni", color: "#7C3AED" },
+                  { id: "zanzariere", label: "Zanzariere", desc: "Reti, sistemi antiinsetto", color: "#1A9E73" },
+                  { id: "pergole", label: "Pergole", desc: "Pergole, gazebo, coperture", color: "#3B7FE0" },
+                  { id: "altro", label: "Altro", desc: "Lavori generali", color: "#6B7280" },
                 ].map(s => (
                   <div key={s.id} onClick={() => setOnbSettore(s.id)}
-                    style={{ padding: "14px 12px", borderRadius: 12, border: `2px solid ${onbSettore === s.id ? T.acc : T.bdr}`, background: onbSettore === s.id ? T.accLt : T.card, cursor: "pointer", transition: "all 0.15s", textAlign: "center" }}>
-                    <div style={{ fontSize: 24, marginBottom: 6 }}>{s.icon}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: onbSettore === s.id ? T.acc : T.text }}>{s.label}</div>
-                    <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{s.desc}</div>
+                    style={{ padding: "14px 12px", borderRadius: 12, border: `2px solid ${onbSettore === s.id ? s.color : "#e0e0e0"}`, background: onbSettore === s.id ? s.color + "10" : "#fff", cursor: "pointer", transition: "all 0.15s", textAlign: "center" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: s.color + "15", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                      <div style={{ width: 12, height: 12, borderRadius: 3, background: s.color }} />
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: onbSettore === s.id ? s.color : "#0D1F1F" }}>{s.label}</div>
+                    <div style={{ fontSize: 10, color: "#888", marginTop: 2 }}>{s.desc}</div>
                   </div>
                 ))}
               </div>
             </>
           ) : (
             <>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 16 }}>👤 I tuoi dati</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#0D1F1F", marginBottom: 16 }}>I tuoi dati</div>
 
-              <label style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Nome *</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Nome *</label>
               <input value={onbNome} onChange={e => setOnbNome(e.target.value)} placeholder="Fabio"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: FF, marginBottom: 14, boxSizing: "border-box", outline: "none" }}
-                onFocus={e => e.target.style.borderColor = T.acc} onBlur={e => e.target.style.borderColor = T.bdr} autoFocus />
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: FF, marginBottom: 14, boxSizing: "border-box", outline: "none" }}
+                onFocus={e => e.target.style.borderColor = "#28A0A0"} onBlur={e => e.target.style.borderColor = "#e0e0e0"} autoFocus />
 
-              <label style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Cognome</label>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, display: "block", marginBottom: 4 }}>Cognome</label>
               <input value={onbCognome} onChange={e => setOnbCognome(e.target.value)} placeholder="Cozza"
-                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: FF, marginBottom: 20, boxSizing: "border-box", outline: "none" }}
-                onFocus={e => e.target.style.borderColor = T.acc} onBlur={e => e.target.style.borderColor = T.bdr} />
+                style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: FF, marginBottom: 20, boxSizing: "border-box", outline: "none" }}
+                onFocus={e => e.target.style.borderColor = "#28A0A0"} onBlur={e => e.target.style.borderColor = "#e0e0e0"} />
 
-              <div style={{ background: T.accLt, borderRadius: 12, padding: "14px 16px", marginBottom: 20, border: `1px solid ${T.acc}20` }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 4 }}>🏢 {onbRagione}</div>
-                {onbPiva && <div style={{ fontSize: 11, color: T.sub, fontFamily: FM }}>{onbPiva}</div>}
-                {onbTelefono && <div style={{ fontSize: 11, color: T.sub }}>{onbTelefono}</div>}
+              <div style={{ background: "#28A0A008", borderRadius: 12, padding: "14px 16px", marginBottom: 20, border: "1px solid #28A0A020" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#28A0A0", marginBottom: 4 }}>{onbRagione}</div>
+                {onbPiva && <div style={{ fontSize: 11, color: "#888", fontFamily: FM }}>{onbPiva}</div>}
+                {onbTelefono && <div style={{ fontSize: 11, color: "#888" }}>{onbTelefono}</div>}
               </div>
             </>
           )}
 
-          {/* ── GDPR Consenso — mostrato solo allo step 3 ── */}
+          {/* GDPR Consenso - solo step 3 */}
           {onbStep === 3 && (
             <div style={{ marginBottom: 16 }}>
-              {/* Privacy Policy — obbligatoria */}
               <div
                 onClick={() => setGdprAccettato(!gdprAccettato)}
-                style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${gdprAccettato ? T.acc : T.bdr}`, background: gdprAccettato ? T.accLt : T.card, cursor: "pointer", marginBottom: 8, transition: "all 0.15s" }}
+                style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${gdprAccettato ? "#28A0A0" : "#e0e0e0"}`, background: gdprAccettato ? "#28A0A008" : "#fff", cursor: "pointer", marginBottom: 8, transition: "all 0.15s" }}
               >
-                <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${gdprAccettato ? T.acc : T.bdr}`, background: gdprAccettato ? T.acc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
-                  {gdprAccettato && <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>✓</span>}
+                <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${gdprAccettato ? "#28A0A0" : "#e0e0e0"}`, background: gdprAccettato ? "#28A0A0" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                  {gdprAccettato && <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>&#10003;</span>}
                 </div>
-                <div style={{ fontSize: 12, color: T.text, lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12, color: "#0D1F1F", lineHeight: 1.5 }}>
                   Ho letto e accetto la{" "}
                   <a href="https://mastro-erp.vercel.app/privacy" target="_blank" rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
-                    style={{ color: T.acc, fontWeight: 700, textDecoration: "underline" }}>
+                    style={{ color: "#28A0A0", fontWeight: 700, textDecoration: "underline" }}>
                     Privacy Policy
                   </a>{" "}e i{" "}
                   <a href="https://mastro-erp.vercel.app/termini" target="_blank" rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
-                    style={{ color: T.acc, fontWeight: 700, textDecoration: "underline" }}>
+                    style={{ color: "#28A0A0", fontWeight: 700, textDecoration: "underline" }}>
                     Termini di Servizio
                   </a>
-                  {" "}<span style={{ color: T.red, fontWeight: 700 }}>*</span>
+                  {" "}<span style={{ color: "#DC4444", fontWeight: 700 }}>*</span>
                 </div>
               </div>
 
-              {/* Marketing — opzionale */}
               <div
                 onClick={() => setMarketingAccettato(!marketingAccettato)}
-                style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${marketingAccettato ? T.acc : T.bdr}`, background: marketingAccettato ? T.accLt : T.card, cursor: "pointer", transition: "all 0.15s" }}
+                style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${marketingAccettato ? "#28A0A0" : "#e0e0e0"}`, background: marketingAccettato ? "#28A0A008" : "#fff", cursor: "pointer", transition: "all 0.15s" }}
               >
-                <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${marketingAccettato ? T.acc : T.bdr}`, background: marketingAccettato ? T.acc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
-                  {marketingAccettato && <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>✓</span>}
+                <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${marketingAccettato ? "#28A0A0" : "#e0e0e0"}`, background: marketingAccettato ? "#28A0A0" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, transition: "all 0.15s" }}>
+                  {marketingAccettato && <span style={{ color: "#fff", fontSize: 12, fontWeight: 900 }}>&#10003;</span>}
                 </div>
-                <div style={{ fontSize: 12, color: T.sub, lineHeight: 1.5 }}>
-                  Acconsento a ricevere aggiornamenti, novità e comunicazioni commerciali da MASTRO{" "}
-                  <span style={{ color: T.sub, fontSize: 11 }}>(opzionale)</span>
+                <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>
+                  Acconsento a ricevere aggiornamenti e comunicazioni da MASTRO (opzionale)
                 </div>
               </div>
             </div>
           )}
 
-          {error && <div style={{ background: "#ff3b3010", border: "1px solid #ff3b3030", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: T.red, fontWeight: 600 }}>⚠️ {error}</div>}
+          {error && <div style={{ background: "#DC444410", border: "1px solid #DC444430", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#DC4444", fontWeight: 600 }}>{error}</div>}
 
           <div style={{ display: "flex", gap: 10 }}>
             {onbStep > 1 && (
               <button onClick={() => { setOnbStep(onbStep - 1); setError(""); }}
-                style={{ flex: 1, padding: "14px", borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, color: T.sub }}>
-                ← Indietro
+                style={{ flex: 1, padding: "14px", borderRadius: 12, border: "1.5px solid #e0e0e0", background: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, color: "#888" }}>
+                Indietro
               </button>
             )}
             <button onClick={handleOnboarding} disabled={loading}
-              style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: `linear-gradient(135deg, ${T.acc}, #B8860B)`, color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "wait" : "pointer", fontFamily: FF, opacity: loading ? 0.7 : 1 }}>
-              {loading ? "Creazione..." : onbStep < 3 ? "Avanti →" : "🚀 Inizia a usare MASTRO"}
+              style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 700, cursor: loading ? "wait" : "pointer", fontFamily: FF, opacity: loading ? 0.7 : 1, boxShadow: "0 4px 0 #1A8080, 0 6px 12px rgba(0,0,0,0.1)" }}>
+              {loading ? "Creazione..." : onbStep < 3 ? "Continua" : "Inizia a usare MASTRO"}
             </button>
           </div>
         </div>
