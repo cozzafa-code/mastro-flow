@@ -1981,7 +1981,7 @@ export default function SettingsPanel() {
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 4, textTransform: "uppercase" as any }}>Tipo</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as any }}>
-                    {["Montaggio","Misure","Assistenza","Consegne","Produzione"].map(tipo => (
+                    {["Montaggio","Misure","Collaudo","Assistenza","Consegne","Produzione","Ufficio","Contabilita","Preventivi","Jolly"].map(tipo => (
                       <button key={tipo} onClick={() => setSquadreDB(prev => prev.map((s, j) => j === i ? { ...s, tipo } : s))}
                         style={{ padding: "6px 12px", borderRadius: 10, border: (sq.tipo || "Montaggio") === tipo ? "none" : "1.5px solid " + T.bdr,
                           background: (sq.tipo || "Montaggio") === tipo ? PRI : T.card,
