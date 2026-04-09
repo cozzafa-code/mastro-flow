@@ -1929,8 +1929,12 @@ export default function SettingsPanel() {
           React.useEffect(() => {
             (async () => {
               try {
-                const { createClient } = await import("@/lib/supabase");
-                const sb = createClient();
+                const mod = await import("@/lib/supabase");
+                // Gestisce: export { createClient }, export default createClient, export { supabase }
+                const sb = typeof mod.createClient === "function" ? mod.createClient()
+                  : typeof mod.default === "function" ? mod.default()
+                  : mod.supabase || mod.default || null;
+                if (!sb || !sb.from) { console.warn("Supabase client non trovato in @/lib/supabase"); setLoadingColori(false); return; }
                 const [rColori, rCat, rForn, rFasce] = await Promise.all([
                   sb.from("colori_catalogo").select("*").order("nome"),
                   sb.from("categorie_colore").select("*").order("ordine"),
@@ -1973,8 +1977,8 @@ export default function SettingsPanel() {
           const salvaColore = async () => {
             if (!newColore.nome) return;
             try {
-              const { createClient } = await import("@/lib/supabase");
-              const sb = createClient();
+              const mod = await import("@/lib/supabase");
+              const sb = typeof mod.createClient === "function" ? mod.createClient() : mod.supabase || mod.default;
               const { data, error } = await sb.from("colori_catalogo").insert([{
                 nome: newColore.nome,
                 codice_ral: newColore.codice_ral || null,
@@ -1997,8 +2001,8 @@ export default function SettingsPanel() {
           const eliminaColore = async (id: string) => {
             if (!confirm("Eliminare questo colore?")) return;
             try {
-              const { createClient } = await import("@/lib/supabase");
-              const sb = createClient();
+              const mod = await import("@/lib/supabase");
+              const sb = typeof mod.createClient === "function" ? mod.createClient() : mod.supabase || mod.default;
               await sb.from("colori_catalogo").delete().eq("id", id);
               setColoriSupa(prev => prev.filter(c => c.id !== id));
             } catch (e) { console.error(e); }
