@@ -1296,6 +1296,8 @@ export default function SettingsPanel() {
                                       u3.immagine_url="data:image/svg+xml;base64,"+btoa(svg3);
                                       salvaProfilo(u3);
                                       alert("DXF: "+(best||"auto")+"\n"+w3.toFixed(1)+"x"+h3.toFixed(1)+"mm"+(cam3?" Cam:"+cam3:"")+"\nBlocchi: "+bns.join(", "));
+                                    } catch(err: any) {
+                                      alert("Errore DXF: " + (err?.message || "formato non supportato"));
                                     }
                                   }} />
                                 </label>
