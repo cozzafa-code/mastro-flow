@@ -1474,7 +1474,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   /* ======= STYLES ======= */
   const fs = isDesktop ? 1.1 : isTablet ? 1.05 : 1;
   const S = {
-    app: { fontFamily: FF, background: T.bg, color: T.text, width: "100%", minHeight: "unset", position: "relative", WebkitFontSmoothing: "antialiased" },
+    app: { fontFamily: FF, background: T.bg, color: T.text, width: "100%", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased" },
     header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
     headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
     headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
@@ -4456,6 +4456,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
       )}
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
+    </div>{/* close S.app */}
     </>
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
     </MastroContext.Provider>
