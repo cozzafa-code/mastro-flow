@@ -582,6 +582,9 @@ export default function SettingsPanel() {
   const [libSearch, setLibSearch] = React.useState("");
   const [libCatFilter, setLibCatFilter] = React.useState("tutti");
 
+  const [coloriSistemiSupa, setColoriSistemiSupa] = React.useState<any[]>([]);
+  const [sistemiProfiloSupa, setSistemiProfiloSupa] = React.useState<any[]>([]);
+
   // ── Fetch colori da Supabase (solo quando si entra nella tab) ──
   React.useEffect(() => {
     if (settingsTab !== "colori" || coloriLoaded) return;
@@ -589,16 +592,20 @@ export default function SettingsPanel() {
     (async () => {
       try {
         const { supabase: sb } = await import("@/lib/supabase");
-        const [rColori, rCat, rForn, rFasce] = await Promise.all([
+        const [rColori, rCat, rForn, rFasce, rCS, rSP] = await Promise.all([
           sb.from("colori_catalogo").select("*").order("nome"),
-          sb.from("categorie_colore").select("*").order("ordine"),
+          sb.from("categorie_colore").select("*").order("nome"),
           sb.from("fornitori_colore").select("*").order("nome"),
           sb.from("fasce_prezzo_colore").select("*"),
+          sb.from("colori_sistemi").select("*"),
+          sb.from("sistemi_profilo").select("*"),
         ]);
         if (rColori.data) setColoriSupa(rColori.data);
         if (rCat.data) setCategorieSupa(rCat.data);
         if (rForn.data) setFornitoriSupa(rForn.data);
         if (rFasce.data) setFasceSupa(rFasce.data);
+        if (rCS.data) setColoriSistemiSupa(rCS.data);
+        if (rSP.data) setSistemiProfiloSupa(rSP.data);
         setColoriLoaded(true);
       } catch (e) { console.error("Errore fetch colori:", e); }
       setLoadingColori(false);
@@ -1946,57 +1953,73 @@ export default function SettingsPanel() {
         {/* === COLORI & RAL === fetch da Supabase colori_catalogo + categorie_colore + fornitori_colore */}
         {settingsTab === "colori" && (() => {
 
-          // Filtra colori
+          // Helper: trova fornitore_id di un colore tramite categoria
+          const getFornitoreId = (c: any) => {
+            const cat = categorieSupa.find(x => x.id === c.categoria_id);
+            return cat?.fornitore_id || "senza_fornitore";
+          };
+
+          // Filtra colori (usa campi reali: codice, uso)
           const coloriFiltrati = coloriSupa.filter(c => {
-            if (filtroFornitore !== "tutti" && c.fornitore_id !== filtroFornitore) return false;
-            if (filtroLato === "interno" && !c.interno) return false;
-            if (filtroLato === "esterno" && !c.esterno) return false;
-            if (cercaColore && !c.nome.toLowerCase().includes(cercaColore.toLowerCase()) && !(c.codice_ral||"").toLowerCase().includes(cercaColore.toLowerCase())) return false;
+            const fId = getFornitoreId(c);
+            if (filtroFornitore !== "tutti" && fId !== filtroFornitore) return false;
+            if (filtroLato === "interno" && c.uso === "esterno") return false;
+            if (filtroLato === "esterno" && c.uso === "interno") return false;
+            if (cercaColore && !c.nome.toLowerCase().includes(cercaColore.toLowerCase()) && !(c.codice||"").toLowerCase().includes(cercaColore.toLowerCase())) return false;
             return true;
           });
 
-          // Raggruppa per fornitore → categoria
+          // Raggruppa per fornitore (da categoria) → categoria → colori
           const grouped: Record<string, Record<string, any[]>> = {};
           coloriFiltrati.forEach(c => {
-            const fId = c.fornitore_id || "senza_fornitore";
+            const fId = getFornitoreId(c);
             const cId = c.categoria_id || "senza_categoria";
             if (!grouped[fId]) grouped[fId] = {};
             if (!grouped[fId][cId]) grouped[fId][cId] = [];
             grouped[fId][cId].push(c);
           });
 
-          // Helper: nome fornitore
+          // Helpers
           const nomeForn = (id: string) => fornitoriSupa.find(f => f.id === id)?.nome || "Senza fornitore";
-          const nomeCat = (id: string) => categorieSupa.find(c => c.id === id)?.nome || "Senza categoria";
+          const nomeCat = (id: string) => categorieSupa.find(c => c.id === id)?.nome || id;
+          const getSistemiColore = (coloreId: number) => {
+            const sIds = coloriSistemiSupa.filter(cs => cs.colore_id === coloreId).map(cs => cs.sistema_id);
+            return sistemiProfiloSupa.filter(s => sIds.includes(s.id));
+          };
 
-          // Salva nuovo colore
+          // Salva nuovo colore (campi reali: codice, uso, categoria_id)
           const salvaColore = async () => {
             if (!newColore.nome) return;
             try {
               const { supabase: sb } = await import("@/lib/supabase");
               const { data, error } = await sb.from("colori_catalogo").insert([{
                 nome: newColore.nome,
-                codice_ral: newColore.codice_ral || null,
+                codice: newColore.codice_ral || null,
                 hex: newColore.hex,
-                fornitore_id: newColore.fornitore_id || null,
                 categoria_id: newColore.categoria_id || null,
-                interno: newColore.interno,
-                esterno: newColore.esterno,
+                uso: newColore.interno && newColore.esterno ? "universale" : newColore.interno ? "interno" : "esterno",
               }]).select().single();
               if (data) {
                 setColoriSupa(prev => [...prev, data]);
+                // Se sistema selezionato, collega
+                if (newColore.fornitore_id && data.id) {
+                  // fornitore_id qui è usato come sistema_id nel form
+                  await sb.from("colori_sistemi").insert([{ colore_id: data.id, sistema_id: newColore.fornitore_id }]);
+                }
                 setNewColore({ nome:"", codice_ral:"", hex:"#888888", fornitore_id:"", categoria_id:"", interno:true, esterno:true });
                 setShowAddColore(false);
+                setColoriLoaded(false); // force reload
               }
               if (error) alert("Errore: " + error.message);
             } catch (e) { console.error(e); }
           };
 
           // Elimina colore
-          const eliminaColore = async (id: string) => {
+          const eliminaColore = async (id: number) => {
             if (!confirm("Eliminare questo colore?")) return;
             try {
               const { supabase: sb } = await import("@/lib/supabase");
+              await sb.from("colori_sistemi").delete().eq("colore_id", id);
               await sb.from("colori_catalogo").delete().eq("id", id);
               setColoriSupa(prev => prev.filter(c => c.id !== id));
             } catch (e) { console.error(e); }
@@ -2108,7 +2131,7 @@ export default function SettingsPanel() {
                                   <div style={{ padding:"8px 12px", display:"flex", flexWrap:"wrap", gap:6 }}>
                                     {colori.map((col: any) => {
                                       // Sistemi collegati
-                                      const sistemiCollegati = sistemiDB.filter((s: any) => (s.colori||[]).includes(col.codice_ral || col.nome));
+                                      const sistemiCollegati = getSistemiColore(col.id);
                                       // Fascia prezzo per questa azienda
                                       const fascia = fasceSupa.find(f => f.colore_id === col.id);
 
@@ -2121,11 +2144,11 @@ export default function SettingsPanel() {
                                             boxShadow:"inset 0 -10px 20px rgba(0,0,0,0.08)" }} />
                                           {/* Nome + codice */}
                                           <div style={{ fontSize:10, fontWeight:700, color:T.text, lineHeight:1.3, marginBottom:2 }}>{col.nome}</div>
-                                          <div style={{ fontSize:9, color:T.sub }}>{col.codice_ral || "\u2014"}</div>
+                                          <div style={{ fontSize:9, color:T.sub }}>{col.codice || "\u2014"}</div>
                                           {/* Interno/Esterno badges */}
                                           <div style={{ display:"flex", gap:3, marginTop:4 }}>
-                                            {col.interno && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#E0F2FE", color:"#0369A1" }}>INT</span>}
-                                            {col.esterno && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>EST</span>}
+                                            {(col.uso === "interno" || col.uso === "universale") && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#E0F2FE", color:"#0369A1" }}>INT</span>}
+                                            {(col.uso === "esterno" || col.uso === "universale") && <span style={{ padding:"1px 5px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>EST</span>}
                                           </div>
                                           {/* Sistemi collegati */}
                                           {sistemiCollegati.length > 0 && (
@@ -2211,20 +2234,20 @@ export default function SettingsPanel() {
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Fornitore</div>
+                    <div style={{ flex:"1 1 30%", minWidth:120 }}>
+                      <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Sistema</div>
                       <select value={newColore.fornitore_id} onChange={e => setNewColore(p => ({...p, fornitore_id:e.target.value}))}
                         style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
-                        <option value="">Seleziona...</option>
-                        {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                        <option value="">Seleziona sistema...</option>
+                        {sistemiProfiloSupa.map(s => <option key={s.id} value={s.id}>{s.marca} — {s.sistema} ({s.materiale})</option>)}
                       </select>
                     </div>
-                    <div style={{ flex:"1 1 45%", minWidth:120 }}>
+                    <div style={{ flex:"1 1 30%", minWidth:120 }}>
                       <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Categoria</div>
                       <select value={newColore.categoria_id} onChange={e => setNewColore(p => ({...p, categoria_id:e.target.value}))}
                         style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
                         <option value="">Seleziona...</option>
-                        {categorieSupa.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                        {categorieSupa.map(c => <option key={c.id} value={c.id}>{c.nome} ({nomeForn(c.fornitore_id)})</option>)}
                       </select>
                     </div>
                   </div>
