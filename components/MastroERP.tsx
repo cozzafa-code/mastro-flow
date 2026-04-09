@@ -530,7 +530,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
         setMontaggiDB([]);
         setMsgs([]);
         setContatti([]);
-        setPipeline([]);
+        setPipelineDB(PIPELINE_DEFAULT);
         setProblemi([]);
         setTeam([]);
         setShowOnboarding(true);
