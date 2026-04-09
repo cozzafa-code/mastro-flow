@@ -8,7 +8,7 @@ import React from "react";
 import { useMastro } from "./MastroContext";
 import {
   FF, FM, THEMES, PLANS, PIPELINE_DEFAULT,
-  TIPOLOGIE_RAPIDE, SETTORI, ICO, Ico, tipoToMinCat,
+  TIPOLOGIE_RAPIDE, SETTORI, ICO, Ico, I, tipoToMinCat,
 } from "./mastro-constants";
 
 
@@ -724,7 +724,7 @@ export default function SettingsPanel() {
                     background: isOn ? (T.pri || "#0D7C6B") + "08" : T.card,
                     display: "flex", alignItems: "center", gap: 12,
                   }}>
-                    <div style={{ fontSize: 28, width: 36, textAlign: "center" }}>{s.icon}</div>
+                    <div style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO[s.icon] || ICO.grid} s={22} c={isOn ? (T.pri || "#0D7C6B") : T.sub} /></div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: isOn ? (T.pri || "#0D7C6B") : T.text }}>{s.label}</div>
                       <div style={{ fontSize: 10, color: T.sub }}>{s.desc}</div>
@@ -1459,7 +1459,7 @@ export default function SettingsPanel() {
                   <div onClick={() => setFavTipologie(fav => isFav ? fav.filter(f => f !== t.code) : [...fav, t.code])} style={{ cursor: "pointer" }}>
                     <span style={{ fontSize: 16, color: isFav ? "#E8A020" : T.bdr }}>{isFav ? "⭐" : ""}</span>
                   </div>
-                  <span style={{ fontSize: 16 }}>{t.icon}</span>
+                  <span style={{ display: "flex", alignItems: "center" }}><I d={ICO[t.icon] || ICO.grid} s={16} c={T.sub} /></span>
                   <div style={{ flex: 1 }}>
                     <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM }}>{t.code}</span>
                     <span style={{ fontSize: 11, color: T.sub, marginLeft: 6 }}>{t.label}</span>
