@@ -1,5 +1,6 @@
 "use client";
 // @ts-nocheck
+// S4-fix
 // ═══════════════════════════════════════════════════════════
 // MASTRO ERP — SettingsPanel
 // Estratto S1: ~2.060 righe (Impostazioni complete)
