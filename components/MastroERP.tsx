@@ -353,6 +353,11 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   const [montCalDate, setMontCalDate] = useState(new Date());
   const [dossierTab, setDossierTab] = useState("storia");
   const [cmFaseIdx, setCmFaseIdx] = useState(0); // filtro fase widget commesse dashboard
+  // Team Command Center states
+  const [teamView, setTeamView] = useState<"compiti"|"calendario"|"persone"|"report">("compiti");
+  const [teamWeek, setTeamWeek] = useState(0);
+  const [showNewCompito, setShowNewCompito] = useState(false);
+  const [newCompito, setNewCompito] = useState({ persona: "", tipo: "", descrizione: "", data: new Date().toISOString().split("T")[0], ora: "09:00", scadenza: "", priorita: "normale", note: "", commessaId: "" });
   const [cmView, setCmView] = useState<"card"|"list">("card"); // vista commesse: card grande | lista compatta
   const [fasePanelOpen, setFasePanelOpen] = useState<Record<string,boolean>>({}); // accordion checklist per fase
   const [catIdx, setCatIdx] = useState(0); // categoria widget allerte dashboard
@@ -3388,7 +3393,460 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
         {tab === "agenda" && <PanelErrorBoundary name="Agenda">{renderAgenda()}</PanelErrorBoundary>}
         {tab === "contabilita" && <PanelErrorBoundary name="Contabilita">{renderContabilita()}</PanelErrorBoundary>}
-        {tab === "montaggi_cal" && <PanelErrorBoundary name="MontaggiCal"><MontaggiCalendar /></PanelErrorBoundary>}
+        {tab === "montaggi_cal" && <PanelErrorBoundary name="Team">{(() => {
+          // Team states at component level
+
+          const today = new Date().toISOString().split("T")[0];
+          
+          // Collect ALL tasks from commesse assignments + standalone tasks
+          const tuttiCompiti: any[] = [];
+          cantieri.forEach((cm: any) => {
+            Object.entries(cm.assegnazioni || {}).forEach(([faseId, ass]: [string, any]) => {
+              if (ass.persona) {
+                tuttiCompiti.push({
+                  id: cm.id + "-" + faseId,
+                  persona: ass.persona,
+                  tipo: faseId,
+                  descrizione: (PIPELINE.find(p => p.id === faseId)?.nome || faseId) + " — " + (cm.cliente || cm.titolo || cm.code || ""),
+                  stato: ass.stato || "da_fare",
+                  scadenza: ass.scadenza || "",
+                  note: ass.note || "",
+                  commessaId: cm.id,
+                  commessa: cm,
+                  color: PIPELINE.find(p => p.id === faseId)?.color || T.acc,
+                  data: ass.scadenza || "",
+                });
+              }
+            });
+          });
+          // Add standalone tasks
+          tasks.forEach((t: any) => {
+            if (t.persona) {
+              tuttiCompiti.push({
+                id: "task-" + t.id,
+                persona: t.persona,
+                tipo: "task",
+                descrizione: t.text || "",
+                stato: t.done ? "completato" : "da_fare",
+                scadenza: t.date || "",
+                notes: t.meta || "",
+                color: "#D08008",
+                data: t.date || "",
+              });
+            }
+          });
+
+          const compitiPersona = (nome: string) => tuttiCompiti.filter(c => c.persona === nome || c.persona === "sq:" + nome);
+          const compitiOggi = tuttiCompiti.filter(c => c.data === today || c.scadenza === today);
+          const compitiScaduti = tuttiCompiti.filter(c => c.scadenza && c.scadenza < today && c.stato !== "completato");
+          const compitiInCorso = tuttiCompiti.filter(c => c.stato === "in_corso");
+          
+          const statoColors: any = { da_fare: T.orange || "#D08008", in_corso: T.blue || "#3B7FE0", completato: T.grn || "#1A9E73", bloccato: T.red || "#DC4444" };
+          const statoLabels: any = { da_fare: "Da fare", in_corso: "In corso", completato: "Fatto", bloccato: "Bloccato" };
+          const statoIco: any = { da_fare: "clock", in_corso: "zap", completato: "check", bloccato: "alert" };
+
+          // Week days helper
+          const getWeekDaysFromOffset = (offset: number) => {
+            const d = new Date(); d.setDate(d.getDate() + offset * 7);
+            const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            const mon = new Date(d.setDate(diff));
+            return Array.from({length: 7}, (_, i) => { const dd = new Date(mon); dd.setDate(mon.getDate() + i); return dd; });
+          };
+
+          const weekDays = getWeekDaysFromOffset(teamWeek);
+
+          return (
+            <div style={{ minHeight: "100vh", paddingBottom: 100 }}>
+              {/* HEADER */}
+              <div style={{ background: "#0D1F1F", padding: "20px 16px 16px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginBottom: 4 }}>Team & Compiti</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>{team.length} membri · {tuttiCompiti.filter(c => c.stato !== "completato").length} compiti attivi</div>
+                {/* KPI row */}
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  {[
+                    { label: "Oggi", val: compitiOggi.length, color: T.acc || "#28A0A0" },
+                    { label: "In corso", val: compitiInCorso.length, color: T.blue || "#3B7FE0" },
+                    { label: "Scaduti", val: compitiScaduti.length, color: T.red || "#DC4444" },
+                    { label: "Fatti", val: tuttiCompiti.filter(c => c.stato === "completato").length, color: T.grn || "#1A9E73" },
+                  ].map(k => (
+                    <div key={k.label} style={{ flex: 1, padding: "10px 6px", borderRadius: 12, background: "rgba(255,255,255,.06)", textAlign: "center" }}>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: k.color }}>{k.val}</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.35)" }}>{k.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* TAB BAR */}
+              <div style={{ display: "flex", background: T.card, borderBottom: "1.5px solid " + T.bdr }}>
+                {([
+                  { id: "compiti", label: "Compiti", ico: "checkCircle" },
+                  { id: "calendario", label: "Calendario", ico: "calendar" },
+                  { id: "persone", label: "Persone", ico: "users" },
+                  { id: "report", label: "Report", ico: "barChart" },
+                ] as const).map(t => (
+                  <div key={t.id} onClick={() => setTeamView(t.id)}
+                    style={{ flex: 1, padding: "12px 4px", textAlign: "center", cursor: "pointer",
+                      borderBottom: teamView === t.id ? "3px solid " + (T.acc || "#28A0A0") : "3px solid transparent" }}>
+                    <I d={ICO[t.ico]} s={14} c={teamView === t.id ? (T.acc || "#28A0A0") : (T.sub || "#999")} />
+                    <div style={{ fontSize: 10, fontWeight: teamView === t.id ? 900 : 600, color: teamView === t.id ? (T.acc || "#28A0A0") : (T.sub || "#999"), marginTop: 2 }}>{t.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ padding: "12px 16px" }}>
+
+              {/* ═══ COMPITI TAB ═══ */}
+              {teamView === "compiti" && (<>
+                {/* FAB nuovo compito */}
+                <div onClick={() => setShowNewCompito(true)}
+                  style={{ position: "fixed", bottom: 90, right: 20, width: 56, height: 56, borderRadius: 16,
+                    background: T.acc || "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 6px 0 0 " + (T.accDk || "#156060") + ", 0 8px 20px rgba(0,0,0,.15)", cursor: "pointer", zIndex: 50 }}>
+                  <I d={ICO.plus} s={24} c="#fff" sw={3} />
+                </div>
+
+                {/* Scaduti alert */}
+                {compitiScaduti.length > 0 && (
+                  <div style={{ padding: "10px 14px", borderRadius: 12, background: "#FFE4E4", border: "1.5px solid #DC444430", marginBottom: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                    <I d={ICO.alert} s={16} c="#DC4444" />
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "#DC4444" }}>{compitiScaduti.length} compiti scaduti</span>
+                  </div>
+                )}
+
+                {/* Group by person */}
+                {team.map(m => {
+                  const mc = compitiPersona(m.nome);
+                  if (mc.length === 0) return null;
+                  const daFare = mc.filter(c => c.stato === "da_fare").length;
+                  const inCorso = mc.filter(c => c.stato === "in_corso").length;
+                  return (
+                    <div key={m.id} style={{ marginBottom: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 800 }}>
+                          {(m.nome || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{m.nome}</span>
+                          <span style={{ fontSize: 10, color: T.sub, marginLeft: 6 }}>{m.ruolo}</span>
+                        </div>
+                        {daFare > 0 && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: T.orange + "18", color: T.orange }}>{daFare} da fare</span>}
+                        {inCorso > 0 && <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: T.blue + "18", color: T.blue }}>{inCorso} in corso</span>}
+                      </div>
+                      {mc.filter(c => c.stato !== "completato").map(c => (
+                        <div key={c.id} style={{ background: T.card, borderRadius: 12, border: "1.5px solid " + T.bdr, padding: "10px 14px",
+                          marginBottom: 4, marginLeft: 36, boxShadow: "0 2px 0 0 " + T.bdr,
+                          borderLeft: "4px solid " + (c.color || T.acc) }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                            <I d={ICO[statoIco[c.stato]] || ICO.clock} s={12} c={statoColors[c.stato]} />
+                            <span style={{ fontSize: 12, fontWeight: 800, color: T.text, flex: 1 }}>{c.descrizione}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: statoColors[c.stato] + "15", color: statoColors[c.stato] }}>{statoLabels[c.stato]}</span>
+                            {c.scadenza && <span style={{ fontSize: 9, color: c.scadenza < today && c.stato !== "completato" ? T.red : T.sub }}><I d={ICO.calendar} s={9} c={T.sub} /> {new Date(c.scadenza + "T12:00:00").toLocaleDateString("it-IT", {day:"2-digit",month:"short"})}</span>}
+                            {c.commessa && <span onClick={() => { setSelectedCM(c.commessa); setTab("commesse"); }} style={{ fontSize: 9, color: T.acc, fontWeight: 700, cursor: "pointer" }}>{c.commessa.code}</span>}
+                          </div>
+                          {c.notes && <div style={{ fontSize: 10, color: T.sub, marginTop: 4, fontStyle: "italic" }}>{c.notes}</div>}
+                          {/* Quick status change */}
+                          <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                            {(["da_fare","in_corso","completato","bloccato"] as const).map(s => (
+                              <button key={s} onClick={() => {
+                                if (c.commessaId && c.tipo !== "task") {
+                                  const faseId = c.tipo;
+                                  setCantieri(cs => cs.map(cm => cm.id === c.commessaId ? {...cm, assegnazioni: {...(cm.assegnazioni||{}), [faseId]: {...((cm.assegnazioni||{})[faseId]||{}), stato: s}}} : cm));
+                                  if (selectedCM?.id === c.commessaId) setSelectedCM((prev: any) => ({...prev, assegnazioni: {...(prev?.assegnazioni||{}), [faseId]: {...((prev?.assegnazioni||{})[faseId]||{}), stato: s}}}));
+                                }
+                              }} style={{ flex: 1, padding: "5px 2px", borderRadius: 6, border: c.stato === s ? "none" : "1px solid " + T.bdr,
+                                background: c.stato === s ? statoColors[s] : "transparent",
+                                color: c.stato === s ? "#fff" : T.sub,
+                                fontSize: 9, fontWeight: 800, cursor: "pointer", fontFamily: FF }}>{statoLabels[s]}</button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+
+                {/* Unassigned members */}
+                {team.filter(m => compitiPersona(m.nome).length === 0).length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, marginBottom: 8, textTransform: "uppercase" }}>Senza compiti assegnati</div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {team.filter(m => compitiPersona(m.nome).length === 0).map(m => (
+                        <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 10, background: T.card, border: "1px solid " + T.bdr }}>
+                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 9, fontWeight: 800 }}>
+                            {(m.nome || "?")[0].toUpperCase()}
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>{m.nome}</span>
+                          <span style={{ fontSize: 9, color: T.sub }}>{m.ruolo}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {tuttiCompiti.filter(c => c.stato !== "completato").length === 0 && (
+                  <div style={{ textAlign: "center", padding: "40px 20px", color: T.sub }}>
+                    <I d={ICO.checkCircle} s={40} c={T.bdr} />
+                    <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginTop: 12 }}>Tutto fatto!</div>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>Nessun compito attivo. Assegna compiti dalle commesse.</div>
+                  </div>
+                )}
+
+                {/* NEW COMPITO MODAL */}
+                {showNewCompito && (
+                  <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+                    onClick={() => setShowNewCompito(false)}>
+                    <div onClick={e => e.stopPropagation()}
+                      style={{ background: T.card, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 480, padding: "24px 20px", maxHeight: "85vh", overflow: "auto" }}>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: T.text, marginBottom: 16 }}>Nuovo compito</div>
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Assegna a</div>
+                        <select value={newCompito.persona} onChange={e => setNewCompito(p => ({...p, persona: e.target.value}))}
+                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 14, fontFamily: FF, color: T.text }}>
+                          <option value="">— Seleziona —</option>
+                          {team.map(m => <option key={m.id} value={m.nome}>{m.nome} ({m.ruolo})</option>)}
+                        </select>
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Tipo</div>
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                          {["Sopralluogo","Misure","Preventivo","Montaggio","Collaudo","Consegna","Acquisti","Ufficio","Pulizia","Manutenzione","Altro"].map(tipo => (
+                            <button key={tipo} onClick={() => setNewCompito(p => ({...p, tipo}))}
+                              style={{ padding: "6px 10px", borderRadius: 8, border: newCompito.tipo === tipo ? "none" : "1px solid " + T.bdr,
+                                background: newCompito.tipo === tipo ? (T.acc || "#28A0A0") : "transparent",
+                                color: newCompito.tipo === tipo ? "#fff" : T.text,
+                                fontSize: 11, fontWeight: 700, cursor: "pointer" }}>{tipo}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Descrizione</div>
+                        <input value={newCompito.descrizione} onChange={e => setNewCompito(p => ({...p, descrizione: e.target.value}))}
+                          placeholder="es. Pulire ufficio, Portare materiale a cantiere..."
+                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 14, fontFamily: FF, color: T.text, outline: "none" }} />
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Data</div>
+                          <input type="date" value={newCompito.data} onChange={e => setNewCompito(p => ({...p, data: e.target.value}))}
+                            style={{ width: "100%", padding: "12px 10px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Ora</div>
+                          <input type="time" value={newCompito.ora} onChange={e => setNewCompito(p => ({...p, ora: e.target.value}))}
+                            style={{ width: "100%", padding: "12px 10px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }} />
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Priorita</div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          {[{id:"bassa",c:T.grn},{id:"normale",c:T.orange},{id:"urgente",c:T.red}].map(pr => (
+                            <button key={pr.id} onClick={() => setNewCompito(p => ({...p, priorita: pr.id}))}
+                              style={{ flex: 1, padding: "10px", borderRadius: 10, border: newCompito.priorita === pr.id ? "none" : "1px solid " + T.bdr,
+                                background: newCompito.priorita === pr.id ? pr.c : "transparent",
+                                color: newCompito.priorita === pr.id ? "#fff" : T.text,
+                                fontSize: 12, fontWeight: 800, cursor: "pointer", textTransform: "capitalize",
+                                boxShadow: newCompito.priorita === pr.id ? "0 3px 0 0 " + pr.c + "80" : "none" }}>{pr.id}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Commessa collegata (opzionale)</div>
+                        <select value={newCompito.commessaId} onChange={e => setNewCompito(p => ({...p, commessaId: e.target.value}))}
+                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text }}>
+                          <option value="">— Nessuna —</option>
+                          {cantieri.map(cm => <option key={cm.id} value={cm.id}>{cm.code} — {cm.cliente}</option>)}
+                        </select>
+                      </div>
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 4 }}>Note</div>
+                        <input value={newCompito.note} onChange={e => setNewCompito(p => ({...p, note: e.target.value}))}
+                          placeholder="Istruzioni aggiuntive..."
+                          style={{ width: "100%", padding: "12px 14px", borderRadius: 12, border: "1.5px solid " + T.bdr, background: T.bg, fontSize: 13, fontFamily: FF, color: T.text, outline: "none" }} />
+                      </div>
+                      <button onClick={() => {
+                        if (!newCompito.persona || !newCompito.descrizione) return;
+                        const t = { id: "t" + Date.now(), text: newCompito.descrizione, persona: newCompito.persona, date: newCompito.data, time: newCompito.ora, priority: newCompito.priorita, cm: newCompito.commessaId, meta: newCompito.note, done: false, tipo: newCompito.tipo };
+                        setTasks(prev => [...prev, t]);
+                        setShowNewCompito(false);
+                        setNewCompito({ persona: "", tipo: "", descrizione: "", data: new Date().toISOString().split("T")[0], ora: "09:00", scadenza: "", priorita: "normale", note: "", commessaId: "" });
+                      }} style={{ width: "100%", padding: "16px", borderRadius: 14, border: "none", background: T.acc || "#28A0A0", color: "#fff",
+                        fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF,
+                        boxShadow: "0 6px 0 0 " + (T.accDk || "#156060") }}>
+                        Assegna compito
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>)}
+
+              {/* ═══ CALENDARIO TAB ═══ */}
+              {teamView === "calendario" && (<>
+                {/* Week navigation */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                  <div onClick={() => setTeamWeek(w => w - 1)} style={{ width: 36, height: 36, borderRadius: 10, background: T.card, border: "1.5px solid " + T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <I d={ICO.chevronLeft} s={16} c={T.text} />
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>
+                    {weekDays[0].toLocaleDateString("it-IT", {day:"numeric",month:"short"})} — {weekDays[6].toLocaleDateString("it-IT", {day:"numeric",month:"short",year:"numeric"})}
+                  </div>
+                  <div onClick={() => setTeamWeek(w => w + 1)} style={{ width: 36, height: 36, borderRadius: 10, background: T.card, border: "1.5px solid " + T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <I d={ICO.chevronRight} s={16} c={T.text} />
+                  </div>
+                </div>
+                {teamWeek !== 0 && <div onClick={() => setTeamWeek(0)} style={{ textAlign: "center", fontSize: 11, color: T.acc, fontWeight: 700, marginBottom: 8, cursor: "pointer" }}>Torna a questa settimana</div>}
+
+                {/* Calendar grid - rows = team members, cols = days */}
+                <div style={{ overflowX: "auto" }}>
+                  <div style={{ minWidth: 600 }}>
+                    {/* Day headers */}
+                    <div style={{ display: "flex", borderBottom: "1.5px solid " + T.bdr, paddingBottom: 6, marginBottom: 4 }}>
+                      <div style={{ width: 100, flexShrink: 0 }} />
+                      {weekDays.map((d, i) => {
+                        const isToday = d.toISOString().split("T")[0] === today;
+                        const isSun = d.getDay() === 0;
+                        return (
+                          <div key={i} style={{ flex: 1, textAlign: "center", padding: "4px 2px" }}>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: isSun ? T.red : T.sub }}>{["Dom","Lun","Mar","Mer","Gio","Ven","Sab"][d.getDay()]}</div>
+                            <div style={{ fontSize: 14, fontWeight: isToday ? 900 : 600, color: isToday ? "#fff" : T.text,
+                              background: isToday ? (T.acc || "#28A0A0") : "transparent", borderRadius: "50%", width: 28, height: 28,
+                              display: "flex", alignItems: "center", justifyContent: "center", margin: "2px auto" }}>{d.getDate()}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Member rows */}
+                    {team.map(m => (
+                      <div key={m.id} style={{ display: "flex", borderBottom: "1px solid " + T.bdr + "60", minHeight: 48 }}>
+                        <div style={{ width: 100, flexShrink: 0, display: "flex", alignItems: "center", gap: 4, padding: "4px 0" }}>
+                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 8, fontWeight: 800, flexShrink: 0 }}>
+                            {(m.nome || "?")[0].toUpperCase()}
+                          </div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.nome.split(" ")[0]}</div>
+                        </div>
+                        {weekDays.map((d, i) => {
+                          const dayStr = d.toISOString().split("T")[0];
+                          const dayCompiti = compitiPersona(m.nome).filter(c => c.data === dayStr || c.scadenza === dayStr);
+                          const isSun = d.getDay() === 0;
+                          return (
+                            <div key={i} style={{ flex: 1, padding: "3px 2px", background: isSun ? T.bdr + "30" : "transparent", minHeight: 44, display: "flex", flexDirection: "column", gap: 2 }}>
+                              {dayCompiti.map(c => (
+                                <div key={c.id} style={{ padding: "2px 4px", borderRadius: 4, background: (c.color || T.acc) + "20", borderLeft: "3px solid " + (c.color || T.acc),
+                                  fontSize: 8, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {c.descrizione.substring(0, 15)}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>)}
+
+              {/* ═══ PERSONE TAB ═══ */}
+              {teamView === "persone" && (<>
+                {team.map(m => {
+                  const mc = compitiPersona(m.nome);
+                  const fatti = mc.filter(c => c.stato === "completato").length;
+                  const attivi = mc.filter(c => c.stato !== "completato").length;
+                  return (
+                    <div key={m.id} style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "14px 16px",
+                      marginBottom: 8, boxShadow: "0 3px 0 0 " + T.bdr }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 14, background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 16, fontWeight: 900 }}>
+                          {(m.nome || "?").split(" ").map((n: string) => n[0]).join("").toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: T.text }}>{m.nome}</div>
+                          <div style={{ fontSize: 11, color: T.sub }}>{m.ruolo}</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 18, fontWeight: 900, color: attivi > 0 ? T.acc : T.grn }}>{attivi}</div>
+                          <div style={{ fontSize: 9, color: T.sub }}>attivi</div>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                        {mc.length > 0 ? (["completato","in_corso","da_fare","bloccato"] as const).map(s => {
+                          const count = mc.filter(c => c.stato === s).length;
+                          if (count === 0) return null;
+                          return <div key={s} style={{ flex: count, height: 6, borderRadius: 3, background: statoColors[s] }} />;
+                        }) : <div style={{ flex: 1, height: 6, borderRadius: 3, background: T.bdr }} />}
+                      </div>
+                      <div style={{ display: "flex", gap: 8, fontSize: 10, color: T.sub }}>
+                        <span><b style={{color:T.grn}}>{fatti}</b> fatti</span>
+                        <span><b style={{color:T.blue}}>{mc.filter(c=>c.stato==="in_corso").length}</b> in corso</span>
+                        <span><b style={{color:T.orange}}>{mc.filter(c=>c.stato==="da_fare").length}</b> da fare</span>
+                        {mc.filter(c=>c.stato==="bloccato").length > 0 && <span><b style={{color:T.red}}>{mc.filter(c=>c.stato==="bloccato").length}</b> bloccati</span>}
+                      </div>
+                      {m.telefono && (
+                        <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                          <div onClick={() => window.location.href = "tel:" + m.telefono} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.grn + "12", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: T.grn }}><I d={ICO.phone} s={11} c={T.grn} /> Chiama</div>
+                          <div onClick={() => window.open("https://wa.me/" + (m.telefono||"").replace(/\D/g,""))} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#25d36612", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#25d366" }}><I d={ICO.messageCircle} s={11} c="#25d366" /> WhatsApp</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>)}
+
+              {/* ═══ REPORT TAB ═══ */}
+              {teamView === "report" && (<>
+                <div style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "16px", marginBottom: 12, boxShadow: "0 3px 0 0 " + T.bdr }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Riepilogo compiti</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {[
+                      { label: "Totale compiti", val: tuttiCompiti.length, color: T.text },
+                      { label: "Completati", val: tuttiCompiti.filter(c=>c.stato==="completato").length, color: T.grn },
+                      { label: "In corso", val: tuttiCompiti.filter(c=>c.stato==="in_corso").length, color: T.blue },
+                      { label: "Da fare", val: tuttiCompiti.filter(c=>c.stato==="da_fare").length, color: T.orange },
+                      { label: "Bloccati", val: tuttiCompiti.filter(c=>c.stato==="bloccato").length, color: T.red },
+                      { label: "Scaduti", val: compitiScaduti.length, color: T.red },
+                    ].map(s => (
+                      <div key={s.label} style={{ padding: "12px 10px", borderRadius: 10, background: s.color + "08", border: "1px solid " + s.color + "20", textAlign: "center" }}>
+                        <div style={{ fontSize: 22, fontWeight: 900, color: s.color }}>{s.val}</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.sub }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Productivity per person */}
+                <div style={{ background: T.card, borderRadius: 14, border: "1.5px solid " + T.bdr, padding: "16px", boxShadow: "0 3px 0 0 " + T.bdr }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 }}>Produttivita per persona</div>
+                  {team.map(m => {
+                    const mc = compitiPersona(m.nome);
+                    const fatti = mc.filter(c => c.stato === "completato").length;
+                    const tot = mc.length;
+                    const perc = tot > 0 ? Math.round(fatti / tot * 100) : 0;
+                    return (
+                      <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+                          {(m.nome||"?")[0].toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{m.nome}</span>
+                            <span style={{ fontSize: 11, fontWeight: 800, color: perc >= 80 ? T.grn : perc >= 50 ? T.orange : T.red }}>{perc}%</span>
+                          </div>
+                          <div style={{ height: 6, borderRadius: 3, background: T.bdr }}>
+                            <div style={{ height: 6, borderRadius: 3, background: perc >= 80 ? T.grn : perc >= 50 ? T.orange : T.red, width: perc + "%", transition: "width 0.3s" }} />
+                          </div>
+                          <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>{fatti}/{tot} completati</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>)}
+
+              </div>
+            </div>
+          );
+        })()}</PanelErrorBoundary>}
           {tab === "settings" && <PanelErrorBoundary name="Impostazioni">{renderSettings()}</PanelErrorBoundary>}
         {tab === "altro" && (() => {
           return (
