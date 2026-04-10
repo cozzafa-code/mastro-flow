@@ -21,8 +21,6 @@ import DesktopTeam from "./DesktopTeam";
 import DesktopLeads from "./DesktopLeads";
 import DesktopRete from "./DesktopRete";
 import DesktopMisure from "./DesktopMisure";
-import DesktopInfissiOra from "./DesktopInfissiOra";
-import DesktopPortaleB2C from "./DesktopPortaleB2C";
 import DesktopCNC from "./DesktopCNC";
 import DesktopListini from "./DesktopListini";
 import AgendaPanel from "./AgendaPanel";
@@ -35,41 +33,35 @@ import QuickBar from "./QuickBar";
 const TEAL="#1A9E73", DARK="#1A1A1C", RED="#DC4444", PURPLE="#8B5CF6";
 
 const NAV = [
-  { group:"Cantiere", items:[
+  { group:"Lavoro quotidiano", items:[
     { key:"home",         ico:"home",     label:"Dashboard" },
     { key:"commesse",     ico:"folder",   label:"Commesse" },
-    { key:"misure",       ico:"ruler",    label:"Misure" },
+    { key:"messaggi",     ico:"inbox",    label:"Messaggi" },
     { key:"agenda",       ico:"calendar", label:"Agenda" },
   ]},
   { group:"Produzione", items:[
-    { key:"produzione",   ico:"cpu",      label:"Produzione",      sub:"Barra → Finestra" },
-    { key:"cnc",          ico:"cpu",      label:"CNC Emmegi",      sub:"CENTRO 2 / TCUT" },
+    { key:"produzione",   ico:"cpu",      label:"Distinte taglio" },
+    { key:"cnc",          ico:"cpu",      label:"CNC / Macchine",    sub:"Emmegi CENTRO 2" },
     { key:"montaggi",     ico:"wrench",   label:"Montaggi" },
     { key:"ordini",       ico:"package",  label:"Ordini fornitori" },
-    { key:"listini",      ico:"fileText", label:"Listini",         sub:"Excel/CSV/PDF" },
   ]},
-  { group:"Gestione", items:[
+  { group:"Amministrazione", items:[
     { key:"clienti",      ico:"users",    label:"Clienti" },
-    { key:"agente",       ico:"zap",      label:"AI Agente" },
-    { key:"messaggi",     ico:"inbox",    label:"Messaggi" },
-    { key:"contabilita",  ico:"wallet",   label:"Contabilità" },
+    { key:"contabilita",  ico:"wallet",   label:"Contabilit\u00E0" },
     { key:"fatture",      ico:"fileText", label:"Fatture SDI" },
     { key:"report",       ico:"barChart", label:"Analytics" },
   ]},
-  { group:"Compliance", items:[
-    { key:"enea",         ico:"shield",   label:"ENEA / CAM 2026" },
+  { group:"Configurazione", items:[
+    { key:"settings",     ico:"settings", label:"Profili & Tipologie" },
+    { key:"listini",      ico:"fileText", label:"Listini" },
+    { key:"archivi",      ico:"database", label:"Archivi tecnici",   sub:"Nodi \u00B7 Vetri \u00B7 Colori" },
   ]},
-  { group:"Crescita", items:[
+  { group:"Extra", items:[
+    { key:"enea",         ico:"shield",   label:"ENEA / CAM" },
     { key:"leads",        ico:"zap",      label:"Trova Clienti" },
     { key:"rete",         ico:"share2",   label:"RETE Agenti" },
-    { key:"infissiora",   ico:"globe",    label:"InfissiOra" },
-    { key:"portale_b2c",  ico:"monitor",  label:"Portale Cliente" },
-    { key:"trasporti",    ico:"package",  label:"Trasporti",       sub:"F5 · Coming 2027" },
-  ]},
-  { group:"Sistema", items:[
+    { key:"agente",       ico:"zap",      label:"AI Agente" },
     { key:"team",         ico:"users",    label:"Team" },
-    { key:"archivi",      ico:"database", label:"Archivi",          sub:"Profili · Nodi · Vetri" },
-    { key:"settings",     ico:"settings", label:"Impostazioni" },
   ]},
 ];
 
@@ -138,8 +130,6 @@ export default function MastroDesktop() {
       case "enea":          return <DesktopENEA />;
       case "leads":         return <DesktopLeads />;
       case "rete":          return <DesktopRete />;
-      case "infissiora":    return <DesktopInfissiOra />;
-      case "portale_b2c":   return <DesktopPortaleB2C />;
       case "team":          return <DesktopTeam />;
       case "settings":      return <SettingsPanel />;
       case "archivi":       return <DesktopSettings />;
