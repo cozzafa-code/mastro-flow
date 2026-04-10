@@ -46,7 +46,7 @@ function WHead({ title, badge, badgeColor, dot, onAction, actionLabel }) {
         {title}
         {badge && <span style={{ fontSize: 10, color: badgeColor || DS.tealDark, fontWeight: 500, marginLeft: 4 }}>{badge}</span>}
       </div>
-      {onAction && <button onClick={onAction} style={{ fontSize: 10, color: DS.teal, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', fontFamily: "'Inter', sans-serif" }}>{actionLabel || 'Vedi tutto \u2192'}</button>}
+      {onAction && <button onClick={onAction} style={{ fontSize: 10, color: DS.teal, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', fontFamily: "'Inter', sans-serif" }}>{actionLabel || 'Vedi tutto →'}</button>}
     </div>
   );
 }
@@ -87,9 +87,9 @@ function RowItem({ label, value, onClick }) {
 
 function CompitiWidget({ onNavigate }) {
   const [compiti, setCompiti] = useState([
-    { id: '1', title: 'Sopralluogo \u2014 Rossi Mario', type: 'Sopralluogo', typeColor: DS.blue, typeBg: '#EBF5FF', address: 'Via Roma 12', time: '9:00', priority: 'urgente', done: false },
-    { id: '2', title: 'Misure \u2014 Bianchi Luigi', type: 'Misure', typeColor: DS.amber, typeBg: '#FFF8E1', address: 'Corso Mazzini 8', time: '11:00', priority: 'normale', done: false },
-    { id: '3', title: 'Consegna \u2014 Verdi Anna', type: 'Consegna', typeColor: DS.green, typeBg: '#E8F5E9', address: 'Via Napoli 3', time: '8:30', priority: 'bassa', done: true },
+    { id: '1', title: 'Sopralluogo — Rossi Mario', type: 'Sopralluogo', typeColor: DS.blue, typeBg: '#EBF5FF', address: 'Via Roma 12', time: '9:00', priority: 'urgente', done: false },
+    { id: '2', title: 'Misure — Bianchi Luigi', type: 'Misure', typeColor: DS.amber, typeBg: '#FFF8E1', address: 'Corso Mazzini 8', time: '11:00', priority: 'normale', done: false },
+    { id: '3', title: 'Consegna — Verdi Anna', type: 'Consegna', typeColor: DS.green, typeBg: '#E8F5E9', address: 'Via Napoli 3', time: '8:30', priority: 'bassa', done: true },
   ]);
 
   const toggleDone = (id) => setCompiti(prev => prev.map(c => c.id === id ? { ...c, done: !c.done } : c));
@@ -97,7 +97,7 @@ function CompitiWidget({ onNavigate }) {
 
   return (
     <>
-      <WHead title="Compiti oggi" badge={`${compiti.filter(c => !c.done).length} da fare`} dot={DS.amber} onAction={() => onNavigate('team')} actionLabel="Team Command \u2192" />
+      <WHead title="Compiti oggi" badge={`${compiti.filter(c => !c.done).length} da fare`} dot={DS.amber} onAction={() => onNavigate('team')} actionLabel="Team Command →" />
       {compiti.map(c => (
         <div key={c.id} style={{ padding: '10px 16px', borderBottom: `1px solid ${DS.border}`, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', transition: 'background 0.1s', opacity: c.done ? 0.5 : 1 }}
           onMouseEnter={e => (e.currentTarget.style.background = DS.light)} onMouseLeave={e => (e.currentTarget.style.background = DS.white)}>
@@ -119,18 +119,18 @@ function CompitiWidget({ onNavigate }) {
           </div>
         </div>
       ))}
-      <ExpandBtn label="Espandi compiti settimana \u2193" onClick={() => onNavigate('team')} />
+      <ExpandBtn label="Espandi compiti settimana ↓" onClick={() => onNavigate('team')} />
     </>
   );
 }
 
-const DEFAULT_ORDER = ['compiti', 'pipeline', 'scadenze', 'oggi', 'team', 'produzione', 'contabilita', 'pratiche'];
+const DEFAULT_ORDER = ['compiti', 'scadenze', 'pipeline', 'produzione', 'oggi', 'contabilita', 'pratiche', 'team'];
 
-export default function HomePanel() {
+export default function HomePanel({ onNavigate }) {
   const [commesse, setCommesse] = useState([]);
   const [messaggi, setMessaggi] = useState([]);
   const user = { nome: 'FABIO COZZA' };
-  const nav = (panel) => { console.log('navigate to:', panel); };
+  const nav = (panel) => { if (onNavigate) onNavigate(panel); };
 
   React.useEffect(() => {
     supabase.from('commesse').select('*').order('created_at', { ascending: false }).limit(20)
@@ -212,14 +212,14 @@ export default function HomePanel() {
             ))}
           </div>
         </div>
-        <ExpandBtn label="Espandi con lista commesse \u2193" onClick={() => nav('commesse')} />
+        <ExpandBtn label="Espandi con lista commesse ↓" onClick={() => nav('commesse')} />
       </>);
       case 'scadenze': return w(<>
         <WHead title="Scadenze 15gg" dot={DS.amber} />
         <div style={{ padding: '14px 16px', fontSize: 11, color: DS.dark }}>
           {['Consegne', 'Fatture', 'Montaggi'].map(s => (<div key={s} style={{ marginBottom: 8 }}><div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: DS.tealDark, marginBottom: 2 }}>{s} (0)</div><div>Nessuna programmata</div></div>))}
         </div>
-        <ExpandBtn label="Espandi scadenze 30gg \u2193" onClick={() => nav('agenda')} />
+        <ExpandBtn label="Espandi scadenze 30gg ↓" onClick={() => nav('agenda')} />
       </>);
       case 'oggi': return w(<>
         <WHead title="Oggi" dot={DS.blue} />
@@ -237,36 +237,36 @@ export default function HomePanel() {
         <div style={{ padding: '10px 16px' }}>
           <div onClick={() => nav('team')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '6px 0' }}>
             <div style={{ width: 30, height: 30, borderRadius: 7, background: DS.teal, color: DS.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 11 }}>T</div>
-            <div><div style={{ fontSize: 12, fontWeight: 600, color: DS.dark }}>Titolare</div><div style={{ fontSize: 9, color: DS.green }}>Online \u2014 3 compiti</div></div>
+            <div><div style={{ fontSize: 12, fontWeight: 600, color: DS.dark }}>Titolare</div><div style={{ fontSize: 9, color: DS.green }}>Online — 3 compiti</div></div>
           </div>
         </div>
-        <ExpandBtn label="Espandi team \u2193" onClick={() => nav('team')} />
+        <ExpandBtn label="Espandi team ↓" onClick={() => nav('team')} />
       </>);
       case 'produzione': return w(<>
         <WHead title="Produzione" badge="0 attive" badgeColor={DS.red} dot={DS.red} onAction={() => nav('distinte')} />
         <RowItem label="In produzione" value={0} onClick={() => nav('distinte')} />
         <RowItem label="In attesa ordini" value={0} onClick={() => nav('ordini')} />
         <RowItem label="Pronte per posa" value={0} onClick={() => nav('montaggi')} />
-        <ExpandBtn label="Espandi produzione \u2193" onClick={() => nav('distinte')} />
+        <ExpandBtn label="Espandi produzione ↓" onClick={() => nav('distinte')} />
       </>);
       case 'contabilita': return w(<>
         <WHead title="Contabilita" onAction={() => nav('contabilita')} />
         <div style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {[{ l: 'Fatturato', v: '\u20AC0', c: DS.green }, { l: 'Incassato', v: '\u20AC0', c: DS.teal }, { l: 'Spese', v: '\u20AC0', c: DS.red }, { l: 'Margine', v: '\u2014', c: DS.dark }].map(s => (
+          {[{ l: 'Fatturato', v: '€0', c: DS.green }, { l: 'Incassato', v: '€0', c: DS.teal }, { l: 'Spese', v: '€0', c: DS.red }, { l: 'Margine', v: '—', c: DS.dark }].map(s => (
             <div key={s.l} onClick={() => nav('contabilita')} style={{ padding: 10, background: DS.light, borderRadius: 8, cursor: 'pointer' }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: DS.tealDark }}>{s.l}</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: s.c, fontFamily: "'JetBrains Mono', monospace", marginTop: 3 }}>{s.v}</div>
             </div>
           ))}
         </div>
-        <ExpandBtn label="Espandi con grafico 6 mesi \u2193" onClick={() => nav('contabilita')} />
+        <ExpandBtn label="Espandi con grafico 6 mesi ↓" onClick={() => nav('contabilita')} />
       </>);
       case 'pratiche': return w(<>
         <WHead title="Pratiche fiscali" dot={DS.blue} />
         <RowItem label="Ristrutturazione 50%" value={0} onClick={() => nav('enea')} />
         <RowItem label="Ecobonus 65%" value={0} onClick={() => nav('enea')} />
         <RowItem label="Barriere 75%" value={0} onClick={() => nav('enea')} />
-        <ExpandBtn label="Espandi pratiche \u2193" onClick={() => nav('enea')} />
+        <ExpandBtn label="Espandi pratiche ↓" onClick={() => nav('enea')} />
       </>);
       default: return null;
     }
@@ -280,7 +280,7 @@ export default function HomePanel() {
       <div style={{ padding: '18px 22px 14px', background: DS.white, borderBottom: `1px solid ${DS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: DS.dark }}>{saluto}, {user?.nome || 'FABIO COZZA'}</h1>
-          <p style={{ margin: '2px 0 0', fontSize: 11, color: DS.tealDark }}>{now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} \u2014 trascina i widget per riordinare</p>
+          <p style={{ margin: '2px 0 0', fontSize: 11, color: DS.tealDark }}>{now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — trascina i widget per riordinare</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button style={btn3dOutline} onMouseDown={press} onMouseUp={release} onClick={() => nav('task')}>{stats.attive} task</button>
@@ -293,8 +293,8 @@ export default function HomePanel() {
         {[
           { l: 'Commesse attive', v: stats.attive, c: DS.blue, s: '0 confermate', p: 'commesse' },
           { l: 'Ferme', v: stats.ferme, c: DS.amber, s: 'Soglia 5gg', p: 'commesse' },
-          { l: 'Pipeline', v: `\u20AC${(stats.pipeline/1000).toFixed(stats.pipeline>9999?0:1)}k`, c: DS.green, s: '\u20AC0 confermato', p: 'commesse' },
-          { l: 'Da incassare', v: `\u20AC${stats.daIncassare.toLocaleString('it-IT')}`, c: DS.red, s: '0 scadute', p: 'fatture' },
+          { l: 'Pipeline', v: `€${(stats.pipeline/1000).toFixed(stats.pipeline>9999?0:1)}k`, c: DS.green, s: '€0 confermato', p: 'commesse' },
+          { l: 'Da incassare', v: `€${stats.daIncassare.toLocaleString('it-IT')}`, c: DS.red, s: '0 scadute', p: 'fatture' },
           { l: 'Messaggi', v: stats.nonLetti, c: DS.teal, s: `${messaggi?.length||0} totali`, p: 'messaggi' },
           { l: 'Compiti', v: 3, c: DS.dark, s: '1 urgente', p: 'team' },
         ].map((s, i) => (

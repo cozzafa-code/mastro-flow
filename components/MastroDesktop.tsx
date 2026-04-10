@@ -989,7 +989,7 @@ export default function MastroDesktop() {
   // Panel router
   const renderPanel = () => {
     switch (activePanel) {
-      case 'dashboard': return <HomePanel />;
+      case 'dashboard': return <HomePanel onNavigate={setActivePanel} />;
       case 'configuratore': return <ConfiguratorePanel onBack={() => setActivePanel('settings')} />;
       case 'settings': return <SettingsPanelInline onNavigate={setActivePanel} />;
       default: {
