@@ -576,6 +576,29 @@ export default function SettingsPanel() {
   const [profiliLoaded, setProfiliLoaded] = React.useState(false);
   const [profiliExpanded, setProfiliExpanded] = React.useState<string|null>(null);
   const [profiliSearch, setProfiliSearch] = React.useState("");
+  const [tipoSupa, setTipoSupa] = React.useState<any[]>([]);
+  const [regoleSupa, setRegoleSupa] = React.useState<any[]>([]);
+  const [tipoLoaded, setTipoLoaded] = React.useState(false);
+  const [tipoExp, setTipoExp] = React.useState<number|null>(null);
+  const [calcL, setCalcL] = React.useState("1200");
+  const [calcH, setCalcH] = React.useState("1400");
+  const [calcHF, setCalcHF] = React.useState("400");
+
+  React.useEffect(() => {
+    if (settingsTab !== "tipologie" || tipoLoaded) return;
+    (async () => {
+      try {
+        const { supabase: sb } = await import("@/lib/supabase");
+        const [r1, r2] = await Promise.all([
+          sb.from("tipologie_infisso").select("*").order("nome"),
+          sb.from("regole_taglio").select("*"),
+        ]);
+        if (r1.data) setTipoSupa(r1.data);
+        if (r2.data) setRegoleSupa(r2.data);
+        setTipoLoaded(true);
+      } catch(e) { console.error(e); }
+    })();
+  }, [settingsTab, tipoLoaded]);
 
   React.useEffect(() => {
     if (settingsTab !== "colori" || coloriLoaded) return;
@@ -2216,29 +2239,111 @@ export default function SettingsPanel() {
         )}
 
         {/* === TIPOLOGIE === */}
-        {settingsTab === "tipologie" && (
-          <>
-            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Tipologie serramento — trascina ⭐ per i preferiti</div>
-            {TIPOLOGIE_RAPIDE.map(t => {
-              const isFav = favTipologie.includes(t.code);
-              return (
-                <div key={t.code} style={{ ...S.card, marginBottom: 4 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 8, padding: "8px 14px" }}>
-                  <div onClick={() => setFavTipologie(fav => isFav ? fav.filter(f => f !== t.code) : [...fav, t.code])} style={{ cursor: "pointer" }}>
-                    <span style={{ fontSize: 16, color: isFav ? "#E8A020" : T.bdr }}>{isFav ? "⭐" : ""}</span>
+        {settingsTab === "tipologie" && (() => {
+          const calcFormula = (formula: string, L: number, H: number, HF: number) => {
+            try {
+              let f = formula.replace(/L\/2/g, String(L/2)).replace(/L/g, String(L)).replace(/H-HF/g, String(H-HF)).replace(/HF/g, String(HF)).replace(/H/g, String(H));
+              return Math.round(eval(f) * 10) / 10;
+            } catch { return 0; }
+          };
+
+          return (
+            <>
+              <div style={{ fontSize:11, color:T.sub, marginBottom:8 }}>Tipologie infisso con distinta di taglio automatica</div>
+
+              {/* Calcolatore */}
+              <div style={{ ...S.card, marginBottom:14 }}><div style={{ ...S.cardInner }}>
+                <div style={{ fontSize:13, fontWeight:800, color:T.text, marginBottom:8 }}>Calcolatore distinta</div>
+                <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:9, color:T.sub, marginBottom:2 }}>Larghezza L (mm)</div>
+                    <input type="number" value={calcL} onChange={e => setCalcL(e.target.value)}
+                      style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${PRI}`, fontSize:16, fontWeight:700, fontFamily:FM, textAlign:"center", background:T.card, color:T.text }} />
                   </div>
-                  <span style={{ display: "flex", alignItems: "center" }}><I d={ICO[t.icon] || ICO.grid} s={16} c={T.sub} /></span>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM }}>{t.code}</span>
-                    <span style={{ fontSize: 11, color: T.sub, marginLeft: 6 }}>{t.label}</span>
-                    {t.forma && t.forma !== "rettangolare" && <span style={{ fontSize: 9, color: PRI, marginLeft: 6, background: PRILt, padding: "1px 5px", borderRadius: 4 }}>{t.forma}</span>}
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:9, color:T.sub, marginBottom:2 }}>Altezza H (mm)</div>
+                    <input type="number" value={calcH} onChange={e => setCalcH(e.target.value)}
+                      style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${PRI}`, fontSize:16, fontWeight:700, fontFamily:FM, textAlign:"center", background:T.card, color:T.text }} />
                   </div>
-                  <Ico d={ICO.pen} s={14} c={T.sub} />
-                </div></div>
-              );
-            })}
-            <div onClick={() => { setSettingsModal("tipologia"); setSettingsForm({ code: "", label: "", icon: "", cat: "Altro", forma: "rettangolare" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipologia</div>
-          </>
-        )}
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:9, color:T.sub, marginBottom:2 }}>H Fascia (mm)</div>
+                    <input type="number" value={calcHF} onChange={e => setCalcHF(e.target.value)}
+                      style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:16, fontWeight:700, fontFamily:FM, textAlign:"center", background:T.card, color:T.text }} />
+                  </div>
+                </div>
+              </div></div>
+
+              {/* Lista tipologie */}
+              {tipoSupa.map(tip => {
+                const regole = regoleSupa.filter(r => r.tipologia_id === tip.id);
+                const isExp = tipoExp === tip.id;
+                const L = parseFloat(calcL) || 0, H = parseFloat(calcH) || 0, HF = parseFloat(calcHF) || 0;
+                const catColor = tip.categoria === "porta" ? "#DC4444" : tip.categoria === "scorrevole" ? "#7C5FBF" : tip.categoria === "fisso" ? "#3B7FE0" : PRI;
+
+                return (
+                  <div key={tip.id} style={{ ...S.card, marginBottom:6, overflow:"hidden" }}>
+                    <div onClick={() => setTipoExp(isExp ? null : tip.id)}
+                      style={{ ...S.cardInner, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
+                      <div style={{ width:36, height:36, borderRadius:8, background:catColor+"15", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        <span style={{ fontSize:11, fontWeight:900, color:catColor }}>{tip.n_ante || 0}A</span>
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{tip.nome}</div>
+                        <div style={{ display:"flex", gap:4, marginTop:2 }}>
+                          <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:700, background:catColor+"15", color:catColor }}>{tip.categoria}</span>
+                          {regole.length > 0 && <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:600, background:PRI+"10", color:PRI }}>{regole.length} regole</span>}
+                          {tip.ha_fascia && <span style={{ fontSize:8, color:T.sub }}>+fascia</span>}
+                          {tip.ha_riporto && <span style={{ fontSize:8, color:T.sub }}>+riporto</span>}
+                        </div>
+                      </div>
+                      <div style={{ fontSize:10, color:T.sub }}>{isExp ? "\u25B2" : "\u25BC"}</div>
+                    </div>
+
+                    {isExp && regole.length > 0 && L > 0 && H > 0 && (
+                      <div style={{ padding:"10px 14px", borderTop:`1px solid ${T.bdr}`, background:T.bg }}>
+                        <div style={{ fontSize:10, fontWeight:800, color:PRI, textTransform:"uppercase", marginBottom:6 }}>Distinta taglio {L} x {H} mm</div>
+                        <table style={{ width:"100%", fontSize:11, borderCollapse:"collapse" }}>
+                          <thead>
+                            <tr style={{ borderBottom:`2px solid ${PRI}` }}>
+                              <th style={{ textAlign:"left", padding:"4px 6px", fontSize:9, color:T.sub }}>Elemento</th>
+                              <th style={{ textAlign:"left", padding:"4px 6px", fontSize:9, color:T.sub }}>Profilo</th>
+                              <th style={{ textAlign:"left", padding:"4px 6px", fontSize:9, color:T.sub }}>Formula</th>
+                              <th style={{ textAlign:"right", padding:"4px 6px", fontSize:9, color:T.sub }}>Taglio mm</th>
+                              <th style={{ textAlign:"center", padding:"4px 6px", fontSize:9, color:T.sub }}>Qt</th>
+                              <th style={{ textAlign:"center", padding:"4px 6px", fontSize:9, color:T.sub }}>\u00B0</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {regole.map((r: any, ri: number) => {
+                              const taglio = calcFormula(r.formula, L, H, HF);
+                              const isVetro = r.profilo_ruolo.includes("vetro");
+                              return (
+                                <tr key={ri} style={{ borderBottom:`1px solid ${T.bdr}`, background: isVetro ? "#DBEAFE10" : "transparent" }}>
+                                  <td style={{ padding:"5px 6px", fontWeight:600, color: isVetro ? "#3B7FE0" : T.text }}>{r.profilo_ruolo.replace(/_/g, " ")}</td>
+                                  <td style={{ padding:"5px 6px", fontFamily:FM, fontSize:10, color:PRI }}>{r.profilo_codice || "—"}</td>
+                                  <td style={{ padding:"5px 6px", fontFamily:FM, fontSize:10, color:T.sub }}>{r.formula}</td>
+                                  <td style={{ padding:"5px 6px", textAlign:"right", fontWeight:800, fontFamily:FM, fontSize:13, color: isVetro ? "#3B7FE0" : T.text }}>{taglio}</td>
+                                  <td style={{ padding:"5px 6px", textAlign:"center", fontSize:10 }}>{r.quantita}</td>
+                                  <td style={{ padding:"5px 6px", textAlign:"center", fontSize:10, color:T.sub }}>{r.angolo_taglio}\u00B0</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {isExp && regole.length === 0 && (
+                      <div style={{ padding:"14px", borderTop:`1px solid ${T.bdr}`, background:T.bg, textAlign:"center", color:T.sub, fontSize:11 }}>
+                        Nessuna regola di taglio configurata per questa tipologia.
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          );
+        })()}
 
         {/* === COPRIFILI === */}
         {settingsTab === "coprifili" && (
