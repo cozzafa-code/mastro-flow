@@ -68,6 +68,7 @@ const NAV = [
   ]},
   { group:"Sistema", items:[
     { key:"team",         ico:"users",    label:"Team" },
+    { key:"archivi",      ico:"database", label:"Archivi",          sub:"Profili · Nodi · Vetri" },
     { key:"settings",     ico:"settings", label:"Impostazioni" },
   ]},
 ];
@@ -140,7 +141,8 @@ export default function MastroDesktop() {
       case "infissiora":    return <DesktopInfissiOra />;
       case "portale_b2c":   return <DesktopPortaleB2C />;
       case "team":          return <DesktopTeam />;
-      case "settings":      return <DesktopSettings />;
+      case "settings":      return <SettingsPanel />;
+      case "archivi":       return <DesktopSettings />;
       default:              return <SoonView k={active} T={T} />;
     }
   };

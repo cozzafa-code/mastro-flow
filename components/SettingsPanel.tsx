@@ -681,7 +681,7 @@ export default function SettingsPanel() {
     {
       label: "Catalogo prodotti",
       items: [
-        { id: "sistemi",       l: "Sistemi profilo",   show: settoriAttivi.includes("serramenti") },
+        { id: "sistemi",       l: "Listini",   show: settoriAttivi.includes("serramenti") },
         { id: "profili_arch",  l: "Archivio profili",  show: settoriAttivi.includes("serramenti") },
         { id: "vetri",         l: "Vetri & pacchetti", show: settoriAttivi.includes("serramenti") },
         { id: "colori",        l: "Colori & RAL",      show: settoriAttivi.includes("serramenti") },
