@@ -983,7 +983,7 @@ export default function MastroDesktop() {
   const [activePanel, setActivePanel] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const sidebarW = sidebarCollapsed ? 64 : 240;
+  const sidebarW = sidebarCollapsed ? 68 : 280;
 
   // Panel router
   const renderPanel = () => {
@@ -1013,14 +1013,29 @@ export default function MastroDesktop() {
         overflowY: 'auto',
         overflowX: 'hidden',
       }}>
-        {/* Logo */}
-        <div style={{ padding: '16px 16px 12px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <svg width="28" height="28" viewBox="0 0 40 40">
-            <rect width="40" height="40" rx="8" fill={DS.teal} />
-            <path d="M10 28V12l10 8-10 8z" fill={DS.white} />
-            <path d="M20 28V12l10 8-10 8z" fill={DS.white} opacity="0.6" />
-          </svg>
-          {!sidebarCollapsed && <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: 2 }}>MASTRO</span>}
+        {/* Logo + Toggle */}
+        <div style={{ padding: '16px 18px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => sidebarCollapsed && setSidebarCollapsed(false)}>
+            <svg width="32" height="32" viewBox="0 0 40 40">
+              <rect width="40" height="40" rx="8" fill={DS.teal} />
+              <path d="M10 28V12l10 8-10 8z" fill={DS.white} />
+              <path d="M20 28V12l10 8-10 8z" fill={DS.white} opacity="0.6" />
+            </svg>
+            {!sidebarCollapsed && <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: 2 }}>MASTRO</span>}
+          </div>
+          {!sidebarCollapsed && (
+            <button
+              onClick={() => setSidebarCollapsed(true)}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 6, borderRadius: 6, transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = DS.teal; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'none'; }}
+              title="Chiudi menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M14 4l-8 6 8 6" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Nav groups */}
@@ -1029,8 +1044,8 @@ export default function MastroDesktop() {
             <div key={group.title} style={{ marginBottom: 4 }}>
               {!sidebarCollapsed && (
                 <div style={{
-                  padding: '12px 16px 4px',
-                  fontSize: 10,
+                  padding: '16px 20px 6px',
+                  fontSize: 11,
                   fontWeight: 700,
                   color: DS.teal,
                   letterSpacing: 1.5,
@@ -1048,23 +1063,25 @@ export default function MastroDesktop() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 10,
+                      gap: 12,
                       width: '100%',
-                      padding: sidebarCollapsed ? '10px 0' : '8px 16px',
+                      padding: sidebarCollapsed ? '14px 0' : '12px 20px',
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                      background: isActive ? 'rgba(40,160,160,0.15)' : 'transparent',
+                      background: isActive ? 'rgba(40,160,160,0.18)' : 'transparent',
                       border: 'none',
-                      borderLeft: isActive ? `3px solid ${DS.teal}` : '3px solid transparent',
-                      color: item.disabled ? 'rgba(255,255,255,0.25)' : isActive ? DS.teal : 'rgba(255,255,255,0.7)',
+                      borderLeft: isActive ? `4px solid ${DS.teal}` : '4px solid transparent',
+                      color: item.disabled ? 'rgba(255,255,255,0.25)' : isActive ? DS.teal : 'rgba(255,255,255,0.75)',
                       cursor: item.disabled ? 'not-allowed' : 'pointer',
-                      fontSize: 13,
-                      fontWeight: isActive ? 600 : 400,
-                      transition: 'all 0.15s',
+                      fontSize: 14,
+                      fontWeight: isActive ? 700 : 500,
+                      transition: 'all 0.12s',
                       fontFamily: "'Inter', sans-serif",
                       textAlign: 'left',
+                      borderRadius: sidebarCollapsed ? 0 : '0 8px 8px 0',
+                      marginRight: sidebarCollapsed ? 0 : 8,
                     }}
-                    onMouseEnter={e => { if (!item.disabled && !isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                    onMouseEnter={e => { if (!item.disabled && !isActive) { e.currentTarget.style.background = 'rgba(40,160,160,0.08)'; e.currentTarget.style.color = DS.teal; } }}
+                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = item.disabled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.75)'; } }}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
                     {item.icon}
@@ -1101,21 +1118,23 @@ export default function MastroDesktop() {
         </nav>
 
         {/* User footer */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: DS.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>F</div>
+        <div style={{ padding: '14px 18px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: DS.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>F</div>
           {!sidebarCollapsed && (
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>FABIO COZZA</div>
-              <div style={{ fontSize: 10, opacity: 0.5 }}>Piano START</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>FABIO COZZA</div>
+              <div style={{ fontSize: 11, opacity: 0.5 }}>Piano START</div>
             </div>
           )}
           {!sidebarCollapsed && (
             <button
               onClick={() => setSidebarCollapsed(true)}
-              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 18 }}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 4 }}
               title="Comprimi sidebar"
             >
-              {'<'}
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 3l-6 6 6 6" />
+              </svg>
             </button>
           )}
         </div>
@@ -1144,9 +1163,14 @@ export default function MastroDesktop() {
             {sidebarCollapsed && (
               <button
                 onClick={() => setSidebarCollapsed(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: DS.tealDark, fontSize: 18 }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: DS.tealDark, padding: 6, borderRadius: 6, transition: 'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = DS.light; e.currentTarget.style.color = DS.teal; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = DS.tealDark; }}
+                title="Apri menu"
               >
-                {'>'}
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M4 6h14M4 11h14M4 16h14" />
+                </svg>
               </button>
             )}
             <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: DS.ink, textTransform: 'capitalize' }}>
