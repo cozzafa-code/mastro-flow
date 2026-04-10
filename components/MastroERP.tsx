@@ -35,7 +35,7 @@ import PreventivoModal from "./PreventivoModal";
 import RilieviListPanel from "./RilieviListPanel";
 import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
-import HomePanel from "./HomePanel";
+import HomePanel from "./HomePanelMobile";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
 import ModalPanel from "./ModalPanel";
