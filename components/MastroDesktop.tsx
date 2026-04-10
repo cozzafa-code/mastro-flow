@@ -21,6 +21,8 @@ import DesktopTeam from "./DesktopTeam";
 import DesktopLeads from "./DesktopLeads";
 import DesktopRete from "./DesktopRete";
 import DesktopMisure from "./DesktopMisure";
+import DesktopInfissiOra from "./DesktopInfissiOra";
+import DesktopPortaleB2C from "./DesktopPortaleB2C";
 import DesktopCNC from "./DesktopCNC";
 import DesktopListini from "./DesktopListini";
 import AgendaPanel from "./AgendaPanel";
@@ -62,6 +64,12 @@ const NAV = [
     { key:"rete",         ico:"share2",   label:"RETE Agenti" },
     { key:"agente",       ico:"zap",      label:"AI Agente" },
     { key:"team",         ico:"users",    label:"Team" },
+  ]},
+  { group:"Roadmap", items:[
+    { key:"misure",       ico:"ruler",    label:"Misure",            sub:"In sviluppo" },
+    { key:"infissiora",   ico:"globe",    label:"InfissiOra",        sub:"Marketplace B2C" },
+    { key:"portale_b2c",  ico:"monitor",  label:"Portale Cliente",   sub:"In roadmap" },
+    { key:"trasporti",    ico:"package",  label:"Trasporti",         sub:"F5 \u00B7 2027" },
   ]},
 ];
 
@@ -133,6 +141,8 @@ export default function MastroDesktop() {
       case "team":          return <DesktopTeam />;
       case "settings":      return <SettingsPanel />;
       case "archivi":       return <DesktopSettings />;
+      case "infissiora":    return <DesktopInfissiOra />;
+      case "portale_b2c":   return <DesktopPortaleB2C />;
       default:              return <SoonView k={active} T={T} />;
     }
   };
