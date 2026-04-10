@@ -1,4 +1,5 @@
 'use client';
+import HomePanel from './HomePanel';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -988,7 +989,7 @@ export default function MastroDesktop() {
   // Panel router
   const renderPanel = () => {
     switch (activePanel) {
-      case 'dashboard': return <DashboardPanel />;
+      case 'dashboard': return <HomePanel />;
       case 'configuratore': return <ConfiguratorePanel onBack={() => setActivePanel('settings')} />;
       case 'settings': return <SettingsPanelInline onNavigate={setActivePanel} />;
       default: {
