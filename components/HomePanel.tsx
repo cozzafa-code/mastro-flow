@@ -2,8 +2,9 @@
 // @ts-nocheck
 // MASTRO ERP — HomePanel v10 — Centro di Comando
 // Widget 3D draggabili + Compiti + Tutto espandibile
-import React, { useState, useMemo, useRef } from "react";
-import { useMastro } from "./MastroContext";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 const DS = {
   teal: '#28A0A0', tealDark: '#156060', dark: '#0D1F1F',
@@ -126,11 +127,15 @@ function CompitiWidget({ onNavigate }) {
 const DEFAULT_ORDER = ['compiti', 'pipeline', 'scadenze', 'oggi', 'team', 'produzione', 'contabilita', 'pratiche'];
 
 export default function HomePanel() {
-  const { state, dispatch } = useMastro();
-  const commesse = state?.commesse || [];
-  const messaggi = state?.messaggi || [];
-  const user = state?.user;
-  const nav = (panel) => dispatch?.({ type: 'SET_PANEL', panel });
+  const [commesse, setCommesse] = useState([]);
+  const [messaggi, setMessaggi] = useState([]);
+  const user = { nome: 'FABIO COZZA' };
+  const nav = (panel) => { console.log('navigate to:', panel); };
+
+  React.useEffect(() => {
+    supabase.from('commesse').select('*').order('created_at', { ascending: false }).limit(20)
+      .then(({ data }) => { if (data) setCommesse(data); });
+  }, []);
 
   const [widgetOrder, setWidgetOrder] = useState(DEFAULT_ORDER);
   const dragItem = useRef(null);
