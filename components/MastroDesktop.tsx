@@ -150,32 +150,36 @@ export default function MastroDesktop() {
   return (
     <div style={{ display:"flex", height:"100vh", width:"100vw", background:T.bg, fontFamily:FF, overflow:"hidden" }}>
       {/* SIDEBAR */}
-      <div style={{ width:sw, flexShrink:0, background:DARK, display:"flex", flexDirection:"column" as any, transition:"width .18s ease", overflow:"hidden", borderRight:"1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ height:52, display:"flex", alignItems:"center", padding:"0 12px", gap:10, borderBottom:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
-          <div style={{ width:28, height:28, borderRadius:7, background:TEAL, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:900, color:"#fff", flexShrink:0 }}>M</div>
-          {!collapsed && <span style={{ fontSize:11, fontWeight:800, color:"#fff", letterSpacing:2, whiteSpace:"nowrap" as any }}>MASTRO</span>}
+      <div style={{ width:sw, flexShrink:0, background:"#0D1F1F", display:"flex", flexDirection:"column" as any, transition:"width .18s ease", overflow:"hidden", borderRight:"1px solid rgba(40,160,160,0.12)" }}>
+        {/* Logo fliwoX */}
+        <div style={{ height:56, display:"flex", alignItems:"center", padding:"0 14px", gap:10, borderBottom:"1px solid rgba(40,160,160,0.1)", flexShrink:0 }}>
+          <svg width="30" height="30" viewBox="0 0 400 400" style={{ flexShrink:0 }}>
+            <rect x="80" y="80" width="240" height="240" rx="52" fill="#28A0A0"/>
+            <path d="M160 160 L240 240 M240 160 L160 240" stroke="#fff" strokeWidth="40" strokeLinecap="round"/>
+          </svg>
+          {!collapsed && <span style={{ fontSize:15, fontWeight:900, color:"#fff", letterSpacing:1.5, whiteSpace:"nowrap" as any }}>MASTRO</span>}
         </div>
-        <nav style={{ flex:1, overflowY:"auto" as any, padding:"4px 0", scrollbarWidth:"none" as any }}>
+        <nav style={{ flex:1, overflowY:"auto" as any, padding:"6px 0", scrollbarWidth:"none" as any }}>
           {NAV.map(({ group, items }) => (
             <div key={group}>
-              {!collapsed && <div style={{ fontSize:8, fontWeight:800, letterSpacing:2, textTransform:"uppercase" as any, color:"rgba(255,255,255,0.16)", padding:"10px 14px 2px" }}>{group}</div>}
+              {!collapsed && <div style={{ fontSize:9, fontWeight:800, letterSpacing:1.8, textTransform:"uppercase" as any, color:"rgba(40,160,160,0.35)", padding:"14px 16px 4px" }}>{group}</div>}
               {items.map(({ key, ico, label: itemLabel, sub }) => {
                 const on = active === key;
                 const b  = badge(key);
                 return (
                   <div key={key} onClick={() => navigate(key)}
-                    style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 14px", cursor:"pointer", position:"relative", background:on ? "rgba(255,255,255,0.09)" : "transparent", transition:"background .1s" }}
+                    style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 16px", cursor:"pointer", position:"relative", background:on ? "rgba(40,160,160,0.12)" : "transparent", transition:"background .12s", borderRadius:on ? "0" : "0", marginBottom:1 }}
                     onMouseEnter={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
-                    onMouseLeave={e => { if (!on) (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-                    {on && <div style={{ position:"absolute", left:0, top:"10%", bottom:"10%", width:2, borderRadius:"0 2px 2px 0", background:TEAL }} />}
-                    <Ico d={ICO[ico as keyof typeof ICO]} s={14} c={on ? "#fff" : "rgba(255,255,255,0.32)"} />
+                    onMouseLeave={e => { if (!on) (e.currentTarget as HTMLElement).style.background = on ? "rgba(40,160,160,0.12)" : "transparent"; }}>
+                    {on && <div style={{ position:"absolute", left:0, top:"15%", bottom:"15%", width:3, borderRadius:"0 3px 3px 0", background:"#28A0A0" }} />}
+                    <Ico d={ICO[ico as keyof typeof ICO]} s={16} c={on ? "#28A0A0" : "rgba(255,255,255,0.3)"} />
                     {!collapsed && <>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:12, fontWeight:on ? 500 : 400, color:on ? "#fff" : "rgba(255,255,255,0.45)", whiteSpace:"nowrap" as any, overflow:"hidden", textOverflow:"ellipsis" }}>{itemLabel}</div>
-                        {sub && <div style={{ fontSize:8, color:"rgba(255,255,255,0.18)" }}>{sub}</div>}
+                        <div style={{ fontSize:13, fontWeight:on ? 700 : 500, color:on ? "#fff" : "rgba(255,255,255,0.5)", whiteSpace:"nowrap" as any, overflow:"hidden", textOverflow:"ellipsis" }}>{itemLabel}</div>
+                        {sub && <div style={{ fontSize:9, color:"rgba(255,255,255,0.2)", marginTop:1 }}>{sub}</div>}
                       </div>
-                      {b > 0 && <div style={{ minWidth:16, height:16, borderRadius:8, background:RED, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                        <span style={{ fontSize:9, fontWeight:700, color:"#fff", lineHeight:1 }}>{b}</span>
+                      {b > 0 && <div style={{ minWidth:18, height:18, borderRadius:9, background:RED, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        <span style={{ fontSize:10, fontWeight:700, color:"#fff", lineHeight:1 }}>{b}</span>
                       </div>}
                     </>}
                   </div>
@@ -184,15 +188,16 @@ export default function MastroDesktop() {
             </div>
           ))}
         </nav>
-        <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", flexShrink:0 }}>
-          {!collapsed && <div style={{ padding:"9px 12px", display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ width:24, height:24, borderRadius:"50%", background:TEAL+"20", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:TEAL, flexShrink:0 }}>{(aziendaInfo?.nome || aziendaInfo?.ragione || "M")[0].toUpperCase()}</div>
+        {/* Footer utente */}
+        <div style={{ borderTop:"1px solid rgba(40,160,160,0.1)", flexShrink:0 }}>
+          {!collapsed && <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ width:28, height:28, borderRadius:8, background:"#28A0A0"+"20", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:"#28A0A0", flexShrink:0 }}>{(aziendaInfo?.nome || aziendaInfo?.ragione || "M")[0].toUpperCase()}</div>
             <div style={{ overflow:"hidden", flex:1 }}>
-              <div style={{ fontSize:11, fontWeight:500, color:"rgba(255,255,255,0.8)", whiteSpace:"nowrap" as any, overflow:"hidden", textOverflow:"ellipsis" }}>{aziendaInfo?.nome || aziendaInfo?.ragione || "Azienda"}</div>
-              <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)" }}>Piano START · {cantieri.length} commesse</div>
+              <div style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.85)", whiteSpace:"nowrap" as any, overflow:"hidden", textOverflow:"ellipsis" }}>{aziendaInfo?.nome || aziendaInfo?.ragione || "Azienda"}</div>
+              <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)" }}>Piano START \u00B7 {cantieri.length} commesse</div>
             </div>
           </div>}
-          <div onClick={() => setCollapsed(c => !c)} style={{ height:30, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.2)", borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+          <div onClick={() => setCollapsed(c => !c)} style={{ height:32, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.2)", borderTop:"1px solid rgba(40,160,160,0.06)" }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform:collapsed ? "rotate(0deg)" : "rotate(180deg)", transition:"transform .18s" }}><polyline points="9 18 15 12 9 6" /></svg>
           </div>
         </div>
@@ -200,7 +205,7 @@ export default function MastroDesktop() {
 
       {/* MAIN */}
       <div style={{ flex:1, display:"flex", flexDirection:"column" as any, overflow:"hidden", minWidth:0 }}>
-        <div style={{ height:50, flexShrink:0, background:"#fff", borderBottom:`0.5px solid ${T.bdr}`, display:"flex", alignItems:"center", padding:"0 18px", gap:10 }}>
+        <div style={{ height:50, flexShrink:0, background:"#fff", borderBottom:`0.5px solid ${T.bdr}`, display:"flex", alignItems:"center", padding:"0 20px", gap:10 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             {history.length > 0 && (
               <div onClick={goBack} title="Indietro" style={{ width:30, height:30, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", border:`1px solid ${T.bdr}`, background:"#fff", flexShrink:0 }}
@@ -209,14 +214,14 @@ export default function MastroDesktop() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </div>
             )}
-            <span style={{ fontSize:14, fontWeight:500, color:T.text, whiteSpace:"nowrap" as any }}>{lbl}</span>
+            <span style={{ fontSize:15, fontWeight:600, color:T.text, whiteSpace:"nowrap" as any }}>{lbl}</span>
           </div>
           <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:7 }}>
-            {ferme > 0 && <div onClick={() => setTab("commesse")} style={{ display:"flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:6, background:RED+"0E", border:`1px solid ${RED}20`, cursor:"pointer" }}><div style={{ width:4, height:4, borderRadius:"50%", background:RED }} /><span style={{ fontSize:11, fontWeight:500, color:RED }}>{ferme} ferme</span></div>}
-            {montOggi > 0 && <div onClick={() => setTab("montaggi")} style={{ display:"flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:6, background:PURPLE+"0E", border:`1px solid ${PURPLE}20`, cursor:"pointer" }}><div style={{ width:4, height:4, borderRadius:"50%", background:PURPLE }} /><span style={{ fontSize:11, fontWeight:500, color:PURPLE }}>{montOggi} oggi</span></div>}
-            {fatScad > 0 && <div onClick={() => setTab("fatture")} style={{ display:"flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:6, background:"#F9731610", border:"1px solid #F9731620", cursor:"pointer" }}><div style={{ width:4, height:4, borderRadius:"50%", background:"#F97316" }} /><span style={{ fontSize:11, fontWeight:500, color:"#F97316" }}>{fatScad} scad.</span></div>}
-            {unread > 0 && <div onClick={() => setTab("messaggi")} style={{ display:"flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:6, background:"#3B7FE010", border:"1px solid #3B7FE020", cursor:"pointer" }}><div style={{ width:4, height:4, borderRadius:"50%", background:"#3B7FE0" }} /><span style={{ fontSize:11, fontWeight:500, color:"#3B7FE0" }}>{unread}</span></div>}
-            <div style={{ width:28, height:28, borderRadius:"50%", background:TEAL+"16", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:TEAL, cursor:"pointer", marginLeft:4 }} onClick={() => setTab("settings")}>{(aziendaInfo?.nome || aziendaInfo?.ragione || "M")[0].toUpperCase()}</div>
+            {ferme > 0 && <div onClick={() => setTab("commesse")} style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:6, background:RED+"0E", border:`1px solid ${RED}20`, cursor:"pointer" }}><div style={{ width:5, height:5, borderRadius:"50%", background:RED }} /><span style={{ fontSize:11, fontWeight:600, color:RED }}>{ferme} ferme</span></div>}
+            {montOggi > 0 && <div onClick={() => setTab("montaggi")} style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:6, background:PURPLE+"0E", border:`1px solid ${PURPLE}20`, cursor:"pointer" }}><div style={{ width:5, height:5, borderRadius:"50%", background:PURPLE }} /><span style={{ fontSize:11, fontWeight:600, color:PURPLE }}>{montOggi} oggi</span></div>}
+            {fatScad > 0 && <div onClick={() => setTab("fatture")} style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:6, background:"#F9731610", border:"1px solid #F9731620", cursor:"pointer" }}><div style={{ width:5, height:5, borderRadius:"50%", background:"#F97316" }} /><span style={{ fontSize:11, fontWeight:600, color:"#F97316" }}>{fatScad} scad.</span></div>}
+            {unread > 0 && <div onClick={() => setTab("messaggi")} style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:6, background:"#3B7FE010", border:"1px solid #3B7FE020", cursor:"pointer" }}><div style={{ width:5, height:5, borderRadius:"50%", background:"#3B7FE0" }} /><span style={{ fontSize:11, fontWeight:600, color:"#3B7FE0" }}>{unread}</span></div>}
+            <div style={{ width:30, height:30, borderRadius:8, background:"#28A0A0"+"16", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:"#28A0A0", cursor:"pointer", marginLeft:4 }} onClick={() => setTab("settings")}>{(aziendaInfo?.nome || aziendaInfo?.ragione || "M")[0].toUpperCase()}</div>
           </div>
         </div>
         <QuickBar />
