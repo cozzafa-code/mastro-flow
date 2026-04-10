@@ -31,7 +31,7 @@ const DS = {
 // ── SVG Icons (mastro-constants style) ──
 const Icons = {
   dashboard: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="2" y="2" width="7" height="7" rx="1.5" />
       <rect x="11" y="2" width="7" height="4" rx="1.5" />
       <rect x="2" y="11" width="7" height="7" rx="1.5" />
@@ -39,104 +39,104 @@ const Icons = {
     </svg>
   ),
   commesse: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M3 5h14M3 10h14M3 15h8" />
       <circle cx="15" cy="15" r="3" />
     </svg>
   ),
   messaggi: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M4 4h12a2 2 0 012 2v6a2 2 0 01-2 2H8l-4 3v-3a2 2 0 01-2-2V6a2 2 0 012-2z" />
     </svg>
   ),
   agenda: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="3" y="4" width="14" height="13" rx="2" />
       <path d="M7 2v4M13 2v4M3 9h14" />
     </svg>
   ),
   distinte: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M4 3h12v14H4z" />
       <path d="M7 7h6M7 10h6M7 13h4" />
     </svg>
   ),
   cnc: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="2" y="6" width="16" height="10" rx="2" />
       <circle cx="7" cy="11" r="2" />
       <path d="M11 9h4M11 13h4" />
     </svg>
   ),
   team: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="7" cy="7" r="3" />
       <circle cx="14" cy="8" r="2.5" />
       <path d="M2 17c0-3 2.5-5 5-5s5 2 5 5M11 17c0-2.5 1.5-4 3-4s3 1.5 3 4" />
     </svg>
   ),
   ordini: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M3 3h2l2 10h8l2-6H7" />
       <circle cx="8" cy="16" r="1.5" />
       <circle cx="14" cy="16" r="1.5" />
     </svg>
   ),
   clienti: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="10" cy="7" r="4" />
       <path d="M3 18c0-3.5 3-6 7-6s7 2.5 7 6" />
     </svg>
   ),
   contabilita: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M12 2L4 6v8l8 4 8-4V6l-8-4z" />
       <path d="M4 6l8 4M12 10v8M12 10l8-4" />
     </svg>
   ),
   fatture: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M5 2h10a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V3a1 1 0 011-1z" />
       <path d="M8 6h4M8 9h4M8 12h2" />
       <path d="M12 14l1.5 1.5L16 13" stroke={DS.green} />
     </svg>
   ),
   analytics: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M3 17V10M7 17V7M11 17V12M15 17V5" />
     </svg>
   ),
   profili: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="3" y="3" width="14" height="14" rx="2" />
       <path d="M3 7h14M7 3v14" />
     </svg>
   ),
   listini: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M10 2v16M6 6l4-4 4 4M6 14l4 4 4-4" />
     </svg>
   ),
   archivio: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M3 3h14v4H3zM4 7v10h12V7" />
       <path d="M8 11h4" />
     </svg>
   ),
   enea: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="10" cy="10" r="7" />
       <path d="M10 6v4l3 2" />
     </svg>
   ),
   trova: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="9" cy="9" r="6" />
       <path d="M14 14l4 4" />
     </svg>
   ),
   rete: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="10" cy="4" r="2" />
       <circle cx="4" cy="14" r="2" />
       <circle cx="16" cy="14" r="2" />
@@ -144,36 +144,36 @@ const Icons = {
     </svg>
   ),
   ai: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M10 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z" />
     </svg>
   ),
   misure: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M3 17L17 3M5 15l2-2M8 12l2-2M11 9l2-2M14 6l2-2" />
     </svg>
   ),
   infissiora: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="3" y="3" width="14" height="14" rx="2" />
       <path d="M3 10h14M10 3v14" />
     </svg>
   ),
   portale: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="2" y="3" width="16" height="12" rx="2" />
       <path d="M6 18h8M10 15v3" />
     </svg>
   ),
   trasporti: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <path d="M2 11h12V5H2zM14 11h3l2 3v3h-5" />
       <circle cx="6" cy="16" r="2" />
       <circle cx="16" cy="16" r="2" />
     </svg>
   ),
   settings: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="10" cy="10" r="3" />
       <path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.2 4.2l2.1 2.1M13.7 13.7l2.1 2.1M4.2 15.8l2.1-2.1M13.7 6.3l2.1-2.1" />
     </svg>
@@ -194,7 +194,7 @@ const Icons = {
     </svg>
   ),
   config: (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
       <rect x="3" y="3" width="6" height="6" rx="1" />
       <rect x="11" y="3" width="6" height="6" rx="1" />
       <rect x="3" y="11" width="6" height="6" rx="1" />
@@ -1013,15 +1013,23 @@ export default function MastroDesktop() {
         overflowY: 'auto',
         overflowX: 'hidden',
       }}>
-        {/* Logo + Toggle */}
-        <div style={{ padding: '16px 18px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* Logo fliwoX + Toggle */}
+        <div style={{ padding: '18px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => sidebarCollapsed && setSidebarCollapsed(false)}>
-            <svg width="32" height="32" viewBox="0 0 40 40">
-              <rect width="40" height="40" rx="8" fill={DS.teal} />
-              <path d="M10 28V12l10 8-10 8z" fill={DS.white} />
-              <path d="M20 28V12l10 8-10 8z" fill={DS.white} opacity="0.6" />
+            {/* fliwoX icon — exact brand SVG */}
+            <svg width="34" height="34" viewBox="0 0 200 200" fill="none">
+              <g transform="rotate(8 100 100)">
+                <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
+                <path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
+                <path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
+              </g>
             </svg>
-            {!sidebarCollapsed && <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: 2 }}>MASTRO</span>}
+            {!sidebarCollapsed && (
+              <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: 0.5 }}>
+                <span style={{ color: DS.white }}>fliwo</span>
+                <span style={{ color: DS.teal }}>X</span>
+              </span>
+            )}
           </div>
           {!sidebarCollapsed && (
             <button
@@ -1031,7 +1039,7 @@ export default function MastroDesktop() {
               onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'none'; }}
               title="Chiudi menu"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M14 4l-8 6 8 6" />
               </svg>
             </button>
@@ -1039,12 +1047,12 @@ export default function MastroDesktop() {
         </div>
 
         {/* Nav groups */}
-        <nav style={{ flex: 1, padding: '8px 0' }}>
+        <nav style={{ flex: 1, padding: '6px 0' }}>
           {SIDEBAR_GROUPS.map(group => (
-            <div key={group.title} style={{ marginBottom: 4 }}>
+            <div key={group.title} style={{ marginBottom: 8 }}>
               {!sidebarCollapsed && (
                 <div style={{
-                  padding: '16px 20px 6px',
+                  padding: '18px 22px 6px',
                   fontSize: 11,
                   fontWeight: 700,
                   color: DS.teal,
@@ -1054,7 +1062,7 @@ export default function MastroDesktop() {
                   {group.title}
                 </div>
               )}
-              {group.items.map(item => {
+              {group.items.map((item, idx) => {
                 const isActive = activePanel === item.id;
                 return (
                   <button
@@ -1063,25 +1071,27 @@ export default function MastroDesktop() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 12,
-                      width: '100%',
-                      padding: sidebarCollapsed ? '14px 0' : '12px 20px',
+                      gap: 14,
+                      width: sidebarCollapsed ? '100%' : 'calc(100% - 16px)',
+                      margin: sidebarCollapsed ? '2px 0' : '3px 8px',
+                      padding: sidebarCollapsed ? '16px 0' : '15px 18px',
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                      background: isActive ? 'rgba(40,160,160,0.18)' : 'transparent',
+                      background: isActive ? 'rgba(40,160,160,0.2)' : 'rgba(255,255,255,0.03)',
                       border: 'none',
                       borderLeft: isActive ? `4px solid ${DS.teal}` : '4px solid transparent',
-                      color: item.disabled ? 'rgba(255,255,255,0.25)' : isActive ? DS.teal : 'rgba(255,255,255,0.75)',
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      color: item.disabled ? 'rgba(255,255,255,0.25)' : isActive ? DS.teal : 'rgba(255,255,255,0.8)',
                       cursor: item.disabled ? 'not-allowed' : 'pointer',
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: isActive ? 700 : 500,
                       transition: 'all 0.12s',
                       fontFamily: "'Inter', sans-serif",
                       textAlign: 'left',
-                      borderRadius: sidebarCollapsed ? 0 : '0 8px 8px 0',
-                      marginRight: sidebarCollapsed ? 0 : 8,
+                      borderRadius: sidebarCollapsed ? 0 : 10,
+                      minHeight: 48,
                     }}
-                    onMouseEnter={e => { if (!item.disabled && !isActive) { e.currentTarget.style.background = 'rgba(40,160,160,0.08)'; e.currentTarget.style.color = DS.teal; } }}
-                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = item.disabled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.75)'; } }}
+                    onMouseEnter={e => { if (!item.disabled && !isActive) { e.currentTarget.style.background = 'rgba(40,160,160,0.12)'; e.currentTarget.style.color = DS.teal; } }}
+                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = item.disabled ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.8)'; } }}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
                     {item.icon}
