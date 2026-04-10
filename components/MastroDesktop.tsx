@@ -627,45 +627,189 @@ function ConfiguratorePanel({ onBack }: { onBack: () => void }) {
 
   const profiloSel = useMemo(() => profili.find(p => p.id === profiloId), [profili, profiloId]);
 
-  // Calcolo distinta taglio
+  // ── Regole distinta per serie (delta reali verificati) ──
+  const REGOLE_DISTINTA: Record<string, {
+    delta_telaio_w: number; delta_telaio_h: number; delta_anta: number;
+    delta_vetro_w: number; delta_vetro_h: number; delta_soglia: number;
+    delta_traverso: number; delta_fermavetro: number;
+    riporto_anta: number; gioco_anta: number; gioco_vetro: number;
+  }> = {
+    'IDEAL4000':    { delta_telaio_w:0, delta_telaio_h:0, delta_anta:84, delta_vetro_w:150, delta_vetro_h:132, delta_soglia:0, delta_traverso:84, delta_fermavetro:0, riporto_anta:110, gioco_anta:0, gioco_vetro:0 },
+    'ENERGETO_8000':{ delta_telaio_w:0, delta_telaio_h:0, delta_anta:84, delta_vetro_w:150, delta_vetro_h:132, delta_soglia:0, delta_traverso:84, delta_fermavetro:0, riporto_anta:110, gioco_anta:0, gioco_vetro:0 },
+    'CX450':        { delta_telaio_w:0, delta_telaio_h:0, delta_anta:44, delta_vetro_w:150, delta_vetro_h:132, delta_soglia:0, delta_traverso:44, delta_fermavetro:0, riporto_anta:0,   gioco_anta:0, gioco_vetro:0 },
+    'CX600':        { delta_telaio_w:0, delta_telaio_h:0, delta_anta:44, delta_vetro_w:184, delta_vetro_h:188, delta_soglia:0, delta_traverso:44, delta_fermavetro:0, riporto_anta:110, gioco_anta:0, gioco_vetro:0 },
+    'CX700':        { delta_telaio_w:0, delta_telaio_h:0, delta_anta:44, delta_vetro_w:150, delta_vetro_h:132, delta_soglia:0, delta_traverso:44, delta_fermavetro:0, riporto_anta:0,   gioco_anta:0, gioco_vetro:0 },
+  };
+
+  // Map TipologiaCode → engine tipologia
+  type EngineTipo = '1A'|'2A'|'2A_RIB'|'VASISTAS'|'PORTA_1A'|'SCORR_2A'|'FISSO'|'ANTA_ANTA'|'BILICO'|'3A';
+  const TIPO_MAP: Record<TipologiaCode, EngineTipo> = {
+    '1A':'1A', '2A':'2A', '2A_RIB':'2A_RIB', '1A_VASISTAS':'VASISTAS',
+    'PORTA_1A':'PORTA_1A', 'SCORR_2A':'SCORR_2A', 'FISSO':'FISSO',
+    'ANTA_ANTA':'ANTA_ANTA', 'BILICO':'BILICO', '3A':'3A',
+  };
+
+  // Tipologia config for engine
+  const TIPO_CFG: Record<EngineTipo, { n_ante:number; has_soglia:boolean; has_traverso:boolean; has_zoccolo:boolean; is_scorrevole:boolean; is_fisso:boolean }> = {
+    '1A':       { n_ante:1, has_soglia:false, has_traverso:false, has_zoccolo:false, is_scorrevole:false, is_fisso:false },
+    '2A':       { n_ante:2, has_soglia:false, has_traverso:false, has_zoccolo:false, is_scorrevole:false, is_fisso:false },
+    '2A_RIB':   { n_ante:2, has_soglia:false, has_traverso:false, has_zoccolo:false, is_scorrevole:false, is_fisso:false },
+    'VASISTAS': { n_ante:1, has_soglia:false, has_traverso:false, has_zoccolo:false, is_scorrevole:false, is_fisso:false },
+    'PORTA_1A': { n_ante:1, has_soglia:true,  has_traverso:false, has_zoccolo:true,  is_scorrevole:false, is_fisso:false },
+    'SCORR_2A': { n_ante:2, has_soglia:true,  has_traverso:false, has_zoccolo:false, is_scorrevole:true,  is_fisso:false },
+    'FISSO':    { n_ante:0, has_soglia:false, has_traverso:false, has_zoccolo:false, is_scorrevole:false, is_fisso:true },
+    'ANTA_ANTA':{ n_ante:2, has_soglia:false, has_traverso:true,  has_zoccolo:false, is_scorrevole:false, is_fisso:false },
+    'BILICO':   { n_ante:1, has_soglia:false, has_traverso:false, has_zoccolo:false, is_scorrevole:false, is_fisso:false },
+    '3A':       { n_ante:3, has_soglia:false, has_traverso:true,  has_zoccolo:false, is_scorrevole:false, is_fisso:false },
+  };
+
+  type ElementoTipo = 'TELAIO'|'ANTA'|'VETRO'|'SOGLIA'|'ZOCCOLO'|'TRAVERSO'|'FERMAVETRO'|'GUARNIZIONE_TELAIO'|'GUARNIZIONE_ANTA'|'GUARNIZIONE_VETRO'|'FERRAMENTA';
+  interface PezzoDistinta { elemento:string; tipo:ElementoTipo; descrizione:string; lunghezza_mm:number; quantita:number; angolo_taglio:number; note?:string; }
+
+  // Lookup regola from profilo serie
+  const regola = useMemo(() => {
+    if (!profiloSel) return null;
+    // Try exact match, then prefix match
+    const s = profiloSel.serie;
+    if (REGOLE_DISTINTA[s]) return { ...REGOLE_DISTINTA[s], serie: s, materiale: profiloSel.materiale };
+    // Fallback: PVC→IDEAL4000 defaults, AL→CX600 defaults
+    const fb = profiloSel.materiale === 'PVC' ? REGOLE_DISTINTA['IDEAL4000'] : REGOLE_DISTINTA['CX600'];
+    return { ...fb, serie: s, materiale: profiloSel.materiale };
+  }, [profiloSel]);
+
+  const [filterTipo, setFilterTipo] = useState<ElementoTipo | 'ALL'>('ALL');
+
+  // ── CUT LIST ENGINE (inline) ──
   const distinta = useMemo(() => {
-    if (!tipologia || !profiloSel) return null;
-    const tip = TIPOLOGIE.find(t => t.code === tipologia);
-    if (!tip) return null;
+    if (!tipologia || !regola) return null;
+    const engineTipo = TIPO_MAP[tipologia];
+    const cfg = TIPO_CFG[engineTipo];
+    const r = regola;
+    const W = larghezza;
+    const H = altezza;
+    const pezzi: PezzoDistinta[] = [];
+    const warnings: string[] = [];
 
-    // Delta formule (CX600 / PVC generico)
-    const isPVC = profiloSel.materiale === 'PVC';
-    const deltaTelaio = isPVC ? 84 : 44;
-    const deltaAnta = isPVC ? 84 : 44;
+    const angolo_t = r.materiale === 'AL' ? 90 : 45;
+    const angolo_a = r.materiale === 'AL' ? 90 : 45;
 
-    const telW = larghezza - deltaTelaio;
-    const telH = altezza - deltaTelaio;
+    // 1. TELAIO
+    const tel_w = W - r.delta_telaio_w;
+    const tel_h = H - r.delta_telaio_h;
 
-    const antaW = tip.ante > 0 ? Math.round((larghezza / Math.max(tip.ante, 1)) - deltaAnta) : 0;
-    const antaH = altezza - deltaAnta;
+    if (cfg.has_soglia) {
+      pezzi.push({ elemento:'TELAIO_MONTANTE_SX', tipo:'TELAIO', descrizione:'Montante telaio SX', lunghezza_mm:tel_h, quantita:1, angolo_taglio:angolo_t, note:'Sup.'+angolo_t+'° Inf.90°(soglia)' });
+      pezzi.push({ elemento:'TELAIO_MONTANTE_DX', tipo:'TELAIO', descrizione:'Montante telaio DX', lunghezza_mm:tel_h, quantita:1, angolo_taglio:angolo_t, note:'Sup.'+angolo_t+'° Inf.90°(soglia)' });
+      pezzi.push({ elemento:'TELAIO_TRAVERSO_SUP', tipo:'TELAIO', descrizione:'Traverso sup. telaio', lunghezza_mm:tel_w, quantita:1, angolo_taglio:angolo_t });
+    } else {
+      pezzi.push({ elemento:'TELAIO_MONTANTE_SX', tipo:'TELAIO', descrizione:'Montante telaio SX', lunghezza_mm:tel_h, quantita:1, angolo_taglio:angolo_t });
+      pezzi.push({ elemento:'TELAIO_MONTANTE_DX', tipo:'TELAIO', descrizione:'Montante telaio DX', lunghezza_mm:tel_h, quantita:1, angolo_taglio:angolo_t });
+      pezzi.push({ elemento:'TELAIO_TRAVERSO_SUP', tipo:'TELAIO', descrizione:'Traverso sup. telaio', lunghezza_mm:tel_w, quantita:1, angolo_taglio:angolo_t });
+      pezzi.push({ elemento:'TELAIO_TRAVERSO_INF', tipo:'TELAIO', descrizione:'Traverso inf. telaio', lunghezza_mm:tel_w, quantita:1, angolo_taglio:angolo_t });
+    }
 
-    const items = [];
-    // Telaio
-    items.push({ pezzo: 'Traverso superiore telaio', qty: 1, lung: telW, profilo: profiloSel.nome });
-    items.push({ pezzo: 'Traverso inferiore telaio', qty: 1, lung: telW, profilo: profiloSel.nome });
-    items.push({ pezzo: 'Montante telaio', qty: 2, lung: telH, profilo: profiloSel.nome });
+    // 2. SOGLIA
+    if (cfg.has_soglia) {
+      const soglia_w = tel_w - r.delta_soglia;
+      pezzi.push({ elemento:'SOGLIA', tipo:'SOGLIA', descrizione:'Soglia portafinestra', lunghezza_mm:soglia_w>0?soglia_w:tel_w, quantita:1, angolo_taglio:90, note:'Taglio dritto' });
+    }
 
-    // Ante
-    if (tip.ante > 0) {
-      for (let i = 0; i < tip.ante; i++) {
-        items.push({ pezzo: `Traverso anta ${i + 1}`, qty: 2, lung: antaW, profilo: profiloSel.nome });
-        items.push({ pezzo: `Montante anta ${i + 1}`, qty: 2, lung: antaH, profilo: profiloSel.nome });
+    // 3. ANTE
+    let anta_w=0, anta_h=0;
+    if (!cfg.is_fisso && cfg.n_ante > 0) {
+      if (cfg.is_scorrevole) {
+        anta_w = Math.round(tel_w/2) + r.riporto_anta - r.delta_anta;
+        anta_h = tel_h - r.delta_anta;
+      } else {
+        anta_w = Math.round(tel_w / cfg.n_ante) - r.delta_anta;
+        anta_h = tel_h - r.delta_anta;
+      }
+      const labels = cfg.n_ante===1?['']: cfg.n_ante===2?['SX','DX']:['SX','C','DX'];
+      for (let i=0; i<cfg.n_ante; i++) {
+        const sfx = labels[i] ? ' '+labels[i] : '';
+        pezzi.push({ elemento:`ANTA${sfx}_M_SX`, tipo:'ANTA', descrizione:`Montante SX anta${sfx}`, lunghezza_mm:anta_h, quantita:1, angolo_taglio:angolo_a });
+        pezzi.push({ elemento:`ANTA${sfx}_M_DX`, tipo:'ANTA', descrizione:`Montante DX anta${sfx}`, lunghezza_mm:anta_h, quantita:1, angolo_taglio:angolo_a });
+        pezzi.push({ elemento:`ANTA${sfx}_T_SUP`, tipo:'ANTA', descrizione:`Traverso sup. anta${sfx}`, lunghezza_mm:anta_w, quantita:1, angolo_taglio:angolo_a });
+        pezzi.push({ elemento:`ANTA${sfx}_T_INF`, tipo:'ANTA', descrizione:`Traverso inf. anta${sfx}`, lunghezza_mm:anta_w, quantita:1, angolo_taglio:angolo_a });
       }
     }
 
-    // Vetro
-    const vetroW = antaW > 0 ? antaW - profiloSel.sede_fv * 2 : telW - profiloSel.sede_fv * 2;
-    const vetroH = (antaH > 0 ? antaH : telH) - profiloSel.sede_fv * 2;
-    const vetroQty = Math.max(tip.ante, 1);
-    items.push({ pezzo: 'Vetro camera', qty: vetroQty, lung: vetroW, profilo: `${vetroW} x ${vetroH}` });
+    // 4. VETRO
+    const vetro_base_w = cfg.is_fisso ? tel_w : anta_w;
+    const vetro_base_h = cfg.is_fisso ? tel_h : anta_h;
+    const vetro_w = vetro_base_w - r.delta_vetro_w;
+    const vetro_h = vetro_base_h - r.delta_vetro_h;
+    const n_vetri = cfg.is_fisso ? 1 : cfg.n_ante;
+    for (let i=0; i<n_vetri; i++) {
+      pezzi.push({ elemento:`VETRO_${i+1}`, tipo:'VETRO', descrizione:`Vetrocamera ${n_vetri>1?i+1:''}`, lunghezza_mm:0, quantita:1, angolo_taglio:90, note:`${vetro_w} x ${vetro_h} mm` });
+    }
 
-    return { items, vetroW, vetroH, telW, telH, antaW, antaH };
-  }, [tipologia, profiloSel, larghezza, altezza]);
+    // 5. FERMAVETRO (4 per vetro)
+    for (let i=0; i<n_vetri; i++) {
+      const fv_w = vetro_w - r.delta_fermavetro;
+      const fv_h = vetro_h - r.delta_fermavetro;
+      pezzi.push({ elemento:`FV_${i+1}_H`, tipo:'FERMAVETRO', descrizione:`Fermavetro orizz. ${n_vetri>1?i+1:''}`, lunghezza_mm:fv_w>0?fv_w:vetro_w, quantita:2, angolo_taglio:45 });
+      pezzi.push({ elemento:`FV_${i+1}_V`, tipo:'FERMAVETRO', descrizione:`Fermavetro vert. ${n_vetri>1?i+1:''}`, lunghezza_mm:fv_h>0?fv_h:vetro_h, quantita:2, angolo_taglio:45 });
+    }
+
+    // 6. TRAVERSO CENTRALE
+    if (cfg.has_traverso) {
+      pezzi.push({ elemento:'TRAVERSO', tipo:'TRAVERSO', descrizione:'Traverso centrale (montante divisorio)', lunghezza_mm:tel_h, quantita:cfg.n_ante===3?2:1, angolo_taglio:90 });
+    }
+
+    // 7. ZOCCOLO
+    if (cfg.has_zoccolo) {
+      pezzi.push({ elemento:'ZOCCOLO', tipo:'ZOCCOLO', descrizione:'Zoccolo inferiore', lunghezza_mm:tel_w, quantita:1, angolo_taglio:90 });
+    }
+
+    // 8. GUARNIZIONI
+    pezzi.push({ elemento:'GUARN_TELAIO', tipo:'GUARNIZIONE_TELAIO', descrizione:'Guarnizione telaio', lunghezza_mm:2*(tel_w+tel_h), quantita:1, angolo_taglio:0, note:'Metro lineare' });
+    if (!cfg.is_fisso) {
+      for (let i=0; i<cfg.n_ante; i++) {
+        pezzi.push({ elemento:`GUARN_ANTA_${i+1}`, tipo:'GUARNIZIONE_ANTA', descrizione:`Guarnizione anta ${cfg.n_ante>1?i+1:''}`, lunghezza_mm:2*(anta_w+anta_h), quantita:1, angolo_taglio:0 });
+      }
+    }
+    for (let i=0; i<n_vetri; i++) {
+      pezzi.push({ elemento:`GUARN_VETRO_${i+1}`, tipo:'GUARNIZIONE_VETRO', descrizione:`Guarnizione vetro ${n_vetri>1?i+1:''}`, lunghezza_mm:2*(vetro_w+vetro_h), quantita:1, angolo_taglio:0 });
+    }
+
+    // 9. FERRAMENTA
+    if (!cfg.is_fisso) {
+      if (!cfg.is_scorrevole) {
+        pezzi.push({ elemento:'CREMONESE', tipo:'FERRAMENTA', descrizione:'Cremonese', lunghezza_mm:0, quantita:cfg.n_ante, angolo_taglio:0, note:engineTipo==='VASISTAS'?'Tipo vasistas':'Battente/ribalta' });
+      }
+      const cern = (anta_h||tel_h)>1800 ? 3 : 2;
+      pezzi.push({ elemento:'CERNIERE', tipo:'FERRAMENTA', descrizione:'Cerniere', lunghezza_mm:0, quantita:cern*cfg.n_ante, angolo_taglio:0, note:`${cern}/anta` });
+      pezzi.push({ elemento:'MANIGLIA', tipo:'FERRAMENTA', descrizione:'Maniglia', lunghezza_mm:0, quantita:cfg.n_ante, angolo_taglio:0 });
+      pezzi.push({ elemento:'INCONTRI', tipo:'FERRAMENTA', descrizione:'Incontri/scontri', lunghezza_mm:0, quantita:cfg.n_ante*2, angolo_taglio:0 });
+    }
+
+    // Warnings
+    if (W<400||H<400) warnings.push('Dimensioni molto piccole');
+    if (W>3000) warnings.push('Larghezza > 3m — verificare portata');
+    if (H>2800) warnings.push('Altezza > 2.8m — verificare classe vento');
+    if (vetro_w<100||vetro_h<100) warnings.push('Luce vetro troppo piccola');
+    if (r.delta_vetro_w===0&&r.delta_vetro_h===0) warnings.push('Delta vetro non configurato');
+
+    // Riepilogo
+    const totale_pezzi = pezzi.reduce((s,p) => s+p.quantita, 0);
+    const profili_ml = pezzi.filter(p=>['TELAIO','ANTA','SOGLIA','ZOCCOLO','TRAVERSO','FERMAVETRO'].includes(p.tipo))
+      .reduce((s,p) => s+(p.lunghezza_mm*p.quantita), 0) / 1000;
+    const tot_vetri = pezzi.filter(p=>p.tipo==='VETRO').reduce((s,p)=>s+p.quantita, 0);
+    const guarn_ml = pezzi.filter(p=>p.tipo.startsWith('GUARNIZIONE'))
+      .reduce((s,p) => s+(p.lunghezza_mm*p.quantita), 0) / 1000;
+
+    return {
+      pezzi, warnings,
+      riepilogo: {
+        totale_pezzi,
+        profili_ml: Math.round(profili_ml*100)/100,
+        tot_vetri,
+        guarn_ml: Math.round(guarn_ml*100)/100,
+        tel_w, tel_h, anta_w, anta_h, vetro_w, vetro_h,
+      }
+    };
+  }, [tipologia, regola, larghezza, altezza]);
 
   if (loading) return <div style={{ padding: 32, color: DS.ink }}>Caricamento profili...</div>;
 
@@ -754,27 +898,127 @@ function ConfiguratorePanel({ onBack }: { onBack: () => void }) {
 
               {distinta && (
                 <div>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, color: DS.ink, marginBottom: 12 }}>DISTINTA DI TAGLIO</h3>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ background: DS.dark, color: DS.white }}>
-                        <th style={{ padding: '8px 12px', textAlign: 'left' }}>Pezzo</th>
-                        <th style={{ padding: '8px 12px', textAlign: 'center' }}>Qty</th>
-                        <th style={{ padding: '8px 12px', textAlign: 'right' }}>Lunghezza</th>
-                        <th style={{ padding: '8px 12px', textAlign: 'left' }}>Profilo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {distinta.items.map((item, i) => (
-                        <tr key={i} style={{ borderBottom: `1px solid ${DS.border}`, background: i % 2 === 0 ? DS.white : DS.light }}>
-                          <td style={{ padding: '8px 12px' }}>{item.pezzo}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>{item.qty}</td>
-                          <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: DS.teal }}>{item.lung} mm</td>
-                          <td style={{ padding: '8px 12px', fontSize: 11, color: DS.tealDark }}>{item.profilo}</td>
+                  {/* Warnings */}
+                  {distinta.warnings.map((w, i) => (
+                    <div key={i} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', background:'#FEF3C7', borderRadius:8, fontSize:12, color:'#92400E', marginBottom:8 }}>
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L13 12H1L7 1z" stroke="#D08008" strokeWidth="1.5" fill="none"/><path d="M7 5.5v3" stroke="#D08008" strokeWidth="1.5" strokeLinecap="round"/><circle cx="7" cy="10.5" r="0.7" fill="#D08008"/></svg>
+                      {w}
+                    </div>
+                  ))}
+
+                  {/* Summary boxes */}
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:14, background:DS.bg, borderRadius:10, marginBottom:14 }}>
+                    {[
+                      { v: distinta.riepilogo.totale_pezzi, l: 'Pezzi' },
+                      { v: distinta.riepilogo.profili_ml, l: 'Profili (ml)' },
+                      { v: distinta.riepilogo.tot_vetri, l: 'Vetri' },
+                      { v: distinta.riepilogo.guarn_ml, l: 'Guarniz. (ml)' },
+                    ].map(s => (
+                      <div key={s.l} style={{ textAlign:'center' }}>
+                        <div style={{ fontSize:18, fontWeight:700, color:DS.teal, fontFamily:'JetBrains Mono, monospace' }}>{s.v}</div>
+                        <div style={{ fontSize:10, fontWeight:600, color:DS.tealDark, textTransform:'uppercase' }}>{s.l}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Dimension boxes: Telaio / Anta / Vetro */}
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:14 }}>
+                    {[
+                      { label:'Telaio', val:`${distinta.riepilogo.tel_w} x ${distinta.riepilogo.tel_h}` },
+                      { label:'Anta', val: distinta.riepilogo.anta_w>0 ? `${distinta.riepilogo.anta_w} x ${distinta.riepilogo.anta_h}` : '\u2014' },
+                      { label:'Vetro', val:`${distinta.riepilogo.vetro_w} x ${distinta.riepilogo.vetro_h}` },
+                    ].map(d => (
+                      <div key={d.label} style={{ padding:'8px 12px', background:DS.light, borderRadius:8, textAlign:'center' }}>
+                        <div style={{ fontSize:10, fontWeight:600, color:DS.tealDark, textTransform:'uppercase' }}>{d.label}</div>
+                        <div style={{ fontFamily:'JetBrains Mono, monospace', fontSize:14, fontWeight:700, color:DS.ink }}>{d.val}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Filter pills */}
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+                    {(['ALL','TELAIO','ANTA','VETRO','FERMAVETRO','SOGLIA','TRAVERSO','ZOCCOLO','GUARNIZIONE_TELAIO','GUARNIZIONE_ANTA','FERRAMENTA'] as const).map(ft => {
+                      const count = ft==='ALL' ? distinta.pezzi.length : distinta.pezzi.filter(p=>p.tipo===ft).length;
+                      if (ft!=='ALL' && count===0) return null;
+                      const active = filterTipo===ft;
+                      return (
+                        <button key={ft} onClick={()=>setFilterTipo(ft)} style={{
+                          padding:'4px 10px', borderRadius:6,
+                          border: active ? `2px solid ${DS.teal}` : `1px solid ${DS.border}`,
+                          background: active ? DS.light : 'transparent',
+                          fontSize:11, fontWeight: active?700:500,
+                          color: active ? DS.teal : DS.ink,
+                          cursor:'pointer', transition:'all 0.15s',
+                        }}>
+                          {ft==='ALL'?'Tutti':ft.replace(/_/g,' ')} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* DISTINTA TABLE */}
+                  <h3 style={{ fontSize:14, fontWeight:700, color:DS.ink, marginBottom:8, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                    <span>DISTINTA DI TAGLIO</span>
+                    <button onClick={() => {
+                      // PDF export via print
+                      const rows = (filterTipo==='ALL'?distinta.pezzi:distinta.pezzi.filter(p=>p.tipo===filterTipo))
+                        .map((p,i)=>`<tr style="background:${i%2===0?'#fff':'#EEF8F8'}"><td style="padding:5px 8px">${i+1}</td><td style="padding:5px 8px;font-weight:600">${p.descrizione}</td><td style="padding:5px 8px"><span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;color:#fff;background:${{TELAIO:'#28A0A0',ANTA:'#3B7FE0',VETRO:'#8B5CF6',SOGLIA:'#D08008',ZOCCOLO:'#92400E',TRAVERSO:'#0D9488',FERMAVETRO:'#6366F1',GUARNIZIONE_TELAIO:'#059669',GUARNIZIONE_ANTA:'#10B981',GUARNIZIONE_VETRO:'#34D399',FERRAMENTA:'#6B7280'}[p.tipo]||'#666'}">${p.tipo}</span></td><td style="padding:5px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-weight:600">${p.lunghezza_mm>0?p.lunghezza_mm+' mm':(p.note||'\u2014')}</td><td style="padding:5px 8px;text-align:center;font-family:JetBrains Mono,monospace">${p.quantita}</td><td style="padding:5px 8px;text-align:center">${p.angolo_taglio>0?p.angolo_taglio+'\u00b0':'\u2014'}</td><td style="padding:5px 8px;font-size:11px;color:#666">${p.note||''}</td></tr>`).join('');
+                      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Distinta</title><style>body{font-family:Inter,sans-serif;padding:40px;color:#0D1F1F}h1{font-size:18px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#0D1F1F;color:#fff;padding:6px 8px;text-align:left;font-weight:600}td{border-bottom:1px solid #C8E4E4}.s{margin-top:20px;padding:12px;background:#E8F4F4;border-radius:8px;font-size:12px}@media print{body{padding:20px}}</style></head><body><h1>DISTINTA TAGLIO</h1><div style="font-size:12px;color:#666;margin-bottom:16px">Tipologia: <b>${tipologia}</b> | Serie: <b>${regola?.serie||''}</b> (${regola?.materiale||''}) | <b style="font-family:JetBrains Mono,monospace">${larghezza} x ${altezza} mm</b> | ${new Date().toLocaleDateString('it-IT')}</div><table><thead><tr><th>#</th><th>Elemento</th><th>Tipo</th><th style="text-align:right">Lunghezza</th><th style="text-align:center">Qt</th><th style="text-align:center">Angolo</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table><div class="s"><b style="color:#28A0A0">Riepilogo:</b> Pezzi: <b>${distinta.riepilogo.totale_pezzi}</b> | Profili: <b>${distinta.riepilogo.profili_ml} ml</b> | Vetri: <b>${distinta.riepilogo.tot_vetri}</b> | Guarnizioni: <b>${distinta.riepilogo.guarn_ml} ml</b><br/>Telaio: <b>${distinta.riepilogo.tel_w}x${distinta.riepilogo.tel_h}</b> | Anta: <b>${distinta.riepilogo.anta_w}x${distinta.riepilogo.anta_h}</b> | Vetro: <b>${distinta.riepilogo.vetro_w}x${distinta.riepilogo.vetro_h}</b></div><div style="margin-top:30px;font-size:10px;color:#999">MASTRO Suite \u2014 Galassia MASTRO</div></body></html>`;
+                      const b = new Blob([html], {type:'text/html'});
+                      const u = URL.createObjectURL(b);
+                      const w = window.open(u,'_blank');
+                      if(w){w.onload=()=>{w.print();URL.revokeObjectURL(u);}}
+                    }} style={{
+                      display:'inline-flex', alignItems:'center', gap:6, padding:'6px 12px', borderRadius:8,
+                      border:'none', fontSize:12, fontWeight:600, cursor:'pointer',
+                      background:DS.teal, color:'#fff', boxShadow:`0 2px 0 ${DS.tealDark}`,
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                      PDF
+                    </button>
+                  </h3>
+                  <div style={{ overflowX:'auto', borderRadius:10, border:`1px solid ${DS.border}` }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ background:DS.dark, color:'#fff', padding:'7px 8px', textAlign:'center', fontSize:11, fontWeight:600, width:30 }}>#</th>
+                          <th style={{ background:DS.dark, color:'#fff', padding:'7px 8px', textAlign:'left', fontSize:11, fontWeight:600 }}>Elemento</th>
+                          <th style={{ background:DS.dark, color:'#fff', padding:'7px 8px', textAlign:'left', fontSize:11, fontWeight:600, width:100 }}>Tipo</th>
+                          <th style={{ background:DS.dark, color:'#fff', padding:'7px 8px', textAlign:'right', fontSize:11, fontWeight:600, width:100 }}>Lunghezza</th>
+                          <th style={{ background:DS.dark, color:'#fff', padding:'7px 8px', textAlign:'center', fontSize:11, fontWeight:600, width:40 }}>Qt</th>
+                          <th style={{ background:DS.dark, color:'#fff', padding:'7px 8px', textAlign:'center', fontSize:11, fontWeight:600, width:55 }}>Angolo</th>
+                          <th style={{ background:DS.dark, color:'#fff', padding:'7px 8px', textAlign:'left', fontSize:11, fontWeight:600 }}>Note</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {(filterTipo==='ALL'?distinta.pezzi:distinta.pezzi.filter(p=>p.tipo===filterTipo)).map((p, i) => {
+                          const tipColors: Record<string,string> = { TELAIO:'#28A0A0', ANTA:'#3B7FE0', VETRO:'#8B5CF6', SOGLIA:'#D08008', ZOCCOLO:'#92400E', TRAVERSO:'#0D9488', FERMAVETRO:'#6366F1', GUARNIZIONE_TELAIO:'#059669', GUARNIZIONE_ANTA:'#10B981', GUARNIZIONE_VETRO:'#34D399', FERRAMENTA:'#6B7280' };
+                          return (
+                            <tr key={p.elemento+i} style={{ background: i%2===0?'#fff':DS.light }}>
+                              <td style={{ padding:'6px 8px', borderBottom:`1px solid ${DS.border}`, textAlign:'center', color:'#999', fontSize:11 }}>{i+1}</td>
+                              <td style={{ padding:'6px 8px', borderBottom:`1px solid ${DS.border}`, fontWeight:600 }}>{p.descrizione}</td>
+                              <td style={{ padding:'6px 8px', borderBottom:`1px solid ${DS.border}` }}>
+                                <span style={{ display:'inline-block', padding:'2px 8px', borderRadius:4, fontSize:10, fontWeight:700, color:'#fff', background:tipColors[p.tipo]||'#666', letterSpacing:0.3 }}>{p.tipo}</span>
+                              </td>
+                              <td style={{ padding:'6px 8px', borderBottom:`1px solid ${DS.border}`, textAlign:'right', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:600 }}>
+                                {p.lunghezza_mm > 0 ? `${p.lunghezza_mm} mm` : '\u2014'}
+                              </td>
+                              <td style={{ padding:'6px 8px', borderBottom:`1px solid ${DS.border}`, textAlign:'center', fontFamily:'JetBrains Mono, monospace', fontSize:12, fontWeight:600 }}>{p.quantita}</td>
+                              <td style={{ padding:'6px 8px', borderBottom:`1px solid ${DS.border}`, textAlign:'center', fontSize:11 }}>{p.angolo_taglio>0?`${p.angolo_taglio}\u00b0`:'\u2014'}</td>
+                              <td style={{ padding:'6px 8px', borderBottom:`1px solid ${DS.border}`, fontSize:11, color:'#666' }}>{p.note||''}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Serie/delta info */}
+                  {regola && (
+                    <div style={{ marginTop:12, padding:'8px 12px', background:DS.light, borderRadius:8, fontSize:11, color:DS.tealDark }}>
+                      Serie: <strong>{regola.serie}</strong> ({regola.materiale}) | delta_anta={regola.delta_anta} | delta_vetro={regola.delta_vetro_w}/{regola.delta_vetro_h} | angolo={regola.materiale==='AL'?'90':'45'}
+                    </div>
+                  )}
                 </div>
               )}
             </>
