@@ -185,7 +185,7 @@ export default function HomePanel({ onNavigate }) {
   const renderWidget = (id) => {
     const w = (children) => (
       <div key={id} draggable onDragStart={() => handleDragStart(id)} onDragOver={(e) => { e.preventDefault(); handleDragOver(id); }} onDrop={handleDrop}
-        style={{ ...widget3d, width: sizeMap[id] || '100%' }}
+        style={{ ...widget3d }}
         onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 7px 0 ${DS.teal}, 0 10px 20px rgba(0,0,0,0.1)`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.boxShadow = `0 5px 0 ${DS.border}, 0 8px 16px rgba(0,0,0,0.07)`; e.currentTarget.style.transform = 'none'; }}>
         <DragHandle />{children}
@@ -277,7 +277,7 @@ export default function HomePanel({ onNavigate }) {
 
   return (
     <div style={{ padding: 0, width: '100%', fontFamily: "'Inter', sans-serif" }}>
-      <div style={{ padding: '18px 22px 14px', background: DS.white, borderBottom: `1px solid ${DS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ padding: '18px 24px 14px', background: DS.white, borderBottom: `1px solid ${DS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: DS.dark }}>{saluto}, {user?.nome || 'FABIO COZZA'}</h1>
           <p style={{ margin: '2px 0 0', fontSize: 11, color: DS.tealDark }}>{now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — trascina i widget per riordinare</p>
@@ -289,7 +289,7 @@ export default function HomePanel({ onNavigate }) {
           <button style={btn3d(DS.dark, '#000')} onMouseDown={press} onMouseUp={release} onClick={() => nav('messaggi')}>Messaggio</button>
         </div>
       </div>
-      <div style={{ padding: '14px 22px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ padding: '14px 22px', display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
         {[
           { l: 'Commesse attive', v: stats.attive, c: DS.blue, s: '0 confermate', p: 'commesse' },
           { l: 'Ferme', v: stats.ferme, c: DS.amber, s: 'Soglia 5gg', p: 'commesse' },
@@ -299,7 +299,7 @@ export default function HomePanel({ onNavigate }) {
           { l: 'Compiti', v: 3, c: DS.dark, s: '1 urgente', p: 'team' },
         ].map((s, i) => (
           <div key={i} onClick={() => nav(s.p)} style={{
-            flex: 1, minWidth: 120, padding: '14px 16px', background: DS.white, borderRadius: 12,
+            padding: '14px 16px', background: DS.white, borderRadius: 12,
             border: `1px solid ${DS.border}`, cursor: 'pointer',
             boxShadow: `0 4px 0 ${DS.border}, 0 5px 10px rgba(0,0,0,0.05)`,
             transition: 'border-color 0.15s, transform 0.15s',
@@ -312,7 +312,7 @@ export default function HomePanel({ onNavigate }) {
           </div>
         ))}
       </div>
-      <div style={{ padding: '0 22px 22px', display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+      <div style={{ padding: '0 22px 22px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
         {widgetOrder.map(id => renderWidget(id))}
       </div>
     </div>
