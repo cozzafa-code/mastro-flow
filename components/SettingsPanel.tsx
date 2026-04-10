@@ -576,29 +576,6 @@ export default function SettingsPanel() {
   const [profiliLoaded, setProfiliLoaded] = React.useState(false);
   const [profiliExpanded, setProfiliExpanded] = React.useState<string|null>(null);
   const [profiliSearch, setProfiliSearch] = React.useState("");
-  const [tipoSupa, setTipoSupa] = React.useState<any[]>([]);
-  const [regoleSupa, setRegoleSupa] = React.useState<any[]>([]);
-  const [tipoLoaded, setTipoLoaded] = React.useState(false);
-  const [tipoExp, setTipoExp] = React.useState<number|null>(null);
-  const [calcL, setCalcL] = React.useState("1200");
-  const [calcH, setCalcH] = React.useState("1400");
-  const [calcHF, setCalcHF] = React.useState("400");
-
-  React.useEffect(() => {
-    if (settingsTab !== "tipologie" || tipoLoaded) return;
-    (async () => {
-      try {
-        const { supabase: sb } = await import("@/lib/supabase");
-        const [r1, r2] = await Promise.all([
-          sb.from("tipologie_infisso").select("*").order("nome"),
-          sb.from("regole_taglio").select("*"),
-        ]);
-        if (r1.data) setTipoSupa(r1.data);
-        if (r2.data) setRegoleSupa(r2.data);
-        setTipoLoaded(true);
-      } catch(e) { console.error(e); }
-    })();
-  }, [settingsTab, tipoLoaded]);
 
   React.useEffect(() => {
     if (settingsTab !== "colori" || coloriLoaded) return;
@@ -681,7 +658,7 @@ export default function SettingsPanel() {
     {
       label: "Catalogo prodotti",
       items: [
-        { id: "sistemi",       l: "Listini",   show: settoriAttivi.includes("serramenti") },
+        { id: "sistemi",       l: "Sistemi profilo",   show: settoriAttivi.includes("serramenti") },
         { id: "profili_arch",  l: "Archivio profili",  show: settoriAttivi.includes("serramenti") },
         { id: "vetri",         l: "Vetri & pacchetti", show: settoriAttivi.includes("serramenti") },
         { id: "colori",        l: "Colori & RAL",      show: settoriAttivi.includes("serramenti") },
@@ -877,15 +854,9 @@ export default function SettingsPanel() {
         {/* ARCHIVIO PROFILI DXF                                   */}
         {/* ═══════════════════════════════════════════════════════ */}
         {/* === ARCHIVIO PROFILI === fetch da Supabase profili_catalogo */}
-        {/* === ARCHIVIO PROFILI === con misure per distinta taglio */}
         {settingsTab === "profili_arch" && (() => {
-          const TIPI_PROFILO = ["Anta","Telaio","Riporto Centrale","Traverso","Montante","Multiuso","Complementare","Fermavetro","Zoccolo","Fascia","Zoccolo Riportato","Compensatore","Colonna","Tubolare","Profilo Tondo","Angolare","Binario","Scattino","Altro"];
+          const TIPI_PROFILO = ["Rahmen","Fl\u00FCgel","Pfosten","Stulp","Soglia","Traverso","Montante","Altro"];
           const MATERIALI_P = ["PVC","Alluminio","Legno","Legno-Alluminio"];
-          const UTILIZZI = [
-            {k:"telaio_fisso",l:"Telaio fisso"},{k:"anta_battente",l:"Anta battente"},{k:"anta_scorrevole",l:"Anta scorrevole"},
-            {k:"fermavetro",l:"Fermavetro"},{k:"riporto",l:"Riporto centrale"},{k:"traverso",l:"Traverso"},
-            {k:"montante",l:"Montante"},{k:"soglia",l:"Soglia"},{k:"fascia",l:"Fascia"},{k:"complementare",l:"Complementare"},
-          ];
 
           const profiliFiltrati = profiliSupa.filter(p => {
             if (profiliSearch && !p.nome?.toLowerCase().includes(profiliSearch.toLowerCase()) && !(p.codice||"").toLowerCase().includes(profiliSearch.toLowerCase())) return false;
@@ -920,12 +891,11 @@ export default function SettingsPanel() {
 
           return (
             <>
-              {/* Stats */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:14 }}>
                 {[
                   { n: profiliSupa.length, l:"Profili", c: PRI },
-                  { n: profiliSupa.filter(p => p.battuta && p.frontale).length, l:"Completi", c:"#1A9E73" },
-                  { n: profiliSupa.filter(p => p.immagine_url || p.dxf_url || p.pdf_url).length, l:"Con file", c:"#3B7FE0" },
+                  { n: profiliSupa.filter(p => p.attivo !== false).length, l:"Attivi", c:"#1A9E73" },
+                  { n: profiliSupa.filter(p => p.dxf_url || p.pdf_url || p.immagine_url).length, l:"Con file", c:"#3B7FE0" },
                 ].map((s,i) => (
                   <div key={i} style={{ background:T.card, border:`1px solid ${T.bdr}`, borderRadius:10, padding:"12px 8px", textAlign:"center" }}>
                     <div style={{ fontSize:22, fontWeight:700, color:s.c, fontFamily:FM }}>{s.n}</div>
@@ -938,189 +908,65 @@ export default function SettingsPanel() {
                 placeholder="Cerca profilo per nome o codice..."
                 style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, boxSizing:"border-box", marginBottom:12 }} />
 
-              {/* Import AI */}
-              <div style={{ ...S.card, marginBottom:14 }}><div style={S.cardInner}>
-                <div style={{ fontSize:13, fontWeight:800, color:T.text, marginBottom:4 }}>Importa profilo con AI</div>
-                <div style={{ fontSize:10, color:T.sub, marginBottom:8 }}>Carica PDF catalogo, immagine o screenshot</div>
-                <div style={{ position:"relative" }}>
-                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp"
-                    style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0]; if (!file) return;
-                      e.target.value = "";
-                      const loadEl = document.createElement("div");
-                      loadEl.id = "ai_prof_load";
-                      loadEl.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;";
-                      loadEl.innerHTML = '<div style="background:#fff;padding:30px 40px;border-radius:16px;text-align:center"><div style="font-size:14px;font-weight:800;margin-bottom:8px">Analisi AI in corso...</div><div style="font-size:11px;color:#6B7280">Claude sta leggendo il profilo</div></div>';
-                      document.body.appendChild(loadEl);
-                      try {
-                        const formData = new FormData();
-                        formData.append("file", file);
-                        const res = await fetch("/api/profilo-extract", { method: "POST", body: formData });
-                        const data = await res.json();
-                        document.getElementById("ai_prof_load")?.remove();
-                        if (data.error) { alert("Errore: " + data.error); return; }
-                        if (data.profili && data.profili.length > 0) {
-                          const { supabase: sb } = await import("@/lib/supabase");
-                          let count = 0;
-                          for (const p of data.profili) {
-                            const ins = {
-                              nome: p.nome || "Profilo estratto", codice: p.codice || null, marca: p.marca || null,
-                              materiale: p.materiale || "PVC", tipo: p.tipo || "Telaio",
-                              utilizzo: p.utilizzo || "telaio_fisso",
-                              profondita_mm: p.profondita_mm || p.bautiefe_mm || null,
-                              frontale: p.frontale || null,
-                              battuta: p.battuta || null,
-                              sede_fermavetro: p.sede_fermavetro || null,
-                              tubolare: p.tubolare || null,
-                              aria: p.aria || null,
-                              uf: p.uf || null, peso_kg_ml: p.peso_kg_ml || null,
-                              sviluppo: p.sviluppo || null,
-                              camere: p.camere || null,
-                              note: (p.note || "") + (p.quote_mm?.length ? " Quote: " + p.quote_mm.join(", ") + "mm" : ""),
-                              attivo: true, azienda_id: aziendaInfo?.id || "demo",
-                            };
-                            const { data: row } = await sb.from("profili_catalogo").insert([ins]).select().single();
-                            if (row) { setProfiliSupa(prev => [...prev, row]); count++; }
-                          }
-                          alert(count + " profil" + (count > 1 ? "i estratti" : "o estratto") + "!");
-                        } else { alert("Nessun profilo trovato nel file."); }
-                      } catch (err: any) { document.getElementById("ai_prof_load")?.remove(); alert("Errore: " + (err.message || "Rete")); }
-                    }} />
-                  <div style={{ border:`1.5px dashed ${PRI}`, borderRadius:8, padding:"14px", textAlign:"center", background:PRI+"08", cursor:"pointer" }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:PRI }}>Trascina PDF catalogo, foto o screenshot</div>
-                    <div style={{ fontSize:9, color:T.sub, marginTop:4 }}>Claude AI estrae codice, misure, peso, Uf</div>
-                  </div>
-                </div>
-              </div></div>
-
-              {/* Import massivo DXF */}
-              <div style={{ ...S.card, marginBottom:14 }}><div style={S.cardInner}>
-                <div style={{ fontSize:13, fontWeight:800, color:T.text, marginBottom:4 }}>Importa multipli DXF</div>
-                <div style={{ fontSize:10, color:T.sub, marginBottom:8 }}>Seleziona pi\u00F9 file DXF — MASTRO crea un profilo per ogni file</div>
-                <div style={{ position:"relative" }}>
-                  <input type="file" accept=".dxf,.dwg" multiple
-                    style={{ position:"absolute", inset:0, opacity:0, cursor:"pointer", zIndex:2 }}
-                    onChange={async (ev) => {
-                      const files = ev.target.files; if (!files || files.length === 0) return;
-                      ev.target.value = "";
-                      const loadEl = document.createElement("div");
-                      loadEl.id = "bulk_load";
-                      loadEl.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;";
-                      loadEl.innerHTML = '<div style="background:#fff;padding:30px 40px;border-radius:16px;text-align:center"><div id="bulk_msg" style="font-size:14px;font-weight:800;margin-bottom:8px">Importazione...</div><div id="bulk_count" style="font-size:11px;color:#6B7280">0 / '+files.length+'</div></div>';
-                      document.body.appendChild(loadEl);
-                      const { supabase: sb } = await import("@/lib/supabase");
-                      let ok = 0, fail = 0;
-                      for (let fi = 0; fi < files.length; fi++) {
-                        const f = files[fi];
-                        const el = document.getElementById("bulk_count");
-                        if (el) el.textContent = (fi+1) + " / " + files.length + " — " + f.name;
-                        try {
-                          const text = await f.text();
-                          const fName = f.name.replace(/\.[^.]+$/, "");
-                          const dl = text.split(/\r?\n/);
-                          // EXTMIN/EXTMAX
-                          let eMinX=0,eMinY=0,eMaxX=0,eMaxY=0,lv2="";
-                          for(let i=0;i<dl.length-1;i++){const c=dl[i].trim(),v=dl[i+1]?.trim()||"";if(c==="9")lv2=v;if(lv2==="$EXTMIN"&&c==="10")eMinX=parseFloat(v);if(lv2==="$EXTMIN"&&c==="20"){eMinY=parseFloat(v);lv2="";}if(lv2==="$EXTMAX"&&c==="10")eMaxX=parseFloat(v);if(lv2==="$EXTMAX"&&c==="20"){eMaxY=parseFloat(v);lv2="";}}
-                          // Blocchi
-                          let inBk=false,bName="",cx4=0;
-                          const bkPts:Record<string,{x:number,y:number}[]>={};
-                          for(let i=0;i<dl.length-1;i++){const c=dl[i].trim(),v=dl[i+1]?.trim()||"";if(c==="0"&&v==="BLOCK"){inBk=true;bName="";}if(c==="0"&&v==="ENDBLK")inBk=false;if(c==="2"&&inBk&&bName==="")bName=v;if(inBk&&bName){if(c==="10")try{cx4=parseFloat(v)}catch(e2){}if(c==="20")try{const y4=parseFloat(v);if(!bkPts[bName])bkPts[bName]=[];bkPts[bName].push({x:cx4,y:y4})}catch(e2){}}}
-                          // Trova blocco target
-                          const fc2=fName.replace(/xx/gi,"00").replace(/[^0-9a-zA-Z]/g,"");
-                          const bns2=Object.keys(bkPts).filter(n=>!n.startsWith("*")&&(bkPts[n]?.length||0)>10);
-                          let best2="";
-                          for(const b of bns2){if(b.toLowerCase()===fc2.toLowerCase()){best2=b;break;}}
-                          if(!best2){for(const b of bns2){if(b.includes(fc2)||fc2.includes(b)){best2=b;break;}}}
-                          if(!best2&&bns2.length>0){let ba2=Infinity;for(const b of bns2){const pp=bkPts[b];const bw2=Math.max(...pp.map(q=>q.x))-Math.min(...pp.map(q=>q.x));const bh2=Math.max(...pp.map(q=>q.y))-Math.min(...pp.map(q=>q.y));if(bw2>5&&bw2<200&&bh2>5&&bh2<200&&bw2*bh2<ba2){ba2=bw2*bh2;best2=b;}}}
-                          let w4=eMaxX-eMinX,h4=eMaxY-eMinY;
-                          if(best2&&bkPts[best2]?.length>0){const bp2=bkPts[best2];w4=Math.max(...bp2.map(q=>q.x))-Math.min(...bp2.map(q=>q.x));h4=Math.max(...bp2.map(q=>q.y))-Math.min(...bp2.map(q=>q.y));}
-                          // Skip se dimensioni invalide
-                          if(w4<=0||h4<=0||w4>2000||h4>2000){ fail++; continue; }
-                          const ins = {
-                            nome: best2 || fName, codice: fName.toUpperCase(), marca: "Importato",
-                            materiale: "PVC", tipo: w4 > 60 ? "Anta" : h4 < 30 ? "Fermavetro" : "Telaio",
-                            utilizzo: w4 > 60 ? "anta_battente" : h4 < 30 ? "fermavetro" : "telaio_fisso",
-                            profondita_mm: Math.round(w4*10)/10, frontale: Math.round(h4*10)/10,
-                            spessore_lama: 3.5, quota_fusione: 0,
-                            attivo: true, azienda_id: aziendaInfo?.id || "demo",
-                          };
-                          const { data: row, error: insErr } = await sb.from("profili_catalogo").insert([ins]).select().single();
-                          if (insErr) { console.error("Insert error:", fName, insErr.message); fail++; }
-                          else if (row) { setProfiliSupa(prev => [...prev, row]); ok++; }
-                        } catch (err: any) { console.error("DXF error:", f.name, err?.message); fail++; }
-                      }
-                      document.getElementById("bulk_load")?.remove();
-                      alert(ok + " profili importati" + (fail > 0 ? ", " + fail + " non importati (vedi Console per dettagli)" : "") + ".\nOra entra in ogni profilo per completare battuta, aria, sede fermavetro.");
-                    }} />
-                  <div style={{ border:`1.5px dashed #D08008`, borderRadius:8, padding:"14px", textAlign:"center", background:"#D0800808", cursor:"pointer" }}>
-                    <div style={{ fontSize:11, fontWeight:700, color:"#D08008" }}>Seleziona pi\u00F9 file DXF/DWG</div>
-                    <div style={{ fontSize:9, color:T.sub, marginTop:4 }}>Estrae profondit\u00E0, frontale, codice da ogni file</div>
-                  </div>
-                </div>
-              </div></div>
               {profiliFiltrati.length === 0 ? (
-                <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>Nessun profilo inserito.</div>
+                <div style={{ textAlign:"center", color:T.sub, fontSize:12, padding:"30px 0" }}>
+                  Nessun profilo inserito. Clicca + per aggiungere il primo.
+                </div>
               ) : (
                 profiliFiltrati.map((p: any) => {
                   const isExp = profiliExpanded === String(p.id);
                   const sistema = sistemiProfiloSupa.find(s => s.id === p.sistema_id);
+                  const fornColore = fornitoriSupa.find(f => f.id === p.fornitore_colore_id);
                   const matColor = p.materiale === "Alluminio" ? "#D08008" : p.materiale === "PVC" ? "#3B7FE0" : "#1A9E73";
-                  const utilizzoLabel = UTILIZZI.find(u => u.k === p.utilizzo)?.l || p.utilizzo || "—";
-                  const isCompleto = p.battuta && p.frontale && p.aria !== null;
 
                   return (
-                    <div key={p.id} style={{ ...S.card, marginBottom:8, overflow:"hidden", border: isCompleto ? `1px solid ${T.bdr}` : `2px solid #DC444440` }}>
-                      {/* Header */}
+                    <div key={p.id} style={{ ...S.card, marginBottom:8, overflow:"hidden" }}>
                       <div onClick={() => setProfiliExpanded(isExp ? null : String(p.id))}
                         style={{ ...S.cardInner, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
                         <div style={{ width:44, height:44, borderRadius:8, flexShrink:0, overflow:"hidden", border:`1px solid ${T.bdr}`, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center" }}>
                           {p.immagine_url ? (
-                            <img src={p.immagine_url} style={{ width:"100%", height:"100%", objectFit:"contain", cursor:"pointer" }} alt=""
-                              onClick={(ev) => { ev.stopPropagation(); const m=document.createElement("div"); m.id="dxf_preview_modal"; m.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;cursor:pointer;"; m.innerHTML='<div style="background:#fff;border-radius:16px;padding:20px;max-width:90vw;max-height:90vh;overflow:auto;text-align:center" onclick="event.stopPropagation()"><div style="font-size:14px;font-weight:800;margin-bottom:10px;color:#0D1F1F">'+(p.nome||"Profilo")+" — "+(p.codice||"")+'</div><img src="'+p.immagine_url+'" style="max-width:80vw;max-height:70vh;object-fit:contain"/><div style="margin-top:10px;font-size:12px;color:#666">'+(p.profondita_mm?p.profondita_mm+"mm prof. ":"")+(p.frontale?p.frontale+"mm front. ":"")+(p.peso_kg_ml?p.peso_kg_ml+" kg/ml":"")+'</div></div>'; m.onclick=()=>m.remove(); document.body.appendChild(m); }} />
+                            <img src={p.immagine_url} style={{ width:"100%", height:"100%", objectFit:"contain" }} alt="" />
                           ) : (
-                            <span style={{ fontSize:9, fontWeight:900, color:matColor }}>{(p.materiale||"?").substring(0,3)}</span>
+                            <span style={{ fontSize:10, fontWeight:900, color:matColor }}>{(p.materiale||"?").substring(0,3)}</span>
                           )}
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{p.nome}</div>
                           <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginTop:2 }}>
                             {p.codice && <span style={{ fontSize:9, color:T.sub, fontFamily:FM }}>{p.codice}</span>}
+                            {p.marca && <span style={{ fontSize:9, color:T.sub }}>{p.marca}</span>}
                             <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:700, background:matColor+"15", color:matColor }}>{p.materiale}</span>
-                            <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:700, background:PRI+"10", color:PRI }}>{utilizzoLabel}</span>
-                            {!isCompleto && <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:700, background:"#FEE2E2", color:"#DC4444" }}>Incompleto</span>}
                           </div>
                           {sistema && <div style={{ fontSize:9, color:PRI, fontWeight:600, marginTop:2 }}>{sistema.marca} {sistema.sistema}</div>}
+                          {fornColore && <div style={{ fontSize:8, color:"#7C5FBF", fontWeight:600, marginTop:1 }}>Colori: {fornColore.nome}</div>}
                         </div>
                         <div style={{ textAlign:"right", flexShrink:0 }}>
-                          {p.frontale && <div style={{ fontSize:12, fontWeight:800, color:T.text, fontFamily:FM }}>{p.frontale}mm</div>}
+                          {p.uf && <div style={{ fontSize:14, fontWeight:800, color: p.uf <= 1.0 ? "#1A9E73" : p.uf <= 1.4 ? "#D08008" : "#DC4444", fontFamily:FM }}>Uf {p.uf}</div>}
                           {p.peso_kg_ml && <div style={{ fontSize:9, color:T.sub }}>{p.peso_kg_ml} kg/ml</div>}
+                          {p.bautiefe_mm && <div style={{ fontSize:9, color:T.sub }}>{p.bautiefe_mm}mm</div>}
                         </div>
                         <div style={{ fontSize:10, color:T.sub }}>{isExp ? "\u25B2" : "\u25BC"}</div>
                       </div>
 
-                      {/* Dettaglio espanso */}
                       {isExp && (
                         <div style={{ padding:"12px 14px", borderTop:`1px solid ${T.bdr}`, background:T.bg }}>
-                          {/* Riga 1: Identificazione */}
-                          <div style={{ fontSize:10, fontWeight:800, color:PRI, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 }}>Identificazione</div>
-                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
-                            <div style={{ flex:"1 1 30%", minWidth:100 }}>
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
                               <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Nome</div>
                               <input defaultValue={p.nome||""} onBlur={e => salvaProfilo({...p, nome:e.target.value})}
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
                             </div>
-                            <div style={{ flex:"1 1 20%", minWidth:80 }}>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
                               <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Codice</div>
                               <input defaultValue={p.codice||""} onBlur={e => salvaProfilo({...p, codice:e.target.value})}
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, background:T.card, color:T.text }} />
                             </div>
-                            <div style={{ flex:"1 1 20%", minWidth:80 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Marca</div>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Marca / Fornitore</div>
                               <input defaultValue={p.marca||""} onBlur={e => salvaProfilo({...p, marca:e.target.value})}
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }} />
                             </div>
-                            <div style={{ flex:"1 1 20%", minWidth:80 }}>
+                            <div style={{ flex:"1 1 45%", minWidth:110 }}>
                               <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Materiale</div>
                               <select defaultValue={p.materiale||"PVC"} onChange={e => salvaProfilo({...p, materiale:e.target.value})}
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
@@ -1129,106 +975,31 @@ export default function SettingsPanel() {
                             </div>
                           </div>
 
-                          {/* Riga 2: Tipo + Utilizzo */}
-                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
-                            <div style={{ flex:"1 1 45%", minWidth:120 }}>
+                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+                            <div style={{ flex:"1 1 30%", minWidth:80 }}>
                               <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Tipo profilo</div>
-                              <select defaultValue={p.tipo||"Telaio"} onChange={e => salvaProfilo({...p, tipo:e.target.value})}
+                              <select defaultValue={p.tipo||"Rahmen"} onChange={e => salvaProfilo({...p, tipo:e.target.value})}
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text }}>
                                 {TIPI_PROFILO.map(t => <option key={t}>{t}</option>)}
                               </select>
                             </div>
-                            <div style={{ flex:"1 1 45%", minWidth:120 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Utilizzo (per distinta taglio)</div>
-                              <select defaultValue={p.utilizzo||"telaio_fisso"} onChange={e => salvaProfilo({...p, utilizzo:e.target.value})}
-                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FF, background:T.card, color:T.text, fontWeight:700, color:PRI }}>
-                                {UTILIZZI.map(u => <option key={u.k} value={u.k}>{u.l}</option>)}
-                              </select>
+                            <div style={{ flex:"1 1 20%", minWidth:70 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Bautiefe mm</div>
+                              <input type="number" defaultValue={p.bautiefe_mm||""} onBlur={e => salvaProfilo({...p, bautiefe_mm:parseFloat(e.target.value)||null})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                             </div>
-                          </div>
-
-                          {/* ═══ MISURE PER DISTINTA TAGLIO ═══ */}
-                          <div style={{ fontSize:10, fontWeight:800, color:"#DC4444", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6, marginTop:4 }}>Misure per distinta taglio</div>
-                          <div style={{ padding:10, borderRadius:10, border:`2px solid ${PRI}30`, background:PRI+"05", marginBottom:12 }}>
-                            <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Battuta (mm)</div>
-                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Sovrapposizione con profilo accoppiato</div>
-                                <input type="number" step="0.1" defaultValue={p.battuta||""} onBlur={e => salvaProfilo({...p, battuta:parseFloat(e.target.value)||null})}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${p.battuta ? PRI : "#DC4444"}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                              </div>
-                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Aria (mm)</div>
-                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Gioco tra profili accoppiati</div>
-                                <input type="number" step="0.1" defaultValue={p.aria||""} onBlur={e => salvaProfilo({...p, aria:parseFloat(e.target.value)||null})}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${p.aria !== null && p.aria !== undefined ? PRI : "#DC4444"}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                              </div>
-                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Frontale (mm)</div>
-                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Faccia vista del profilo</div>
-                                <input type="number" step="0.1" defaultValue={p.frontale||""} onBlur={e => salvaProfilo({...p, frontale:parseFloat(e.target.value)||null})}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${p.frontale ? PRI : "#DC4444"}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                              </div>
-                            </div>
-                            <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Sede fermavetro (mm)</div>
-                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Alloggio vetro (anta/fisso)</div>
-                                <input type="number" step="0.1" defaultValue={p.sede_fermavetro||""} onBlur={e => salvaProfilo({...p, sede_fermavetro:parseFloat(e.target.value)||null})}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                              </div>
-                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Tubolare (mm)</div>
-                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Altezza parte strutturale</div>
-                                <input type="number" step="0.1" defaultValue={p.tubolare||""} onBlur={e => salvaProfilo({...p, tubolare:parseFloat(e.target.value)||null})}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                              </div>
-                              <div style={{ flex:"1 1 30%", minWidth:110 }}>
-                                <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Spessore lama (mm)</div>
-                                <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Taglio 45°</div>
-                                <input type="number" step="0.1" defaultValue={p.spessore_lama||3.5} onBlur={e => salvaProfilo({...p, spessore_lama:parseFloat(e.target.value)||3.5})}
-                                  style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                              </div>
-                            </div>
-                            {/* Quota fusione solo per PVC */}
-                            {(p.materiale === "PVC" || p.materiale === "Legno-Alluminio") && (
-                              <div style={{ display:"flex", gap:8 }}>
-                                <div style={{ flex:"1 1 30%", minWidth:110 }}>
-                                  <div style={{ fontSize:9, color:T.sub, marginBottom:3, fontWeight:700 }}>Quota fusione (mm)</div>
-                                  <div style={{ fontSize:8, color:T.sub, marginBottom:3 }}>Materiale perso in saldatura — dipende dalla saldatrice</div>
-                                  <input type="number" step="0.1" defaultValue={p.quota_fusione||0} onBlur={e => salvaProfilo({...p, quota_fusione:parseFloat(e.target.value)||0})}
-                                    style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid #7C5FBF`, fontSize:14, fontWeight:700, fontFamily:FM, textAlign:"right", background:"#7C5FBF08", color:T.text }} />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Riga 3: Dati fisici */}
-                          <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 }}>Dati fisici</div>
-                          <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
-                            <div style={{ flex:"1 1 22%", minWidth:70 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Profondità (mm)</div>
-                              <input type="number" defaultValue={p.profondita_mm||""} onBlur={e => salvaProfilo({...p, profondita_mm:parseFloat(e.target.value)||null})}
-                                style={{ width:"100%", padding:"7px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                            </div>
-                            <div style={{ flex:"1 1 22%", minWidth:70 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Uf (W/m²K)</div>
+                            <div style={{ flex:"1 1 20%", minWidth:70 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Uf W/m\u00B2K</div>
                               <input type="number" step="0.01" defaultValue={p.uf||""} onBlur={e => salvaProfilo({...p, uf:parseFloat(e.target.value)||null})}
-                                style={{ width:"100%", padding:"7px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:p.uf <= 1.0 ? "#1A9E73" : p.uf <= 1.4 ? "#D08008" : T.text }} />
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                             </div>
-                            <div style={{ flex:"1 1 22%", minWidth:70 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Peso (kg/ml)</div>
-                              <input type="number" step="0.001" defaultValue={p.peso_kg_ml||""} onBlur={e => salvaProfilo({...p, peso_kg_ml:parseFloat(e.target.value)||null})}
-                                style={{ width:"100%", padding:"7px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
-                            </div>
-                            <div style={{ flex:"1 1 22%", minWidth:70 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Sviluppo (mm)</div>
-                              <input type="number" defaultValue={p.sviluppo||""} onBlur={e => salvaProfilo({...p, sviluppo:parseFloat(e.target.value)||null})}
-                                style={{ width:"100%", padding:"7px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontWeight:700, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
+                            <div style={{ flex:"1 1 20%", minWidth:70 }}>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Peso kg/ml</div>
+                              <input type="number" step="0.01" defaultValue={p.peso_kg_ml||""} onBlur={e => salvaProfilo({...p, peso_kg_ml:parseFloat(e.target.value)||null})}
+                                style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                             </div>
                           </div>
 
-                          {/* Sistema + Colori */}
                           <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
                             <div style={{ flex:"1 1 45%", minWidth:140 }}>
                               <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Sistema profilo</div>
@@ -1239,16 +1010,18 @@ export default function SettingsPanel() {
                               </select>
                             </div>
                             <div style={{ flex:"1 1 45%", minWidth:140 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Colori collegati</div>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Colori collegati (fornitore)</div>
                               <select defaultValue={p.fornitore_colore_id||""} onChange={e => salvaProfilo({...p, fornitore_colore_id:e.target.value||null})}
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text }}>
                                 <option value="">Nessun collegamento</option>
                                 {fornitoriSupa.map(f => <option key={f.id} value={f.id}>{f.nome} ({f.materiale})</option>)}
                               </select>
+                              {p.fornitore_colore_id && <div style={{ fontSize:8, color:"#7C5FBF", marginTop:3, fontWeight:600 }}>
+                                Tutti i colori {fornitoriSupa.find(f => f.id === p.fornitore_colore_id)?.nome} collegati
+                              </div>}
                             </div>
                           </div>
 
-                          {/* Upload file */}
                           <div style={{ display:"flex", gap:8, marginBottom:10, flexWrap:"wrap" }}>
                             <div style={{ flex:"1 1 30%", minWidth:100 }}>
                               <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Disegno sezione</div>
@@ -1272,74 +1045,20 @@ export default function SettingsPanel() {
                               {p.dxf_url ? (
                                 <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                                   <span style={{ padding:"2px 6px", borderRadius:4, fontSize:8, fontWeight:700, background:"#FEF3C7", color:"#92400E" }}>DXF</span>
-                                  <div onClick={() => salvaProfilo({...p, dxf_url:null, immagine_url:null})} style={{ fontSize:9, color:"#DC4444", cursor:"pointer", fontWeight:600 }}>x</div>
+                                  <div onClick={() => salvaProfilo({...p, dxf_url:null})} style={{ fontSize:9, color:"#DC4444", cursor:"pointer", fontWeight:600 }}>x</div>
                                 </div>
                               ) : (
                                 <label style={{ display:"inline-flex", padding:"5px 10px", borderRadius:6, background:"#FEF3C7", color:"#92400E", fontSize:9, fontWeight:600, cursor:"pointer" }}>
                                   DXF/DWG
-                                  <input type="file" accept=".dxf,.dwg" style={{ display:"none" }} onChange={async e => {
+                                  <input type="file" accept=".dxf,.dwg" style={{ display:"none" }} onChange={e => {
                                     const file = e.target.files?.[0]; if (!file) return;
-                                    const text = await file.text();
-                                    const fName = file.name.replace(/\.[^.]+$/, "");
-                                    try {
-                                      const dl = text.split(/\r?\n/);
-                                      let eMinX=0,eMinY=0,eMaxX=0,eMaxY=0,lv="";
-                                      for(let i=0;i<dl.length-1;i++){const c=dl[i].trim(),v=dl[i+1]?.trim()||"";if(c==="9")lv=v;if(lv==="$EXTMIN"&&c==="10")eMinX=parseFloat(v);if(lv==="$EXTMIN"&&c==="20"){eMinY=parseFloat(v);lv="";}if(lv==="$EXTMAX"&&c==="10")eMaxX=parseFloat(v);if(lv==="$EXTMAX"&&c==="20"){eMaxY=parseFloat(v);lv="";}}
-                                      let inB=false,bn="",cx3=0,eT2="";
-                                      const bPolys:Record<string,{x:number,y:number}[][]>={};
-                                      const bPts:Record<string,{x:number,y:number}[]>={};
-                                      let cP2:{x:number,y:number}[]=[];
-                                      const tx2:string[]=[];
-                                      for(let i=0;i<dl.length-1;i++){
-                                        const c=dl[i].trim(),v=dl[i+1]?.trim()||"";
-                                        if(c==="0"&&v==="BLOCK"){inB=true;bn="";}
-                                        if(c==="0"&&v==="ENDBLK"){if(eT2==="LWPOLYLINE"&&cP2.length>0&&bn){if(!bPolys[bn])bPolys[bn]=[];bPolys[bn].push([...cP2]);cP2=[];}inB=false;}
-                                        if(c==="2"&&inB&&bn==="")bn=v;
-                                        if(c==="0"){if(eT2==="LWPOLYLINE"&&cP2.length>0&&bn){if(!bPolys[bn])bPolys[bn]=[];bPolys[bn].push([...cP2]);cP2=[];}eT2=v;}
-                                        if(inB&&bn){if(c==="10"){try{cx3=parseFloat(v)}catch(e2){}}if(c==="20"){try{const y3=parseFloat(v);if(!bPts[bn])bPts[bn]=[];bPts[bn].push({x:cx3,y:y3});if(eT2==="LWPOLYLINE")cP2.push({x:cx3,y:y3})}catch(e2){}}}
-                                        if((c==="1"||c==="3")&&(eT2==="MTEXT"||eT2==="TEXT"))tx2.push(v);
-                                      }
-                                      // Trova blocco: XXxxYY -> XX00YY
-                                      const fc=fName.replace(/xx/gi,"00").replace(/[^0-9a-zA-Z]/g,"");
-                                      const bns=Object.keys(bPts).filter(n=>!n.startsWith("*")&&(bPts[n]?.length||0)>10);
-                                      let best="";
-                                      for(const b of bns){if(b.toLowerCase()===fc.toLowerCase()){best=b;break;}}
-                                      if(!best){for(const b of bns){if(b.includes(fc)||fc.includes(b)){best=b;break;}}}
-                                      if(!best){let ba=Infinity;for(const b of bns){const pp=bPts[b];if(pp.length<10)continue;const bw=Math.max(...pp.map(q=>q.x))-Math.min(...pp.map(q=>q.x));const bh=Math.max(...pp.map(q=>q.y))-Math.min(...pp.map(q=>q.y));if(bw>5&&bw<200&&bh>5&&bh<200&&bw*bh<ba){ba=bw*bh;best=b;}}}
-                                      let w3=eMaxX-eMinX,h3=eMaxY-eMinY,mx3=eMinX,my3=eMinY;
-                                      const uP=bPolys[best]||[];
-                                      if(best&&bPts[best]?.length>0){const bp=bPts[best];mx3=Math.min(...bp.map(q=>q.x));my3=Math.min(...bp.map(q=>q.y));w3=Math.max(...bp.map(q=>q.x))-mx3;h3=Math.max(...bp.map(q=>q.y))-my3;}
-                                      const s3=Math.min(220/(w3||1),180/(h3||1)),pd3=10;
-                                      const sw3=w3*s3+pd3*2,sh3=h3*s3+pd3*2;
-                                      let sp3="";
-                                      uP.forEach(poly=>{if(poly.length<2)return;sp3+='<path d="'+poly.map((pt,ii)=>(ii===0?"M":"L")+(((pt.x-mx3)*s3+pd3).toFixed(1))+","+(sh3-((pt.y-my3)*s3+pd3)).toFixed(1)).join(" ")+' Z" fill="none" stroke="#2c3e50" stroke-width="0.6"/>';});
-                                      if(!sp3)sp3='<rect x="'+pd3+'" y="'+pd3+'" width="'+(w3*s3).toFixed(0)+'" height="'+(h3*s3).toFixed(0)+'" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="4,2"/>';
-                                      const svg3='<svg viewBox="0 0 '+sw3.toFixed(0)+' '+sh3.toFixed(0)+'" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#fafbfc" rx="4"/>'+sp3+'<text x="'+(sw3/2).toFixed(0)+'" y="'+(sh3-3)+'" text-anchor="middle" font-size="9" fill="#333" font-weight="bold">'+(best||fName)+' '+w3.toFixed(0)+'x'+h3.toFixed(0)+'mm</text></svg>';
-                                      let cod3=null as string|null,pes3=null as number|null,svi3=null as number|null;
-                                      tx2.forEach(t=>{const cm3=t.match(/\b(\d{2}[xX]{2}\d{2})\b/);if(cm3&&!cod3)cod3=cm3[1];const pm3=t.match(/([\d.,]+)\s*[Kk]g/);if(pm3)pes3=parseFloat(pm3[1].replace(",","."));const sm3=t.match(/mm\.?\s*([\d.,]+)/i);if(sm3)svi3=parseFloat(sm3[1].replace(",","."));});
-                                      let cam3=0;uP.forEach(poly=>{if(poly.length>=3){let a3=0;for(let ii=0;ii<poly.length;ii++){const jj=(ii+1)%poly.length;a3+=poly[ii].x*poly[jj].y-poly[jj].x*poly[ii].y;}a3=Math.abs(a3/2);if(a3>w3*h3*0.02&&a3<w3*h3*0.4)cam3++;}});
-                                      if(!cod3)cod3=best||fName;
-                                      const u3:any={...p,dxf_url:"dxf_loaded"};
-                                      if(w3>0&&w3<1000)u3.profondita_mm=Math.round(w3*10)/10;
-                                      if(h3>0&&h3<1000)u3.frontale=Math.round(h3*10)/10;
-                                      if(cod3)u3.codice=cod3;
-                                      if(!u3.nome||u3.nome==="Nuovo profilo")u3.nome=cod3||fName;
-                                      if(pes3)u3.peso_kg_ml=pes3;
-                                      if(svi3)u3.sviluppo=svi3;
-                                      if(cam3>0)u3.camere=cam3;
-                                      u3.tipo=w3>60?"Anta":h3<30?"Fermavetro":"Telaio";
-                                      u3.immagine_url="data:image/svg+xml;base64,"+btoa(svg3);
-                                      salvaProfilo(u3);
-                                      alert("DXF: "+(best||"auto")+"\n"+w3.toFixed(1)+"x"+h3.toFixed(1)+"mm"+(cam3?" Cam:"+cam3:"")+"\nBlocchi: "+bns.join(", "));
-                                    } catch(err: any) {
-                                      alert("Errore DXF: " + (err?.message || "formato non supportato"));
-                                    }
+                                    const r = new FileReader(); r.onload = ev => salvaProfilo({...p, dxf_url:ev.target?.result}); r.readAsDataURL(file);
                                   }} />
                                 </label>
                               )}
                             </div>
                             <div style={{ flex:"1 1 30%", minWidth:100 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Scheda PDF</div>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Scheda tecnica</div>
                               {p.pdf_url ? (
                                 <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                                   <span style={{ padding:"2px 6px", borderRadius:4, fontSize:8, fontWeight:700, background:"#DBEAFE", color:"#1E40AF" }}>PDF</span>
@@ -1357,14 +1076,12 @@ export default function SettingsPanel() {
                             </div>
                           </div>
 
-                          {/* Note */}
                           <div style={{ marginBottom:8 }}>
                             <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Note</div>
                             <textarea defaultValue={p.note||""} rows={2} onBlur={e => salvaProfilo({...p, note:e.target.value})}
                               style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:11, fontFamily:FF, background:T.card, color:T.text, resize:"vertical" }} />
                           </div>
 
-                          {/* Elimina */}
                           <div style={{ display:"flex", justifyContent:"flex-end", paddingTop:8, borderTop:`1px solid ${T.bdr}` }}>
                             <div onClick={() => eliminaProfilo(p.id)}
                               style={{ padding:"6px 14px", borderRadius:6, background:"rgba(220,68,68,0.1)", color:"#DC4444", fontSize:11, fontWeight:700, cursor:"pointer" }}>
@@ -1378,15 +1095,15 @@ export default function SettingsPanel() {
                 })
               )}
 
-              {/* Aggiungi profilo */}
-              <div onClick={() => salvaProfilo({ nome:"Nuovo profilo", materiale:"PVC", tipo:"Telaio", utilizzo:"telaio_fisso", attivo:true })}
+              <div onClick={() => {
+                salvaProfilo({ nome:"Nuovo profilo", materiale:"PVC", tipo:"Rahmen", attivo:true });
+              }}
                 style={{ padding:"14px", borderRadius:T.r, border:`1px dashed ${PRI}`, textAlign:"center", cursor:"pointer", color:PRI, fontSize:12, fontWeight:600, marginTop:8 }}>
                 + Aggiungi profilo
               </div>
             </>
           );
         })()}
-
 
 
         {settingsTab === "azienda" && (
@@ -2239,111 +1956,29 @@ export default function SettingsPanel() {
         )}
 
         {/* === TIPOLOGIE === */}
-        {settingsTab === "tipologie" && (() => {
-          const calcFormula = (formula: string, L: number, H: number, HF: number) => {
-            try {
-              let f = formula.replace(/L\/2/g, String(L/2)).replace(/L/g, String(L)).replace(/H-HF/g, String(H-HF)).replace(/HF/g, String(HF)).replace(/H/g, String(H));
-              return Math.round(eval(f) * 10) / 10;
-            } catch { return 0; }
-          };
-
-          return (
-            <>
-              <div style={{ fontSize:11, color:T.sub, marginBottom:8 }}>Tipologie infisso con distinta di taglio automatica</div>
-
-              {/* Calcolatore */}
-              <div style={{ ...S.card, marginBottom:14 }}><div style={{ ...S.cardInner }}>
-                <div style={{ fontSize:13, fontWeight:800, color:T.text, marginBottom:8 }}>Calcolatore distinta</div>
-                <div style={{ display:"flex", gap:8, marginBottom:8 }}>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:9, color:T.sub, marginBottom:2 }}>Larghezza L (mm)</div>
-                    <input type="number" value={calcL} onChange={e => setCalcL(e.target.value)}
-                      style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${PRI}`, fontSize:16, fontWeight:700, fontFamily:FM, textAlign:"center", background:T.card, color:T.text }} />
+        {settingsTab === "tipologie" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Tipologie serramento — trascina ⭐ per i preferiti</div>
+            {TIPOLOGIE_RAPIDE.map(t => {
+              const isFav = favTipologie.includes(t.code);
+              return (
+                <div key={t.code} style={{ ...S.card, marginBottom: 4 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 8, padding: "8px 14px" }}>
+                  <div onClick={() => setFavTipologie(fav => isFav ? fav.filter(f => f !== t.code) : [...fav, t.code])} style={{ cursor: "pointer" }}>
+                    <span style={{ fontSize: 16, color: isFav ? "#E8A020" : T.bdr }}>{isFav ? "⭐" : ""}</span>
                   </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:9, color:T.sub, marginBottom:2 }}>Altezza H (mm)</div>
-                    <input type="number" value={calcH} onChange={e => setCalcH(e.target.value)}
-                      style={{ width:"100%", padding:"8px", borderRadius:7, border:`2px solid ${PRI}`, fontSize:16, fontWeight:700, fontFamily:FM, textAlign:"center", background:T.card, color:T.text }} />
+                  <span style={{ display: "flex", alignItems: "center" }}><I d={ICO[t.icon] || ICO.grid} s={16} c={T.sub} /></span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM }}>{t.code}</span>
+                    <span style={{ fontSize: 11, color: T.sub, marginLeft: 6 }}>{t.label}</span>
+                    {t.forma && t.forma !== "rettangolare" && <span style={{ fontSize: 9, color: PRI, marginLeft: 6, background: PRILt, padding: "1px 5px", borderRadius: 4 }}>{t.forma}</span>}
                   </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:9, color:T.sub, marginBottom:2 }}>H Fascia (mm)</div>
-                    <input type="number" value={calcHF} onChange={e => setCalcHF(e.target.value)}
-                      style={{ width:"100%", padding:"8px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:16, fontWeight:700, fontFamily:FM, textAlign:"center", background:T.card, color:T.text }} />
-                  </div>
-                </div>
-              </div></div>
-
-              {/* Lista tipologie */}
-              {tipoSupa.map(tip => {
-                const regole = regoleSupa.filter(r => r.tipologia_id === tip.id);
-                const isExp = tipoExp === tip.id;
-                const L = parseFloat(calcL) || 0, H = parseFloat(calcH) || 0, HF = parseFloat(calcHF) || 0;
-                const catColor = tip.categoria === "porta" ? "#DC4444" : tip.categoria === "scorrevole" ? "#7C5FBF" : tip.categoria === "fisso" ? "#3B7FE0" : PRI;
-
-                return (
-                  <div key={tip.id} style={{ ...S.card, marginBottom:6, overflow:"hidden" }}>
-                    <div onClick={() => setTipoExp(isExp ? null : tip.id)}
-                      style={{ ...S.cardInner, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
-                      <div style={{ width:36, height:36, borderRadius:8, background:catColor+"15", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                        <span style={{ fontSize:11, fontWeight:900, color:catColor }}>{tip.n_ante || 0}A</span>
-                      </div>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{tip.nome}</div>
-                        <div style={{ display:"flex", gap:4, marginTop:2 }}>
-                          <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:700, background:catColor+"15", color:catColor }}>{tip.categoria}</span>
-                          {regole.length > 0 && <span style={{ padding:"1px 5px", borderRadius:3, fontSize:8, fontWeight:600, background:PRI+"10", color:PRI }}>{regole.length} regole</span>}
-                          {tip.ha_fascia && <span style={{ fontSize:8, color:T.sub }}>+fascia</span>}
-                          {tip.ha_riporto && <span style={{ fontSize:8, color:T.sub }}>+riporto</span>}
-                        </div>
-                      </div>
-                      <div style={{ fontSize:10, color:T.sub }}>{isExp ? "\u25B2" : "\u25BC"}</div>
-                    </div>
-
-                    {isExp && regole.length > 0 && L > 0 && H > 0 && (
-                      <div style={{ padding:"10px 14px", borderTop:`1px solid ${T.bdr}`, background:T.bg }}>
-                        <div style={{ fontSize:10, fontWeight:800, color:PRI, textTransform:"uppercase", marginBottom:6 }}>Distinta taglio {L} x {H} mm</div>
-                        <table style={{ width:"100%", fontSize:11, borderCollapse:"collapse" }}>
-                          <thead>
-                            <tr style={{ borderBottom:`2px solid ${PRI}` }}>
-                              <th style={{ textAlign:"left", padding:"4px 6px", fontSize:9, color:T.sub }}>Elemento</th>
-                              <th style={{ textAlign:"left", padding:"4px 6px", fontSize:9, color:T.sub }}>Profilo</th>
-                              <th style={{ textAlign:"left", padding:"4px 6px", fontSize:9, color:T.sub }}>Formula</th>
-                              <th style={{ textAlign:"right", padding:"4px 6px", fontSize:9, color:T.sub }}>Taglio mm</th>
-                              <th style={{ textAlign:"center", padding:"4px 6px", fontSize:9, color:T.sub }}>Qt</th>
-                              <th style={{ textAlign:"center", padding:"4px 6px", fontSize:9, color:T.sub }}>\u00B0</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {regole.map((r: any, ri: number) => {
-                              const taglio = calcFormula(r.formula, L, H, HF);
-                              const isVetro = r.profilo_ruolo.includes("vetro");
-                              return (
-                                <tr key={ri} style={{ borderBottom:`1px solid ${T.bdr}`, background: isVetro ? "#DBEAFE10" : "transparent" }}>
-                                  <td style={{ padding:"5px 6px", fontWeight:600, color: isVetro ? "#3B7FE0" : T.text }}>{r.profilo_ruolo.replace(/_/g, " ")}</td>
-                                  <td style={{ padding:"5px 6px", fontFamily:FM, fontSize:10, color:PRI }}>{r.profilo_codice || "—"}</td>
-                                  <td style={{ padding:"5px 6px", fontFamily:FM, fontSize:10, color:T.sub }}>{r.formula}</td>
-                                  <td style={{ padding:"5px 6px", textAlign:"right", fontWeight:800, fontFamily:FM, fontSize:13, color: isVetro ? "#3B7FE0" : T.text }}>{taglio}</td>
-                                  <td style={{ padding:"5px 6px", textAlign:"center", fontSize:10 }}>{r.quantita}</td>
-                                  <td style={{ padding:"5px 6px", textAlign:"center", fontSize:10, color:T.sub }}>{r.angolo_taglio}\u00B0</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                    {isExp && regole.length === 0 && (
-                      <div style={{ padding:"14px", borderTop:`1px solid ${T.bdr}`, background:T.bg, textAlign:"center", color:T.sub, fontSize:11 }}>
-                        Nessuna regola di taglio configurata per questa tipologia.
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </>
-          );
-        })()}
+                  <Ico d={ICO.pen} s={14} c={T.sub} />
+                </div></div>
+              );
+            })}
+            <div onClick={() => { setSettingsModal("tipologia"); setSettingsForm({ code: "", label: "", icon: "", cat: "Altro", forma: "rettangolare" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${PRI}`, textAlign: "center", cursor: "pointer", color: PRI, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipologia</div>
+          </>
+        )}
 
         {/* === COPRIFILI === */}
         {settingsTab === "coprifili" && (
