@@ -51,7 +51,7 @@ import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 import { useOfflineCache } from "@/hooks/useOfflineCache";
 
-function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
+function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDesktop }: { user?: any, azienda?: any, forceMobile?: boolean, forceDesktop?: boolean }) {
   const [theme, setTheme] = useState("fliwox");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
@@ -728,7 +728,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   // Check Gmail on mount
   useEffect(() => { gmailCheckStatus(); }, []);
   const isTablet = winW >= 768;
-  const isDesktop = winW >= 1024;
+  const isDesktop = forceDesktop ? true : forceMobile ? false : winW >= 1024;
 
   const goBack = () => {
     if (homeView) { setHomeView(null); return; }
@@ -5347,10 +5347,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
 //  ERROR BOUNDARY WRAPPER 
-export default function MastroMisure() {
+export default function MastroMisure(props: any) {
   return (
     <MastroErrorBoundary>
-      <MastroMisureInner />
+      <MastroMisureInner {...props} />
     </MastroErrorBoundary>
   );
 }
