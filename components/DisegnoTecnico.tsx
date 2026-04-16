@@ -1802,10 +1802,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   else {
                                     const sp = findSnap(px, py);
                                     if (sp) { px = sp.x; py = sp.y; }
-                                    else {
-                                      if (Math.abs(px-pending.x1)<5) px=pending.x1;
-                                      if (Math.abs(py-pending.y1)<5) py=pending.y1;
-                                    }
+                                    // H/V: forza allineamento anche dopo snap
+                                    const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
+                                    if (adxC < 12 && adyC > adxC * 2) px=pending.x1;
+                                    if (adyC < 12 && adxC > adyC * 2) py=pending.y1;
                                     // chiusura forma — solo per telaio libero senza subType
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
@@ -2377,11 +2377,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // Snap a punti esistenti durante il movimento
                                     const snapPt = findSnap(gx, gy);
                                     if (snapPt) { gx = snapPt.x; gy = snapPt.y; }
-                                    // H/V snap se molto vicino (entro 5px)
-                                    if (!snapPt) {
-                                      if (Math.abs(gx - p.x1) < 5) gx = p.x1;
-                                      if (Math.abs(gy - p.y1) < 5) gy = p.y1;
-                                    }
+                                    // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
+                                    // (anche dopo findSnap — priorita' all'allineamento)
+                                    const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
+                                    if (adx < 12 && ady > adx * 2) gx = p.x1;
+                                    if (ady < 12 && adx > ady * 2) gy = p.y1;
                                     // Mont.Lib: forza verticale
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") {
                                       gx = p.x1;
@@ -2448,10 +2448,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const pp = dw._pendingLine;
                                     const snapPtT = findSnap(gx, gy);
                                     if (snapPtT) { gx = snapPtT.x; gy = snapPtT.y; }
-                                    else {
-                                      if (Math.abs(gx - pp.x1) < 5) gx = pp.x1;
-                                      if (Math.abs(gy - pp.y1) < 5) gy = pp.y1;
-                                    }
+                                    // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
+                                    const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
+                                    if (adxT < 12 && adyT > adxT * 2) gx = pp.x1;
+                                    if (adyT < 12 && adxT > adyT * 2) gy = pp.y1;
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
                                     if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
