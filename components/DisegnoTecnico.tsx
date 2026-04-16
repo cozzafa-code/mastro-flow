@@ -1708,22 +1708,42 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   el2.x >= cell.x - 2 && el2.y >= cell.y - 2 &&
                                   el2.x + el2.w <= cell.x + cell.w + 2 && el2.y + el2.h <= cell.y + cell.h + 2;
                                 
+                                // ── Clip Y cella per zoccolo/soglia/fascia dentro la cella ──
+                                let cellY = cell.y, cellH = cell.h;
+                                const horzSubInCell = els.filter(e => 
+                                  e.type === "freeLine" && e.subType && 
+                                  Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1
+                                );
+                                horzSubInCell.forEach(h => {
+                                  const hMidY = (h.y1 + h.y2) / 2;
+                                  const hMinX = Math.min(h.x1, h.x2), hMaxX = Math.max(h.x1, h.x2);
+                                  if (hMaxX < cell.x + 5 || hMinX > cell.x + cell.w - 5) return;
+                                  const cellMidY = cellY + cellH / 2;
+                                  if (hMidY > cellMidY && hMidY < cellY + cellH) {
+                                    cellH = hMidY - cellY;
+                                  }
+                                  if (hMidY < cellMidY && hMidY > cellY) {
+                                    cellH = cellH - (hMidY - cellY);
+                                    cellY = hMidY;
+                                  }
+                                });
+
                                 // Regular cell handling
                                 if (drawMode === "place-anta") {
                                   const existingAnta = els.find(e => (e.type === "innerRect" || e.type === "persiana") && inCell(e));
                                   if (existingAnta) {
                                     const midX = snap(cell.x + cell.w / 2);
                                     const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana" || e.type === "glass") && inCell(e)));
-                                    newEls.push({ id: Date.now(), type: "montante", x: midX, y1: cell.y - HM, y2: cell.y + cell.h + HM });
+                                    newEls.push({ id: Date.now(), type: "montante", x: midX, y1: cellY - HM, y2: cellY + cellH + HM });
                                     setDW(newEls);
                                   } else {
                                     const newEls = [...els];
-                                    newEls.push({ id: Date.now(), type: "innerRect", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
+                                    newEls.push({ id: Date.now(), type: "innerRect", x: cell.x + 1, y: cellY + 1, w: cell.w - 2, h: cellH - 2, cellId: cell.id });
                                     setDW(newEls, { drawMode: null });
                                   }
                                 } else if (drawMode === "place-porta") {
                                   const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana") && inCell(e)));
-                                  newEls.push({ id: Date.now(), type: "innerRect", subType: "porta", x: cell.x + 1, y: cell.y + 1, w: cell.w - 2, h: cell.h - 2, cellId: cell.id });
+                                  newEls.push({ id: Date.now(), type: "innerRect", subType: "porta", x: cell.x + 1, y: cellY + 1, w: cell.w - 2, h: cellH - 2, cellId: cell.id });
                                   setDW(newEls);
                                   setMode({ drawMode: null });
                                 } else if (drawMode === "place-persiana") {
