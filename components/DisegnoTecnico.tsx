@@ -3060,6 +3060,57 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {/* Lato RIGHT */}
                                           {sideRect("right", el.x + el.w - TK, rightY, TK, rightH)}
                                           {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700} pointerEvents="none">PORTA</text>}
+                                          {/* CALAMITE: punti di aggancio agli estremi dei lati hidden */}
+                                          {hiddenSides.length > 0 && (() => {
+                                            const isSnapMode = drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
+                                            const magnetColor = isSnapMode ? "#FF3B30" : "#1A9E73";
+                                            const magnetSize = isSnapMode ? 4 : 2.5;
+                                            const magnetStroke = isSnapMode ? 1.5 : 1;
+                                            // Per ogni lato hidden, disegno 2 calamite agli estremi del lato
+                                            const magnets = [];
+                                            hiddenSides.forEach((side: string) => {
+                                              const offLeft = hiddenSides.includes("left") ? 0 : TK;
+                                              const offRight = hiddenSides.includes("right") ? 0 : TK;
+                                              const offTop = hiddenSides.includes("top") ? 0 : TK;
+                                              const offBot = hiddenSides.includes("bot") ? 0 : TK;
+                                              let p1, p2;
+                                              if (side === "top") {
+                                                p1 = { x: el.x + offLeft, y: el.y + TK/2 };
+                                                p2 = { x: el.x + el.w - offRight, y: el.y + TK/2 };
+                                              } else if (side === "bot") {
+                                                p1 = { x: el.x + offLeft, y: el.y + el.h - TK/2 };
+                                                p2 = { x: el.x + el.w - offRight, y: el.y + el.h - TK/2 };
+                                              } else if (side === "left") {
+                                                p1 = { x: el.x + TK/2, y: el.y + offTop };
+                                                p2 = { x: el.x + TK/2, y: el.y + el.h - offBot };
+                                              } else {
+                                                p1 = { x: el.x + el.w - TK/2, y: el.y + offTop };
+                                                p2 = { x: el.x + el.w - TK/2, y: el.y + el.h - offBot };
+                                              }
+                                              magnets.push(
+                                                <g key={`magnet-${side}-1`} pointerEvents="none">
+                                                  <circle cx={p1.x} cy={p1.y} r={magnetSize} fill={magnetColor} stroke="#fff" strokeWidth={magnetStroke} opacity={0.9}>
+                                                    {isSnapMode && <animate attributeName="r" values={`${magnetSize};${magnetSize*1.5};${magnetSize}`} dur="1s" repeatCount="indefinite" />}
+                                                  </circle>
+                                                </g>
+                                              );
+                                              magnets.push(
+                                                <g key={`magnet-${side}-2`} pointerEvents="none">
+                                                  <circle cx={p2.x} cy={p2.y} r={magnetSize} fill={magnetColor} stroke="#fff" strokeWidth={magnetStroke} opacity={0.9}>
+                                                    {isSnapMode && <animate attributeName="r" values={`${magnetSize};${magnetSize*1.5};${magnetSize}`} dur="1s" repeatCount="indefinite" />}
+                                                  </circle>
+                                                </g>
+                                              );
+                                              // Linea tratteggiata che indica dove andrà il profilo
+                                              if (isSnapMode) {
+                                                magnets.push(
+                                                  <line key={`magnet-line-${side}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} 
+                                                    stroke={magnetColor} strokeWidth={1.5} strokeDasharray="3,3" opacity={0.7} pointerEvents="none" />
+                                                );
+                                              }
+                                            });
+                                            return magnets;
+                                          })()}
                                         </g>
                                       );
                                     }
