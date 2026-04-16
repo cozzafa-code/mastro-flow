@@ -1616,10 +1616,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const polyMinY = Math.min(...allPolyY);
                                       const polyMaxY = Math.max(...allPolyY);
                                       cellPoly = [
-                                        [subX1 + TK_FRAME, polyMinY + TK_FRAME],
-                                        [subX2 - TK_FRAME, polyMinY + TK_FRAME],
-                                        [subX2 - TK_FRAME, polyMaxY - TK_FRAME],
-                                        [subX1 + TK_FRAME, polyMaxY - TK_FRAME]
+                                        [subX1 + 2, polyMinY + 2],
+                                        [subX2 - 2, polyMinY + 2],
+                                        [subX2 - 2, polyMaxY - 2],
+                                        [subX1 + 2, polyMaxY - 2]
                                       ];
                                     }
                                   }
@@ -2328,7 +2328,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* Row 3: Azioni */}
                                 <div style={{ display: "flex", gap: 3, padding: "0 8px 6px", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={undo} style={bDel(T.acc)}>↩ Annulla</div>
-                                  {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>🗑 Elimina sel.</div>}
+                                  {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>Elimina</div>}
+                                  {selId && (() => {
+                                    const selEl = els.find(e => e.id === selId);
+                                    if (!selEl) return null;
+                                    const canChange = ["polyAnta","polyGlass","polyPersiana","innerRect","persiana","glass"].includes(selEl.type);
+                                    if (!canChange) return null;
+                                    const changeType = (newType, newSubType) => {
+                                      const upd = els.map(e => {
+                                        if (e.id !== selId) return e;
+                                        if (newType === "polyAnta") return { ...e, type: "polyAnta", subType: newSubType || undefined };
+                                        if (newType === "polyGlass") return { ...e, type: "polyGlass", subType: undefined };
+                                        if (newType === "polyPersiana") return { ...e, type: "polyPersiana", subType: undefined };
+                                        return e;
+                                      });
+                                      setDW(upd, { selectedId: selId });
+                                    };
+                                    return <>
+                                      {selEl.type !== "polyAnta" && <div onClick={() => changeType("polyAnta")} style={bDel("#1A9E73")}>Anta</div>}
+                                      {(selEl.type !== "polyAnta" || selEl.subType !== "porta") && <div onClick={() => changeType("polyAnta","porta")} style={bDel("#D08008")}>Porta</div>}
+                                      {selEl.type !== "polyGlass" && <div onClick={() => changeType("polyGlass")} style={bDel("#3B7FE0")}>Vetro</div>}
+                                      {selEl.type !== "polyPersiana" && <div onClick={() => changeType("polyPersiana")} style={bDel("#666")}>Persiana</div>}
+                                    </>;
+                                  })()}
                                   <div style={{ flex: 1 }} />
                                   <div onClick={() => setDW([], { selectedId: null, drawMode: null, _pendingLine: null, history: [] })} style={bDel()}>🗑 Reset</div>
                                   {frame && <div onClick={() => {
