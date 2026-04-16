@@ -1553,7 +1553,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (!cell && cells.length === 0) {
                                   // Extract polygon from freeLines — solo telaio (senza subType), escludi zoccolo/soglia/fascia
                                   const lines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                  if (lines.length >= 4) {
+                                  console.log("[CAD-DEBUG] telaio lines:", lines.length, "all freeLine:", els.filter(e=>e.type==="freeLine").length, "subTypes:", els.filter(e=>e.type==="freeLine"&&e.subType).map(e=>e.subType));
+                                  if (lines.length >= 3) { // era 4, ma un telaio a U ha solo 3 lati
                                     // Build ordered point chain from connected lines
                                     const pts = [];
                                     const used = new Set();
@@ -1573,13 +1574,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         if (d2 < 15) { addPt(l.x1, l.y1); used.add(li); break; }
                                       }
                                     }
-                                    if (pts.length >= 4) {
+                                    if (pts.length >= 3) {
                                       cell = { id: "poly", poly: pts };
                                     }
                                   }
                                   // Fallback to bbox if polygon extraction failed
                                   if (!cell) {
-                                    const allLines = els.filter(e => e.type === "freeLine" || e.type === "apLine");
+                                    const allLines = els.filter(e => (e.type === "freeLine" && !e.subType) || e.type === "apLine");
                                     if (allLines.length > 0) {
                                       const allX = allLines.flatMap(l => [l.x1, l.x2]);
                                       const allY = allLines.flatMap(l => [l.y1, l.y2]);
