@@ -1839,19 +1839,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const hidden = e.hiddenSides || [];
                                     if (hidden.length === 0) return false;
                                     const TK = TK_anta(e);
-                                    // Definizione area di ogni lato
-                                    const sides = {
-                                      top: { x: e.x, y: e.y, w: e.w, h: TK },
-                                      bot: { x: e.x, y: e.y + e.h - TK, w: e.w, h: TK },
-                                      left: { x: e.x, y: e.y + TK, w: TK, h: Math.max(0, e.h - TK*2) },
-                                      right: { x: e.x + e.w - TK, y: e.y + TK, w: TK, h: Math.max(0, e.h - TK*2) }
+                                    // Definizione area di ogni lato hidden con AMPIA tolleranza verso l'interno dell'anta
+                                    // Per top/bot: strip orizzontale che occupa 30% dell'altezza dall'estremo
+                                    // Per left/right: strip verticale che occupa 30% della larghezza dall'estremo
+                                    const TOL = 30; // tolleranza ESTERNA (oltre il bordo dell'anta)
+                                    const sidesZone: any = {
+                                      top: { x: e.x - TOL, y: e.y - TOL, w: e.w + TOL*2, h: e.h * 0.3 + TOL },
+                                      bot: { x: e.x - TOL, y: e.y + e.h * 0.7, w: e.w + TOL*2, h: e.h * 0.3 + TOL },
+                                      left: { x: e.x - TOL, y: e.y - TOL, w: e.w * 0.3 + TOL, h: e.h + TOL*2 },
+                                      right: { x: e.x + e.w * 0.7, y: e.y - TOL, w: e.w * 0.3 + TOL, h: e.h + TOL*2 }
                                     };
-                                    // Controlla se il click è dentro uno dei lati hidden
                                     return hidden.some((side: string) => {
-                                      const r = sides[side];
+                                      const r = sidesZone[side];
                                       if (!r) return false;
-                                      // Tolleranza +15px per permettere click facili su mobile dove il lato è sottile
-                                      return mx >= r.x - 15 && mx <= r.x + r.w + 15 && my >= r.y - 15 && my <= r.y + r.h + 15;
+                                      return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
                                     });
                                   });
                                   if (antaFound) {
@@ -1864,10 +1865,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       right: { x: antaFound.x + antaFound.w - TK, y: antaFound.y + TK, w: TK, h: Math.max(0, antaFound.h - TK*2) }
                                     };
                                     // Trova quale lato hidden è stato cliccato (il primo che contiene il click)
+                                    const TOL2 = 30;
+                                    const zonesForClicked: any = {
+                                      top: { x: antaFound.x - TOL2, y: antaFound.y - TOL2, w: antaFound.w + TOL2*2, h: antaFound.h * 0.3 + TOL2 },
+                                      bot: { x: antaFound.x - TOL2, y: antaFound.y + antaFound.h * 0.7, w: antaFound.w + TOL2*2, h: antaFound.h * 0.3 + TOL2 },
+                                      left: { x: antaFound.x - TOL2, y: antaFound.y - TOL2, w: antaFound.w * 0.3 + TOL2, h: antaFound.h + TOL2*2 },
+                                      right: { x: antaFound.x + antaFound.w * 0.7, y: antaFound.y - TOL2, w: antaFound.w * 0.3 + TOL2, h: antaFound.h + TOL2*2 }
+                                    };
                                     const clickedSide = hidden.find((side: string) => {
-                                      const r = sides[side];
+                                      const r = zonesForClicked[side];
                                       if (!r) return false;
-                                      return mx >= r.x - 15 && mx <= r.x + r.w + 15 && my >= r.y - 15 && my <= r.y + r.h + 15;
+                                      return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
                                     });
                                     if (clickedSide) {
                                       const r = sides[clickedSide];
