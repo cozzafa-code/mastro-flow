@@ -3051,13 +3051,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       {/* Guide H/V dai vertici esistenti — solo visive */}
                                       {uniquePts.map((pt, i) => (
                                         <g key={`guide-${i}`} opacity={0.25}>
-                                          <line x1={0} y1={pt.y} x2={canvasW} y2={pt.y} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
-                                          <line x1={pt.x} y1={0} x2={pt.x} y2={canvasH} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
+                                          <line x1={panX - 500} y1={pt.y} x2={panX + canvasW/zoom + 500} y2={pt.y} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
+                                          <line x1={pt.x} y1={panY - 500} x2={pt.x} y2={panY + canvasH/zoom + 500} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
                                         </g>
                                       ))}
                                       {/* H/V guide lines from pending point */}
-                                      <line x1={0} y1={p.y1} x2={canvasW} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
-                                      <line x1={p.x1} y1={0} x2={p.x1} y2={canvasH} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      <line x1={panX - 500} y1={p.y1} x2={panX + canvasW/zoom + 500} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      <line x1={p.x1} y1={panY - 500} x2={p.x1} y2={panY + canvasH/zoom + 500} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      {/* ALIGNMENT INDICATORS — quando il cursore è allineato H/V con un vertice */}
+                                      {gx != null && gy != null && uniquePts.map((pt, ai) => {
+                                        const alignH = Math.abs(gy - pt.y) < 3;
+                                        const alignV = Math.abs(gx - pt.x) < 3;
+                                        if (!alignH && !alignV) return null;
+                                        return <g key={`align-${ai}`}>
+                                          {alignH && <>
+                                            <line x1={Math.min(gx, pt.x)} y1={pt.y} x2={Math.max(gx, pt.x)} y2={pt.y} stroke="#DC4444" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.9} />
+                                            <circle cx={pt.x} cy={pt.y} r={5} fill="none" stroke="#DC4444" strokeWidth={1.5} />
+                                            <circle cx={gx} cy={gy} r={5} fill="none" stroke="#DC4444" strokeWidth={1.5} />
+                                          </>}
+                                          {alignV && <>
+                                            <line x1={pt.x} y1={Math.min(gy, pt.y)} x2={pt.x} y2={Math.max(gy, pt.y)} stroke="#3B7FE0" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.9} />
+                                            <circle cx={pt.x} cy={pt.y} r={5} fill="none" stroke="#3B7FE0" strokeWidth={1.5} />
+                                            <circle cx={gx} cy={gy} r={5} fill="none" stroke="#3B7FE0" strokeWidth={1.5} />
+                                          </>}
+                                        </g>;
+                                      })}
                                       {/* Live guide line to mouse */}
                                       {gx != null && gy != null && <>
                                         <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={2.5} strokeDasharray="8,4" opacity={0.8} />
