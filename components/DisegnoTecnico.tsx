@@ -1206,6 +1206,44 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                 });
                               });
+                              // ── SNAP esteso: spazio tra 2+ ante con stesso lato hidden allineato ──
+                              // Esempio: 2 ante affiancate con lato "bot" eliminato → zoccolo deve passare anche nello spazio centrale
+                              const pushAG = (p: any) => pts.push({ ...p, _antaSnap: true });
+                              const antasWithHidden = els.filter(e => e.type === "innerRect" && (e.hiddenSides || []).length > 0);
+                              ["top", "bot"].forEach(sideKey => {
+                                const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
+                                if (group.length < 2) return;
+                                // Raggruppa per Y allineata (tolleranza 5px)
+                                const getY = (a: any) => sideKey === "top" ? a.y + (a.subType==="porta"?TK_PORTA:TK_ANTA)/2 : a.y + a.h - (a.subType==="porta"?TK_PORTA:TK_ANTA)/2;
+                                const sorted = [...group].sort((a,b) => a.x - b.x);
+                                for (let i = 0; i < sorted.length - 1; i++) {
+                                  const a1 = sorted[i], a2 = sorted[i+1];
+                                  const y1 = getY(a1), y2 = getY(a2);
+                                  if (Math.abs(y1 - y2) > 5) continue; // non allineate
+                                  const y = (y1 + y2) / 2;
+                                  const xStart = a1.x + a1.w, xEnd = a2.x;
+                                  if (xEnd <= xStart) continue;
+                                  // Punti lungo lo spazio tra le due ante
+                                  pushAG({x: xStart, y}); pushAG({x: xEnd, y}); pushAG({x: (xStart+xEnd)/2, y});
+                                  for (let d = 0; d <= (xEnd-xStart); d += GRID) pushAG({x: xStart+d, y});
+                                }
+                              });
+                              ["left", "right"].forEach(sideKey => {
+                                const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
+                                if (group.length < 2) return;
+                                const getX = (a: any) => sideKey === "left" ? a.x + (a.subType==="porta"?TK_PORTA:TK_ANTA)/2 : a.x + a.w - (a.subType==="porta"?TK_PORTA:TK_ANTA)/2;
+                                const sorted = [...group].sort((a,b) => a.y - b.y);
+                                for (let i = 0; i < sorted.length - 1; i++) {
+                                  const a1 = sorted[i], a2 = sorted[i+1];
+                                  const x1 = getX(a1), x2 = getX(a2);
+                                  if (Math.abs(x1 - x2) > 5) continue;
+                                  const x = (x1 + x2) / 2;
+                                  const yStart = a1.y + a1.h, yEnd = a2.y;
+                                  if (yEnd <= yStart) continue;
+                                  pushAG({x, y: yStart}); pushAG({x, y: yEnd}); pushAG({x, y: (yStart+yEnd)/2});
+                                  for (let d = 0; d <= (yEnd-yStart); d += GRID) pushAG({x, y: yStart+d});
+                                }
+                              });
                               return pts;
                             };
                             const findSnap = (mx, my) => {
