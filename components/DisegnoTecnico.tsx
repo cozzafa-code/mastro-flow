@@ -1614,10 +1614,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         if (mx < montX[i]) { subX2 = montX[i]; break; }
                                         subX1 = montX[i];
                                       }
-                                      // Filtra i punti del polygon alla sotto-cella (clamp X)
-                                      const allPolyY = cell.poly.map(p => p[1]);
-                                      const polyMinY = Math.min(...allPolyY);
-                                      const polyMaxY = Math.max(...allPolyY);
                                       cellPoly = [
                                         [subX1 + TK_FRAME, _cpMinY + TK_FRAME],
                                         [subX2 - TK_FRAME, _cpMinY + TK_FRAME],
@@ -1626,6 +1622,40 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       ];
                                     }
                                   }
+                                  // ── Clip Y per zoccolo/soglia/fascia/traverso orizzontali dentro la cella ──
+                                  const cpLeft = Math.min(cellPoly[0][0], cellPoly[3][0]);
+                                  const cpRight = Math.max(cellPoly[1][0], cellPoly[2][0]);
+                                  let cpTop = cellPoly[0][1];
+                                  let cpBot = cellPoly[2][1];
+                                  const horzSubEls = els.filter(e => 
+                                    e.type === "freeLine" && e.subType && 
+                                    Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1
+                                  );
+                                  const tkSubMap: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, traverso: TK_MONT, soglia_rib: TK_SOGLIA };
+                                  horzSubEls.forEach(h => {
+                                    const hMidY = (h.y1 + h.y2) / 2;
+                                    const hMinX = Math.min(h.x1, h.x2), hMaxX = Math.max(h.x1, h.x2);
+                                    const hT = tkSubMap[h.subType] || TK_FRAME;
+                                    // Controlla che la freeLine si sovrapponga alla sotto-cella in X
+                                    if (hMaxX < cpLeft + 5 || hMinX > cpRight - 5) return;
+                                    const hTopEdge = hMidY - hT;
+                                    const hBotEdge = hMidY + hT;
+                                    // Se è nella metà inferiore della cella → alza il bottom
+                                    const cellMidY = (cpTop + cpBot) / 2;
+                                    if (hMidY > cellMidY && hTopEdge < cpBot) {
+                                      cpBot = Math.min(cpBot, hTopEdge);
+                                    }
+                                    // Se è nella metà superiore → abbassa il top
+                                    if (hMidY < cellMidY && hBotEdge > cpTop) {
+                                      cpTop = Math.max(cpTop, hBotEdge);
+                                    }
+                                  });
+                                  cellPoly = [
+                                    [cellPoly[0][0], cpTop],
+                                    [cellPoly[1][0], cpTop],
+                                    [cellPoly[2][0], cpBot],
+                                    [cellPoly[3][0], cpBot]
+                                  ];
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
                                     // Rimuovi solo le polyAnta nella stessa zona X
                                     const subMinX = Math.min(...cellPoly.map(p => p[0]));
