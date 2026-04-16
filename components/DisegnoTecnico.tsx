@@ -1599,10 +1599,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const _cpMinX = Math.min(..._cpAllX), _cpMaxX = Math.max(..._cpAllX);
                                   const _cpMinY = Math.min(..._cpAllY), _cpMaxY = Math.max(..._cpAllY);
                                   let cellPoly = [
-                                    [_cpMinX + TK_FRAME, _cpMinY + TK_FRAME],
-                                    [_cpMaxX - TK_FRAME, _cpMinY + TK_FRAME],
-                                    [_cpMaxX - TK_FRAME, _cpMaxY - TK_FRAME],
-                                    [_cpMinX + TK_FRAME, _cpMaxY - TK_FRAME]
+                                    [_cpMinX + 1, _cpMinY + 1],
+                                    [_cpMaxX - 1, _cpMinY + 1],
+                                    [_cpMaxX - 1, _cpMaxY - 1],
+                                    [_cpMinX + 1, _cpMaxY - 1]
                                   ];
                                   if (freeMontanti.length > 0) {
                                     // Trova i montanti che attraversano il polygon verticalmente
@@ -1626,10 +1626,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const polyMinY = Math.min(...allPolyY);
                                       const polyMaxY = Math.max(...allPolyY);
                                       cellPoly = [
-                                        [subX1 + TK_FRAME, _cpMinY + TK_FRAME],
-                                        [subX2 - TK_FRAME, _cpMinY + TK_FRAME],
-                                        [subX2 - TK_FRAME, _cpMaxY - TK_FRAME],
-                                        [subX1 + TK_FRAME, _cpMaxY - TK_FRAME]
+                                        [subX1 + 1, _cpMinY + 1],
+                                        [subX2 - 1, _cpMinY + 1],
+                                        [subX2 - 1, _cpMaxY - 1],
+                                        [subX1 + 1, _cpMaxY - 1]
                                       ];
                                     }
                                   }
@@ -2884,7 +2884,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // ═══ POLYGON ANTA — follows actual shape ═══
                                     if (el.type === "polyAnta" && el.poly) {
                                       const pts = el.poly;
-                                      const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                      const tk = el.subType === "porta" ? 4 : 3; // ridotto per anta piu grande
                                       // Outer polygon — riempie tutta la cella
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
                                       // Inner polygon — inset rettangolare di tk (profilo anta)
