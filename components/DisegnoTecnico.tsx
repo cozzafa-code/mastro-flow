@@ -1576,8 +1576,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 
                                 // Polygon shape handling
                                 if (cell.poly) {
-                                  // Se ci sono montanti liberi, dividi il polygon per trovare la sotto-cella cliccata
-                                  const freeMontanti = els.filter(e => e.type === "montante");
+                                  // Divisori verticali: montanti classici + freeLine verticali INTERNE al telaio
+                                  const classicMont = els.filter(e => e.type === "montante");
+                                  // freeLine verticali interne (non sono i bordi sx/dx del telaio)
+                                  const vertFreeLines = els.filter(e => 
+                                    e.type === "freeLine" && !e.subType && 
+                                    Math.abs(e.x2 - e.x1) < Math.abs(e.y2 - e.y1) + 1 &&
+                                    e.x1 > _cpMinX + 10 && e.x1 < _cpMaxX - 10
+                                  );
+                                  const freeMontanti = [...classicMont, ...vertFreeLines.map(l => ({ x: (l.x1 + l.x2) / 2 }))];
                                   // Inseta il poly di TK_FRAME per stare dentro il telaio
                                   const _cpAllX = cell.poly.map(p => p[0]);
                                   const _cpAllY = cell.poly.map(p => p[1]);
