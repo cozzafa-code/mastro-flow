@@ -1559,7 +1559,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 }
                                 // Per telaio libero (no frame), converti cella BSP in poly per usare il path polyAnta
                                 // La cella BSP è GIÀ insetata di TK_FRAME da getCells, quindi il poly è il bordo interno
-                                if (cell && !cell.poly && !frame) {
+                                if (cell && !cell.poly && !frame && poly) {
                                   cell = { id: cell.id, poly: [
                                     [cell.x, cell.y], [cell.x + cell.w, cell.y],
                                     [cell.x + cell.w, cell.y + cell.h], [cell.x, cell.y + cell.h]
