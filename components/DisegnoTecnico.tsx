@@ -1593,7 +1593,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (cell.poly) {
                                   // Se ci sono montanti liberi, dividi il polygon per trovare la sotto-cella cliccata
                                   const freeMontanti = els.filter(e => e.type === "montante");
-                                  let cellPoly = cell.poly;
+                                  // Inseta il poly di TK_FRAME per stare dentro il telaio
+                                  const _cpAllX = cell.poly.map(p => p[0]);
+                                  const _cpAllY = cell.poly.map(p => p[1]);
+                                  const _cpMinX = Math.min(..._cpAllX), _cpMaxX = Math.max(..._cpAllX);
+                                  const _cpMinY = Math.min(..._cpAllY), _cpMaxY = Math.max(..._cpAllY);
+                                  let cellPoly = [
+                                    [_cpMinX + TK_FRAME, _cpMinY + TK_FRAME],
+                                    [_cpMaxX - TK_FRAME, _cpMinY + TK_FRAME],
+                                    [_cpMaxX - TK_FRAME, _cpMaxY - TK_FRAME],
+                                    [_cpMinX + TK_FRAME, _cpMaxY - TK_FRAME]
+                                  ];
                                   if (freeMontanti.length > 0) {
                                     // Trova i montanti che attraversano il polygon verticalmente
                                     const allPolyX = cell.poly.map(p => p[0]);
@@ -2875,16 +2885,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (el.type === "polyAnta" && el.poly) {
                                       const pts = el.poly;
                                       const tk = el.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                      // Outer polygon
+                                      // Outer polygon — riempie tutta la cella
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — shrink by tk toward centroid
+                                      // Inner polygon — inset rettangolare di tk (profilo anta)
+                                      const apAllX = pts.map(p => p[0]);
+                                      const apAllY = pts.map(p => p[1]);
+                                      const apMinX = Math.min(...apAllX) + tk, apMaxX = Math.max(...apAllX) - tk;
+                                      const apMinY = Math.min(...apAllY) + tk, apMaxY = Math.max(...apAllY) - tk;
+                                      const innerPts = [[apMinX,apMinY],[apMaxX,apMinY],[apMaxX,apMaxY],[apMinX,apMaxY]];
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const innerPts = pts.map(p => {
-                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
-                                        const dist = Math.hypot(dx2, dy2) || 1;
-                                        return [(p[0] + dx2 / dist * tk), (p[1] + dy2 / dist * tk)];
-                                      });
                                       const innerStr = innerPts.map(p => p.join(",")).join(" ");
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
