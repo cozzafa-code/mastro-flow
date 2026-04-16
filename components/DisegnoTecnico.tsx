@@ -1850,8 +1850,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     return hidden.some((side: string) => {
                                       const r = sides[side];
                                       if (!r) return false;
-                                      // Tolleranza +3px per permettere click facili su lati sottili
-                                      return mx >= r.x - 3 && mx <= r.x + r.w + 3 && my >= r.y - 3 && my <= r.y + r.h + 3;
+                                      // Tolleranza +15px per permettere click facili su mobile dove il lato è sottile
+                                      return mx >= r.x - 15 && mx <= r.x + r.w + 15 && my >= r.y - 15 && my <= r.y + r.h + 15;
                                     });
                                   });
                                   if (antaFound) {
@@ -1867,7 +1867,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const clickedSide = hidden.find((side: string) => {
                                       const r = sides[side];
                                       if (!r) return false;
-                                      return mx >= r.x - 3 && mx <= r.x + r.w + 3 && my >= r.y - 3 && my <= r.y + r.h + 3;
+                                      return mx >= r.x - 15 && mx <= r.x + r.w + 15 && my >= r.y - 15 && my <= r.y + r.h + 15;
                                     });
                                     if (clickedSide) {
                                       const r = sides[clickedSide];
@@ -3003,6 +3003,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const TK = el.subType === "porta" ? TK_PORTA : TK_ANTA;
                                       // Fill interno (sfondo anta) — visibile solo se almeno un lato non è hidden
                                       const hasAnySide = ["top","bot","left","right"].some(s => !hiddenSides.includes(s));
+                                      // Se un lato è hidden, estendi lo sfondo fino al bordo su quel lato (niente gap visivo)
+                                      const bgTop = hiddenSides.includes("top") ? el.y : el.y + TK;
+                                      const bgBot = hiddenSides.includes("bot") ? el.y + el.h : el.y + el.h - TK;
+                                      const bgLeft = hiddenSides.includes("left") ? el.x : el.x + TK;
+                                      const bgRight = hiddenSides.includes("right") ? el.x + el.w : el.x + el.w - TK;
                                       // 4 lati come rect separati cliccabili
                                       const sideRect = (side, rx, ry, rw, rh) => {
                                         if (hiddenSides.includes(side)) return null;
@@ -3021,7 +3026,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return (
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined}>
                                           {/* Sfondo interno (vetro area) */}
-                                          {hasAnySide && <rect x={el.x + TK} y={el.y + TK} width={Math.max(0, el.w - TK*2)} height={Math.max(0, el.h - TK*2)} fill="#f8f8f6" stroke="none" pointerEvents="none" />}
+                                          {hasAnySide && <rect x={bgLeft} y={bgTop} width={Math.max(0, bgRight - bgLeft)} height={Math.max(0, bgBot - bgTop)} fill="#f8f8f6" stroke="none" pointerEvents="none" />}
                                           {/* Lato TOP */}
                                           {sideRect("top", el.x, el.y, el.w, TK)}
                                           {/* Lato BOT */}
