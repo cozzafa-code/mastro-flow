@@ -1297,16 +1297,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
 
                             const getSvgXY = (e2, svg) => {
-                              const r2 = svg.getBoundingClientRect();
                               const clientX = e2.touches ? e2.touches[0].clientX : e2.clientX;
                               const clientY = e2.touches ? e2.touches[0].clientY : e2.clientY;
-                              // Convert screen coords to viewBox coords
-                              // Use actual rendered size (r2.width/height) — not canvasW — to handle maxWidth:100% scaling
-                              const px = clientX - r2.left;
-                              const py = clientY - r2.top;
-                              const scaleX = canvasW / r2.width;
-                              const scaleY = canvasH / r2.height;
-                              return { mx: panX + px * scaleX / zoom, my: panY + py * scaleY / zoom };
+                              // Use SVG native coordinate transform (handles viewBox + scaling correctly)
+                              const pt = svg.createSVGPoint();
+                              pt.x = clientX;
+                              pt.y = clientY;
+                              const svgPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+                              return { mx: svgPt.x, my: svgPt.y };
                             };
 
                             // ── Drag ──
