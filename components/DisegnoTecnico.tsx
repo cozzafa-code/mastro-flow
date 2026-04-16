@@ -1190,20 +1190,38 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
                                 if (d < bestD + 4) { best = chainStart; }
                               }
-                              // ALIGNMENT SNAP: se nessun punto vicino, cerca allineamento H/V con vertici distanti
-                              if (!best) {
-                                const ALIGN_TOL = 15;
-                                let bestAlignY = null, bestAlignDY = ALIGN_TOL;
-                                let bestAlignX = null, bestAlignDX = ALIGN_TOL;
-                                pts.forEach(p => {
-                                  const dy = Math.abs(p.y - my);
-                                  if (dy < bestAlignDY) { bestAlignDY = dy; bestAlignY = p.y; }
-                                  const dx = Math.abs(p.x - mx);
-                                  if (dx < bestAlignDX) { bestAlignDX = dx; bestAlignX = p.x; }
-                                });
-                                if (bestAlignY !== null || bestAlignX !== null) {
-                                  best = { x: bestAlignX !== null ? bestAlignX : mx, y: bestAlignY !== null ? bestAlignY : my };
-                                }
+                              // ALIGNMENT SNAP: forza allineamento Y/X con vertici esistenti (PRIORITA' ALTA)
+                              // Se il cursore e' entro 20px dalla Y di un vertice, forza quella Y
+                              // Questo garantisce che le gambe del telaio siano alla stessa altezza
+                              const ALIGN_TOL = 20;
+                              const freeLineVertices = els.filter(e => e.type === "freeLine" && !e.subType)
+                                .flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
+                              // Deduplica vertici
+                              const seenV = new Set();
+                              const uVerts = freeLineVertices.filter(p => {
+                                const k = Math.round(p.x/3) + "," + Math.round(p.y/3);
+                                if (seenV.has(k)) return false;
+                                seenV.add(k); return true;
+                              });
+                              // Cerca allineamento Y (orizzontale) — solo vertici DISTANTI in X (>50px)
+                              let alignY = null, alignDY = ALIGN_TOL;
+                              uVerts.forEach(p => {
+                                if (Math.abs(p.x - mx) < 50) return; // ignora vertici sulla stessa colonna
+                                const dy = Math.abs(p.y - my);
+                                if (dy < alignDY) { alignDY = dy; alignY = p.y; }
+                              });
+                              // Cerca allineamento X (verticale) — solo vertici DISTANTI in Y (>50px)
+                              let alignX = null, alignDX = ALIGN_TOL;
+                              uVerts.forEach(p => {
+                                if (Math.abs(p.y - my) < 50) return;
+                                const dx = Math.abs(p.x - mx);
+                                if (dx < alignDX) { alignDX = dx; alignX = p.x; }
+                              });
+                              // Applica allineamento al risultato
+                              if (alignY !== null || alignX !== null) {
+                                const rx = alignX !== null ? alignX : (best ? best.x : mx);
+                                const ry = alignY !== null ? alignY : (best ? best.y : my);
+                                best = { x: rx, y: ry };
                               }
                               return best;
                             };
