@@ -63,6 +63,7 @@ export function useVaniSync(
             sistema: v.sistema,
             coloreInt: v.coloreInt,
             coloreEst: v.coloreEst,
+            _dKeys: v.disegno ? Object.keys(v.disegno).length : 0,
           }))
         ),
       }))
@@ -134,6 +135,7 @@ async function syncVaniToSupabase(cantieri: any[], aziendaId: string) {
               misure_complete: misure,
               rilievo_id: rilievo.id,
               rilievo_data: rilievo.data,
+              disegno: vano.disegno || null,
             },
             updated_at: new Date().toISOString(),
           };
