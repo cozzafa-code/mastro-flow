@@ -969,7 +969,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const frame = frames[0] || null; // primary frame for compat
                             const allMontanti = els.filter(e => e.type === "montante");
                             const allTraversi = els.filter(e => e.type === "traverso");
-                            const TK_FRAME = 6, TK_MONT = 7, TK_ANTA = 7, TK_PORTA = 8, TK_SOGLIA = 3, TK_ZOCCOLO = 8, TK_FASCIA = 5, TK_PROFCOMP = 4;
+                            const TK_FRAME = 6, TK_MONT = 7, TK_ANTA = 9, TK_PORTA = 10, TK_SOGLIA = 3, TK_ZOCCOLO = 8, TK_FASCIA = 5, TK_PROFCOMP = 4;
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGONS from freeLines — tutte le catene chiuse ══
@@ -1252,14 +1252,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              const ANTA_SNAP_R = 50; // raggio snap molto più ampio per lati ante eliminati
+                              const ANTA_SNAP_R = 40; // raggio snap per lati ante eliminati (solo in drawMode profilo)
+                              const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
                               pts.forEach(p => {
                                 if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
                                 const d = Math.hypot(p.x - mx, p.y - my);
-                                const rad = p._antaSnap ? ANTA_SNAP_R : SNAP_R;
-                                // Se è un punto anta e supera il best ma è entro raggio anta → lo prende con bonus di priorità
-                                if (p._antaSnap && d < ANTA_SNAP_R && d < bestD + 15) { bestD = d; best = p; }
-                                else if (d < bestD) { bestD = d; best = p; }
+                                const rad = (p._antaSnap && isProfileMode) ? ANTA_SNAP_R : SNAP_R;
+                                if (d < rad && d < bestD) { bestD = d; best = p; }
                               });
                               // Snap al chainStart (chiusura forma) solo se ≥3 segmenti e non montante/traverso
                               if (canClose && chainStart && !dw._lineSubType) {
