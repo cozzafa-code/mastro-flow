@@ -2405,7 +2405,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* Row 3: Azioni */}
                                 <div style={{ display: "flex", gap: 3, padding: "0 8px 6px", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={undo} style={bDel(T.acc)}>↩ Annulla</div>
-                                  {selId && <div onClick={() => setDW(els.filter(e => e.id !== selId), { selectedId: null })} style={bDel()}>Elimina</div>}
+                                  {selId && <div onClick={() => {
+                                    // Se selId è "antaId:side", elimina solo quel lato aggiungendolo a hiddenSides
+                                    const selStr = String(selId);
+                                    if (selStr.includes(":")) {
+                                      const [antaIdStr, side] = selStr.split(":");
+                                      const antaId = isNaN(Number(antaIdStr)) ? antaIdStr : Number(antaIdStr);
+                                      const upd = els.map(e => {
+                                        if (e.id !== antaId) return e;
+                                        const hidden = [...(e.hiddenSides || []), side];
+                                        return { ...e, hiddenSides: hidden };
+                                      });
+                                      setDW(upd, { selectedId: null });
+                                    } else {
+                                      setDW(els.filter(e => e.id !== selId), { selectedId: null });
+                                    }
+                                  }} style={bDel()}>Elimina</div>}
                                   {selId && (() => {
                                     const selEl = els.find(e => e.id === selId);
                                     if (!selEl) return null;
@@ -2914,14 +2929,39 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                     // ═══ ANTA — doppio rettangolo, clipped to polygon ═══
                                     if (el.type === "innerRect") {
-                                      const isSel = selId === el.id;
-                                      const clr = isSel ? "#1A9E73" : (hc || "#1A1A1C");
-                                      const sw = isSel ? 2.5 : 1.5;
+                                      const hiddenSides = el.hiddenSides || [];
+                                      const clrBase = hc || "#1A1A1C";
+                                      const TK = el.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                      // Fill interno (sfondo anta) — visibile solo se almeno un lato non è hidden
+                                      const hasAnySide = ["top","bot","left","right"].some(s => !hiddenSides.includes(s));
+                                      // 4 lati come rect separati cliccabili
+                                      const sideRect = (side, rx, ry, rw, rh) => {
+                                        if (hiddenSides.includes(side)) return null;
+                                        const sideId = `${el.id}:${side}`;
+                                        const isSelSide = selId === sideId;
+                                        const sideClr = isSelSide ? "#1A9E73" : clrBase;
+                                        const sideFill = isSelSide ? "#1A9E7333" : "#e8e8e4";
+                                        const sideSw = isSelSide ? 2 : 1;
+                                        return (
+                                          <rect key={side} x={rx} y={ry} width={rw} height={rh} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
+                                            onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: sideId }); }}
+                                            style={{ cursor: drawMode ? undefined : "pointer" }}
+                                          />
+                                        );
+                                      };
                                       return (
-                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} style={{ cursor: drawMode ? undefined : "pointer" }}>
-                                          <rect x={el.x} y={el.y} width={el.w} height={el.h} fill={isSel ? "#1A9E7312" : "#f8f8f6"} stroke={clr} strokeWidth={sw} rx={1} />
-                                          <rect x={el.x + TK_FRAME} y={el.y + TK_FRAME} width={el.w - TK_FRAME * 2} height={el.h - TK_FRAME * 2} fill="none" stroke={clr} strokeWidth={1} rx={0.5} />
-                                          {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700}>PORTA</text>}
+                                        <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined}>
+                                          {/* Sfondo interno (vetro area) */}
+                                          {hasAnySide && <rect x={el.x + TK} y={el.y + TK} width={Math.max(0, el.w - TK*2)} height={Math.max(0, el.h - TK*2)} fill="#f8f8f6" stroke="none" pointerEvents="none" />}
+                                          {/* Lato TOP */}
+                                          {sideRect("top", el.x, el.y, el.w, TK)}
+                                          {/* Lato BOT */}
+                                          {sideRect("bot", el.x, el.y + el.h - TK, el.w, TK)}
+                                          {/* Lato LEFT */}
+                                          {sideRect("left", el.x, el.y + TK, TK, Math.max(0, el.h - TK*2))}
+                                          {/* Lato RIGHT */}
+                                          {sideRect("right", el.x + el.w - TK, el.y + TK, TK, Math.max(0, el.h - TK*2))}
+                                          {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700} pointerEvents="none">PORTA</text>}
                                         </g>
                                       );
                                     }
