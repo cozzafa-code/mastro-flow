@@ -1184,27 +1184,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const pushA = (p: any) => pts.push({ ...p, _antaSnap: true });
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
-                                    // Bordo INTERNO superiore — zoccolo si aggancia dentro all'anta
-                                    const y = a.y + TK;
-                                    const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
+                                    const y = a.y + TK - 1;
+                                    const x1 = a.x + offLeft + 1, x2 = a.x + a.w - offRight - 1;
                                     pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
                                     for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
                                   } else if (side === "bot") {
-                                    // Bordo INTERNO inferiore
-                                    const y = a.y + a.h - TK;
-                                    const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
+                                    const y = a.y + a.h - TK - 1;
+                                    const x1 = a.x + offLeft + 1, x2 = a.x + a.w - offRight - 1;
                                     pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
                                     for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
                                   } else if (side === "left") {
-                                    // Bordo INTERNO sinistro
-                                    const x = a.x + TK;
-                                    const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
+                                    const x = a.x + TK - 1;
+                                    const y1 = a.y + offTop + 1, y2 = a.y + a.h - offBot - 1;
                                     pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
                                     for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
                                   } else if (side === "right") {
-                                    // Bordo INTERNO destro
-                                    const x = a.x + a.w - TK;
-                                    const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
+                                    const x = a.x + a.w - TK - 1;
+                                    const y1 = a.y + offTop + 1, y2 = a.y + a.h - offBot - 1;
                                     pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
                                     for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
                                   }
@@ -1966,22 +1962,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const offBot = hidden.includes("bot") ? 0 : TK;
                                       // Coordinate della freeLine: linea centrale del lato, con offset dai lati presenti
                                       let lx1, ly1, lx2, ly2;
-                                      if (clickedSide === "top") {
-                                        const cy = antaFound.y + TK;
-                                        lx1 = antaFound.x + offLeft; ly1 = cy;
-                                        lx2 = antaFound.x + antaFound.w - offRight; ly2 = cy;
+                                      // Fine-tune: profilo 2px più corto (1 per lato) + 1px più in alto
+                                    if (clickedSide === "top") {
+                                        const cy = antaFound.y + TK - 1;
+                                        lx1 = antaFound.x + offLeft + 1; ly1 = cy;
+                                        lx2 = antaFound.x + antaFound.w - offRight - 1; ly2 = cy;
                                       } else if (clickedSide === "bot") {
-                                        const cy = antaFound.y + antaFound.h - TK;
-                                        lx1 = antaFound.x + offLeft; ly1 = cy;
-                                        lx2 = antaFound.x + antaFound.w - offRight; ly2 = cy;
+                                        const cy = antaFound.y + antaFound.h - TK - 1;
+                                        lx1 = antaFound.x + offLeft + 1; ly1 = cy;
+                                        lx2 = antaFound.x + antaFound.w - offRight - 1; ly2 = cy;
                                       } else if (clickedSide === "left") {
-                                        const cx = antaFound.x + TK;
-                                        lx1 = cx; ly1 = antaFound.y + offTop;
-                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot;
+                                        const cx = antaFound.x + TK - 1;
+                                        lx1 = cx; ly1 = antaFound.y + offTop + 1;
+                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot - 1;
                                       } else {
-                                        const cx = antaFound.x + antaFound.w - TK;
-                                        lx1 = cx; ly1 = antaFound.y + offTop;
-                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot;
+                                        const cx = antaFound.x + antaFound.w - TK - 1;
+                                        lx1 = cx; ly1 = antaFound.y + offTop + 1;
+                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot - 1;
                                       }
                                       const newEls = [...els, {
                                         id: Date.now() + Math.floor(Math.random()*10000),
