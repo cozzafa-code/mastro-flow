@@ -1740,12 +1740,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     setDW(newEls);
                                   } else {
                                     const newEls = [...els];
-                                    newEls.push({ id: Date.now(), type: "innerRect", x: cell.x + 1, y: cellY + 1, w: cell.w - 2, h: cellH + 3, cellId: cell.id });
+                                    newEls.push({ id: Date.now(), type: "innerRect", x: cell.x + 1, y: cellY + 6, w: cell.w - 2, h: cellH + 8, cellId: cell.id });
                                     setDW(newEls, { drawMode: null });
                                   }
                                 } else if (drawMode === "place-porta") {
                                   const newEls = els.filter(e => !((e.type === "innerRect" || e.type === "persiana") && inCell(e)));
-                                  newEls.push({ id: Date.now(), type: "innerRect", subType: "porta", x: cell.x + 1, y: cellY + 1, w: cell.w - 2, h: cellH + 3, cellId: cell.id });
+                                  newEls.push({ id: Date.now(), type: "innerRect", subType: "porta", x: cell.x + 1, y: cellY + 6, w: cell.w - 2, h: cellH + 8, cellId: cell.id });
                                   setDW(newEls);
                                   setMode({ drawMode: null });
                                 } else if (drawMode === "place-persiana") {
