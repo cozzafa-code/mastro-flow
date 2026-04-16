@@ -1626,10 +1626,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const polyMinY = Math.min(...allPolyY);
                                       const polyMaxY = Math.max(...allPolyY);
                                       cellPoly = [
-                                        [subX1 + 2, polyMinY + 2],
-                                        [subX2 - 2, polyMinY + 2],
-                                        [subX2 - 2, polyMaxY - 2],
-                                        [subX1 + 2, polyMaxY - 2]
+                                        [subX1 + TK_FRAME, _cpMinY + TK_FRAME],
+                                        [subX2 - TK_FRAME, _cpMinY + TK_FRAME],
+                                        [subX2 - TK_FRAME, _cpMaxY - TK_FRAME],
+                                        [subX1 + TK_FRAME, _cpMaxY - TK_FRAME]
                                       ];
                                     }
                                   }
