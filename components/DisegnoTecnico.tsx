@@ -1871,18 +1871,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                     if (clickedSide) {
                                       const r = sides[clickedSide];
-                                      // Coordinate della freeLine: linea centrale del lato
+                                      // Offset dai lati ADIACENTI ancora presenti (non hidden)
+                                      // Per top/bot: offset sx/dx. Per left/right: offset top/bot.
+                                      const offLeft = hidden.includes("left") ? 0 : TK;
+                                      const offRight = hidden.includes("right") ? 0 : TK;
+                                      const offTop = hidden.includes("top") ? 0 : TK;
+                                      const offBot = hidden.includes("bot") ? 0 : TK;
+                                      // Coordinate della freeLine: linea centrale del lato, con offset dai lati presenti
                                       let lx1, ly1, lx2, ly2;
                                       if (clickedSide === "top" || clickedSide === "bot") {
-                                        // orizzontale
+                                        // orizzontale: parte da x + offLeft, finisce a x + w - offRight
                                         const cy = r.y + r.h / 2;
-                                        lx1 = r.x; ly1 = cy;
-                                        lx2 = r.x + r.w; ly2 = cy;
+                                        lx1 = antaFound.x + offLeft; ly1 = cy;
+                                        lx2 = antaFound.x + antaFound.w - offRight; ly2 = cy;
                                       } else {
-                                        // verticale (left/right)
+                                        // verticale (left/right): parte da y + offTop, finisce a y + h - offBot
                                         const cx = r.x + r.w / 2;
-                                        lx1 = cx; ly1 = r.y;
-                                        lx2 = cx; ly2 = r.y + r.h;
+                                        lx1 = cx; ly1 = antaFound.y + offTop;
+                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot;
                                       }
                                       const newEls = [...els, {
                                         id: Date.now() + Math.floor(Math.random()*10000),
