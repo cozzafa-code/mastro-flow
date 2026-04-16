@@ -1650,23 +1650,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     e.type === "freeLine" && e.subType && 
                                     Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1
                                   );
-                                  const tkSubMap: any = { soglia: TK_SOGLIA, zoccolo: TK_ZOCCOLO, fascia: TK_FASCIA, profcomp: TK_PROFCOMP, traverso: TK_MONT, soglia_rib: TK_SOGLIA };
                                   horzSubEls.forEach(h => {
                                     const hMidY = (h.y1 + h.y2) / 2;
                                     const hMinX = Math.min(h.x1, h.x2), hMaxX = Math.max(h.x1, h.x2);
-                                    const hT = tkSubMap[h.subType] || TK_FRAME;
                                     // Controlla che la freeLine si sovrapponga alla sotto-cella in X
                                     if (hMaxX < cpLeft + 5 || hMinX > cpRight - 5) return;
-                                    const hTopEdge = hMidY - hT;
-                                    const hBotEdge = hMidY + hT;
-                                    // Se è nella metà inferiore della cella → alza il bottom
+                                    // Usa la linea centrale come confine: l'anta non attraversa il profilo
                                     const cellMidY = (cpTop + cpBot) / 2;
-                                    if (hMidY > cellMidY && hTopEdge < cpBot) {
-                                      cpBot = Math.min(cpBot, hTopEdge);
+                                    if (hMidY > cellMidY && hMidY < cpBot) {
+                                      cpBot = Math.min(cpBot, hMidY);
                                     }
-                                    // Se è nella metà superiore → abbassa il top
-                                    if (hMidY < cellMidY && hBotEdge > cpTop) {
-                                      cpTop = Math.max(cpTop, hBotEdge);
+                                    if (hMidY < cellMidY && hMidY > cpTop) {
+                                      cpTop = Math.max(cpTop, hMidY);
                                     }
                                   });
                                   cellPoly = [
