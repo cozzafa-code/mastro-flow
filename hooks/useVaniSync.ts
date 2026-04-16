@@ -80,7 +80,7 @@ export function useVaniSync(
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [cantieri, aziendaId, isUuid]);
+  }, [cantieri, userId, isUuid]);
 }
 
 // -------- Sync effettivo --------
