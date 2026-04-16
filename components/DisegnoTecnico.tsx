@@ -1172,6 +1172,38 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 // Snap lungo la linea ogni GRID pixel
                                 for (let d = GRID; d < len; d += GRID) pts.push({x:l.x1+ux*d, y:l.y1+uy*d});
                               });
+                              // ── SNAP sui lati ELIMINATI delle ante (aggancio profilo allo spazio vuoto) ──
+                              els.filter(e => e.type === "innerRect" && (e.hiddenSides || []).length > 0).forEach(a => {
+                                const TK = a.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                const hid = a.hiddenSides || [];
+                                const offLeft = hid.includes("left") ? 0 : TK;
+                                const offRight = hid.includes("right") ? 0 : TK;
+                                const offTop = hid.includes("top") ? 0 : TK;
+                                const offBot = hid.includes("bot") ? 0 : TK;
+                                hid.forEach((side: string) => {
+                                  if (side === "top") {
+                                    const y = a.y + TK / 2;
+                                    const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
+                                    pts.push({x: x1, y}, {x: x2, y}, {x: (x1+x2)/2, y});
+                                    for (let d = GRID; d < (x2-x1); d += GRID) pts.push({x: x1+d, y});
+                                  } else if (side === "bot") {
+                                    const y = a.y + a.h - TK / 2;
+                                    const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
+                                    pts.push({x: x1, y}, {x: x2, y}, {x: (x1+x2)/2, y});
+                                    for (let d = GRID; d < (x2-x1); d += GRID) pts.push({x: x1+d, y});
+                                  } else if (side === "left") {
+                                    const x = a.x + TK / 2;
+                                    const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
+                                    pts.push({x, y: y1}, {x, y: y2}, {x, y: (y1+y2)/2});
+                                    for (let d = GRID; d < (y2-y1); d += GRID) pts.push({x, y: y1+d});
+                                  } else if (side === "right") {
+                                    const x = a.x + a.w - TK / 2;
+                                    const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
+                                    pts.push({x, y: y1}, {x, y: y2}, {x, y: (y1+y2)/2});
+                                    for (let d = GRID; d < (y2-y1); d += GRID) pts.push({x, y: y1+d});
+                                  }
+                                });
+                              });
                               return pts;
                             };
                             const findSnap = (mx, my) => {
@@ -3068,57 +3100,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           {/* Lato RIGHT */}
                                           {sideRect("right", el.x + el.w - TK, rightY, TK, rightH)}
                                           {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700} pointerEvents="none">PORTA</text>}
-                                          {/* CALAMITE: punti di aggancio agli estremi dei lati hidden */}
-                                          {hiddenSides.length > 0 && (() => {
-                                            const isSnapMode = drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
-                                            const magnetColor = isSnapMode ? "#FF3B30" : "#1A9E73";
-                                            const magnetSize = isSnapMode ? 4 : 2.5;
-                                            const magnetStroke = isSnapMode ? 1.5 : 1;
-                                            // Per ogni lato hidden, disegno 2 calamite agli estremi del lato
-                                            const magnets = [];
-                                            hiddenSides.forEach((side: string) => {
-                                              const offLeft = hiddenSides.includes("left") ? 0 : TK;
-                                              const offRight = hiddenSides.includes("right") ? 0 : TK;
-                                              const offTop = hiddenSides.includes("top") ? 0 : TK;
-                                              const offBot = hiddenSides.includes("bot") ? 0 : TK;
-                                              let p1, p2;
-                                              if (side === "top") {
-                                                p1 = { x: el.x + offLeft, y: el.y + TK/2 };
-                                                p2 = { x: el.x + el.w - offRight, y: el.y + TK/2 };
-                                              } else if (side === "bot") {
-                                                p1 = { x: el.x + offLeft, y: el.y + el.h - TK/2 };
-                                                p2 = { x: el.x + el.w - offRight, y: el.y + el.h - TK/2 };
-                                              } else if (side === "left") {
-                                                p1 = { x: el.x + TK/2, y: el.y + offTop };
-                                                p2 = { x: el.x + TK/2, y: el.y + el.h - offBot };
-                                              } else {
-                                                p1 = { x: el.x + el.w - TK/2, y: el.y + offTop };
-                                                p2 = { x: el.x + el.w - TK/2, y: el.y + el.h - offBot };
-                                              }
-                                              magnets.push(
-                                                <g key={`magnet-${side}-1`} pointerEvents="none">
-                                                  <circle cx={p1.x} cy={p1.y} r={magnetSize} fill={magnetColor} stroke="#fff" strokeWidth={magnetStroke} opacity={0.9}>
-                                                    {isSnapMode && <animate attributeName="r" values={`${magnetSize};${magnetSize*1.5};${magnetSize}`} dur="1s" repeatCount="indefinite" />}
-                                                  </circle>
-                                                </g>
-                                              );
-                                              magnets.push(
-                                                <g key={`magnet-${side}-2`} pointerEvents="none">
-                                                  <circle cx={p2.x} cy={p2.y} r={magnetSize} fill={magnetColor} stroke="#fff" strokeWidth={magnetStroke} opacity={0.9}>
-                                                    {isSnapMode && <animate attributeName="r" values={`${magnetSize};${magnetSize*1.5};${magnetSize}`} dur="1s" repeatCount="indefinite" />}
-                                                  </circle>
-                                                </g>
-                                              );
-                                              // Linea tratteggiata che indica dove andrà il profilo
-                                              if (isSnapMode) {
-                                                magnets.push(
-                                                  <line key={`magnet-line-${side}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} 
-                                                    stroke={magnetColor} strokeWidth={1.5} strokeDasharray="3,3" opacity={0.7} pointerEvents="none" />
-                                                );
-                                              }
-                                            });
-                                            return magnets;
-                                          })()}
                                         </g>
                                       );
                                     }
