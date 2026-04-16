@@ -1190,6 +1190,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
                                 if (d < bestD + 4) { best = chainStart; }
                               }
+                              // ALIGNMENT SNAP: se nessun punto vicino, cerca allineamento H/V con vertici distanti
+                              if (!best) {
+                                const ALIGN_TOL = 15;
+                                let bestAlignY = null, bestAlignDY = ALIGN_TOL;
+                                let bestAlignX = null, bestAlignDX = ALIGN_TOL;
+                                pts.forEach(p => {
+                                  const dy = Math.abs(p.y - my);
+                                  if (dy < bestAlignDY) { bestAlignDY = dy; bestAlignY = p.y; }
+                                  const dx = Math.abs(p.x - mx);
+                                  if (dx < bestAlignDX) { bestAlignDX = dx; bestAlignX = p.x; }
+                                });
+                                if (bestAlignY !== null || bestAlignX !== null) {
+                                  best = { x: bestAlignX !== null ? bestAlignX : mx, y: bestAlignY !== null ? bestAlignY : my };
+                                }
+                              }
                               return best;
                             };
 
