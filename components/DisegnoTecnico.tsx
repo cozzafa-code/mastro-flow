@@ -2557,6 +2557,52 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <circle key={`sp${pi}`} cx={p.x} cy={p.y} r={3} fill={drawMode === "apertura" ? T.blue : "#1A9E73"} fillOpacity={0.2} />
                                   ))}
 
+                                  {/* ══ PUNTI DI RIFERIMENTO — vertici telaio visibili SEMPRE in draw mode ══ */}
+                                  {drawMode && (() => {
+                                    const verts = [];
+                                    // Vertici freeLine (telaio + profili)
+                                    els.filter(e => e.type === "freeLine").forEach(l => {
+                                      verts.push({x:l.x1,y:l.y1,sub:l.subType||"telaio"});
+                                      verts.push({x:l.x2,y:l.y2,sub:l.subType||"telaio"});
+                                    });
+                                    // Vertici frame
+                                    frames.forEach(fr => {
+                                      verts.push({x:fr.x,y:fr.y,sub:"frame"});
+                                      verts.push({x:fr.x+fr.w,y:fr.y,sub:"frame"});
+                                      verts.push({x:fr.x,y:fr.y+fr.h,sub:"frame"});
+                                      verts.push({x:fr.x+fr.w,y:fr.y+fr.h,sub:"frame"});
+                                    });
+                                    // Montanti
+                                    els.filter(e => e.type === "montante").forEach(m => {
+                                      const my1 = m.y1 ?? (frame ? frame.y : fY);
+                                      const my2 = m.y2 ?? (frame ? frame.y + frame.h : fY + fH);
+                                      verts.push({x:m.x,y:my1,sub:"montante"});
+                                      verts.push({x:m.x,y:my2,sub:"montante"});
+                                    });
+                                    // Traversi
+                                    els.filter(e => e.type === "traverso").forEach(t => {
+                                      const tx1 = t.x1 ?? (frame ? frame.x : fX);
+                                      const tx2 = t.x2 ?? (frame ? frame.x + frame.w : fX + fW);
+                                      verts.push({x:tx1,y:t.y,sub:"traverso"});
+                                      verts.push({x:tx2,y:t.y,sub:"traverso"});
+                                    });
+                                    // Deduplica
+                                    const seen2 = new Set();
+                                    const uv = verts.filter(p => {
+                                      const k = Math.round(p.x/4)+","+Math.round(p.y/4);
+                                      if (seen2.has(k)) return false;
+                                      seen2.add(k); return true;
+                                    });
+                                    const colMap = {telaio:"#1A9E73",frame:"#555",montante:"#D08008",traverso:"#D08008",soglia:"#8B5E3C",zoccolo:"#8B5E3C",fascia:"#666"};
+                                    return uv.map((v,vi) => {
+                                      const c = colMap[v.sub] || "#1A9E73";
+                                      return <g key={`ref-${vi}`}>
+                                        <line x1={v.x-6} y1={v.y} x2={v.x+6} y2={v.y} stroke={c} strokeWidth={1.5} opacity={0.7} />
+                                        <line x1={v.x} y1={v.y-6} x2={v.x} y2={v.y+6} stroke={c} strokeWidth={1.5} opacity={0.7} />
+                                      </g>;
+                                    });
+                                  })()}
+
                                   {/* ══ CLOSED POLYGON PROFILES ══ */}
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
