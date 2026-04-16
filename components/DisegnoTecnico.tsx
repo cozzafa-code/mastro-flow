@@ -3009,6 +3009,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const bgLeft = hiddenSides.includes("left") ? el.x : el.x + TK;
                                       const bgRight = hiddenSides.includes("right") ? el.x + el.w : el.x + el.w - TK;
                                       // 4 lati come rect separati cliccabili
+                                      // I lati left/right si estendono verticalmente se top/bot sono hidden
+                                      // I lati top/bot si estendono orizzontalmente se left/right sono hidden
+                                      const hidTop = hiddenSides.includes("top");
+                                      const hidBot = hiddenSides.includes("bot");
+                                      const hidLeft = hiddenSides.includes("left");
+                                      const hidRight = hiddenSides.includes("right");
+                                      // Top: parte da el.x se left hidden, sennò da el.x (pezzo copre già angolo)
+                                      const topX = hidLeft ? el.x : el.x;
+                                      const topW = el.w - (hidLeft ? 0 : 0) - (hidRight ? 0 : 0);
+                                      // Bot: idem
+                                      const botX = topX;
+                                      const botW = topW;
+                                      // Left: parte da el.y se top hidden, altrimenti da el.y+TK; finisce a el.y+el.h se bot hidden, altrimenti el.y+el.h-TK
+                                      const leftY = hidTop ? el.y : el.y + TK;
+                                      const leftH = (hidBot ? el.y + el.h : el.y + el.h - TK) - leftY;
+                                      // Right: idem
+                                      const rightY = leftY;
+                                      const rightH = leftH;
                                       const sideRect = (side, rx, ry, rw, rh) => {
                                         if (hiddenSides.includes(side)) return null;
                                         const sideId = `${el.id}:${side}`;
@@ -3017,7 +3035,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         const sideFill = isSelSide ? "#1A9E7333" : "#e8e8e4";
                                         const sideSw = isSelSide ? 2 : 1;
                                         return (
-                                          <rect key={side} x={rx} y={ry} width={rw} height={rh} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
+                                          <rect key={side} x={rx} y={ry} width={Math.max(0, rw)} height={Math.max(0, rh)} fill={sideFill} stroke={sideClr} strokeWidth={sideSw}
                                             onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: sideId }); }}
                                             style={{ cursor: drawMode ? undefined : "pointer" }}
                                           />
@@ -3027,14 +3045,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         <g key={el.id} clipPath={poly ? `url(#polyClip-${vanoId})` : undefined}>
                                           {/* Sfondo interno (vetro area) */}
                                           {hasAnySide && <rect x={bgLeft} y={bgTop} width={Math.max(0, bgRight - bgLeft)} height={Math.max(0, bgBot - bgTop)} fill="#f8f8f6" stroke="none" pointerEvents="none" />}
-                                          {/* Lato TOP */}
-                                          {sideRect("top", el.x, el.y, el.w, TK)}
+                                          {/* Lato TOP (esteso orizzontalmente se left/right hidden) */}
+                                          {sideRect("top", topX, el.y, topW, TK)}
                                           {/* Lato BOT */}
-                                          {sideRect("bot", el.x, el.y + el.h - TK, el.w, TK)}
-                                          {/* Lato LEFT */}
-                                          {sideRect("left", el.x, el.y + TK, TK, Math.max(0, el.h - TK*2))}
+                                          {sideRect("bot", botX, el.y + el.h - TK, botW, TK)}
+                                          {/* Lato LEFT (esteso verticalmente se top/bot hidden) */}
+                                          {sideRect("left", el.x, leftY, TK, leftH)}
                                           {/* Lato RIGHT */}
-                                          {sideRect("right", el.x + el.w - TK, el.y + TK, TK, Math.max(0, el.h - TK*2))}
+                                          {sideRect("right", el.x + el.w - TK, rightY, TK, rightH)}
                                           {el.subType === "porta" && <text x={el.x + el.w / 2} y={el.y + 12} textAnchor="middle" fontSize={7} fill="#555" fontWeight={700} pointerEvents="none">PORTA</text>}
                                         </g>
                                       );
