@@ -1,6 +1,7 @@
 'use client';
 import HomePanel from './HomePanel';
 import CostruttorePanel from './CostruttorePanel';
+import CommessaIntegrata from './CommessaIntegrata';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -312,9 +313,40 @@ function SettingsPanelInline({ onNavigate }: { onNavigate: (p: string) => void }
   return <SP onNavigate={onNavigate} />;
 }
 
+
+// ── Lista Commesse per selezionare quale aprire ──
+function CommesseLista({ onSelect }: { onSelect: (id: string) => void }) {
+  const [commesse, setCommesse] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    supabase.from("commesse").select("id, cliente, indirizzo, citta, stato, codice, created_at")
+      .order("created_at", { ascending: false }).limit(50)
+      .then(({ data }) => { setCommesse(data || []); setLoading(false); });
+  }, []);
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#86868b" }}>Caricamento commesse...</div>;
+  return (
+    <div style={{ padding: 24 }}>
+      <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0D1F1F', marginBottom: 16 }}>Commesse</h2>
+      <div style={{ fontSize: 12, color: '#86868b', marginBottom: 16 }}>Clicca su una commessa per vedere foto, firme, disegni, misure, alert e tutto il resto.</div>
+      {commesse.length === 0 ? <div style={{ padding: 30, textAlign: "center", color: "#86868b" }}>Nessuna commessa</div> :
+        commesse.map(c => (
+          <div key={c.id} onClick={() => onSelect(c.id)} style={{ background: '#fff', border: '1px solid #C8E4E4', borderRadius: 12, padding: 14, marginBottom: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#0D1F1F' }}>{c.cliente || c.codice || 'Commessa'}</div>
+              <div style={{ fontSize: 11, color: '#86868b', marginTop: 2 }}>{c.indirizzo || ''} {c.citta || ''}</div>
+            </div>
+            <div style={{ fontSize: 11, color: '#28A0A0', fontWeight: 700 }}>{c.stato || '—'}</div>
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
 export default function MastroDesktop() {
   const [activePanel, setActivePanel] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedCommessaId, setSelectedCommessaId] = useState<string | null>(null);
 
   const sidebarW = sidebarCollapsed ? 68 : 280;
 
@@ -322,6 +354,8 @@ export default function MastroDesktop() {
   const renderPanel = () => {
     switch (activePanel) {
       case 'dashboard': return <HomePanel onNavigate={setActivePanel} />;
+      case 'commessa_dettaglio': return selectedCommessaId ? <CommessaIntegrata commessaId={selectedCommessaId} /> : <CommesseLista onSelect={(id) => { setSelectedCommessaId(id); setActivePanel('commessa_dettaglio'); }} />;
+      case 'commesse': return <CommesseLista onSelect={(id) => { setSelectedCommessaId(id); setActivePanel('commessa_dettaglio'); }} />;
       case 'configuratore': return <CostruttorePanel onBack={() => setActivePanel('settings')} />;
       case 'settings': return <SettingsPanelInline onNavigate={setActivePanel} />;
       default: {
