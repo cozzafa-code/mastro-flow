@@ -969,7 +969,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const frame = frames[0] || null; // primary frame for compat
                             const allMontanti = els.filter(e => e.type === "montante");
                             const allTraversi = els.filter(e => e.type === "traverso");
-                            const TK_FRAME = 6, TK_MONT = 7, TK_ANTA = 6, TK_PORTA = 7, TK_SOGLIA = 3, TK_ZOCCOLO = 8, TK_FASCIA = 5, TK_PROFCOMP = 4;
+                            const TK_FRAME = 6, TK_MONT = 7, TK_ANTA = 7, TK_PORTA = 8, TK_SOGLIA = 3, TK_ZOCCOLO = 8, TK_FASCIA = 5, TK_PROFCOMP = 4;
                             const HM = TK_MONT / 2;
 
                             // ══ POLYGONS from freeLines — tutte le catene chiuse ══
@@ -1173,6 +1173,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 for (let d = GRID; d < len; d += GRID) pts.push({x:l.x1+ux*d, y:l.y1+uy*d});
                               });
                               // ── SNAP sui lati ELIMINATI delle ante (aggancio profilo allo spazio vuoto) ──
+                              // Flag _antaSnap = true → questi punti hanno raggio snap più ampio (vedi findSnap)
                               els.filter(e => e.type === "innerRect" && (e.hiddenSides || []).length > 0).forEach(a => {
                                 const TK = a.subType === "porta" ? TK_PORTA : TK_ANTA;
                                 const hid = a.hiddenSides || [];
@@ -1180,27 +1181,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const offRight = hid.includes("right") ? 0 : TK;
                                 const offTop = hid.includes("top") ? 0 : TK;
                                 const offBot = hid.includes("bot") ? 0 : TK;
+                                const pushA = (p: any) => pts.push({ ...p, _antaSnap: true });
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
                                     const y = a.y + TK / 2;
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
-                                    pts.push({x: x1, y}, {x: x2, y}, {x: (x1+x2)/2, y});
-                                    for (let d = GRID; d < (x2-x1); d += GRID) pts.push({x: x1+d, y});
+                                    pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
+                                    for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
                                   } else if (side === "bot") {
                                     const y = a.y + a.h - TK / 2;
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
-                                    pts.push({x: x1, y}, {x: x2, y}, {x: (x1+x2)/2, y});
-                                    for (let d = GRID; d < (x2-x1); d += GRID) pts.push({x: x1+d, y});
+                                    pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
+                                    for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
                                   } else if (side === "left") {
                                     const x = a.x + TK / 2;
                                     const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
-                                    pts.push({x, y: y1}, {x, y: y2}, {x, y: (y1+y2)/2});
-                                    for (let d = GRID; d < (y2-y1); d += GRID) pts.push({x, y: y1+d});
+                                    pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
+                                    for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
                                   } else if (side === "right") {
                                     const x = a.x + a.w - TK / 2;
                                     const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
-                                    pts.push({x, y: y1}, {x, y: y2}, {x, y: (y1+y2)/2});
-                                    for (let d = GRID; d < (y2-y1); d += GRID) pts.push({x, y: y1+d});
+                                    pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
+                                    for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
                                   }
                                 });
                               });
@@ -1212,10 +1214,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
+                              const ANTA_SNAP_R = 50; // raggio snap molto più ampio per lati ante eliminati
                               pts.forEach(p => {
                                 if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
                                 const d = Math.hypot(p.x - mx, p.y - my);
-                                if (d < bestD) { bestD = d; best = p; }
+                                const rad = p._antaSnap ? ANTA_SNAP_R : SNAP_R;
+                                // Se è un punto anta e supera il best ma è entro raggio anta → lo prende con bonus di priorità
+                                if (p._antaSnap && d < ANTA_SNAP_R && d < bestD + 15) { bestD = d; best = p; }
+                                else if (d < bestD) { bestD = d; best = p; }
                               });
                               // Snap al chainStart (chiusura forma) solo se ≥3 segmenti e non montante/traverso
                               if (canClose && chainStart && !dw._lineSubType) {
