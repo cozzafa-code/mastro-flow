@@ -1184,22 +1184,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const pushA = (p: any) => pts.push({ ...p, _antaSnap: true });
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
-                                    const y = a.y + TK / 2;
+                                    // Bordo INTERNO superiore — zoccolo si aggancia dentro all'anta
+                                    const y = a.y + TK;
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
                                     pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
                                     for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
                                   } else if (side === "bot") {
-                                    const y = a.y + a.h - TK / 2;
+                                    // Bordo INTERNO inferiore
+                                    const y = a.y + a.h - TK;
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
                                     pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
                                     for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
                                   } else if (side === "left") {
-                                    const x = a.x + TK / 2;
+                                    // Bordo INTERNO sinistro
+                                    const x = a.x + TK;
                                     const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
                                     pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
                                     for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
                                   } else if (side === "right") {
-                                    const x = a.x + a.w - TK / 2;
+                                    // Bordo INTERNO destro
+                                    const x = a.x + a.w - TK;
                                     const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
                                     pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
                                     for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
@@ -1214,7 +1218,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
                                 // Raggruppa per Y allineata (tolleranza 5px)
-                                const getY = (a: any) => sideKey === "top" ? a.y + (a.subType==="porta"?TK_PORTA:TK_ANTA)/2 : a.y + a.h - (a.subType==="porta"?TK_PORTA:TK_ANTA)/2;
+                                const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA : a.y + a.h - tkA; };
                                 const sorted = [...group].sort((a,b) => a.x - b.x);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
@@ -1231,7 +1235,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               ["left", "right"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                const getX = (a: any) => sideKey === "left" ? a.x + (a.subType==="porta"?TK_PORTA:TK_ANTA)/2 : a.x + a.w - (a.subType==="porta"?TK_PORTA:TK_ANTA)/2;
+                                const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA : a.x + a.w - tkA; };
                                 const sorted = [...group].sort((a,b) => a.y - b.y);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
@@ -1962,14 +1966,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const offBot = hidden.includes("bot") ? 0 : TK;
                                       // Coordinate della freeLine: linea centrale del lato, con offset dai lati presenti
                                       let lx1, ly1, lx2, ly2;
-                                      if (clickedSide === "top" || clickedSide === "bot") {
-                                        // orizzontale: parte da x + offLeft, finisce a x + w - offRight
-                                        const cy = r.y + r.h / 2;
+                                      if (clickedSide === "top") {
+                                        const cy = antaFound.y + TK;
                                         lx1 = antaFound.x + offLeft; ly1 = cy;
                                         lx2 = antaFound.x + antaFound.w - offRight; ly2 = cy;
+                                      } else if (clickedSide === "bot") {
+                                        const cy = antaFound.y + antaFound.h - TK;
+                                        lx1 = antaFound.x + offLeft; ly1 = cy;
+                                        lx2 = antaFound.x + antaFound.w - offRight; ly2 = cy;
+                                      } else if (clickedSide === "left") {
+                                        const cx = antaFound.x + TK;
+                                        lx1 = cx; ly1 = antaFound.y + offTop;
+                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot;
                                       } else {
-                                        // verticale (left/right): parte da y + offTop, finisce a y + h - offBot
-                                        const cx = r.x + r.w / 2;
+                                        const cx = antaFound.x + antaFound.w - TK;
                                         lx1 = cx; ly1 = antaFound.y + offTop;
                                         lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot;
                                       }
