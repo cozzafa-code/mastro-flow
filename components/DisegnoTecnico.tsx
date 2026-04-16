@@ -1091,8 +1091,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Polygon cells
                               if (poly) {
                                 const allX2 = poly.map(p => p[0]), allY2 = poly.map(p => p[1]);
-                                const pL = Math.min(...allX2) + 2, pR = Math.max(...allX2) - 2;
-                                const pT = Math.min(...allY2) + 2, pB = Math.max(...allY2) - 2;
+                                const pL = Math.min(...allX2) + TK_FRAME, pR = Math.max(...allX2) - TK_FRAME;
+                                const pT = Math.min(...allY2) + TK_FRAME, pB = Math.max(...allY2) - TK_FRAME;
                                 return bspSplit([{ x: pL, y: pT, w: pR - pL, h: pB - pT, id: "P0" }]);
                               }
                               // Fallback: poly non chiuso — usa bbox delle freeLine senza subType
@@ -1576,6 +1576,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 
                                 // Polygon shape handling
                                 if (cell.poly) {
+                                  // Bordi del polygon esterno (linea centrale delle freeLine)
+                                  const _cpAllX = cell.poly.map(p => p[0]);
+                                  const _cpAllY = cell.poly.map(p => p[1]);
+                                  const _cpMinX = Math.min(..._cpAllX), _cpMaxX = Math.max(..._cpAllX);
+                                  const _cpMinY = Math.min(..._cpAllY), _cpMaxY = Math.max(..._cpAllY);
                                   // Divisori verticali: montanti classici + freeLine verticali INTERNE al telaio
                                   const classicMont = els.filter(e => e.type === "montante");
                                   // freeLine verticali interne (non sono i bordi sx/dx del telaio)
@@ -1585,16 +1590,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     e.x1 > _cpMinX + 10 && e.x1 < _cpMaxX - 10
                                   );
                                   const freeMontanti = [...classicMont, ...vertFreeLines.map(l => ({ x: (l.x1 + l.x2) / 2 }))];
-                                  // Inseta il poly di TK_FRAME per stare dentro il telaio
-                                  const _cpAllX = cell.poly.map(p => p[0]);
-                                  const _cpAllY = cell.poly.map(p => p[1]);
-                                  const _cpMinX = Math.min(..._cpAllX), _cpMaxX = Math.max(..._cpAllX);
-                                  const _cpMinY = Math.min(..._cpAllY), _cpMaxY = Math.max(..._cpAllY);
+                                  // Inseta il poly di TK_FRAME per stare dentro il telaio (bordo INTERNO del profilo)
                                   let cellPoly = [
-                                    [_cpMinX + 1, _cpMinY + 1],
-                                    [_cpMaxX - 1, _cpMinY + 1],
-                                    [_cpMaxX - 1, _cpMaxY - 1],
-                                    [_cpMinX + 1, _cpMaxY - 1]
+                                    [_cpMinX + TK_FRAME, _cpMinY + TK_FRAME],
+                                    [_cpMaxX - TK_FRAME, _cpMinY + TK_FRAME],
+                                    [_cpMaxX - TK_FRAME, _cpMaxY - TK_FRAME],
+                                    [_cpMinX + TK_FRAME, _cpMaxY - TK_FRAME]
                                   ];
                                   if (freeMontanti.length > 0) {
                                     // Trova i montanti che attraversano il polygon verticalmente
@@ -1618,10 +1619,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const polyMinY = Math.min(...allPolyY);
                                       const polyMaxY = Math.max(...allPolyY);
                                       cellPoly = [
-                                        [subX1 + 1, _cpMinY + 1],
-                                        [subX2 - 1, _cpMinY + 1],
-                                        [subX2 - 1, _cpMaxY - 1],
-                                        [subX1 + 1, _cpMaxY - 1]
+                                        [subX1 + TK_FRAME, _cpMinY + TK_FRAME],
+                                        [subX2 - TK_FRAME, _cpMinY + TK_FRAME],
+                                        [subX2 - TK_FRAME, _cpMaxY - TK_FRAME],
+                                        [subX1 + TK_FRAME, _cpMaxY - TK_FRAME]
                                       ];
                                     }
                                   }
