@@ -1644,6 +1644,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // Rimuovi se si sovrappone alla zona cliccata
                                       return !(eMinX < subMaxX - 5 && eMaxX > subMinX + 5);
                                     });
+                                    console.log("[CAD] polyAnta poly:", JSON.stringify(cellPoly), "from cell.poly:", JSON.stringify(cell.poly), "_cp bounds:", {_cpMinX,_cpMaxX,_cpMinY,_cpMaxY});
                                     newEls.push({ id: Date.now(), type: "polyAnta", poly: cellPoly, subType: drawMode === "place-porta" ? "porta" : undefined });
                                     setDW(newEls);
                                   } else if (drawMode === "place-vetro") {
@@ -2901,6 +2902,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
                                           <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
+                                          <text x={Math.min(...pts.map(p=>p[0]))} y={Math.max(...pts.map(p=>p[1]))+10} fontSize={5} fill="#999">{Math.round(Math.max(...pts.map(p=>p[0]))-Math.min(...pts.map(p=>p[0])))}x{Math.round(Math.max(...pts.map(p=>p[1]))-Math.min(...pts.map(p=>p[1])))}</text>
                                         </g>
                                       );
                                     }
