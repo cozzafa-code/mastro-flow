@@ -1714,6 +1714,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   e.type === "freeLine" && e.subType && 
                                   Math.abs(e.y2 - e.y1) <= Math.abs(e.x2 - e.x1) + 1
                                 );
+                                document.title = `cell[${cell.y.toFixed(0)}-${(cell.y+cell.h).toFixed(0)}] hSubs=${horzSubInCell.length} ${horzSubInCell.map(h=>`${h.subType}@${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
                                 horzSubInCell.forEach(h => {
                                   const hMidY = (h.y1 + h.y2) / 2;
                                   const hMinX = Math.min(h.x1, h.x2), hMaxX = Math.max(h.x1, h.x2);
