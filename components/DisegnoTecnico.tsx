@@ -1549,7 +1549,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // Place modes — click on cell OR polygon fallback for complex shapes
                               if (drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-porta" || drawMode === "place-persiana") {
                                 let cell = findCellAt(mx, my);
-                                document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
+                                // Se findCellAt fallisce ma ci sono celle, prendi la più vicina
+                                if (!cell && cells.length > 0) {
+                                  let best = null, bestD = Infinity;
+                                  cells.forEach(c2 => {
+                                    const cx = c2.x + c2.w / 2, cy = c2.y + c2.h / 2;
+                                    const d = Math.hypot(mx - cx, my - cy);
+                                    if (d < bestD) { bestD = d; best = c2; }
+                                  });
+                                  cell = best;
+                                }
+                                // Per telaio libero (no frame), converti cella BSP in poly per usare il path polyAnta
+                                // La cella BSP è GIÀ insetata di TK_FRAME da getCells, quindi il poly è il bordo interno
+                                if (cell && !cell.poly && !frame && poly) {
+                                  cell = { id: cell.id, poly: [
+                                    [cell.x, cell.y], [cell.x + cell.w, cell.y],
+                                    [cell.x + cell.w, cell.y + cell.h], [cell.x, cell.y + cell.h]
+                                  ], _bspInset: true };
+                                }
                                 if (!cell && cells.length === 0) {
                                   // Calcola BBOX delle freeLine telaio (senza subType) come cella per anta
                                   const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
@@ -1591,11 +1608,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   );
                                   const freeMontanti = [...classicMont, ...vertFreeLines.map(l => ({ x: (l.x1 + l.x2) / 2 }))];
                                   // Inseta il poly di TK_FRAME per stare dentro il telaio (bordo INTERNO del profilo)
+                                  // Se la cella viene da BSP (getCells), è GIÀ insetata — usa offset 0
+                                  const _cpInset = cell._bspInset ? 0 : TK_FRAME;
                                   let cellPoly = [
-                                    [_cpMinX + TK_FRAME, _cpMinY + TK_FRAME],
-                                    [_cpMaxX - TK_FRAME, _cpMinY + TK_FRAME],
-                                    [_cpMaxX - TK_FRAME, _cpMaxY - TK_FRAME],
-                                    [_cpMinX + TK_FRAME, _cpMaxY - TK_FRAME]
+                                    [_cpMinX + _cpInset, _cpMinY + _cpInset],
+                                    [_cpMaxX - _cpInset, _cpMinY + _cpInset],
+                                    [_cpMaxX - _cpInset, _cpMaxY - _cpInset],
+                                    [_cpMinX + _cpInset, _cpMaxY - _cpInset]
                                   ];
                                   if (freeMontanti.length > 0) {
                                     // Trova i montanti che attraversano il polygon verticalmente
@@ -1615,10 +1634,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         subX1 = montX[i];
                                       }
                                       cellPoly = [
-                                        [subX1 + TK_FRAME, _cpMinY + TK_FRAME],
-                                        [subX2 - TK_FRAME, _cpMinY + TK_FRAME],
-                                        [subX2 - TK_FRAME, _cpMaxY - TK_FRAME],
-                                        [subX1 + TK_FRAME, _cpMaxY - TK_FRAME]
+                                        [subX1 + _cpInset, _cpMinY + _cpInset],
+                                        [subX2 - _cpInset, _cpMinY + _cpInset],
+                                        [subX2 - _cpInset, _cpMaxY - _cpInset],
+                                        [subX1 + _cpInset, _cpMaxY - _cpInset]
                                       ];
                                     }
                                   }
