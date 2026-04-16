@@ -1828,6 +1828,75 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               }
 
                               // Line / apertura draw modes
+                              // ═══ AGGANCIO AUTOMATICO: click su lato anta vuoto crea freeLine esatta ═══
+                              if (drawMode === "line" && dw._lineSubType && !dw._pendingLine) {
+                                const profileSub = dw._lineSubType;
+                                if (["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(profileSub)) {
+                                  // Cerca un'anta il cui lato hidden contiene il click
+                                  const TK_anta = (a: any) => a.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                  const antaFound = els.find((e: any) => {
+                                    if (e.type !== "innerRect") return false;
+                                    const hidden = e.hiddenSides || [];
+                                    if (hidden.length === 0) return false;
+                                    const TK = TK_anta(e);
+                                    // Definizione area di ogni lato
+                                    const sides = {
+                                      top: { x: e.x, y: e.y, w: e.w, h: TK },
+                                      bot: { x: e.x, y: e.y + e.h - TK, w: e.w, h: TK },
+                                      left: { x: e.x, y: e.y + TK, w: TK, h: Math.max(0, e.h - TK*2) },
+                                      right: { x: e.x + e.w - TK, y: e.y + TK, w: TK, h: Math.max(0, e.h - TK*2) }
+                                    };
+                                    // Controlla se il click è dentro uno dei lati hidden
+                                    return hidden.some((side: string) => {
+                                      const r = sides[side];
+                                      if (!r) return false;
+                                      // Tolleranza +3px per permettere click facili su lati sottili
+                                      return mx >= r.x - 3 && mx <= r.x + r.w + 3 && my >= r.y - 3 && my <= r.y + r.h + 3;
+                                    });
+                                  });
+                                  if (antaFound) {
+                                    const hidden = antaFound.hiddenSides || [];
+                                    const TK = TK_anta(antaFound);
+                                    const sides: any = {
+                                      top: { x: antaFound.x, y: antaFound.y, w: antaFound.w, h: TK },
+                                      bot: { x: antaFound.x, y: antaFound.y + antaFound.h - TK, w: antaFound.w, h: TK },
+                                      left: { x: antaFound.x, y: antaFound.y + TK, w: TK, h: Math.max(0, antaFound.h - TK*2) },
+                                      right: { x: antaFound.x + antaFound.w - TK, y: antaFound.y + TK, w: TK, h: Math.max(0, antaFound.h - TK*2) }
+                                    };
+                                    // Trova quale lato hidden è stato cliccato (il primo che contiene il click)
+                                    const clickedSide = hidden.find((side: string) => {
+                                      const r = sides[side];
+                                      if (!r) return false;
+                                      return mx >= r.x - 3 && mx <= r.x + r.w + 3 && my >= r.y - 3 && my <= r.y + r.h + 3;
+                                    });
+                                    if (clickedSide) {
+                                      const r = sides[clickedSide];
+                                      // Coordinate della freeLine: linea centrale del lato
+                                      let lx1, ly1, lx2, ly2;
+                                      if (clickedSide === "top" || clickedSide === "bot") {
+                                        // orizzontale
+                                        const cy = r.y + r.h / 2;
+                                        lx1 = r.x; ly1 = cy;
+                                        lx2 = r.x + r.w; ly2 = cy;
+                                      } else {
+                                        // verticale (left/right)
+                                        const cx = r.x + r.w / 2;
+                                        lx1 = cx; ly1 = r.y;
+                                        lx2 = cx; ly2 = r.y + r.h;
+                                      }
+                                      const newEls = [...els, {
+                                        id: Date.now() + Math.floor(Math.random()*10000),
+                                        type: "freeLine",
+                                        subType: profileSub,
+                                        x1: lx1, y1: ly1, x2: lx2, y2: ly2
+                                      }];
+                                      setDW(newEls, { drawMode: null, _lineSubType: null, _pendingLine: null });
+                                      return;
+                                    }
+                                  }
+                                }
+                              }
+
                               if (drawMode === "line" || drawMode === "apertura") {
                                 const pending = dw._pendingLine;
                                 // Leggi subType sia da dw che da pending (pending è più affidabile)
