@@ -1551,39 +1551,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 let cell = findCellAt(mx, my);
                                 document.title = "mx="+mx.toFixed(0)+" celle="+cells.map(c=>"["+c.x.toFixed(0)+"-"+(c.x+c.w).toFixed(0)+"]").join("")+" hit="+(cell?cell.id:"null");
                                 if (!cell && cells.length === 0) {
-                                  // Extract polygon from freeLines — solo telaio (senza subType), escludi zoccolo/soglia/fascia
-                                  const lines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                  console.log("[CAD-DEBUG] telaio lines:", lines.length, "all freeLine:", els.filter(e=>e.type==="freeLine").length, "subTypes:", els.filter(e=>e.type==="freeLine"&&e.subType).map(e=>e.subType));
-                                  if (lines.length >= 3) { // era 4, ma un telaio a U ha solo 3 lati
-                                    // Build ordered point chain from connected lines
-                                    const pts = [];
-                                    const used = new Set();
-                                    const addPt = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
-                                    // Start with first line
-                                    addPt(lines[0].x1, lines[0].y1);
-                                    addPt(lines[0].x2, lines[0].y2);
-                                    used.add(0);
-                                    for (let iter = 0; iter < lines.length; iter++) {
-                                      const last = pts[pts.length - 1];
-                                      for (let li = 0; li < lines.length; li++) {
-                                        if (used.has(li)) continue;
-                                        const l = lines[li];
-                                        const d1 = Math.hypot(l.x1 - last[0], l.y1 - last[1]);
-                                        const d2 = Math.hypot(l.x2 - last[0], l.y2 - last[1]);
-                                        if (d1 < 15) { addPt(l.x2, l.y2); used.add(li); break; }
-                                        if (d2 < 15) { addPt(l.x1, l.y1); used.add(li); break; }
-                                      }
-                                    }
-                                    if (pts.length >= 3) {
-                                      cell = { id: "poly", poly: pts };
-                                    }
+                                  // Calcola BBOX delle freeLine telaio (senza subType) come cella per anta
+                                  const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
+                                  if (telLines.length >= 2) {
+                                    const allX = telLines.flatMap(l => [l.x1, l.x2]);
+                                    const allY = telLines.flatMap(l => [l.y1, l.y2]);
+                                    const bMinX = Math.min(...allX), bMaxX = Math.max(...allX);
+                                    const bMinY = Math.min(...allY), bMaxY = Math.max(...allY);
+                                    cell = { id: "poly", poly: [
+                                      [bMinX, bMinY], [bMaxX, bMinY], [bMaxX, bMaxY], [bMinX, bMaxY]
+                                    ]};
                                   }
-                                  // Fallback to bbox if polygon extraction failed
+                                  // Fallback apLine
                                   if (!cell) {
-                                    const allLines = els.filter(e => (e.type === "freeLine" && !e.subType) || e.type === "apLine");
-                                    if (allLines.length > 0) {
-                                      const allX = allLines.flatMap(l => [l.x1, l.x2]);
-                                      const allY = allLines.flatMap(l => [l.y1, l.y2]);
+                                    const apLines = els.filter(e => e.type === "apLine");
+                                    if (apLines.length > 0) {
+                                      const allX = apLines.flatMap(l => [l.x1, l.x2]);
+                                      const allY = apLines.flatMap(l => [l.y1, l.y2]);
                                       cell = { x: Math.min(...allX), y: Math.min(...allY), w: Math.max(...allX) - Math.min(...allX), h: Math.max(...allY) - Math.min(...allY), id: "bbox" };
                                     }
                                   }
