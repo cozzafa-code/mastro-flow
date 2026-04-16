@@ -1182,27 +1182,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const offTop = hid.includes("top") ? 0 : TK;
                                 const offBot = hid.includes("bot") ? 0 : TK;
                                 const pushA = (p: any) => pts.push({ ...p, _antaSnap: true });
+                                const pushAO = (p: any, ori: string) => pts.push({ ...p, _antaSnap: true, _antaOri: ori });
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
                                     const y = a.y + TK + 2;
                                     const x1 = a.x + offLeft - 2, x2 = a.x + a.w - offRight + 2;
-                                    pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
-                                    for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
+                                    pushAO({x: x1, y}, "H"); pushAO({x: x2, y}, "H"); pushAO({x: (x1+x2)/2, y}, "H");
+                                    for (let d = GRID; d < (x2-x1); d += GRID) pushAO({x: x1+d, y}, "H");
                                   } else if (side === "bot") {
                                     const y = a.y + a.h - TK + 2;
                                     const x1 = a.x + offLeft - 2, x2 = a.x + a.w - offRight + 2;
-                                    pushA({x: x1, y}); pushA({x: x2, y}); pushA({x: (x1+x2)/2, y});
-                                    for (let d = GRID; d < (x2-x1); d += GRID) pushA({x: x1+d, y});
+                                    pushAO({x: x1, y}, "H"); pushAO({x: x2, y}, "H"); pushAO({x: (x1+x2)/2, y}, "H");
+                                    for (let d = GRID; d < (x2-x1); d += GRID) pushAO({x: x1+d, y}, "H");
                                   } else if (side === "left") {
                                     const x = a.x + TK + 2;
                                     const y1 = a.y + offTop - 2, y2 = a.y + a.h - offBot + 2;
-                                    pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
-                                    for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
+                                    pushAO({x, y: y1}, "V"); pushAO({x, y: y2}, "V"); pushAO({x, y: (y1+y2)/2}, "V");
+                                    for (let d = GRID; d < (y2-y1); d += GRID) pushAO({x, y: y1+d}, "V");
                                   } else if (side === "right") {
                                     const x = a.x + a.w - TK + 2;
                                     const y1 = a.y + offTop - 2, y2 = a.y + a.h - offBot + 2;
-                                    pushA({x, y: y1}); pushA({x, y: y2}); pushA({x, y: (y1+y2)/2});
-                                    for (let d = GRID; d < (y2-y1); d += GRID) pushA({x, y: y1+d});
+                                    pushAO({x, y: y1}, "V"); pushAO({x, y: y2}, "V"); pushAO({x, y: (y1+y2)/2}, "V");
+                                    for (let d = GRID; d < (y2-y1); d += GRID) pushAO({x, y: y1+d}, "V");
                                   }
                                 });
                               });
@@ -2039,8 +2040,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   } else {
                                     // Soglia, zoccolo, fascia, profcomp, tel.libero — snap unificato
                                     const snapPt = findSnap(px, py);
-                                    if (snapPt) { px = snapPt.x; py = snapPt.y; }
-                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
+                                    let antaOri = null;
+                                    if (snapPt) {
+                                      px = snapPt.x; py = snapPt.y;
+                                      if (snapPt._antaSnap && snapPt._antaOri) antaOri = snapPt._antaOri;
+                                    }
+                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal, _antaOri: antaOri }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
                                 } else {
                                   // SECONDO CLICK — crea il segmento
@@ -2089,6 +2094,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }
 
+                                  // Se è aggancio ANTA → forza allineamento H o V rigido e salta tutti gli altri snap
+                                  if (pending._antaOri === "H") {
+                                    py = pending.y1; // forza Y uguale al primo click (linea orizzontale)
+                                    // Snap X all'estremo anta più vicino
+                                    const snapX = findSnap(px, py);
+                                    if (snapX && snapX._antaSnap && Math.abs(snapX.y - py) < 2) px = snapX.x;
+                                  } else if (pending._antaOri === "V") {
+                                    px = pending.x1; // forza X uguale al primo click (linea verticale)
+                                    const snapY = findSnap(px, py);
+                                    if (snapY && snapY._antaSnap && Math.abs(snapY.x - px) < 2) py = snapY.y;
+                                  }
                                   // Per montante X è sempre = pending.x1, per traverso Y è sempre = pending.y1
                                   // → il guard "punto uguale" va saltato per questi subType
                                   if (!isMont && !isTrav && px===pending.x1 && py===pending.y1) return;
