@@ -14,7 +14,6 @@ import { supabase } from "@/lib/supabase";
 import { useSyncEngine, SyncStatusBar } from "./mastro-sync";
 import { useCloudLoader, persistAndSync } from "../hooks/useCloudLoader";
 import { useVaniSync } from "../hooks/useVaniSync";
-import { useRealtimeSync } from "../hooks/useRealtimeSync";
 import { generaPreventivoPDF as _generaPreventivoPDF } from "../lib/pdf-preventivo";
 import { generaPDFMisure as _generaPDFMisure } from "../lib/pdf-misure";
 import { generaFatturaPDF as _generaFatturaPDF, generaOrdinePDF as _generaOrdinePDF, generaConfermaFirmataPDF as _generaConfermaFirmataPDF, generaXmlSDI as _generaXmlSDI, generaTrackingCliente as _generaTrackingCliente } from "../lib/pdf-documents";
@@ -31,7 +30,6 @@ const SYNC_KEYS = ["cantieri","events","contatti","tasks","problemi","team","azi
 
 
 import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEventDB, saveContatto, saveTeamMember, saveTask, saveAzienda, saveVanoDB, saveMateriali, savePipeline, FONT, FF, FM, tipoToMinCat, THEMES, PLANS, PIPELINE_DEFAULT, MOTIVI_BLOCCO, AFASE, CANTIERI_INIT, FATTURE_INIT, ORDINI_INIT, MONTAGGI_INIT, TASKS_INIT, AI_INBOX_INIT, MSGS_INIT, TEAM_INIT, CONTATTI_INIT, COLORI_INIT, SISTEMI_INIT, VETRI_INIT, TIPOLOGIE_RAPIDE, SETTORI, SETTORI_DEFAULT, COPRIFILI_INIT, LAMIERE_INIT, Ico, I, ICO, PUNTI_MISURE, useDragOrder, TIPI_EVENTO, tipoEvColor } from "./mastro-constants";
-const STATI_ORD_MINI=[{id:'bozza',l:'Bozza',c:'#999'},{id:'approvato',l:'Approvato',c:'#3B7FE0'},{id:'inviato',l:'Inviato',c:'#D08008'},{id:'confermato_forn',l:'Confermato',c:'#6366F1'},{id:'modificato_forn',l:'Modificato',c:'#F59E0B'},{id:'in_produzione',l:'In prod.',c:'#7C3AED'},{id:'spedito',l:'Spedito',c:'#3B7FE0'},{id:'ricevuto_parziale',l:'Parziale',c:'#D08008'},{id:'ricevuto',l:'Ricevuto',c:'#1A9E73'},{id:'controllato',l:'Controllato',c:'#059669'},{id:'chiuso',l:'Chiuso',c:'#6B7280'},{id:'contestato',l:'Contestato',c:'#DC4444'},{id:'annullato',l:'Annullato',c:'#DC4444'}];
 import { MastroContext } from "./MastroContext";
 import SettingsPanel from "./SettingsPanel";
 import PreventivoModal from "./PreventivoModal";
@@ -41,9 +39,6 @@ import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobile";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
-import NodiTecniciPanel from "./NodiTecniciPanel";
-import OrdiniFornitori from "./OrdiniFornitori";
-import CostruttoreLavorazioni from "./CostruttoreLavorazioni";
 import ModalPanel from "./ModalPanel";
 import RiepilogoPanel from "./RiepilogoPanel";
 import AgendaPanel from "./AgendaPanel";
@@ -57,7 +52,7 @@ import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 import { useOfflineCache } from "@/hooks/useOfflineCache";
 
-function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda?: any }) {
+function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDesktop }: { user?: any, azienda?: any, forceMobile?: boolean, forceDesktop?: boolean }) {
   const [theme, setTheme] = useState("fliwox");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
@@ -476,14 +471,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     });
   };
   const [showVoice, setShowVoice] = useState(false);
-  const [talkOpen, setTalkOpen] = useState(false);
-  
-  // Intercept ordini tab from MastroDesktop sidebar (may use different ID)
-  useEffect(() => {
-    if (tab === 'ordini_f' || tab === 'ordini' || tab === 'ordiniForn' || tab === 'ordini_fornitore') {
-      setTab('ordini_fornitori');
-    }
-  }, [tab]);
   const [contatti, setContatti] = useState<any[]>([]);
   const [msgSubTab, setMsgSubTab] = useState("chat"); // "chat" | "rubrica" | "ai" | "email"
   const [aiInbox, setAiInbox] = useState<any[]>([]);
@@ -614,18 +601,16 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 },[]);
 
   // Cloud loader hook (caricamento, visibility, polling)
-  const { syncReady, applyCloud } = useCloudLoader(userId, isUuid, {
+  const { syncReady } = useCloudLoader(userId, isUuid, {
     setCantieri, setEvents, setContatti, setTasks, setProblemi, setTeam,
     setAziendaInfo, setPipelineDB, setSistemiDB, setVetriDB, setColoriDB,
     setCoprifiliDB, setLamiereDB, setLibreriaDB, setFattureDB, setOrdiniFornDB,
     setSquadreDB, setMontaggiDB,
   });
 
-  // Realtime sync (Supabase channels) - 16 apr 2026
-  useRealtimeSync(userId, applyCloud, true);
-  useVaniSync(cantieri, userId, isUuid);
   // Persist + cloud sync effects
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "cantieri", cantieri), [cantieri]);
+  useVaniSync(cantieri, userId, isUuid);
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "tasks", tasks), [tasks]);
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "events", events), [events]);
   useEffect(() => persistAndSync(syncReady, isUuid, sync, "colori", coloriDB), [coloriDB]);
@@ -745,7 +730,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   // Check Gmail on mount
   useEffect(() => { gmailCheckStatus(); }, []);
   const isTablet = winW >= 768;
-  const isDesktop = winW >= 1024;
+  const isDesktop = forceDesktop ? true : forceMobile ? false : winW >= 1024;
 
   const goBack = () => {
     if (homeView) { setHomeView(null); return; }
@@ -1664,17 +1649,7 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
   // Card compatta per vista lista
 
   
-  const renderCommesse = () => <CommessePanel onOpenVano={(cmId: string, vanoId: string) => {
-    // Bridge: find commessa in cantieri, set selectedCM + selectedVano
-    const cm = cantieri.find(c => c.id === cmId);
-    if (cm) {
-      setSelectedCM(cm);
-      const rilievo = cm.rilievi?.[cm.rilievi.length - 1];
-      if (rilievo) setSelectedRilievo(rilievo);
-      const vano = rilievo?.vani?.find(v => String(v.id) === String(vanoId));
-      if (vano) { setSelectedVano(vano); setVanoStep(0); }
-    }
-  }} />;
+  const renderCommesse = () => <CommessePanel />;
 
   /* == COMMESSA DETAIL == */
   const renderCMDetail = () => <CMDetailPanel />;
@@ -1985,56 +1960,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 <Chip label="Ordine inviato" done={c.ck_ordine_inviato} onClick={()=>updateCM("ck_ordine_inviato",!c.ck_ordine_inviato)}/>
                 <Chip label="Conferma ricezione da fornitore" done={c.ck_ordine_confermato} onClick={()=>updateCM("ck_ordine_confermato",!c.ck_ordine_confermato)}/>
                 <Chip label="Materiale in arrivo comunicato al cliente" done={c.ck_cliente_avvisato} onClick={()=>updateCM("ck_cliente_avvisato",!c.ck_cliente_avvisato)}/>
-                {/* ORDER COCKPIT — Barra approvvigionamento commessa */}
-                {(() => {
-                  const ordCM = ordiniFornDB.filter(o => (o.commesse_ids || []).includes(c.id) || o.cmId === c.id);
-                  if (!ordCM.length) return <div style={{marginTop:10,padding:10,borderRadius:10,background:"#EEF8F8",border:"1px solid #C8E4E4",fontSize:11,color:"#156060",textAlign:"center"}}>Nessun ordine procurement collegato a questa commessa</div>;
-                  const totRighe = ordCM.reduce((s, o) => s + ((o.righe || []).length || o.totale_pezzi || 0), 0);
-                  const confRighe = ordCM.filter(o => ['confermato_forn','in_produzione','spedito','ricevuto','controllato','chiuso'].includes(o.stato)).reduce((s, o) => s + ((o.righe || []).length || o.totale_pezzi || 0), 0);
-                  const ricRighe = ordCM.filter(o => ['ricevuto','controllato','chiuso'].includes(o.stato)).reduce((s, o) => s + ((o.righe || []).length || o.totale_pezzi || 0), 0);
-                  const pConf = totRighe > 0 ? Math.round(confRighe / totRighe * 100) : 0;
-                  const pRic = totRighe > 0 ? Math.round(ricRighe / totRighe * 100) : 0;
-                  const inRitardo = ordCM.some(o => o.consegna_prevista && new Date(o.consegna_prevista) < new Date() && !['ricevuto','chiuso','controllato','annullato'].includes(o.stato));
-                  return (
-                    <div style={{marginTop:12,padding:14,borderRadius:12,background:"#EEF8F8",border:inRitardo?"2px solid #DC4444":"2px solid #C8E4E4"}}>
-                      <div style={{fontSize:11,fontWeight:800,color:"#0D1F1F",marginBottom:8,display:"flex",alignItems:"center",gap:6}}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                        APPROVVIGIONAMENTO
-                        {inRitardo && <span style={{color:"#DC4444",fontWeight:800,marginLeft:6}}>IN RITARDO</span>}
-                      </div>
-                      {/* Progress bars */}
-                      <div style={{marginBottom:6}}>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:9,fontWeight:700,color:"#156060",marginBottom:2}}>
-                          <span>Ordinato: {ordCM.length} ordini ({totRighe} righe)</span><span>100%</span>
-                        </div>
-                        <div style={{height:8,borderRadius:4,background:"#C8E4E4"}}><div style={{height:8,borderRadius:4,background:"#28A0A0",width:"100%"}}/></div>
-                      </div>
-                      <div style={{marginBottom:6}}>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:9,fontWeight:700,color:"#3B7FE0",marginBottom:2}}>
-                          <span>Confermato fornitore</span><span>{pConf}%</span>
-                        </div>
-                        <div style={{height:8,borderRadius:4,background:"#C8E4E4"}}><div style={{height:8,borderRadius:4,background:"#3B7FE0",width:pConf+"%",transition:"width .3s"}}/></div>
-                      </div>
-                      <div style={{marginBottom:4}}>
-                        <div style={{display:"flex",justifyContent:"space-between",fontSize:9,fontWeight:700,color:"#1A9E73",marginBottom:2}}>
-                          <span>Ricevuto in magazzino</span><span>{pRic}%</span>
-                        </div>
-                        <div style={{height:8,borderRadius:4,background:"#C8E4E4"}}><div style={{height:8,borderRadius:4,background:"#1A9E73",width:pRic+"%",transition:"width .3s"}}/></div>
-                      </div>
-                      {/* Lista ordini mini */}
-                      <div style={{marginTop:8}}>
-                        {ordCM.map(o => {
-                          const stO = STATI_ORD_MINI.find(s => s.id === o.stato) || {l:o.stato,c:"#999"};
-                          return <div key={o.id || o.codice} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:10,borderTop:"1px solid #C8E4E4"}}>
-                            <span style={{fontFamily:"'JetBrains Mono',monospace",fontWeight:700,color:"#28A0A0"}}>{o.codice}</span>
-                            <span style={{flex:1,color:"#156060"}}>{o.fornitore}</span>
-                            <span style={{padding:"2px 8px",borderRadius:4,fontSize:8,fontWeight:700,background:stO.c+"18",color:stO.c}}>{stO.l}</span>
-                          </div>;
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>}
             </div>
           );
@@ -3456,8 +3381,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
             ::-webkit-scrollbar-thumb { background: #DCDCD7; border-radius: 2px; }
           `}</style>
           <MastroDesktop />
-          {/* Ordini Fornitori — overlay sopra MastroDesktop quando tab = ordini_fornitori */}
-          {tab === "ordini_fornitori" && <div style={{position:"fixed",inset:0,zIndex:200,background:"#F8FAFA"}}><OrdiniFornitori onBack={() => setTab("home")} /></div>}
         </>
       </MastroContext.Provider>
     );
@@ -4044,9 +3967,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
           );
         })()}</PanelErrorBoundary>}
           {tab === "settings" && <PanelErrorBoundary name="Impostazioni">{renderSettings()}</PanelErrorBoundary>}
-        {tab === "nodi_tecnici" && <PanelErrorBoundary name="Nodi Tecnici"><div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC"}}><NodiTecniciPanel onBack={() => setTab("home")} /></div></PanelErrorBoundary>}
-        {tab === "ordini_fornitori" && <PanelErrorBoundary name="Ordini Fornitori"><div style={{position:"fixed",inset:0,zIndex:200,background:"#F8FAFA"}}><OrdiniFornitori onBack={() => setTab("home")} /></div></PanelErrorBoundary>}
-        {tab === "lavorazioni_cat" && <PanelErrorBoundary name="Lavorazioni"><div style={{position:"fixed",inset:0,zIndex:200,background:"#F2F1EC"}}><CostruttoreLavorazioni onBack={() => setTab("home")} /></div></PanelErrorBoundary>}
         {tab === "altro" && (() => {
           return (
             <div style={{ padding:"20px 16px 100px", minHeight:"100vh" }}>
@@ -4066,30 +3986,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
                 </div>
                 <svg style={{ marginLeft:"auto" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8BBCBC" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
               </div>
-
-              {/* CATALOGHI TECNICI */}
-              <div style={{ fontSize:13, fontWeight:800, color:"#28A0A0", textTransform:"uppercase", letterSpacing:".8px", marginTop:24, marginBottom:10 }}>Cataloghi Tecnici</div>
-              {[
-                { id:"ordini_fornitori", label:"Ordini Fornitori", desc:"Trasformatore ordini universale", col:"#D08008", ico:ICO.package },
-                { id:"nodi_tecnici", label:"Nodi Tecnici", desc:"Assembla sezioni profilo nei giunti", col:"#28A0A0", ico:ICO.edit },
-                { id:"lavorazioni_cat", label:"Lavorazioni", desc:"Forature, fresature, operazioni CNC", col:"#3B7FE0", ico:ICO.wrench },
-              ].map(item => (
-                <div key={item.id} onClick={() => setTab(item.id)}
-                  style={{ background:"#fff", borderRadius:16, border:"1px solid #C8E4E4",
-                    boxShadow:"0 4px 0 0 #A8CCCC", padding:"18px 16px", marginBottom:10,
-                    display:"flex", alignItems:"center", gap:14, cursor:"pointer" }}>
-                  <div style={{ width:44, height:44, borderRadius:12,
-                    background:item.col+"15", display:"flex", alignItems:"center",
-                    justifyContent:"center", flexShrink:0 }}>
-                    <I d={item.ico} s={22} c={item.col} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize:15, fontWeight:800, color:"#0D1F1F" }}>{item.label}</div>
-                    <div style={{ fontSize:12, color:"#4A7070", marginTop:2 }}>{item.desc}</div>
-                  </div>
-                  <svg style={{ marginLeft:"auto" }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={item.col} strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-              ))}
             </div>
           );
         })()}
@@ -5444,46 +5340,6 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
-
-      {/* ═══ TALK GLOBALE — sempre visibile in tutte le schermate ═══ */}
-      {tab !== "messaggi" && !talkOpen && (
-        <div onClick={() => setTalkOpen(true)} style={{ position:"fixed", bottom: isDesktop ? 20 : 80, right: 20, width: 52, height: 52, borderRadius: "50%", background: "#28A0A0", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(40,160,160,.4), 0 2px 0 #156060", zIndex: 800, transition: "transform .15s" }}
-          onMouseOver={(e:any) => e.currentTarget.style.transform="scale(1.08)"}
-          onMouseOut={(e:any) => e.currentTarget.style.transform="scale(1)"}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          {(msgs||[]).filter((m:any) => !m.letto).length > 0 && <div style={{ position:"absolute" as const, top:-3, right:-3, width:18, height:18, borderRadius:"50%", background:"#DC4444", color:"#fff", fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", border:"2px solid #fff" }}>{(msgs||[]).filter((m:any) => !m.letto).length > 9 ? "9+" : (msgs||[]).filter((m:any) => !m.letto).length}</div>}
-        </div>
-      )}
-      {talkOpen && (
-        <div style={{ position:"fixed", bottom: isDesktop ? 20 : 80, right: 20, width: 340, height: 460, borderRadius: 16, background: "#fff", boxShadow: "0 8px 40px rgba(0,0,0,.2), 0 0 0 1px #C8E4E4", zIndex: 801, overflow: "hidden", display: "flex", flexDirection: "column" as const }}>
-          <div style={{ background: "#0D1F1F", padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2" width="18" height="18"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 13, color: "#fff", display: "flex", alignItems: "center", gap: 4 }}>Talk <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1A9E73" }} /></div></div>
-            <button onClick={() => { setTab("messaggi"); setTalkOpen(false); }} style={{ background: "none", border: "1px solid rgba(255,255,255,.1)", borderRadius: 4, padding: "2px 8px", color: "rgba(255,255,255,.4)", cursor: "pointer", fontSize: 9, fontWeight: 700, fontFamily: FF }}>Espandi</button>
-            <button onClick={() => setTalkOpen(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,.4)", cursor: "pointer", fontSize: 18, padding: "0 4px", lineHeight: "1" }}>&times;</button>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto" as const, padding: 12, background: "#FAFCFC", fontSize: 12 }}>
-            {(msgs||[]).slice(-20).map((m:any, i:number) => (
-              <div key={i} style={{ marginBottom: 8, padding: "6px 10px", background: m.letto ? "#fff" : "#EEF8F8", borderRadius: 8, border: "1px solid #C8E4E4" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#156060" }}>{m.mittente || m.from || "Sistema"}</div>
-                <div style={{ fontSize: 11, color: "#0D1F1F", marginTop: 2 }}>{m.oggetto || m.text || (m.corpo||"").substring(0,60) || "..."}</div>
-                <div style={{ fontSize: 8, color: "#999", marginTop: 2 }}>{m.data || ""}</div>
-              </div>
-            ))}
-            {(!msgs || !msgs.length) && <div style={{ textAlign: "center" as const, padding: "40px 0", color: "#999", fontSize: 11 }}>Nessun messaggio</div>}
-          </div>
-          <div style={{ padding: "8px 10px", borderTop: "1px solid #C8E4E4", background: "#fff", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <input type="text" placeholder="Messaggio..." style={{ flex: 1, border: "1.5px solid #C8E4E4", borderRadius: 20, padding: "7px 12px", fontSize: 11, fontFamily: FF, outline: "none", background: "#F4F8F8" }}
-              onKeyDown={(e:any) => { if(e.key === "Enter" && e.target.value.trim()) { setMsgs((prev:any) => [...(prev||[]), { id: Date.now(), mittente: "Tu", oggetto: e.target.value, data: new Date().toISOString().split("T")[0], letto: true, canale: "chat" }]); e.target.value = ""; }}}
-              onFocus={(e:any) => e.target.style.borderColor="#28A0A0"} onBlur={(e:any) => e.target.style.borderColor="#C8E4E4"} />
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#28A0A0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, boxShadow: "0 2px 4px rgba(40,160,160,.3)" }}
-              onClick={(e:any) => { const inp = e.currentTarget.previousSibling as HTMLInputElement; if(inp?.value?.trim()) { setMsgs((prev:any) => [...(prev||[]), { id: Date.now(), mittente: "Tu", oggetto: inp.value, data: new Date().toISOString().split("T")[0], letto: true, canale: "chat" }]); inp.value = ""; }}}>
-              <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path d="M2 2l16 8-16 8V11l10-1-10-1V2z"/></svg>
-            </div>
-          </div>
-        </div>
-      )}
-
     </>
     </MastroContext.Provider>
   );
@@ -5493,10 +5349,10 @@ function MastroMisureInner({ user, azienda: aziendaInit }: { user?: any, azienda
 
 
 //  ERROR BOUNDARY WRAPPER 
-export default function MastroMisure() {
+export default function MastroMisure(props: any) {
   return (
     <MastroErrorBoundary>
-      <MastroMisureInner />
+      <MastroMisureInner {...props} />
     </MastroErrorBoundary>
   );
 }
