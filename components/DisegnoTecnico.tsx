@@ -1672,6 +1672,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       cpTop = Math.max(cpTop, hMidY);
                                     }
                                   });
+                                  document.title = `POLY cpT=${cpTop.toFixed(0)} cpB=${cpBot.toFixed(0)} subs=${horzSubEls.length} ${horzSubEls.map(h=>`${h.subType||"?"}@y=${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
                                   cellPoly = [
                                     [cellPoly[0][0], cpTop],
                                     [cellPoly[1][0], cpTop],
