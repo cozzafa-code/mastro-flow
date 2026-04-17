@@ -2023,8 +2023,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // FIX: smart search si attiva SOLO se il click e\' DENTRO o molto vicino
                                   // al bounding box dell'anta (padding 30px). Se clicchi sul telaio lontano,
                                   // salta lo smart search e procede col flusso normale (primo click telaio).
-                                  const NEAR_PAD = _isTouchDev ? 40 : 20;
-                                  const MAX_DIST = _isTouchDev ? 80 : 50;
+                                  const NEAR_PAD = _isTouchDev ? 80 : 30;
+                                  const MAX_DIST = _isTouchDev ? 250 : 150;
                                   type Candidate = { anta: any, side: string, dist: number };
                                   let bestCand: Candidate | null = null;
                                   let bestD = MAX_DIST;
@@ -3523,10 +3523,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const ext2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Per orizzontali: bordo basso polygon = el.y1
+                                      // Per orizzontali: bordo superiore polygon = el.y1 (filo bordo interno anta).
+                                      // FIX FLUSH: polygon disegnato SOTTO la linea (da el.y1 a el.y1+halfT*2),
+                                      // invece del vecchio offset TK_FRAME che lasciava ~6px di gap.
                                       if (isHorzEl && !isPartOfPoly) {
-                                        ey1 = el.y1 - halfT + TK_FRAME;
-                                        ey2 = el.y2 - halfT + TK_FRAME;
+                                        ey1 = el.y1 + halfT;
+                                        ey2 = el.y2 + halfT;
                                       }
                                       // Taglio 45° sul profilo freeLine orizzontale
                                       const flCorners = el.corners || [];
