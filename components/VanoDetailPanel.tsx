@@ -1827,14 +1827,17 @@ export default function VanoDetailPanel() {
               {/* Modal DisegnoTecnico — forma finestra */}
               {showDisegno && (
                 <div style={{ position:"fixed", inset:0, zIndex:9000, background:"rgba(0,0,0,0.7)",
-                  display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  <div style={{ width:"calc(100vw - 8px)", height:"calc(100vh - 8px)",
-                    background:"#fff", borderRadius:14, display:"flex", flexDirection:"column", overflow:"hidden" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
-                      borderBottom:"1px solid #eee", flexShrink:0 }}>
-                      <span style={{ fontWeight:700, fontSize:13, flex:1 }}>📐 Disegno tecnico — {v.nome}</span>
-                      <button onClick={()=>setShowDisegno(false)} style={{ background:"#eee", border:"none",
-                        borderRadius:8, padding:"4px 12px", cursor:"pointer", fontSize:12, fontWeight:700 }}>✕ Chiudi</button>
+                  display:"flex", alignItems:"stretch", justifyContent:"center",
+                  paddingTop:"env(safe-area-inset-top, 0px)",
+                  paddingBottom:"env(safe-area-inset-bottom, 0px)" }}>
+                  <div style={{ width:"100vw", height:"100%",
+                    background:"#fff", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px",
+                      borderBottom:"1px solid #eee", flexShrink:0, background:"#1A9E7310" }}>
+                      <span style={{ fontWeight:700, fontSize:13, flex:1, color:"#1A9E73" }}>📐 Disegno — {v.nome}</span>
+                      <button onClick={()=>setShowDisegno(false)} style={{ background:"#DC4444", border:"none",
+                        borderRadius:10, padding:"10px 18px", cursor:"pointer", fontSize:14, fontWeight:800, color:"#fff",
+                        minWidth:88, minHeight:40 }}>✕ Chiudi</button>
                     </div>
                     <div style={{ flex:1, overflow:"hidden" }}>
                       <DisegnoTecnico

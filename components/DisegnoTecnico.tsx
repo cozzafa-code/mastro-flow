@@ -945,8 +945,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const GRID = 1; // movimento fluido al pixel
                             // Touch detection: dita richiedono raggio molto piu' grande del mouse
                             const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
-                            // Base: 90 su touch (pollice tipico copre ~80-100px), 28 mouse. Diviso per zoom.
-                            const SNAP_R = (_isTouch ? 90 : 28) / Math.max(0.4, (dw._zoom || 1));
+                            // Base: 120 su touch (pollice + imprecisione), 28 mouse. Diviso per zoom.
+                            const SNAP_R = (_isTouch ? 120 : 28) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -1257,7 +1257,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              const ANTA_SNAP_R = (_isTouch ? 140 : 60) / Math.max(0.4, (dw._zoom || 1)); // molto ampio su touch per dita
+                              const ANTA_SNAP_R = (_isTouch ? 200 : 60) / Math.max(0.4, (dw._zoom || 1)); // raggio gigante su touch
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
                               // FIX: in profileMode cerca SOLO tra i punti _antaSnap — MAI sul telaio.
                               // Altrimenti il telaio che tocca i bordi dell'anta vince per distanza.
@@ -1925,57 +1925,55 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               }
 
                               // Line / apertura draw modes
-                              // ═══ AGGANCIO AUTOMATICO: click su lato anta vuoto crea freeLine esatta ═══
+                              // ═══ AGGANCIO AUTOMATICO INTELLIGENTE: click vicino a lato hidden crea freeLine esatta ═══
                               if (drawMode === "line" && dw._lineSubType && !dw._pendingLine) {
                                 const profileSub = dw._lineSubType;
                                 if (["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(profileSub)) {
-                                  // Cerca un'anta il cui lato hidden contiene il click
                                   const TK_anta = (a: any) => a.subType === "porta" ? TK_PORTA : TK_ANTA;
-                                  // Touch = zone piu' grandi per dita
                                   const _isTouchDev = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
-                                  const TOL = _isTouchDev ? 80 : 30;
-                                  const FRAC = _isTouchDev ? 0.5 : 0.3;
-                                  const antaFound = els.find((e: any) => {
-                                    if (e.type !== "innerRect") return false;
+                                  // SMART SEARCH: per ogni anta con lati hidden, calcolo distanza dal click
+                                  // al bordo del lato hidden piu' vicino. Vince l'anta+lato a distanza minima.
+                                  // Raggio massimo: 250px su touch, 150px mouse. Copre quasi tutto lo schermo anta.
+                                  const MAX_DIST = _isTouchDev ? 250 : 150;
+                                  type Candidate = { anta: any, side: string, dist: number };
+                                  let bestCand: Candidate | null = null;
+                                  let bestD = MAX_DIST;
+                                  els.forEach((e: any) => {
+                                    if (e.type !== "innerRect") return;
                                     const hidden = e.hiddenSides || [];
-                                    if (hidden.length === 0) return false;
-                                    const sidesZone: any = {
-                                      top: { x: e.x - TOL, y: e.y - TOL, w: e.w + TOL*2, h: e.h * FRAC + TOL },
-                                      bot: { x: e.x - TOL, y: e.y + e.h * (1-FRAC), w: e.w + TOL*2, h: e.h * FRAC + TOL },
-                                      left: { x: e.x - TOL, y: e.y - TOL, w: e.w * FRAC + TOL, h: e.h + TOL*2 },
-                                      right: { x: e.x + e.w * (1-FRAC), y: e.y - TOL, w: e.w * FRAC + TOL, h: e.h + TOL*2 }
-                                    };
-                                    return hidden.some((side: string) => {
-                                      const r = sidesZone[side];
-                                      if (!r) return false;
-                                      return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+                                    if (hidden.length === 0) return;
+                                    const TKh = TK_anta(e);
+                                    // Per ogni lato hidden: calcolo la distanza del click dal bordo INTERNO di quel lato
+                                    // (la linea dove finirebbe il profilo)
+                                    hidden.forEach((side: string) => {
+                                      let dist: number;
+                                      if (side === "top") {
+                                        const y = e.y + TKh;
+                                        const cx = Math.max(e.x, Math.min(e.x + e.w, mx));
+                                        dist = Math.hypot(cx - mx, y - my);
+                                      } else if (side === "bot") {
+                                        const y = e.y + e.h - TKh;
+                                        const cx = Math.max(e.x, Math.min(e.x + e.w, mx));
+                                        dist = Math.hypot(cx - mx, y - my);
+                                      } else if (side === "left") {
+                                        const x = e.x + TKh;
+                                        const cy = Math.max(e.y, Math.min(e.y + e.h, my));
+                                        dist = Math.hypot(x - mx, cy - my);
+                                      } else { // right
+                                        const x = e.x + e.w - TKh;
+                                        const cy = Math.max(e.y, Math.min(e.y + e.h, my));
+                                        dist = Math.hypot(x - mx, cy - my);
+                                      }
+                                      if (dist < bestD) { bestD = dist; bestCand = { anta: e, side, dist }; }
                                     });
                                   });
-                                  if (antaFound) {
+                                  if (bestCand) {
+                                    const antaFound: any = (bestCand as any).anta;
+                                    const clickedSide: string = (bestCand as any).side;
                                     const hidden = antaFound.hiddenSides || [];
                                     const TK = TK_anta(antaFound);
-                                    const sides: any = {
-                                      top: { x: antaFound.x, y: antaFound.y, w: antaFound.w, h: TK },
-                                      bot: { x: antaFound.x, y: antaFound.y + antaFound.h - TK, w: antaFound.w, h: TK },
-                                      left: { x: antaFound.x, y: antaFound.y + TK, w: TK, h: Math.max(0, antaFound.h - TK*2) },
-                                      right: { x: antaFound.x + antaFound.w - TK, y: antaFound.y + TK, w: TK, h: Math.max(0, antaFound.h - TK*2) }
-                                    };
-                                    // Trova quale lato hidden è stato cliccato (stessa tolleranza di sopra)
-                                    const zonesForClicked: any = {
-                                      top: { x: antaFound.x - TOL, y: antaFound.y - TOL, w: antaFound.w + TOL*2, h: antaFound.h * FRAC + TOL },
-                                      bot: { x: antaFound.x - TOL, y: antaFound.y + antaFound.h * (1-FRAC), w: antaFound.w + TOL*2, h: antaFound.h * FRAC + TOL },
-                                      left: { x: antaFound.x - TOL, y: antaFound.y - TOL, w: antaFound.w * FRAC + TOL, h: antaFound.h + TOL*2 },
-                                      right: { x: antaFound.x + antaFound.w * (1-FRAC), y: antaFound.y - TOL, w: antaFound.w * FRAC + TOL, h: antaFound.h + TOL*2 }
-                                    };
-                                    const clickedSide = hidden.find((side: string) => {
-                                      const r = zonesForClicked[side];
-                                      if (!r) return false;
-                                      return mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
-                                    });
-                                    if (clickedSide) {
-                                      const r = sides[clickedSide];
+                                    {
                                       // Offset dai lati ADIACENTI ancora presenti (non hidden)
-                                      // Per top/bot: offset sx/dx. Per left/right: offset top/bot.
                                       const offLeft = hidden.includes("left") ? 0 : TK;
                                       const offRight = hidden.includes("right") ? 0 : TK;
                                       const offTop = hidden.includes("top") ? 0 : TK;
@@ -2470,12 +2468,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   margin: 0,
                                 } : {})
                               }}>
-                                {/* Header */}
-                                <div style={{ padding: "8px 12px", background: `${"#1A9E73"}10`, display: "flex", alignItems: "center", gap: 8 }}>
-                                  <span style={{ fontSize: 14 }}>✏️</span>
-                                  <span style={{ fontSize: 12, fontWeight: 800, color: "#1A9E73", flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
-                                  <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
-                                </div>
+                                {/* Header - solo desktop (su mobile il modal esterno ha gia il suo header) */}
+                                {!_isMobile && (
+                                  <div style={{ padding: "8px 12px", background: `${"#1A9E73"}10`, display: "flex", alignItems: "center", gap: 8 }}>
+                                    <span style={{ fontSize: 14 }}>✏️</span>
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: "#1A9E73", flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
+                                    <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
+                                  </div>
+                                )}
 
                                 {/* ═══ TAB BAR ═══ */}
                                 <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}` }}>
