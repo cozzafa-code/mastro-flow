@@ -1209,13 +1209,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               });
                               // ── SNAP esteso: spazio tra 2+ ante con stesso lato hidden allineato ──
                               // Esempio: 2 ante affiancate con lato "bot" eliminato → zoccolo deve passare anche nello spazio centrale
-                              const pushAG = (p: any) => pts.push({ ...p, _antaSnap: true });
+                              // FIX: pushAG ora porta anche _antaOri (H/V) così il secondo click forza l'allineamento rigido
+                              const pushAG = (p: any, ori: string) => pts.push({ ...p, _antaSnap: true, _antaOri: ori });
                               const antasWithHidden = els.filter(e => e.type === "innerRect" && (e.hiddenSides || []).length > 0);
                               ["top", "bot"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
                                 // Raggruppa per Y allineata (tolleranza 5px)
-                                const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA : a.y + a.h - tkA; };
+                                const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA + 2 : a.y + a.h - tkA + 2; };
                                 const sorted = [...group].sort((a,b) => a.x - b.x);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
@@ -1224,15 +1225,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const y = (y1 + y2) / 2;
                                   const xStart = a1.x + a1.w, xEnd = a2.x;
                                   if (xEnd <= xStart) continue;
-                                  // Punti lungo lo spazio tra le due ante
-                                  pushAG({x: xStart, y}); pushAG({x: xEnd, y}); pushAG({x: (xStart+xEnd)/2, y});
-                                  for (let d = 0; d <= (xEnd-xStart); d += GRID) pushAG({x: xStart+d, y});
+                                  // Punti lungo lo spazio tra le due ante (orizzontale → _antaOri="H")
+                                  pushAG({x: xStart, y}, "H"); pushAG({x: xEnd, y}, "H"); pushAG({x: (xStart+xEnd)/2, y}, "H");
+                                  for (let d = 0; d <= (xEnd-xStart); d += GRID) pushAG({x: xStart+d, y}, "H");
                                 }
                               });
                               ["left", "right"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA : a.x + a.w - tkA; };
+                                const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA + 2 : a.x + a.w - tkA + 2; };
                                 const sorted = [...group].sort((a,b) => a.y - b.y);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
@@ -1241,8 +1242,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const x = (x1 + x2) / 2;
                                   const yStart = a1.y + a1.h, yEnd = a2.y;
                                   if (yEnd <= yStart) continue;
-                                  pushAG({x, y: yStart}); pushAG({x, y: yEnd}); pushAG({x, y: (yStart+yEnd)/2});
-                                  for (let d = 0; d <= (yEnd-yStart); d += GRID) pushAG({x, y: yStart+d});
+                                  // Verticale → _antaOri="V"
+                                  pushAG({x, y: yStart}, "V"); pushAG({x, y: yEnd}, "V"); pushAG({x, y: (yStart+yEnd)/2}, "V");
+                                  for (let d = 0; d <= (yEnd-yStart); d += GRID) pushAG({x, y: yStart+d}, "V");
                                 }
                               });
                               return pts;
@@ -1255,12 +1257,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               let best = null, bestD = SNAP_R;
                               const ANTA_SNAP_R = 40; // raggio snap per lati ante eliminati (solo in drawMode profilo)
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
-                              pts.forEach(p => {
-                                if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
-                                const d = Math.hypot(p.x - mx, p.y - my);
-                                const rad = (p._antaSnap && isProfileMode) ? ANTA_SNAP_R : SNAP_R;
-                                if (d < rad && d < bestD) { bestD = d; best = p; }
-                              });
+                              // FIX: in profileMode, i punti _antaSnap hanno PRIORITA' ASSOLUTA.
+                              // Prima passo: cerco solo tra i punti _antaSnap con raggio esteso. Se trovo, vince.
+                              if (isProfileMode) {
+                                let bestAnta = null, bestAntaD = ANTA_SNAP_R;
+                                pts.forEach(p => {
+                                  if (!p._antaSnap) return;
+                                  if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
+                                  const d = Math.hypot(p.x - mx, p.y - my);
+                                  if (d < bestAntaD) { bestAntaD = d; bestAnta = p; }
+                                });
+                                if (bestAnta) { best = bestAnta; bestD = bestAntaD; }
+                              }
+                              // Secondo passo: fallback su punti normali solo se nessun anta ha matchato
+                              if (!best) {
+                                pts.forEach(p => {
+                                  if (p._antaSnap) return; // già valutati sopra
+                                  if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
+                                  const d = Math.hypot(p.x - mx, p.y - my);
+                                  if (d < SNAP_R && d < bestD) { bestD = d; best = p; }
+                                });
+                              }
                               // Snap al chainStart (chiusura forma) solo se ≥3 segmenti e non montante/traverso
                               if (canClose && chainStart && !dw._lineSubType) {
                                 const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
@@ -1294,7 +1311,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (dx < alignDX) { alignDX = dx; alignX = p.x; }
                               });
                               // Applica allineamento al risultato
-                              if (alignY !== null || alignX !== null) {
+                              // FIX: se best e' un punto anta (_antaSnap), NON sovrascrivere — preserva flag e orientamento
+                              if ((alignY !== null || alignX !== null) && !(best && best._antaSnap)) {
                                 const rx = alignX !== null ? alignX : (best ? best.x : mx);
                                 const ry = alignY !== null ? alignY : (best ? best.y : my);
                                 best = { x: rx, y: ry };
