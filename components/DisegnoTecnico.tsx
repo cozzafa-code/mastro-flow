@@ -1337,7 +1337,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const pts = getSnapPoints();
                               const chainStart = dw._chainStart;
                               const freeLines = els.filter(e => e.type === "freeLine");
-                              const canClose = freeLines.length >= 3;
+                              const canClose = freeLines.filter(l => !l.subType).length >= 3;
                               let best = null, bestD = SNAP_R;
                               const ANTA_SNAP_R = (_isTouch ? 200 : 60) / Math.max(0.4, (dw._zoom || 1)); // raggio gigante su touch
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
@@ -2250,7 +2250,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     else if (adyC < HV_TOL && adxC > adyC) py=pending.y1; // orizzontale: forza Y uguale
                                     // chiusura forma — solo se click DAVVERO sul primo punto e 3+ lati gia piazzati
                                     if (!subTypeVal) {
-                                      const freeLines = els.filter(e=>e.type==="freeLine");
+                                      const freeLines = els.filter(e=>e.type==="freeLine" && !e.subType);
                                       const CLOSE_R2 = _isTouch ? 45 : 30;
                                       if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<CLOSE_R2) { px=cs.x; py=cs.y; }
                                     }
