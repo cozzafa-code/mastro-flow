@@ -505,9 +505,17 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // Responsive width
   const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 430);
+  // Device touch detection: iPad/tablet/phone → sempre mobile, anche se innerWidth >= 1024
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   useEffect(() => {
     const h = () => setWinW(window.innerWidth);
     window.addEventListener("resize", h);
+    // Touch detection: qualsiasi device con supporto touch (tablet, smartphone, iPad Pro, Surface)
+    // Combiniamo 3 segnali per robustezza: pointer coarse + ontouchstart + maxTouchPoints
+    try {
+      const hasTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0) || window.matchMedia("(pointer: coarse)").matches;
+      setIsTouchDevice(!!hasTouch);
+    } catch { setIsTouchDevice(false); }
     return () => window.removeEventListener("resize", h);
   }, []);
 
@@ -730,7 +738,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // Check Gmail on mount
   useEffect(() => { gmailCheckStatus(); }, []);
   const isTablet = winW >= 768;
-  const isDesktop = forceDesktop ? true : forceMobile ? false : winW >= 1024;
+  // FIX: desktop solo se NON e' un device touch. Tablet/iPad/phone → sempre mobile anche se widescreen
+  const isDesktop = forceDesktop ? true : forceMobile ? false : (winW >= 1024 && !isTouchDevice);
 
   const goBack = () => {
     if (homeView) { setHomeView(null); return; }
