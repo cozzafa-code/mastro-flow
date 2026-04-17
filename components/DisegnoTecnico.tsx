@@ -2468,7 +2468,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 borderRadius: window.innerWidth > 768 ? 12 : 0,
                                 border: window.innerWidth > 768 ? `1.5px solid ${"#1A9E73"}` : "none",
                                 overflow: "hidden",
-                                // Mobile: posizione fissa fullscreen
+                                // Mobile: posizione fissa fullscreen con safe-area per Dynamic Island
                                 ...(window.innerWidth <= 768 ? {
                                   position: "fixed" as const,
                                   top: 0, left: 0, right: 0, bottom: 0,
@@ -2478,6 +2478,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   overflow: "hidden",
                                   borderRadius: 0,
                                   margin: 0,
+                                  paddingTop: "env(safe-area-inset-top, 0px)",
+                                  paddingBottom: "env(safe-area-inset-bottom, 0px)",
+                                  background: "#fff",
                                 } : {})
                               }}>
                                 {/* Header - solo desktop (su mobile il modal esterno ha gia il suo header) */}
@@ -2486,6 +2489,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <span style={{ fontSize: 14 }}>✏️</span>
                                     <span style={{ fontSize: 12, fontWeight: 800, color: "#1A9E73", flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
                                     <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
+                                  </div>
+                                )}
+                                {/* Header mobile: X rossa + titolo sotto la safe-area */}
+                                {_isMobile && (
+                                  <div style={{ padding: "8px 12px", background: "#1A9E73", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", flex: 1 }}>✏️ Disegno {vanoNome ? `— ${vanoNome}` : ""}</span>
+                                    <button onClick={() => onClose()} style={{ background: "#DC4444", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 14, fontWeight: 800, color: "#fff", minWidth: 72, minHeight: 36 }}>✕ Chiudi</button>
                                   </div>
                                 )}
 
