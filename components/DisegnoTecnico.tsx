@@ -1120,13 +1120,34 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // ══ Snap points ══
                             const getSnapPoints = () => {
                               const pts = [];
-                              // Frame: angoli + mezzerie + bordi continui
+                              // Frame: angoli + mezzerie + bordi continui (ESTERNO + INTERNO)
                               frames.forEach(fr => {
                                 const fx = fr.x, fy = fr.y, fw = fr.w, fh2 = fr.h;
+                                // Angoli esterni
                                 pts.push({x:fx,y:fy},{x:fx+fw,y:fy},{x:fx,y:fy+fh2},{x:fx+fw,y:fy+fh2});
+                                // Mezzerie bordi esterni
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
+                                // Bordi esterni continui ogni 10px
                                 for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
                                 for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
+                                // ── NUOVO: BORDO INTERNO del telaio (dove si aggancia lo zoccolo/soglia al telaio) ──
+                                // Lati interni a filo TK_FRAME dall'esterno
+                                // Flag _antaSnap + _antaOri anche qui, cosi' profileMode (zoccolo/soglia) li vede.
+                                const ix1 = fx + TK_FRAME, ix2 = fx + fw - TK_FRAME;
+                                const iy1 = fy + TK_FRAME, iy2 = fy + fh2 - TK_FRAME;
+                                // 4 angoli interni (senza _antaSnap, per snap generale)
+                                pts.push({x:ix1,y:iy1},{x:ix2,y:iy1},{x:ix1,y:iy2},{x:ix2,y:iy2});
+                                // Bordi interni continui ogni 2px, con flag _antaSnap per attivarsi in profileMode
+                                // Top (ori H) e Bot (ori H): per soglia/zoccolo orizzontali
+                                for (let xx = ix1; xx <= ix2; xx += 2) {
+                                  pts.push({x:xx, y:iy1, _antaSnap:true, _antaOri:"H"});
+                                  pts.push({x:xx, y:iy2, _antaSnap:true, _antaOri:"H"});
+                                }
+                                // Left (ori V) e Right (ori V): per profili verticali
+                                for (let yy = iy1; yy <= iy2; yy += 2) {
+                                  pts.push({x:ix1, y:yy, _antaSnap:true, _antaOri:"V"});
+                                  pts.push({x:ix2, y:yy, _antaSnap:true, _antaOri:"V"});
+                                }
                               });
                               // Celle
                               cells.forEach(c2 => {
@@ -1139,6 +1160,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 pts.push({x:m.x, y:my1},{x:m.x, y:my2},{x:m.x, y:(my1+my2)/2});
                                 // Snap lungo tutto il montante (ogni GRID pixel)
                                 for (let y = my1 + GRID; y < my2; y += GRID) pts.push({x:m.x, y});
+                                // NUOVO: bordi laterali del montante (a sinistra e destra dello spessore)
+                                const mxL = m.x - TK_MONT/2, mxR = m.x + TK_MONT/2;
+                                for (let yy = my1; yy <= my2; yy += GRID) { pts.push({x:mxL, y:yy}); pts.push({x:mxR, y:yy}); }
                               });
                               // Traversi — bordi superiore e inferiore + centro
                               els.filter(e => e.type === "traverso").forEach(t => {
@@ -1162,6 +1186,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const mx2 = (l.x1+l.x2)/2, my2 = (l.y1+l.y2)/2;
                                 // Estremità e centro sulla linea
                                 pts.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2},{x:mx2,y:my2});
+                                // NUOVO: punti ogni GRID lungo la freeLine (per snap di altri profili ad essa)
+                                {
+                                  const lenL = Math.hypot(l.x2-l.x1, l.y2-l.y1);
+                                  if (lenL > GRID) {
+                                    const uxL = (l.x2-l.x1)/lenL, uyL = (l.y2-l.y1)/lenL;
+                                    for (let d = GRID; d < lenL; d += GRID) pts.push({x:l.x1+uxL*d, y:l.y1+uyL*d});
+                                  }
+                                }
                                 if (isHz) {
                                   // Bordo superiore renderizzato: ey1 = l.y1 - hT + TK_FRAME
                                   const yTop = l.y1 - hT + TK_FRAME;
@@ -1976,11 +2008,56 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (dist < bestD) { bestD = dist; bestCand = { anta: e, side, dist }; }
                                     });
                                   });
+                                  // ── FALLBACK TELAIO: se nessuna anta ha vinto, considera il TELAIO come pseudo-anta ──
+                                  // Il telaio ha tutti e 4 i lati "hidden" (vuoti all'interno), quindi zoccolo/soglia/
+                                  // profili si agganciano al bordo interno del telaio quando si clicca vicino.
+                                  if (!bestCand) {
+                                    const frameEl = els.find((e: any) => e.type === "rect");
+                                    if (frameEl) {
+                                      const fr = frameEl;
+                                      // Gate: click dentro/vicino al telaio
+                                      const frInBox = mx >= fr.x - NEAR_PAD && mx <= fr.x + fr.w + NEAR_PAD
+                                                    && my >= fr.y - NEAR_PAD && my <= fr.y + fr.h + NEAR_PAD;
+                                      if (frInBox) {
+                                        const TKf = TK_FRAME;
+                                        const sides4 = ["top","bot","left","right"];
+                                        sides4.forEach((side: string) => {
+                                          let dist: number;
+                                          if (side === "top") {
+                                            const y = fr.y + TKf;
+                                            const cx = Math.max(fr.x, Math.min(fr.x + fr.w, mx));
+                                            dist = Math.hypot(cx - mx, y - my);
+                                          } else if (side === "bot") {
+                                            const y = fr.y + fr.h - TKf;
+                                            const cx = Math.max(fr.x, Math.min(fr.x + fr.w, mx));
+                                            dist = Math.hypot(cx - mx, y - my);
+                                          } else if (side === "left") {
+                                            const x = fr.x + TKf;
+                                            const cy = Math.max(fr.y, Math.min(fr.y + fr.h, my));
+                                            dist = Math.hypot(x - mx, cy - my);
+                                          } else {
+                                            const x = fr.x + fr.w - TKf;
+                                            const cy = Math.max(fr.y, Math.min(fr.y + fr.h, my));
+                                            dist = Math.hypot(x - mx, cy - my);
+                                          }
+                                          if (dist < bestD) {
+                                            bestD = dist;
+                                            // Pseudo-anta: uso oggetto con stessi campi x/y/w/h e hiddenSides=[all]
+                                            bestCand = {
+                                              anta: { x: fr.x, y: fr.y, w: fr.w, h: fr.h, hiddenSides: sides4, _isFrame: true, subType: null },
+                                              side, dist
+                                            };
+                                          }
+                                        });
+                                      }
+                                    }
+                                  }
                                   if (bestCand) {
                                     const antaFound: any = (bestCand as any).anta;
                                     const clickedSide: string = (bestCand as any).side;
                                     const hidden = antaFound.hiddenSides || [];
-                                    const TK = TK_anta(antaFound);
+                                    // TK_FRAME per il telaio (pseudo-anta), TK_ANTA/TK_PORTA per le ante vere
+                                    const TK = antaFound._isFrame ? TK_FRAME : TK_anta(antaFound);
                                     {
                                       // Offset dai lati ADIACENTI ancora presenti (non hidden)
                                       const offLeft = hidden.includes("left") ? 0 : TK;
