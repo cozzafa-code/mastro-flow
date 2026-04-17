@@ -1289,7 +1289,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              const ANTA_SNAP_R = (_isTouch ? 200 : 60) / Math.max(0.4, (dw._zoom || 1)); // raggio gigante su touch
+                              const ANTA_SNAP_R = (_isTouch ? 50 : 60) / Math.max(0.4, (dw._zoom || 1)); // raggio ridotto su touch per stabilità
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
                               // FIX: in profileMode cerca SOLO tra i punti _antaSnap — MAI sul telaio.
                               // Altrimenti il telaio che tocca i bordi dell'anta vince per distanza.
