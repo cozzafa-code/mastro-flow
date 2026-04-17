@@ -1181,29 +1181,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const offRight = hid.includes("right") ? 0 : TK;
                                 const offTop = hid.includes("top") ? 0 : TK;
                                 const offBot = hid.includes("bot") ? 0 : TK;
-                                const pushA = (p: any) => pts.push({ ...p, _antaSnap: true });
                                 const pushAO = (p: any, ori: string) => pts.push({ ...p, _antaSnap: true, _antaOri: ori });
+                                // DENSO: snap ogni 2px sull\'intero bordo interno del lato hidden
+                                // FIX segni: offset +2 verso l\'INTERNO dell\'anta (bot/right usano -2, non +2)
+                                const STEP = 2;
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
-                                    const y = a.y + TK + 2;
+                                    const y = a.y + TK + 2; // dentro l\'anta verso giù
                                     const x1 = a.x + offLeft - 2, x2 = a.x + a.w - offRight + 2;
-                                    pushAO({x: x1, y}, "H"); pushAO({x: x2, y}, "H"); pushAO({x: (x1+x2)/2, y}, "H");
-                                    for (let d = GRID; d < (x2-x1); d += GRID) pushAO({x: x1+d, y}, "H");
+                                    for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
                                   } else if (side === "bot") {
-                                    const y = a.y + a.h - TK + 2;
+                                    const y = a.y + a.h - TK - 2; // FIX: dentro l\'anta verso su (prima era +2 = fuori)
                                     const x1 = a.x + offLeft - 2, x2 = a.x + a.w - offRight + 2;
-                                    pushAO({x: x1, y}, "H"); pushAO({x: x2, y}, "H"); pushAO({x: (x1+x2)/2, y}, "H");
-                                    for (let d = GRID; d < (x2-x1); d += GRID) pushAO({x: x1+d, y}, "H");
+                                    for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
                                   } else if (side === "left") {
-                                    const x = a.x + TK + 2;
+                                    const x = a.x + TK + 2; // dentro l\'anta verso destra
                                     const y1 = a.y + offTop - 2, y2 = a.y + a.h - offBot + 2;
-                                    pushAO({x, y: y1}, "V"); pushAO({x, y: y2}, "V"); pushAO({x, y: (y1+y2)/2}, "V");
-                                    for (let d = GRID; d < (y2-y1); d += GRID) pushAO({x, y: y1+d}, "V");
+                                    for (let yy = y1; yy <= y2; yy += STEP) pushAO({x, y: yy}, "V");
                                   } else if (side === "right") {
-                                    const x = a.x + a.w - TK + 2;
+                                    const x = a.x + a.w - TK - 2; // FIX: dentro l\'anta verso sinistra (prima era +2 = fuori)
                                     const y1 = a.y + offTop - 2, y2 = a.y + a.h - offBot + 2;
-                                    pushAO({x, y: y1}, "V"); pushAO({x, y: y2}, "V"); pushAO({x, y: (y1+y2)/2}, "V");
-                                    for (let d = GRID; d < (y2-y1); d += GRID) pushAO({x, y: y1+d}, "V");
+                                    for (let yy = y1; yy <= y2; yy += STEP) pushAO({x, y: yy}, "V");
                                   }
                                 });
                               });
@@ -1215,25 +1213,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               ["top", "bot"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                // Raggruppa per Y allineata (tolleranza 5px)
-                                const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA + 2 : a.y + a.h - tkA + 2; };
+                                // FIX segni: top = +TK+2, bot = -TK-2 (dentro l\'anta)
+                                const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA + 2 : a.y + a.h - tkA - 2; };
                                 const sorted = [...group].sort((a,b) => a.x - b.x);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
                                   const y1 = getY(a1), y2 = getY(a2);
-                                  if (Math.abs(y1 - y2) > 5) continue; // non allineate
+                                  if (Math.abs(y1 - y2) > 5) continue;
                                   const y = (y1 + y2) / 2;
                                   const xStart = a1.x + a1.w, xEnd = a2.x;
                                   if (xEnd <= xStart) continue;
-                                  // Punti lungo lo spazio tra le due ante (orizzontale → _antaOri="H")
-                                  pushAG({x: xStart, y}, "H"); pushAG({x: xEnd, y}, "H"); pushAG({x: (xStart+xEnd)/2, y}, "H");
-                                  for (let d = 0; d <= (xEnd-xStart); d += GRID) pushAG({x: xStart+d, y}, "H");
+                                  // Denso ogni 2px
+                                  for (let xx = xStart; xx <= xEnd; xx += 2) pushAG({x: xx, y}, "H");
                                 }
                               });
                               ["left", "right"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA + 2 : a.x + a.w - tkA + 2; };
+                                // FIX segni: left = +TK+2, right = -TK-2 (dentro l\'anta)
+                                const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA + 2 : a.x + a.w - tkA - 2; };
                                 const sorted = [...group].sort((a,b) => a.y - b.y);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
@@ -1242,9 +1240,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const x = (x1 + x2) / 2;
                                   const yStart = a1.y + a1.h, yEnd = a2.y;
                                   if (yEnd <= yStart) continue;
-                                  // Verticale → _antaOri="V"
-                                  pushAG({x, y: yStart}, "V"); pushAG({x, y: yEnd}, "V"); pushAG({x, y: (yStart+yEnd)/2}, "V");
-                                  for (let d = 0; d <= (yEnd-yStart); d += GRID) pushAG({x, y: yStart+d}, "V");
+                                  for (let yy = yStart; yy <= yEnd; yy += 2) pushAG({x, y: yy}, "V");
                                 }
                               });
                               return pts;
@@ -1257,8 +1253,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               let best = null, bestD = SNAP_R;
                               const ANTA_SNAP_R = 60; // raggio snap per lati ante eliminati (domina su vertici telaio)
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
-                              // FIX: in profileMode, i punti _antaSnap hanno PRIORITA' ASSOLUTA.
-                              // Prima passo: cerco solo tra i punti _antaSnap con raggio esteso. Se trovo, vince.
+                              // FIX: in profileMode cerca SOLO tra i punti _antaSnap — MAI sul telaio.
+                              // Altrimenti il telaio che tocca i bordi dell'anta vince per distanza.
                               if (isProfileMode) {
                                 let bestAnta = null, bestAntaD = ANTA_SNAP_R;
                                 pts.forEach(p => {
@@ -1268,11 +1264,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   if (d < bestAntaD) { bestAntaD = d; bestAnta = p; }
                                 });
                                 if (bestAnta) { best = bestAnta; bestD = bestAntaD; }
-                              }
-                              // Secondo passo: fallback su punti normali solo se nessun anta ha matchato
-                              if (!best) {
+                                // In profileMode NIENTE fallback sul telaio: se l'utente non e' sull'anta non snappa
+                              } else {
+                                // Modalita' non-profilo: snap normale su tutti i punti
                                 pts.forEach(p => {
-                                  if (p._antaSnap) return; // già valutati sopra
                                   if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
                                   const d = Math.hypot(p.x - mx, p.y - my);
                                   if (d < SNAP_R && d < bestD) { bestD = d; best = p; }
