@@ -2100,16 +2100,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Telaio libero / altri: snap normale
                                   else {
                                     const sp = findSnap(px, py);
-                                    if (sp) { px = sp.x; py = sp.y; }
-                                    // H/V: forza allineamento anche dopo snap
+                                    // FIX: non accettare snap che coincide con chainStart (primo punto)
+                                    // a meno che il click sia DAVVERO vicinissimo (chiusura forma gestita dopo).
+                                    // Altrimenti su mobile SNAP_R=120 pescava il primo punto da lontano.
+                                    const cs = dw._chainStart;
+                                    const clickNearCS = cs && Math.hypot(px-cs.x, py-cs.y) < (_isTouch ? 40 : 25);
+                                    if (sp) {
+                                      const spIsCS = cs && Math.abs(sp.x - cs.x) < 2 && Math.abs(sp.y - cs.y) < 2;
+                                      if (!spIsCS || clickNearCS) { px = sp.x; py = sp.y; }
+                                    }
+                                    // H/V: forza allineamento anche dopo snap (tolleranza ampia su touch)
+                                    const HV_TOL = _isTouch ? 50 : 25;
                                     const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
-                                    if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
-                                    if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
-                                    // chiusura forma — solo per telaio libero senza subType
-                                    // FIX: raggio chiusura fisso 40px (non SNAP_R+6 che su mobile = 126+)
-                                    // + serve 3 linee gia\' piazzate (non 2), altrimenti il 3 click chiude accidentalmente
+                                    if (adxC < HV_TOL && adyC > adxC) px=pending.x1;      // verticale: forza X uguale
+                                    else if (adyC < HV_TOL && adxC > adyC) py=pending.y1; // orizzontale: forza Y uguale
+                                    // chiusura forma — solo se click DAVVERO sul primo punto e 3+ lati gia piazzati
                                     if (!subTypeVal) {
-                                      const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
                                       const CLOSE_R2 = _isTouch ? 45 : 30;
                                       if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<CLOSE_R2) { px=cs.x; py=cs.y; }
