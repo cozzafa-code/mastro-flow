@@ -1937,7 +1937,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // SMART SEARCH: per ogni anta con lati hidden, calcolo distanza dal click
                                   // al bordo del lato hidden piu' vicino. Vince l'anta+lato a distanza minima.
                                   // Raggio massimo: 250px su touch, 150px mouse. Copre quasi tutto lo schermo anta.
-                                  const MAX_DIST = _isTouchDev ? 250 : 150;
+                                  // FIX: smart search si attiva SOLO se il click e\' DENTRO o molto vicino
+                                  // al bounding box dell'anta (padding 30px). Se clicchi sul telaio lontano,
+                                  // salta lo smart search e procede col flusso normale (primo click telaio).
+                                  const NEAR_PAD = _isTouchDev ? 40 : 20;
+                                  const MAX_DIST = _isTouchDev ? 80 : 50;
                                   type Candidate = { anta: any, side: string, dist: number };
                                   let bestCand: Candidate | null = null;
                                   let bestD = MAX_DIST;
@@ -1945,9 +1949,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (e.type !== "innerRect") return;
                                     const hidden = e.hiddenSides || [];
                                     if (hidden.length === 0) return;
+                                    // GATE: il click deve essere nel bounding box anta espanso di NEAR_PAD
+                                    const inBox = mx >= e.x - NEAR_PAD && mx <= e.x + e.w + NEAR_PAD
+                                                && my >= e.y - NEAR_PAD && my <= e.y + e.h + NEAR_PAD;
+                                    if (!inBox) return;
                                     const TKh = TK_anta(e);
-                                    // Per ogni lato hidden: calcolo la distanza del click dal bordo INTERNO di quel lato
-                                    // (la linea dove finirebbe il profilo)
                                     hidden.forEach((side: string) => {
                                       let dist: number;
                                       if (side === "top") {
