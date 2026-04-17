@@ -1182,25 +1182,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const offTop = hid.includes("top") ? 0 : TK;
                                 const offBot = hid.includes("bot") ? 0 : TK;
                                 const pushAO = (p: any, ori: string) => pts.push({ ...p, _antaSnap: true, _antaOri: ori });
-                                // DENSO: snap ogni 2px sull\'intero bordo interno del lato hidden
-                                // FIX segni: offset +2 verso l\'INTERNO dell\'anta (bot/right usano -2, non +2)
+                                // Snap DENSO ogni 2px a FILO DENTRO l\'anta (bordo interno dove prima c\'era il lato eliminato)
+                                // Nessun offset artificiale: profilo esattamente al TK del lato hidden.
                                 const STEP = 2;
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
-                                    const y = a.y + TK + 2; // dentro l\'anta verso giù
-                                    const x1 = a.x + offLeft - 2, x2 = a.x + a.w - offRight + 2;
+                                    const y = a.y + TK; // filo bordo interno dell\'anta (dove finiva il lato top)
+                                    const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
                                     for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
                                   } else if (side === "bot") {
-                                    const y = a.y + a.h - TK - 2; // FIX: dentro l\'anta verso su (prima era +2 = fuori)
-                                    const x1 = a.x + offLeft - 2, x2 = a.x + a.w - offRight + 2;
+                                    const y = a.y + a.h - TK; // filo bordo interno dell\'anta (verso su)
+                                    const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
                                     for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
                                   } else if (side === "left") {
-                                    const x = a.x + TK + 2; // dentro l\'anta verso destra
-                                    const y1 = a.y + offTop - 2, y2 = a.y + a.h - offBot + 2;
+                                    const x = a.x + TK; // filo bordo interno (verso destra)
+                                    const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
                                     for (let yy = y1; yy <= y2; yy += STEP) pushAO({x, y: yy}, "V");
                                   } else if (side === "right") {
-                                    const x = a.x + a.w - TK - 2; // FIX: dentro l\'anta verso sinistra (prima era +2 = fuori)
-                                    const y1 = a.y + offTop - 2, y2 = a.y + a.h - offBot + 2;
+                                    const x = a.x + a.w - TK; // filo bordo interno (verso sinistra)
+                                    const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
                                     for (let yy = y1; yy <= y2; yy += STEP) pushAO({x, y: yy}, "V");
                                   }
                                 });
@@ -1213,8 +1213,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               ["top", "bot"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                // FIX segni: top = +TK+2, bot = -TK-2 (dentro l\'anta)
-                                const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA + 2 : a.y + a.h - tkA - 2; };
+                                // A filo bordo interno dell\'anta (TK puro, no offset)
+                                const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA : a.y + a.h - tkA; };
                                 const sorted = [...group].sort((a,b) => a.x - b.x);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
@@ -1230,8 +1230,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               ["left", "right"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                // FIX segni: left = +TK+2, right = -TK-2 (dentro l\'anta)
-                                const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA + 2 : a.x + a.w - tkA - 2; };
+                                // A filo bordo interno dell\'anta (TK puro, no offset)
+                                const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA : a.x + a.w - tkA; };
                                 const sorted = [...group].sort((a,b) => a.y - b.y);
                                 for (let i = 0; i < sorted.length - 1; i++) {
                                   const a1 = sorted[i], a2 = sorted[i+1];
@@ -2146,6 +2146,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
+                                  // FIX CRITICO: in profileMode la weld SALTA completamente, altrimenti risnappa
+                                  // il punto anta corretto ai vertici del telaio piu\' vicini (= bug aggancio telaio).
+                                  const skipWeld = subTypeVal && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(subTypeVal);
                                   const WELD2 = SNAP_R;
                                   const buildWeldPts2 = (allEls) => {
                                     const wpts = [];
@@ -2165,14 +2168,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   };
                                   // Snap i punti del NUOVO elemento ai vicini esistenti
                                   let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
-                                  const existingWeldPts = buildWeldPts2(els);
-                                  existingWeldPts.forEach(p => {
-                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
-                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
-                                  });
+                                  if (!skipWeld) {
+                                    const existingWeldPts = buildWeldPts2(els);
+                                    existingWeldPts.forEach(p => {
+                                      if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
+                                      if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
+                                    });
+                                  }
                                   newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
                                   // Snap i freeLine ESISTENTI ai punti del nuovo elemento
-                                  const weldedEls = els.map(x => {
+                                  const weldedEls = skipWeld ? els : els.map(x => {
                                     if (x.x1 === undefined) return x;
                                     let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
                                     if (Math.hypot(nx1-snappedX1, ny1-snappedY1)<WELD2) { nx1=snappedX1; ny1=snappedY1; }
