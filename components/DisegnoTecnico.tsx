@@ -1139,12 +1139,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 pts.push({x:ix1,y:iy1},{x:ix2,y:iy1},{x:ix1,y:iy2},{x:ix2,y:iy2});
                                 // Bordi interni continui ogni 2px, con flag _antaSnap per attivarsi in profileMode
                                 // Top (ori H) e Bot (ori H): per soglia/zoccolo orizzontali
-                                for (let xx = ix1; xx <= ix2; xx += 2) {
+                                for (let xx = ix1; xx <= ix2; xx += 10) {
                                   pts.push({x:xx, y:iy1, _antaSnap:true, _antaOri:"H"});
                                   pts.push({x:xx, y:iy2, _antaSnap:true, _antaOri:"H"});
                                 }
                                 // Left (ori V) e Right (ori V): per profili verticali
-                                for (let yy = iy1; yy <= iy2; yy += 2) {
+                                for (let yy = iy1; yy <= iy2; yy += 10) {
                                   pts.push({x:ix1, y:yy, _antaSnap:true, _antaOri:"V"});
                                   pts.push({x:ix2, y:yy, _antaSnap:true, _antaOri:"V"});
                                 }
@@ -1222,7 +1222,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const pushAO = (p: any, ori: string) => pts.push({ ...p, _antaSnap: true, _antaOri: ori });
                                 // Snap DENSO ogni 2px a FILO DENTRO l'anta (bordo interno dove prima c'era il lato eliminato)
                                 // Nessun offset artificiale: profilo esattamente al TK del lato hidden.
-                                const STEP = 2;
+                                const STEP = 10;
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
                                     const y = a.y + TK; // filo bordo interno dell'anta (dove finiva il lato top)
@@ -1261,8 +1261,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const y = (y1 + y2) / 2;
                                   const xStart = a1.x + a1.w, xEnd = a2.x;
                                   if (xEnd <= xStart) continue;
-                                  // Denso ogni 2px
-                                  for (let xx = xStart; xx <= xEnd; xx += 2) pushAG({x: xx, y}, "H");
+                                  // Step 10px (ridotto da 2 per stabilità touch)
+                                  for (let xx = xStart; xx <= xEnd; xx += 10) pushAG({x: xx, y}, "H");
                                 }
                               });
                               ["left", "right"].forEach(sideKey => {
@@ -1278,7 +1278,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const x = (x1 + x2) / 2;
                                   const yStart = a1.y + a1.h, yEnd = a2.y;
                                   if (yEnd <= yStart) continue;
-                                  for (let yy = yStart; yy <= yEnd; yy += 2) pushAG({x, y: yy}, "V");
+                                  for (let yy = yStart; yy <= yEnd; yy += 10) pushAG({x, y: yy}, "V");
                                 }
                               });
                               return pts;
