@@ -940,7 +940,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const panX = dw._panX || 0, panY = dw._panY || 0;
                             const canvasW = Math.min(window.innerWidth > 768 ? 900 : window.innerWidth - 8, window.innerWidth - 8);
                             const GRID = 1; // movimento fluido al pixel
-                            const SNAP_R = 50;
+                            const SNAP_R = 80;
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
