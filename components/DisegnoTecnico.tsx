@@ -2141,11 +2141,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
                                     // Soglia, zoccolo, fascia, profcomp, tel.libero — snap unificato
+                                    // FIX TOUCH: se findSnap non trova _antaSnap, cerca comunque lo snap generico
+                                    // più vicino (bordo anta, telaio, vertice) così il click si ancora SEMPRE.
                                     const snapPt = findSnap(px, py);
                                     let antaOri = null;
                                     if (snapPt) {
                                       px = snapPt.x; py = snapPt.y;
                                       if (snapPt._antaSnap && snapPt._antaOri) antaOri = snapPt._antaOri;
+                                    } else {
+                                      // Fallback: punto più vicino qualunque (incluso telaio, vertici)
+                                      const allPts = getSnapPoints();
+                                      const FALLBACK_R = _isTouch ? 80 : 30;
+                                      let bestF: any = null, bestDF = FALLBACK_R;
+                                      allPts.forEach((p: any) => {
+                                        const d = Math.hypot(p.x - px, p.y - py);
+                                        if (d < bestDF) { bestDF = d; bestF = p; }
+                                      });
+                                      if (bestF) {
+                                        px = bestF.x; py = bestF.y;
+                                        if (bestF._antaSnap && bestF._antaOri) antaOri = bestF._antaOri;
+                                      }
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal, _antaOri: antaOri }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
