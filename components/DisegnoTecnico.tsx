@@ -1137,17 +1137,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const iy1 = fy + TK_FRAME, iy2 = fy + fh2 - TK_FRAME;
                                 // 4 angoli interni (senza _antaSnap, per snap generale)
                                 pts.push({x:ix1,y:iy1},{x:ix2,y:iy1},{x:ix1,y:iy2},{x:ix2,y:iy2});
-                                // Bordi interni continui ogni 2px, con flag _antaSnap per attivarsi in profileMode
-                                // Top (ori H) e Bot (ori H): per soglia/zoccolo orizzontali
-                                for (let xx = ix1; xx <= ix2; xx += 10) {
-                                  pts.push({x:xx, y:iy1, _antaSnap:true, _antaOri:"H"});
-                                  pts.push({x:xx, y:iy2, _antaSnap:true, _antaOri:"H"});
-                                }
-                                // Left (ori V) e Right (ori V): per profili verticali
-                                for (let yy = iy1; yy <= iy2; yy += 10) {
-                                  pts.push({x:ix1, y:yy, _antaSnap:true, _antaOri:"V"});
-                                  pts.push({x:ix2, y:yy, _antaSnap:true, _antaOri:"V"});
-                                }
+                                // 4 mezzerie bordi interni con _antaSnap (utili come riferimento, snap vero è su retta via getAntaSnapLines)
+                                pts.push({x:(ix1+ix2)/2, y:iy1, _antaSnap:true, _antaOri:"H"});
+                                pts.push({x:(ix1+ix2)/2, y:iy2, _antaSnap:true, _antaOri:"H"});
+                                pts.push({x:ix1, y:(iy1+iy2)/2, _antaSnap:true, _antaOri:"V"});
+                                pts.push({x:ix2, y:(iy1+iy2)/2, _antaSnap:true, _antaOri:"V"});
                               });
                               // Celle
                               cells.forEach(c2 => {
@@ -1220,26 +1214,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const offTop = hid.includes("top") ? 0 : TK;
                                 const offBot = hid.includes("bot") ? 0 : TK;
                                 const pushAO = (p: any, ori: string) => pts.push({ ...p, _antaSnap: true, _antaOri: ori });
-                                // Snap DENSO ogni 2px a FILO DENTRO l'anta (bordo interno dove prima c'era il lato eliminato)
-                                // Nessun offset artificiale: profilo esattamente al TK del lato hidden.
-                                const STEP = 10;
+                                // Solo estremi + punto medio per ogni lato hidden. Lo snap vero è su retta (vedi getAntaSnapLines).
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
-                                    const y = a.y + TK; // filo bordo interno dell'anta (dove finiva il lato top)
+                                    const y = a.y + TK;
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
-                                    for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
+                                    pushAO({x:x1, y}, "H"); pushAO({x:x2, y}, "H"); pushAO({x:(x1+x2)/2, y}, "H");
                                   } else if (side === "bot") {
-                                    const y = a.y + a.h - TK; // filo bordo interno dell'anta (verso su)
+                                    const y = a.y + a.h - TK;
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
-                                    for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
+                                    pushAO({x:x1, y}, "H"); pushAO({x:x2, y}, "H"); pushAO({x:(x1+x2)/2, y}, "H");
                                   } else if (side === "left") {
-                                    const x = a.x + TK; // filo bordo interno (verso destra)
+                                    const x = a.x + TK;
                                     const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
-                                    for (let yy = y1; yy <= y2; yy += STEP) pushAO({x, y: yy}, "V");
+                                    pushAO({x, y:y1}, "V"); pushAO({x, y:y2}, "V"); pushAO({x, y:(y1+y2)/2}, "V");
                                   } else if (side === "right") {
-                                    const x = a.x + a.w - TK; // filo bordo interno (verso sinistra)
+                                    const x = a.x + a.w - TK;
                                     const y1 = a.y + offTop, y2 = a.y + a.h - offBot;
-                                    for (let yy = y1; yy <= y2; yy += STEP) pushAO({x, y: yy}, "V");
+                                    pushAO({x, y:y1}, "V"); pushAO({x, y:y2}, "V"); pushAO({x, y:(y1+y2)/2}, "V");
                                   }
                                 });
                               });
@@ -1261,8 +1253,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const y = (y1 + y2) / 2;
                                   const xStart = a1.x + a1.w, xEnd = a2.x;
                                   if (xEnd <= xStart) continue;
-                                  // Step 10px (ridotto da 2 per stabilità touch)
-                                  for (let xx = xStart; xx <= xEnd; xx += 10) pushAG({x: xx, y}, "H");
+                                  // Solo estremi + medio (snap vero è su retta)
+                                  pushAG({x: xStart, y}, "H");
+                                  pushAG({x: xEnd, y}, "H");
+                                  pushAG({x: (xStart+xEnd)/2, y}, "H");
                                 }
                               });
                               ["left", "right"].forEach(sideKey => {
@@ -1278,30 +1272,87 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   const x = (x1 + x2) / 2;
                                   const yStart = a1.y + a1.h, yEnd = a2.y;
                                   if (yEnd <= yStart) continue;
-                                  for (let yy = yStart; yy <= yEnd; yy += 10) pushAG({x, y: yy}, "V");
+                                  pushAG({x, y: yStart}, "V");
+                                  pushAG({x, y: yEnd}, "V");
+                                  pushAG({x, y: (yStart+yEnd)/2}, "V");
                                 }
                               });
                               return pts;
+                            };
+
+                            // ══ Snap LINES per profileMode (zoccolo/soglia/fascia/profcomp) ══
+                            // Ritorna segmenti {x1,y1,x2,y2,ori:"H"|"V"} su cui proiettare perpendicolarmente.
+                            // Usando snap a retta (non a punti densi) il pallino non balla MAI sul touch.
+                            const getAntaSnapLines = () => {
+                              const lines: any[] = [];
+                              // Bordi interni telaio
+                              frames.forEach(fr => {
+                                const ix1 = fr.x + TK_FRAME, ix2 = fr.x + fr.w - TK_FRAME;
+                                const iy1 = fr.y + TK_FRAME, iy2 = fr.y + fr.h - TK_FRAME;
+                                lines.push({x1:ix1,y1:iy1,x2:ix2,y2:iy1,ori:"H"});
+                                lines.push({x1:ix1,y1:iy2,x2:ix2,y2:iy2,ori:"H"});
+                                lines.push({x1:ix1,y1:iy1,x2:ix1,y2:iy2,ori:"V"});
+                                lines.push({x1:ix2,y1:iy1,x2:ix2,y2:iy2,ori:"V"});
+                              });
+                              // Lati hidden delle ante
+                              els.filter(e => e.type === "innerRect" && (e.hiddenSides||[]).length > 0).forEach(a => {
+                                const TK = a.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                const hid = a.hiddenSides || [];
+                                const offL = hid.includes("left") ? 0 : TK;
+                                const offR = hid.includes("right") ? 0 : TK;
+                                const offT = hid.includes("top") ? 0 : TK;
+                                const offB = hid.includes("bot") ? 0 : TK;
+                                hid.forEach((side: string) => {
+                                  if (side === "top") {
+                                    const y = a.y + TK;
+                                    lines.push({x1:a.x+offL, y1:y, x2:a.x+a.w-offR, y2:y, ori:"H"});
+                                  } else if (side === "bot") {
+                                    const y = a.y + a.h - TK;
+                                    lines.push({x1:a.x+offL, y1:y, x2:a.x+a.w-offR, y2:y, ori:"H"});
+                                  } else if (side === "left") {
+                                    const x = a.x + TK;
+                                    lines.push({x1:x, y1:a.y+offT, x2:x, y2:a.y+a.h-offB, ori:"V"});
+                                  } else if (side === "right") {
+                                    const x = a.x + a.w - TK;
+                                    lines.push({x1:x, y1:a.y+offT, x2:x, y2:a.y+a.h-offB, ori:"V"});
+                                  }
+                                });
+                              });
+                              return lines;
+                            };
+
+                            // Proietta (mx,my) sul segmento L. Ritorna {x,y,d} punto più vicino e distanza.
+                            const projectOnSeg = (L: any, mx: number, my: number) => {
+                              if (L.ori === "H") {
+                                const y = L.y1;
+                                const x = Math.max(Math.min(L.x1, L.x2), Math.min(Math.max(L.x1, L.x2), mx));
+                                return { x, y, d: Math.abs(my - y) + Math.max(0, Math.min(L.x1,L.x2)-mx, mx-Math.max(L.x1,L.x2)) };
+                              } else {
+                                const x = L.x1;
+                                const y = Math.max(Math.min(L.y1, L.y2), Math.min(Math.max(L.y1, L.y2), my));
+                                return { x, y, d: Math.abs(mx - x) + Math.max(0, Math.min(L.y1,L.y2)-my, my-Math.max(L.y1,L.y2)) };
+                              }
                             };
                             const findSnap = (mx, my) => {
                               const pts = getSnapPoints();
                               const chainStart = dw._chainStart;
                               const freeLines = els.filter(e => e.type === "freeLine");
-                              const canClose = freeLines.filter(l => !l.subType).length >= 3;
+                              const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              const ANTA_SNAP_R = (_isTouch ? 50 : 60) / Math.max(0.4, (dw._zoom || 1)); // raggio ridotto su touch per stabilità
+                              const ANTA_SNAP_R = (_isTouch ? 200 : 60) / Math.max(0.4, (dw._zoom || 1)); // raggio gigante su touch
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
                               // FIX: in profileMode cerca SOLO tra i punti _antaSnap — MAI sul telaio.
                               // Altrimenti il telaio che tocca i bordi dell'anta vince per distanza.
                               if (isProfileMode) {
-                                let bestAnta = null, bestAntaD = ANTA_SNAP_R;
-                                pts.forEach(p => {
-                                  if (!p._antaSnap) return;
-                                  if (!canClose && chainStart && Math.hypot(p.x - chainStart.x, p.y - chainStart.y) < 20) return;
-                                  const d = Math.hypot(p.x - mx, p.y - my);
-                                  if (d < bestAntaD) { bestAntaD = d; bestAnta = p; }
+                                // SNAP A RETTA: proietta (mx,my) su ogni segmento _antaSnap disponibile.
+                                // Niente ballonzolo su touch: la proiezione è unica e stabile.
+                                const lines = getAntaSnapLines();
+                                let bestL = null, bestLD = ANTA_SNAP_R;
+                                lines.forEach(L => {
+                                  const pr = projectOnSeg(L, mx, my);
+                                  if (pr.d < bestLD) { bestLD = pr.d; bestL = { x: pr.x, y: pr.y, _antaSnap: true, _antaOri: L.ori }; }
                                 });
-                                if (bestAnta) { best = bestAnta; bestD = bestAntaD; }
+                                if (bestL) { best = bestL; bestD = bestLD; }
                                 // In profileMode NIENTE fallback sul telaio: se l'utente non e' sull'anta non snappa
                               } else {
                                 // Modalita' non-profilo: snap normale su tutti i punti
@@ -2141,26 +2192,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
                                     // Soglia, zoccolo, fascia, profcomp, tel.libero — snap unificato
-                                    // FIX TOUCH: se findSnap non trova _antaSnap, cerca comunque lo snap generico
-                                    // più vicino (bordo anta, telaio, vertice) così il click si ancora SEMPRE.
                                     const snapPt = findSnap(px, py);
                                     let antaOri = null;
                                     if (snapPt) {
                                       px = snapPt.x; py = snapPt.y;
                                       if (snapPt._antaSnap && snapPt._antaOri) antaOri = snapPt._antaOri;
-                                    } else {
-                                      // Fallback: punto più vicino qualunque (incluso telaio, vertici)
-                                      const allPts = getSnapPoints();
-                                      const FALLBACK_R = _isTouch ? 80 : 30;
-                                      let bestF: any = null, bestDF = FALLBACK_R;
-                                      allPts.forEach((p: any) => {
-                                        const d = Math.hypot(p.x - px, p.y - py);
-                                        if (d < bestDF) { bestDF = d; bestF = p; }
-                                      });
-                                      if (bestF) {
-                                        px = bestF.x; py = bestF.y;
-                                        if (bestF._antaSnap && bestF._antaOri) antaOri = bestF._antaOri;
-                                      }
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal, _antaOri: antaOri }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
@@ -2214,7 +2250,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     else if (adyC < HV_TOL && adxC > adyC) py=pending.y1; // orizzontale: forza Y uguale
                                     // chiusura forma — solo se click DAVVERO sul primo punto e 3+ lati gia piazzati
                                     if (!subTypeVal) {
-                                      const freeLines = els.filter(e=>e.type==="freeLine" && !e.subType);
+                                      const freeLines = els.filter(e=>e.type==="freeLine");
                                       const CLOSE_R2 = _isTouch ? 45 : 30;
                                       if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<CLOSE_R2) { px=cs.x; py=cs.y; }
                                     }
