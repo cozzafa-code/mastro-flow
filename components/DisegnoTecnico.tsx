@@ -942,8 +942,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const GRID = 1; // movimento fluido al pixel
                             // Touch detection: dita richiedono raggio molto piu' grande del mouse
                             const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
-                            // Base: 55 su touch, 28 mouse. Diviso per zoom: se zoom 0.5 raddoppia il raggio SVG
-                            const SNAP_R = (_isTouch ? 55 : 28) / Math.max(0.4, (dw._zoom || 1));
+                            // Base: 90 su touch (pollice tipico copre ~80-100px), 28 mouse. Diviso per zoom.
+                            const SNAP_R = (_isTouch ? 90 : 28) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -1254,7 +1254,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              const ANTA_SNAP_R = (_isTouch ? 90 : 60) / Math.max(0.4, (dw._zoom || 1)); // piu ampio su touch
+                              const ANTA_SNAP_R = (_isTouch ? 140 : 60) / Math.max(0.4, (dw._zoom || 1)); // molto ampio su touch per dita
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
                               // FIX: in profileMode cerca SOLO tra i punti _antaSnap — MAI sul telaio.
                               // Altrimenti il telaio che tocca i bordi dell'anta vince per distanza.
@@ -1928,20 +1928,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(profileSub)) {
                                   // Cerca un'anta il cui lato hidden contiene il click
                                   const TK_anta = (a: any) => a.subType === "porta" ? TK_PORTA : TK_ANTA;
+                                  // Touch = zone piu' grandi per dita
+                                  const _isTouchDev = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
+                                  const TOL = _isTouchDev ? 80 : 30;
+                                  const FRAC = _isTouchDev ? 0.5 : 0.3;
                                   const antaFound = els.find((e: any) => {
                                     if (e.type !== "innerRect") return false;
                                     const hidden = e.hiddenSides || [];
                                     if (hidden.length === 0) return false;
-                                    const TK = TK_anta(e);
-                                    // Definizione area di ogni lato hidden con AMPIA tolleranza verso l'interno dell'anta
-                                    // Per top/bot: strip orizzontale che occupa 30% dell'altezza dall'estremo
-                                    // Per left/right: strip verticale che occupa 30% della larghezza dall'estremo
-                                    const TOL = 30; // tolleranza ESTERNA (oltre il bordo dell'anta)
                                     const sidesZone: any = {
-                                      top: { x: e.x - TOL, y: e.y - TOL, w: e.w + TOL*2, h: e.h * 0.3 + TOL },
-                                      bot: { x: e.x - TOL, y: e.y + e.h * 0.7, w: e.w + TOL*2, h: e.h * 0.3 + TOL },
-                                      left: { x: e.x - TOL, y: e.y - TOL, w: e.w * 0.3 + TOL, h: e.h + TOL*2 },
-                                      right: { x: e.x + e.w * 0.7, y: e.y - TOL, w: e.w * 0.3 + TOL, h: e.h + TOL*2 }
+                                      top: { x: e.x - TOL, y: e.y - TOL, w: e.w + TOL*2, h: e.h * FRAC + TOL },
+                                      bot: { x: e.x - TOL, y: e.y + e.h * (1-FRAC), w: e.w + TOL*2, h: e.h * FRAC + TOL },
+                                      left: { x: e.x - TOL, y: e.y - TOL, w: e.w * FRAC + TOL, h: e.h + TOL*2 },
+                                      right: { x: e.x + e.w * (1-FRAC), y: e.y - TOL, w: e.w * FRAC + TOL, h: e.h + TOL*2 }
                                     };
                                     return hidden.some((side: string) => {
                                       const r = sidesZone[side];
@@ -1958,13 +1957,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       left: { x: antaFound.x, y: antaFound.y + TK, w: TK, h: Math.max(0, antaFound.h - TK*2) },
                                       right: { x: antaFound.x + antaFound.w - TK, y: antaFound.y + TK, w: TK, h: Math.max(0, antaFound.h - TK*2) }
                                     };
-                                    // Trova quale lato hidden è stato cliccato (il primo che contiene il click)
-                                    const TOL2 = 30;
+                                    // Trova quale lato hidden è stato cliccato (stessa tolleranza di sopra)
                                     const zonesForClicked: any = {
-                                      top: { x: antaFound.x - TOL2, y: antaFound.y - TOL2, w: antaFound.w + TOL2*2, h: antaFound.h * 0.3 + TOL2 },
-                                      bot: { x: antaFound.x - TOL2, y: antaFound.y + antaFound.h * 0.7, w: antaFound.w + TOL2*2, h: antaFound.h * 0.3 + TOL2 },
-                                      left: { x: antaFound.x - TOL2, y: antaFound.y - TOL2, w: antaFound.w * 0.3 + TOL2, h: antaFound.h + TOL2*2 },
-                                      right: { x: antaFound.x + antaFound.w * 0.7, y: antaFound.y - TOL2, w: antaFound.w * 0.3 + TOL2, h: antaFound.h + TOL2*2 }
+                                      top: { x: antaFound.x - TOL, y: antaFound.y - TOL, w: antaFound.w + TOL*2, h: antaFound.h * FRAC + TOL },
+                                      bot: { x: antaFound.x - TOL, y: antaFound.y + antaFound.h * (1-FRAC), w: antaFound.w + TOL*2, h: antaFound.h * FRAC + TOL },
+                                      left: { x: antaFound.x - TOL, y: antaFound.y - TOL, w: antaFound.w * FRAC + TOL, h: antaFound.h + TOL*2 },
+                                      right: { x: antaFound.x + antaFound.w * (1-FRAC), y: antaFound.y - TOL, w: antaFound.w * FRAC + TOL, h: antaFound.h + TOL*2 }
                                     };
                                     const clickedSide = hidden.find((side: string) => {
                                       const r = zonesForClicked[side];
@@ -1979,25 +1977,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const offRight = hidden.includes("right") ? 0 : TK;
                                       const offTop = hidden.includes("top") ? 0 : TK;
                                       const offBot = hidden.includes("bot") ? 0 : TK;
-                                      // Coordinate della freeLine: linea centrale del lato, con offset dai lati presenti
+                                      // Coordinate della freeLine: A FILO esatto del bordo interno dell'anta (TK puro)
                                       let lx1, ly1, lx2, ly2;
-                                      // Fine-tune: profilo 4px più lungo (2 per lato) + 2px più in basso
-                                    if (clickedSide === "top") {
-                                        const cy = antaFound.y + TK + 2;
-                                        lx1 = antaFound.x + offLeft - 2; ly1 = cy;
-                                        lx2 = antaFound.x + antaFound.w - offRight + 2; ly2 = cy;
+                                      if (clickedSide === "top") {
+                                        const cy = antaFound.y + TK;
+                                        lx1 = antaFound.x + offLeft; ly1 = cy;
+                                        lx2 = antaFound.x + antaFound.w - offRight; ly2 = cy;
                                       } else if (clickedSide === "bot") {
-                                        const cy = antaFound.y + antaFound.h - TK + 2;
-                                        lx1 = antaFound.x + offLeft - 2; ly1 = cy;
-                                        lx2 = antaFound.x + antaFound.w - offRight + 2; ly2 = cy;
+                                        const cy = antaFound.y + antaFound.h - TK;
+                                        lx1 = antaFound.x + offLeft; ly1 = cy;
+                                        lx2 = antaFound.x + antaFound.w - offRight; ly2 = cy;
                                       } else if (clickedSide === "left") {
-                                        const cx = antaFound.x + TK + 2;
-                                        lx1 = cx; ly1 = antaFound.y + offTop - 2;
-                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot + 2;
+                                        const cx = antaFound.x + TK;
+                                        lx1 = cx; ly1 = antaFound.y + offTop;
+                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot;
                                       } else {
-                                        const cx = antaFound.x + antaFound.w - TK + 2;
-                                        lx1 = cx; ly1 = antaFound.y + offTop - 2;
-                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot + 2;
+                                        const cx = antaFound.x + antaFound.w - TK;
+                                        lx1 = cx; ly1 = antaFound.y + offTop;
+                                        lx2 = cx; ly2 = antaFound.y + antaFound.h - offBot;
                                       }
                                       const newEls = [...els, {
                                         id: Date.now() + Math.floor(Math.random()*10000),
