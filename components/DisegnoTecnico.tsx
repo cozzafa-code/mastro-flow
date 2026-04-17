@@ -1802,10 +1802,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   else {
                                     const sp = findSnap(px, py);
                                     if (sp) { px = sp.x; py = sp.y; }
-                                    else {
-                                      if (Math.abs(px-pending.x1)<5) px=pending.x1;
-                                      if (Math.abs(py-pending.y1)<5) py=pending.y1;
-                                    }
+                                    // H/V: forza allineamento anche dopo snap
+                                    const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
+                                    if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
+                                    if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
                                     // chiusura forma — solo per telaio libero senza subType
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
@@ -2325,14 +2325,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* SVG Canvas — zoomable with wheel + pannable */}
-                                <div style={{ overflow: "auto", position: "relative", flex: window.innerWidth <= 768 ? "1 1 0" : undefined, maxHeight: window.innerWidth > 768 ? "85vh" : undefined, border: `1px solid ${T.bdr}` }}>
-                                <svg width={canvasW * Math.max(1, zoom)} height={canvasH * Math.max(1, zoom)}
+                                <div style={{ overflow: "hidden", position: "relative", flex: "1 1 0", minHeight: 300, border: `1px solid ${T.bdr}` }}>
+                                <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
                                   style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default") }}
                                   onClick={onSvgClick}
                                   onWheel={(e2) => {
                                     e2.preventDefault();
-                                    const newZoom = Math.max(0.5, Math.min(4, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
+                                    const newZoom = Math.max(0.15, Math.min(6, zoom + (e2.deltaY < 0 ? 0.15 : -0.15)));
                                     setMode({ _zoom: newZoom });
                                   }}
                                   onMouseDown={(e2) => {
@@ -2377,11 +2377,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     // Snap a punti esistenti durante il movimento
                                     const snapPt = findSnap(gx, gy);
                                     if (snapPt) { gx = snapPt.x; gy = snapPt.y; }
-                                    // H/V snap se molto vicino (entro 5px)
-                                    if (!snapPt) {
-                                      if (Math.abs(gx - p.x1) < 5) gx = p.x1;
-                                      if (Math.abs(gy - p.y1) < 5) gy = p.y1;
-                                    }
+                                    // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
+                                    // (anche dopo findSnap — priorita' all'allineamento)
+                                    const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
+                                    if (adx < 25 && ady > adx * 1.5) gx = p.x1;
+                                    if (ady < 25 && adx > ady * 1.5) gy = p.y1;
                                     // Mont.Lib: forza verticale
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") {
                                       gx = p.x1;
@@ -2448,10 +2448,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const pp = dw._pendingLine;
                                     const snapPtT = findSnap(gx, gy);
                                     if (snapPtT) { gx = snapPtT.x; gy = snapPtT.y; }
-                                    else {
-                                      if (Math.abs(gx - pp.x1) < 5) gx = pp.x1;
-                                      if (Math.abs(gy - pp.y1) < 5) gy = pp.y1;
-                                    }
+                                    // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
+                                    const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
+                                    if (adxT < 25 && adyT > adxT * 1.5) gx = pp.x1;
+                                    if (adyT < 25 && adxT > adyT * 1.5) gy = pp.y1;
                                     if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
                                     if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
@@ -2479,7 +2479,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     {poly && <clipPath id={`polyClip-${vanoId}`}><polygon points={poly.map(p => p.join(",")).join(" ")} /></clipPath>}
                                     {frame && <clipPath id={`frameClip-${vanoId}`}><rect x={frame.x+6} y={frame.y+6} width={frame.w-12} height={frame.h-12} /></clipPath>}
                                   </defs>
-                                  <rect width={canvasW} height={canvasH} fill={`url(#dg-${vanoId})`} />
+                                  <rect x={panX - 100} y={panY - 100} width={canvasW / zoom + 200} height={canvasH / zoom + 200} fill={`url(#dg-${vanoId})`} />
 
                                   {/* Cell highlights in place mode — clipped to polygon if present */}
                                   {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-ap" || drawMode === "place-mont" || drawMode === "place-trav" || drawMode === "place-porta" || drawMode === "place-persiana") && cells.length > 0 && (
@@ -3051,13 +3051,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       {/* Guide H/V dai vertici esistenti — solo visive */}
                                       {uniquePts.map((pt, i) => (
                                         <g key={`guide-${i}`} opacity={0.25}>
-                                          <line x1={0} y1={pt.y} x2={canvasW} y2={pt.y} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
-                                          <line x1={pt.x} y1={0} x2={pt.x} y2={canvasH} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
+                                          <line x1={panX - 500} y1={pt.y} x2={panX + canvasW/zoom + 500} y2={pt.y} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
+                                          <line x1={pt.x} y1={panY - 500} x2={pt.x} y2={panY + canvasH/zoom + 500} stroke="#1A9E73" strokeWidth={0.6} strokeDasharray="6,6" />
                                         </g>
                                       ))}
                                       {/* H/V guide lines from pending point */}
-                                      <line x1={0} y1={p.y1} x2={canvasW} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
-                                      <line x1={p.x1} y1={0} x2={p.x1} y2={canvasH} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      <line x1={panX - 500} y1={p.y1} x2={panX + canvasW/zoom + 500} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      <line x1={p.x1} y1={panY - 500} x2={p.x1} y2={panY + canvasH/zoom + 500} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      {/* ALIGNMENT INDICATORS — quando il cursore è allineato H/V con un vertice */}
+                                      {gx != null && gy != null && uniquePts.map((pt, ai) => {
+                                        const alignH = Math.abs(gy - pt.y) < 3;
+                                        const alignV = Math.abs(gx - pt.x) < 3;
+                                        if (!alignH && !alignV) return null;
+                                        return <g key={`align-${ai}`}>
+                                          {alignH && <>
+                                            <line x1={Math.min(gx, pt.x)} y1={pt.y} x2={Math.max(gx, pt.x)} y2={pt.y} stroke="#DC4444" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.9} />
+                                            <circle cx={pt.x} cy={pt.y} r={5} fill="none" stroke="#DC4444" strokeWidth={1.5} />
+                                            <circle cx={gx} cy={gy} r={5} fill="none" stroke="#DC4444" strokeWidth={1.5} />
+                                          </>}
+                                          {alignV && <>
+                                            <line x1={pt.x} y1={Math.min(gy, pt.y)} x2={pt.x} y2={Math.max(gy, pt.y)} stroke="#3B7FE0" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.9} />
+                                            <circle cx={pt.x} cy={pt.y} r={5} fill="none" stroke="#3B7FE0" strokeWidth={1.5} />
+                                            <circle cx={gx} cy={gy} r={5} fill="none" stroke="#3B7FE0" strokeWidth={1.5} />
+                                          </>}
+                                        </g>;
+                                      })}
                                       {/* Live guide line to mouse */}
                                       {gx != null && gy != null && <>
                                         <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={2.5} strokeDasharray="8,4" opacity={0.8} />
