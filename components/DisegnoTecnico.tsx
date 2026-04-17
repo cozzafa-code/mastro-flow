@@ -924,6 +924,9 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
+  // Touch device detection per toolbar compatta
+  const _isMobile = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
+  const [toolCat, setToolCat] = React.useState<"struttura"|"profili"|"aperture"|"strumenti">("struttura");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
   const realW = propRealW || 1200;
@@ -2506,8 +2509,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
+                                {/* ═══ TAB CATEGORIE (solo mobile) ═══ */}
+                                {_isMobile && (
+                                  <div style={{ display: "flex", gap: 2, padding: "4px 6px", borderBottom: `1px solid ${T.bdr}`, background: "#fafaf7" }}>
+                                    {[
+                                      { id: "struttura", l: "🏗 Struttura" },
+                                      { id: "profili", l: "▬ Profili" },
+                                      { id: "aperture", l: "🪟 Aperture" },
+                                      { id: "strumenti", l: "🛠 Strumenti" }
+                                    ].map(c => (
+                                      <div key={c.id} onClick={() => setToolCat(c.id as any)}
+                                        style={{ flex: 1, textAlign: "center", padding: "6px 4px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", background: toolCat === c.id ? "#1A9E73" : "transparent", color: toolCat === c.id ? "#fff" : "#555", border: toolCat === c.id ? "none" : `1px solid ${T.bdr}` }}>
+                                        {c.l}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                                 {/* ═══ GRUPPO 1: TELAIO + STRUTTURA ═══ */}
-                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Struttura</div>
+                                {(!_isMobile || toolCat === "struttura") && <>
+                                {!_isMobile && <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Struttura</div>}
                                 {/* RIGA 1: Telaio + Montante + Traverso */}
                                 <div style={{ display: "flex", gap: 3, padding: "3px 8px 2px", flexWrap: "wrap" }}>
                                   <div onClick={() => {
@@ -2534,7 +2554,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}>┃ Mont.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}>━ Trav.</div>
                                 </div>
-                                {/* RIGA 2: Profili liberi — sempre visibili */}
+                                </>}
+                                {/* ═══ GRUPPO PROFILI ═══ */}
+                                {(!_isMobile || toolCat === "profili") && <>
+                                {!_isMobile && <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Profili</div>}
                                 <div style={{ display: "flex", gap: 3, padding: "2px 8px 4px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont-free" ? null : "place-mont-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-mont-free")}>┃ Mont.Lib.</div>
@@ -2551,9 +2574,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "profcomp")}>— Prof.Comp.</div>
                                 </div>
+                                </>}
 
                                 {/* ═══ GRUPPO 2: ANTE + VETRI ═══ */}
-                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Aperture</div>
+                                {(!_isMobile || toolCat === "aperture") && <>
+                                {!_isMobile && <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Aperture</div>}
                                 <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}>🪟 Anta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}>🚪 Porta</div>
@@ -2565,9 +2590,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <div key={ap.id} onClick={() => setMode({ drawMode: "place-ap", _placeApType: ap.id, _pendingLine: null })} style={bAp(drawMode === "place-ap" && placeApType === ap.id)}>{ap.l}</div>
                                   ))}
                                 </div>
+                                </>}
 
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
-                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Strumenti</div>
+                                {(!_isMobile || toolCat === "strumenti") && <>
+                                {!_isMobile && <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Strumenti</div>}
                                 <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}>↗ Linea lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}>✒ Penna</div>
@@ -2603,7 +2630,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
 
 
-                                {/* Row 3: Azioni */}
+                                </>}
+                                {/* Row 3: Azioni — sempre visibile */}
                                 <div style={{ display: "flex", gap: 3, padding: "0 8px 6px", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={undo} style={bDel(T.acc)}>↩ Annulla</div>
                                   {selId && <div onClick={() => {
