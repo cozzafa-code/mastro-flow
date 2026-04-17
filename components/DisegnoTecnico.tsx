@@ -3472,12 +3472,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const ext2 = (hasMontAt2 || hasVertAt2) ? -HM_loc : halfT;
                                       let ex1 = el.x1 - ux * ext1, ey1 = el.y1 - uy * ext1;
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
-                                      // Per orizzontali: polygon centrato sulla linea (bordo sup = el.y1 - halfT, bordo inf = el.y1 + halfT)
-                                      // La linea el.y1 è a FILO del bordo interno del telaio (smart search mette cy = telaio.y + telaio.h - TK_FRAME)
-                                      // quindi polygon va da el.y1-halfT (dentro telaio) a el.y1+halfT (sotto bordo interno, sul pavimento)
+                                      // Per orizzontali: bordo basso polygon = el.y1
                                       if (isHorzEl && !isPartOfPoly) {
-                                        ey1 = el.y1;
-                                        ey2 = el.y2;
+                                        ey1 = el.y1 - halfT + TK_FRAME;
+                                        ey2 = el.y2 - halfT + TK_FRAME;
                                       }
                                       // Taglio 45° sul profilo freeLine orizzontale
                                       const flCorners = el.corners || [];
