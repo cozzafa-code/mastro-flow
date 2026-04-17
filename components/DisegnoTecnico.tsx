@@ -1280,9 +1280,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 });
                               }
                               // Snap al chainStart (chiusura forma) solo se ≥3 segmenti e non montante/traverso
+                              // FIX: raggio fisso 30px (40 su touch) — prima era bestD+4 che su mobile = SNAP_R 120+
+                              // causava chiusura accidentale (rettangolo -> triangolo).
                               if (canClose && chainStart && !dw._lineSubType) {
                                 const d = Math.hypot(chainStart.x - mx, chainStart.y - my);
-                                if (d < bestD + 4) { best = chainStart; }
+                                const CLOSE_R = _isTouch ? 40 : 30;
+                                if (d < CLOSE_R) { best = chainStart; }
                               }
                               // ALIGNMENT SNAP: forza allineamento Y/X con vertici esistenti (PRIORITA' ALTA)
                               // FIX CRITICO: in profileMode (zoccolo/soglia/etc.) DISABILITIAMO l'alignment snap
@@ -2103,10 +2106,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
                                     if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
                                     // chiusura forma — solo per telaio libero senza subType
+                                    // FIX: raggio chiusura fisso 40px (non SNAP_R+6 che su mobile = 126+)
+                                    // + serve 3 linee gia\' piazzate (non 2), altrimenti il 3 click chiude accidentalmente
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
-                                      if (cs && freeLines.length>=2 && Math.hypot(px-cs.x,py-cs.y)<SNAP_R+6) { px=cs.x; py=cs.y; }
+                                      const CLOSE_R2 = _isTouch ? 45 : 30;
+                                      if (cs && freeLines.length>=3 && Math.hypot(px-cs.x,py-cs.y)<CLOSE_R2) { px=cs.x; py=cs.y; }
                                     }
                                   }
 
