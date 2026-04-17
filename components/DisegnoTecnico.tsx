@@ -3474,8 +3474,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       let ex2 = el.x2 + ux * ext2, ey2 = el.y2 + uy * ext2;
                                       // Per orizzontali: bordo ALTO polygon = el.y1 (poggia sul telaio)
                                       if (isHorzEl && !isPartOfPoly) {
-                                        ey1 = el.y1 + halfT;
-                                        ey2 = el.y2 + halfT;
+                                        ey1 = el.y1 + halfT - 5;
+                                        ey2 = el.y2 + halfT - 5;
+                                        ex1 = ex1 + 5;
+                                        ex2 = ex2 + 5;
                                       }
                                       // Taglio 45° sul profilo freeLine orizzontale
                                       const flCorners = el.corners || [];
