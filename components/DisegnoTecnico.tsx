@@ -940,7 +940,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const panX = dw._panX || 0, panY = dw._panY || 0;
                             const canvasW = Math.min(window.innerWidth > 768 ? 900 : window.innerWidth - 8, window.innerWidth - 8);
                             const GRID = 1; // movimento fluido al pixel
-                            const SNAP_R = 28;
+                            // Touch detection: dita richiedono raggio molto piu' grande del mouse
+                            const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
+                            // Base: 55 su touch, 28 mouse. Diviso per zoom: se zoom 0.5 raddoppia il raggio SVG
+                            const SNAP_R = (_isTouch ? 55 : 28) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -1182,16 +1185,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 const offTop = hid.includes("top") ? 0 : TK;
                                 const offBot = hid.includes("bot") ? 0 : TK;
                                 const pushAO = (p: any, ori: string) => pts.push({ ...p, _antaSnap: true, _antaOri: ori });
-                                // Snap DENSO ogni 2px a FILO DENTRO l\'anta (bordo interno dove prima c\'era il lato eliminato)
+                                // Snap DENSO ogni 2px a FILO DENTRO l'anta (bordo interno dove prima c'era il lato eliminato)
                                 // Nessun offset artificiale: profilo esattamente al TK del lato hidden.
                                 const STEP = 2;
                                 hid.forEach((side: string) => {
                                   if (side === "top") {
-                                    const y = a.y + TK; // filo bordo interno dell\'anta (dove finiva il lato top)
+                                    const y = a.y + TK; // filo bordo interno dell'anta (dove finiva il lato top)
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
                                     for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
                                   } else if (side === "bot") {
-                                    const y = a.y + a.h - TK; // filo bordo interno dell\'anta (verso su)
+                                    const y = a.y + a.h - TK; // filo bordo interno dell'anta (verso su)
                                     const x1 = a.x + offLeft, x2 = a.x + a.w - offRight;
                                     for (let xx = x1; xx <= x2; xx += STEP) pushAO({x: xx, y}, "H");
                                   } else if (side === "left") {
@@ -1213,7 +1216,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               ["top", "bot"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                // A filo bordo interno dell\'anta (TK puro, no offset)
+                                // A filo bordo interno dell'anta (TK puro, no offset)
                                 const getY = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "top" ? a.y + tkA : a.y + a.h - tkA; };
                                 const sorted = [...group].sort((a,b) => a.x - b.x);
                                 for (let i = 0; i < sorted.length - 1; i++) {
@@ -1230,7 +1233,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               ["left", "right"].forEach(sideKey => {
                                 const group = antasWithHidden.filter(a => (a.hiddenSides || []).includes(sideKey));
                                 if (group.length < 2) return;
-                                // A filo bordo interno dell\'anta (TK puro, no offset)
+                                // A filo bordo interno dell'anta (TK puro, no offset)
                                 const getX = (a: any) => { const tkA = a.subType==="porta"?TK_PORTA:TK_ANTA; return sideKey === "left" ? a.x + tkA : a.x + a.w - tkA; };
                                 const sorted = [...group].sort((a,b) => a.y - b.y);
                                 for (let i = 0; i < sorted.length - 1; i++) {
@@ -1251,7 +1254,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const freeLines = els.filter(e => e.type === "freeLine");
                               const canClose = freeLines.length >= 3;
                               let best = null, bestD = SNAP_R;
-                              const ANTA_SNAP_R = 60; // raggio snap per lati ante eliminati (domina su vertici telaio)
+                              const ANTA_SNAP_R = (_isTouch ? 90 : 60) / Math.max(0.4, (dw._zoom || 1)); // piu ampio su touch
                               const isProfileMode = dw.drawMode === "line" && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(dw._lineSubType);
                               // FIX: in profileMode cerca SOLO tra i punti _antaSnap — MAI sul telaio.
                               // Altrimenti il telaio che tocca i bordi dell'anta vince per distanza.
@@ -2147,7 +2150,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
                                   // FIX CRITICO: in profileMode la weld SALTA completamente, altrimenti risnappa
-                                  // il punto anta corretto ai vertici del telaio piu\' vicini (= bug aggancio telaio).
+                                  // il punto anta corretto ai vertici del telaio piu' vicini (= bug aggancio telaio).
                                   const skipWeld = subTypeVal && ["zoccolo","soglia","fascia","profcomp","soglia_rib"].includes(subTypeVal);
                                   const WELD2 = SNAP_R;
                                   const buildWeldPts2 = (allEls) => {
