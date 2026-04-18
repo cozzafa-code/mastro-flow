@@ -1941,7 +1941,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     cellPoly = _realPoly.map(p => {
                                       const dx = _cx-p[0], dy = _cy-p[1];
                                       const d = Math.hypot(dx,dy) || 1;
-                                      return [p[0]+dx/d*18, p[1]+dy/d*18];
+                                      return [p[0]+dx/d*22, p[1]+dy/d*22];
                                     });
                                   }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
