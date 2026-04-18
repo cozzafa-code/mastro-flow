@@ -2281,34 +2281,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if(bestX!==null) px=bestX;
                                     // Se nessuno snap: accetta px grezzo
                                   }
-                                  // Telaio libero / altri: snap diretto ai vertici + findSnap
+                                  // Telaio libero / altri: snap semplice (come vecchio codice stabile)
                                   else {
-                                    // Snap diretto ai vertici delle freeLine (priorità assoluta, raggio 28px)
-                                    let _directSnap = false;
-                                    const _allVtx2: {x:number,y:number}[] = [];
-                                    els.filter((e:any) => e.type === "freeLine").forEach((l:any) => {
-                                      _allVtx2.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2});
-                                    });
-                                    let _bestVD2 = 28, _bestV2: {x:number,y:number}|null = null;
-                                    _allVtx2.forEach(p => {
-                                      const d = Math.hypot(px-p.x, py-p.y);
-                                      if (d < _bestVD2) { _bestVD2 = d; _bestV2 = p; }
-                                    });
-                                    if (_bestV2) { px = _bestV2.x; py = _bestV2.y; _directSnap = true; }
-                                    // Fallback: findSnap generico
-                                    if (!_directSnap) {
-                                      const sp = findSnap(px, py);
-                                      if (sp) { px = sp.x; py = sp.y; }
-                                    }
-                                    // H/V alignment: se quasi dritto, forza asse (soglia 20px)
-                                    if (Math.abs(px-pending.x1)<10 && Math.abs(py-pending.y1)>10) px=pending.x1;
-                                    if (Math.abs(py-pending.y1)<10 && Math.abs(px-pending.x1)>10) py=pending.y1;
-                                    // Snap Y ai piedi di altri segmenti verticali (allinea gambe)
-                                    if (px===pending.x1) { // segmento verticale
-                                      const otherVerts = els.filter((e:any)=>e.type==="freeLine"&&!e.subType&&Math.abs(e.x1-e.x2)<3).flatMap((l:any)=>[l.y1,l.y2]);
-                                      otherVerts.forEach(vy => { if (Math.abs(py-vy)<10) py=vy; });
-                                    }
-                                    // chiusura forma ÔÇö solo per telaio libero senza subType
+                                    const sp = findSnap(px, py);
+                                    if (sp) { px = sp.x; py = sp.y; }
+                                    // H/V snap entro 8px
+                                    if (Math.abs(px-pending.x1)<8 && Math.abs(py-pending.y1)>8) px=pending.x1;
+                                    if (Math.abs(py-pending.y1)<8 && Math.abs(px-pending.x1)>8) py=pending.y1;
+                                    // chiusura forma
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
@@ -2316,72 +2296,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }
 
-                                  // Per montante X ├¿ sempre = pending.x1, per traverso Y ├¿ sempre = pending.y1
-                                  // ÔåÆ il guard "punto uguale" va saltato per questi subType
                                   if (!isMont && !isTrav && px===pending.x1 && py===pending.y1) return;
-                                  if (isMont && py===pending.y1) return;   // zero-length verticale
-                                  if (isTrav && px===pending.x1) return;   // zero-length orizzontale
+                                  if (isMont && py===pending.y1) return;
+                                  if (isTrav && px===pending.x1) return;
                                   const lineType = drawMode==="apertura" ? "apLine" : "freeLine";
-                                  // Clamp al frame
-                                  let [nx1,ny1,nx2,ny2] = [pending.x1,pending.y1,px,py];
-                                  const fr=els.find(e=>e.type==="rect");
-                                  if(fr&&lineType==="freeLine"){const isH=Math.abs(nx2-nx1)>=Math.abs(ny2-ny1);if(isH){nx1=Math.max(fr.x,Math.min(fr.x+fr.w,nx1));nx2=Math.max(fr.x,Math.min(fr.x+fr.w,nx2));}else{ny1=Math.max(fr.y,Math.min(fr.y+fr.h,ny1));ny2=Math.max(fr.y,Math.min(fr.y+fr.h,ny2));}}
-                                  // Clamp anche per Tel.Lib. (freeLine senza subType come telaio)
-                                  if(!fr&&subTypeVal&&lineType==="freeLine"){
-                                    const telV=els.filter(e=>e.type==="freeLine"&&!e.subType&&Math.abs(e.x2-e.x1)<Math.abs(e.y2-e.y1)+1);
-                                    const telH=els.filter(e=>e.type==="freeLine"&&!e.subType&&Math.abs(e.y2-e.y1)<=Math.abs(e.x2-e.x1)+1);
-                                    if(telV.length>=2){
-                                      const vXs=telV.flatMap(l=>[(l.x1+l.x2)/2]);
-                                      const cL=Math.min(...vXs), cR=Math.max(...vXs);
-                                      nx1=Math.max(cL,Math.min(cR,nx1)); nx2=Math.max(cL,Math.min(cR,nx2));
-                                    }
-                                    if(telV.length>=1){
-                                      const vYs=telV.flatMap(l=>[l.y1,l.y2]);
-                                      const cT=Math.min(...vYs), cB=Math.max(...vYs);
-                                      ny1=Math.max(cT,Math.min(cB,ny1)); ny2=Math.max(cT,Math.min(cB,ny2));
-                                    }
-                                  }                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
-                                  // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
-                                  const WELD2 = 20;
-                                  const buildWeldPts2 = (allEls) => {
-                                    const wpts = [];
-                                    allEls.forEach(o => {
-                                      if (o.x1 !== undefined) { wpts.push({x:o.x1,y:o.y1}); wpts.push({x:o.x2,y:o.y2}); wpts.push({x:(o.x1+o.x2)/2,y:(o.y1+o.y2)/2}); }
-                                      if (o.type === "rect") { wpts.push({x:o.x,y:o.y},{x:o.x+o.w,y:o.y},{x:o.x,y:o.y+o.h},{x:o.x+o.w,y:o.y+o.h}); }
-                                      if (o.type === "montante") {
-                                        const my1=o.y1??o.y, my2=o.y2??(o.y+(o.h||0));
-                                        wpts.push({x:o.x,y:my1},{x:o.x,y:my2},{x:o.x,y:(my1+my2)/2});
-                                      }
-                                      if (o.type === "traverso") {
-                                        const tx1=o.x1??o.x, tx2=o.x2??(o.x+(o.w||0));
-                                        wpts.push({x:tx1,y:o.y},{x:tx2,y:o.y},{x:(tx1+tx2)/2,y:o.y});
-                                      }
-                                    });
-                                    return wpts;
-                                  };
-                                  // Snap i punti del NUOVO elemento ai vicini esistenti
-                                  let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
-                                  const existingWeldPts = buildWeldPts2(els);
-                                  existingWeldPts.forEach(p => {
-                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
-                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
-                                  });
-                                  newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
-                                  // Snap i freeLine ESISTENTI ai punti del nuovo elemento
-                                  const weldedEls = els.map(x => {
-                                    if (x.x1 === undefined) return x;
-                                    let nx1=x.x1, ny1=x.y1, nx2=x.x2, ny2=x.y2;
-                                    if (Math.hypot(nx1-snappedX1, ny1-snappedY1)<WELD2) { nx1=snappedX1; ny1=snappedY1; }
-                                    if (Math.hypot(nx2-snappedX1, ny2-snappedY1)<WELD2) { nx2=snappedX1; ny2=snappedY1; }
-                                    if (Math.hypot(nx1-snappedX2, ny1-snappedY2)<WELD2) { nx1=snappedX2; ny1=snappedY2; }
-                                    if (Math.hypot(nx2-snappedX2, ny2-snappedY2)<WELD2) { nx2=snappedX2; ny2=snappedY2; }
-                                    if (nx1!==x.x1||ny1!==x.y1||nx2!==x.x2||ny2!==x.y2) return {...x,x1:nx1,y1:ny1,x2:nx2,y2:ny2};
-                                    return x;
-                                  });
-                                  // Per montante/traverso: reset pendingLine (no catena), per telaio libero: concatena
+                                  // Crea elemento direttamente con px,py (già snappati)
+                                  const newEl = { id: Date.now(), type: lineType, x1: pending.x1, y1: pending.y1, x2: px, y2: py, ...(subTypeVal ? { subType: subTypeVal } : {}) };
+                                  // Per montante/traverso: reset, per telaio libero: concatena dal punto finale
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
-                                  const newPending = (isMont || isTrav) ? null : { x1: snappedX2, y1: snappedY2, _subType: subTypeVal || null };
-                                  setDW([...weldedEls, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
+                                  const newPending = (isMont || isTrav) ? null : { x1: px, y1: py, _subType: subTypeVal || null };
+                                  setDW([...els, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
