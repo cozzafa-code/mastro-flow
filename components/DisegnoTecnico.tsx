@@ -1785,14 +1785,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 }
                                 // Anta usa il poly se esiste un telaio libero non rettangolare (poligono reale)
                                 // Altrimenti usa innerRect (caso normale: telaio rect senza freeLine)
-                                const hasRealPoly = poly && (() => {
-                                  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+                                const _polyForCheck = polyVC || poly;
+                                const hasRealPoly = _polyForCheck && (() => {
+                                  const xs = _polyForCheck.map(p => p[0]), ys = _polyForCheck.map(p => p[1]);
                                   const minX = Math.min(...xs), maxX = Math.max(...xs);
                                   const minY = Math.min(...ys), maxY = Math.max(...ys);
                                   // Se il poligono ha >4 vertici o se non è rettangolare, è un poly reale
-                                  if (poly.length > 4) return true;
-                                  // Controllo se è rettangolare: ogni vertice deve essere su un angolo del bbox
-                                  return !poly.every(p => (p[0] === minX || p[0] === maxX) && (p[1] === minY || p[1] === maxY));
+                                  if (_polyForCheck.length > 4) return true;
+                                  return !_polyForCheck.every(p => (p[0] === minX || p[0] === maxX) && (p[1] === minY || p[1] === maxY));
                                 })();
                                 if (cell && !cell.poly && hasRealPoly) {
                                   cell = { id: cell.id, poly: [
@@ -1801,9 +1801,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   ], _bspInset: true };
                                 }
                                 if (!cell && cells.length === 0) {
-                                  // Usa il poligono reale chiuso (da getPolygons) se disponibile
-                                  if (poly && poly.length >= 3) {
-                                    cell = { id: "poly", poly: poly };
+                                  // Usa il poligono reale chiuso se disponibile
+                                  const _polyFallback = polyVC || poly;
+                                  if (_polyFallback && _polyFallback.length >= 3) {
+                                    cell = { id: "poly", poly: _polyFallback };
                                   } else {
                                     // Fallback: BBOX delle freeLine
                                     const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
