@@ -2699,6 +2699,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
                                       else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
                                     }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #1A9E73", background: "#1A9E73", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>Chiudi</div>
+                                    <div onClick={() => {
+                                      const fl = els.filter(e => e.type === "freeLine" && !e.subType);
+                                      const ptCount: Record<string,number> = {};
+                                      fl.forEach(l => { const k1 = Math.round(l.x1)+","+Math.round(l.y1); const k2 = Math.round(l.x2)+","+Math.round(l.y2); ptCount[k1]=(ptCount[k1]||0)+1; ptCount[k2]=(ptCount[k2]||0)+1; });
+                                      const freePts: {x:number,y:number}[] = [];
+                                      fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
+                                      if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y, _virtual: true }], { _pendingLine: null }); }
+                                    }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px dashed #1A9E73", background: "#fff", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#1A9E73", whiteSpace: "nowrap" }}>Chiudi ⓥ</div>
                                   )}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.</div>
@@ -3630,6 +3638,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
+                                    if (el.type === "freeLine" && el._virtual) {
+                                      // Chiusura virtuale — invisibile, solo per calcolo poligono
+                                      return <g key={el.id} />;
+                                    }
                                     if (el.type === "freeLine") {
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
