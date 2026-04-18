@@ -948,7 +948,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // Touch detection: dita richiedono raggio molto piu' grande del mouse
                             const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
                             // Base: 120 su touch (pollice + imprecisione), 28 mouse. Diviso per zoom.
-                            const SNAP_R = (_isTouch ? 60 : 15) / Math.max(0.4, (dw._zoom || 1));
+                            const SNAP_R = (_isTouch ? 120 : 28) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -2366,42 +2366,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Per montante/traverso: reset pendingLine (no catena), per telaio libero: concatena
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
                                   const newPending = (isMont || isTrav) ? null : { x1: snappedX2, y1: snappedY2, _subType: subTypeVal || null };
-                                  // Saldatura globale: forza tutti i vertici vicini (<20px) alla stessa posizione
-                                  const allFinal = [...weldedEls, newEl];
-                                  const GWELD = 20;
-                                  const freeOnly = allFinal.filter(e => e.type === "freeLine" || e.type === "virtualClose");
-                                  // Raccogli tutti i vertici unici
-                                  const allVtx: {x:number,y:number,elIdx:number,ptKey:string}[] = [];
-                                  freeOnly.forEach((el, i) => {
-                                    const idx = allFinal.indexOf(el);
-                                    allVtx.push({x:el.x1,y:el.y1,elIdx:idx,ptKey:"1"});
-                                    allVtx.push({x:el.x2,y:el.y2,elIdx:idx,ptKey:"2"});
-                                  });
-                                  // Per ogni coppia vicina, forza alla media
-                                  const merged = new Map<number, {x:number,y:number}>();
-                                  for (let i = 0; i < allVtx.length; i++) {
-                                    for (let j = i+1; j < allVtx.length; j++) {
-                                      if (Math.hypot(allVtx[i].x-allVtx[j].x, allVtx[i].y-allVtx[j].y) < GWELD) {
-                                        // Usa il primo punto come riferimento (non la media, per stabilità)
-                                        const ref = merged.get(i) || {x:allVtx[i].x, y:allVtx[i].y};
-                                        merged.set(j, ref);
-                                        if (!merged.has(i)) merged.set(i, ref);
-                                      }
-                                    }
-                                  }
-                                  // Applica le saldature
-                                  if (merged.size > 0) {
-                                    merged.forEach((pt, vtxIdx) => {
-                                      const v = allVtx[vtxIdx];
-                                      const el = allFinal[v.elIdx];
-                                      if (v.ptKey === "1") { el.x1 = pt.x; el.y1 = pt.y; }
-                                      else { el.x2 = pt.x; el.y2 = pt.y; }
-                                    });
-                                  }
-                                  // Aggiorna anche il pending per la catena
-                                  const lastEl = allFinal[allFinal.length-1];
-                                  const fixedPending = (isMont || isTrav) ? null : { x1: lastEl.x2, y1: lastEl.y2, _subType: subTypeVal || null };
-                                  setDW(allFinal, { _pendingLine: fixedPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
+                                  setDW([...weldedEls, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
                               }
