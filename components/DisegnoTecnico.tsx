@@ -1935,8 +1935,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     _realPoly = cell.poly;
                                   }
                                   if (_realPoly && _realPoly.length >= 3) {
-                                    // Anta segue il poly reale del telaio
-                                    cellPoly = _realPoly.map(p => [p[0], p[1]]);
+                                    // Anta: shrink 10px dal centroide — sta dentro il telaio
+                                    const _cx = _realPoly.reduce((s,p)=>s+p[0],0)/_realPoly.length;
+                                    const _cy = _realPoly.reduce((s,p)=>s+p[1],0)/_realPoly.length;
+                                    cellPoly = _realPoly.map(p => {
+                                      const dx = _cx-p[0], dy = _cy-p[1];
+                                      const d = Math.hypot(dx,dy) || 1;
+                                      return [p[0]+dx/d*10, p[1]+dy/d*10];
+                                    });
                                   }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
                                     // Rimuovi solo le polyAnta nella stessa zona X
