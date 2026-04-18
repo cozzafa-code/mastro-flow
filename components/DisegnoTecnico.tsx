@@ -1934,13 +1934,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }
                                   if (!_realPoly) _realPoly = cell.poly;
                                   if (_realPoly && _realPoly.length >= 3) {
-                                    const _rpXs = _realPoly.map(p=>p[0]), _rpYs = _realPoly.map(p=>p[1]);
-                                    const _rpMinX = Math.min(..._rpXs), _rpMaxX = Math.max(..._rpXs);
-                                    const _rpMinY = Math.min(..._rpYs), _rpMaxY = Math.max(..._rpYs);
-                                    const _isRect = _realPoly.length === 4 && _realPoly.every(p => 
-                                      (Math.abs(p[0]-_rpMinX)<3 || Math.abs(p[0]-_rpMaxX)<3) && 
-                                      (Math.abs(p[1]-_rpMinY)<3 || Math.abs(p[1]-_rpMaxY)<3));
-                                    if (!_isRect) {
+                                    {
                                       // Inset per-edge con winding corretto
                                       const _n = _realPoly.length;
                                       // Calcola area con segno per determinare winding (CW vs CCW)
