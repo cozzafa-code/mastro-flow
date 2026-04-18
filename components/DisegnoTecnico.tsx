@@ -1935,14 +1935,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     _realPoly = cell.poly;
                                   }
                                   if (_realPoly && _realPoly.length >= 3) {
-                                    // Anta: shrink 18px dal centroide — sta dentro il telaio
+                                    // Anta: scala proporzionale 94% verso il centroide — uniforme su tutti i lati
                                     const _cx = _realPoly.reduce((s,p)=>s+p[0],0)/_realPoly.length;
                                     const _cy = _realPoly.reduce((s,p)=>s+p[1],0)/_realPoly.length;
-                                    cellPoly = _realPoly.map(p => {
-                                      const dx = _cx-p[0], dy = _cy-p[1];
-                                      const d = Math.hypot(dx,dy) || 1;
-                                      return [p[0]+dx/d*28, p[1]+dy/d*28];
-                                    });
+                                    const _scale = 0.94;
+                                    cellPoly = _realPoly.map(p => [
+                                      _cx + (p[0] - _cx) * _scale,
+                                      _cy + (p[1] - _cy) * _scale
+                                    ]);
                                   }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
                                     // Rimuovi solo le polyAnta nella stessa zona X
