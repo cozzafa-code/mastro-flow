@@ -1943,10 +1943,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (!_isRect) {
                                       const _pcx = _rpXs.reduce((a,b)=>a+b,0)/_realPoly.length;
                                       const _pcy = _rpYs.reduce((a,b)=>a+b,0)/_realPoly.length;
+                                      const _antaInset = Math.min(_cpInset, 3);
                                       cellPoly = _realPoly.map(p => {
                                         const dx = _pcx - p[0], dy = _pcy - p[1];
                                         const dist = Math.hypot(dx, dy) || 1;
-                                        return [p[0] + dx/dist * _cpInset, p[1] + dy/dist * _cpInset];
+                                        return [p[0] + dx/dist * _antaInset, p[1] + dy/dist * _antaInset];
                                       });
                                     }
                                   }
@@ -3187,14 +3188,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <pattern id={`dg-${vanoId}`} width={GRID} height={GRID} patternUnits="userSpaceOnUse">
                                       <path d={`M ${GRID} 0 L 0 0 0 ${GRID}`} fill="none" stroke="#f0f0f0" strokeWidth="0.5" />
                                     </pattern>
-                                    {poly && <clipPath id={`polyClip-${vanoId}`}><polygon points={poly.map(p => p.join(",")).join(" ")} /></clipPath>}
+                                    {(polyVC || poly) && <clipPath id={`polyClip-${vanoId}`}><polygon points={(polyVC || poly).map(p => p.join(",")).join(" ")} /></clipPath>}
                                     {frame && <clipPath id={`frameClip-${vanoId}`}><rect x={frame.x+6} y={frame.y+6} width={frame.w-12} height={frame.h-12} /></clipPath>}
                                   </defs>
                                   <rect x={panX - 100} y={panY - 100} width={canvasW / zoom + 200} height={canvasH / zoom + 200} fill={`url(#dg-${vanoId})`} />
 
                                   {/* Cell highlights in place mode — clipped to polygon if present */}
                                   {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-ap" || drawMode === "place-mont" || drawMode === "place-trav" || drawMode === "place-porta" || drawMode === "place-persiana") && cells.length > 0 && (
-                                    <g clipPath={poly ? `url(#polyClip-${vanoId})` : undefined}>
+                                    <g clipPath={(polyVC || poly) ? `url(#polyClip-${vanoId})` : undefined}>
                                       {cells.map(c2 => (
                                         <rect key={`cell-${c2.id}`} x={c2.x + 1} y={c2.y + 1} width={c2.w - 2} height={c2.h - 2}
                                           fill={drawMode === "place-ap" ? T.blue : drawMode === "place-mont" || drawMode === "place-trav" ? "#555" : T.grn} fillOpacity={0.06}
@@ -3204,9 +3205,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   )}
                                   {/* Polygon shape highlight when no cells but freeLines exist */}
                                   {(drawMode === "place-anta" || drawMode === "place-vetro" || drawMode === "place-ap" || drawMode === "place-porta" || drawMode === "place-persiana") && cells.length === 0 && (() => {
-                                    const lines = els.filter(e => e.type === "freeLine");
+                                    const lines = els.filter(e => e.type === "freeLine" || e.type === "virtualClose");
                                     if (lines.length < 2) return null;
-                                    // Build point chain from connected lines
+                                    // Build point chain from connected lines (tolleranza 30px per angoli imprecisi)
                                     const pts = [];
                                     const used = new Set();
                                     const addPt = (x, y) => { const k = `${Math.round(x)},${Math.round(y)}`; if (!pts.length || k !== `${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x, y]); };
@@ -3216,8 +3217,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       for (let li = 0; li < lines.length; li++) {
                                         if (used.has(li)) continue;
                                         const l = lines[li];
-                                        if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 2) { addPt(l.x2, l.y2); used.add(li); break; }
-                                        if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 2) { addPt(l.x1, l.y1); used.add(li); break; }
+                                        if (Math.hypot(l.x1 - last[0], l.y1 - last[1]) < 30) { addPt(l.x2, l.y2); used.add(li); break; }
+                                        if (Math.hypot(l.x2 - last[0], l.y2 - last[1]) < 30) { addPt(l.x1, l.y1); used.add(li); break; }
                                       }
                                     }
                                     const clr = drawMode === "place-ap" ? T.blue : T.grn;
