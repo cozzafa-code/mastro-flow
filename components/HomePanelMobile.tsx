@@ -284,7 +284,7 @@ export default function HomePanel() {
         </Card>
 
         {/* AZIONI RAPIDE */}
-        <div style={{ marginTop: 4, paddingRight: 28 }}>
+        <div style={{ marginTop: 4 }}>
           <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 800, color: SUB, textTransform: "uppercase" as any, letterSpacing: "0.07em" }}>Azioni rapide</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div onClick={() => setShowModal("commessa")}
