@@ -1935,54 +1935,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     _realPoly = cell.poly;
                                   }
                                   if (_realPoly && _realPoly.length >= 3) {
-                                    {
-                                      // Inset per-edge con winding corretto
-                                      const _n = _realPoly.length;
-                                      // Calcola area con segno per determinare winding (CW vs CCW)
-                                      let _signedArea = 0;
-                                      for (let i = 0; i < _n; i++) {
-                                        const a = _realPoly[i], b = _realPoly[(i+1)%_n];
-                                        _signedArea += (a[0]*b[1] - b[0]*a[1]);
-                                      }
-                                      // Se _signedArea > 0 → CCW, normali interne = rotate CW (-90°) = (dy, -dx)
-                                      // Se _signedArea < 0 → CW, normali interne = rotate CCW (+90°) = (-dy, dx)
-                                      const _ccw = _signedArea > 0;
-                                      const insetPts: number[][] = [];
-                                      for (let i = 0; i < _n; i++) {
-                                        const prev = _realPoly[(i-1+_n)%_n];
-                                        const cur = _realPoly[i];
-                                        const next = _realPoly[(i+1)%_n];
-                                        // Edge entrante (prev→cur)
-                                        const e1x = cur[0]-prev[0], e1y = cur[1]-prev[1];
-                                        const e1len = Math.hypot(e1x,e1y) || 1;
-                                        // Edge uscente (cur→next)
-                                        const e2x = next[0]-cur[0], e2y = next[1]-cur[1];
-                                        const e2len = Math.hypot(e2x,e2y) || 1;
-                                        // Normali interne
-                                        let n1x: number, n1y: number, n2x: number, n2y: number;
-                                        if (_ccw) {
-                                          n1x = e1y/e1len; n1y = -e1x/e1len;
-                                          n2x = e2y/e2len; n2y = -e2x/e2len;
-                                        } else {
-                                          n1x = -e1y/e1len; n1y = e1x/e1len;
-                                          n2x = -e2y/e2len; n2y = e2x/e2len;
-                                        }
-                                        // Bisettrice
-                                        let bx = n1x+n2x, by = n1y+n2y;
-                                        const blen = Math.hypot(bx,by);
-                                        if (blen < 0.001) {
-                                          insetPts.push([cur[0]+n1x*TK_FRAME, cur[1]+n1y*TK_FRAME]);
-                                        } else {
-                                          bx /= blen; by /= blen;
-                                          // Offset lungo bisettrice = TK_FRAME / cos(half_angle)
-                                          const dot = n1x*bx + n1y*by;
-                                          const offset = dot > 0.1 ? TK_FRAME / dot : TK_FRAME * 2;
-                                          const clampOff = Math.min(offset, TK_FRAME * 4);
-                                          insetPts.push([cur[0]+bx*clampOff, cur[1]+by*clampOff]);
-                                        }
-                                      }
-                                      cellPoly = insetPts;
-                                    }
+                                    // Anta segue il poly reale del telaio
+                                    cellPoly = _realPoly.map(p => [p[0], p[1]]);
                                   }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
                                     // Rimuovi solo le polyAnta nella stessa zona X
