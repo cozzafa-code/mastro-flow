@@ -2234,9 +2234,20 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
-                                    // Soglia, zoccolo, fascia, profcomp, tel.libero ÔÇö snap unificato
+                                    // Soglia, zoccolo, fascia, profcomp, tel.libero — snap unificato
                                     const snapPt = findSnap(px, py);
                                     if (snapPt) { px = snapPt.x; py = snapPt.y; }
+                                    // Extra: snap forte ai vertici freeLine esistenti (angoli perfetti)
+                                    if (!snapPt) {
+                                      let bestVD = 25, bestV: any = null;
+                                      els.filter(e => e.type === "freeLine").forEach(l => {
+                                        [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}].forEach(p => {
+                                          const d = Math.hypot(px-p.x, py-p.y);
+                                          if (d < bestVD) { bestVD = d; bestV = p; }
+                                        });
+                                      });
+                                      if (bestV) { px = bestV.x; py = bestV.y; }
+                                    }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
                                 } else {
