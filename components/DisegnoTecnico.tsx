@@ -925,6 +925,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
   const [menuTab, setMenuTab] = React.useState<"struttura"|"aperture"|"strumenti">("struttura");
+  const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
   const realW = propRealW || 1200;
@@ -2477,6 +2478,18 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 <div style={{ padding: "8px 12px", background: `${"#1A9E73"}10`, display: "flex", alignItems: "center", gap: 8 }}>
                                   <span style={{ fontSize: 14 }}>✏️</span>
                                   <span style={{ fontSize: 12, fontWeight: 800, color: "#1A9E73", flex: 1 }}>Disegno — {vanoNome || "Vano"} ({realW}×{realH})</span>
+                                  {/* Toggle Vista Interna / Esterna */}
+                                  <div onClick={() => setVista(vista === "interna" ? "esterna" : "interna")}
+                                    style={{
+                                      display: "flex", alignItems: "center", gap: 4, cursor: "pointer",
+                                      padding: "3px 8px", borderRadius: 12,
+                                      background: vista === "interna" ? "#1A9E7320" : "#D0800820",
+                                      border: `1.5px solid ${vista === "interna" ? "#1A9E73" : "#D08008"}`,
+                                      fontSize: 10, fontWeight: 800,
+                                      color: vista === "interna" ? "#1A9E73" : "#D08008",
+                                    }}>
+                                    {vista === "interna" ? "🏠 INT" : "🌳 EST"} ⇄
+                                  </div>
                                   <span onClick={() => onClose()} style={{ fontSize: 16, cursor: "pointer", color: T.sub, padding: "2px 6px" }}>✕</span>
                                 </div>
 
@@ -2696,9 +2709,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                                 {/* SVG Canvas — zoomable with wheel + pannable */}
                                 <div style={{ overflow: "hidden", position: "relative", flex: "1 1 0", minHeight: 300, border: `1px solid ${T.bdr}` }}>
+                                {/* Badge Vista — fisso sopra al canvas */}
+                                <div style={{
+                                  position: "absolute", top: 8, left: 8, zIndex: 10,
+                                  padding: "4px 10px", borderRadius: 14,
+                                  background: vista === "interna" ? "#1A9E73" : "#D08008",
+                                  color: "white", fontSize: 10, fontWeight: 900,
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                                  pointerEvents: "none",
+                                  letterSpacing: 0.5,
+                                }}>
+                                  {vista === "interna" ? "🏠 VISTA INTERNA" : "🌳 VISTA ESTERNA (specchiata)"}
+                                </div>
                                 <svg width="100%" height="100%"
                                   viewBox={`${panX} ${panY} ${canvasW / zoom} ${canvasH / zoom}`}
-                                  style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default") }}
+                                  style={{ display: "block", background: "#fff", touchAction: "none", cursor: drawMode ? cursorMode : (zoom > 1 ? "grab" : "default"), transform: vista === "esterna" ? "scaleX(-1)" : "none", transition: "transform 0.3s ease" }}
                                   onClick={onSvgClick}
                                   onWheel={(e2) => {
                                     e2.preventDefault();
