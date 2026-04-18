@@ -1810,14 +1810,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Inseta il poly di TK_FRAME per stare dentro il telaio (bordo INTERNO del profilo)
                                   // Se la cella viene da BSP (getCells), è GIÀ insetata — usa offset 0
                                   const _cpInset = cell._bspInset ? 0 : TK_FRAME;
-                                  // Usa il poligono reale con inset verso il centroide (non bbox)
-                                  const _cpCx = _cpAllX.reduce((a,b)=>a+b,0) / _cpAllX.length;
-                                  const _cpCy = _cpAllY.reduce((a,b)=>a+b,0) / _cpAllY.length;
-                                  let cellPoly = cell.poly.map(p => {
-                                    const dx = _cpCx - p[0], dy = _cpCy - p[1];
-                                    const dist = Math.hypot(dx, dy) || 1;
-                                    return [p[0] + dx / dist * _cpInset, p[1] + dy / dist * _cpInset];
-                                  });
+                                  let cellPoly = [
+                                    [_cpMinX + _cpInset, _cpMinY + _cpInset],
+                                    [_cpMaxX - _cpInset, _cpMinY + _cpInset],
+                                    [_cpMaxX - _cpInset, _cpMaxY - _cpInset],
+                                    [_cpMinX + _cpInset, _cpMaxY - _cpInset]
+                                  ];
                                   if (freeMontanti.length > 0) {
                                     // Taglia il poligono con linee verticali dei montanti
                                     const allPolyX = cell.poly.map(p => p[0]);
@@ -1833,35 +1831,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         if (mx < montX[i]) { subX2 = montX[i]; break; }
                                         subX1 = montX[i];
                                       }
-                                      // Clip il poly tra subX1 e subX2 mantenendo le Y reali dei bordi
-                                      const clipPolyByX = (poly: number[][], xL: number, xR: number) => {
-                                        // Trova le Y di intersezione dei lati del poly con le verticali xL e xR
-                                        const findYatX = (x: number) => {
-                                          const ys: number[] = [];
-                                          for (let i = 0; i < poly.length; i++) {
-                                            const a = poly[i], b = poly[(i+1)%poly.length];
-                                            const minX = Math.min(a[0],b[0]), maxX = Math.max(a[0],b[0]);
-                                            if (x >= minX - 1 && x <= maxX + 1 && Math.abs(b[0]-a[0]) > 0.5) {
-                                              const t = (x - a[0]) / (b[0] - a[0]);
-                                              if (t >= -0.01 && t <= 1.01) ys.push(a[1] + t * (b[1] - a[1]));
-                                            }
-                                          }
-                                          ys.sort((a,b)=>a-b);
-                                          return ys;
-                                        };
-                                        const ysL = findYatX(xL), ysR = findYatX(xR);
-                                        if (ysL.length >= 2 && ysR.length >= 2) {
-                                          return [
-                                            [xL + _cpInset, ysL[0] + _cpInset],
-                                            [xR - _cpInset, ysR[0] + _cpInset],
-                                            [xR - _cpInset, ysR[ysR.length-1] - _cpInset],
-                                            [xL + _cpInset, ysL[ysL.length-1] - _cpInset]
-                                          ];
-                                        }
-                                        return null;
-                                      };
-                                      const clipped = clipPolyByX(cell.poly, subX1, subX2);
-                                      if (clipped) cellPoly = clipped;
+                                      cellPoly = [
+                                        [subX1 + _cpInset, _cpMinY + _cpInset],
+                                        [subX2 - _cpInset, _cpMinY + _cpInset],
+                                        [subX2 - _cpInset, _cpMaxY - _cpInset],
+                                        [subX1 + _cpInset, _cpMaxY - _cpInset]
+                                      ];
                                     }
                                   }
                                   // ── Clip Y per zoccolo/soglia/fascia/traverso orizzontali dentro la cella ──
@@ -1888,11 +1863,31 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   });
                                   document.title = `POLY cpT=${cpTop.toFixed(0)} cpB=${cpBot.toFixed(0)} subs=${horzSubEls.length} ${horzSubEls.map(h=>`${h.subType||"?"}@y=${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
-                                  // Clip Y mantenendo la forma: ogni punto viene limitato tra cpTop e cpBot
-                                  cellPoly = cellPoly.map(p => [
-                                    p[0],
-                                    Math.max(cpTop, Math.min(cpBot, p[1]))
-                                  ]);
+                                  cellPoly = [
+                                    [cellPoly[0][0], cpTop],
+                                    [cellPoly[1][0], cpTop],
+                                    [cellPoly[2][0], cpBot],
+                                    [cellPoly[3][0], cpBot]
+                                  ];
+                                  // Se il poly reale non è rettangolare, usa quello per l'anta
+                                  if (poly && poly.length >= 3) {
+                                    const _polyXs = poly.map(p=>p[0]), _polyYs = poly.map(p=>p[1]);
+                                    const _pMinX = Math.min(..._polyXs), _pMaxX = Math.max(..._polyXs);
+                                    const _pMinY = Math.min(..._polyYs), _pMaxY = Math.max(..._polyYs);
+                                    const _isRect = poly.length === 4 && poly.every(p => 
+                                      (Math.abs(p[0]-_pMinX)<2 || Math.abs(p[0]-_pMaxX)<2) && 
+                                      (Math.abs(p[1]-_pMinY)<2 || Math.abs(p[1]-_pMaxY)<2));
+                                    if (!_isRect) {
+                                      // Poly non rettangolare: inset ogni vertice verso il centroide
+                                      const _pcx = _polyXs.reduce((a,b)=>a+b,0)/poly.length;
+                                      const _pcy = _polyYs.reduce((a,b)=>a+b,0)/poly.length;
+                                      cellPoly = poly.map(p => {
+                                        const dx = _pcx - p[0], dy = _pcy - p[1];
+                                        const dist = Math.hypot(dx, dy) || 1;
+                                        return [p[0] + dx/dist * _cpInset, p[1] + dy/dist * _cpInset];
+                                      });
+                                    }
+                                  }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
                                     // Rimuovi solo le polyAnta nella stessa zona X
                                     const subMinX = Math.min(...cellPoly.map(p => p[0]));
