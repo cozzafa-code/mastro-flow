@@ -3266,7 +3266,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return <g key={`oc${ci}`}>
                                         <polyline points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={TK + 1} strokeLinejoin="miter" strokeMiterlimit={20} strokeLinecap="square" />
                                         <polyline points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK - 0.5} strokeLinejoin="miter" strokeMiterlimit={20} strokeLinecap="square" />
-                                        <polyline points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeLinecap="square" />
+
                                         {ch.map((p,pi) => <circle key={`occ${ci}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>;
                                     });
