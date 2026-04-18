@@ -2670,21 +2670,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="9" x2="3" y2="15"/><line x1="21" y1="9" x2="21" y2="15"/></svg>Misure</div>
                                   {/* Righello / Metro */}
                                   <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21L21 3L21 9L3 21Z"/><line x1="7" y1="17" x2="9" y2="15"/><line x1="11" y1="13" x2="13" y2="11"/><line x1="15" y1="9" x2="17" y2="7"/></svg>Righello</div>
-                                  {/* Toggle Gradi — mostra angoli numerici sui vertici */}
-                                  <div onClick={() => setMode({ _showGradi: !dw._showGradi })} style={{ ...bs(dw._showGradi), background: dw._showGradi ? "#D0800812" : undefined, color: dw._showGradi ? "#D08008" : undefined, border: `1px solid ${dw._showGradi ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21 L21 21 L3 3 Z"/><path d="M8 21 A5 5 0 0 0 3 16" strokeWidth="1.5"/></svg>Gradi</div>
-                                  {/* Toggle Miter 45 — forza taglio 45 a tutti gli angoli del telaio libero */}
-                                  <div onClick={() => {
-                                    const next = !dw._miter45;
-                                    if (next) {
-                                      // Applica 45 a tutte le giunzioni esistenti
-                                      const all45 = junctions.map((j: any) => ({ ...j, type: "45", winner: "A" }));
-                                      setMode({ _miter45: true, _junctions: all45 });
-                                    } else {
-                                      // Riporta a 90
-                                      const all90 = (dw._junctions || []).map((j: any) => ({ ...j, type: "90" }));
-                                      setMode({ _miter45: false, _junctions: all90 });
-                                    }
-                                  }} style={{ ...bs(dw._miter45), background: dw._miter45 ? "#1A9E7312" : undefined, color: dw._miter45 ? "#1A9E73" : undefined, border: `1px solid ${dw._miter45 ? "#1A9E73" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="21" x2="12" y2="12"/><line x1="12" y1="12" x2="21" y2="21"/><line x1="12" y1="12" x2="12" y2="3"/></svg>Angoli 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   {/* Distinta materiali */}
                                   <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Distinta</div>
                                   {/* Giunzioni */}
@@ -3704,48 +3693,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
                                   })}
-                                  {/* ══ OVERLAY GRADI sui vertici freeLine ══ */}
-                                  {dw._showGradi && (() => {
-                                    const fls = els.filter((e: any) => e.type === "freeLine" && !e.subType);
-                                    if (fls.length < 2) return null;
-                                    // Raccolgo endpoint e trovo coppie di linee che si incontrano allo stesso punto
-                                    type Pt = { x: number; y: number; lines: { l: any; isStart: boolean }[] };
-                                    const ptMap: Record<string, Pt> = {};
-                                    const keyOf = (x: number, y: number) => Math.round(x) + "," + Math.round(y);
-                                    fls.forEach(l => {
-                                      const kS = keyOf(l.x1, l.y1), kE = keyOf(l.x2, l.y2);
-                                      if (!ptMap[kS]) ptMap[kS] = { x: l.x1, y: l.y1, lines: [] };
-                                      if (!ptMap[kE]) ptMap[kE] = { x: l.x2, y: l.y2, lines: [] };
-                                      ptMap[kS].lines.push({ l, isStart: true });
-                                      ptMap[kE].lines.push({ l, isStart: false });
-                                    });
-                                    return Object.values(ptMap).filter(p => p.lines.length >= 2).map((p, idx) => {
-                                      // Calcolo i vettori uscenti dal vertice
-                                      const vecs = p.lines.slice(0, 2).map(ln => {
-                                        const other = ln.isStart ? { x: ln.l.x2, y: ln.l.y2 } : { x: ln.l.x1, y: ln.l.y1 };
-                                        const dx = other.x - p.x, dy = other.y - p.y;
-                                        const len = Math.hypot(dx, dy) || 1;
-                                        return { dx: dx / len, dy: dy / len };
-                                      });
-                                      const dot = vecs[0].dx * vecs[1].dx + vecs[0].dy * vecs[1].dy;
-                                      const angRad = Math.acos(Math.max(-1, Math.min(1, dot)));
-                                      const angDeg = Math.round(angRad * 180 / Math.PI);
-                                      // Posizione label: bisettrice interna
-                                      const bx = (vecs[0].dx + vecs[1].dx), by = (vecs[0].dy + vecs[1].dy);
-                                      const blen = Math.hypot(bx, by) || 1;
-                                      const lx = p.x + (bx / blen) * 22, ly = p.y + (by / blen) * 22;
-                                      const isRight = Math.abs(angDeg - 90) < 3;
-                                      const clr = isRight ? "#1A9E73" : "#D08008";
-                                      return (
-                                        <g key={"ang" + idx} pointerEvents="none">
-                                          <circle cx={p.x} cy={p.y} r={4} fill={clr} stroke="#fff" strokeWidth={1} />
-                                          <rect x={lx - 14} y={ly - 7} width={28} height={14} rx={3} fill={clr} opacity={0.92} />
-                                          <text x={lx} y={ly + 4} textAnchor="middle" fontSize={9} fontWeight={900} fill="#fff" fontFamily="monospace">{angDeg}°</text>
-                                        </g>
-                                      );
-                                    });
-                                  })()}
-
                                 </svg>
                                 </div>
 
