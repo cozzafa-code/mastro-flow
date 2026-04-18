@@ -2680,6 +2680,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
                                       if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
                                       else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
+                                      // DEBUG: mostra vertici nel title
+                                      const _dbg = els.filter(e=>e.type==="freeLine"&&!e.subType).map(e=>`${Math.round(e.x1)},${Math.round(e.y1)}→${Math.round(e.x2)},${Math.round(e.y2)}`).join(" | ");
+                                      document.title = _dbg;
                                     }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #1A9E73", background: "#1A9E73", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>Chiudi</div>
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine" && !e.subType);
