@@ -3816,6 +3816,28 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           if (drawMode === "place-mont-free" || drawMode === "place-trav-free") return null;
                                           return <circle cx={gx} cy={gy} r={5} fill={clr} fillOpacity={0.7} />;
                                         })()}
+                                        {/* LIVE ALIGNMENT INDICATOR — mostra "=" quando il cursore è alla stessa Y di un piede esistente */}
+                                        {(() => {
+                                          // Cerca montanti verticali completati (freeLine senza subType, verticali)
+                                          const vLegs = els.filter(e => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 5);
+                                          if (vLegs.length === 0 || gx === null || gy === null) return null;
+                                          // Cerca se gy è allineato al piede (max Y) di un altro montante
+                                          for (const leg of vLegs) {
+                                            const footY = Math.max(leg.y1, leg.y2);
+                                            const footX = (leg.x1 + leg.x2) / 2;
+                                            // Non confrontare con se stesso (stessa X = stesso montante in costruzione)
+                                            if (Math.abs(footX - p.x1) < 5) continue;
+                                            if (Math.abs(gy - footY) < 12) {
+                                              return <g pointerEvents="none">
+                                                <line x1={Math.min(footX, gx)} y1={footY} x2={Math.max(footX, gx)} y2={footY} stroke="#1A9E73" strokeWidth={1.5} strokeDasharray="6,3" opacity={0.8} />
+                                                <circle cx={footX} cy={footY} r={6} fill="none" stroke="#1A9E73" strokeWidth={2} opacity={0.8} />
+                                                <rect x={(footX+gx)/2-14} y={footY-22} width={28} height={16} rx={3} fill="#1A9E73" opacity={0.9} />
+                                                <text x={(footX+gx)/2} y={footY-11} textAnchor="middle" fill="white" fontSize={10} fontWeight={700}>=</text>
+                                              </g>;
+                                            }
+                                          }
+                                          return null;
+                                        })()}
                                         {/* Angle + length label */}
                                         {/* Badge — si adatta per restare visibile */}
                                         {(() => {
