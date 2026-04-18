@@ -1010,6 +1010,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   used.forEach(i => usedGlobal.add(i));
                                   return pts;
                                 }
+                                // Catena aperta con >=3 punti: chiudi implicitamente (telaio senza base)
+                                if (pts.length >= 3 && used.size >= 2) {
+                                  used.forEach(i => usedGlobal.add(i));
+                                  return pts; // poly aperto — la linea di chiusura è implicita
+                                }
                                 return null;
                               };
                               for (let i = 0; i < lines.length; i++) {
@@ -1871,7 +1876,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   ];
                                   // Se il telaio ha forma non rettangolare, adatta l'anta
                                   const _realPoly = poly || cell.poly;
-                                  document.title = `RP=${_realPoly?_realPoly.length:'null'} poly=${poly?poly.length:'null'} cp=${cell.poly?cell.poly.length:'null'} bsp=${cell._bspInset?'Y':'N'}`;
                                   if (_realPoly && _realPoly.length >= 3) {
                                     const _rpXs = _realPoly.map(p=>p[0]), _rpYs = _realPoly.map(p=>p[1]);
                                     const _rpMinX = Math.min(..._rpXs), _rpMaxX = Math.max(..._rpXs);
