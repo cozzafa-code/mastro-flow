@@ -1763,16 +1763,21 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   ], _bspInset: true };
                                 }
                                 if (!cell && cells.length === 0) {
-                                  // Calcola BBOX delle freeLine telaio (senza subType) come cella per anta
-                                  const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
-                                  if (telLines.length >= 2) {
-                                    const allX = telLines.flatMap(l => [l.x1, l.x2]);
-                                    const allY = telLines.flatMap(l => [l.y1, l.y2]);
-                                    const bMinX = Math.min(...allX), bMaxX = Math.max(...allX);
-                                    const bMinY = Math.min(...allY), bMaxY = Math.max(...allY);
-                                    cell = { id: "poly", poly: [
-                                      [bMinX, bMinY], [bMaxX, bMinY], [bMaxX, bMaxY], [bMinX, bMaxY]
-                                    ]};
+                                  // Usa il poligono reale chiuso (da getPolygons) se disponibile
+                                  if (poly && poly.length >= 3) {
+                                    cell = { id: "poly", poly: poly };
+                                  } else {
+                                    // Fallback: BBOX delle freeLine
+                                    const telLines = els.filter(e => e.type === "freeLine" && !e.subType);
+                                    if (telLines.length >= 2) {
+                                      const allX = telLines.flatMap(l => [l.x1, l.x2]);
+                                      const allY = telLines.flatMap(l => [l.y1, l.y2]);
+                                      const bMinX = Math.min(...allX), bMaxX = Math.max(...allX);
+                                      const bMinY = Math.min(...allY), bMaxY = Math.max(...allY);
+                                      cell = { id: "poly", poly: [
+                                        [bMinX, bMinY], [bMaxX, bMinY], [bMaxX, bMaxY], [bMinX, bMaxY]
+                                      ]};
+                                    }
                                   }
                                   // Fallback apLine
                                   if (!cell) {
