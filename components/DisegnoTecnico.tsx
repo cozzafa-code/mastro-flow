@@ -1910,7 +1910,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   ];
                                   // Se il telaio ha forma non rettangolare, adatta l'anta
                                   // poly = poligono chiuso da getPolygons, oppure costruisci dalla catena freeLine aperta
-                                  let _realPoly = poly;
+                                  let _realPoly = polyVC || poly;
                                   if (!_realPoly) {
                                     // Telaio aperto: costruisci poly dalla catena di freeLine + virtualClose
                                     const _fls = els.filter(e => (e.type === "freeLine" && !e.subType) || e.type === "virtualClose");
