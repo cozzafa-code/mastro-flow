@@ -1935,10 +1935,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     _realPoly = cell.poly;
                                   }
                                   if (_realPoly && _realPoly.length >= 3) {
-                                    // Anta: scala proporzionale 94% verso il centroide — uniforme su tutti i lati
+                                    // Anta: scala basata su TK_FRAME — margine fisso in pixel
                                     const _cx = _realPoly.reduce((s,p)=>s+p[0],0)/_realPoly.length;
                                     const _cy = _realPoly.reduce((s,p)=>s+p[1],0)/_realPoly.length;
-                                    const _scale = 0.94;
+                                    // Calcola il raggio medio dal centroide
+                                    const _avgR = _realPoly.reduce((s,p)=>s+Math.hypot(p[0]-_cx,p[1]-_cy),0)/_realPoly.length;
+                                    // Scala = (raggio - TK_FRAME) / raggio
+                                    const _scale = _avgR > TK_FRAME*2 ? (_avgR - TK_FRAME) / _avgR : 0.9;
                                     cellPoly = _realPoly.map(p => [
                                       _cx + (p[0] - _cx) * _scale,
                                       _cy + (p[1] - _cy) * _scale
