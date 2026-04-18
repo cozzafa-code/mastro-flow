@@ -2281,10 +2281,25 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if(bestX!==null) px=bestX;
                                     // Se nessuno snap: accetta px grezzo
                                   }
-                                  // Telaio libero / altri: snap normale
+                                  // Telaio libero / altri: snap diretto ai vertici + findSnap
                                   else {
-                                    const sp = findSnap(px, py);
-                                    if (sp) { px = sp.x; py = sp.y; }
+                                    // Snap diretto ai vertici delle freeLine (priorità assoluta, raggio 28px)
+                                    let _directSnap = false;
+                                    const _allVtx2: {x:number,y:number}[] = [];
+                                    els.filter((e:any) => e.type === "freeLine").forEach((l:any) => {
+                                      _allVtx2.push({x:l.x1,y:l.y1},{x:l.x2,y:l.y2});
+                                    });
+                                    let _bestVD2 = 28, _bestV2: {x:number,y:number}|null = null;
+                                    _allVtx2.forEach(p => {
+                                      const d = Math.hypot(px-p.x, py-p.y);
+                                      if (d < _bestVD2) { _bestVD2 = d; _bestV2 = p; }
+                                    });
+                                    if (_bestV2) { px = _bestV2.x; py = _bestV2.y; _directSnap = true; }
+                                    // Fallback: findSnap generico
+                                    if (!_directSnap) {
+                                      const sp = findSnap(px, py);
+                                      if (sp) { px = sp.x; py = sp.y; }
+                                    }
                                     // H/V alignment: se quasi dritto, forza asse (soglia 20px)
                                     if (Math.abs(px-pending.x1)<10 && Math.abs(py-pending.y1)>10) px=pending.x1;
                                     if (Math.abs(py-pending.y1)<10 && Math.abs(px-pending.x1)>10) py=pending.y1;
