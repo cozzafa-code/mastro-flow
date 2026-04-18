@@ -1943,32 +1943,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (!_isRect) {
                                       const _pcx = _rpXs.reduce((a,b)=>a+b,0)/_realPoly.length;
                                       const _pcy = _rpYs.reduce((a,b)=>a+b,0)/_realPoly.length;
-                                      // Inset uniforme per-edge (ogni lato si muove di TK_FRAME verso l'interno)
-                                      const _inPoly = _realPoly;
-                                      const _inN = _inPoly.length;
-                                      const _inset = 2; // anta quasi a filo col telaio
-                                      cellPoly = _inPoly.map((p, i) => {
-                                        const prev = _inPoly[(i - 1 + _inN) % _inN];
-                                        const next = _inPoly[(i + 1) % _inN];
-                                        // Normali dei due lati adiacenti (verso l'interno)
-                                        const dx1 = p[0] - prev[0], dy1 = p[1] - prev[1];
-                                        const len1 = Math.hypot(dx1, dy1) || 1;
-                                        const n1x = -dy1 / len1, n1y = dx1 / len1;
-                                        const dx2 = next[0] - p[0], dy2 = next[1] - p[1];
-                                        const len2 = Math.hypot(dx2, dy2) || 1;
-                                        const n2x = -dy2 / len2, n2y = dx2 / len2;
-                                        // Bisettrice: media delle due normali
-                                        let bx = (n1x + n2x) / 2, by = (n1y + n2y) / 2;
-                                        const blen = Math.hypot(bx, by) || 1;
-                                        bx /= blen; by /= blen;
-                                        // Verifica direzione (verso il centroide)
-                                        const toCx = _pcx - p[0], toCy = _pcy - p[1];
-                                        if (bx * toCx + by * toCy < 0) { bx = -bx; by = -by; }
-                                        // Calcola spostamento per mantenere inset uniforme
-                                        const sinHalf = Math.abs(n1x * n2y - n1y * n2x);
-                                        const offset = sinHalf > 0.01 ? _inset / Math.max(sinHalf, 0.3) : _inset;
-                                        const clampOff = Math.min(offset, _inset * 3);
-                                        return [p[0] + bx * clampOff, p[1] + by * clampOff];
+                                      // Shrink minimo dal centroide (1px) — anta quasi a filo col profilo
+                                      cellPoly = _realPoly.map(p => {
+                                        const dx = _pcx - p[0], dy = _pcy - p[1];
+                                        const dist = Math.hypot(dx, dy) || 1;
+                                        return [p[0] + dx/dist * 1, p[1] + dy/dist * 1];
                                       });
                                     }
                                   }
@@ -3605,23 +3584,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const tk = el.subType === "porta" ? 4 : 3; // ridotto per anta piu grande
                                       // Outer polygon — riempie tutta la cella
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — inset per-edge uniforme
+                                      // Inner polygon — shrink dal centroide
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const _iN = pts.length;
-                                      const innerPts = pts.map((p, i) => {
-                                        const prev = pts[(i - 1 + _iN) % _iN];
-                                        const next = pts[(i + 1) % _iN];
-                                        const dx1 = p[0]-prev[0], dy1 = p[1]-prev[1], len1 = Math.hypot(dx1,dy1)||1;
-                                        const n1x = -dy1/len1, n1y = dx1/len1;
-                                        const dx2 = next[0]-p[0], dy2 = next[1]-p[1], len2 = Math.hypot(dx2,dy2)||1;
-                                        const n2x = -dy2/len2, n2y = dx2/len2;
-                                        let bx = (n1x+n2x)/2, by = (n1y+n2y)/2;
-                                        const bl = Math.hypot(bx,by)||1; bx/=bl; by/=bl;
-                                        if (bx*(cx2-p[0])+by*(cy2-p[1])<0) { bx=-bx; by=-by; }
-                                        const sinH = Math.abs(n1x*n2y-n1y*n2x);
-                                        const off = Math.min(sinH>0.01 ? tk/Math.max(sinH,0.3) : tk, tk*3);
-                                        return [p[0]+bx*off, p[1]+by*off];
+                                      const innerPts = pts.map(p => {
+                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
+                                        const dist = Math.hypot(dx2, dy2) || 1;
+                                        return [p[0] + dx2/dist * (tk + 2), p[1] + dy2/dist * (tk + 2)];
                                       });
                                       const innerStr = innerPts.map(p => p.join(",")).join(" ");
                                       return (
