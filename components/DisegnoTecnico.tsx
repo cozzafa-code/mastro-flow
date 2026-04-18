@@ -3677,6 +3677,29 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       {/* H/V guide lines from pending point */}
                                       <line x1={panX - 500} y1={p.y1} x2={panX + canvasW/zoom + 500} y2={p.y1} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
                                       <line x1={p.x1} y1={panY - 500} x2={p.x1} y2={panY + canvasH/zoom + 500} stroke="#ccc" strokeWidth={0.5} strokeDasharray="4,4" />
+                                      {/* PASSIVE LEG ALIGNMENT CHECK — solo indicatore visivo, zero interazione */}
+                                      {(() => {
+                                        // Trova montanti verticali completati (freeLine con x1===x2, cioè verticali)
+                                        const verticals = els.filter(e => e.type === "freeLine" && Math.abs(e.x1 - e.x2) < 3);
+                                        if (verticals.length < 2) return null;
+                                        // Prendi il punto più basso (max Y) di ogni montante
+                                        const bottoms = verticals.map(v => ({ x: v.x1, y: Math.max(v.y1, v.y2) }));
+                                        // Controlla se almeno 2 montanti hanno lo stesso Y in basso (tolleranza 8px)
+                                        for (let i = 0; i < bottoms.length; i++) {
+                                          for (let j = i + 1; j < bottoms.length; j++) {
+                                            if (Math.abs(bottoms[i].y - bottoms[j].y) < 8) {
+                                              const midX = (bottoms[i].x + bottoms[j].x) / 2;
+                                              const alignY = (bottoms[i].y + bottoms[j].y) / 2;
+                                              return <g pointerEvents="none" opacity={0.85}>
+                                                <line x1={bottoms[i].x} y1={alignY} x2={bottoms[j].x} y2={alignY} stroke="#1A9E73" strokeWidth={1.2} strokeDasharray="8,4" />
+                                                <rect x={midX - 42} y={alignY + 8} width={84} height={20} rx={4} fill="#1A9E73" />
+                                                <text x={midX} y={alignY + 22} textAnchor="middle" fill="white" fontSize={11} fontWeight={600}>ALLINEATO</text>
+                                              </g>;
+                                            }
+                                          }
+                                        }
+                                        return null;
+                                      })()}
                                       {/* Live guide line to mouse */}
                                       {gx != null && gy != null && <>
                                         <line x1={p.x1} y1={p.y1} x2={gx} y2={gy} stroke={clr} strokeWidth={2.5} strokeDasharray="8,4" opacity={0.8} />
