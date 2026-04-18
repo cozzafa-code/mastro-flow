@@ -2062,7 +2062,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                               if (drawMode === "line" || drawMode === "apertura") {
                                 const pending = dw._pendingLine;
-                                // Leggi subType sia da dw che da pending (pending è più affidabile)
+                                // Leggi subType sia da dw che da pending (pending ├¿ pi├╣ affidabile)
                                 const subTypeVal = (pending && pending._subType) || dw._lineSubType || null;
                                 const isMont = subTypeVal === "montante";
                                 const isTrav = subTypeVal === "traverso";
@@ -2104,17 +2104,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                     setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: { x: px, y: py }, _lineSubType: subTypeVal });
                                   } else {
-                                    // Soglia, zoccolo, fascia, profcomp, tel.libero — snap unificato
+                                    // Soglia, zoccolo, fascia, profcomp, tel.libero ÔÇö snap unificato
                                     const snapPt = findSnap(px, py);
-                                    let antaOri = null;
-                                    if (snapPt) {
-                                      px = snapPt.x; py = snapPt.y;
-                                      if (snapPt._antaSnap && snapPt._antaOri) antaOri = snapPt._antaOri;
-                                    }
-                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal, _antaOri: antaOri }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
+                                    if (snapPt) { px = snapPt.x; py = snapPt.y; }
+                                    setMode({ _pendingLine: { x1: px, y1: py, _subType: subTypeVal }, _chainStart: dw._chainStart || { x: px, y: py }, _lineSubType: subTypeVal });
                                   }
                                 } else {
-                                  // SECONDO CLICK — crea il segmento
+                                  // SECONDO CLICK ÔÇö crea il segmento
 
                                   // Montante: X SEMPRE uguale al primo punto, Y libera
                                   if (isMont) {
@@ -2149,11 +2145,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const sp = findSnap(px, py);
                                     if (sp) { px = sp.x; py = sp.y; }
                                     else {
-                                      // Forzatura ortogonale minima (solo se distanza <5px) come nel 30mar
                                       if (Math.abs(px-pending.x1)<5) px=pending.x1;
                                       if (Math.abs(py-pending.y1)<5) py=pending.y1;
                                     }
-                                    // chiusura forma — solo per telaio libero senza subType
+                                    // chiusura forma ÔÇö solo per telaio libero senza subType
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
                                       const freeLines = els.filter(e=>e.type==="freeLine");
@@ -2161,19 +2156,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }
 
-                                  // Se è aggancio ANTA → forza allineamento H o V rigido e salta tutti gli altri snap
-                                  if (pending._antaOri === "H") {
-                                    py = pending.y1; // forza Y uguale al primo click (linea orizzontale)
-                                    // Snap X all'estremo anta più vicino
-                                    const snapX = findSnap(px, py);
-                                    if (snapX && snapX._antaSnap && Math.abs(snapX.y - py) < 2) px = snapX.x;
-                                  } else if (pending._antaOri === "V") {
-                                    px = pending.x1; // forza X uguale al primo click (linea verticale)
-                                    const snapY = findSnap(px, py);
-                                    if (snapY && snapY._antaSnap && Math.abs(snapY.x - px) < 2) py = snapY.y;
-                                  }
-                                  // Per montante X è sempre = pending.x1, per traverso Y è sempre = pending.y1
-                                  // → il guard "punto uguale" va saltato per questi subType
+                                  // Per montante X ├¿ sempre = pending.x1, per traverso Y ├¿ sempre = pending.y1
+                                  // ÔåÆ il guard "punto uguale" va saltato per questi subType
                                   if (!isMont && !isTrav && px===pending.x1 && py===pending.y1) return;
                                   if (isMont && py===pending.y1) return;   // zero-length verticale
                                   if (isTrav && px===pending.x1) return;   // zero-length orizzontale
@@ -2241,7 +2225,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 }
                                 return;
                               }
-
                               // Righello — traccia misura con punti di riferimento
                               if (drawMode === "righello") {
                                 const sp = findSnap(mx, my);
