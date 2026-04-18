@@ -2148,10 +2148,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   else {
                                     const sp = findSnap(px, py);
                                     if (sp) { px = sp.x; py = sp.y; }
-                                    // H/V: forza allineamento anche dopo snap
-                                    const adxC = Math.abs(px-pending.x1), adyC = Math.abs(py-pending.y1);
-                                    if (adxC < 25 && adyC > adxC * 1.5) px=pending.x1;
-                                    if (adyC < 25 && adxC > adyC * 1.5) py=pending.y1;
+                                    else {
+                                      // Forzatura ortogonale minima (solo se distanza <5px) come nel 30mar
+                                      if (Math.abs(px-pending.x1)<5) px=pending.x1;
+                                      if (Math.abs(py-pending.y1)<5) py=pending.y1;
+                                    }
                                     // chiusura forma — solo per telaio libero senza subType
                                     if (!subTypeVal) {
                                       const cs = dw._chainStart;
