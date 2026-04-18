@@ -1901,15 +1901,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       cpTop = Math.max(cpTop, hMidY);
                                     }
                                   });
-                                  document.title = `POLY cpT=${cpTop.toFixed(0)} cpB=${cpBot.toFixed(0)} subs=${horzSubEls.length} ${horzSubEls.map(h=>`${h.subType||"?"}@y=${((h.y1+h.y2)/2).toFixed(0)}`).join(",")}`;
-                                  cellPoly = [
-                                    [cellPoly[0][0], cpTop],
-                                    [cellPoly[1][0], cpTop],
-                                    [cellPoly[2][0], cpBot],
-                                    [cellPoly[3][0], cpBot]
-                                  ];
-                                  // Se il telaio ha forma non rettangolare, adatta l'anta
-                                  // poly = poligono chiuso da getPolygons, oppure costruisci dalla catena freeLine aperta
+                                  // Controlla se c'è un poly reale (non rettangolare) da usare per l'anta
                                   let _realPoly = polyVC || poly;
                                   if (!_realPoly) {
                                     // Telaio aperto: costruisci poly dalla catena di freeLine + virtualClose
@@ -1932,7 +1924,16 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       if (_pts.length >= 3) _realPoly = _pts;
                                     }
                                   }
-                                  if (!_realPoly) _realPoly = cell.poly;
+                                  if (!_realPoly) {
+                                    // Nessun poly reale — applica clamp Y rettangolare (logica originale)
+                                    cellPoly = [
+                                      [cellPoly[0][0], cpTop],
+                                      [cellPoly[1][0], cpTop],
+                                      [cellPoly[2][0], cpBot],
+                                      [cellPoly[3][0], cpBot]
+                                    ];
+                                    _realPoly = cell.poly;
+                                  }
                                   if (_realPoly && _realPoly.length >= 3) {
                                     {
                                       // Inset per-edge con winding corretto
