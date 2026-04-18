@@ -2362,7 +2362,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   });
                                   // Per montante/traverso: reset pendingLine (no catena), per telaio libero: concatena
                                   const newChainStart = (isMont || isTrav) ? null : dw._chainStart;
-                                  const newPending = (isMont || isTrav) ? null : { x1: px, y1: py, _subType: subTypeVal || null };
+                                  const newPending = (isMont || isTrav) ? null : { x1: snappedX2, y1: snappedY2, _subType: subTypeVal || null };
                                   setDW([...weldedEls, newEl], { _pendingLine: newPending, _chainStart: newChainStart, _lineSubType: subTypeVal });
                                 }
                                 return;
