@@ -1024,6 +1024,44 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const area = (p) => Math.abs(p.reduce((s,pt,i)=>{ const q=p[(i+1)%p.length]; return s+(pt[0]*q[1]-q[0]*pt[1]); },0)/2);
                               return area(a) >= area(b) ? a : b;
                             }) : null;
+                            // Poly con virtualClose inclusa — solo per calcolo anta
+                            const _getPolysVC = () => {
+                              const vcs = els.filter(e => e.type === "virtualClose");
+                              if (vcs.length === 0) return polys;
+                              const lines = [...els.filter(e => e.type === "freeLine"), ...vcs];
+                              if (lines.length < 3) return polys;
+                              const CONN = 15;
+                              const usedG = new Set();
+                              const res: number[][][] = [];
+                              for (let si = 0; si < lines.length; si++) {
+                                if (usedG.has(si)) continue;
+                                const used = new Set<number>();
+                                const pts: number[][] = [];
+                                const addP = (x:number,y:number) => { const k=`${Math.round(x)},${Math.round(y)}`; if(!pts.length||k!==`${Math.round(pts[pts.length-1][0])},${Math.round(pts[pts.length-1][1])}`) pts.push([x,y]); };
+                                addP(lines[si].x1, lines[si].y1); addP(lines[si].x2, lines[si].y2); used.add(si);
+                                for (let it=0; it<lines.length; it++) {
+                                  const last=pts[pts.length-1]; let found=false;
+                                  for (let li=0; li<lines.length; li++) {
+                                    if (used.has(li)||usedG.has(li)) continue;
+                                    const l=lines[li];
+                                    if (Math.hypot(l.x1-last[0],l.y1-last[1])<CONN) { addP(l.x2,l.y2); used.add(li); found=true; break; }
+                                    if (Math.hypot(l.x2-last[0],l.y2-last[1])<CONN) { addP(l.x1,l.y1); used.add(li); found=true; break; }
+                                  }
+                                  if (!found) break;
+                                }
+                                if (pts.length>=3 && Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])<CONN) {
+                                  used.forEach(i=>usedG.add(i)); res.push(pts);
+                                }
+                              }
+                              return res.length > 0 ? res : polys;
+                            };
+                            const polyVC = (() => {
+                              const pvc = _getPolysVC();
+                              return pvc.length > 0 ? pvc.reduce((a,b) => {
+                                const area = (p: number[][]) => Math.abs(p.reduce((s,pt,i)=>{ const q=p[(i+1)%p.length]; return s+(pt[0]*q[1]-q[0]*pt[1]); },0)/2);
+                                return area(a) >= area(b) ? a : b;
+                              }) : null;
+                            })();
 
                             // ══ Line-segment intersection helpers ══
                             const segIntersectV = (x, pts2) => {
