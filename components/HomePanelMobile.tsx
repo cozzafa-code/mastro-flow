@@ -309,7 +309,7 @@ export default function HomePanel() {
               <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <I d={ICO.wallet} s={17} c="#fff" />
               </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Contabilit\u00E0</p>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Contabilità</p>
             </div>
             <div onClick={() => setTab("montaggi_cal")}
               style={{ background: "#2563EB", borderRadius: 14, boxShadow: "0 5px 0 0 #1742A0", padding: "14px 12px",
