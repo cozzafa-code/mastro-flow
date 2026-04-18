@@ -924,6 +924,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
+  const [menuTab, setMenuTab] = React.useState<"struttura"|"aperture"|"strumenti">("struttura");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
   const realW = propRealW || 1200;
@@ -2319,8 +2320,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             };
 
                             // ══ Styles ══
-                            const bs = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? "#1A9E73" : T.bdr}`, background: active ? `${"#1A9E73"}12` : T.card, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#1A9E73" : T.text });
-                            const bAp = (active = false) => ({ padding: "5px 9px", borderRadius: 6, border: `1.5px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
+                            const bs = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? "#1A9E73" : T.bdr}`, background: active ? `${"#1A9E73"}12` : T.card, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: active ? "#1A9E73" : T.text });
+                            const bAp = (active = false) => ({ padding: "3px 6px", borderRadius: 5, border: `1px solid ${active ? T.blue : T.blue + "30"}`, background: active ? `${T.blue}12` : `${T.blue}05`, fontSize: 9, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: T.blue });
                             const bDel = (c2 = T.red) => ({ padding: "5px 9px", borderRadius: 6, border: `1px solid ${c2}30`, background: `${c2}08`, fontSize: 10, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" as any, color: c2 });
 
                             const cursorMode = drawMode === "line" || drawMode === "apertura" || drawMode === "righello" || drawMode === "place-mont-free" || drawMode === "place-trav-free" ? "crosshair" : drawMode ? "pointer" : "default";
@@ -2511,10 +2512,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
+                                {/* ═══ TAB BAR MENU (Struttura / Aperture / Strumenti) ═══ */}
+                                <div style={{ display: "flex", gap: 4, padding: "4px 6px", borderBottom: `1px solid ${T.bdr}`, background: "#F8FAFA" }}>
+                                  {[{id:"struttura",l:"Struttura",c:"#1A9E73"},{id:"aperture",l:"Aperture",c:"#3B7FE0"},{id:"strumenti",l:"Strumenti",c:"#6366f1"}].map(mt => (
+                                    <div key={mt.id} onClick={() => setMenuTab(mt.id as any)} style={{
+                                      flex: 1, padding: "5px 0", textAlign: "center", fontSize: 10, fontWeight: 800,
+                                      borderRadius: 6, cursor: "pointer",
+                                      background: menuTab === mt.id ? mt.c : "white",
+                                      color: menuTab === mt.id ? "white" : T.sub,
+                                      border: `1px solid ${menuTab === mt.id ? mt.c : T.bdr}`,
+                                    }}>{mt.l}</div>
+                                  ))}
+                                </div>
+
                                 {/* ═══ GRUPPO 1: TELAIO + STRUTTURA ═══ */}
-                                <div style={{ padding: "2px 6px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Struttura</div>
+                                {menuTab === "struttura" && <>
                                 {/* RIGA 1: Telaio + Montante + Traverso */}
-                                <div style={{ display: "flex", gap: 2, padding: "2px 6px 1px", flexWrap: "wrap" }}>
+                                <div style={{ display: "flex", gap: 2, padding: "4px 6px 1px", flexWrap: "wrap" }}>
                                   <div onClick={() => {
                                     if (frames.length === 0) {
                                       setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
@@ -2556,10 +2570,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
                                     style={bs(drawMode === "line" && dw._lineSubType === "profcomp")}>— Prof.Comp.</div>
                                 </div>
+                                </>}
 
                                 {/* ═══ GRUPPO 2: ANTE + VETRI ═══ */}
-                                <div style={{ padding: "2px 6px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Aperture</div>
-                                <div style={{ display: "flex", gap: 2, padding: "2px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                {menuTab === "aperture" && <>
+                                <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}>🪟 Anta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}>🚪 Porta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}>▤ Pers.</div>
@@ -2570,10 +2585,11 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     <div key={ap.id} onClick={() => setMode({ drawMode: "place-ap", _placeApType: ap.id, _pendingLine: null })} style={bAp(drawMode === "place-ap" && placeApType === ap.id)}>{ap.l}</div>
                                   ))}
                                 </div>
+                                </>}
 
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
-                                <div style={{ padding: "2px 6px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Strumenti</div>
-                                <div style={{ display: "flex", gap: 2, padding: "2px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                {menuTab === "strumenti" && <>
+                                <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}>↗ Linea lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}>✒ Penna</div>
                                   <div onClick={() => { const txt = prompt("Testo:"); if (!txt) return; const cx2=frame?frame.x+frame.w/2:fX+fW/2; const cy2=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"label",x:cx2,y:cy2,text:txt,fontSize:11}]); }} style={bs()}>Aa Testo</div>
@@ -2605,6 +2621,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {/* Giunzioni */}
                                   {junctions.length > 0 && <div onClick={() => setMode({ drawMode: drawMode === "junction" ? null : "junction", _pendingLine: null })} style={{ ...bs(drawMode === "junction"), background: drawMode === "junction" ? "#3B7FE012" : undefined, color: drawMode === "junction" ? T.blue : undefined, border: `1.5px solid ${drawMode === "junction" ? T.blue : T.bdr}` }}>⌐ Giunzioni ({junctions.length})</div>}
                                 </div>
+                                </>}
 
 
 
