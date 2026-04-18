@@ -948,7 +948,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // Touch detection: dita richiedono raggio molto piu' grande del mouse
                             const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
                             // Base: 120 su touch (pollice + imprecisione), 28 mouse. Diviso per zoom.
-                            const SNAP_R = (_isTouch ? 120 : 28) / Math.max(0.4, (dw._zoom || 1));
+                            const SNAP_R = (_isTouch ? 60 : 15) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
