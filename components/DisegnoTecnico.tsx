@@ -982,7 +982,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                             // ══ POLYGONS from freeLines — tutte le catene chiuse ══
                             const getPolygons = () => {
-                              const lines = els.filter(e => e.type === "freeLine");
+                              const lines = els.filter(e => e.type === "freeLine" || e.type === "virtualClose");
                               if (lines.length < 3) return [];
                               const CONN = 15;
                               const usedGlobal = new Set();
@@ -2705,7 +2705,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       fl.forEach(l => { const k1 = Math.round(l.x1)+","+Math.round(l.y1); const k2 = Math.round(l.x2)+","+Math.round(l.y2); ptCount[k1]=(ptCount[k1]||0)+1; ptCount[k2]=(ptCount[k2]||0)+1; });
                                       const freePts: {x:number,y:number}[] = [];
                                       fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
-                                      if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y, _virtual: true }], { _pendingLine: null }); }
+                                      if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "virtualClose", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
                                     }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px dashed #1A9E73", background: "#fff", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#1A9E73", whiteSpace: "nowrap" }}>Chiudi ⓥ</div>
                                   </>)}
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.</div>
@@ -3638,10 +3638,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       </g>
                                     );
 
-                                    if (el.type === "freeLine" && el._virtual) {
-                                      // Chiusura virtuale — invisibile, solo per calcolo poligono
-                                      return <g key={el.id} />;
-                                    }
                                     if (el.type === "freeLine") {
                                       const dx2 = el.x2 - el.x1, dy2 = el.y2 - el.y1;
                                       const len = Math.hypot(dx2, dy2) || 1;
@@ -3771,6 +3767,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           <text x={mx2} y={my2+4} textAnchor="middle" fontSize={10} fontWeight={800} fill={dimEdit?.id === el.id ? "#fff" : T.acc} fontFamily="monospace">{el.label}</text>
                                         </g>
                                       );
+                                    }
+                                    if (el.type === "virtualClose") {
+                                      // Chiusura virtuale — linea tratteggiata quasi invisibile
+                                      return <g key={el.id} opacity={0.2} pointerEvents="none">
+                                        <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={0.5} strokeDasharray="4,6" />
+                                      </g>;
                                     }
                                     if (el.type === "penPath") return (
                                       <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
