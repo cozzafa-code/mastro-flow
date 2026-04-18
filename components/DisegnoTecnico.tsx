@@ -924,7 +924,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
-  const [menuTab, setMenuTab] = React.useState<"struttura"|"aperture"|"strumenti"|null>(null);
+  const [menuTab, setMenuTab] = React.useState<"struttura"|"profili"|"aperture"|"sensi"|"strumenti"|null>(null);
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -942,7 +942,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             const panX = dw._panX || 0, panY = dw._panY || 0;
                             const canvasW = Math.min(window.innerWidth > 768 ? 900 : window.innerWidth - 8, window.innerWidth - 8);
                             const GRID = 1; // movimento fluido al pixel
-                            const SNAP_R = 80;
+                            // Touch detection: dita richiedono raggio molto piu' grande del mouse
+                            const _isTouch = typeof window !== "undefined" && (("ontouchstart" in window) || (navigator.maxTouchPoints > 0));
+                            // Base: 120 su touch (pollice + imprecisione), 28 mouse. Diviso per zoom.
+                            const SNAP_R = (_isTouch ? 120 : 28) / Math.max(0.4, (dw._zoom || 1));
 
                             const aspect = realW / realH;
                             const PAD = 24, PAD_DIM = 28;
@@ -1123,6 +1126,24 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 pts.push({x:fx+fw/2,y:fy},{x:fx+fw/2,y:fy+fh2},{x:fx,y:fy+fh2/2},{x:fx+fw,y:fy+fh2/2});
                                 for (let t = GRID; t < fw; t += GRID) pts.push({x:fx+t,y:fy},{x:fx+t,y:fy+fh2});
                                 for (let t = GRID; t < fh2; t += GRID) pts.push({x:fx,y:fy+t},{x:fx+fw,y:fy+t});
+                                // ── BORDO INTERNO del telaio (dove si aggancia lo zoccolo/soglia al telaio) ──
+                                // Lati interni a filo TK_FRAME dall'esterno
+                                // Flag _antaSnap + _antaOri, così profileMode (zoccolo/soglia) li vede.
+                                const ix1 = fx + TK_FRAME, ix2 = fx + fw - TK_FRAME;
+                                const iy1 = fy + TK_FRAME, iy2 = fy + fh2 - TK_FRAME;
+                                // 4 angoli interni (senza _antaSnap, per snap generale)
+                                pts.push({x:ix1,y:iy1},{x:ix2,y:iy1},{x:ix1,y:iy2},{x:ix2,y:iy2});
+                                // Bordi interni continui ogni 2px, con flag _antaSnap per attivarsi in profileMode
+                                // Top (ori H) e Bot (ori H): per soglia/zoccolo orizzontali
+                                for (let xx = ix1; xx <= ix2; xx += 2) {
+                                  pts.push({x:xx, y:iy1, _antaSnap:true, _antaOri:"H"});
+                                  pts.push({x:xx, y:iy2, _antaSnap:true, _antaOri:"H"});
+                                }
+                                // Left (ori V) e Right (ori V): per profili verticali
+                                for (let yy = iy1; yy <= iy2; yy += 2) {
+                                  pts.push({x:ix1, y:yy, _antaSnap:true, _antaOri:"V"});
+                                  pts.push({x:ix2, y:yy, _antaSnap:true, _antaOri:"V"});
+                                }
                               });
                               // Celle
                               cells.forEach(c2 => {
@@ -2525,11 +2546,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
-                                {/* ═══ TAB BAR MENU (Struttura / Aperture / Strumenti) ═══ */}
-                                <div style={{ display: "flex", gap: 4, padding: "4px 6px", borderBottom: `1px solid ${T.bdr}`, background: "#F8FAFA" }}>
-                                  {[{id:"struttura",l:"Struttura",c:"#1A9E73"},{id:"aperture",l:"Aperture",c:"#3B7FE0"},{id:"strumenti",l:"Strumenti",c:"#6366f1"}].map(mt => (
+                                {/* ═══ TAB BAR MENU a 5 sezioni ═══ */}
+                                <div style={{ display: "flex", gap: 3, padding: "4px 6px", borderBottom: `1px solid ${T.bdr}`, background: "#F8FAFA" }}>
+                                  {[
+                                    {id:"struttura",l:"Struttura",c:"#1A9E73"},
+                                    {id:"profili",l:"Profili",c:"#1A7070"},
+                                    {id:"aperture",l:"Aperture",c:"#3B7FE0"},
+                                    {id:"sensi",l:"Sensi",c:"#D08008"},
+                                    {id:"strumenti",l:"Strumenti",c:"#6366f1"},
+                                  ].map(mt => (
                                     <div key={mt.id} onClick={() => setMenuTab(menuTab === mt.id ? null : mt.id as any)} style={{
-                                      flex: 1, padding: "5px 0", textAlign: "center", fontSize: 10, fontWeight: 800,
+                                      flex: 1, padding: "5px 0", textAlign: "center", fontSize: 9, fontWeight: 800,
                                       borderRadius: 6, cursor: "pointer",
                                       background: menuTab === mt.id ? mt.c : "white",
                                       color: menuTab === mt.id ? "white" : T.sub,
@@ -2538,10 +2565,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   ))}
                                 </div>
 
-                                {/* ═══ GRUPPO 1: TELAIO + STRUTTURA ═══ */}
+                                {/* ═══ TAB 1: STRUTTURA ═══ */}
                                 {menuTab === "struttura" && <>
-                                {/* RIGA 1: Telaio + Montante + Traverso */}
-                                <div style={{ display: "flex", gap: 2, padding: "4px 6px 1px", flexWrap: "wrap" }}>
+                                <div style={{ display: "flex", gap: 3, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => {
                                     if (frames.length === 0) {
                                       setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
@@ -2550,8 +2576,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const nw = lastF.w * 0.6, nh = lastF.h * 0.5;
                                       setDW([...els, { id: Date.now(), type: "rect", x: snap(lastF.x + lastF.w - TK_FRAME), y: snap(lastF.y + lastF.h - nh), w: snap(nw), h: snap(nh) }]);
                                     }
-                                  }} style={bs()}>▭ Telaio</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}>⬡ Tel.Lib.</div>
+                                  }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="1"/></svg>Telaio</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && !dw._lineSubType ? null : "line", _lineSubType: null, _pendingLine: null })} style={bs(drawMode === "line" && !dw._lineSubType)}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polygon points="12,3 21,8 21,17 12,22 3,17 3,8"/></svg>Tel.Lib.</div>
                                   {drawMode === "line" && !dw._lineSubType && els.filter(e => e.type === "freeLine" && !e.subType).length >= 2 && (
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine");
@@ -2561,41 +2587,57 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
                                       if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
                                       else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
-                                    }} style={{ padding: "5px 12px", borderRadius: 6, border: "2px solid #1A9E73", background: "#1A9E73", fontSize: 10, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>⬡ Chiudi</div>
+                                    }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #1A9E73", background: "#1A9E73", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>Chiudi</div>
                                   )}
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}>┃ Mont.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}>━ Trav.</div>
-                                </div>
-                                {/* RIGA 2: Profili liberi — sempre visibili */}
-                                <div style={{ display: "flex", gap: 2, padding: "1px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont-free" ? null : "place-mont-free", _pendingLine: null })}
-                                    style={bs(drawMode === "place-mont-free")}>┃ Mont.Lib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
-                                    style={bs(drawMode === "place-trav-free")}>━ Trav.Lib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
-                                    style={bs(drawMode === "line" && dw._lineSubType === "soglia")}>— Soglia</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
-                                    style={bs(drawMode === "line" && dw._lineSubType === "zoccolo")}>━ Zoccolo</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "fascia" ? null : "line", _lineSubType: "fascia", _pendingLine: null })}
-                                    style={bs(drawMode === "line" && dw._lineSubType === "fascia")}>▬ Fascia</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia_rib" ? null : "line", _lineSubType: "soglia_rib", _pendingLine: null })}
-                                    style={bs(drawMode === "line" && dw._lineSubType === "soglia_rib")}>⌐ Soglia Rib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
-                                    style={bs(drawMode === "line" && dw._lineSubType === "profcomp")}>— Prof.Comp.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont" ? null : "place-mont", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-mont")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.</div>
                                 </div>
                                 </>}
 
-                                {/* ═══ GRUPPO 2: ANTE + VETRI ═══ */}
+                                {/* ═══ TAB 2: PROFILI ═══ */}
+                                {menuTab === "profili" && <>
+                                <div style={{ display: "flex", gap: 3, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-mont-free" ? null : "place-mont-free", _pendingLine: null })}
+                                    style={bs(drawMode === "place-mont-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="12" y1="3" x2="12" y2="21"/></svg>Mont.Lib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
+                                    style={bs(drawMode === "place-trav-free")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3,2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/></svg>Trav.Lib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia" ? null : "line", _lineSubType: "soglia", _pendingLine: null })}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "soglia")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="14" width="18" height="4" rx="0.5"/></svg>Soglia</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "zoccolo" ? null : "line", _lineSubType: "zoccolo", _pendingLine: null })}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "zoccolo")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="16" width="18" height="6" rx="0.5" fill="currentColor" fillOpacity="0.15"/></svg>Zoccolo</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "fascia" ? null : "line", _lineSubType: "fascia", _pendingLine: null })}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "fascia")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="2" width="18" height="5" rx="0.5"/></svg>Fascia</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "soglia_rib" ? null : "line", _lineSubType: "soglia_rib", _pendingLine: null })}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "soglia_rib")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 18 L8 14 L16 14 L21 18 Z"/></svg>Sog.Rib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "line" && dw._lineSubType === "profcomp" ? null : "line", _lineSubType: "profcomp", _pendingLine: null })}
+                                    style={bs(drawMode === "line" && dw._lineSubType === "profcomp")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12" strokeWidth="3"/></svg>Prof.Comp.</div>
+                                </div>
+                                </>}
+
+                                {/* ═══ TAB 3: APERTURE (tipo) ═══ */}
                                 {menuTab === "aperture" && <>
-                                <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}>🪟 Anta</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}>🚪 Porta</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}>▤ Pers.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "place-vetro" ? null : "place-vetro", _pendingLine: null })} style={bs(drawMode === "place-vetro")}>💎 Vetro</div>
-                                  <div onClick={() => { const cx=frame?frame.x+frame.w/2:fX+fW/2; const cy=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"circle",cx,cy,r:Math.min(fW,fH)/4}]); }} style={bs()}>⭕ Oblò</div>
-                                  <span style={{ fontSize: 9, color: T.sub, alignSelf: "center" }}>|</span>
-                                  {[{id:"SX",l:"← SX"},{id:"DX",l:"DX →"},{id:"RIB",l:"↕ Rib."},{id:"OB",l:"↙↕ OB"},{id:"ALZ",l:"→ Alz."},{id:"SCO",l:"↔ Sco."},{id:"FISSO",l:"✕ Fisso"}].map(ap => (
-                                    <div key={ap.id} onClick={() => setMode({ drawMode: "place-ap", _placeApType: ap.id, _pendingLine: null })} style={bAp(drawMode === "place-ap" && placeApType === ap.id)}>{ap.l}</div>
+                                <div style={{ display: "flex", gap: 3, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="4" y="3" width="16" height="18" rx="0.5"/><line x1="12" y1="3" x2="12" y2="21"/></svg>Anta</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M4 21 V4 Q4 3 5 3 H19 Q20 3 20 4 V21"/><circle cx="16" cy="12" r="1" fill="currentColor"/></svg>Porta</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="0.5"/><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="16" x2="21" y2="16"/></svg>Pers.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "place-vetro" ? null : "place-vetro", _pendingLine: null })} style={bs(drawMode === "place-vetro")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="3" y="3" width="18" height="18" rx="0.5"/><line x1="6" y1="6" x2="10" y2="6"/><line x1="6" y1="6" x2="6" y2="10"/></svg>Vetro</div>
+                                  <div onClick={() => { const cx=frame?frame.x+frame.w/2:fX+fW/2; const cy=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"circle",cx,cy,r:Math.min(fW,fH)/4}]); }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><circle cx="12" cy="12" r="9"/></svg>Oblò</div>
+                                </div>
+                                </>}
+
+                                {/* ═══ TAB 4: SENSI APERTURA ═══ */}
+                                {menuTab === "sensi" && <>
+                                <div style={{ display: "flex", gap: 3, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                  {[
+                                    {id:"SX",l:"SX",icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="15,6 9,12 15,18"/></svg>},
+                                    {id:"DX",l:"DX",icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="9,6 15,12 9,18"/></svg>},
+                                    {id:"RIB",l:"Rib.",icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="6,9 12,3 18,9"/><polyline points="6,15 12,21 18,15"/></svg>},
+                                    {id:"OB",l:"OB",icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="6,15 4,21 10,19"/><polyline points="6,9 12,3 18,9"/><line x1="12" y1="3" x2="4" y2="21"/></svg>},
+                                    {id:"ALZ",l:"Alz.",icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="6,14 12,8 18,14"/><line x1="4" y1="20" x2="20" y2="20"/></svg>},
+                                    {id:"SCO",l:"Sco.",icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="7,9 3,12 7,15"/><polyline points="17,9 21,12 17,15"/><line x1="3" y1="12" x2="21" y2="12"/></svg>},
+                                    {id:"FISSO",l:"Fisso",icon:<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="4" y="4" width="16" height="16" rx="0.5"/><line x1="4" y1="4" x2="20" y2="20"/><line x1="20" y1="4" x2="4" y2="20"/></svg>},
+                                  ].map(ap => (
+                                    <div key={ap.id} onClick={() => setMode({ drawMode: "place-ap", _placeApType: ap.id, _pendingLine: null })} style={bAp(drawMode === "place-ap" && placeApType === ap.id)}>{ap.icon}{ap.l}</div>
                                   ))}
                                 </div>
                                 </>}
@@ -2603,8 +2645,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
                                 {menuTab === "strumenti" && <>
                                 <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}>↗ Linea lib.</div>
-                                  <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}>✒ Penna</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="5" y1="19" x2="19" y2="5"/><polyline points="10,5 19,5 19,14"/></svg>Linea lib.</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><line x1="2" y1="2" x2="7.586" y2="7.586"/></svg>Penna</div>
                                   <div onClick={() => { const txt = prompt("Testo:"); if (!txt) return; const cx2=frame?frame.x+frame.w/2:fX+fW/2; const cy2=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"label",x:cx2,y:cy2,text:txt,fontSize:11}]); }} style={bs()}>Aa Testo</div>
                                   <div onClick={() => {
                                     const nEls = els.filter(e => e.type !== "dim");
@@ -2622,15 +2664,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       els.filter(e=>e.type==="freeLine").forEach((fl,fi)=>{const dx2=fl.x2-fl.x1,dy2=fl.y2-fl.y1;const segPx=Math.hypot(dx2,dy2);const diagMM=Math.hypot(realW,realH);const totalPx=Math.hypot(bR-bL,bB-bT);const segMM=Math.round(segPx/totalPx*diagMM);const cx=(bL+bR)/2,cy=(bT+bB)/2;const mx=(fl.x1+fl.x2)/2,my=(fl.y1+fl.y2)/2;const toCx=cx-mx,toCy=cy-my;const dist=Math.hypot(toCx,toCy)||1;const offX=-toCx/dist*16,offY=-toCy/dist*16;nEls.push({id:Date.now()+350+fi,type:"dim",x1:fl.x1+offX,y1:fl.y1+offY,x2:fl.x2+offX,y2:fl.y2+offY,label:String(segMM)});});
                                     }
                                     setDW(nEls);
-                                  }} style={bs()}>↔ Misure</div>
+                                  }} style={bs()}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="9" x2="3" y2="15"/><line x1="21" y1="9" x2="21" y2="15"/></svg>Misure</div>
                                   {/* Righello / Metro */}
-                                  <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1.5px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}>📐 Righello</div>
+                                  <div onClick={() => setMode({ drawMode: drawMode === "righello" ? null : "righello", _pendingLine: null })} style={{ ...bs(drawMode === "righello"), background: drawMode === "righello" ? "#3B7FE012" : undefined, color: drawMode === "righello" ? T.blue : undefined, border: `1px solid ${drawMode === "righello" ? T.blue : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M3 21L21 3L21 9L3 21Z"/><line x1="7" y1="17" x2="9" y2="15"/><line x1="11" y1="13" x2="13" y2="11"/><line x1="15" y1="9" x2="17" y2="7"/></svg>Righello</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-45" ? null : "corner-45", _pendingLine: null })} style={{ ...bs(drawMode === "corner-45"), color: drawMode === "corner-45" ? "#D08008" : undefined, border: `1.5px solid ${drawMode === "corner-45" ? "#D08008" : T.bdr}` }}>⌐ 45°</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "corner-90" ? null : "corner-90", _pendingLine: null })} style={bs(drawMode === "corner-90")}>⌐ 90°</div>
                                   {/* Distinta materiali */}
-                                  <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1.5px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}>📋 Distinta</div>
+                                  <div onClick={() => setMode({ _showDistinta: !dw._showDistinta })} style={{ ...bs(dw._showDistinta), background: dw._showDistinta ? "#D0800812" : undefined, color: dw._showDistinta ? "#D08008" : undefined, border: `1px solid ${dw._showDistinta ? "#D08008" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><rect x="5" y="3" width="14" height="18" rx="1"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Distinta</div>
                                   {/* Giunzioni */}
                                   {junctions.length > 0 && <div onClick={() => setMode({ drawMode: drawMode === "junction" ? null : "junction", _pendingLine: null })} style={{ ...bs(drawMode === "junction"), background: drawMode === "junction" ? "#3B7FE012" : undefined, color: drawMode === "junction" ? T.blue : undefined, border: `1.5px solid ${drawMode === "junction" ? T.blue : T.bdr}` }}>⌐ Giunzioni ({junctions.length})</div>}
                                 </div>
