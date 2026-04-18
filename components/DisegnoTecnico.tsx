@@ -2189,9 +2189,13 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   else {
                                     const sp = findSnap(px, py);
                                     if (sp) { px = sp.x; py = sp.y; }
-                                    else {
-                                      if (Math.abs(px-pending.x1)<5) px=pending.x1;
-                                      if (Math.abs(py-pending.y1)<5) py=pending.y1;
+                                    // H/V alignment: se quasi dritto, forza asse (soglia 20px)
+                                    if (Math.abs(px-pending.x1)<20 && Math.abs(py-pending.y1)>20) px=pending.x1;
+                                    if (Math.abs(py-pending.y1)<20 && Math.abs(px-pending.x1)>20) py=pending.y1;
+                                    // Snap Y ai piedi di altri segmenti verticali (allinea gambe)
+                                    if (px===pending.x1) { // segmento verticale
+                                      const otherVerts = els.filter((e:any)=>e.type==="freeLine"&&!e.subType&&Math.abs(e.x1-e.x2)<3).flatMap((l:any)=>[l.y1,l.y2]);
+                                      otherVerts.forEach(vy => { if (Math.abs(py-vy)<20) py=vy; });
                                     }
                                     // chiusura forma ÔÇö solo per telaio libero senza subType
                                     if (!subTypeVal) {
@@ -2247,9 +2251,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Snap i punti del NUOVO elemento ai vicini esistenti
                                   let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
                                   const existingWeldPts = buildWeldPts2(els);
+                                  // Determina se il segmento è prevalentemente verticale
+                                  const _isVertSeg = Math.abs(snappedX2-snappedX1) < Math.abs(snappedY2-snappedY1);
+                                  const _isHorzSeg = !_isVertSeg;
                                   existingWeldPts.forEach(p => {
-                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
-                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
+                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) {
+                                      // Per segmenti verticali senza subType: salda solo Y, mantieni X dritto
+                                      if (_isVertSeg && !subTypeVal) { snappedY1=p.y; } else { snappedX1=p.x; snappedY1=p.y; }
+                                    }
+                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) {
+                                      if (_isVertSeg && !subTypeVal) { snappedY2=p.y; } else { snappedX2=p.x; snappedY2=p.y; }
+                                    }
                                   });
                                   newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
                                   // Snap i freeLine ESISTENTI ai punti del nuovo elemento
@@ -2900,10 +2912,15 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const snapPt = findSnap(gx, gy);
                                     if (snapPt) { gx = snapPt.x; gy = snapPt.y; }
                                     // H/V snap: forza allineamento SEMPRE se quasi verticale/orizzontale
-                                    // (anche dopo findSnap — priorita' all'allineamento)
                                     const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
                                     if (adx < 25 && ady > adx * 1.5) gx = p.x1;
                                     if (ady < 25 && adx > ady * 1.5) gy = p.y1;
+                                    // Tel.Lib. senza subType: snap Y ai piedi di altri segmenti verticali
+                                    if (drawMode === "line" && !dw._lineSubType && !p._subType && gx === p.x1) {
+                                      const _otherVY = els.filter((e: any) => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 3)
+                                        .flatMap((l: any) => [l.y1, l.y2]);
+                                      _otherVY.forEach(vy => { if (Math.abs(gy - vy) < 20) gy = vy; });
+                                    }
                                     // Mont.Lib / Profile montante: forza verticale
                                     const _pSub = p._subType || dw._lineSubType;
                                     if (drawMode === "place-mont-free" || _pSub === "montante") {
@@ -3030,6 +3047,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
                                     if (adxT < 25 && adyT > adxT * 1.5) gx = pp.x1;
                                     if (adyT < 25 && adxT > adyT * 1.5) gy = pp.y1;
+                                    // Tel.Lib. senza subType: snap Y ai piedi di altri montanti
+                                    if (drawMode === "line" && !dw._lineSubType && !pp._subType && gx === pp.x1) {
+                                      const _otherVYT = els.filter((e: any) => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 3)
+                                        .flatMap((l: any) => [l.y1, l.y2]);
+                                      _otherVYT.forEach(vy => { if (Math.abs(gy - vy) < 20) gy = vy; });
+                                    }
                                     const _pSubT = pp._subType || dw._lineSubType;
                                     if (drawMode === "place-mont-free" || _pSubT === "montante") {
                                       gx = pp.x1;
