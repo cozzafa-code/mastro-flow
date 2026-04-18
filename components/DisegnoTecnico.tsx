@@ -1869,19 +1869,19 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     [cellPoly[2][0], cpBot],
                                     [cellPoly[3][0], cpBot]
                                   ];
-                                  // Se il poly reale non è rettangolare, usa quello per l'anta
-                                  if (poly && poly.length >= 3) {
-                                    const _polyXs = poly.map(p=>p[0]), _polyYs = poly.map(p=>p[1]);
-                                    const _pMinX = Math.min(..._polyXs), _pMaxX = Math.max(..._polyXs);
-                                    const _pMinY = Math.min(..._polyYs), _pMaxY = Math.max(..._polyYs);
-                                    const _isRect = poly.length === 4 && poly.every(p => 
-                                      (Math.abs(p[0]-_pMinX)<2 || Math.abs(p[0]-_pMaxX)<2) && 
-                                      (Math.abs(p[1]-_pMinY)<2 || Math.abs(p[1]-_pMaxY)<2));
+                                  // Se cell.poly non è rettangolare, adatta l'anta alla forma reale
+                                  const _realPoly = cell.poly;
+                                  if (_realPoly && _realPoly.length >= 3) {
+                                    const _rpXs = _realPoly.map(p=>p[0]), _rpYs = _realPoly.map(p=>p[1]);
+                                    const _rpMinX = Math.min(..._rpXs), _rpMaxX = Math.max(..._rpXs);
+                                    const _rpMinY = Math.min(..._rpYs), _rpMaxY = Math.max(..._rpYs);
+                                    const _isRect = _realPoly.length === 4 && _realPoly.every(p => 
+                                      (Math.abs(p[0]-_rpMinX)<3 || Math.abs(p[0]-_rpMaxX)<3) && 
+                                      (Math.abs(p[1]-_rpMinY)<3 || Math.abs(p[1]-_rpMaxY)<3));
                                     if (!_isRect) {
-                                      // Poly non rettangolare: inset ogni vertice verso il centroide
-                                      const _pcx = _polyXs.reduce((a,b)=>a+b,0)/poly.length;
-                                      const _pcy = _polyYs.reduce((a,b)=>a+b,0)/poly.length;
-                                      cellPoly = poly.map(p => {
+                                      const _pcx = _rpXs.reduce((a,b)=>a+b,0)/_realPoly.length;
+                                      const _pcy = _rpYs.reduce((a,b)=>a+b,0)/_realPoly.length;
+                                      cellPoly = _realPoly.map(p => {
                                         const dx = _pcx - p[0], dy = _pcy - p[1];
                                         const dist = Math.hypot(dx, dy) || 1;
                                         return [p[0] + dx/dist * _cpInset, p[1] + dy/dist * _cpInset];
