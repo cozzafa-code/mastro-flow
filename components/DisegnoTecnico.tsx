@@ -1019,7 +1019,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               }
                               return result;
                             };
-                            const polys = !frame ? getPolygons() : [];
+                            const polys = getPolygons();
                             const poly = polys.length > 0 ? polys.reduce((a,b) => {
                               const area = (p) => Math.abs(p.reduce((s,pt,i)=>{ const q=p[(i+1)%p.length]; return s+(pt[0]*q[1]-q[0]*pt[1]); },0)/2);
                               return area(a) >= area(b) ? a : b;
@@ -1869,8 +1869,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     [cellPoly[2][0], cpBot],
                                     [cellPoly[3][0], cpBot]
                                   ];
-                                  // Se cell.poly non è rettangolare, adatta l'anta alla forma reale
-                                  const _realPoly = cell.poly;
+                                  // Se il telaio ha forma non rettangolare, adatta l'anta
+                                  const _realPoly = poly || cell.poly;
                                   if (_realPoly && _realPoly.length >= 3) {
                                     const _rpXs = _realPoly.map(p=>p[0]), _rpYs = _realPoly.map(p=>p[1]);
                                     const _rpMinX = Math.min(..._rpXs), _rpMaxX = Math.max(..._rpXs);
