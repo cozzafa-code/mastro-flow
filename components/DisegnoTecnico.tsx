@@ -1946,7 +1946,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       // Inset uniforme per-edge (ogni lato si muove di TK_FRAME verso l'interno)
                                       const _inPoly = _realPoly;
                                       const _inN = _inPoly.length;
-                                      const _inset = TK_FRAME;
+                                      const _inset = 2; // anta quasi a filo col telaio
                                       cellPoly = _inPoly.map((p, i) => {
                                         const prev = _inPoly[(i - 1 + _inN) % _inN];
                                         const next = _inPoly[(i + 1) % _inN];
@@ -2337,7 +2337,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }                                  const newEl = { id: Date.now(), type: lineType, x1: nx1, y1: ny1, x2: nx2, y2: ny2, ...(subTypeVal ? { subType: subTypeVal } : {}) };
                                   // Saldatura immediata bidirezionale: frame + montanti + traversi + freeLine
-                                  const WELD2 = SNAP_R;
+                                  const WELD2 = 20;
                                   const buildWeldPts2 = (allEls) => {
                                     const wpts = [];
                                     allEls.forEach(o => {
