@@ -2904,13 +2904,26 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const adx = Math.abs(gx - p.x1), ady = Math.abs(gy - p.y1);
                                     if (adx < 25 && ady > adx * 1.5) gx = p.x1;
                                     if (ady < 25 && adx > ady * 1.5) gy = p.y1;
-                                    // Mont.Lib: forza verticale
-                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") {
+                                    // Mont.Lib / Profile montante: forza verticale
+                                    const _pSub = p._subType || dw._lineSubType;
+                                    if (drawMode === "place-mont-free" || _pSub === "montante") {
                                       gx = p.x1;
+                                      // Snap Y solo a vertici sulla stessa colonna (±30px) per allineare piedi
+                                      const colVerts = els.filter((e: any) => e.type === "freeLine").flatMap((l: any) => [
+                                        { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
+                                      ]);
+                                      let bestYsnap = 25, bestYval: number|null = null;
+                                      colVerts.forEach(pt => {
+                                        if (Math.abs(pt.x - p.x1) > 30) { // vertici su ALTRE colonne
+                                          const dy = Math.abs(gy - pt.y);
+                                          if (dy < bestYsnap) { bestYsnap = dy; bestYval = pt.y; }
+                                        }
+                                      });
+                                      if (bestYval !== null) gy = bestYval;
                                       if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
                                     }
-                                    // Trav.Lib: forza orizzontale
-                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") {
+                                    // Trav.Lib / Profile traverso: forza orizzontale
+                                    if (drawMode === "place-trav-free" || _pSub === "traverso") {
                                       gy = p.y1;
                                       if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx));
                                     }
@@ -3017,8 +3030,23 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const adxT = Math.abs(gx - pp.x1), adyT = Math.abs(gy - pp.y1);
                                     if (adxT < 25 && adyT > adxT * 1.5) gx = pp.x1;
                                     if (adyT < 25 && adxT > adyT * 1.5) gy = pp.y1;
-                                    if (drawMode === "place-mont-free" || dw._lineSubType === "montante") { gx = pp.x1; if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy)); }
-                                    if (drawMode === "place-trav-free" || dw._lineSubType === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
+                                    const _pSubT = pp._subType || dw._lineSubType;
+                                    if (drawMode === "place-mont-free" || _pSubT === "montante") {
+                                      gx = pp.x1;
+                                      const colVertsT = els.filter((e: any) => e.type === "freeLine").flatMap((l: any) => [
+                                        { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
+                                      ]);
+                                      let bestYsT = 25, bestYvT: number|null = null;
+                                      colVertsT.forEach(pt => {
+                                        if (Math.abs(pt.x - pp.x1) > 30) {
+                                          const dy = Math.abs(gy - pt.y);
+                                          if (dy < bestYsT) { bestYsT = dy; bestYvT = pt.y; }
+                                        }
+                                      });
+                                      if (bestYvT !== null) gy = bestYvT;
+                                      if (frame) gy = Math.max(frame.y, Math.min(frame.y + frame.h, gy));
+                                    }
+                                    if (drawMode === "place-trav-free" || _pSubT === "traverso") { gy = pp.y1; if (frame) gx = Math.max(frame.x, Math.min(frame.x + frame.w, gx)); }
                                     const deg = Math.round(Math.atan2(-(gy - pp.y1), gx - pp.x1) * 180 / Math.PI);
                                     const len = Math.round(Math.hypot(gx - pp.x1, gy - pp.y1) / fW * realW);
                                     if (dw._guideX !== gx || dw._guideY !== gy) {
