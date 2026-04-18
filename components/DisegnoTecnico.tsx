@@ -1010,11 +1010,6 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   used.forEach(i => usedGlobal.add(i));
                                   return pts;
                                 }
-                                // Catena aperta con >=3 punti: chiudi implicitamente (telaio senza base)
-                                if (pts.length >= 3 && used.size >= 2) {
-                                  used.forEach(i => usedGlobal.add(i));
-                                  return pts; // poly aperto — la linea di chiusura è implicita
-                                }
                                 return null;
                               };
                               for (let i = 0; i < lines.length; i++) {
@@ -1875,7 +1870,30 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     [cellPoly[3][0], cpBot]
                                   ];
                                   // Se il telaio ha forma non rettangolare, adatta l'anta
-                                  const _realPoly = poly || cell.poly;
+                                  // poly = poligono chiuso da getPolygons, oppure costruisci dalla catena freeLine aperta
+                                  let _realPoly = poly;
+                                  if (!_realPoly) {
+                                    // Telaio aperto: costruisci poly dalla catena di freeLine senza subType
+                                    const _fls = els.filter(e => e.type === "freeLine" && !e.subType);
+                                    if (_fls.length >= 2) {
+                                      const _CONN = 15;
+                                      const _used = new Set();
+                                      const _pts: number[][] = [];
+                                      const _addP = (x:number,y:number) => { const k=`${Math.round(x)},${Math.round(y)}`; if(!_pts.length||k!==`${Math.round(_pts[_pts.length-1][0])},${Math.round(_pts[_pts.length-1][1])}`) _pts.push([x,y]); };
+                                      _addP(_fls[0].x1, _fls[0].y1); _addP(_fls[0].x2, _fls[0].y2); _used.add(0);
+                                      for (let it=0; it<_fls.length; it++) {
+                                        const last=_pts[_pts.length-1];
+                                        for (let li=0; li<_fls.length; li++) {
+                                          if (_used.has(li)) continue;
+                                          const l=_fls[li];
+                                          if (Math.hypot(l.x1-last[0],l.y1-last[1])<_CONN) { _addP(l.x2,l.y2); _used.add(li); break; }
+                                          if (Math.hypot(l.x2-last[0],l.y2-last[1])<_CONN) { _addP(l.x1,l.y1); _used.add(li); break; }
+                                        }
+                                      }
+                                      if (_pts.length >= 3) _realPoly = _pts;
+                                    }
+                                  }
+                                  if (!_realPoly) _realPoly = cell.poly;
                                   if (_realPoly && _realPoly.length >= 3) {
                                     const _rpXs = _realPoly.map(p=>p[0]), _rpYs = _realPoly.map(p=>p[1]);
                                     const _rpMinX = Math.min(..._rpXs), _rpMaxX = Math.max(..._rpXs);
