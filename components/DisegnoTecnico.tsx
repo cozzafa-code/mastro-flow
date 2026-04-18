@@ -1941,14 +1941,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       (Math.abs(p[0]-_rpMinX)<3 || Math.abs(p[0]-_rpMaxX)<3) && 
                                       (Math.abs(p[1]-_rpMinY)<3 || Math.abs(p[1]-_rpMaxY)<3));
                                     if (!_isRect) {
-                                      const _pcx = _rpXs.reduce((a,b)=>a+b,0)/_realPoly.length;
-                                      const _pcy = _rpYs.reduce((a,b)=>a+b,0)/_realPoly.length;
-                                      // Inset di TK_FRAME dal centroide — anta dentro il profilo del telaio
-                                      cellPoly = _realPoly.map(p => {
-                                        const dx = _pcx - p[0], dy = _pcy - p[1];
-                                        const dist = Math.hypot(dx, dy) || 1;
-                                        return [p[0] + dx/dist * TK_FRAME, p[1] + dy/dist * TK_FRAME];
-                                      });
+                                      // Usa il poly direttamente — l'anta sta sulla linea centrale del telaio
+                                      cellPoly = _realPoly.map(p => [p[0], p[1]]);
                                     }
                                   }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
