@@ -1685,22 +1685,38 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (drawMode === "place-profile-free") {
                                 const pending = dw._pendingLine;
                                 const sub = dw._profileSub || "zoccolo";
-                                const snapPt = findSnap(Math.round(mx), Math.round(my));
-                                const rx = snapPt ? snapPt.x : Math.round(mx);
-                                const ry = snapPt ? snapPt.y : Math.round(my);
+                                // Snap dolce anche al 1° click: solo se entro 20px dai bordi interni del telaio
+                                let rx = Math.round(mx), ry = Math.round(my);
+                                if (frame) {
+                                  const iy1 = frame.y + TK_FRAME, iy2 = frame.y + frame.h - TK_FRAME;
+                                  const ix1 = frame.x + TK_FRAME, ix2 = frame.x + frame.w - TK_FRAME;
+                                  if (Math.abs(ry - iy1) < 20) ry = iy1;
+                                  else if (Math.abs(ry - iy2) < 20) ry = iy2;
+                                  if (Math.abs(rx - ix1) < 20) rx = ix1;
+                                  else if (Math.abs(rx - ix2) < 20) rx = ix2;
+                                }
                                 if (!pending) {
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: sub } });
                                 } else {
-                                  // 2° click: snap al punto reale (raggio SNAP_R già adattivo touch)
-                                  const snap2 = findSnap(Math.round(mx), Math.round(my));
-                                  const fx2 = snap2 ? snap2.x : Math.round(mx);
-                                  const fy2 = snap2 ? snap2.y : Math.round(my);
-                                  // Se lo spostamento è prevalentemente orizzontale o verticale, forzo l'asse
+                                  // 2° click: NO findSnap aggressivo (porterebbe al bordo opposto)
+                                  // Solo snap dolce: se il click è vicino (<20px) a un bordo interno del telaio, aggancio; altrimenti resta dove hai cliccato
+                                  let fx2 = Math.round(mx), fy2 = Math.round(my);
+                                  if (frame) {
+                                    const iy1 = frame.y + TK_FRAME, iy2 = frame.y + frame.h - TK_FRAME;
+                                    const ix1 = frame.x + TK_FRAME, ix2 = frame.x + frame.w - TK_FRAME;
+                                    // Snap Y ai bordi top/bot interni solo se entro 20px
+                                    if (Math.abs(fy2 - iy1) < 20) fy2 = iy1;
+                                    else if (Math.abs(fy2 - iy2) < 20) fy2 = iy2;
+                                    // Snap X ai bordi left/right interni solo se entro 20px
+                                    if (Math.abs(fx2 - ix1) < 20) fx2 = ix1;
+                                    else if (Math.abs(fx2 - ix2) < 20) fx2 = ix2;
+                                  }
+                                  // Se spostamento prevalente orizzontale/verticale, forza asse
                                   const ddx = Math.abs(fx2 - pending.x1);
                                   const ddy = Math.abs(fy2 - pending.y1);
                                   let x2f = fx2, y2f = fy2;
-                                  if (ddx > ddy * 3) y2f = pending.y1;   // prevalente orizzontale: forza stessa Y
-                                  else if (ddy > ddx * 3) x2f = pending.x1; // prevalente verticale: forza stessa X
+                                  if (ddx > ddy * 3) y2f = pending.y1;
+                                  else if (ddy > ddx * 3) x2f = pending.x1;
                                   if (Math.hypot(x2f - pending.x1, y2f - pending.y1) < 5) return;
                                   setDW([...els, { id: Date.now(), type: "freeLine", subType: sub, x1: pending.x1, y1: pending.y1, x2: x2f, y2: y2f }], { _pendingLine: null });
                                 }
