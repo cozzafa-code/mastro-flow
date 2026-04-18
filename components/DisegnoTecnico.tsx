@@ -2680,9 +2680,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       fl.forEach(l => { const k1=Math.round(l.x1)+","+Math.round(l.y1); const k2=Math.round(l.x2)+","+Math.round(l.y2); if(ptCount[k1]===1)freePts.push({x:l.x1,y:l.y1}); if(ptCount[k2]===1)freePts.push({x:l.x2,y:l.y2}); });
                                       if (freePts.length >= 2) { setDW([...els, { id: Date.now(), type: "freeLine", x1: freePts[0].x, y1: freePts[0].y, x2: freePts[1].x, y2: freePts[1].y }], { _pendingLine: null }); }
                                       else { setDW([...els, { id: Date.now(), type: "freeLine", x1: fl[fl.length-1].x2, y1: fl[fl.length-1].y2, x2: fl[0].x1, y2: fl[0].y1 }], { _pendingLine: null }); }
-                                      // DEBUG: mostra vertici nel title
-                                      const _dbg = els.filter(e=>e.type==="freeLine"&&!e.subType).map(e=>`${Math.round(e.x1)},${Math.round(e.y1)}→${Math.round(e.x2)},${Math.round(e.y2)}`).join(" | ");
-                                      document.title = _dbg;
+
                                     }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #1A9E73", background: "#1A9E73", fontSize: 9, fontWeight: 800, cursor: "pointer", color: "#fff", whiteSpace: "nowrap" }}>Chiudi</div>
                                     <div onClick={() => {
                                       const fl = els.filter(e => e.type === "freeLine" && !e.subType);
@@ -3227,6 +3225,52 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     });
                                   })()}
 
+                                  {/* ══ OPEN CHAIN PROFILES — catene non chiuse renderizzate come polyline ══ */}
+                                  {(() => {
+                                    // Trova catene di freeLine senza subType che NON fanno parte di un poly chiuso
+                                    const closedFLIds = new Set();
+                                    // Segna tutte le freeLine che fanno parte di un poly chiuso
+                                    polys.forEach(polyPts => {
+                                      els.filter(e => e.type === "freeLine" && !e.subType).forEach(fl => {
+                                        const p1in = polyPts.some(p => Math.hypot(p[0]-fl.x1,p[1]-fl.y1) < 15);
+                                        const p2in = polyPts.some(p => Math.hypot(p[0]-fl.x2,p[1]-fl.y2) < 15);
+                                        if (p1in && p2in) closedFLIds.add(fl.id);
+                                      });
+                                    });
+                                    // FreeLine non-chiuse senza subType
+                                    const openFLs = els.filter(e => e.type === "freeLine" && !e.subType && !closedFLIds.has(e.id));
+                                    if (openFLs.length < 2) return null;
+                                    // Costruisci catena
+                                    const CONN = 15;
+                                    const used = new Set();
+                                    const chains: number[][][] = [];
+                                    for (let si = 0; si < openFLs.length; si++) {
+                                      if (used.has(si)) continue;
+                                      const pts: number[][] = [];
+                                      pts.push([openFLs[si].x1, openFLs[si].y1], [openFLs[si].x2, openFLs[si].y2]);
+                                      used.add(si);
+                                      for (let it = 0; it < openFLs.length; it++) {
+                                        const last = pts[pts.length - 1];
+                                        for (let li = 0; li < openFLs.length; li++) {
+                                          if (used.has(li)) continue;
+                                          const l = openFLs[li];
+                                          if (Math.hypot(l.x1-last[0],l.y1-last[1]) < CONN) { pts.push([l.x2,l.y2]); used.add(li); break; }
+                                          if (Math.hypot(l.x2-last[0],l.y2-last[1]) < CONN) { pts.push([l.x1,l.y1]); used.add(li); break; }
+                                        }
+                                      }
+                                      if (pts.length >= 2) chains.push(pts);
+                                    }
+                                    const TK = TK_FRAME * 2;
+                                    return chains.map((ch, ci) => {
+                                      const ptStr = ch.map(p => `${p[0]},${p[1]}`).join(" ");
+                                      return <g key={`oc${ci}`}>
+                                        <polyline points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={TK + 1} strokeLinejoin="miter" strokeMiterlimit={20} strokeLinecap="square" />
+                                        <polyline points={ptStr} fill="none" stroke="#eceae0" strokeWidth={TK - 0.5} strokeLinejoin="miter" strokeMiterlimit={20} strokeLinecap="square" />
+                                        <polyline points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" strokeLinecap="square" />
+                                        {ch.map((p,pi) => <circle key={`occ${ci}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
+                                      </g>;
+                                    });
+                                  })()}
                                   {/* ══ CLOSED POLYGON PROFILES ══ */}
                                   {polys.map((polyPts, polyIdx) => {
                                     if (polyPts.length < 3) return null;
@@ -3243,7 +3287,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {/* 4. Bordo interno netto */}
                                         <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" />
                                         {/* Corner dots */}
-                                        {polyPts.map((p,pi)=><g key={`pc${polyIdx}-${pi}`}><circle cx={p[0]} cy={p[1]} r={3} fill="#333" /><text x={p[0]+5} y={p[1]-5} fontSize={7} fill="red" fontFamily="monospace">{`${Math.round(p[0])},${Math.round(p[1])}`}</text></g>)}
+                                        {polyPts.map((p,pi)=><circle key={`pc${polyIdx}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
                                       </g>
                                     );
                                   })}
@@ -3637,6 +3681,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const refReal = frame ? (frame.w >= frame.h ? realW : realH) : Math.max(realW, realH);
                                       const mmLen = el._mmOverride != null ? el._mmOverride : Math.round(len / refLen * refReal);
                                       const isPartOfPoly = poly && poly.length >= 3;
+                                      // Controlla se questa freeLine fa parte di una catena aperta (≥2 segmenti connessi)
+                                      const isPartOfChain = !subType && !isPartOfPoly && (() => {
+                                        const others = els.filter(e => e.type === "freeLine" && !e.subType && e.id !== el.id);
+                                        return others.some(o => 
+                                          Math.hypot(o.x1-el.x1,o.y1-el.y1)<15 || Math.hypot(o.x2-el.x1,o.y2-el.y1)<15 ||
+                                          Math.hypot(o.x1-el.x2,o.y1-el.y2)<15 || Math.hypot(o.x2-el.x2,o.y2-el.y2)<15
+                                        );
+                                      })();
                                       // ── Determina se la linea è orizzontale o verticale ──
                                       const isHorzLine = Math.abs(dy2) <= Math.abs(dx2) + 0.5;
                                       // ── SubType con spessore fisso: usa RECT agganciato al frame (come il telaio) ──
@@ -3695,12 +3747,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }} {...(!drawMode ? { onMouseDown: (e3) => onDrag(e3, el.id), onTouchStart: (e3) => onDrag(e3, el.id) } : {})}>
                                           <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="transparent" strokeWidth={Math.max(14, halfT * 3)} />
-                                          {!isPartOfPoly && <>
+                                          {!isPartOfPoly && !isPartOfChain && <>
                                             <polygon points={pts4} fill={sel ? "#1A9E7318" : fillC} stroke="none" />
                                             <polygon points={pts4} fill="none" stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} strokeLinejoin="miter" strokeMiterlimit={20} />
                                           </>}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={2} opacity={0.3} />}
-                                          {!subType && <><text x={el.x1} y={el.y1-8} fontSize={6} fill="blue" fontFamily="monospace">{`${Math.round(el.x1)},${Math.round(el.y1)}`}</text><text x={el.x2} y={el.y2+12} fontSize={6} fill="red" fontFamily="monospace">{`${Math.round(el.x2)},${Math.round(el.y2)}`}</text></>}
+
                                           {labelTxt && (
                                             <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lxN}, ${lyN})`}>
                                               <rect x={lxN - labelTxt.length*3.5} y={lyN - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
