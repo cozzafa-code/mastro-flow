@@ -982,7 +982,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
 
                             // ══ POLYGONS from freeLines — tutte le catene chiuse ══
                             const getPolygons = () => {
-                              const lines = els.filter(e => e.type === "freeLine" || e.type === "virtualClose");
+                              const lines = els.filter(e => e.type === "freeLine");
                               if (lines.length < 3) return [];
                               const CONN = 15;
                               const usedGlobal = new Set();
@@ -1873,8 +1873,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // poly = poligono chiuso da getPolygons, oppure costruisci dalla catena freeLine aperta
                                   let _realPoly = poly;
                                   if (!_realPoly) {
-                                    // Telaio aperto: costruisci poly dalla catena di freeLine senza subType
-                                    const _fls = els.filter(e => e.type === "freeLine" && !e.subType);
+                                    // Telaio aperto: costruisci poly dalla catena di freeLine + virtualClose
+                                    const _fls = els.filter(e => (e.type === "freeLine" && !e.subType) || e.type === "virtualClose");
                                     if (_fls.length >= 2) {
                                       const _CONN = 15;
                                       const _used = new Set();
@@ -3768,12 +3768,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         </g>
                                       );
                                     }
-                                    if (el.type === "virtualClose") {
-                                      // Chiusura virtuale — linea tratteggiata quasi invisibile
-                                      return <g key={el.id} opacity={0.2} pointerEvents="none">
-                                        <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={0.5} strokeDasharray="4,6" />
-                                      </g>;
-                                    }
+                                    if (el.type === "virtualClose") return null;
                                     if (el.type === "penPath") return (
                                       <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                         <path d={el.d} fill="none" stroke={sel ? "#1A9E73" : "#1A1A1C"} strokeWidth={sel ? 2.5 : 1.8} strokeLinecap="round" strokeLinejoin="round" />
