@@ -2347,17 +2347,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Snap i punti del NUOVO elemento ai vicini esistenti
                                   let snappedX1=pending.x1, snappedY1=pending.y1, snappedX2=px, snappedY2=py;
                                   const existingWeldPts = buildWeldPts2(els);
-                                  // Determina se il segmento è prevalentemente verticale
-                                  const _isVertSeg = Math.abs(snappedX2-snappedX1) < Math.abs(snappedY2-snappedY1);
-                                  const _isHorzSeg = !_isVertSeg;
                                   existingWeldPts.forEach(p => {
-                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) {
-                                      // Per segmenti verticali senza subType: salda solo Y, mantieni X dritto
-                                      if (_isVertSeg && !subTypeVal) { snappedY1=p.y; } else { snappedX1=p.x; snappedY1=p.y; }
-                                    }
-                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) {
-                                      if (_isVertSeg && !subTypeVal) { snappedY2=p.y; } else { snappedX2=p.x; snappedY2=p.y; }
-                                    }
+                                    if (Math.hypot(p.x-snappedX1,p.y-snappedY1)<WELD2) { snappedX1=p.x; snappedY1=p.y; }
+                                    if (Math.hypot(p.x-snappedX2,p.y-snappedY2)<WELD2) { snappedX2=p.x; snappedY2=p.y; }
                                   });
                                   newEl.x1=snappedX1; newEl.y1=snappedY1; newEl.x2=snappedX2; newEl.y2=snappedY2;
                                   // Snap i freeLine ESISTENTI ai punti del nuovo elemento
