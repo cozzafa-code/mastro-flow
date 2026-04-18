@@ -1941,45 +1941,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       (Math.abs(p[0]-_rpMinX)<3 || Math.abs(p[0]-_rpMaxX)<3) && 
                                       (Math.abs(p[1]-_rpMinY)<3 || Math.abs(p[1]-_rpMaxY)<3));
                                     if (!_isRect) {
-                                      // Inset per-edge: ogni lato si sposta di TK_FRAME verso l'interno
-                                      const _n = _realPoly.length;
-                                      // Calcola le normali interne di ogni edge
-                                      const edges: {nx:number,ny:number}[] = [];
-                                      const _cx = _rpXs.reduce((a,b)=>a+b,0)/_n;
-                                      const _cy = _rpYs.reduce((a,b)=>a+b,0)/_n;
-                                      for (let i = 0; i < _n; i++) {
-                                        const a = _realPoly[i], b = _realPoly[(i+1)%_n];
-                                        const edx = b[0]-a[0], edy = b[1]-a[1];
-                                        const elen = Math.hypot(edx,edy) || 1;
-                                        // Normale: ruota 90° — scegliamo la direzione verso l'interno
-                                        let nx = edy/elen, ny = -edx/elen;
-                                        // Verifica che punti verso il centroide
-                                        const midx = (a[0]+b[0])/2, midy = (a[1]+b[1])/2;
-                                        if (nx*(_cx-midx)+ny*(_cy-midy) < 0) { nx=-nx; ny=-ny; }
-                                        edges.push({nx,ny});
-                                      }
-                                      // Per ogni vertice: intersezione delle due linee offset adiacenti
-                                      cellPoly = _realPoly.map((p, i) => {
-                                        const prevEdge = edges[(i-1+_n)%_n];
-                                        const curEdge = edges[i];
-                                        // Linea offset del lato precedente: passa per (prevPt + normal*TK) con direzione del lato
-                                        const prevPt = _realPoly[(i-1+_n)%_n];
-                                        const curPt = p;
-                                        const nextPt = _realPoly[(i+1)%_n];
-                                        // Offset points on each edge
-                                        const p1x = prevPt[0]+prevEdge.nx*TK_FRAME, p1y = prevPt[1]+prevEdge.ny*TK_FRAME;
-                                        const d1x = curPt[0]-prevPt[0], d1y = curPt[1]-prevPt[1];
-                                        const p2x = curPt[0]+curEdge.nx*TK_FRAME, p2y = curPt[1]+curEdge.ny*TK_FRAME;
-                                        const d2x = nextPt[0]-curPt[0], d2y = nextPt[1]-curPt[1];
-                                        // Intersezione: p1+t*d1 = p2+s*d2
-                                        const denom = d1x*d2y - d1y*d2x;
-                                        if (Math.abs(denom) < 0.001) {
-                                          // Lati paralleli: usa offset semplice
-                                          return [p[0]+curEdge.nx*TK_FRAME, p[1]+curEdge.ny*TK_FRAME];
-                                        }
-                                        const t = ((p2x-p1x)*d2y - (p2y-p1y)*d2x) / denom;
-                                        return [p1x + t*d1x, p1y + t*d1y];
-                                      });
+                                      // Forma non rettangolare: usa il poly diretto (l'anta copre la forma)
+                                      cellPoly = _realPoly.map(p => [p[0], p[1]]);
                                     }
                                   }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
