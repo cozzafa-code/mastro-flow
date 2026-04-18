@@ -2459,12 +2459,17 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 ...(window.innerWidth <= 768 ? {
                                   position: "fixed" as const,
                                   top: 0, left: 0, right: 0, bottom: 0,
+                                  paddingTop: "env(safe-area-inset-top)",
+                                  paddingLeft: "env(safe-area-inset-left)",
+                                  paddingRight: "env(safe-area-inset-right)",
+                                  paddingBottom: "env(safe-area-inset-bottom)",
                                   zIndex: 1000,
                                   display: "flex",
                                   flexDirection: "column" as const,
                                   overflow: "hidden",
                                   borderRadius: 0,
                                   margin: 0,
+                                  background: T.card,
                                 } : {})
                               }}>
                                 {/* Header */}
@@ -2507,9 +2512,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* ═══ GRUPPO 1: TELAIO + STRUTTURA ═══ */}
-                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Struttura</div>
+                                <div style={{ padding: "2px 6px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Struttura</div>
                                 {/* RIGA 1: Telaio + Montante + Traverso */}
-                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 2px", flexWrap: "wrap" }}>
+                                <div style={{ display: "flex", gap: 2, padding: "2px 6px 1px", flexWrap: "wrap" }}>
                                   <div onClick={() => {
                                     if (frames.length === 0) {
                                       setDW([...els, { id: Date.now(), type: "rect", x: fX, y: fY, w: fW, h: fH }]);
@@ -2535,7 +2540,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav" ? null : "place-trav", _pendingLine: null, _lineSubType: null })} style={bs(drawMode === "place-trav")}>━ Trav.</div>
                                 </div>
                                 {/* RIGA 2: Profili liberi — sempre visibili */}
-                                <div style={{ display: "flex", gap: 3, padding: "2px 8px 4px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                <div style={{ display: "flex", gap: 2, padding: "1px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-mont-free" ? null : "place-mont-free", _pendingLine: null })}
                                     style={bs(drawMode === "place-mont-free")}>┃ Mont.Lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-trav-free" ? null : "place-trav-free", _pendingLine: null })}
@@ -2553,8 +2558,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* ═══ GRUPPO 2: ANTE + VETRI ═══ */}
-                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Aperture</div>
-                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
+                                <div style={{ padding: "2px 6px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Aperture</div>
+                                <div style={{ display: "flex", gap: 2, padding: "2px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-anta" ? null : "place-anta", _pendingLine: null })} style={bs(drawMode === "place-anta")}>🪟 Anta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-porta" ? null : "place-porta", _pendingLine: null })} style={bs(drawMode === "place-porta")}>🚪 Porta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "place-persiana" ? null : "place-persiana", _pendingLine: null })} style={bs(drawMode === "place-persiana")}>▤ Pers.</div>
@@ -2567,8 +2572,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 </div>
 
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
-                                <div style={{ padding: "3px 8px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Strumenti</div>
-                                <div style={{ display: "flex", gap: 3, padding: "3px 8px 4px", overflowX: "auto", borderBottom: `1px solid ${T.bdr}` }}>
+                                <div style={{ padding: "2px 6px 0", fontSize: 8, fontWeight: 800, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>Strumenti</div>
+                                <div style={{ display: "flex", gap: 2, padding: "2px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
                                   <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}>↗ Linea lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}>✒ Penna</div>
                                   <div onClick={() => { const txt = prompt("Testo:"); if (!txt) return; const cx2=frame?frame.x+frame.w/2:fX+fW/2; const cy2=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"label",x:cx2,y:cy2,text:txt,fontSize:11}]); }} style={bs()}>Aa Testo</div>
