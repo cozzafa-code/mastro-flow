@@ -2190,12 +2190,12 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const sp = findSnap(px, py);
                                     if (sp) { px = sp.x; py = sp.y; }
                                     // H/V alignment: se quasi dritto, forza asse (soglia 20px)
-                                    if (Math.abs(px-pending.x1)<20 && Math.abs(py-pending.y1)>20) px=pending.x1;
-                                    if (Math.abs(py-pending.y1)<20 && Math.abs(px-pending.x1)>20) py=pending.y1;
+                                    if (Math.abs(px-pending.x1)<10 && Math.abs(py-pending.y1)>10) px=pending.x1;
+                                    if (Math.abs(py-pending.y1)<10 && Math.abs(px-pending.x1)>10) py=pending.y1;
                                     // Snap Y ai piedi di altri segmenti verticali (allinea gambe)
                                     if (px===pending.x1) { // segmento verticale
                                       const otherVerts = els.filter((e:any)=>e.type==="freeLine"&&!e.subType&&Math.abs(e.x1-e.x2)<3).flatMap((l:any)=>[l.y1,l.y2]);
-                                      otherVerts.forEach(vy => { if (Math.abs(py-vy)<20) py=vy; });
+                                      otherVerts.forEach(vy => { if (Math.abs(py-vy)<10) py=vy; });
                                     }
                                     // chiusura forma ÔÇö solo per telaio libero senza subType
                                     if (!subTypeVal) {
@@ -2919,7 +2919,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (drawMode === "line" && !dw._lineSubType && !p._subType && gx === p.x1) {
                                       const _otherVY = els.filter((e: any) => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 3)
                                         .flatMap((l: any) => [l.y1, l.y2]);
-                                      _otherVY.forEach(vy => { if (Math.abs(gy - vy) < 20) gy = vy; });
+                                      _otherVY.forEach(vy => { if (Math.abs(gy - vy) < 10) gy = vy; });
                                     }
                                     // Mont.Lib / Profile montante: forza verticale
                                     const _pSub = p._subType || dw._lineSubType;
@@ -2929,7 +2929,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const colVerts = els.filter((e: any) => e.type === "freeLine").flatMap((l: any) => [
                                         { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
                                       ]);
-                                      let bestYsnap = 25, bestYval: number|null = null;
+                                      let bestYsnap = 10, bestYval: number|null = null;
                                       colVerts.forEach(pt => {
                                         if (Math.abs(pt.x - p.x1) > 30) { // vertici su ALTRE colonne
                                           const dy = Math.abs(gy - pt.y);
@@ -3051,7 +3051,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (drawMode === "line" && !dw._lineSubType && !pp._subType && gx === pp.x1) {
                                       const _otherVYT = els.filter((e: any) => e.type === "freeLine" && !e.subType && Math.abs(e.x1 - e.x2) < 3)
                                         .flatMap((l: any) => [l.y1, l.y2]);
-                                      _otherVYT.forEach(vy => { if (Math.abs(gy - vy) < 20) gy = vy; });
+                                      _otherVYT.forEach(vy => { if (Math.abs(gy - vy) < 10) gy = vy; });
                                     }
                                     const _pSubT = pp._subType || dw._lineSubType;
                                     if (drawMode === "place-mont-free" || _pSubT === "montante") {
@@ -3059,7 +3059,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const colVertsT = els.filter((e: any) => e.type === "freeLine").flatMap((l: any) => [
                                         { x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 }
                                       ]);
-                                      let bestYsT = 25, bestYvT: number|null = null;
+                                      let bestYsT = 10, bestYvT: number|null = null;
                                       colVertsT.forEach(pt => {
                                         if (Math.abs(pt.x - pp.x1) > 30) {
                                           const dy = Math.abs(gy - pt.y);
