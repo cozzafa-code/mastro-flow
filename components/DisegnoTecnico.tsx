@@ -937,6 +937,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                             // dwRef: sempre aggiornato, usato nei click handler per evitare stale closure
                             const dwRef = React.useRef(dw);
                             dwRef.current = dw;
+                            // Refs per pinch/pan touch (SVG principale canvas mobile)
+                            const _lastPinch = React.useRef<number|null>(null);
+                            const _panStart = React.useRef<{x:number,y:number,panX:number,panY:number}|null>(null);
                             const placeApType = dw._placeApType || "SX";
                             const zoom = dw._zoom || 1;
                             const panX = dw._panX || 0, panY = dw._panY || 0;
@@ -1570,6 +1573,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               const dw = dwRef.current;
                               const els = dw.elements || [];
                               const drawMode = dw.drawMode || null;
+                              // In modalità pan non creare elementi al click
+                              if (drawMode === "pan") return;
 
                               // Place montante/traverso — click on cell OR polygon
                               if (drawMode === "place-mont") {
@@ -2573,6 +2578,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   {drawMode === "place-mont-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine montante" : "1° click → inizio montante"}</span>}
                                   {drawMode === "place-trav-free" && <span style={{ fontSize: 9, background: "#555", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? "2° click → fine traverso" : "1° click → inizio traverso"}</span>}
                                   {drawMode === "place-profile-free" && <span style={{ fontSize: 9, background: "#D08008", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>{dw._pendingLine ? `2° click → fine ${dw._profileSub}` : `1° click → inizio ${dw._profileSub}`}</span>}
+                                  {drawMode === "pan" && <span style={{ fontSize: 9, background: "#1A9E73", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>✋ SPOSTA — trascina il dito</span>}
                                   {drawMode === "place-ap" && <span style={{ fontSize: 9, background: T.blue, color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 800 }}>👆 {placeApType} — click cella</span>}
                                 </div>
 
@@ -2693,6 +2699,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* ═══ GRUPPO 3: ANNOTAZIONI + STRUMENTI ═══ */}
                                 {menuTab === "strumenti" && <>
                                 <div style={{ display: "flex", gap: 2, padding: "4px 6px 3px", flexWrap: "wrap", borderBottom: `1px solid ${T.bdr}` }}>
+                                  {/* Sposta — pan del canvas con 1 dito */}
+                                  <div onClick={() => setMode({ drawMode: drawMode === "pan" ? null : "pan", _pendingLine: null })} style={{ ...bs(drawMode === "pan"), background: drawMode === "pan" ? "#1A9E7312" : undefined, color: drawMode === "pan" ? "#1A9E73" : undefined, border: `1px solid ${drawMode === "pan" ? "#1A9E73" : T.bdr}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><polyline points="5,9 2,12 5,15"/><polyline points="9,5 12,2 15,5"/><polyline points="15,19 12,22 9,19"/><polyline points="19,9 22,12 19,15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>Sposta</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "apertura" ? null : "apertura", _pendingLine: null })} style={bAp(drawMode === "apertura")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><line x1="5" y1="19" x2="19" y2="5"/><polyline points="10,5 19,5 19,14"/></svg>Linea lib.</div>
                                   <div onClick={() => setMode({ drawMode: drawMode === "pen" ? null : "pen", _penPath: null })} style={bs(drawMode === "pen")}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:"inline",verticalAlign:"middle",marginRight:3}}><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><line x1="2" y1="2" x2="7.586" y2="7.586"/></svg>Penna</div>
                                   <div onClick={() => { const txt = prompt("Testo:"); if (!txt) return; const cx2=frame?frame.x+frame.w/2:fX+fW/2; const cy2=frame?frame.y+frame.h/2:fY+fH/2; setDW([...els,{id:Date.now(),type:"label",x:cx2,y:cy2,text:txt,fontSize:11}]); }} style={bs()}>Aa Testo</div>
@@ -2907,6 +2915,22 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchStart={(e2) => {
+                                    // ── Pinch zoom con 2 dita ──
+                                    if (e2.touches.length === 2) {
+                                      e2.preventDefault();
+                                      _lastPinch.current = Math.hypot(
+                                        e2.touches[0].clientX - e2.touches[1].clientX,
+                                        e2.touches[0].clientY - e2.touches[1].clientY
+                                      );
+                                      return;
+                                    }
+                                    // ── Pan con 1 dito in modalità "pan" ──
+                                    if (drawMode === "pan") {
+                                      e2.preventDefault();
+                                      const t = e2.touches[0];
+                                      _panStart.current = { x: t.clientX, y: t.clientY, panX, panY };
+                                      return;
+                                    }
                                     if (drawMode === "pen") {
                                       e2.preventDefault();
                                       const svg = e2.currentTarget;
@@ -2924,6 +2948,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     const dw = dwRef.current;
                                     const els = dw.elements || [];
                                     const drawMode = dw.drawMode || null;
+                                    // ── Pinch zoom con 2 dita ──
+                                    if (e2.touches.length === 2 && _lastPinch.current != null) {
+                                      e2.preventDefault();
+                                      const d = Math.hypot(
+                                        e2.touches[0].clientX - e2.touches[1].clientX,
+                                        e2.touches[0].clientY - e2.touches[1].clientY
+                                      );
+                                      const delta = (d - _lastPinch.current) / 100;
+                                      const newZoom = Math.max(0.15, Math.min(6, (dw._zoom || 1) + delta));
+                                      onUpdate({ ...dw, _zoom: newZoom });
+                                      _lastPinch.current = d;
+                                      return;
+                                    }
+                                    // ── Pan con 1 dito in modalità "pan" ──
+                                    if (drawMode === "pan" && _panStart.current) {
+                                      e2.preventDefault();
+                                      const t = e2.touches[0];
+                                      const svg = e2.currentTarget;
+                                      const rect = svg.getBoundingClientRect();
+                                      const vb = svg.viewBox?.baseVal;
+                                      const sx = vb ? vb.width / rect.width : 1;
+                                      const sy2 = vb ? vb.height / rect.height : 1;
+                                      const dx = (t.clientX - _panStart.current.x) * sx;
+                                      const dy = (t.clientY - _panStart.current.y) * sy2;
+                                      onUpdate({ ...dw, _panX: _panStart.current.panX - dx, _panY: _panStart.current.panY - dy });
+                                      return;
+                                    }
                                     e2.preventDefault();
                                     const svg = e2.currentTarget;
                                     const t = e2.touches[0];
@@ -2957,6 +3008,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     }
                                   }}
                                   onTouchEnd={(e2) => {
+                                    // Reset refs pinch/pan
+                                    if (e2.touches.length < 2) _lastPinch.current = null;
+                                    if (e2.touches.length === 0) _panStart.current = null;
                                     if (drawMode === "pen" && dw._penActive) {
                                       const pts2 = dw._penPath || [];
                                       if (pts2.length > 2) {
