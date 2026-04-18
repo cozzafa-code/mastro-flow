@@ -1634,8 +1634,9 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: "montante" } });
                                 } else {
                                   const x = pending.x1;
-                                  const colSnap = findSnap(x, Math.round(my));
-                                  const finalY = colSnap ? colSnap.y : Math.round(my);
+                                  // FIX: cerco snap al punto reale (mx,my) invece che solo sulla colonna x fissa
+                                  const snap2 = findSnap(Math.round(mx), Math.round(my));
+                                  const finalY = snap2 ? snap2.y : Math.round(my);
                                   let y1 = Math.min(pending.y1, finalY);
                                   let y2 = Math.max(pending.y1, finalY);
                                   // Aggiusta y1/y2 al bordo del profilo orizzontale più vicino
@@ -1663,8 +1664,10 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 } else {
                                   // Y fisso al primo click, snap X al secondo
                                   const y = pending.y1;
-                                  const rowSnap = findSnap(Math.round(mx), y);
-                                  const finalX = rowSnap ? rowSnap.x : Math.round(mx);
+                                  // FIX: cerco snap al punto reale (mx,my) NON solo sulla riga y fissa
+                                  // Così posso agganciarmi a bordi verticali del telaio anche se la y non combacia
+                                  const snap2 = findSnap(Math.round(mx), Math.round(my));
+                                  const finalX = snap2 ? snap2.x : Math.round(mx);
                                   const x1 = Math.min(pending.x1, finalX);
                                   const x2 = Math.max(pending.x1, finalX);
                                   if (Math.abs(x2 - x1) < 3) return;
