@@ -1314,7 +1314,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               // perche' creava punti artificiali sul telaio che deformavano il profilo.
                               // L'alignment serve solo per la costruzione del telaio, NON per i profili che si agganciano all'anta.
                               if (!isProfileMode) {
-                                const ALIGN_TOL = 20;
+                                const ALIGN_TOL = 10;
                                 const freeLineVertices = els.filter(e => e.type === "freeLine" && !e.subType)
                                   .flatMap(l => [{x:l.x1,y:l.y1},{x:l.x2,y:l.y2}]);
                                 // Deduplica vertici
