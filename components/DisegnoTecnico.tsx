@@ -924,7 +924,7 @@ function LiberoEditor({ T, realW, realH, onPtsChange, onGoTo3D }: any) {
 
 export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: propRealW, realH: propRealH, onUpdate, onUpdateField, onClose, T }) {
   const [viewTab, setViewTab] = React.useState("disegno");
-  const [menuTab, setMenuTab] = React.useState<"struttura"|"aperture"|"strumenti">("struttura");
+  const [menuTab, setMenuTab] = React.useState<"struttura"|"aperture"|"strumenti"|null>(null);
   const [vista, setVista] = React.useState<"interna"|"esterna">("interna");
 
   const [dimEdit, setDimEdit] = React.useState<{id: any, val: string, x: number, y: number} | null>(null);
@@ -2528,7 +2528,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 {/* ═══ TAB BAR MENU (Struttura / Aperture / Strumenti) ═══ */}
                                 <div style={{ display: "flex", gap: 4, padding: "4px 6px", borderBottom: `1px solid ${T.bdr}`, background: "#F8FAFA" }}>
                                   {[{id:"struttura",l:"Struttura",c:"#1A9E73"},{id:"aperture",l:"Aperture",c:"#3B7FE0"},{id:"strumenti",l:"Strumenti",c:"#6366f1"}].map(mt => (
-                                    <div key={mt.id} onClick={() => setMenuTab(mt.id as any)} style={{
+                                    <div key={mt.id} onClick={() => setMenuTab(menuTab === mt.id ? null : mt.id as any)} style={{
                                       flex: 1, padding: "5px 0", textAlign: "center", fontSize: 10, fontWeight: 800,
                                       borderRadius: 6, cursor: "pointer",
                                       background: menuTab === mt.id ? mt.c : "white",
