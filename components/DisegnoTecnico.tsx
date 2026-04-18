@@ -1943,12 +1943,8 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                     if (!_isRect) {
                                       const _pcx = _rpXs.reduce((a,b)=>a+b,0)/_realPoly.length;
                                       const _pcy = _rpYs.reduce((a,b)=>a+b,0)/_realPoly.length;
-                                      // Shrink minimo dal centroide (1px) — anta quasi a filo col profilo
-                                      cellPoly = _realPoly.map(p => {
-                                        const dx = _pcx - p[0], dy = _pcy - p[1];
-                                        const dist = Math.hypot(dx, dy) || 1;
-                                        return [p[0] + dx/dist * 1, p[1] + dy/dist * 1];
-                                      });
+                                      // Usa il poly esatto senza shrink — il rendering dell'anta gestisce l'inner
+                                      cellPoly = _realPoly.map(p => [p[0], p[1]]);
                                     }
                                   }
                                   if (drawMode === "place-anta" || drawMode === "place-porta") {
@@ -3584,14 +3580,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const tk = el.subType === "porta" ? 4 : 3; // ridotto per anta piu grande
                                       // Outer polygon — riempie tutta la cella
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — shrink dal centroide
+                                      // Inner polygon — inset rettangolare di tk (come il vecchio codice stabile)
+                                      const apAllX = pts.map(p => p[0]);
+                                      const apAllY = pts.map(p => p[1]);
+                                      const apMinX = Math.min(...apAllX) + tk, apMaxX = Math.max(...apAllX) - tk;
+                                      const apMinY = Math.min(...apAllY) + tk, apMaxY = Math.max(...apAllY) - tk;
+                                      const innerPts = [[apMinX,apMinY],[apMaxX,apMinY],[apMaxX,apMaxY],[apMinX,apMaxY]];
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-                                      const innerPts = pts.map(p => {
-                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
-                                        const dist = Math.hypot(dx2, dy2) || 1;
-                                        return [p[0] + dx2/dist * (tk + 2), p[1] + dy2/dist * (tk + 2)];
-                                      });
                                       const innerStr = innerPts.map(p => p.join(",")).join(" ");
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
