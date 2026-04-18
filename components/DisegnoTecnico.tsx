@@ -1030,7 +1030,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (vcs.length === 0) return polys;
                               const lines = [...els.filter(e => e.type === "freeLine"), ...vcs];
                               if (lines.length < 3) return polys;
-                              const CONN = 15;
+                              const CONN = 30;
                               const usedG = new Set();
                               const res: number[][][] = [];
                               for (let si = 0; si < lines.length; si++) {
