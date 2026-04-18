@@ -3243,7 +3243,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                         {/* 4. Bordo interno netto */}
                                         <polygon points={ptStr} fill="none" stroke="#1A1A1C" strokeWidth={0.8} strokeLinejoin="miter" />
                                         {/* Corner dots */}
-                                        {polyPts.map((p,pi)=><circle key={`pc${polyIdx}-${pi}`} cx={p[0]} cy={p[1]} r={3} fill="#333" />)}
+                                        {polyPts.map((p,pi)=><g key={`pc${polyIdx}-${pi}`}><circle cx={p[0]} cy={p[1]} r={3} fill="#333" /><text x={p[0]+5} y={p[1]-5} fontSize={7} fill="red" fontFamily="monospace">{`${Math.round(p[0])},${Math.round(p[1])}`}</text></g>)}
                                       </g>
                                     );
                                   })}
@@ -3700,6 +3700,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                             <polygon points={pts4} fill="none" stroke={sel ? "#1A9E73" : "#3A3A3C"} strokeWidth={sel ? 1.5 : 0.7} strokeLinejoin="miter" strokeMiterlimit={20} />
                                           </>}
                                           {sel && <line x1={el.x1} y1={el.y1} x2={el.x2} y2={el.y2} stroke="#1A9E73" strokeWidth={2} opacity={0.3} />}
+                                          {!subType && <><text x={el.x1} y={el.y1-8} fontSize={6} fill="blue" fontFamily="monospace">{`${Math.round(el.x1)},${Math.round(el.y1)}`}</text><text x={el.x2} y={el.y2+12} fontSize={6} fill="red" fontFamily="monospace">{`${Math.round(el.x2)},${Math.round(el.y2)}`}</text></>}
                                           {labelTxt && (
                                             <g transform={`rotate(${ang > 90 || ang < -90 ? ang + 180 : ang}, ${lxN}, ${lyN})`}>
                                               <rect x={lxN - labelTxt.length*3.5} y={lyN - 7} width={labelTxt.length*7+4} height={13} fill="#1A1A1C" rx={3} opacity={0.85} />
