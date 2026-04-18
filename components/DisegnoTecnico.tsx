@@ -1805,12 +1805,14 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                   // Inseta il poly di TK_FRAME per stare dentro il telaio (bordo INTERNO del profilo)
                                   // Se la cella viene da BSP (getCells), è GIÀ insetata — usa offset 0
                                   const _cpInset = cell._bspInset ? 0 : TK_FRAME;
-                                  let cellPoly = [
-                                    [_cpMinX + _cpInset, _cpMinY + _cpInset],
-                                    [_cpMaxX - _cpInset, _cpMinY + _cpInset],
-                                    [_cpMaxX - _cpInset, _cpMaxY - _cpInset],
-                                    [_cpMinX + _cpInset, _cpMaxY - _cpInset]
-                                  ];
+                                  // Usa il poligono reale con inset verso il centroide (non bbox)
+                                  const _cpCx = _cpAllX.reduce((a,b)=>a+b,0) / _cpAllX.length;
+                                  const _cpCy = _cpAllY.reduce((a,b)=>a+b,0) / _cpAllY.length;
+                                  let cellPoly = cell.poly.map(p => {
+                                    const dx = _cpCx - p[0], dy = _cpCy - p[1];
+                                    const dist = Math.hypot(dx, dy) || 1;
+                                    return [p[0] + dx / dist * _cpInset, p[1] + dy / dist * _cpInset];
+                                  });
                                   if (freeMontanti.length > 0) {
                                     // Trova i montanti che attraversano il polygon verticalmente
                                     const allPolyX = cell.poly.map(p => p[0]);
@@ -3491,19 +3493,33 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                       const tk = el.subType === "porta" ? 4 : 3; // ridotto per anta piu grande
                                       // Outer polygon — riempie tutta la cella
                                       const outerPts = pts.map(p => p.join(",")).join(" ");
-                                      // Inner polygon — inset rettangolare di tk (profilo anta)
-                                      const apAllX = pts.map(p => p[0]);
-                                      const apAllY = pts.map(p => p[1]);
-                                      const apMinX = Math.min(...apAllX) + tk, apMaxX = Math.max(...apAllX) - tk;
-                                      const apMinY = Math.min(...apAllY) + tk, apMaxY = Math.max(...apAllY) - tk;
-                                      const innerPts = [[apMinX,apMinY],[apMaxX,apMinY],[apMaxX,apMaxY],[apMinX,apMaxY]];
+                                      // Inner polygon — inset proporzionale dal centroide (segue la forma)
                                       const cx2 = pts.reduce((s, p) => s + p[0], 0) / pts.length;
                                       const cy2 = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+                                      const innerPts = pts.map(p => {
+                                        const dx2 = cx2 - p[0], dy2 = cy2 - p[1];
+                                        const dist = Math.hypot(dx2, dy2) || 1;
+                                        return [p[0] + dx2 / dist * tk, p[1] + dy2 / dist * tk];
+                                      });
                                       const innerStr = innerPts.map(p => p.join(",")).join(" ");
                                       return (
                                         <g key={el.id} onClick={(e3) => { e3.stopPropagation(); if (!drawMode) setMode({ selectedId: el.id }); }}>
                                           <polygon points={outerPts} fill="#f8f8f6" fillOpacity={0.3} stroke={hc || "#777"} strokeWidth={1} />
                                           <polygon points={innerStr} fill="none" stroke={hc || "#777"} strokeWidth={0.6} />
+                                          {/* Linee maniglia — dal punto medio del lato sinistro al centroide */}
+                                          {!el.subType && (() => {
+                                            // Lato sinistro: media dei punti con X minore
+                                            const sortedByX = [...pts].sort((a,b) => a[0] - b[0]);
+                                            const leftPts = sortedByX.slice(0, Math.ceil(pts.length/2));
+                                            const handleX = leftPts.reduce((s,p) => s+p[0],0)/leftPts.length;
+                                            const handleTopY = Math.min(...leftPts.map(p=>p[1]));
+                                            const handleBotY = Math.max(...leftPts.map(p=>p[1]));
+                                            const handleMidY = (handleTopY + handleBotY) / 2;
+                                            return <>
+                                              <line x1={handleX} y1={handleTopY} x2={cx2} y2={handleMidY} stroke={(hc || "#777") + "40"} strokeWidth={0.5} />
+                                              <line x1={handleX} y1={handleBotY} x2={cx2} y2={handleMidY} stroke={(hc || "#777") + "40"} strokeWidth={0.5} />
+                                            </>;
+                                          })()}
                                           {el.subType === "porta" && <text x={cx2} y={cy2} textAnchor="middle" fontSize={8} fill="#555" fontWeight={700}>PORTA</text>}
                                         </g>
                                       );
