@@ -1649,8 +1649,27 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                               if (drawMode === "place-profile-free") {
                                 const pending = dw._pendingLine;
                                 const sub = dw._profileSub || "zoccolo";
-                                // Snap dolce anche al 1° click: solo se entro 20px dai bordi interni del telaio
+                                // Snap 1° click: bordi frame + vertici freeLine esistenti
                                 let rx = Math.round(mx), ry = Math.round(my);
+                                // Snap ai vertici freeLine esistenti (priorità)
+                                const verts1: {x:number,y:number}[] = [];
+                                els.filter((e: any) => e.type === "freeLine").forEach((l: any) => {
+                                  verts1.push({ x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 });
+                                });
+                                let bestV1D = 20, bestV1: {x:number,y:number}|null = null;
+                                verts1.forEach(pt => {
+                                  const d = Math.hypot(rx - pt.x, ry - pt.y);
+                                  if (d < bestV1D) { bestV1D = d; bestV1 = pt; }
+                                });
+                                if (bestV1) { rx = bestV1.x; ry = bestV1.y; }
+                                else {
+                                  // Snap single-axis ai vertici
+                                  verts1.forEach(pt => {
+                                    if (Math.abs(ry - pt.y) < 20) ry = pt.y;
+                                    if (Math.abs(rx - pt.x) < 20) rx = pt.x;
+                                  });
+                                }
+                                // Snap ai bordi interni del telaio
                                 if (frame) {
                                   const iy1 = frame.y + TK_FRAME, iy2 = frame.y + frame.h - TK_FRAME;
                                   const ix1 = frame.x + TK_FRAME, ix2 = frame.x + frame.w - TK_FRAME;
@@ -1662,25 +1681,51 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                 if (!pending) {
                                   setMode({ _pendingLine: { x1: rx, y1: ry, _subType: sub } });
                                 } else {
-                                  // 2° click: NO findSnap aggressivo (porterebbe al bordo opposto)
-                                  // Solo snap dolce: se il click è vicino (<20px) a un bordo interno del telaio, aggancio; altrimenti resta dove hai cliccato
+                                  // 2° click: snap ai bordi frame + snap ai vertici freeLine esistenti
                                   let fx2 = Math.round(mx), fy2 = Math.round(my);
+                                  const SNAP_SOFT = 20;
+                                  // 1) Snap ai vertici di tutte le freeLine esistenti (allinea gambe)
+                                  const allVerts: {x:number,y:number}[] = [];
+                                  els.filter((e: any) => e.type === "freeLine").forEach((l: any) => {
+                                    allVerts.push({ x: l.x1, y: l.y1 }, { x: l.x2, y: l.y2 });
+                                  });
+                                  let bestSnapD = SNAP_SOFT, bestSnapPt: {x:number,y:number}|null = null;
+                                  allVerts.forEach(pt => {
+                                    const d = Math.hypot(fx2 - pt.x, fy2 - pt.y);
+                                    if (d < bestSnapD) { bestSnapD = d; bestSnapPt = pt; }
+                                  });
+                                  // Snap anche solo su singolo asse (Y per allineare piedi, X per allineare lati)
+                                  if (!bestSnapPt) {
+                                    allVerts.forEach(pt => {
+                                      if (Math.abs(fy2 - pt.y) < SNAP_SOFT) fy2 = pt.y;
+                                      if (Math.abs(fx2 - pt.x) < SNAP_SOFT) fx2 = pt.x;
+                                    });
+                                  } else {
+                                    fx2 = bestSnapPt.x; fy2 = bestSnapPt.y;
+                                  }
+                                  // 2) Snap ai bordi interni del telaio
                                   if (frame) {
                                     const iy1 = frame.y + TK_FRAME, iy2 = frame.y + frame.h - TK_FRAME;
                                     const ix1 = frame.x + TK_FRAME, ix2 = frame.x + frame.w - TK_FRAME;
-                                    // Snap Y ai bordi top/bot interni solo se entro 20px
-                                    if (Math.abs(fy2 - iy1) < 20) fy2 = iy1;
-                                    else if (Math.abs(fy2 - iy2) < 20) fy2 = iy2;
-                                    // Snap X ai bordi left/right interni solo se entro 20px
-                                    if (Math.abs(fx2 - ix1) < 20) fx2 = ix1;
-                                    else if (Math.abs(fx2 - ix2) < 20) fx2 = ix2;
+                                    if (Math.abs(fy2 - iy1) < SNAP_SOFT) fy2 = iy1;
+                                    else if (Math.abs(fy2 - iy2) < SNAP_SOFT) fy2 = iy2;
+                                    if (Math.abs(fx2 - ix1) < SNAP_SOFT) fx2 = ix1;
+                                    else if (Math.abs(fx2 - ix2) < SNAP_SOFT) fx2 = ix2;
                                   }
-                                  // Se spostamento prevalente orizzontale/verticale, forza asse
-                                  const ddx = Math.abs(fx2 - pending.x1);
-                                  const ddy = Math.abs(fy2 - pending.y1);
+                                  // 3) Forza asse: montante=verticale, traverso=orizzontale
+                                  const _st = pending._subType || sub;
                                   let x2f = fx2, y2f = fy2;
-                                  if (ddx > ddy * 3) y2f = pending.y1;
-                                  else if (ddy > ddx * 3) x2f = pending.x1;
+                                  if (_st === "montante") {
+                                    x2f = pending.x1; // forza verticale
+                                  } else if (_st === "traverso") {
+                                    y2f = pending.y1; // forza orizzontale
+                                  } else {
+                                    // Generico: forza asse se prevalente
+                                    const ddx = Math.abs(fx2 - pending.x1);
+                                    const ddy = Math.abs(fy2 - pending.y1);
+                                    if (ddx > ddy * 3) y2f = pending.y1;
+                                    else if (ddy > ddx * 3) x2f = pending.x1;
+                                  }
                                   if (Math.hypot(x2f - pending.x1, y2f - pending.y1) < 5) return;
                                   setDW([...els, { id: Date.now(), type: "freeLine", subType: sub, x1: pending.x1, y1: pending.y1, x2: x2f, y2: y2f }], { _pendingLine: null });
                                 }
