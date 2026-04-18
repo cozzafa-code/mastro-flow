@@ -261,7 +261,7 @@ export default function CommessePanel() {
 
       {/* fliwoX Chips fase + Sort */}
       <div style={{ padding: "0 14px 10px" }}>
-        <div style={{ display: "flex", gap: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 8 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as any, paddingBottom: 8 }}>
           {[{ id: "tutte", nome: "Tutte", color: "#28A0A0", count: cantieri.length },
             ...PIPELINE.filter(p => p.attiva).map(p => ({ ...p, count: cantieri.filter(c => c.fase === p.id).length })).filter(p => p.count > 0)
           ].map(p => {
@@ -269,7 +269,7 @@ export default function CommessePanel() {
             const fc = PIPELINE_FLIWOX[p.id] || "#28A0A0";
             return (
               <div key={p.id} onClick={() => setFilterFase(sel && p.id !== "tutte" ? "tutte" : p.id)} style={{
-                padding: "7px 13px", borderRadius: 20, fontSize: 12, fontWeight: 900, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" as any,
+                padding: "7px 13px", borderRadius: 20, fontSize: 12, fontWeight: 900, cursor: "pointer", whiteSpace: "nowrap" as any,
                 background: sel ? (p.id === "tutte" ? "#28A0A0" : fc) : "white",
                 color: sel ? "white" : "#4A7070",
                 border: `1.5px solid ${sel ? (p.id === "tutte" ? "#156060" : fc) : "#C8E4E4"}`,
@@ -278,7 +278,7 @@ export default function CommessePanel() {
             );
           })}
         </div>
-        <div style={{ display: "flex", gap: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as any }}>
           {[["default","Recenti"],["nome","A-Z"],["euro","€"],["data","Data"]].map(([v,l]) => (
             <div key={v} onClick={() => setSortBy(v as any)} style={{
               padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 900, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" as any,
