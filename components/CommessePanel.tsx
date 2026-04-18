@@ -278,10 +278,10 @@ export default function CommessePanel() {
             );
           })}
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" as any }}>
           {[["default","Recenti"],["nome","A-Z"],["euro","€"],["data","Data"]].map(([v,l]) => (
             <div key={v} onClick={() => setSortBy(v as any)} style={{
-              padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 900, cursor: "pointer",
+              padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 900, cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap" as any,
               background: sortBy === v ? "#28A0A0" : "white",
               color: sortBy === v ? "white" : "#4A7070",
               border: `1.5px solid ${sortBy === v ? "#156060" : "#C8E4E4"}`,
@@ -289,7 +289,7 @@ export default function CommessePanel() {
             }}>{l}</div>
           ))}
           {totaleEuro > 0 && (
-            <div style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 20, background: "white", border: "1.5px solid #C8E4E4", boxShadow: "0 3px 0 0 #A8CCCC", display: "flex", gap: 6, alignItems: "center" }}>
+            <div style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 20, background: "white", border: "1.5px solid #C8E4E4", boxShadow: "0 3px 0 0 #A8CCCC", display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
               <span style={{ fontSize: 11, color: "#4A7070", fontWeight: 700 }}>{filtered.length} comm.</span>
               <span style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F", fontFamily: FM }}>€{totaleEuro.toLocaleString("it-IT", { maximumFractionDigits: 0 })}</span>
             </div>
@@ -317,7 +317,7 @@ export default function CommessePanel() {
       ) : (
         <div style={{
           display: "grid",
-          gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr 1fr",
+          gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr",
           gap: 10, padding: "0 14px"
         }}>
           {filteredSorted.map(c => renderCard(c))}
