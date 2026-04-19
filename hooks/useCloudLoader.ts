@@ -71,18 +71,14 @@ export function useCloudLoader(
       })) || null;
       if (safeCantieri) { setters.setCantieri(safeCantieri); localStorage.setItem("mastro:cantieri", JSON.stringify(safeCantieri)); }
 
-      // Array semplici
-      const arrayKeys = [
+      // Array semplici (no mapping needed)
+      const arrayKeysSimple = [
         ["events", setters.setEvents],
         ["contatti", setters.setContatti],
         ["tasks", setters.setTasks],
         ["problemi", setters.setProblemi],
         ["team", setters.setTeam],
         ["pipeline", setters.setPipelineDB],
-        ["vetri", setters.setVetriDB],
-        ["colori", setters.setColoriDB],
-        ["coprifili", setters.setCoprifiliDB],
-        ["lamiere", setters.setLamiereDB],
         ["libreria", setters.setLibreriaDB],
         ["fatture", setters.setFattureDB],
         ["ordiniForn", setters.setOrdiniFornDB],
@@ -90,9 +86,59 @@ export function useCloudLoader(
         ["montaggi", setters.setMontaggiDB],
       ] as const;
 
-      for (const [key, setter] of arrayKeys) {
+      for (const [key, setter] of arrayKeysSimple) {
         const data = sa(cloud, key);
         if (data) { setter(data); localStorage.setItem(`mastro:${key}`, JSON.stringify(data)); }
+      }
+
+      // ── Colori: map codice→code ──
+      if (sa(cloud, "colori")) {
+        const mapped = sa(cloud, "colori")!.map(c => ({
+          ...c,
+          code: c.code || c.codice || c.nome || "",
+          nome: c.nome || c.codice || "",
+          hex: c.hex || "#ccc",
+          tipo: c.tipo || "RAL",
+        }));
+        setters.setColoriDB(mapped);
+        localStorage.setItem("mastro:colori", JSON.stringify(mapped));
+      }
+
+      // ── Vetri: map codice→code, ug ──
+      if (sa(cloud, "vetri")) {
+        const mapped = sa(cloud, "vetri")!.map(v => ({
+          ...v,
+          code: v.code || v.codice || v.nome || "",
+          nome: v.nome || v.codice || "",
+          ug: v.ug || v.valore_ug || "",
+          prezzoMq: v.prezzoMq || v.prezzo_mq || 0,
+        }));
+        setters.setVetriDB(mapped);
+        localStorage.setItem("mastro:vetri", JSON.stringify(mapped));
+      }
+
+      // ── Coprifili: map codice→cod ──
+      if (sa(cloud, "coprifili")) {
+        const mapped = sa(cloud, "coprifili")!.map(c => ({
+          ...c,
+          cod: c.cod || c.codice || c.nome || "",
+          nome: c.nome || c.codice || "",
+          prezzoMl: c.prezzoMl || c.prezzo_ml || 0,
+        }));
+        setters.setCoprifiliDB(mapped);
+        localStorage.setItem("mastro:coprifili", JSON.stringify(mapped));
+      }
+
+      // ── Lamiere: map codice→cod ──
+      if (sa(cloud, "lamiere")) {
+        const mapped = sa(cloud, "lamiere")!.map(l => ({
+          ...l,
+          cod: l.cod || l.codice || l.nome || "",
+          nome: l.nome || l.codice || "",
+          prezzoMl: l.prezzoMl || l.prezzo_ml || 0,
+        }));
+        setters.setLamiereDB(mapped);
+        localStorage.setItem("mastro:lamiere", JSON.stringify(mapped));
       }
 
       // Azienda: oggetto singolo (non array)
@@ -101,10 +147,19 @@ export function useCloudLoader(
         localStorage.setItem("mastro:azienda", JSON.stringify(cloud.azienda));
       }
 
-      // Sistemi: migrazione con griglie demo
+      // Sistemi: migrazione con griglie demo + mapping snake_case
       if (sa(cloud, "sistemi")) {
         const migrated = sa(cloud, "sistemi")!.map(s => ({
           ...s,
+          marca: s.marca || "",
+          sistema: s.sistema || "",
+          prezzoMq: s.prezzoMq || s.prezzo_mq || 0,
+          euroMq: s.euroMq || s.prezzo_mq || 0,
+          sovRAL: s.sovRAL || s.sov_ral || 0,
+          sovLegno: s.sovLegno || s.sov_legno || 0,
+          uf: s.uf || "",
+          colori: Array.isArray(s.colori) ? s.colori : [],
+          sottosistemi: Array.isArray(s.sottosistemi) ? s.sottosistemi : [],
           griglia: s.griglia || DEMO_GRIGLIE[s.sistema] || [],
           minimiMq: s.minimiMq || {},
         }));
