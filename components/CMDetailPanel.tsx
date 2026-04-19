@@ -1033,15 +1033,17 @@ export default function CMDetailPanel() {
                     <div>
                       {rilieviCC.length === 0 ? (
                         <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Vai al cantiere e prendi le misure dei vani</div>
+                      ) : vaniCC.length === 0 ? (
+                        <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>
+                          {rilieviCC.length} rilievo creato · Aggiungi i vani da misurare
+                        </div>
                       ) : (
                         <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>
-                          {rilieviCC.length} rilievo · {vaniCC.length} vani {vaniCC.length > 0 ? "· aggiungi misure a tutti i vani" : "· aggiungi i vani"}
+                          {rilieviCC.length} rilievo · {vaniCC.length} vani {vaniCC.length > 0 ? "· aggiungi misure a tutti i vani" : ""}
                         </div>
                       )}
-                      {vaniCC.length === 0 ? (
-                        <div style={{ padding: "14px 16px", borderRadius: 12, background: "#28A0A0", display: "flex", alignItems: "center", gap: 10, margin: "8px 0", cursor: "pointer", boxShadow: "0 4px 16px rgba(40,160,160,0.35)" }}><I d={ICO.mapPin} s={18} c="#fff" /><div><div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>CREA RILIEVO</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>Aggiungi i vani e inserisci le misure</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
-                      ) : (
-                        <div style={{ fontSize: 12, color: T.grn, fontWeight: 700, textAlign: "center" }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
+                      {vaniCC.length > 0 && (
+                        <div style={{ fontSize: 12, color: "#28A0A0", fontWeight: 700, textAlign: "center" }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
                     </div>
                   )}
