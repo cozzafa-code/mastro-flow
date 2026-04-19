@@ -24,28 +24,28 @@ const DIARIO_TAGS = [
 
 // ─── Lumina Design Tokens ────────────────────────────────
 const L = {
-  bg:          "#f9f9fb",
+  bg:          "#F5F4F0",
   surface:     "#ffffff",
-  surfaceLow:  "#f3f3f5",
-  surfaceMid:  "#eeeef0",
-  primary:     "#031631",
-  primaryCont: "#1a2b47",
+  surfaceLow:  "#F7F7F5",
+  surfaceMid:  "#F0EFEC",
+  primary:     "#0D1F1F",
+  primaryCont: "#163333",
   onPrimary:   "#ffffff",
-  muted:       "#8293b4",
-  text:        "#1a1c1d",
-  sub:         "#44474d",
-  placeholder: "#75777e",
-  green:       "#1a9e73",
-  red:         "#dc4444",
-  amber:       "#e4c18c",
-  amberBg:     "#ffdeac",
-  border:      "rgba(197,198,206,0.25)",
-  glass:       "rgba(255,255,255,0.85)",
+  muted:       "#5A8A8A",
+  text:        "#1A1A18",
+  sub:         "#B0B0A8",
+  placeholder: "#B0B0A8",
+  green:       "#0F6E56",
+  red:         "#E24B4A",
+  amber:       "#C4875A",
+  amberBg:     "#FFF4E6",
+  border:      "#F0EFEC",
+  glass:       "rgba(255,255,255,0.9)",
 } as const;
 const SH = {
-  ambient: "0 20px 40px rgba(26,28,29,0.04)",
-  float:   "0 20px 40px rgba(26,28,29,0.08)",
-  sm:      "0 2px 8px rgba(26,28,29,0.05)",
+  ambient: "0 2px 8px rgba(0,0,0,0.04)",
+  float:   "0 2px 8px rgba(0,0,0,0.04)",
+  sm:      "0 2px 8px rgba(0,0,0,0.04)",
 } as const;
 // ─────────────────────────────────────────────────────────
 export default function ClientiPanel() {
@@ -65,10 +65,10 @@ export default function ClientiPanel() {
   const [newDiarioTag, setNewDiarioTag] = React.useState("nota");
 
     const filters = [
-      { id: "tutti", l: "Tutti", c: L.primary },
-      { id: "cliente", l: "Clienti", c: "#007aff" },
-      { id: "fornitore", l: "Fornitori", c: "#34c759" },
-      { id: "professionista", l: "Professionisti", c: "#af52de" },
+      { id: "tutti", l: "Tutti", c: "#28A0A0" },
+      { id: "cliente", l: "Clienti", c: "#3572A5" },
+      { id: "fornitore", l: "Fornitori", c: "#0F6E56" },
+      { id: "professionista", l: "Professionisti", c: "#7B6BA5" },
     ];
     const filtered = contatti
       .filter(c => clientiFilter === "tutti" || c.tipo === clientiFilter)
@@ -467,7 +467,7 @@ export default function ClientiPanel() {
             <div style={{ fontSize: 20, fontWeight: 900 }}>Clienti</div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 11, color: L.sub, fontWeight: 600 }}>{contatti.length}</span>
-              <div onClick={() => setShowNewCliente(true)} style={{ width: 32, height: 32, borderRadius: 8, background: L.primary, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              <div onClick={() => setShowNewCliente(true)} style={{ width: 34, height: 34, borderRadius: 10, background: "#28A0A0", boxShadow: "0 2px 8px rgba(40,160,160,0.4)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                 <Ico d={ICO.plus} s={16} c="#fff" />
               </div>
             </div>
@@ -495,11 +495,11 @@ export default function ClientiPanel() {
           )}
           {filtered.map(c => {
             const cmCount = cmCountFor(c);
-            const tipoColor = c.tipo === "cliente" ? "#007aff" : c.tipo === "fornitore" ? "#34c759" : "#af52de";
+            const tipoColor = c.tipo === "cliente" ? "#3572A5" : c.tipo === "fornitore" ? "#0F6E56" : "#7B6BA5";
             const initials = ((c.nome||"")[0] || "") + ((c.cognome||"")[0] || "");
             return (
-              <div key={c.id} onClick={() => setSelectedCliente(c)} style={{ padding: "12px 14px", background: L.surface, borderRadius: 12, border: `1px solid ${L.border}`, marginBottom: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 42, height: 42, borderRadius: "50%", background: tipoColor + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: tipoColor, flexShrink: 0 }}>
+              <div key={c.id} onClick={() => setSelectedCliente(c)} style={{ padding: "12px 14px", background: L.surface, borderRadius: 14, border: "none", marginBottom: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.04)", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: tipoColor + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: tipoColor, flexShrink: 0 }}>
                   {initials.toUpperCase() || "?"}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -516,8 +516,8 @@ export default function ClientiPanel() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 4 }}>
-                  {c.telefono && <div onClick={(e) => { e.stopPropagation(); window.location.href="tel:" + c.telefono; }} style={{ width: 32, height: 32, borderRadius: "50%", background: "#d1fae5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}></div>}
-                  {c.telefono && <div onClick={(e) => { e.stopPropagation(); window.open("https://wa.me/" + (c.telefono||"").replace(/\s/g, "")); }} style={{ width: 32, height: 32, borderRadius: "50%", background: "#dcf8c6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}></div>}
+                  {c.telefono && <div onClick={(e) => { e.stopPropagation(); window.location.href="tel:" + c.telefono; }} style={{ width: 32, height: 32, borderRadius: 10, background: "#E1F5EE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}></div>}
+                  {c.telefono && <div onClick={(e) => { e.stopPropagation(); window.open("https://wa.me/" + (c.telefono||"").replace(/\s/g, "")); }} style={{ width: 32, height: 32, borderRadius: 10, background: "#E1F5EE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}></div>}
                 </div>
               </div>
             );
