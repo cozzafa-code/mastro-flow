@@ -84,7 +84,7 @@ export default function CMDetailPanel() {
     const m = selectedCM?.misure || {};
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "#fff", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "10px 16px", background: "#1A1A1C", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px", background: "#1A1A1C", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ color: "#28A0A0", fontWeight: 700, fontSize: 14 }}><I d={ICO.ruler} /> {selectedCM?.nome || "Disegno"}</span>
           <button onClick={() => setShowCadDraw(false)} style={{ background: "none", border: "none", color: "#fff", fontSize: 22, cursor: "pointer" }}>✕</button>
         </div>
@@ -195,7 +195,7 @@ export default function CMDetailPanel() {
       return (
         <div style={{ paddingBottom: 80 }}>
           {/* Header sticky */}
-          <div style={{ background: T.topbar || "#1A1A1C", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 10 }}>
+          <div style={{ background: T.topbar || "#1A1A1C", padding: "calc(env(safe-area-inset-top, 0px) + 12px) 14px 12px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 10 }}>
             <div onClick={() => setPrevWorkspace(false)} style={{ fontSize: 18, cursor: "pointer", color: "#fff" }}>←</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.code} · {c.cliente} {c.cognome || ""}</div>
@@ -849,7 +849,7 @@ export default function CMDetailPanel() {
     return (
       <div style={{ paddingBottom: 80 }}>
         {/* Topbar MASTRO branding */}
-        <div style={{ background: "#0D1F1F", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ background: "#0D1F1F", padding: "calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div onClick={() => { setSelectedRilievo(null); setSelectedCM(null); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
             <svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M8 2L2 8l6 6" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>{c.code}</span>
