@@ -697,10 +697,10 @@ export default function SettingsPanel() {
   ];
 
   return (
-    <div style={{ display:"flex", flexDirection: isDesktop ? "row" : "column", height: isDesktop ? "100vh" : "auto", minHeight:"100vh", overflow: isDesktop ? "hidden" : "auto", backgroundColor:"#D8EEEE", backgroundImage:"linear-gradient(rgba(40,160,160,0.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,0.18) 1px,transparent 1px)", backgroundSize:"24px 24px", fontFamily:"Inter, system-ui, sans-serif" }}>
+    <div style={{ display:"flex", flexDirection: isDesktop ? "row" : "column", height: isDesktop ? "100vh" : "auto", minHeight:"100vh", overflow: isDesktop ? "hidden" : "auto", backgroundColor:"#F5F4F0", fontFamily:"-apple-system, 'SF Pro Display', system-ui, sans-serif" }}>
 
       {/* fliwoX SIDEBAR */}
-      <div style={{ width: isDesktop ? 200 : "100%", flexShrink:0, background:"#0D1F1F", borderRight: isDesktop ? "1px solid rgba(40,160,160,0.2)" : "none", borderBottom: isDesktop ? "none" : "2px solid #C8E4E4", overflowY: isDesktop ? "auto" : "hidden", display:"flex", flexDirection:"column" }}>
+      <div style={{ width: isDesktop ? 200 : "100%", flexShrink:0, background:"#0D1F1F", borderRight: isDesktop ? "1px solid rgba(40,160,160,0.2)" : "none", borderBottom: isDesktop ? "none" : "0.5px solid #F0EFEC", overflowY: isDesktop ? "auto" : "hidden", display:"flex", flexDirection:"column" }}>
         {/* Sidebar header */}
         <div style={{ padding:"15px 16px 12px", borderBottom:"1px solid rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ fontSize:17, fontWeight:900, color:"white", letterSpacing:"-0.3px" }}>Impostazioni</div>
@@ -716,7 +716,7 @@ export default function SettingsPanel() {
             <select
               value={settingsTab}
               onChange={e => setSettingsTab(e.target.value)}
-              style={{ width:"100%", padding:"12px 14px", borderRadius:14, border:"1.5px solid #28A0A0", background:"rgba(40,160,160,0.08)", fontSize:14, fontWeight:900, color:"white", fontFamily:"inherit", boxShadow:"0 5px 0 0 #156060", outline:"none" }}
+              style={{ width:"100%", padding:"12px 14px", borderRadius:14, border:"0.5px solid rgba(40,160,160,0.3)", background:"rgba(40,160,160,0.08)", fontSize:14, fontWeight:600, color:"white", fontFamily:"inherit", outline:"none" }}
             >
               {sidebarGroups.flatMap(g => g.items).map(item => (
                 <option key={item.id} value={item.id} style={{ background:"#0D1F1F", color:"white" }}>{item.l}</option>
@@ -757,7 +757,7 @@ export default function SettingsPanel() {
         {/* fliwoX azienda info bottom */}
         <div style={{ padding:"12px 14px", borderTop:"1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <div style={{ width:32, height:32, borderRadius:10, background:"#28A0A0", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:900, color:"white", flexShrink:0, boxShadow:"0 3px 0 0 #156060" }}>
+            <div style={{ width:32, height:32, borderRadius:10, background:"#28A0A0", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:900, color:"white", flexShrink:0, boxShadow:"0 2px 6px rgba(40,160,160,0.3)" }}>
               {(aziendaInfo?.ragione || "W").charAt(0)}
             </div>
             <div style={{ overflow:"hidden" }}>
@@ -1519,7 +1519,7 @@ export default function SettingsPanel() {
                       ctx.setTeam((prev: any) => prev.map((t: any) => t.id === m.id ? updated : t));
                       setSelMembro(updated);
                     }} style={{ width: "100%", padding: "14px", borderRadius: 14, border: "none", background: PRI, color: "#fff",
-                      fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 0 0 #156060", marginTop: 8 }}>
+                      fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(40,160,160,0.3)", marginTop: 8 }}>
                       + Aggiungi documento
                     </button>
                   </div>
@@ -1540,7 +1540,7 @@ export default function SettingsPanel() {
                         setSelMembro(updated);
                         setMNota("");
                       }} style={{ width: 48, height: 48, borderRadius: 12, border: "none", background: PRI, display: "flex", alignItems: "center", justifyContent: "center",
-                        cursor: "pointer", boxShadow: "0 4px 0 0 #156060", flexShrink: 0 }}>
+                        cursor: "pointer", boxShadow: "0 2px 8px rgba(40,160,160,0.3)", flexShrink: 0 }}>
                         <I d={ICO.plus} s={20} c="#fff" sw={3} />
                       </button>
                     </div>
@@ -1577,7 +1577,7 @@ export default function SettingsPanel() {
                   <I d={ICO.chevronRight || ICO.back} s={16} c={T.sub} />
                 </div></div>
               ))}
-              <div onClick={() => { setSettingsModal("membro"); setSettingsForm({ nome: "", ruolo: "Posatore", compiti: "" }); }} style={{ padding: "16px", borderRadius: 14, border: "none", background: "#28A0A0", textAlign: "center", cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 800, boxShadow: "0 4px 0 0 #156060", marginTop: 8 }}>+ Aggiungi membro al team</div>
+              <div onClick={() => { setSettingsModal("membro"); setSettingsForm({ nome: "", ruolo: "Posatore", compiti: "" }); }} style={{ padding: "16px", borderRadius: 14, border: "none", background: "#28A0A0", textAlign: "center", cursor: "pointer", color: "#fff", fontSize: 14, fontWeight: 800, boxShadow: "0 2px 8px rgba(40,160,160,0.3)", marginTop: 8 }}>+ Aggiungi membro al team</div>
             </>
           );
         })()}
@@ -2287,7 +2287,7 @@ export default function SettingsPanel() {
             ))}
             <button onClick={() => setSquadreDB(prev => [...prev, { id: "sq" + Date.now(), nome: "Nuova Squadra", membri: [], colore: "#E8A020", tipo: "Montaggio", capo: "" }])}
               style={{ width: "100%", padding: "16px", borderRadius: 14, border: "none", background: PRI, color: "#fff",
-                fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 0 0 #156060" }}>
+                fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(40,160,160,0.3)" }}>
               + Nuova squadra
             </button>
           </>
