@@ -70,7 +70,7 @@ export default function ModalPanel() {
                       <div style={{ fontSize:10, fontWeight:700, color:T.sub, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>Email destinatario</div>
                       <input
                         type="email" placeholder="cliente@email.com"
-                        style={{ width:"100%", padding:"9px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, background:T.card, fontSize:13, color:T.text, fontFamily:"inherit", boxSizing:"border-box" as any }}
+                        style={{ width:"100%", padding:"9px 12px", borderRadius:8, border:"0.5px solid #F0EFEC", background:"#F7F7F5", fontSize:13, color:T.text, fontFamily:"inherit", boxSizing:"border-box" as any }}
                         onChange={e => {
                           const v = e.target.value;
                           setShowMailModal(prev => prev ? { ...prev, emailOverride: v } : prev);
@@ -86,7 +86,7 @@ export default function ModalPanel() {
                       value={mailBody}
                       onChange={e => setMailBody(e.target.value)}
                       rows={10}
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1px solid ${T.bdr}`, background:T.card, fontSize:12, color:T.text, fontFamily:"inherit", resize:"vertical" as any, boxSizing:"border-box" as any, lineHeight:1.6 }}
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:"0.5px solid #F0EFEC", background:"#F7F7F5", fontSize:12, color:T.text, fontFamily:"inherit", resize:"vertical" as any, boxSizing:"border-box" as any, lineHeight:1.6 }}
                     />
                   </div>
 
@@ -131,7 +131,7 @@ Cordiali saluti,
 Fabio Cozza - Walter Cozza Serramenti` },
                       ].map(({ lbl, tpl }) => (
                         <div key={lbl} onClick={() => setMailBody(tpl)}
-                          style={{ padding:"5px 10px", borderRadius:20, border:`1px solid ${T.bdr}`, background:T.card, fontSize:11, fontWeight:600, color:T.text, cursor:"pointer" }}>
+                          style={{ padding:"5px 10px", borderRadius:20, border:"0.5px solid #F0EFEC", background:"#F7F7F5", fontSize:11, fontWeight:600, color:T.text, cursor:"pointer" }}>
                           {lbl}
                         </div>
                       ))}
