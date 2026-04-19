@@ -85,7 +85,7 @@ export default function CMDetailPanel() {
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "#fff", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "10px 16px", background: "#1A1A1C", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ color: "#D08008", fontWeight: 700, fontSize: 14 }}>📐 {selectedCM?.nome || "Disegno"}</span>
+          <span style={{ color: "#28A0A0", fontWeight: 700, fontSize: 14 }}><I d={ICO.ruler} /> {selectedCM?.nome || "Disegno"}</span>
           <button onClick={() => setShowCadDraw(false)} style={{ background: "none", border: "none", color: "#fff", fontSize: 22, cursor: "pointer" }}>✕</button>
         </div>
         <div style={{ flex: 1, overflow: "hidden" }}>
@@ -202,7 +202,7 @@ export default function CMDetailPanel() {
               <div style={{ fontSize: 10, color: "#ffffff60" }}>{c.indirizzo || ""}</div>
             </div>
             {fattureDB.filter(f => f.cmId === c.id).length > 0 && (
-              <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#1A9E7330" : "#D0800830", color: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#1A9E73" : "#D08008", flexShrink: 0 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#28A0A030" : "#D0800830", color: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#28A0A0" : "#D08008", flexShrink: 0 }}>
                 {fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "✓ Pagata" : "📋 Fattura"}
               </span>
             )}
@@ -453,9 +453,9 @@ export default function CMDetailPanel() {
                     const storico = await getFascicoliCommessa(c.id);
                     setFascicoliStorico(storico);
                   }}
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #2D7A6B 0%, #1A9E73 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
-                  <span style={{ fontSize: 16 }}>📐</span> Fascicolo Geometra
+                  <span style={{ fontSize: 16 }}><I d={ICO.ruler} /></span> Fascicolo Geometra
                 </button>
                 <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico · Link cliente · Excel ENEA</div>
               </div>
@@ -463,7 +463,7 @@ export default function CMDetailPanel() {
               {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (
                 <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}><I d={ICO.edit} />€+ AVANTI → Conferma ordine</button>
               )}
-              {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#34c75918", border: "1px solid #34c75940", fontSize: 12, fontWeight: 700, color: "#34c759", textAlign: "center" }}>{ccDone}</div>}
+              {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
             </div>
           )}
 
@@ -483,8 +483,8 @@ export default function CMDetailPanel() {
                   ✓+ Apri disegnatore
                 </button>
                 {c.cadData && (
-                  <div style={{ marginTop: 12, padding: "10px 14px", background: "#1A9E7312", borderRadius: 10, border: "1px solid #1A9E7330" }}>
-                    <div style={{ fontSize: 11, color: "#1A9E73", fontWeight: 700 }}>
+                  <div style={{ marginTop: 12, padding: "10px 14px", background: "#28A0A012", borderRadius: 10, border: "1px solid #28A0A030" }}>
+                    <div style={{ fontSize: 11, color: "#28A0A0", fontWeight: 700 }}>
                       ✓ {c.cadData.oggetti?.length || 0} elementi disegnati
                     </div>
                   </div>
@@ -848,6 +848,21 @@ export default function CMDetailPanel() {
     // == VISTA RILIEVO CON VANI ==
     return (
       <div style={{ paddingBottom: 80 }}>
+        {/* Topbar MASTRO branding */}
+        <div style={{ background: "#0D1F1F", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div onClick={() => { setSelectedRilievo(null); setSelectedCM(null); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M8 2L2 8l6 6" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>{c.code}</span>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>·</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>{c.cliente} {c.cognome || ""}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "#28A0A0", background: "rgba(40,160,160,0.15)", padding: "3px 8px", borderRadius: 6, letterSpacing: "0.05em" }}>MASTRO</span>
+          </div>
+        </div>
+        {c.indirizzo && (
+          <div style={{ background: "#0D1F1F", padding: "0 16px 10px", fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>{c.indirizzo}</div>
+        )}
         {/* Header rilievo */}
         <div style={{ ...S.header }}>
           <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); }} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: T.bg, border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: T.text }}><Ico d={ICO.back} s={16} c={T.text} /> Indietro</div>
@@ -933,9 +948,9 @@ export default function CMDetailPanel() {
           const stepsCC = [
             { id: "sopralluogo", icon: "mapPin", l: "Rilievo",    done: (rilieviCC.length > 0 && vaniCC.length > 0) || skipped("sopralluogo"), skipped: skipped("sopralluogo"), desc: "Misure, foto, note dal cantiere" },
             { id: "preventivo",  icon: "fileText", l: "Preventivo", done: !!c.preventivoInviato || skipped("preventivo"),  skipped: skipped("preventivo"),  desc: "Rivedi prezzi, sconti, condizioni" },
-            { id: "conferma",    icon: "✍️",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
+            { id: "conferma",    icon: "edit",  l: "Firma",      done: hasFirmaCC || skipped("conferma"),               skipped: skipped("conferma"),    desc: "Firma cliente e conferma ordine" },
             { id: "ordini",      icon: "package", l: "Ordine",     done: hasOrdCC || skipped("ordini"),                   skipped: skipped("ordini"),      desc: "Ordina materiali ai fornitori" },
-            { id: "produzione",  icon: "🏭", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
+            { id: "produzione",  icon: "building", l: "Produzione", done: confFirmCC || skipped("produzione"),             skipped: skipped("produzione"),  desc: "Attesa materiali e lavorazione" },
             { id: "posa",        icon: "wrench", l: "Posa",       done: montCC.some(m => ["completato","collaudo","chiuso"].includes(m.interventoStato || m.stato)) || skipped("posa"), skipped: skipped("posa"), desc: "Montaggio al cantiere" },
             { id: "collaudo",    icon: "checkCircle", l: "Collaudo",   done: !!c.collaudoOk || montCC.some(m => ["collaudo","chiuso"].includes(m.interventoStato)) || skipped("collaudo"), skipped: skipped("collaudo"), desc: "Verifica lavoro, foto finale" },
             { id: "chiusura",    icon: "tag", l: "Chiusura",   done: tuttoCC, desc: "Fattura saldo e chiudi" },
@@ -947,6 +962,16 @@ export default function CMDetailPanel() {
 
           return (
             <div style={{ margin: "8px 16px 4px" }}>
+              {/* Centro Comando header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "#0D1F1F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.02em" }}>Centro Comando</span>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0", background: "rgba(40,160,160,0.1)", padding: "3px 10px", borderRadius: 8 }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
+              </div>
               {/* Progress dots con label */}
               <div style={{ display: "flex", gap: 2, marginBottom: 6, justifyContent: "center", alignItems: "flex-end" }}>
                 {stepsCC.map((s, i) => (
@@ -954,33 +979,37 @@ export default function CMDetailPanel() {
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                       <div style={{
                         width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
-                        background: s.skipped ? "#ff9500" : s.done ? "#34c759" : i === curIdxCC ? T.acc : T.bg,
+                        background: s.skipped ? "#ff9500" : s.done ? "#28A0A0" : i === curIdxCC ? T.acc : T.bg,
                         color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
                       }}>{s.skipped ? <I d={ICO.check} s={10} c="#fff" /> : s.done ? <I d={ICO.check} s={10} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={10} c="#fff" />}</div>
-                      <div style={{ fontSize: 7, color: i === curIdxCC ? T.acc : s.done ? "#34c759" : T.sub, fontWeight: i === curIdxCC ? 800 : 500, whiteSpace: "nowrap", maxWidth: 32, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>{s.l}</div>
+                      <div style={{ fontSize: 7, color: i === curIdxCC ? T.acc : s.done ? "#28A0A0" : T.sub, fontWeight: i === curIdxCC ? 800 : 500, whiteSpace: "nowrap", maxWidth: 32, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>{s.l}</div>
                     </div>
-                    {i < stepsCC.length - 1 && <div style={{ width: 6, height: 2, background: s.done ? "#34c759" : T.bdr, marginBottom: 12 }} />}
+                    {i < stepsCC.length - 1 && <div style={{ width: 6, height: 2, background: s.done ? "#28A0A0" : T.bdr, marginBottom: 12 }} />}
                   </div>
                 ))}
               </div>
               {/* Current action */}
               {curCC && (
-                <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: "12px 14px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <IcoKey name={curCC.icon} s={18} c={T.acc} />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{curCC.l}</span>
-                      <div style={{ fontSize: 10, color: T.sub }}>{curCC.desc}</div>
+                <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: "14px 16px", boxShadow: "0 2px 12px rgba(40,160,160,0.08)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <IcoKey name={curCC.icon} s={16} c="#28A0A0" />
                     </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: T.acc }}>{doneCC}/{stepsCC.length}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: "#0D1F1F" }}>{curCC.l}</span>
+                        <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 6, background: "#28A0A0", color: "#fff", letterSpacing: "0.04em" }}>DA FARE</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{curCC.desc}</div>
+                    </div>
                     {hasFattCC && (
-                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: tuttoCC ? "#1A9E7320" : "#D0800820", color: tuttoCC ? "#1A9E73" : "#D08008", marginLeft: 4 }}>
-                        {tuttoCC ? "✓ Pagata" : "📋 Fatt."}
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: tuttoCC ? "#28A0A020" : "#D0800820", color: tuttoCC ? "#28A0A0" : "#D08008" }}>
+                        {tuttoCC ? "✓ Pagata" : <I d={ICO.fileText} />}
                       </span>
                     )}
                   </div>
                   {/* Success flash */}
-                  {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#34c75918", border: "1px solid #34c75940", fontSize: 12, fontWeight: 700, color: "#34c759", textAlign: "center" }}>{ccDone}</div>}
+                  {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
 
                   {/* Skipped steps log */}
                   {(c.skipLog || []).length > 0 && (
@@ -1009,7 +1038,7 @@ export default function CMDetailPanel() {
                         </div>
                       )}
                       {vaniCC.length === 0 ? (
-                        <div style={{ padding: "12px 16px", borderRadius: 10, border: `1.5px dashed ${T.grn}`, background: `${T.grn}08`, display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}><I d={ICO.mapPin} s={18} c={T.grn} /><div><div style={{ fontSize: 13, fontWeight: 700, color: T.grn }}>Avvia sopralluogo</div><div style={{ fontSize: 11, color: T.sub }}>Aggiungi i vani e inserisci le misure sul cantiere</div></div></div>
+                        <div style={{ padding: "14px 16px", borderRadius: 12, background: "#28A0A0", display: "flex", alignItems: "center", gap: 10, margin: "8px 0", cursor: "pointer", boxShadow: "0 4px 16px rgba(40,160,160,0.35)" }}><I d={ICO.mapPin} s={18} c="#fff" /><div><div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>CREA RILIEVO</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>Aggiungi i vani e inserisci le misure</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
                       ) : (
                         <div style={{ fontSize: 12, color: T.grn, fontWeight: 700, textAlign: "center" }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
@@ -1113,10 +1142,10 @@ export default function CMDetailPanel() {
                         </div>
                       ) : (
                         <div>
-                          <div style={{ padding: 8, borderRadius: 8, background: "#34c75912", marginBottom: 6, fontSize: 11, color: "#34c759", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ padding: 8, borderRadius: 8, background: "#28A0A012", marginBottom: 6, fontSize: 11, color: "#28A0A0", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
                             <I d={ICO.paperclip} />
                             <span onClick={() => { if (firmaFileUrl) { const w = window.open(""); w?.document.write(`<iframe src="${firmaFileUrl}" style="width:100%;height:100vh;border:none"></iframe>`); } }} style={{ flex: 1, cursor: "pointer", textDecoration: "underline", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{firmaFileName}</span>
-                            <a href={firmaFileUrl || "#"} download={firmaFileName} style={{ fontSize: 10, color: "#34c759", cursor: "pointer", textDecoration: "none", flexShrink: 0 }}>🔗</a>
+                            <a href={firmaFileUrl || "#"} download={firmaFileName} style={{ fontSize: 10, color: "#28A0A0", cursor: "pointer", textDecoration: "none", flexShrink: 0 }}>🔗</a>
                             <span onClick={() => { setFirmaFileUrl(null); setFirmaFileName(""); }} style={{ cursor: "pointer", flexShrink: 0 }}>✓</span>
                           </div>
                           <button onClick={() => {
@@ -1125,7 +1154,7 @@ export default function CMDetailPanel() {
                             setSelectedCM(prev => ({ ...prev, firmaCliente: true, dataFirma: new Date().toISOString().split("T")[0] }));
                             setFirmaStep(0); setFirmaFileUrl(null); setFirmaFileName("");
                             setCcDone("✓ Firma registrata!"); setTimeout(() => setCcDone(null), 3000);
-                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA FIRMA →</button>
+                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA FIRMA →</button>
                         </div>
                       )}
                     </div>
@@ -1322,13 +1351,13 @@ export default function CMDetailPanel() {
                       {!ordConfCC ? (
                         <button onClick={() => apriInboxDocumento(c.id, "conferma")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#af52de", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.download} /> CARICA CONFERMA FORNITORE →</button>
                       ) : ccConfirm !== "conferma_ok" ? (
-                        <button onClick={() => setCcConfirm("conferma_ok")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ APPROVA E AVVIA PRODUZIONE →</button>
+                        <button onClick={() => setCcConfirm("conferma_ok")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ APPROVA E AVVIA PRODUZIONE →</button>
                       ) : (
-                        <div style={{ background: "#34c75912", borderRadius: 10, padding: 12, border: "1px solid #34c75930" }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759", marginBottom: 4 }}>Confermi avvio produzione?</div>
+                        <div style={{ background: "#28A0A012", borderRadius: 10, padding: 12, border: "1px solid #28A0A030" }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#28A0A0", marginBottom: 4 }}>Confermi avvio produzione?</div>
                           <div style={{ display: "flex", gap: 8 }}>
                             <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                            <button onClick={() => { setOrdiniFornDB(prev => prev.map(o => o.cmId === c.id ? { ...o, conferma: { ...o.conferma, firmata: true } } : o)); setCcConfirm(null); setCcDone("✓ Produzione avviata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO</button>
+                            <button onClick={() => { setOrdiniFornDB(prev => prev.map(o => o.cmId === c.id ? { ...o, conferma: { ...o.conferma, firmata: true } } : o)); setCcConfirm(null); setCcDone("✓ Produzione avviata!"); setTimeout(() => setCcDone(null), 3000); }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO</button>
                           </div>
                         </div>
                       )}
@@ -1498,7 +1527,7 @@ export default function CMDetailPanel() {
                               setEvents(prev => [...prev, { id: "ev_m_" + Date.now(), date: montFormData.data, time: montFormData.orario, text: `🔧 Montaggio ${c.cliente} (${montGiorni}g)`, tipo: "montaggio", persona: c.cliente, cm: c.code, addr: c.indirizzo || "", done: false }]);
                               setMontFormOpen(false);
                               setCcDone("✓ Montaggio pianificato!"); setTimeout(() => setCcDone(null), 3000);
-                            }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA</button>
+                            }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMA</button>
                           </div>
                         </div>
                       )}
@@ -1542,23 +1571,23 @@ export default function CMDetailPanel() {
                       )}
                       {saldoFatCC && !saldoPagatoCC && (
                         ccConfirm !== "pagata" ? (
-                          <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ SEGNA PAGATA €{fmtCC(restoCC)} →</button>
+                          <button onClick={() => setCcConfirm("pagata")} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ SEGNA PAGATA €{fmtCC(restoCC)} →</button>
                         ) : (
-                          <div style={{ background: "#34c75912", borderRadius: 10, padding: 12, border: "1px solid #34c75930" }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: "#34c759", marginBottom: 4 }}>Conferma pagamento €{fmtCC(restoCC)}</div>
+                          <div style={{ background: "#28A0A012", borderRadius: 10, padding: 12, border: "1px solid #28A0A030" }}>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: "#28A0A0", marginBottom: 4 }}>Conferma pagamento €{fmtCC(restoCC)}</div>
                             <div style={{ display: "flex", gap: 8 }}>
                               <button onClick={() => setCcConfirm(null)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                               <button onClick={() => {
                                 setFattureDB(prev => prev.map(f => f.cmId === c.id && !f.pagata ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: "Bonifico" } : f));
                                 setFaseTo(c.id, "chiusura");
                                 setCcConfirm(null); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000);
-                              }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO INCASSO</button>
+                              }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CONFERMO INCASSO</button>
                             </div>
                           </div>
                         )
                       )}
                       {!saldoFatCC && restoCC <= 0 && (
-                        <button onClick={() => { setFaseTo(c.id, "chiusura"); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CHIUDI COMMESSA →</button>
+                        <button onClick={() => { setFaseTo(c.id, "chiusura"); setCcDone("✓ Commessa chiusa!"); setTimeout(() => setCcDone(null), 3000); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✓ CHIUDI COMMESSA →</button>
                       )}
                     </div>
                     );
@@ -1628,9 +1657,9 @@ export default function CMDetailPanel() {
           <div style={{ padding: "12px 16px" }}>
             {/* Stato misure globale */}
             <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 14, textAlign: "center", fontSize: 12, fontWeight: 700,
-              background: c.firmaCliente ? "#34c75912" : "#ff950012",
-              color: c.firmaCliente ? "#34c759" : "#ff9500",
-              border: `1px solid ${c.firmaCliente ? "#34c75930" : "#ff950030"}`,
+              background: c.firmaCliente ? "#28A0A012" : "#ff950012",
+              color: c.firmaCliente ? "#28A0A0" : "#ff9500",
+              border: `1px solid ${c.firmaCliente ? "#28A0A030" : "#ff950030"}`,
             }}>
               {c.firmaCliente
                 ? "✓ Misure definitive · cliente ha firmato"
@@ -1679,7 +1708,7 @@ export default function CMDetailPanel() {
                     </div>
                     {ril.motivoModifica && <div style={{ fontSize: 11, color: "#ff9500", marginTop: 2 }}><I d={ICO.wrench} /> {ril.motivoModifica}</div>}
                     {ril.note && <div style={{ fontSize: 11, color: T.sub, marginTop: 2, fontStyle: "italic" }}>"{ril.note}"</div>}
-                    {ril._ereditatiCount > 0 && <div style={{ fontSize: 10, color: "#34c759", marginTop: 2 }}><I d={ICO.clipboard} /> {ril._ereditatiCount} vani ereditati da R{ril.n - 1}</div>}
+                    {ril._ereditatiCount > 0 && <div style={{ fontSize: 10, color: "#28A0A0", marginTop: 2 }}><I d={ICO.clipboard} /> {ril._ereditatiCount} vani ereditati da R{ril.n - 1}</div>}
                   </div>
                   <span style={{ color: T.sub, fontSize: 14, alignSelf: "center" }}>📷</span>
                 </div>
@@ -1966,7 +1995,7 @@ export default function CMDetailPanel() {
                     )}
                     {a.tipo === "foto" && a.dataUrl && <img src={a.dataUrl} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} alt="" />}
                     {a.tipo === "file" && a.dataUrl && <a href={a.dataUrl} download={a.nome} style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer", textDecoration: "none" }}><I d={ICO.folder} /> Apri</a>}
-                    {a.tipo === "firma" && a.dataUrl && <span onClick={() => { const w = window.open(""); w?.document.write(`<iframe src="${a.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`); }} style={{ padding: "3px 8px", borderRadius: 6, background: "#34c75912", fontSize: 10, fontWeight: 600, color: "#34c759", cursor: "pointer" }}>📸 Apri</span>}
+                    {a.tipo === "firma" && a.dataUrl && <span onClick={() => { const w = window.open(""); w?.document.write(`<iframe src="${a.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`); }} style={{ padding: "3px 8px", borderRadius: 6, background: "#28A0A012", fontSize: 10, fontWeight: 600, color: "#28A0A0", cursor: "pointer" }}>📸 Apri</span>}
                     {a.tipo === "firma" && a.dataUrl && <a href={a.dataUrl} download={a.nome} style={{ padding: "3px 8px", borderRadius: 6, background: T.bg, fontSize: 10, fontWeight: 600, color: T.sub, cursor: "pointer", textDecoration: "none" }}>🔗</a>}
                     {/* Delete */}
                     <div onClick={() => { setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: (x.allegati || []).filter(al => al.id !== a.id) } : x)); setSelectedCM(p => ({ ...p, allegati: (p.allegati || []).filter(al => al.id !== a.id) })); }} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={12} c={T.sub} /></div>
@@ -2061,7 +2090,7 @@ export default function CMDetailPanel() {
             <div style={{ background: T.bg, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 580, maxHeight: "88vh", overflowY: "auto", padding: "20px 16px 32px" }}>
               {/* Header */}
               <div style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #2D7A6B, #1A9E73)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginRight: 10 }}>📐</div>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, marginRight: 10 }}><I d={ICO.ruler} s={18} c="#fff" /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: T.text }}>Fascicolo Geometra</div>
                   <div style={{ fontSize: 11, color: T.sub }}>{(getVaniAttivi(c) || []).length} vani · {c.code || c.id}</div>
@@ -2124,7 +2153,7 @@ export default function CMDetailPanel() {
                     }
                   }}
                   disabled={fascicoloLoading}
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #2D7A6B, #1A9E73)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: fascicoloLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: fascicoloLoading ? 0.7 : 1 }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: fascicoloLoading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: fascicoloLoading ? 0.7 : 1 }}
                 >
                   {fascicoloLoading ? "+▶ Generazione..." : "🔧 Genera link condivisibile (30gg)"}
                 </button>
