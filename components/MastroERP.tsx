@@ -4382,18 +4382,19 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             settings: <svg width="20" height="20" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="14" cy="14" r="3"/><path d="M14 4v3M14 21v3M4 14h3M21 14h3M6.3 6.3l2.1 2.1M19.6 19.6l2.1 2.1M6.3 21.7l2.1-2.1M19.6 8.4l2.1-2.1"/></svg>,
           };
           return (
-            <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:100,
-              background:"#0D1F1F", borderTop:"1px solid rgba(40,160,160,0.15)",
-              display:"flex", justifyContent:"space-around", alignItems:"center",
-              padding:"10px 0",
-              paddingBottom:"calc(10px + env(safe-area-inset-bottom, 0px))" }}>
+            <div style={{ position:"fixed", bottom:14, left:14, right:14, zIndex:100,
+              background:"linear-gradient(145deg, #0D1F1F, #163333)", border:"none",
+              borderRadius:18, display:"flex", justifyContent:"space-around", alignItems:"center",
+              padding:"8px 4px",
+              paddingBottom:"calc(8px + env(safe-area-inset-bottom, 0px))",
+              boxShadow:"0 4px 14px rgba(0,0,0,0.2)" }}>
               {TABS.map(t => {
                 const active = tab === t.id;
                 const badge = t.id === "messaggi" && (msgs||[]).filter((m:any) => !m.letto).length > 0
                   ? (msgs||[]).filter((m:any) => !m.letto).length : 0;
                 return (
                   <div key={t.id} onClick={() => { setTab(t.id); if (t.id !== "commesse") setSelectedCM(null); }}
-                    style={{ flex:1, display:"flex", flexDirection:"column" as any, alignItems:"center", gap:3, cursor:"pointer", padding:"2px 0" }}>
+                    style={{ flex:1, display:"flex", flexDirection:"column" as any, alignItems:"center", gap:3, cursor:"pointer", padding:"7px 12px", background: active ? "rgba(40,160,160,0.2)" : "transparent", borderRadius: 12 }}>
                     <div style={{ position:"relative" as any, color: active ? "#28A0A0" : "rgba(255,255,255,0.35)" }}>
                       {React.cloneElement(NAV_ICONS[t.id] as any, { stroke: active ? "#28A0A0" : "rgba(255,255,255,0.35)" })}
                       {badge > 0 && (
@@ -4404,8 +4405,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                         </div>
                       )}
                     </div>
-                    <div style={{ fontSize:10, fontWeight: active ? 900 : 600,
-                      color: active ? "#28A0A0" : "rgba(255,255,255,0.35)" }}>{t.label}</div>
+                    <div style={{ fontSize:9, fontWeight: active ? 700 : 500,
+                      color: active ? "#28A0A0" : "#5A8A8A", marginTop:2 }}>{t.label}</div>
                   </div>
                 );
               })}
