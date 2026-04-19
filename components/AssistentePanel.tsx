@@ -19,6 +19,7 @@ export default function AssistentePanel() {
   const {
     T, S, cantieri, fattureDB, fatturePassive, tasks, events,
     montaggiDB, ordiniFornDB, contatti, squadreDB, pipelineDB,
+    sistemiDB, coloriDB, vetriDB, coprifiliDB, lamiereDB, aziendaInfo,
   } = useMastro();
 
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
@@ -84,6 +85,14 @@ export default function AssistentePanel() {
       taskAperti: taskAperti.slice(0, 20),
       ordiniAttivi: (ordiniFornDB || []).filter(o => o.stato !== "consegnato").slice(0, 10),
       pipeline,
+      // Materiali e catalogo
+      azienda: aziendaInfo ? { nome: aziendaInfo.nome, ragione: aziendaInfo.ragione, piva: aziendaInfo.piva, citta: aziendaInfo.citta } : null,
+      sistemi: (sistemiDB || []).map(s => ({ marca: s.marca, sistema: s.sistema, materiale: s.materiale, prezzoMq: s.prezzoMq || s.euroMq || 0, sovRAL: s.sovRAL || 0, sovLegno: s.sovLegno || 0 })),
+      colori: (coloriDB || []).map(c => ({ code: c.code || c.codice, nome: c.nome, tipo: c.tipo, hex: c.hex })),
+      vetri: (vetriDB || []).map(v => ({ code: v.code || v.codice, nome: v.nome, ug: v.ug, prezzoMq: v.prezzoMq || 0 })),
+      coprifili: (coprifiliDB || []).map(c => ({ cod: c.cod || c.codice, nome: c.nome })),
+      lamiere: (lamiereDB || []).map(l => ({ cod: l.cod || l.codice, nome: l.nome })),
+      contatti: (contatti || []).slice(0, 30).map(c => ({ nome: c.nome, cognome: c.cognome, telefono: c.telefono, tipo: c.tipo })),
     };
   };
 
@@ -122,23 +131,50 @@ export default function AssistentePanel() {
   const startVoice = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) { alert("Microfono non supportato su questo browser"); return; }
+    // Stop precedente se attivo
+    if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
     const rec = new SR();
     rec.lang = "it-IT";
     rec.interimResults = false;
     rec.maxAlternatives = 1;
+    rec.continuous = false; // singola frase, poi stop
+    let gotResult = false;
     rec.onstart = () => setIsListening(true);
-    rec.onend = () => setIsListening(false);
+    rec.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
     rec.onresult = (e: any) => {
+      gotResult = true;
       const transcript = e.results[0][0].transcript;
       setInput(transcript);
+      // Auto-invio dopo 500ms
+      setTimeout(() => {
+        if (transcript.trim()) sendMessage(transcript.trim());
+      }, 500);
+      try { rec.stop(); } catch {}
     };
-    rec.onerror = () => setIsListening(false);
+    rec.onerror = (e: any) => {
+      console.warn("Speech error:", e.error);
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
     recognitionRef.current = rec;
     rec.start();
+    // Timeout sicurezza: stop dopo 10s se nessun risultato
+    setTimeout(() => {
+      if (!gotResult && recognitionRef.current) {
+        try { rec.stop(); } catch {}
+        setIsListening(false);
+      }
+    }, 10000);
   };
 
   const stopVoice = () => {
-    recognitionRef.current?.stop();
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
+    }
     setIsListening(false);
   };
 
@@ -146,14 +182,12 @@ export default function AssistentePanel() {
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: T.bg, paddingBottom: 0 }}>
 
       {/* Header */}
-      <div style={{ padding: "16px 20px 12px", borderBottom: `1px solid ${T.bdr}`, background: T.card }}>
+      <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 16px) 20px 12px", borderBottom: `1px solid ${T.bdr}`, background: "#0D1F1F" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: T.acc, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <I d={ICO.sparkles} s={18} c="#fff" />
-          </div>
+          <svg width="28" height="28" viewBox="0 0 200 200" fill="none"><g><rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/><rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/><rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/><rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/></g><g transform="rotate(8 100 100)"><rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/><path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/><path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/></g></svg>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>MASTRO AI</div>
-            <div style={{ fontSize: 11, color: T.sub }}>Assistente intelligente — powered by GPT-4o</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>MASTRO AI</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>Assistente intelligente · conosce i tuoi dati</div>
           </div>
         </div>
       </div>
