@@ -1,7 +1,37 @@
 'use client';
 import HomePanel from './HomePanel';
 import CostruttorePanel from './CostruttorePanel';
-import CommessaIntegrata from './CommessaIntegrata';
+import CommessePanel from './CommessePanel';
+import AgendaPanel from './AgendaPanel';
+import MessaggiPanel from './MessaggiPanel';
+import MastroSignal from './MastroSignal';
+import ClientiPanel from './ClientiPanel';
+import ContabilitaPanel from './ContabilitaPanel';
+import DesktopCNC from './DesktopCNC';
+import DesktopProdFlow from './DesktopProdFlow';
+import DesktopOrdini from './DesktopOrdini';
+import OrdiniFornitori from './OrdiniFornitori';
+import DesktopTeam from './DesktopTeam';
+import DesktopMontaggi from './DesktopMontaggi';
+import DesktopMisure from './DesktopMisure';
+import DesktopFatture from './DesktopFatture';
+import DesktopReport from './DesktopReport';
+import DesktopListini from './DesktopListini';
+import DesktopENEA from './DesktopENEA';
+import DesktopLeads from './DesktopLeads';
+import DesktopRete from './DesktopRete';
+import DesktopAgente from './DesktopAgente';
+import DesktopProduzione from './DesktopProduzione';
+import DesktopInfissiOra from './DesktopInfissiOra';
+import DesktopPortaleB2C from './DesktopPortaleB2C';
+import WizardVanoComposto from './WizardVanoComposto';
+import PreventivoPanel from './PreventivoPanel';
+import MisurePanel from './MisurePanel';
+import ArchivioProfiliPanel from './ArchivioProfiliPanel';
+import NodiTecniciPanel from './NodiTecniciPanel';
+import CostruttoreVetri from './CostruttoreVetri';
+import CostruttoreLavorazioni from './CostruttoreLavorazioni';
+import PosizionatoreLavorazioni from './PosizionatoreLavorazioni';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -226,12 +256,11 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     title: 'LAVORO QUOTIDIANO',
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: Icons.dashboard },
+      { id: 'agenda', label: 'Agenda', icon: Icons.agenda },
       { id: 'commesse', label: 'Commesse', icon: Icons.commesse },
       { id: 'messaggi', label: 'Messaggi', icon: Icons.messaggi },
-      { id: 'agenda', label: 'Agenda', icon: Icons.agenda },
-      { id: 'distinte', label: 'Distinte taglio', icon: Icons.distinte },
-      { id: 'cnc', label: 'CNC / Macchine', icon: Icons.cnc, subtitle: 'Emmegi CENTRO 2' },
       { id: 'ordini', label: 'Ordini fornitori', icon: Icons.ordini },
+      { id: 'produzione', label: 'Produzione', icon: Icons.dashboard },
     ],
   },
   {
@@ -252,11 +281,22 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     ],
   },
   {
+    title: 'CATALOGHI TECNICI',
+    items: [
+      { id: 'archivio_profili', label: 'Archivio Profili', icon: Icons.profili, subtitle: 'DXF / DWG' },
+      { id: 'nodi_tecnici', label: 'Nodi Tecnici', icon: Icons.archivio },
+      { id: 'costruttore_vetri', label: 'Costruttore Vetri', icon: Icons.config, subtitle: 'EN 673 / 410' },
+      { id: 'lavorazioni', label: 'Libreria Lavorazioni', icon: Icons.cnc, subtitle: 'CNC + Cantiere' },
+      { id: 'posizionatore', label: 'Posizionatore', icon: Icons.misure },
+      { id: 'configuratore', label: 'Configuratore', icon: Icons.config },
+      { id: 'listini', label: 'Listini', icon: Icons.listini },
+    ],
+  },
+  {
     title: 'CONFIGURAZIONE',
     items: [
       { id: 'settings', label: 'Profili e Tipologie', icon: Icons.profili },
       { id: 'configuratore', label: 'Configuratore', icon: Icons.config },
-      { id: 'listini', label: 'Listini', icon: Icons.listini },
       { id: 'archivio', label: 'Archivi tecnici', icon: Icons.archivio, subtitle: 'Nodi - Vetri - Colori' },
     ],
   },
@@ -272,8 +312,8 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     title: 'ROADMAP',
     items: [
-      { id: 'infissiora', label: 'InfissiOra', icon: Icons.infissiora, subtitle: 'Marketplace B2C', disabled: true },
-      { id: 'portale', label: 'Portale Cliente', icon: Icons.portale, subtitle: 'In roadmap', disabled: true },
+      { id: 'infissiora', label: 'InfissiOra', icon: Icons.infissiora, subtitle: 'Marketplace B2C' },
+      { id: 'portale', label: 'Portale Cliente', icon: Icons.portale, subtitle: 'In sviluppo' },
       { id: 'trasporti', label: 'Trasporti', icon: Icons.trasporti, subtitle: 'F5 - 2027', disabled: true },
     ],
   },
@@ -313,32 +353,275 @@ function SettingsPanelInline({ onNavigate }: { onNavigate: (p: string) => void }
   return <SP onNavigate={onNavigate} />;
 }
 
+// ═══════════════════════════════════════════════════════════
+// VANO DETAIL STANDALONE — bypassa MastroContext, carica da Supabase
+// ═══════════════════════════════════════════════════════════
+const M = "'JetBrains Mono', monospace";
+const VANO_TABS = ['Dettagli', 'Misure', 'Wizard', 'Preventivo', 'Disegno', 'Riepilogo'];
+const TIPI_VANO = ['F1A', 'F2A', 'F1A-R', 'F2A-R', 'PF1A', 'PF2A', 'SC-1A', 'SC-2A', 'PT-1A', 'PT-2A', 'FIX', 'VAS-1A', 'PVC-F1A'];
 
-// ── Lista Commesse per selezionare quale aprire ──
-function CommesseLista({ onSelect }: { onSelect: (id: string) => void }) {
-  const [commesse, setCommesse] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  React.useEffect(() => {
-    supabase.from("commesse").select("id, cliente, indirizzo, citta, stato, codice, created_at")
-      .order("created_at", { ascending: false }).limit(50)
-      .then(({ data }) => { setCommesse(data || []); setLoading(false); });
-  }, []);
-  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#86868b" }}>Caricamento commesse...</div>;
+function VanoDetailStandalone({ vanoId, commessaId, onBack, onNavigate }: {
+  vanoId: string | null;
+  commessaId: string | null;
+  onBack: () => void;
+  onNavigate: (p: string) => void;
+}) {
+  const [vano, setVano] = useState<any>(null);
+  const [commessa, setCommessa] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  const fetchData = useCallback(async () => {
+    if (!vanoId) return;
+    setLoading(true);
+    const [{ data: v }, { data: cm }] = await Promise.all([
+      supabase.from('vani').select('*').eq('id', vanoId).single(),
+      commessaId ? supabase.from('commesse').select('*').eq('id', commessaId).single() : { data: null },
+    ]);
+    setVano(v);
+    setCommessa(cm);
+    setLoading(false);
+  }, [vanoId, commessaId]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const updateVano = useCallback(async (field: string, value: any) => {
+    if (!vano) return;
+    const updated = { ...vano, [field]: value };
+    setVano(updated);
+    setSaving(true);
+    await supabase.from('vani').update({ [field]: value }).eq('id', vano.id);
+    setSaving(false);
+    setToast('Salvato');
+    setTimeout(() => setToast(''), 1500);
+  }, [vano]);
+
+  const updateMisura = useCallback(async (key: string, val: number) => {
+    if (!vano) return;
+    const newMisure = { ...(vano.misure_complete || {}), [key]: val };
+    setVano({ ...vano, misure_complete: newMisure });
+    setSaving(true);
+    await supabase.from('vani').update({ misure_complete: newMisure }).eq('id', vano.id);
+    setSaving(false);
+    setToast('Salvato');
+    setTimeout(() => setToast(''), 1500);
+  }, [vano]);
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: DS.teal }}>Caricamento vano...</div>;
+  if (!vano) return <div style={{ padding: 40, textAlign: 'center', color: DS.red }}>Vano non trovato</div>;
+
+  const mis = vano.misure_complete || vano.misure_json || {};
+  const lmm = mis.lCentro || mis.larghezza || 0;
+  const hmm = mis.hCentro || mis.altezza || 0;
+  const hasMis = lmm > 0 && hmm > 0;
+  const mq = hasMis ? ((lmm / 1000) * (hmm / 1000)).toFixed(2) : '—';
+
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0D1F1F', marginBottom: 16 }}>Commesse</h2>
-      <div style={{ fontSize: 12, color: '#86868b', marginBottom: 16 }}>Clicca su una commessa per vedere foto, firme, disegni, misure, alert e tutto il resto.</div>
-      {commesse.length === 0 ? <div style={{ padding: 30, textAlign: "center", color: "#86868b" }}>Nessuna commessa</div> :
-        commesse.map(c => (
-          <div key={c.id} onClick={() => onSelect(c.id)} style={{ background: '#fff', border: '1px solid #C8E4E4', borderRadius: 12, padding: 14, marginBottom: 8, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#0D1F1F' }}>{c.cliente || c.codice || 'Commessa'}</div>
-              <div style={{ fontSize: 11, color: '#86868b', marginTop: 2 }}>{c.indirizzo || ''} {c.citta || ''}</div>
-            </div>
-            <div style={{ fontSize: 11, color: '#28A0A0', fontWeight: 700 }}>{c.stato || '—'}</div>
+    <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: 'fixed', top: 70, right: 24, padding: '8px 20px', background: DS.green, color: DS.white, borderRadius: 8, fontSize: 13, fontWeight: 700, zIndex: 999, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button onClick={onBack} style={{ padding: '6px 14px', background: DS.light, border: `1px solid ${DS.border}`, borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: DS.teal, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 3L5 8l5 5"/></svg>
+          Commessa
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: DS.ink }}>{vano.nome || 'Vano'}</div>
+          <div style={{ fontSize: 12, color: '#999' }}>
+            {commessa?.nome_cliente || ''} {commessa ? `- ${commessa.indirizzo || ''}` : ''}
           </div>
-        ))
-      }
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, fontFamily: M, fontWeight: 700, color: DS.teal, background: DS.light, padding: '4px 10px', borderRadius: 6, border: `1px solid ${DS.border}` }}>{vano.tipo || '—'}</span>
+          {saving && <span style={{ fontSize: 11, color: DS.amber }}>Salvando...</span>}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 2, marginBottom: 20, background: DS.light, padding: 3, borderRadius: 10 }}>
+        {VANO_TABS.map((t, i) => (
+          <button key={t} onClick={() => setTab(i)} style={{
+            flex: 1, padding: '10px 0', fontSize: 13, fontWeight: tab === i ? 700 : 500,
+            color: tab === i ? DS.white : DS.ink, background: tab === i ? DS.teal : 'transparent',
+            border: 'none', borderRadius: 8, cursor: 'pointer', transition: 'all .15s',
+            boxShadow: tab === i ? `0 2px 0 ${DS.tealDark}` : 'none',
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {tab === 0 && <VanoTabDettagli vano={vano} updateVano={updateVano} />}
+      {tab === 1 && <MisurePanel vanoId={vano.id} onComplete={() => { setToast('Misure complete!'); fetchData(); }} />}
+      {tab === 2 && <WizardVanoComposto vanoId={vano.id} commessaId={commessaId || ''} onSaved={() => { setToast('Vano salvato!'); fetchData(); }} />}
+      {tab === 3 && <PreventivoPanel commessaId={commessaId || ''} />}
+      {tab === 4 && <VanoTabDisegno vano={vano} onNavigate={onNavigate} />}
+      {tab === 5 && <VanoTabRiepilogo vano={vano} commessa={commessa} lmm={lmm} hmm={hmm} mq={mq} />}
+    </div>
+  );
+}
+
+// ── Tab DETTAGLI ──
+function VanoTabDettagli({ vano, updateVano }: { vano: any; updateVano: (f: string, v: any) => void }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <VField label="Nome vano" value={vano.nome || ''} onChange={v => updateVano('nome', v)} />
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 700, color: DS.ink, marginBottom: 4, display: 'block' }}>Tipologia</label>
+        <select value={vano.tipo || ''} onChange={e => updateVano('tipo', e.target.value)}
+          style={{ width: '100%', padding: '9px 10px', border: `1.5px solid ${DS.border}`, borderRadius: 8, fontSize: 13, background: DS.white, outline: 'none', color: DS.ink }}>
+          <option value="">— Seleziona —</option>
+          {TIPI_VANO.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+      <VField label="Stanza" value={vano.stanza || ''} onChange={v => updateVano('stanza', v)} />
+      <VField label="Piano" value={vano.piano || ''} onChange={v => updateVano('piano', v)} />
+      <VField label="Sistema" value={vano.sistema || ''} onChange={v => updateVano('sistema', v)} span />
+      <div style={{ gridColumn: '1 / -1', padding: 16, background: DS.light, borderRadius: 10, border: `1px solid ${DS.border}` }}>
+        <label style={{ fontSize: 12, fontWeight: 700, color: DS.ink, marginBottom: 6, display: 'block' }}>Note</label>
+        <textarea value={vano.note || ''} onChange={e => updateVano('note', e.target.value)}
+          rows={3} style={{ width: '100%', padding: 10, border: `1px solid ${DS.border}`, borderRadius: 8, fontSize: 13, resize: 'vertical', outline: 'none', background: DS.white }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Tab MISURE ──
+const MISURE_FIELDS = [
+  { key: 'lCentro', label: 'Larghezza Centro', unit: 'mm' },
+  { key: 'hCentro', label: 'Altezza Centro', unit: 'mm' },
+  { key: 'lSX', label: 'Larghezza SX', unit: 'mm' },
+  { key: 'lDX', label: 'Larghezza DX', unit: 'mm' },
+  { key: 'hSX', label: 'Altezza SX', unit: 'mm' },
+  { key: 'hDX', label: 'Altezza DX', unit: 'mm' },
+  { key: 'profMuro', label: 'Prof. muro', unit: 'mm' },
+  { key: 'spallettaSX', label: 'Spalletta SX', unit: 'mm' },
+  { key: 'spallettaDX', label: 'Spalletta DX', unit: 'mm' },
+  { key: 'architrave', label: 'Architrave', unit: 'mm' },
+  { key: 'soglia', label: 'Soglia', unit: 'mm' },
+  { key: 'distDaPavimento', label: 'Dist. da pavimento', unit: 'mm' },
+];
+
+function VanoTabMisure({ vano, mis, updateMisura, lmm, hmm, mq }: {
+  vano: any; mis: any; updateMisura: (k: string, v: number) => void; lmm: number; hmm: number; mq: string;
+}) {
+  return (
+    <div>
+      {/* Summary */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        {[
+          { l: 'Larghezza', v: lmm ? `${lmm} mm` : '—', c: DS.teal },
+          { l: 'Altezza', v: hmm ? `${hmm} mm` : '—', c: DS.blue },
+          { l: 'Superficie', v: mq !== '—' ? `${mq} m\u00B2` : '—', c: DS.green },
+        ].map(s => (
+          <div key={s.l} style={{ flex: 1, padding: '12px 14px', background: s.c + '08', borderRadius: 10, border: `1.5px solid ${s.c}20` }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#999' }}>{s.l}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, fontFamily: M, color: s.c }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+      {/* Fields */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+        {MISURE_FIELDS.map(f => (
+          <div key={f.key}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: DS.ink, display: 'block', marginBottom: 3 }}>{f.label}</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+              <input type="number" value={mis[f.key] || ''} onChange={e => updateMisura(f.key, parseInt(e.target.value) || 0)}
+                style={{ flex: 1, padding: '8px 10px', border: `1.5px solid ${DS.border}`, borderRadius: '8px 0 0 8px', fontSize: 14, fontFamily: M, outline: 'none', background: DS.white }} />
+              <span style={{ padding: '8px 10px', background: DS.light, border: `1.5px solid ${DS.border}`, borderLeft: 'none', borderRadius: '0 8px 8px 0', fontSize: 11, color: '#999', fontWeight: 700 }}>{f.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Tab ACCESSORI (placeholder) ──
+function VanoTabAccessori({ vano }: { vano: any }) {
+  const acc = vano.accessori || {};
+  const items = Object.keys(acc);
+  return (
+    <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
+      {items.length === 0 ? (
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Nessun accessorio configurato</div>
+          <div style={{ fontSize: 12 }}>Gli accessori saranno disponibili dal configuratore completo</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, textAlign: 'left' }}>
+          {items.map(k => (
+            <div key={k} style={{ padding: '10px 14px', background: acc[k]?.attivo ? DS.teal + '08' : DS.light, borderRadius: 8, border: `1px solid ${acc[k]?.attivo ? DS.teal + '30' : DS.border}` }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DS.ink }}>{k}</div>
+              <div style={{ fontSize: 11, color: acc[k]?.attivo ? DS.green : '#999' }}>{acc[k]?.attivo ? 'Attivo' : 'Non attivo'}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Tab DISEGNO (link to configuratore) ──
+function VanoTabDisegno({ vano, onNavigate }: { vano: any; onNavigate: (p: string) => void }) {
+  return (
+    <div style={{ padding: 30, textAlign: 'center' }}>
+      <div style={{ width: 80, height: 80, margin: '0 auto 16px', background: DS.teal + '10', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={DS.teal} strokeWidth="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 3v18" />
+        </svg>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: DS.ink, marginBottom: 8 }}>Disegno tecnico</div>
+      <div style={{ fontSize: 13, color: '#999', marginBottom: 20 }}>Apri il configuratore per disegnare il vano con il CAD integrato</div>
+      <button onClick={() => onNavigate('configuratore')} style={{
+        padding: '12px 28px', fontSize: 14, fontWeight: 700, background: DS.teal, color: DS.white,
+        border: 'none', borderRadius: 10, cursor: 'pointer', boxShadow: `0 3px 0 ${DS.tealDark}`,
+      }}>
+        Apri Configuratore
+      </button>
+    </div>
+  );
+}
+
+// ── Tab RIEPILOGO ──
+function VanoTabRiepilogo({ vano, commessa, lmm, hmm, mq }: { vano: any; commessa: any; lmm: number; hmm: number; mq: string }) {
+  const rows = [
+    ['Nome', vano.nome || '—'],
+    ['Tipologia', vano.tipo || '—'],
+    ['Stanza', vano.stanza || '—'],
+    ['Piano', vano.piano || '—'],
+    ['Sistema', vano.sistema || '—'],
+    ['Larghezza', lmm ? `${lmm} mm` : '—'],
+    ['Altezza', hmm ? `${hmm} mm` : '—'],
+    ['Superficie', mq !== '—' ? `${mq} m\u00B2` : '—'],
+    ['Commessa', commessa?.nome_cliente || '—'],
+  ];
+  return (
+    <div style={{ borderRadius: 10, overflow: 'hidden', border: `1.5px solid ${DS.border}` }}>
+      {rows.map(([label, val], i) => (
+        <div key={label} style={{ display: 'flex', padding: '10px 16px', background: i % 2 === 0 ? DS.white : DS.light, borderBottom: i < rows.length - 1 ? `1px solid ${DS.border}40` : 'none' }}>
+          <div style={{ width: 140, fontSize: 12, fontWeight: 700, color: '#999' }}>{label}</div>
+          <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: DS.ink, fontFamily: M }}>{val}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Helper: VField ──
+function VField({ label, value, onChange, span }: { label: string; value: string; onChange: (v: string) => void; span?: boolean }) {
+  return (
+    <div style={{ gridColumn: span ? '1 / -1' : undefined }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: DS.ink, marginBottom: 4, display: 'block' }}>{label}</label>
+      <input type="text" value={value} onChange={e => onChange(e.target.value)}
+        style={{ width: '100%', padding: '9px 10px', border: `1.5px solid ${DS.border}`, borderRadius: 8, fontSize: 13, outline: 'none', background: DS.white, color: DS.ink }} />
     </div>
   );
 }
@@ -346,18 +629,79 @@ function CommesseLista({ onSelect }: { onSelect: (id: string) => void }) {
 export default function MastroDesktop() {
   const [activePanel, setActivePanel] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedCommessaId, setSelectedCommessaId] = useState<string | null>(null);
+  // ── Vano Detail bridge ──
+  const [selectedVanoId, setSelectedVanoId] = useState<string | null>(null);
+  const [vanoCommessaId, setVanoCommessaId] = useState<string | null>(null);
+  // ── Cross-navigation context ──
+  const [navCommessaId, setNavCommessaId] = useState<string | null>(null);
+  const [signalEntity, setSignalEntity] = useState<string | null>(null);
+  const [signalContatto, setSignalContatto] = useState<string | null>(null);
+
+  // Navigate to panel, optionally with commessa context
+  const navigateTo = useCallback((panel: string, commessaId?: string, opts?: {entity?: string, contatto?: string}) => {
+    if (commessaId) setNavCommessaId(commessaId);
+    if (opts?.entity) setSignalEntity(opts.entity);
+    if (opts?.contatto) setSignalContatto(opts.contatto);
+    if (panel === 'messaggi' && !opts?.entity) { setSignalEntity(null); setSignalContatto(null); }
+    setActivePanel(panel);
+  }, []);
+
+  // When clicking sidebar, clear commessa context
+  const sidebarNavigate = useCallback((panel: string) => {
+    setNavCommessaId(null);
+    setActivePanel(panel);
+  }, []);
+
+  const handleOpenVano = useCallback((cmId: string, vanoId: string) => {
+    setVanoCommessaId(cmId);
+    setSelectedVanoId(vanoId);
+    setActivePanel('configuratore');
+  }, []);
+
+  const handleBackFromVano = useCallback(() => {
+    const backTo = vanoCommessaId ? 'commesse' : 'settings';
+    setSelectedVanoId(null);
+    setVanoCommessaId(null);
+    setActivePanel(backTo);
+  }, [vanoCommessaId]);
 
   const sidebarW = sidebarCollapsed ? 68 : 280;
 
   // Panel router
   const renderPanel = () => {
     switch (activePanel) {
-      case 'dashboard': return <HomePanel onNavigate={setActivePanel} />;
-      case 'commessa_dettaglio': return selectedCommessaId ? <CommessaIntegrata commessaId={selectedCommessaId} /> : <CommesseLista onSelect={(id) => { setSelectedCommessaId(id); setActivePanel('commessa_dettaglio'); }} />;
-      case 'commesse': return <CommesseLista onSelect={(id) => { setSelectedCommessaId(id); setActivePanel('commessa_dettaglio'); }} />;
-      case 'configuratore': return <CostruttorePanel onBack={() => setActivePanel('settings')} />;
-      case 'settings': return <SettingsPanelInline onNavigate={setActivePanel} />;
+      case 'dashboard': return <HomePanel onNavigate={navigateTo} />;
+      case 'agenda': return <AgendaPanel />;
+      case 'commesse': return <CommessePanel onNavigate={navigateTo} onOpenVano={handleOpenVano} />;
+      case 'messaggi': return <MastroSignal onBack={() => navigateTo('home')} initialEntity={signalEntity} initialContatto={signalContatto} />;
+      case 'clienti': return <ClientiPanel />;
+      case 'contabilita': return <ContabilitaPanel />;
+      case 'configuratore': return <CostruttorePanel onBack={() => handleBackFromVano()} vanoId={selectedVanoId} commessaId={vanoCommessaId} />;
+      case 'settings': return <SettingsPanelInline onNavigate={navigateTo} />;
+      case 'cnc': return <DesktopProdFlow commessaId={navCommessaId} onNavigate={navigateTo} onBack={() => navigateTo('home')} />;
+      case 'distinte': return <DesktopProdFlow commessaId={navCommessaId} onNavigate={navigateTo} onBack={() => navigateTo('home')} />;
+      case 'ordini': return <OrdiniFornitori onBack={() => navigateTo('home')} />;
+      case 'team': return <DesktopTeam commessaId={navCommessaId} onNavigate={navigateTo} />;
+      case 'montaggi': return <DesktopMontaggi commessaId={navCommessaId} onNavigate={navigateTo} />;
+      case 'misure': return <DesktopMisure commessaId={navCommessaId} onNavigate={navigateTo} />;
+      case 'fatture': return <DesktopFatture commessaId={navCommessaId} onNavigate={navigateTo} />;
+      case 'analytics': return <DesktopReport />;
+      case 'listini': return <DesktopListini />;
+      case 'archivio': return <SettingsPanelInline onNavigate={navigateTo} />;
+      case 'enea': return <DesktopENEA commessaId={navCommessaId} onNavigate={navigateTo} />;
+      case 'trovaClienti': return <DesktopLeads />;
+      case 'rete': return <DesktopRete />;
+      case 'aiAgente': return <DesktopAgente />;
+      case 'produzione': return <DesktopProduzione commessaId={navCommessaId} onNavigate={navigateTo} />;
+      case 'archivio_profili': return <ArchivioProfiliPanel onBack={() => sidebarNavigate('dashboard')} />;
+      case 'nodi_tecnici': return <NodiTecniciPanel onBack={() => sidebarNavigate('dashboard')} />;
+      case 'costruttore_vetri': return <CostruttoreVetri onBack={() => sidebarNavigate('dashboard')} />;
+      case 'lavorazioni': return <CostruttoreLavorazioni onBack={() => sidebarNavigate('dashboard')} />;
+      case 'posizionatore': return <PosizionatoreLavorazioni onBack={() => sidebarNavigate('dashboard')} />;
+      case 'infissiora': return <DesktopInfissiOra />;
+      case 'portale': return <DesktopPortaleB2C />;
+      case 'vanoDetail': return <VanoDetailStandalone vanoId={selectedVanoId} commessaId={vanoCommessaId} onBack={handleBackFromVano} onNavigate={navigateTo} />;
+      case 'wizardVano': return <WizardVanoComposto vanoId={selectedVanoId} commessaId={vanoCommessaId || ''} onClose={handleBackFromVano} onSaved={handleBackFromVano} />;
       default: {
         const allItems = SIDEBAR_GROUPS.flatMap(g => g.items);
         const item = allItems.find(i => i.id === activePanel);
@@ -434,7 +778,7 @@ export default function MastroDesktop() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => !item.disabled && setActivePanel(item.id)}
+                    onClick={() => !item.disabled && sidebarNavigate(item.id)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -551,7 +895,7 @@ export default function MastroDesktop() {
               </button>
             )}
             <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: DS.ink, textTransform: 'capitalize' }}>
-              {SIDEBAR_GROUPS.flatMap(g => g.items).find(i => i.id === activePanel)?.label || activePanel}
+              {activePanel === 'vanoDetail' ? 'Dettaglio Vano' : (SIDEBAR_GROUPS.flatMap(g => g.items).find(i => i.id === activePanel)?.label || activePanel)}
             </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
