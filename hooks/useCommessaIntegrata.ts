@@ -232,3 +232,4 @@ export async function registraAvanzamento(payload: {
   if (error) throw error;
   return data;
 }
+// bridge
