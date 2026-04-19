@@ -1494,7 +1494,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   /* ======= STYLES ======= */
   const fs = isDesktop ? 1.1 : isTablet ? 1.05 : 1;
   const S = {
-    app: { fontFamily: FF, background: T.bg, backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", color: T.text, width: "100%", maxWidth: "100vw", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased", paddingBottom: 80, overflow: "hidden", boxSizing: "border-box" as any },
+    app: { fontFamily: FF, background: "#F5F4F0", color: T.text, width: "100%", maxWidth: "100vw", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased", paddingBottom: 80, overflow: "hidden", boxSizing: "border-box" as any },
     header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
     headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
     headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
@@ -2134,7 +2134,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       timeline.sort((a: any, b: any) => (b.data || "").localeCompare(a.data || ""));
 
       return (
-        <div style={{ minHeight: "100vh", background: T.bg, backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px" }}>
+        <div style={{ minHeight: "100vh", background: "#F5F4F0" }}>
           {/* Header */}
           <div style={{ background: "#0D1F1F", padding: "20px 16px 24px", paddingTop: "calc(20px + env(safe-area-inset-top, 0px))" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
