@@ -146,34 +146,34 @@ export const THEMES = {
   // ═══════════════════════════════════════════════
   fliwox: {
     name: "fliwoX", emoji: "layers",
-    // Sfondo con griglia teal — applicare come background-image in componenti
-    bg: "#D8EEEE", bg2: "#EEF8F8", card: "#FFFFFF", card2: "#F0F8F8",
-    // Border e shadow card
-    bdr: "#C8E4E4", bdrL: "#DDF0F0",
+    // Sfondo pulito — Sistema Operativo v2
+    bg: "#F5F4F0", bg2: "#F7F7F5", card: "#FFFFFF", card2: "#F7F7F5",
+    // Border sottili
+    bdr: "#F0EFEC", bdrL: "#F7F7F5",
     // Testi
-    text: "#0D1F1F", sub: "#4A7070", sub2: "#8BBCBC",
+    text: "#1A1A18", sub: "#8A8A82", sub2: "#B0B0A8",
     // Primary teal
     pri: "#28A0A0",
-    acc: "#28A0A0", accD: "#156060", accLt: "rgba(40,160,160,0.10)", accBg: "#28A0A0",
+    acc: "#28A0A0", accD: "#1D7A7A", accLt: "rgba(40,160,160,0.08)", accBg: "#28A0A0",
     // Semantici
-    grn: "#1A9E73", grnLt: "rgba(26,158,115,0.10)",
-    red: "#DC4444", redLt: "rgba(220,68,68,0.10)",
-    orange: "#D08008", orangeLt: "rgba(208,128,8,0.10)",
-    blue: "#3B7FE0", blueLt: "rgba(59,127,224,0.10)",
-    purple: "#7C5FBF", purpleLt: "rgba(124,95,191,0.10)",
-    cyan: "#28A0A0", cyanLt: "rgba(40,160,160,0.10)",
-    // Card shadow — rilievo fisico fliwoX
-    cardSh: "0 7px 0 0 #A8CCCC, 0 8px 20px rgba(0,0,0,0.06)",
-    cardShH: "0 9px 0 0 #A8CCCC, 0 12px 28px rgba(0,0,0,0.10)",
+    grn: "#0F6E56", grnLt: "rgba(15,110,86,0.08)",
+    red: "#E24B4A", redLt: "rgba(226,75,74,0.08)",
+    orange: "#C4875A", orangeLt: "rgba(196,135,90,0.08)",
+    blue: "#3572A5", blueLt: "rgba(53,114,165,0.08)",
+    purple: "#7B6BA5", purpleLt: "rgba(123,107,165,0.08)",
+    cyan: "#28A0A0", cyanLt: "rgba(40,160,160,0.08)",
+    // Card shadow — morbide, no 3D
+    cardSh: "0 2px 8px rgba(0,0,0,0.04)",
+    cardShH: "0 4px 12px rgba(0,0,0,0.06)",
     // Topbar
     topbar: "#0D1F1F",
     // Border radius
-    r: 18, r2: 14,
-    // Bottoni — rilievo fisico (usare box-shadow su bottoni)
+    r: 16, r2: 12,
+    // Bottoni — ombre morbide
     btnPrimaryBg: "#28A0A0",
-    btnPrimarySh: "0 8px 0 0 #156060",
+    btnPrimarySh: "0 2px 8px rgba(40,160,160,0.3)",
     btnSecondaryBg: "#FFFFFF",
-    btnSecondarySh: "0 6px 0 0 #A8CCCC",
+    btnSecondarySh: "0 2px 8px rgba(0,0,0,0.04)",
     // Pipeline fasi — colori approvati
     pipelineColors: {
       sopralluogo: "#28A0A0",
