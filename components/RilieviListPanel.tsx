@@ -122,7 +122,7 @@ export default function RilieviListPanel() {
       if (!nuovoRilData.data) setTimeout(() => setNuovoRilData(d => ({ ...d, data: d.data || oggi, ora: d.ora || oraAdesso })), 0);
 
       return (
-      <div style={{ paddingBottom: 100, background: "#F8FAFC", minHeight: "100vh" }}>
+      <div style={{ paddingBottom: 100, background: "#F7F7F5", minHeight: "100vh" }}>
         {/* Header */}
         <div style={{ background: "#0F766E", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
           <div onClick={() => setShowNuovoRilievo(false)} style={{ cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: 22, lineHeight: 1 }}>←</div>
@@ -185,17 +185,17 @@ export default function RilieviListPanel() {
           })()}
 
           {/* Data e Ora */}
-          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12 }}>Data e ora del rilievo</div>
+          <div style={{ background: "#fff", borderRadius: 14, border: "0.5px solid #F0EFEC", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#B0B0A8", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12 }}>Data e ora del rilievo</div>
             <div style={{ display: "flex", gap: 12 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#64748B", display: "block", marginBottom: 6 }}>Data</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#B0B0A8", display: "block", marginBottom: 6 }}>Data</label>
                 <input style={{ ...S.input, fontSize: 16, padding: "12px 14px", borderRadius: 10, fontWeight: 600 }}
                   type="date" value={nuovoRilData.data || oggi}
                   onChange={e => setNuovoRilData(d => ({...d, data: e.target.value}))} />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#64748B", display: "block", marginBottom: 6 }}>Ora</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "#B0B0A8", display: "block", marginBottom: 6 }}>Ora</label>
                 <input style={{ ...S.input, fontSize: 16, padding: "12px 14px", borderRadius: 10, fontWeight: 600 }}
                   type="time" value={nuovoRilData.ora || oraAdesso}
                   onChange={e => setNuovoRilData(d => ({...d, ora: e.target.value}))} />
@@ -204,8 +204,8 @@ export default function RilieviListPanel() {
           </div>
 
           {/* Rilevatore */}
-          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Chi esegue il rilievo</label>
+          <div style={{ background: "#fff", borderRadius: 14, border: "0.5px solid #F0EFEC", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#B0B0A8", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Chi esegue il rilievo</label>
             <input style={{ ...S.input, fontSize: 16, padding: "12px 14px", borderRadius: 10 }}
               placeholder="Nome del rilevatore..."
               value={nuovoRilData.rilevatore}
@@ -213,8 +213,8 @@ export default function RilieviListPanel() {
           </div>
 
           {/* Note */}
-          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #E2E8F0", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Note preliminari</label>
+          <div style={{ background: "#fff", borderRadius: 14, border: "0.5px solid #F0EFEC", padding: "16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#B0B0A8", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 10 }}>Note preliminari</label>
             <textarea style={{ ...S.input, fontSize: 15, padding: "12px 14px", borderRadius: 10, minHeight: 80, resize: "none", lineHeight: 1.5 }}
               placeholder="Annotazioni, accesso al cantiere, particolarità..."
               value={nuovoRilData.note}
@@ -1076,17 +1076,17 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                             <div>
                               <div style={{ fontSize: 11, color: L.sub, marginBottom: 8 }}>Crea il primo rilievo con i vani da misurare</div>
                               <button onClick={() => setShowRilieviForm(true)}
-                                style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                                  boxShadow: "0 4px 0 #0D7C6B", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                                  boxShadow: "0 2px 8px rgba(40,160,160,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                                 CREA RILIEVO
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                               </button>
                             </div>
                           ) : (
-                            <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E2E8F0", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+                            <div style={{ background: "#fff", borderRadius: 12, border: "0.5px solid #F0EFEC", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
                               {/* Header form */}
-                              <div style={{ background: "#0F766E", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                              <div style={{ background: "#0D1F1F", padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                 <div style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Nuovo Rilievo #{rilievi.length + 1}</div>
                                 <div onClick={() => setShowRilieviForm(false)} style={{ color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</div>
                               </div>
@@ -1094,37 +1094,37 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                 {/* Data + Ora */}
                                 <div style={{ display: "flex", gap: 8 }}>
                                   <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Data</label>
+                                    <label style={{ fontSize: 9, fontWeight: 700, color: "#B0B0A8", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Data</label>
                                     <input type="date" value={nuovoRilData.data || oggi}
                                       onChange={e => setNuovoRilData(d => ({...d, data: e.target.value}))}
-                                      style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 14, fontWeight: 600, boxSizing: "border-box", background: "#F8FAFC" }} />
+                                      style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "0.5px solid #F0EFEC", fontSize: 14, fontWeight: 600, boxSizing: "border-box", background: "#F7F7F5" }} />
                                   </div>
                                   <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Ora</label>
+                                    <label style={{ fontSize: 9, fontWeight: 700, color: "#B0B0A8", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Ora</label>
                                     <input type="time" value={nuovoRilData.ora || oraAdesso}
                                       onChange={e => setNuovoRilData(d => ({...d, ora: e.target.value}))}
-                                      style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 14, fontWeight: 600, boxSizing: "border-box", background: "#F8FAFC" }} />
+                                      style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "0.5px solid #F0EFEC", fontSize: 14, fontWeight: 600, boxSizing: "border-box", background: "#F7F7F5" }} />
                                   </div>
                                 </div>
                                 {/* Rilevatore */}
                                 <div>
-                                  <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Chi esegue</label>
+                                  <label style={{ fontSize: 9, fontWeight: 700, color: "#B0B0A8", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Chi esegue</label>
                                   <input placeholder="Nome rilevatore..." value={nuovoRilData.rilevatore || ""}
                                     onChange={e => setNuovoRilData(d => ({...d, rilevatore: e.target.value}))}
-                                    style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 14, boxSizing: "border-box", background: "#F8FAFC" }} />
+                                    style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "0.5px solid #F0EFEC", fontSize: 14, boxSizing: "border-box", background: "#F7F7F5" }} />
                                 </div>
                                 {/* Note */}
                                 <div>
-                                  <label style={{ fontSize: 9, fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Note (opz.)</label>
+                                  <label style={{ fontSize: 9, fontWeight: 700, color: "#B0B0A8", textTransform: "uppercase", letterSpacing: 0.6, display: "block", marginBottom: 4 }}>Note (opz.)</label>
                                   <textarea placeholder="Accesso cantiere, particolarità..." value={nuovoRilData.note || ""}
                                     onChange={e => setNuovoRilData(d => ({...d, note: e.target.value}))}
                                     rows={2}
-                                    style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "1px solid #E2E8F0", fontSize: 13, boxSizing: "border-box", resize: "none", background: "#F8FAFC" }} />
+                                    style={{ width: "100%", padding: "9px 10px", borderRadius: 8, border: "0.5px solid #F0EFEC", fontSize: 13, boxSizing: "border-box", resize: "none", background: "#F7F7F5" }} />
                                 </div>
                                 {/* CTA */}
                                 <button onClick={() => { salvaRilievo(); setShowRilieviForm(false); }}
-                                  style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "#1A9E73", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer",
-                                    boxShadow: "0 3px 0 #0D7C6B", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                  style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
+                                    boxShadow: "0 2px 8px rgba(40,160,160,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                                   Crea Rilievo #{rilievi.length + 1}
                                 </button>
@@ -1850,7 +1850,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                 const setSelGuida = setSelGuidaFiscale;
                 const sg = VOCI_GUIDA.find(v => v.id === selGuida);
                 return (
-                  <div style={{ marginBottom: 12, background: "#F8FAFC", borderRadius: 10, border: "1px solid #ddd", overflow: "hidden" }}>
+                  <div style={{ marginBottom: 12, background: "#F7F7F5", borderRadius: 10, border: "1px solid #ddd", overflow: "hidden" }}>
                     {!selGuida ? (
                       <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: "#3B7FE0", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>Seleziona per vedere requisiti e testo fattura</div>
