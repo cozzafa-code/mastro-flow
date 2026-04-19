@@ -1,66 +1,68 @@
 "use client";
 // @ts-nocheck
-// MASTRO ERP — HomePanel MOBILE — fliwoX Approved Mockup faithful
+// MASTRO ERP — HomePanel MOBILE — Restyled "Sistema Operativo" v2
 import React, { useState, useEffect } from "react";
 import { useMastro } from "./MastroContext";
 import SpesaQuick from "./SpesaQuick";
 import { ICO, I } from "./mastro-constants";
 
-const T_CLR = "#28A0A0";
-const T_DARK = "#156060";
-const T_LIGHT = "#EEF8F8";
-const INK = "#0D1F1F";
-const SUB = "#4A7070";
-const BDR = "#C8E4E4";
-const RED = "#DC4444";
-const AMB = "#D08008";
-const GRN = "#1A9E73";
+// ─── THEME ─────────────────────────────────────────────────────────
+const TH = {
+  bg: "#0D1F1F",
+  bgLight: "#F5F4F0",
+  card: "#fff",
+  teal: "#28A0A0",
+  tealDark: "#1D7A7A",
+  tealMuted: "#5A8A8A",
+  ink: "#1A1A18",
+  sub: "#B0B0A8",
+  border: "#F0EFEC",
+  red: "#E24B4A",
+  redLight: "rgba(226,75,74,0.25)",
+  amber: "#C4875A",
+  amberLight: "rgba(232,168,124,0.18)",
+  green: "#0F6E56",
+  greenLight: "#E1F5EE",
+};
 
 const PIPE_COLORS: Record<string, string> = {
-  sopralluogo: T_CLR, preventivo: "#1A7070", conferma: "#1060A0",
+  sopralluogo: TH.teal, preventivo: "#1A7070", conferma: "#1060A0",
   ordini: "#806020", produzione: "#806020", posa: "#806020",
   collaudo: "#6B4FB0", chiusura: "#6B4FB0",
 };
 
-// \u2500\u2500\u2500 ICONS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-const IcoSun = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" style={{ display: "block", margin: "0 auto 2px" }}>
-    <circle cx="12" cy="12" r="5"/>
-    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+// ─── GRADIENT AVATARS ──────────────────────────────────────────────
+const AV_GRADS = [
+  "linear-gradient(145deg, #2BAFAF, #1E8585)",
+  "linear-gradient(145deg, #D09560, #A87545)",
+  "linear-gradient(145deg, #1A3535, #0D1F1F)",
+  "linear-gradient(145deg, #3572A5, #245A85)",
+  "linear-gradient(145deg, #7B6BA5, #5A4D85)",
+  "linear-gradient(145deg, #5E8C5A, #3D6B3A)",
+];
+
+// ─── ICONS ─────────────────────────────────────────────────────────
+const IcoBell = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TH.tealMuted} strokeWidth="2" strokeLinecap="round">
+    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
   </svg>
 );
-const IcoDoc  = ({ color }: any) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>;
-const IcoMeas = ({ color }: any) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round"><path d="M4 20L10 8l4 8 4-5 4 9"/></svg>;
-const IcoCal  = ({ color }: any) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
-const IcoChev = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={T_CLR} strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>;
 
-// \u2500\u2500\u2500 COMPONENTS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-const Card = ({ children, style = {} }: any) => (
-  <div style={{ background: "white", borderRadius: 14, border: `1px solid ${BDR}`, boxShadow: "0 4px 0 0 #A8CCCC, 0 6px 14px rgba(0,0,0,.06)", padding: "13px 14px", ...style }}>{children}</div>
+// ─── COMPONENTS ────────────────────────────────────────────────────
+const Card = ({ children, style = {}, borderLeft }: any) => (
+  <div style={{ background: TH.card, borderRadius: 16, padding: "14px 16px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", ...(borderLeft ? { borderLeft: `4px solid ${borderLeft}` } : {}), ...style }}>{children}</div>
 );
-const SecTitle = ({ children, badge }: any) => (
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-    <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: SUB, textTransform: "uppercase" as any, letterSpacing: "0.07em" }}>{children}</p>
-    {badge}
-  </div>
+const SecLabel = ({ children }: any) => (
+  <span style={{ fontSize: 10, fontWeight: 700, color: TH.sub, letterSpacing: "0.5px" }}>{children}</span>
 );
-const Pill = ({ children, bg, color }: any) => (
-  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 800, background: bg, color }}>{children}</span>
+const Badge = ({ children, bg, color }: any) => (
+  <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 10px", borderRadius: 10, background: bg, color, boxShadow: bg.includes("gradient") ? `0 2px 6px rgba(40,160,160,0.3)` : undefined }}>{children}</span>
 );
-const BtnP = ({ children, onClick }: any) => (
-  <button onClick={onClick} style={{ background: T_CLR, border: "none", borderRadius: 12, padding: "5px 11px", fontSize: 11, fontWeight: 800, color: "white", cursor: "pointer", fontFamily: "system-ui", boxShadow: `0 3px 0 0 ${T_DARK}`, display: "flex", alignItems: "center", gap: 6 }}>{children}</button>
-);
-const Av = ({ initials, bg, size = 38, fontSize = 13 }: any) => (
-  <div style={{ width: size, height: size, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: "white", fontSize, border: "2px solid rgba(255,255,255,.7)", boxShadow: "0 2px 0 0 rgba(0,0,0,.12)", flexShrink: 0 }}>{initials}</div>
-);
-const Dot = ({ color }: any) => (
-  <div style={{ width: 9, height: 9, borderRadius: "50%", background: color, border: "2px solid white", position: "absolute", bottom: -1, right: -1 }} />
+const Av = ({ initials, bg, size = 40, fontSize = 16 }: any) => (
+  <div style={{ width: size, height: size, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: bg.includes("#0D1F1F") || bg.includes("#1A3535") ? TH.teal : "#fff", fontSize, flexShrink: 0, boxShadow: "0 3px 8px rgba(0,0,0,0.15)" }}>{initials}</div>
 );
 
-// \u2500\u2500\u2500 MAIN \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── MAIN ──────────────────────────────────────────────────────────
 export default function HomePanel() {
   const {
     cantieri, events, problemi, fattureDB, operatori: operatoriDB,
@@ -85,250 +87,249 @@ export default function HomePanel() {
   const prevDaFare = (cantieri || []).filter(c => c.fase === "preventivo");
   const probAperti = (problemi || []).filter(p => p.stato !== "risolto");
   const todayEvs = (events || []).filter(e => e.date === todayISO).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
+  const fatScadute = (fattureDB || []).filter(f => !f.pagata && f.scadenza && f.scadenza < todayISO);
 
   const tasks: any[] = [];
-  if (probAperti.length > 0) tasks.push({ titolo: "Problema: " + (probAperti[0].titolo || "da risolvere"), sotto: probAperti.length + " aperti", color: RED, icon: <IcoDoc color={RED} />, action: () => setShowProblemiView(true) });
-  if (ferme.length > 0) { const c = ferme[0]; tasks.push({ titolo: "Sblocca " + c.cliente, sotto: c.code + " \u00B7 ferma da " + giorniFermaCM(c) + " gg", color: RED, icon: <IcoDoc color={RED} />, action: () => { setSelectedCM(c); setTab("commesse"); } }); }
-  if (prevDaFare.length > 0) { const c = prevDaFare[0]; tasks.push({ titolo: "Preventivo: " + c.cliente, sotto: prevDaFare.length + " in attesa", color: AMB, icon: <IcoMeas color={AMB} />, action: () => { setSelectedCM(c); setTab("commesse"); } }); }
-  if (todayEvs.length > 0) { const e = todayEvs[0]; tasks.push({ titolo: e.text, sotto: (e.time || "") + (e.persona ? " \u00B7 " + e.persona : ""), color: T_CLR, icon: <IcoCal color={T_CLR} />, action: () => setTab("agenda") }); }
+  if (probAperti.length > 0) tasks.push({ titolo: "Problema: " + (probAperti[0].titolo || "da risolvere"), sotto: probAperti.length + " aperti", color: TH.red, action: () => setShowProblemiView(true) });
+  if (ferme.length > 0) { const c = ferme[0]; tasks.push({ titolo: "Sblocca " + c.cliente, sotto: c.code + " \u00B7 ferma da " + giorniFermaCM(c) + " gg", color: TH.red, action: () => { setSelectedCM(c); setTab("commesse"); } }); }
+  if (prevDaFare.length > 0) { const c = prevDaFare[0]; tasks.push({ titolo: "Preventivo: " + c.cliente, sotto: prevDaFare.length + " in attesa", color: TH.amber, action: () => { setSelectedCM(c); setTab("commesse"); } }); }
+  if (todayEvs.length > 0) { const e = todayEvs[0]; tasks.push({ titolo: e.text, sotto: (e.time || "") + (e.persona ? " \u00B7 " + e.persona : ""), color: TH.teal, action: () => setTab("agenda") }); }
+
+  // ALERT COUNTS
+  const alertRitardi = ferme.length;
+  const alertPagamenti = fatScadute.length;
+  const alertMateriali = probAperti.filter(p => (p.titolo || "").toLowerCase().includes("material")).length;
+  const alertProblemi = probAperti.length;
 
   // OPERATORI
-  const ops = (operatoriDB && operatoriDB.length > 0) ? operatoriDB.map((op: any) => ({
+  const ops = (operatoriDB && operatoriDB.length > 0) ? operatoriDB.map((op: any, idx: number) => ({
     ini: ((op.nome || "?")[0] + (op.cognome || "?")[0]).toUpperCase(),
-    bg: ["#1A7878", "#1060A0", "#6B4FB0", "#806020"][op.id?.charCodeAt(0) % 4] || "#1A7878",
+    bg: AV_GRADS[idx % AV_GRADS.length],
     nome: (op.nome || "") + " " + (op.cognome || ""),
     ruolo: op.ruolo || "Operatore",
     status: op.stato_oggi || "offline",
-    dot: op.stato_oggi === "online" || op.stato_oggi === "in cantiere" ? GRN : op.stato_oggi === "in rilievo" ? AMB : "#8BBCBC",
+    dot: op.stato_oggi === "online" || op.stato_oggi === "in cantiere" ? TH.green : op.stato_oggi === "in rilievo" ? TH.amber : TH.tealMuted,
     opacity: op.stato_oggi === "offline" ? 0.55 : 1,
   })) : [];
   const onlineCount = ops.filter(o => o.status !== "offline").length;
-  const sPill = (s: string) => s === "online" || s === "in cantiere" ? { bg: "#D8F2F2", color: "#0A5050" } : s === "in rilievo" ? { bg: "#FFF0DC", color: "#7A4000" } : { bg: "#F0F8F8", color: "#8BBCBC" };
 
   // COMMESSE RECENTI
   const recenti = [...(cantieri || [])].sort((a, b) => String(b.updatedAt || b.id || "").localeCompare(String(a.updatedAt || a.id || ""))).slice(0, 3);
   const FASI = ["sopralluogo", "preventivo", "ordini", "montaggio", "fattura"];
 
+  // Problema per commessa
+  const cmProblema = (c: any) => {
+    const gg = giorniFermaCM(c);
+    if (gg >= sogliaDays) return { text: `cliente fermo da ${gg}gg`, color: TH.amber };
+    const prob = (problemi || []).find(p => p.commessa_id === c.id && p.stato !== "risolto");
+    if (prob) return { text: prob.titolo || "problema aperto", color: TH.red };
+    const fat = (fattureDB || []).find(f => f.commessa_id === c.id && !f.pagata && f.scadenza && f.scadenza < todayISO);
+    if (fat) return { text: "fattura scaduta", color: TH.red };
+    return null;
+  };
+
   return (
-    <div style={{ fontFamily: "'Inter',system-ui,sans-serif", backgroundColor: "#D8EEEE", overflowX: "hidden", backgroundImage: "linear-gradient(rgba(40,160,160,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(40,160,160,.18) 1px,transparent 1px)", backgroundSize: "24px 24px", minHeight: "100%", paddingBottom: 100 }}>
+    <div style={{ fontFamily: "-apple-system, 'SF Pro Display', system-ui, sans-serif", background: TH.bg, minHeight: "100%", overflowX: "hidden" }}>
 
-      {/* TOPBAR */}
-      <div style={{ background: "linear-gradient(160deg, rgba(5,20,20,0.75) 0%, rgba(15,45,45,0.65) 60%, rgba(40,160,160,0.15) 100%)", backdropFilter: "blur(40px) saturate(180%)", WebkitBackdropFilter: "blur(40px) saturate(180%)", paddingTop: "calc(env(safe-area-inset-top) + 14px)", paddingBottom: 14, paddingLeft: 18, paddingRight: 18, position: "relative", overflow: "hidden", boxShadow: "0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(40,160,160,0.15)", borderBottom: "1px solid rgba(40,160,160,0.25)" }}>
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none" width="32" height="32" style={{ flexShrink: 0 }}>
-              <g>
-                <rect x="95" y="15" width="8" height="8" rx="2" fill="#2FA7A2"/>
-                <rect x="128" y="24" width="8" height="8" rx="2" fill="#7ED957"/>
-                <rect x="152" y="48" width="8" height="8" rx="2" fill="#F59E0B"/>
-                <rect x="162" y="93" width="8" height="8" rx="2" fill="#7ED957"/>
-                <rect x="152" y="138" width="8" height="8" rx="2" fill="#F59E0B"/>
-                <rect x="128" y="162" width="8" height="8" rx="2" fill="#7ED957"/>
-                <rect x="95" y="172" width="8" height="8" rx="2" fill="#2FA7A2"/>
-                <rect x="62" y="162" width="8" height="8" rx="2" fill="#F59E0B"/>
-                <rect x="38" y="138" width="8" height="8" rx="2" fill="#7ED957"/>
-                <rect x="28" y="93" width="8" height="8" rx="2" fill="#F59E0B"/>
-                <rect x="38" y="48" width="8" height="8" rx="2" fill="#7ED957"/>
-                <rect x="62" y="24" width="8" height="8" rx="2" fill="#F59E0B"/>
-              </g>
-              <g transform="rotate(8 100 100)">
-                <rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/>
-                <path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
-                <path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/>
-              </g>
-            </svg>
-            <div>
-            <p suppressHydrationWarning style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,.45)", fontWeight: 600 }}>
+      {/* ═══ HEADER SCURO ═══ */}
+      <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 18px) 20px 0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <p suppressHydrationWarning style={{ margin: 0, fontSize: 11, color: TH.tealMuted }}>
               {dataLabel.charAt(0).toUpperCase() + dataLabel.slice(1)}
             </p>
-            <p style={{ margin: "2px 0 0", fontSize: 20, fontWeight: 900, color: "white", lineHeight: 1.2 }}>{saluto}{aziendaInfo?.nome ? ", " + aziendaInfo.nome.split(" ")[0] : ""}</p>
-            </div>
-            </div>
-          {/* Meteo */}
-          <div style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.15)", borderRadius: 12, padding: "8px 12px", textAlign: "center", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)" }}>
-            <IcoSun />
-            <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 900, color: "white" }}>22\u00B0</p>
-            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.5)" }}>Brindisi</p>
+            <p style={{ margin: "2px 0 0", fontSize: 24, fontWeight: 700, color: "#fff", letterSpacing: "-0.5px" }}>
+              {saluto}{aziendaInfo?.nome ? ", " + aziendaInfo.nome.split(" ")[0] : ""}
+            </p>
+          </div>
+          <div style={{ width: 36, height: 36, borderRadius: 12, background: `linear-gradient(145deg, ${TH.teal}, ${TH.tealDark})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#fff", fontWeight: 600, boxShadow: `0 2px 8px rgba(40,160,160,0.4)` }}>
+            {(aziendaInfo?.nome || "M").charAt(0)}
           </div>
         </div>
-        {/* Mini KPI */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-          <div onClick={() => setTab("commesse")} style={{ background: "rgba(40,160,160,.2)", border: "1px solid rgba(40,160,160,.45)", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: T_CLR, fontFamily: "monospace" }}>{commesseAttive}</p>
-            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>commesse</p>
+
+        {/* ALERT GLOBALI */}
+        {(alertRitardi > 0 || alertPagamenti > 0 || alertProblemi > 0) && (
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 4 }}>
+            {alertRitardi > 0 && (
+              <div onClick={() => setShowProblemiView(true)} style={{ background: TH.redLight, border: "1px solid rgba(226,75,74,0.5)", borderRadius: 10, padding: "7px 12px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: TH.red, boxShadow: `0 0 8px rgba(226,75,74,0.6)`, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: "#F7C1C1", fontWeight: 700 }}>{alertRitardi} RITARD{alertRitardi === 1 ? "O" : "I"} OGGI</span>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 4 }}>
+              {alertPagamenti > 0 && (
+                <div onClick={() => setTab("contabilita")} style={{ flex: 1, background: TH.amberLight, border: "1px solid rgba(232,168,124,0.35)", borderRadius: 10, padding: "6px 10px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#E8A87C", flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, color: "#E8A87C", fontWeight: 700 }}>{alertPagamenti} PAGAMENT{alertPagamenti === 1 ? "O" : "I"}</span>
+                </div>
+              )}
+              {alertProblemi > 0 && (
+                <div onClick={() => setShowProblemiView(true)} style={{ flex: 1, background: "rgba(196,135,90,0.15)", border: "1px solid rgba(196,135,90,0.3)", borderRadius: 10, padding: "6px 10px", display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: TH.amber, flexShrink: 0 }} />
+                  <span style={{ fontSize: 10, color: "#D09560", fontWeight: 700 }}>{alertProblemi} PROBLEM{alertProblemi === 1 ? "A" : "I"}</span>
+                </div>
+              )}
+            </div>
           </div>
-          <div onClick={() => setTab("altro")} style={{ background: "rgba(40,160,160,.2)", border: "1px solid rgba(40,160,160,.45)", borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: T_CLR, fontFamily: "monospace" }}>{onlineCount}</p>
-            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>in campo</p>
+        )}
+
+        {/* KPI CON CONTESTO */}
+        <div style={{ display: "flex", gap: 8, marginTop: 12, paddingBottom: 18 }}>
+          <div onClick={() => setTab("commesse")} style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "0.5px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: "12px 10px", textAlign: "center", cursor: "pointer" }}>
+            <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: 1 }}>{commesseAttive}</p>
+            <p style={{ margin: "3px 0 0", fontSize: 9, color: TH.tealMuted }}>COMMESSE</p>
+            {ferme.length > 0 && <p style={{ margin: "2px 0 0", fontSize: 9, color: TH.red, fontWeight: 600 }}>{ferme.length} problemi</p>}
           </div>
-          <div onClick={() => setTab("contabilita")} style={{ background: totFat > 0 ? "rgba(26,158,115,.22)" : "rgba(40,160,160,.2)", border: `1px solid ${totFat > 0 ? "rgba(26,158,115,.45)" : "rgba(40,160,160,.45)"}`, borderRadius: 12, padding: "10px 10px", textAlign: "center", cursor: "pointer", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "0 6px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: totFat > 0 ? GRN : T_CLR, fontFamily: "monospace" }}>{fmtK(totFat)}</p>
-            <p style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,.65)", fontWeight: 700 }}>da incassare</p>
+          <div onClick={() => setTab("altro")} style={{ flex: 1, background: "rgba(40,160,160,0.12)", border: "0.5px solid rgba(40,160,160,0.2)", borderRadius: 14, padding: "12px 10px", textAlign: "center", cursor: "pointer" }}>
+            <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: TH.teal, lineHeight: 1 }}>{onlineCount}</p>
+            <p style={{ margin: "3px 0 0", fontSize: 9, color: TH.tealMuted }}>IN CAMPO</p>
+            <p style={{ margin: "2px 0 0", fontSize: 9, color: TH.teal, fontWeight: 600 }}>{onlineCount > 0 ? "tutti ok" : "nessuno"}</p>
+          </div>
+          <div onClick={() => setTab("contabilita")} style={{ flex: 1, background: "rgba(232,168,124,0.1)", border: "0.5px solid rgba(232,168,124,0.2)", borderRadius: 14, padding: "12px 10px", textAlign: "center", cursor: "pointer" }}>
+            <p style={{ margin: "3px 0 0", fontSize: 22, fontWeight: 700, color: "#E8A87C", lineHeight: 1 }}>{fmtK(totFat)}</p>
+            <p style={{ margin: "3px 0 0", fontSize: 9, color: TH.tealMuted }}>SCOPERTO</p>
+            {fatScadute.length > 0 && <p style={{ margin: "2px 0 0", fontSize: 9, color: TH.red, fontWeight: 600 }}>{fatScadute.length} scadut{fatScadute.length === 1 ? "o" : "i"}</p>}
           </div>
         </div>
       </div>
-      {/* Stacco sfumato */}
-      <div style={{ height: 20, background: "linear-gradient(to bottom, rgba(13,31,31,0.35) 0%, transparent 100%)", pointerEvents: "none" }} />
 
-      <div style={{ padding: 12, display: "flex", flexDirection: "column" as any, gap: 10 }}>
+      {/* ═══ CONTENUTO CHIARO ═══ */}
+      <div style={{ background: TH.bgLight, borderRadius: "28px 28px 0 0", minHeight: 500, padding: "18px 14px 100px" }}>
 
-        {/* DA FARE ORA */}
-        <Card>
-          <SecTitle badge={<Pill bg="#FFF0DC" color="#7A4000">{tasks.length} azioni</Pill>}>Da fare ora</SecTitle>
+        {/* PRIORITÀ ORA */}
+        <Card borderLeft={TH.red} style={{ marginBottom: 10 }}>
+          <div style={{ marginBottom: 10 }}>
+            <span style={{ background: TH.red, color: "#fff", fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, letterSpacing: "0.5px" }}>PRIORITÀ ORA</span>
+          </div>
+
           {tasks.length === 0
-            ? <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>Nessuna azione urgente</p>
-            : <div style={{ display: "flex", flexDirection: "column" as any, gap: 7 }}>
-              {tasks.map((t, i) => (
-                <div key={i} onClick={t.action} style={{ background: "white", borderRadius: 12, border: `1px solid ${BDR}`, boxShadow: "0 2px 0 0 #A8CCCC", padding: "11px 13px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", borderLeft: `4px solid ${t.color}` }}>
-                  <div style={{ width: 32, height: 32, background: t.color + "1A", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{t.icon}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: INK }}>{t.titolo}</p>
-                    <p style={{ margin: 0, fontSize: 10, color: SUB }}>{t.sotto}</p>
+            ? <p style={{ margin: 0, fontSize: 12, color: TH.sub, textAlign: "center", padding: "8px 0" }}>Nessuna azione urgente</p>
+            : <>
+              {/* TASK HERO */}
+              <div style={{ background: "#FEF6F5", borderRadius: 12, padding: "12px 14px", marginBottom: 8, border: "0.5px solid rgba(226,75,74,0.15)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: tasks[0].color, flexShrink: 0, boxShadow: `0 0 8px ${tasks[0].color}66` }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TH.ink }}>{tasks[0].titolo}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: tasks[0].color, fontWeight: 600 }}>{tasks[0].sotto}</p>
                   </div>
-                  <IcoChev />
+                </div>
+                <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                  <div onClick={tasks[0].action} style={{ flex: 1, background: TH.bg, color: TH.teal, fontSize: 11, fontWeight: 700, padding: "8px 0", borderRadius: 8, cursor: "pointer", textAlign: "center" }}>Apri</div>
+                  <div onClick={tasks[0].action} style={{ flex: 1, background: TH.teal, color: "#fff", fontSize: 11, fontWeight: 700, padding: "8px 0", borderRadius: 8, cursor: "pointer", textAlign: "center" }}>Completa</div>
+                </div>
+              </div>
+
+              {/* ALTRI TASK */}
+              {tasks.slice(1).map((t, i) => (
+                <div key={i} onClick={t.action} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", cursor: "pointer", borderTop: i === 0 ? "none" : undefined }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: t.color, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: 13, color: TH.ink, fontWeight: 500 }}>{t.titolo}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: TH.sub }}>{t.sotto}</p>
+                  </div>
+                  <span style={{ fontSize: 11, color: TH.sub }}>›</span>
+                </div>
+              ))}
+            </>
+          }
+        </Card>
+
+        {/* SQUADRA IN CAMPO */}
+        <Card style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <SecLabel>SQUADRA IN CAMPO</SecLabel>
+            <Badge bg={`linear-gradient(135deg, ${TH.teal}, ${TH.tealDark})`} color="#fff">{onlineCount} attivi</Badge>
+          </div>
+          {ops.length === 0
+            ? <p style={{ margin: 0, fontSize: 12, color: TH.sub, textAlign: "center", padding: "8px 0" }}>Nessun operatore configurato</p>
+            : <div style={{ display: "flex", gap: 8 }}>
+              {ops.map((op, i) => (
+                <div key={i} style={{ flex: 1, background: "#F7F7F5", borderRadius: 12, padding: "12px 6px", textAlign: "center", opacity: op.opacity }}>
+                  <Av initials={op.ini} bg={op.bg} size={34} fontSize={11} />
+                  <p style={{ margin: "6px 0 0", fontSize: 12, fontWeight: 600, color: TH.ink }}>{op.nome.split(" ")[0]}</p>
+                  <p style={{ margin: "2px 0 0", fontSize: 9, color: op.dot === TH.green ? TH.green : op.dot === TH.amber ? "#854F0B" : TH.tealMuted, fontWeight: 600 }}>{op.ruolo.toLowerCase()}</p>
                 </div>
               ))}
             </div>
           }
         </Card>
 
-        {/* OPERATORI OGGI */}
-        <Card>
-          <SecTitle badge={<Pill bg="#D8F2F2" color="#0A5050">{onlineCount} in campo</Pill>}>Operatori oggi</SecTitle>
-          {ops.length === 0
-            ? <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>Nessun operatore configurato</p>
-            : <div style={{ display: "flex", flexDirection: "column" as any, gap: 7 }}>
-            {ops.map((op, i) => {
-              const p = sPill(op.status);
+        {/* COMMESSE */}
+        <Card style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <SecLabel>COMMESSE</SecLabel>
+            <span onClick={() => setTab("commesse")} style={{ fontSize: 12, color: TH.teal, fontWeight: 600, cursor: "pointer" }}>Tutte →</span>
+          </div>
+          {recenti.length === 0
+            ? <p style={{ margin: 0, fontSize: 12, color: TH.sub, textAlign: "center", padding: "8px 0" }}>Nessuna commessa</p>
+            : recenti.map((c, i) => {
+              const fi = FASI.indexOf(c.fase);
+              const ini = (c.cliente || "??").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+              const bg = AV_GRADS[i % AV_GRADS.length];
+              const faseLabel = c.fase || "sopralluogo";
+              const faseColors: Record<string, { bg: string; color: string }> = {
+                sopralluogo: { bg: TH.greenLight, color: TH.green },
+                preventivo: { bg: TH.greenLight, color: TH.green },
+                ordini: { bg: "#FFF4E6", color: "#854F0B" },
+                montaggio: { bg: "#FFF4E6", color: "#854F0B" },
+                fattura: { bg: TH.greenLight, color: "#085041" },
+                chiusura: { bg: TH.greenLight, color: "#085041" },
+              };
+              const fc = faseColors[faseLabel] || faseColors.sopralluogo;
+              const prob = cmProblema(c);
+              const isLast = i === recenti.length - 1;
               return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, opacity: op.opacity }}>
-                  <div style={{ position: "relative", flexShrink: 0 }}>
-                    <Av initials={op.ini} bg={op.bg} />
-                    <Dot color={op.dot} />
+                <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
+                  style={{ padding: "10px 0", borderBottom: isLast ? "none" : `0.5px solid ${TH.border}`, cursor: "pointer" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <Av initials={ini} bg={bg} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TH.ink }}>{c.cliente}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: TH.sub }}>{c.indirizzo || "—"} · {(c.vani || []).length || 0} vani</p>
+                    </div>
+                    <span style={{ background: fc.bg, color: fc.color, fontSize: 9, padding: "3px 8px", borderRadius: 6, fontWeight: 700 }}>{faseLabel}</span>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: INK }}>{op.nome}</p>
-                    <p style={{ margin: 0, fontSize: 10, color: SUB }}>{op.ruolo}</p>
-                  </div>
-                  <Pill bg={p.bg} color={p.color}>{op.status}</Pill>
+                  {prob && (
+                    <div style={{ marginTop: 5, marginLeft: 52, display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 5, height: 5, borderRadius: "50%", background: prob.color }} />
+                      <span style={{ fontSize: 10, color: prob.color, fontWeight: 600 }}>{prob.text}</span>
+                    </div>
+                  )}
                 </div>
               );
-            })}
-          </div>}
-        </Card>
-
-        {/* AGENDA OGGI */}
-        <Card>
-          <SecTitle badge={<BtnP onClick={() => setTab("agenda")}>Vedi tutto</BtnP>}>Agenda oggi</SecTitle>
-          {todayEvs.length === 0
-            ? <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>Nessun evento oggi</p>
-            : <div style={{ display: "flex", flexDirection: "column" as any }}>
-              {todayEvs.slice(0, 4).map((e, i) => {
-                const isLast = i === Math.min(todayEvs.length, 4) - 1;
-                const clr = i === 0 ? T_CLR : i === 1 ? AMB : "#1060A0";
-                return (
-                  <div key={e.id || i} style={{ display: "flex", gap: 10, padding: "9px 0", borderBottom: isLast ? "none" : `1px solid ${T_LIGHT}` }}>
-                    <div style={{ width: 40, flexShrink: 0, textAlign: "center" }}>
-                      <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: clr }}>{e.time || "\u2014"}</p>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: INK }}>{e.text}</p>
-                      <p style={{ margin: 0, fontSize: 10, color: SUB }}>{e.persona || ""}</p>
-                    </div>
-                    <div style={{ width: 4, background: clr, borderRadius: 2, flexShrink: 0 }} />
-                  </div>
-                );
-              })}
-            </div>
+            })
           }
         </Card>
 
-        {/* ULTIME COMMESSE */}
-        <Card>
-          <SecTitle badge={<BtnP onClick={() => setTab("commesse")}>Tutte &rarr;</BtnP>}>Ultime commesse</SecTitle>
-          <div style={{ display: "flex", flexDirection: "column" as any, gap: 6 }}>
-            {recenti.length === 0
-              ? <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>Nessuna commessa</p>
-              : recenti.map((c, i) => {
-                const isClosed = c.fase === "chiusura";
-                const fi = FASI.indexOf(c.fase);
-                const ini = (c.cliente || "??").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
-                const bg = ["#1A7878", "#6B4FB0", "#B05020", "#1060A0"][i % 4];
-                return (
-                  <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
-                    style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: T_LIGHT, borderRadius: 9, border: `1px solid ${BDR}`, cursor: "pointer" }}>
-                    <Av initials={ini} bg={bg} size={30} fontSize={10} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: INK }}>{c.cliente}</p>
-                      <div style={{ display: "flex", gap: 2, marginTop: 3, height: 13 }}>
-                        {FASI.map((f, fii) => {
-                          const done = fii <= fi;
-                          return (
-                            <div key={f} style={{ flex: fii === 0 ? 3 : 2, background: done ? (PIPE_COLORS[f] || T_CLR) : "#D0E8E8", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, color: done ? "white" : SUB }}>
-                              {f[0].toUpperCase()}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    {isClosed
-                      ? <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: GRN, flexShrink: 0 }}>\u2713 chiusa</p>
-                      : <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: INK, flexShrink: 0 }}>{c.euro ? fmtK(parseFloat(c.euro)) : "\u2014"}</p>
-                    }
-                  </div>
-                );
-              })
-            }
+        {/* AZIONI COMPATTE */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <div onClick={() => setShowModal("commessa")} style={{ flex: 1, background: TH.bg, borderRadius: 12, padding: "12px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 7, background: TH.teal, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <I d={ICO.folder} s={14} c="#fff" />
+            </div>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#fff" }}>Nuova commessa</p>
           </div>
-        </Card>
-
-        {/* AZIONI RAPIDE */}
-        <div style={{ marginTop: 4 }}>
-          <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 800, color: SUB, textTransform: "uppercase" as any, letterSpacing: "0.07em" }}>Azioni rapide</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div onClick={() => setShowModal("commessa")}
-              style={{ background: T_CLR, borderRadius: 14, boxShadow: `0 5px 0 0 ${T_DARK}`, padding: "14px 12px",
-                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <I d={ICO.folder} s={17} c="#fff" />
-              </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Commessa</p>
+          <div onClick={() => setShowSpesa(true)} style={{ flex: 1, background: TH.bg, borderRadius: 12, padding: "12px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 7, background: TH.amber, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <I d={ICO.wallet} s={14} c="#fff" />
             </div>
-            <div onClick={() => setShowSpesa(true)}
-              style={{ background: "#7C5FBF", borderRadius: 14, boxShadow: "0 5px 0 0 #4A3870", padding: "14px 12px",
-                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 18 }}>&#128478;</span>
-              </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Spese</p>
-            </div>
-            <div onClick={() => setTab("contabilita")}
-              style={{ background: "#1A7070", borderRadius: 14, boxShadow: "0 5px 0 0 #0E4040", padding: "14px 12px",
-                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <I d={ICO.wallet} s={17} c="#fff" />
-              </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Contabilità</p>
-            </div>
-            <div onClick={() => setTab("montaggi_cal")}
-              style={{ background: "#2563EB", borderRadius: 14, boxShadow: "0 5px 0 0 #1742A0", padding: "14px 12px",
-                display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <span style={{ fontSize: 18 }}>&#128736;</span>
-              </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Squadra</p>
-            </div>
-            <div onClick={() => setTab("clienti")}
-              style={{ background: "#7F77DD", borderRadius: 14, boxShadow: "0 5px 0 0 #4A4490", padding: "14px 12px",
-                display: "flex", alignItems: "center", gap: 10, cursor: "pointer", gridColumn: "1 / -1" }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <I d={ICO.users} s={17} c="#fff" />
-              </div>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 900, color: "#fff" }}>Clienti</p>
-            </div>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#fff" }}>Spesa</p>
           </div>
         </div>
+
+        {/* SUGGERIMENTO AI */}
+        {tasks.length > 0 && (
+          <div onClick={tasks[0].action} style={{ background: `linear-gradient(145deg, #163333, ${TH.bg})`, borderRadius: 14, padding: "12px 16px", marginBottom: 14, border: `0.5px solid rgba(40,160,160,0.2)`, cursor: "pointer" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TH.teal} strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span style={{ fontSize: 9, color: TH.tealMuted, fontWeight: 700, letterSpacing: "0.5px" }}>SUGGERIMENTO</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: "#fff", fontWeight: 500, lineHeight: 1.4 }}>
+              {tasks[0].titolo}. <span style={{ color: TH.teal, fontWeight: 700 }}>{tasks[0].sotto}</span>
+            </p>
+          </div>
+        )}
 
       </div>
 
