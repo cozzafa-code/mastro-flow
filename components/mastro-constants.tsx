@@ -147,7 +147,7 @@ export const THEMES = {
   fliwox: {
     name: "fliwoX", emoji: "layers",
     // Sfondo pulito — Sistema Operativo v2
-    bg: "#EEF8F8", bg2: "#DDEFEF", card: "#FFFFFF", card2: "#F7F7F5",
+    bg: "#E4F2F2", bg2: "#D8EEEE", card: "#FFFFFF", card2: "#F7F7F5",
     // Border sottili
     bdr: "#F0EFEC", bdrL: "#F7F7F5",
     // Testi

@@ -1495,7 +1495,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   /* ======= STYLES ======= */
   const fs = isDesktop ? 1.1 : isTablet ? 1.05 : 1;
   const S = {
-    app: { fontFamily: FF, background: "#EEF8F8", color: T.text, width: "100%", maxWidth: "100vw", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased", paddingBottom: 0, overflow: "hidden", boxSizing: "border-box" as any },
+    app: { fontFamily: FF, background: "#E4F2F2", color: T.text, width: "100%", maxWidth: "100vw", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased", paddingBottom: 0, overflow: "hidden", boxSizing: "border-box" as any },
     header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
     headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
     headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
