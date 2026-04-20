@@ -1071,6 +1071,111 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                       : "Misure indicative — in attesa di firma cliente"}
                   </div>
                 )}
+                {/* ═══ PROSSIMA AZIONE + ALERT ═══ */}
+                {(() => {
+                  // Calcolo prossima azione
+                  const hasRilievi = rilievi.length > 0;
+                  const hasVani = vani.length > 0;
+                  const hasMisure = vaniConMisure.length > 0;
+                  const hasPrezzi = vaniConPrezzo.length > 0;
+                  const hasFirmaC = hasFirma;
+                  const fattCm = fattureCommessa;
+                  const hasFatt = fattCm.length > 0;
+                  const hasAcconto = fattCm.some((f: any) => f.pagata);
+                  const hasOrdine = ordiniCommessa.length > 0;
+                  const hasConferma = ordineConfermato;
+                  const hasMont = hasMontaggio;
+
+                  let nextTitle = "";
+                  let nextDesc = "";
+                  let nextBtn = "";
+                  if (!hasRilievi) { nextTitle = "Esegui il primo rilievo"; nextDesc = "Vai in cantiere e rileva le misure di ogni vano"; nextBtn = "CREA RILIEVO"; }
+                  else if (!hasVani) { nextTitle = "Aggiungi vani al rilievo"; nextDesc = "Servono i vani prima di inserire le misure"; nextBtn = "APRI RILIEVO"; }
+                  else if (!hasMisure) { nextTitle = "Completa le misure"; nextDesc = `${vaniConMisure.length}/${vani.length} vani misurati`; nextBtn = "APRI MISURE"; }
+                  else if (!hasPrezzi) { nextTitle = "Imposta prezzi per il preventivo"; nextDesc = "Misure OK — definisci €/mq per ogni vano"; nextBtn = "APRI PREVENTIVO"; }
+                  else if (!hasFirmaC) { nextTitle = "Invia preventivo per firma"; nextDesc = `€${fmt(totPreventivo)} pronti da inviare al cliente`; nextBtn = "INVIA PREVENTIVO"; }
+                  else if (!hasFatt) { nextTitle = "Emetti fattura di acconto"; nextDesc = "Preventivo firmato — richiedi acconto 30-60%"; nextBtn = "CREA FATTURA"; }
+                  else if (!hasAcconto) { nextTitle = "Sollecita pagamento acconto"; nextDesc = "Fattura emessa ma non ancora incassata"; nextBtn = "SOLLECITA"; }
+                  else if (!hasOrdine) { nextTitle = "Crea ordine al fornitore"; nextDesc = "Acconto ricevuto — ordina i materiali"; nextBtn = "CREA ORDINE"; }
+                  else if (!hasConferma) { nextTitle = "Attendi conferma fornitore"; nextDesc = "Ordine inviato — sollecita se tarda"; nextBtn = "SOLLECITA FORN."; }
+                  else if (!hasMont) { nextTitle = "Pianifica montaggio"; nextDesc = "Materiale in arrivo — programma cantiere"; nextBtn = "PIANIFICA"; }
+                  else { nextTitle = "Chiusura commessa"; nextDesc = "Fattura il saldo e archivia"; nextBtn = "FATTURA SALDO"; }
+
+                  // Alert automatici
+                  const alerts: Array<{txt: string, kind: string}> = [];
+                  const gg = (d: string) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : 0;
+
+                  if (hasRilievi && !hasFirmaC) {
+                    const g = gg(rilievi[0]?.data);
+                    if (g > 7) alerts.push({ txt: `Preventivo fermo da ${g} giorni — solleciti firma cliente`, kind: "warn" });
+                  }
+                  if (hasFatt && !hasAcconto) {
+                    const f = fattCm.find((x: any) => !x.pagata);
+                    if (f?.data) {
+                      const g = gg(f.data);
+                      if (g > 10) alerts.push({ txt: `Acconto non incassato da ${g} giorni`, kind: "danger" });
+                    }
+                  }
+                  if (hasOrdine && !hasConferma) {
+                    const o = ordiniCommessa[0];
+                    if (o?.dataInvio) {
+                      const g = gg(o.dataInvio);
+                      if (g > 3) alerts.push({ txt: `Ordine senza conferma da ${g} giorni — contatta fornitore`, kind: "warn" });
+                    }
+                  }
+                  if (hasMont && !hasFirmaC) {
+                    alerts.push({ txt: "Montaggio pianificato ma cliente non ha firmato preventivo", kind: "danger" });
+                  }
+
+                  return (
+                    <>
+                      {/* Prossima Azione */}
+                      <div style={{
+                        marginTop: 12, padding: "11px 12px", borderRadius: 12,
+                        background: "linear-gradient(145deg, rgba(95,208,208,0.18), rgba(40,160,160,0.08))",
+                        border: "1.5px solid rgba(40,160,160,0.35)",
+                        boxShadow: "0 4px 12px rgba(40,160,160,0.15), inset 0 1px 1px rgba(255,255,255,0.7)",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#28A0A0", boxShadow: "0 0 6px #28A0A0" }} />
+                          <div style={{ fontSize: 9, fontWeight: 900, color: "#1A7A7A", letterSpacing: "1px" }}>PROSSIMA AZIONE</div>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>{nextTitle}</div>
+                        <div style={{ fontSize: 11, color: "#5A7878", marginBottom: 9, fontWeight: 500 }}>{nextDesc}</div>
+                        <button onClick={() => { window.scrollBy({ top: 200, behavior: "smooth" }); }} style={{
+                          width: "100%", padding: "11px", borderRadius: 11, border: "none",
+                          background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+                          color: "#fff", fontSize: 12, fontWeight: 900, cursor: "pointer",
+                          boxShadow: "0 6px 14px rgba(31,120,120,0.35), inset 0 1px 2px rgba(255,255,255,0.3)",
+                          letterSpacing: "0.4px",
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                        }}>{nextBtn} <span>→</span></button>
+                      </div>
+
+                      {/* Alert */}
+                      {alerts.length > 0 && (
+                        <div style={{
+                          marginTop: 10, padding: "10px 12px", borderRadius: 12,
+                          background: "linear-gradient(145deg, rgba(226,75,74,0.12), rgba(226,75,74,0.04))",
+                          border: "1.5px solid rgba(226,75,74,0.3)",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <div style={{ fontSize: 9, fontWeight: 900, color: "#E24B4A", letterSpacing: "1px" }}>ATTENZIONE · {alerts.length}</div>
+                          </div>
+                          {alerts.map((a, i) => (
+                            <div key={i} style={{
+                              fontSize: 11, fontWeight: 600, color: "#C03030",
+                              padding: "4px 0",
+                              borderTop: i > 0 ? "1px solid rgba(226,75,74,0.15)" : "none",
+                            }}>• {a.txt}</div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+
                 {/* Success flash */}
                 {ccDone && (
                   <div style={{ marginTop: 6, padding: "10px 12px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 13, fontWeight: 700, color: "#28A0A0", textAlign: "center", animation: "fadeIn 0.3s" }}>
