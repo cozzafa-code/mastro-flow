@@ -875,43 +875,70 @@ export default function CMDetailPanel() {
     // == VISTA RILIEVO CON VANI ==
     return (
       <div style={{ paddingBottom: 80 }}>
-        {/* Topbar MASTRO branding */}
-        <div style={{ background: "#0D1F1F", padding: "calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div onClick={() => { setSelectedRilievo(null); setSelectedCM(null); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M8 2L2 8l6 6" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.03em" }}>{c.code}</span>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500 }}>·</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>{c.cliente} {c.cognome || ""}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="22" height="22" viewBox="0 0 200 200" fill="none"><g><rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/><rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/><rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/><rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/></g><g transform="rotate(8 100 100)"><rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/><path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/><path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/></g></svg>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: "0.04em" }}>MASTRO</span>
-          </div>
-        </div>
-        {c.indirizzo && (
-          <div style={{ background: "#0D1F1F", padding: "0 16px 10px", fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500 }}>{c.indirizzo}</div>
-        )}
-        {/* Header rilievo */}
-        <div style={{ ...S.header }}>
-          <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); }} style={{ cursor: "pointer", padding: "8px 12px", borderRadius: 8, background: T.bg, border: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 700, color: T.text }}><Ico d={ICO.back} s={16} c={T.text} /> Indietro</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{tipoRil === "definitiva" ? <><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></> : tipoRil === "modifica" ? <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/> : <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></>}</svg>
-              <div style={S.headerTitle}>{tipoLblRil} · R{r?.n}</div>
+        {/* HERO_TEAL_CM2 - hero fliwoX unificato */}
+        <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
+          <div style={{
+            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            borderRadius: 22, padding: "14px 16px 14px",
+            position: "relative", overflow: "hidden",
+            boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+            marginBottom: 10,
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
+              <div onClick={() => { setSelectedRilievo(null); setSelectedCM(null); setCmSubTab("rilievi"); }} style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", flexShrink: 0,
+                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "1px", textTransform: "uppercase" }}>{c.code}{r ? ` · ${tipoLblRil} R${r?.n}` : ""}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px", marginTop: 1, textShadow: "0 2px 4px rgba(0,0,0,0.2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {c.cliente} {c.cognome || ""}
+                </div>
+                {c.indirizzo && (
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.85)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {c.indirizzo}
+                  </div>
+                )}
+              </div>
+              {vaniList.length > 0 && (
+                <div style={{ textAlign: "right" as const, flexShrink: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", lineHeight: 1, textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>{progVani}%</div>
+                  <div style={{ fontSize: 9, color: "rgba(255,255,255,0.8)", fontWeight: 600, marginTop: 2 }}>{vaniMisurati.length}/{vaniList.length} vani</div>
+                </div>
+              )}
             </div>
-            <div style={{ fontSize: 12, color: T.sub, marginTop: 1 }}><span style={{ fontFamily: "monospace", fontWeight: 700, color: T.acc }}>{c.code}</span> · {c.cliente} {c.cognome || ""} · {r?.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day:"numeric", month:"short", year:"numeric" }) : ""}</div>
-          </div>
-          {vaniList.length > 0 && (
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: tipoColRil }}>{progVani}%</div>
-              <div style={{ fontSize: 10, color: T.sub }}>{vaniMisurati.length}/{vaniList.length} vani</div>
+
+            {/* Azioni secondarie: riepilogo + PDF */}
+            <div style={{ display: "flex", gap: 6, marginTop: 10, position: "relative", zIndex: 2 }}>
+              <div onClick={() => setShowRiepilogo(true)} style={{
+                flex: 1, padding: "8px 10px", borderRadius: 10,
+                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                cursor: "pointer",
+                color: "#fff", fontSize: 11, fontWeight: 700,
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
+                Riepilogo
+              </div>
+              <div onClick={exportPDF} style={{
+                flex: 1, padding: "8px 10px", borderRadius: 10,
+                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                cursor: "pointer",
+                color: "#fff", fontSize: 11, fontWeight: 700,
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Esporta PDF
+              </div>
             </div>
-          )}
-          <div onClick={() => setShowRiepilogo(true)} style={{ padding: "6px 10px", borderRadius: 6, background: T.accLt, cursor: "pointer", marginLeft: 6 }}>
-            <span style={{ fontSize: 14 }}><I d={ICO.clipboard} /></span>
-          </div>
-          <div onClick={exportPDF} style={{ padding: "6px 10px", borderRadius: 6, background: T.redLt, cursor: "pointer" }}>
-            <Ico d={ICO.file} s={16} c={T.red} />
           </div>
         </div>
 
