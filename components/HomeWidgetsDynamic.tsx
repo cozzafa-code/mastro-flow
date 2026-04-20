@@ -101,8 +101,8 @@ export default function HomeWidgetsDynamic() {
     _d7: d7,
   };
 
-  const FIXED = ["oggi_devi_fare", "squadra", "produzione"];
-  const dynamicWidgets = (widgets || DEFAULT_WIDGETS).filter(w => !FIXED.includes(w));
+  const FIXED: string[] = [];
+  const dynamicWidgets = widgets || DEFAULT_WIDGETS;
 
   const nav = {
     goto: (id: string) => { ctx?.setTab?.(id); trackEvent?.("widget_click", id); },
