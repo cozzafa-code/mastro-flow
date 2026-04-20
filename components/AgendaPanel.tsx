@@ -7,19 +7,23 @@ import { ICO, I } from "./mastro-constants";
 
 // ─── THEME ─────────────────────────────────────────────────────────
 const TH = {
-  bg: "#0D1F1F", bgLight: "#F5F4F0", card: "#fff",
-  teal: "#28A0A0", tealDark: "#1D7A7A", tealMuted: "#5A8A8A",
-  ink: "#1A1A18", sub: "#B0B0A8", border: "#F0EFEC",
-  red: "#E24B4A", amber: "#C4875A", green: "#0F6E56",
-  greenLight: "#E1F5EE", blu: "#3572A5",
+  bg: "#0D1F1F", bgPage: "#E4F2F2", card: "#FFFFFF", cardAlt: "#F5FBFB",
+  tealBright: "#5FD0D0", teal: "#28A0A0", tealDark: "#1A7A7A",
+  tealMuted: "#8FA8A8",
+  ink: "#0D1F1F", sub: "#5A7878", subLight: "#8FA8A8",
+  border: "rgba(40,160,160,0.08)", borderSolid: "#C8E4E4",
+  red: "#E24B4A", redBright: "#FF7B4D",
+  amber: "#F5A030", amberDeep: "#C97716",
+  green: "#8BC443", greenDeep: "#6A9A26", greenDark: "#1A9E73",
+  blu: "#3B7FE0", purple: "#7B6BA5",
 };
 
 // ─── TIPI EVENTO → colore/label ───────────────────────────────────
 const TIPO_CFG: Record<string, { label: string; bg: string; color: string }> = {
-  montaggio:   { label: "MONTAGGIO",   bg: "rgba(40,160,160,.1)",  color: TH.tealDark },
-  sopralluogo: { label: "SOPRALLUOGO", bg: "rgba(53,114,165,.08)", color: TH.blu },
-  rilievo:     { label: "RILIEVO",     bg: "rgba(196,135,90,.1)",  color: "#854F0B" },
-  default:     { label: "EVENTO",      bg: "rgba(40,160,160,.08)", color: TH.teal },
+  montaggio:   { label: "MONTAGGIO",   bg: "rgba(40,160,160,0.15)",  color: TH.tealDark },
+  sopralluogo: { label: "SOPRALLUOGO", bg: "rgba(59,127,224,0.15)",  color: TH.blu },
+  rilievo:     { label: "RILIEVO",     bg: "rgba(245,160,48,0.18)",  color: TH.amberDeep },
+  default:     { label: "EVENTO",      bg: "rgba(40,160,160,0.12)",  color: TH.teal },
 };
 const getTipoCfg = (ev: any) => {
   if (ev._isMontaggio) return TIPO_CFG.montaggio;
@@ -31,7 +35,7 @@ const getTipoColor = (ev: any) => {
   if (ev._isScadenza) return ev._tipo === "incasso" ? TH.green : TH.amber;
   const tipo = (ev.tipo || ev.type || "").toLowerCase();
   if (tipo === "sopralluogo") return TH.blu;
-  if (tipo === "rilievo") return TH.amber;
+  if (tipo === "rilievo") return TH.amberDeep;
   return ev.color || TH.teal;
 };
 
@@ -43,14 +47,23 @@ const fixText = (s: string) => (s || "").replace(/â€"/g, "–").replace(/â�
 
 // ─── SUB-COMPONENTS ──────────────────────────────────────────────
 const NavBtn = ({ onClick, children }: any) => (
-  <div onClick={onClick} style={{ width: 34, height: 34, background: "rgba(255,255,255,0.06)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-    {children}
-  </div>
+  <div onClick={onClick} style={{
+    width: 34, height: 34,
+    background: "linear-gradient(145deg, #FFF, #D8EEEE)",
+    borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+    cursor: "pointer", flexShrink: 0,
+    boxShadow: "0 4px 10px rgba(0,0,0,0.15), 0 0 0 2px rgba(255,255,255,0.25)",
+  }}>{children}</div>
 );
 const NavBtnLight = ({ onClick, children }: any) => (
-  <div onClick={onClick} style={{ width: 34, height: 34, background: TH.card, border: `0.5px solid ${TH.border}`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-    {children}
-  </div>
+  <div onClick={onClick} style={{
+    width: 34, height: 34,
+    background: "linear-gradient(145deg, #FFFFFF 0%, #F5FBFB 100%)",
+    borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+    cursor: "pointer", flexShrink: 0,
+    boxShadow: "0 4px 10px rgba(31,120,120,0.12), inset 0 1px 1px rgba(255,255,255,0.8)",
+    border: "1px solid rgba(200,228,228,0.5)",
+  }}>{children}</div>
 );
 const IcoChevL = ({ color = TH.teal }: any) => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -112,7 +125,13 @@ export default function AgendaPanel() {
     const montSq = ev._isMontaggio && ev._squadra;
     return (
       <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}
-        style={{ background: TH.card, borderRadius: 14, padding: "12px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", cursor: "pointer" }}>
+        style={{
+          background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+          borderRadius: 16, padding: "13px 15px",
+          boxShadow: "0 6px 18px rgba(31,120,120,0.1)",
+          border: "1px solid rgba(200,228,228,0.5)",
+          cursor: "pointer", marginBottom: 10,
+        }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: montSq ? 8 : 0 }}>
           <div style={{ flex: 1 }}>
             <span style={{ display: "inline-block", background: cfg.bg, borderRadius: 6, padding: "2px 8px", marginBottom: 6 }}>
@@ -200,7 +219,7 @@ export default function AgendaPanel() {
         </div>
       </div>
 
-      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: TH.ink, padding: "0 2px" }}>Prossimi eventi</p>
+      <p style={{ margin: "18px 4px 10px", fontSize: 11, fontWeight: 900, color: TH.ink, letterSpacing: "1px", textTransform: "uppercase" as any }}>Prossimi eventi</p>
       {prossimi.length === 0 ? (
         <p style={{ margin: 0, fontSize: 12, color: TH.sub, textAlign: "center", padding: 16 }}>Nessun evento in programma</p>
       ) : prossimi.map(ev => {
@@ -208,7 +227,13 @@ export default function AgendaPanel() {
         const clr = getTipoColor(ev);
         return (
           <div key={ev.id} onClick={() => setSelectedEvent(ev)}
-            style={{ background: TH.card, borderRadius: 14, padding: "14px 16px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", cursor: "pointer" }}>
+            style={{
+              background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+              borderRadius: 16, padding: "14px 16px",
+              boxShadow: "0 6px 18px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
+              border: "1px solid rgba(200,228,228,0.5)",
+              cursor: "pointer", marginBottom: 10,
+            }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={clr} strokeWidth="2" strokeLinecap="round">
@@ -237,7 +262,7 @@ export default function AgendaPanel() {
           <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TH.ink }}>{wLabel}</p>
           <NavBtnLight onClick={() => navDate(1)}><IcoChevR /></NavBtnLight>
         </div>
-        <div style={{ background: TH.card, borderRadius: 16, padding: "14px 12px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+        <div style={{ background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius: 18, padding: "16px 14px", boxShadow: "0 6px 20px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)", border: "1px solid rgba(200,228,228,0.5)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
             {weekDays.map((d, i) => {
               const iso = dateStr(d);
@@ -327,49 +352,100 @@ export default function AgendaPanel() {
   const views = ["mese", "settimana", "giorno"] as const;
 
   return (
-    <div style={{ fontFamily: "-apple-system, 'SF Pro Display', system-ui, sans-serif", background: TH.bgLight, minHeight: "100%", paddingBottom: 100 }}>
+    <div style={{
+      fontFamily: "'Manrope', -apple-system, 'SF Pro Display', system-ui, sans-serif",
+      background: TH.bgPage, minHeight: "100%",
+      padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 110px",
+      overflowX: "hidden" as any,
+    }}>
 
-      {/* TOPBAR SCURO */}
-      <div style={{ background: TH.bg, padding: "calc(env(safe-area-inset-top, 0px) + 14px) 18px 14px", display: "flex", alignItems: "center", gap: 12 }}>
-        <svg width="22" height="22" viewBox="0 0 200 200" fill="none"><g><rect x="95" y="15" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="130" y="25" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="50" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="165" y="95" width="10" height="10" rx="2" fill="#7ED957"/><rect x="155" y="140" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="130" y="165" width="10" height="10" rx="2" fill="#7ED957"/><rect x="95" y="175" width="10" height="10" rx="2" fill="#2FA7A2"/><rect x="60" y="165" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="140" width="10" height="10" rx="2" fill="#7ED957"/><rect x="25" y="95" width="10" height="10" rx="2" fill="#F59E0B"/><rect x="35" y="50" width="10" height="10" rx="2" fill="#7ED957"/><rect x="60" y="25" width="10" height="10" rx="2" fill="#F59E0B"/></g><g transform="rotate(8 100 100)"><rect x="55" y="55" width="90" height="90" rx="22" fill="#2FA7A2"/><path d="M70 70 L130 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/><path d="M130 70 L70 130" stroke="#F2F1EC" strokeWidth="18" strokeLinecap="round"/></g></svg>
-        <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#fff", flex: 1 }}>Agenda</p>
-        {dayEvents.length > 0 && agendaView === "giorno" && (
-          <span style={{ background: "rgba(40,160,160,.2)", borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, color: TH.teal }}>{dayEvents.length} eventi</span>
-        )}
-        <div onClick={() => setShowNewEvent(true)} style={{ width: 34, height: 34, borderRadius: 10, background: TH.teal, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: `0 2px 8px rgba(40,160,160,0.4)` }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      {/* ═══ HERO TEAL fliwoX ═══ */}
+      <div style={{
+        background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+        borderRadius: 22,
+        padding: "14px 16px 16px",
+        position: "relative" as any,
+        overflow: "hidden" as any,
+        boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+        marginBottom: 14,
+      }}>
+        <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
+
+        {/* Header titolo */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" as any, zIndex: 2, marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "1px", textTransform: "uppercase" as any }}>Pianificazione</div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px", marginTop: 2, textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>Agenda</div>
+            {dayEvents.length > 0 && agendaView === "giorno" && (
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginTop: 4 }}>
+                {dayEvents.length} event{dayEvents.length === 1 ? "o" : "i"} oggi
+              </div>
+            )}
+          </div>
+
+          <div onClick={() => setShowNewEvent(true)} style={{
+            width: 40, height: 40, borderRadius: 11,
+            background: "linear-gradient(145deg, #FFF, #D8EEEE)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 0 0 2px rgba(255,255,255,0.25)",
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TH.tealDark} strokeWidth="3" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* Tab switch dentro hero */}
+        <div style={{
+          position: "relative" as any, zIndex: 2,
+          display: "flex", gap: 2, padding: 3,
+          background: "rgba(255,255,255,0.15)",
+          borderRadius: 12,
+          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+        }}>
+          {views.map(v => {
+            const active = agendaView === v;
+            const label = v.charAt(0).toUpperCase() + v.slice(1);
+            return (
+              <div key={v} onClick={() => setAgendaView(v)} style={{
+                flex: 1, padding: "9px 4px", textAlign: "center" as any,
+                fontSize: 12, fontWeight: 800, cursor: "pointer",
+                background: active ? "#fff" : "transparent",
+                color: active ? TH.tealDark : "rgba(255,255,255,0.85)",
+                borderRadius: 9,
+                boxShadow: active ? "0 2px 6px rgba(0,0,0,0.15)" : "none",
+                letterSpacing: "0.3px",
+                transition: "all 0.15s",
+              }}>{label}</div>
+            );
+          })}
         </div>
       </div>
 
-      {/* TAB SWITCH */}
-      <div style={{ display: "flex", background: TH.bg, padding: "0 18px 14px", gap: 4 }}>
-        {views.map(v => {
-          const active = agendaView === v;
-          const label = v.charAt(0).toUpperCase() + v.slice(1);
-          return (
-            <div key={v} onClick={() => setAgendaView(v)}
-              style={{ flex: 1, padding: "8px 4px", textAlign: "center", fontSize: 12, fontWeight: active ? 700 : 500, cursor: "pointer",
-                background: active ? "rgba(40,160,160,0.2)" : "transparent",
-                color: active ? TH.teal : TH.tealMuted,
-                borderRadius: 10 }}>
-              {label}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* BODY */}
-      <div style={{ padding: 14 }}>
+      {/* ═══ BODY ═══ */}
+      <div>
         {agendaView === "mese" && renderMese()}
         {agendaView === "settimana" && renderSettimana()}
         {agendaView === "giorno" && renderGiorno()}
 
-        <div style={{ marginTop: 14 }}>
-          <button onClick={() => setShowNewEvent(true)} style={{ width: "100%", background: TH.bg, border: "none", borderRadius: 14, padding: 16, fontSize: 14, fontWeight: 700, color: TH.teal, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TH.teal} strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            Nuovo evento
-          </button>
-        </div>
+        {/* Nuovo evento */}
+        <button onClick={() => setShowNewEvent(true)} style={{
+          width: "100%", marginTop: 14,
+          background: "linear-gradient(145deg, #0D1F1F, #163333)",
+          border: "none", borderRadius: 16, padding: 16,
+          fontSize: 14, fontWeight: 800, color: TH.tealBright,
+          cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          boxShadow: "0 6px 18px rgba(13,31,31,0.3), inset 0 1px 2px rgba(255,255,255,0.08)",
+          letterSpacing: "0.3px",
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TH.tealBright} strokeWidth="3" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Nuovo evento
+        </button>
       </div>
     </div>
   );
