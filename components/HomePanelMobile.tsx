@@ -410,26 +410,7 @@ export default function HomePanel() {
       </div>
 
             {/* ═══ WIDGET PERSONALIZZABILI ═══ */}
-      <HomeWidgetsDynamic
-        data={{
-          tasks: tasks || [],
-          cantieri: cantieri || [],
-          fattureDB: (fattureDB as any) || [],
-          team: team || [],
-          msgs: (msgs as any) || [],
-          problemi: problemi || [],
-          events: events || [],
-        }}
-        aziendaId={aziendaInfo?.id}
-        onNav={{
-          goto: (t: string) => setTab(t),
-          openCM: (c: any) => { setSelectedCM(c); setTab("commesse"); },
-          openProblema: () => setShowProblemiView?.(true),
-          openTask: () => setTab("agenda"),
-          openEvent: () => setTab("agenda"),
-          openMsg: () => setTab("messaggi"),
-        }}
-      />
+      <HomeWidgetsDynamic />
 
       {showSpesa && <SpesaQuick onClose={() => setShowSpesa(false)} />}
     </div>

@@ -4,25 +4,12 @@ import WidgetPicker from "./WidgetPicker";
 import { useWidgetConfig, DEFAULT_WIDGETS } from "@/hooks/useWidgetConfig";
 import { WIDGET_BY_ID } from "./widgetCatalog";
 import { renderWidgetBody } from "./widgetRenderers";
+import { useMastro } from "./MastroContext";
 
 const TEAL = "#28A0A0";
 const TEAL_DARK = "#1A7A7A";
 const DARK = "#0D1F1F";
 const SUB = "#5A7878";
-const BORDER = "rgba(40,160,160,0.08)";
-
-interface Props {
-  data: any;                    // { tasks, cantieri, fattureDB, team, msgs, problemi, events }
-  aziendaId?: string;
-  onNav?: {
-    goto?: (tab: string) => void;
-    openCM?: (c: any) => void;
-    openProblema?: (p: any) => void;
-    openTask?: (t: any) => void;
-    openEvent?: (e: any) => void;
-    openMsg?: (m: any) => void;
-  };
-}
 
 // Error Boundary: se qualcosa nel widget crasha, isoliamo
 class WidgetErrorBoundary extends Component<any, { hasError: boolean }> {
@@ -77,20 +64,33 @@ function WidgetCard({ title, subtitle, iconPath, children, onRemove }: any) {
   );
 }
 
-export default function HomeWidgetsDynamic({ data, aziendaId, onNav }: Props) {
+export default function HomeWidgetsDynamic() {
   const [showPicker, setShowPicker] = useState(false);
+  const ctx: any = useMastro();
+  const aziendaId = ctx?.aziendaInfo?.id || ctx?.azienda_id;
   const { widgets, addWidget, removeWidget, trackEvent } = useWidgetConfig(aziendaId);
+
+  // Dati dal context (tutti opzionali, fallback a [])
+  const data = {
+    tasks: ctx?.tasks || [],
+    cantieri: ctx?.cantieri || [],
+    fattureDB: ctx?.fattureDB || [],
+    team: ctx?.team || ctx?.operatori || ctx?.operatoriDB || [],
+    msgs: ctx?.msgs || ctx?.messaggi || [],
+    problemi: ctx?.problemi || [],
+    events: ctx?.events || [],
+  };
 
   const FIXED = ["oggi_devi_fare", "squadra", "produzione"];
   const dynamicWidgets = (widgets || DEFAULT_WIDGETS).filter(w => !FIXED.includes(w));
 
   const nav = {
-    goto: (id: string) => { onNav?.goto?.(id); trackEvent?.("widget_click", id); },
-    openCM: (c: any) => onNav?.openCM?.(c),
-    openProblema: (p: any) => onNav?.openProblema?.(p),
-    openTask: (t: any) => onNav?.openTask?.(t),
-    openEvent: (e: any) => onNav?.openEvent?.(e),
-    openMsg: (m: any) => onNav?.openMsg?.(m),
+    goto: (id: string) => { ctx?.setTab?.(id); trackEvent?.("widget_click", id); },
+    openCM: (c: any) => { ctx?.setSelectedCM?.(c); ctx?.setTab?.("commesse"); },
+    openProblema: () => ctx?.setShowProblemiView?.(true),
+    openTask: () => ctx?.setTab?.("agenda"),
+    openEvent: () => ctx?.setTab?.("agenda"),
+    openMsg: () => ctx?.setTab?.("messaggi"),
   };
 
   return (
