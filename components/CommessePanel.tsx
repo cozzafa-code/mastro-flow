@@ -56,6 +56,11 @@ const PIPELINE_FLIWOX: Record<string, { bg: string; fg: string; solid: string }>
   chiusura:    { bg: "rgba(90,120,120,0.15)", fg: "#5A7878", solid: "#8FA8A8" },
 };
 
+
+const __styleInject = typeof document !== "undefined" && !document.getElementById("mastro-cm-slide")
+  ? (() => { const el = document.createElement("style"); el.id = "mastro-cm-slide"; el.textContent = "@keyframes slideDown { from { opacity: 0; max-height: 0 } to { opacity: 1; max-height: 800px } }"; document.head.appendChild(el); return true; })()
+  : true;
+
 export default function CommessePanel() {
   const {
     T, isDesktop, isTablet, PIPELINE,
@@ -67,6 +72,7 @@ export default function CommessePanel() {
 
   const TODAY = new Date().toISOString().split("T")[0];
   const [sortBy, setSortBy] = useState("default");
+  const [expandedCmId, setExpandedCmId] = useState<any>(null);
   const fmtEuro = (n: number) => n > 0 ? "€" + n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) : "";
   const fmtData = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "";
   const initials = (c: any) => ((c.cliente || "?").charAt(0) + (c.cognome || "").charAt(0)).toUpperCase();
@@ -106,8 +112,9 @@ export default function CommessePanel() {
     const euroVal = c.euro ? parseFloat(c.euro) : 0;
     const fs = faseStyle(c.fase, alert, ferma, giorniFermaCM(c), fase.nome);
 
+    const isExpanded = expandedCmId === c.id;
     return (
-      <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
+      <div key={c.id}
         style={{
           background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
           borderRadius: 18,
@@ -115,10 +122,13 @@ export default function CommessePanel() {
           marginBottom: 12,
           boxShadow: alert
             ? `0 6px 20px rgba(226,75,74,0.15), inset 3px 0 0 ${TH.red}`
-            : "0 6px 20px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
+            : isExpanded
+              ? `0 10px 28px rgba(40,160,160,0.18), 0 0 0 2px ${TH.teal}`
+              : "0 6px 20px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
           border: "1px solid rgba(200,228,228,0.5)",
-          cursor: "pointer",
-        }}>
+          transition: "box-shadow 0.2s",
+        }}
+        onClick={() => { if (!isExpanded) { setSelectedCM(c); setTab("commesse"); } }}>
 
         {/* Header: avatar + nome + pill fase */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -215,6 +225,167 @@ export default function CommessePanel() {
             </span>
           </div>
         )}
+
+        {/* ═══ BOTTONE ESPANDI ═══ */}
+        <div
+          onClick={(e) => { e.stopPropagation(); setExpandedCmId(isExpanded ? null : c.id); }}
+          style={{
+            marginTop: 10,
+            padding: "8px 12px",
+            borderRadius: 10,
+            background: isExpanded ? "linear-gradient(145deg, #0D1F1F, #1A3535)" : "linear-gradient(155deg, #FFFFFF, #F5FBFB)",
+            border: isExpanded ? "none" : "1px solid #C8E4E4",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            cursor: "pointer",
+            color: isExpanded ? "#5FD0D0" : TH.tealDark,
+            fontSize: 11, fontWeight: 800, letterSpacing: "0.3px",
+            boxShadow: isExpanded ? "0 4px 10px rgba(13,31,31,0.25)" : "0 2px 6px rgba(31,120,120,0.08)",
+            transition: "all 0.15s",
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isExpanded ? "#5FD0D0" : TH.tealDark} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+          {isExpanded ? "CHIUDI DETTAGLIO" : "APRI CENTRO OPERATIVO"}
+        </div>
+
+        {/* ═══ PANNELLO ESPANSO ═══ */}
+        {isExpanded && (() => {
+          const rilievi = c.rilievi || [];
+          const vani = getVaniAttivi(c);
+          const fattCm = (fattureDB || []).filter((f: any) => f.cmId === c.id);
+          const fattPagate = fattCm.filter((f: any) => f.pagata);
+          const incassato = fattPagate.reduce((t: number, f: any) => t + (f.importo || 0), 0);
+          const hasFirma = !!c.firmaCliente;
+          const hasRilievi = rilievi.length > 0;
+          const hasVani = vani.length > 0;
+
+          // Calcolo prossima azione (semplificato)
+          let nextAction = "";
+          let nextBtn = "";
+          let nextTarget = "";
+          if (!hasRilievi) { nextAction = "Esegui il primo rilievo"; nextBtn = "CREA RILIEVO"; nextTarget = "rilievo"; }
+          else if (!hasVani) { nextAction = "Aggiungi vani al rilievo"; nextBtn = "APRI RILIEVO"; nextTarget = "rilievo"; }
+          else if (!hasFirma) { nextAction = "Invia il preventivo al cliente per firma"; nextBtn = "APRI PREVENTIVO"; nextTarget = "preventivo"; }
+          else if (fattCm.length === 0) { nextAction = "Emetti la fattura di acconto"; nextBtn = "CREA FATTURA"; nextTarget = "fattura"; }
+          else if (!fattPagate.length) { nextAction = "Acconto non ancora incassato"; nextBtn = "SOLLECITA"; nextTarget = "fattura"; }
+          else { nextAction = "Procedi con ordine fornitore"; nextBtn = "CREA ORDINE"; nextTarget = "ordini"; }
+
+          // Alert automatici
+          const alerts: string[] = [];
+          if (ferma) alerts.push(`Commessa ferma da ${giorniFermaCM(c)} giorni`);
+          if (scad) alerts.push("Scadenza superata");
+          if (hasRilievi && !hasFirma && rilievi[0]?.data) {
+            const gg = Math.floor((Date.now() - new Date(rilievi[0].data).getTime()) / 86400000);
+            if (gg > 5) alerts.push(`Preventivo fermo da ${gg}gg — solleciti firma`);
+          }
+
+          return (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                marginTop: 12, padding: "12px 0 0",
+                borderTop: "1px dashed rgba(40,160,160,0.25)",
+                animation: "slideDown 0.25s ease-out",
+              }}
+            >
+              {/* Prossima azione */}
+              <div style={{
+                background: "linear-gradient(145deg, rgba(95,208,208,0.15), rgba(40,160,160,0.08))",
+                borderRadius: 12, padding: "10px 12px", marginBottom: 10,
+                border: "1px solid rgba(40,160,160,0.25)",
+              }}>
+                <div style={{ fontSize: 9, fontWeight: 900, color: TH.tealDark, letterSpacing: "1px", marginBottom: 4 }}>PROSSIMA AZIONE</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: TH.ink, marginBottom: 8 }}>{nextAction}</div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedCM(c); setTab("commesse"); }}
+                  style={{
+                    width: "100%", padding: "10px", borderRadius: 10, border: "none",
+                    background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+                    color: "#fff", fontSize: 11, fontWeight: 900, cursor: "pointer",
+                    boxShadow: "0 5px 12px rgba(31,120,120,0.35), inset 0 1px 2px rgba(255,255,255,0.3)",
+                    letterSpacing: "0.4px",
+                  }}
+                >{nextBtn} →</button>
+              </div>
+
+              {/* Alert */}
+              {alerts.length > 0 && (
+                <div style={{
+                  background: "linear-gradient(145deg, rgba(226,75,74,0.12), rgba(226,75,74,0.05))",
+                  borderRadius: 12, padding: "10px 12px", marginBottom: 10,
+                  border: "1px solid rgba(226,75,74,0.3)",
+                }}>
+                  <div style={{ fontSize: 9, fontWeight: 900, color: TH.red, letterSpacing: "1px", marginBottom: 5 }}>⚠ ATTENZIONE</div>
+                  {alerts.map((a, i) => (
+                    <div key={i} style={{ fontSize: 11, fontWeight: 600, color: TH.red, marginBottom: 2 }}>· {a}</div>
+                  ))}
+                </div>
+              )}
+
+              {/* Quick stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 10 }}>
+                {[
+                  { l: "VANI", v: vani.length || "—", c: TH.tealDark },
+                  { l: "INCASSATO", v: incassato > 0 ? "€" + (incassato/1000).toFixed(1) + "k" : "€0", c: TH.greenDark },
+                  { l: "PROG", v: Math.round(((PIPELINE.findIndex(p => p.id === c.fase) + 1) / PIPELINE.length) * 100) + "%", c: "#1A3535" },
+                ].map((s, i) => (
+                  <div key={i} style={{
+                    padding: "8px 6px", borderRadius: 10,
+                    background: "linear-gradient(155deg, #FFFFFF, #F5FBFB)",
+                    border: "1px solid rgba(200,228,228,0.5)",
+                    textAlign: "center" as const,
+                  }}>
+                    <div style={{ fontSize: 8, fontWeight: 900, color: TH.sub, letterSpacing: "0.5px" }}>{s.l}</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: s.c, marginTop: 2, fontFamily: FM, letterSpacing: "-0.3px" }}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quick actions */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginBottom: 10 }}>
+                {[
+                  { l: "Misure", ico: <path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/>, c: TH.teal },
+                  { l: "Fatture", ico: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></>, c: TH.greenDark },
+                  { l: "Ordini", ico: <><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></>, c: TH.amberDeep },
+                  { l: "Montaggio", ico: <><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></>, c: "#7B6BA5" },
+                ].map((a, i) => (
+                  <button
+                    key={i}
+                    onClick={(e) => { e.stopPropagation(); setSelectedCM(c); setTab("commesse"); }}
+                    style={{
+                      padding: "10px 4px", borderRadius: 11, border: "none",
+                      background: "linear-gradient(155deg, #FFFFFF, #F5FBFB)",
+                      border: "1px solid rgba(200,228,228,0.6)",
+                      cursor: "pointer",
+                      display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 4,
+                      boxShadow: "0 2px 6px rgba(31,120,120,0.06)",
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={a.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{a.ico}</svg>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: TH.ink, letterSpacing: "0.2px" }}>{a.l}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Apri centro completo */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setSelectedCM(c); setTab("commesse"); }}
+                style={{
+                  width: "100%", padding: "11px", borderRadius: 11, border: "none",
+                  background: "linear-gradient(145deg, #0D1F1F, #1A3535)",
+                  color: "#5FD0D0", fontSize: 11, fontWeight: 900, cursor: "pointer",
+                  letterSpacing: "0.4px",
+                  boxShadow: "0 5px 14px rgba(13,31,31,0.3), inset 0 1px 2px rgba(255,255,255,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                APRI CENTRO COMPLETO
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5FD0D0" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+          );
+        })()}
       </div>
     );
   };
