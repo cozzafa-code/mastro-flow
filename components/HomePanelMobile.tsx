@@ -379,35 +379,6 @@ export default function HomePanel() {
           );
         })}
       </Widget>
-
-      {/* ═══ AZIONI COMPATTE ═══ */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-        <div onClick={() => setShowModal("commessa")} style={{
-          flex: 1,
-          background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-          borderRadius: 14, padding: "12px 14px",
-          cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-          boxShadow: "0 6px 14px rgba(31,120,120,0.35), inset 0 1px 2px rgba(255,255,255,0.3)",
-        }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <I d={ICO.folder} s={14} c="#fff" />
-          </div>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>Nuova commessa</p>
-        </div>
-        <div onClick={() => setShowSpesa(true)} style={{
-          flex: 1,
-          background: "linear-gradient(145deg, #F5A030, #C97716)",
-          borderRadius: 14, padding: "12px 14px",
-          cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-          boxShadow: "0 6px 14px rgba(201,119,22,0.3), inset 0 1px 2px rgba(255,255,255,0.3)",
-        }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <I d={ICO.wallet} s={14} c="#fff" />
-          </div>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>Spesa</p>
-        </div>
-      </div>
-
       {showSpesa && <SpesaQuick onClose={() => setShowSpesa(false)} />}
     </div>
   );
