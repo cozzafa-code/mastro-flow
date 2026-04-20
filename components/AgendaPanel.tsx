@@ -433,15 +433,16 @@ export default function AgendaPanel() {
         {/* Nuovo evento */}
         <button onClick={() => setShowNewEvent(true)} style={{
           width: "100%", marginTop: 14,
-          background: "linear-gradient(145deg, #0D1F1F, #163333)",
+          background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
           border: "none", borderRadius: 16, padding: 16,
-          fontSize: 14, fontWeight: 800, color: TH.tealBright,
+          fontSize: 14, fontWeight: 800, color: "#fff",
           cursor: "pointer", fontFamily: "inherit",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          boxShadow: "0 6px 18px rgba(13,31,31,0.3), inset 0 1px 2px rgba(255,255,255,0.08)",
+          boxShadow: "0 8px 20px rgba(31,120,120,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
           letterSpacing: "0.3px",
+          textShadow: "0 1px 2px rgba(0,0,0,0.15)",
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TH.tealBright} strokeWidth="3" strokeLinecap="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
             <path d="M12 5v14M5 12h14"/>
           </svg>
           Nuovo evento
