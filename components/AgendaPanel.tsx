@@ -78,7 +78,7 @@ export default function AgendaPanel() {
     agendaView, cantieri, deleteEvent, events, montaggiDB, fattureDB, fatturePassive,
     ordiniFornDB, squadreDB, selDate, selectedEvent, tasks, setTasks,
     setAgendaView, setSelDate, setSelectedCM, setSelectedEvent, setShowNewEvent, setTab,
-    agendaFilters,
+    setNewEvent, agendaFilters,
   } = useMastro();
 
   const todayStr = dateStr(new Date());
@@ -487,23 +487,49 @@ export default function AgendaPanel() {
         {agendaView === "settimana" && renderSettimana()}
         {agendaView === "giorno" && renderGiorno()}
 
-        {/* Nuovo evento */}
-        <button onClick={() => setShowNewEvent(true)} style={{
-          width: "100%", marginTop: 14,
-          background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-          border: "none", borderRadius: 16, padding: 16,
-          fontSize: 14, fontWeight: 800, color: "#fff",
-          cursor: "pointer", fontFamily: "inherit",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-          boxShadow: "0 8px 20px rgba(31,120,120,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
-          letterSpacing: "0.3px",
-          textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
-          Nuovo evento
-        </button>
+        {/* Nuovo evento + Nuovo task */}
+        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+          <button onClick={() => {
+            setNewEvent((ev: any) => ({ ...ev, tipo: "sopralluogo" }));
+            setShowNewEvent(true);
+          }} style={{
+            flex: 1,
+            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            border: "none", borderRadius: 16, padding: 16,
+            fontSize: 13, fontWeight: 800, color: "#fff",
+            cursor: "pointer", fontFamily: "inherit",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            boxShadow: "0 8px 20px rgba(31,120,120,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
+            letterSpacing: "0.3px",
+            textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Nuovo evento
+          </button>
+
+          <button onClick={() => {
+            setNewEvent((ev: any) => ({ ...ev, tipo: "task" }));
+            setShowNewEvent(true);
+          }} style={{
+            flex: 1,
+            background: "linear-gradient(145deg, #FFA94D, #F5A030 50%, #C97716 100%)",
+            border: "none", borderRadius: 16, padding: 16,
+            fontSize: 13, fontWeight: 800, color: "#fff",
+            cursor: "pointer", fontFamily: "inherit",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            boxShadow: "0 8px 20px rgba(201,119,22,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
+            letterSpacing: "0.3px",
+            textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            Nuovo task
+          </button>
+        </div>
       </div>
     </div>
   );
