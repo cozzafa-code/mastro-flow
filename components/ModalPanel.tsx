@@ -349,7 +349,20 @@ Fabio Cozza - Walter Cozza Serramenti` },
 
           {showModal === "commessa" && (
             <>
-              <div style={S.modalTitle}>Nuova commessa</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ ...S.modalTitle, marginBottom: 0 }}>Nuova commessa</div>
+                <button onClick={() => setShowModal(null)} style={{
+                  width: 34, height: 34, borderRadius: 10,
+                  background: "#EEF8F8", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, padding: 0,
+                }} aria-label="Chiudi">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A7878" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
               <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
                 {[{ id: "nuova", l: "Nuova installazione", c: T.acc }, { id: "riparazione", l: "Riparazione", c: T.orange }].map(t => (
                   <div key={t.id} onClick={() => { setNewCM(c => ({ ...c, tipo: t.id })); setRipSearch(""); setRipCMSel(null); setRipProblema(""); setRipFotos([]); setRipUrgenza("media"); }}
