@@ -200,18 +200,21 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
         const nid = near?.id || null;
         if (nid !== nearestIdRef.current) {
           nearestIdRef.current = nid;
+          console.log("[GN] near:", nid, "has quick?", !!quickHandlers[nid]);
           if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
           holdVoiceRef.current = null;
           setHoldVoice(null);
           if (nid && quickHandlers[nid]) {
             holdVoiceRef.current = nid;
             setHoldVoice(nid);
-            try { if ("vibrate" in navigator) (navigator as any).vibrate(8); } catch(e) {}
+            try { if ("vibrate" in navigator) (navigator as any).vibrate(15); } catch(e) {}
+            console.log("[GN] hold started on", nid);
             holdTimerRef.current = setTimeout(() => {
               holdFiredRef.current = nid;
               setHoldFired(nid);
-              try { if ("vibrate" in navigator) (navigator as any).vibrate([40, 30, 60]); } catch(e) {}
-            }, 400);
+              console.log("[GN] HOLD FIRED", nid);
+              try { if ("vibrate" in navigator) (navigator as any).vibrate([50, 40, 80, 40, 100]); } catch(e) {}
+            }, 300);
           }
         }
       } else if (s.side === "left" && dx > ACTIVATION_DIST) {
@@ -222,18 +225,21 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
         const nid = near?.id || null;
         if (nid !== nearestIdRef.current) {
           nearestIdRef.current = nid;
+          console.log("[GN] near:", nid, "has quick?", !!quickHandlers[nid]);
           if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
           holdVoiceRef.current = null;
           setHoldVoice(null);
           if (nid && quickHandlers[nid]) {
             holdVoiceRef.current = nid;
             setHoldVoice(nid);
-            try { if ("vibrate" in navigator) (navigator as any).vibrate(8); } catch(e) {}
+            try { if ("vibrate" in navigator) (navigator as any).vibrate(15); } catch(e) {}
+            console.log("[GN] hold started on", nid);
             holdTimerRef.current = setTimeout(() => {
               holdFiredRef.current = nid;
               setHoldFired(nid);
-              try { if ("vibrate" in navigator) (navigator as any).vibrate([40, 30, 60]); } catch(e) {}
-            }, 400);
+              console.log("[GN] HOLD FIRED", nid);
+              try { if ("vibrate" in navigator) (navigator as any).vibrate([50, 40, 80, 40, 100]); } catch(e) {}
+            }, 300);
           }
         }
       } else if (s.side === "bottom" && -dy > ACTIVATION_DIST) {
