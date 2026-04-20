@@ -879,7 +879,7 @@ export default function CMDetailPanel() {
     // == VISTA RILIEVO CON VANI ==
     return (
       <div style={{ paddingBottom: 80 }}>
-        {/* HERO_TEAL_CM2 - hero fliwoX unificato */}
+        {/* HERO_TEAL_CM2_V2 - hero fliwoX + ripristino tutti gli elementi */}
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
           <div style={{
             background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
@@ -945,6 +945,45 @@ export default function CMDetailPanel() {
             </div>
           </div>
         </div>
+
+        {/* Banner rilievo info - modifica riparazione */}
+        {r?.motivoModifica && (
+          <div style={{ margin: "4px 12px 8px", padding: "8px 12px", background: T.orangeLt, borderRadius: 10, border: `1px solid ${T.orange}30`, fontSize: 12, color: T.orange, fontWeight: 600 }}>
+            <I d={ICO.wrench} /> <strong>Modifica:</strong> {r.motivoModifica}
+          </div>
+        )}
+
+        {/* Barra progresso vani */}
+        {vaniList.length > 0 && (
+          <div style={{ padding: "0 12px 8px" }}>
+            <div style={{ height: 5, background: T.bdr, borderRadius: 3, overflow: "hidden", marginBottom: 4 }}>
+              <div style={{ height: "100%", width: `${progVani}%`, background: progVani === 100 ? T.grn : tipoColRil, borderRadius: 3, transition: "width 0.3s" }} />
+            </div>
+            {vaniDaFare.filter(v => !v.note?.startsWith("+")).length > 0 && <div style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>Mancano misure: {vaniDaFare.filter(v => !v.note?.startsWith("+")).map(v => v.nome).join(", ")}</div>}
+            {tutteMis && <div style={{ fontSize: 11, color: T.grn, fontWeight: 700 }}>✓ Tutte le misure raccolte</div>}
+          </div>
+        )}
+
+        {/* Info badges: riparazione / nuova / sistema / salita / mezzo / piano / foro / telefono */}
+        <div style={{ padding: "0 12px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.wrench} /> Riparazione</span>}
+          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>Nuova</span>}
+          {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
+          {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
+          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>{c.mezzoSalita}</span>}
+          {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
+          {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
+          {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}><I d={ICO.phone} /> {c.telefono}</span>}
+        </div>
+
+        {/* Note commessa */}
+        {c.note && (
+          <div style={{ padding: "0 12px", marginBottom: 6 }}>
+            <div style={{ padding: "8px 12px", borderRadius: 10, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 12, color: T.sub, lineHeight: 1.4 }}>
+              <I d={ICO.fileText} /> {c.note}
+            </div>
+          </div>
+        )}
 
         {/* Banner rilievo info */}
         {r?.motivoModifica && (
