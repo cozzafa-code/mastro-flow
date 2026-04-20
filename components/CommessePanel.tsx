@@ -91,7 +91,7 @@ export default function CommessePanel() {
   if (showRiepilogo && selectedCM) return <RiepilogoPanel />;
   if (selectedVano) return <VanoSectorRouter />;
   if (selectedRilievo) return <CMDetailPanel />;
-  if (selectedCM) return <RilieviListPanel />;
+  if (selectedCM) return <CMDetailPanel />;
 
   const fermeCount = cantieri.filter(c => isFerma(c)).length;
   const totaleEuro = filtered.reduce((sum, c) => sum + (c.euro ? parseFloat(c.euro) : 0), 0);

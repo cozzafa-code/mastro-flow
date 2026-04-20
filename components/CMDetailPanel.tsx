@@ -62,6 +62,33 @@ export default function CMDetailPanel() {
     aziendaInfo,
   } = useMastro();
 
+  // AUTO_PICK_OR_DRAFT: se commessa aperta senza rilievo, usa l'ultimo o crea bozza
+  React.useEffect(() => {
+    if (!selectedCM) return;
+    if (selectedRilievo) return;
+    const rilievi = selectedCM.rilievi || [];
+    if (rilievi.length > 0) {
+      setSelectedRilievo(rilievi[rilievi.length - 1]);
+      return;
+    }
+    // 0 rilievi: crea bozza R1 vuoto
+    const oggiISO = new Date().toISOString().split("T")[0];
+    const newR = {
+      id: Date.now(),
+      n: 1,
+      tipo: "indicativa",
+      data: oggiISO,
+      ora: new Date().toTimeString().slice(0,5),
+      rilevatore: "",
+      vani: [],
+      note: "",
+    };
+    setCantieri((cs: any[]) => cs.map(cm => cm.id === selectedCM.id ? { ...cm, rilievi: [newR] } : cm));
+    setSelectedCM((p: any) => ({ ...p, rilievi: [newR] }));
+    setSelectedRilievo(newR);
+  }, [selectedCM?.id, selectedRilievo]);
+
+
   if (!selectedCM) return null;
 
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
