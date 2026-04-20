@@ -76,7 +76,7 @@ const WidgetHead = ({ icon, subtitle, title }: any) => (
         </svg>
       </div>
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "#5A7878", letterSpacing: "0.6px", textTransform: "uppercase", lineHeight: 1 }}>{subtitle}</div>
+        <div style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F", letterSpacing: "1px", textTransform: "uppercase", lineHeight: 1 }}>{subtitle}</div>
         <div style={{ fontSize: 16, fontWeight: 700, color: "#0D1F1F", letterSpacing: "-0.3px", marginTop: 3 }}>{title}</div>
       </div>
     </div>
