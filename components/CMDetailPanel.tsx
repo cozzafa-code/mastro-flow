@@ -63,12 +63,15 @@ export default function CMDetailPanel() {
   } = useMastro();
 
   // AUTO_PICK_OR_DRAFT: se commessa aperta senza rilievo, usa l'ultimo o crea bozza
+  const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
   React.useEffect(() => {
-    if (!selectedCM) return;
+    if (!selectedCM) { setAutoPickDoneForCm(null); return; }
     if (selectedRilievo) return;
+    if (autoPickDoneForCm === selectedCM.id) return; // gia' gestita questa commessa
     const rilievi = selectedCM.rilievi || [];
     if (rilievi.length > 0) {
       setSelectedRilievo(rilievi[rilievi.length - 1]);
+      setAutoPickDoneForCm(selectedCM.id);
       return;
     }
     // 0 rilievi: crea bozza R1 vuoto
@@ -86,7 +89,8 @@ export default function CMDetailPanel() {
     setCantieri((cs: any[]) => cs.map(cm => cm.id === selectedCM.id ? { ...cm, rilievi: [newR] } : cm));
     setSelectedCM((p: any) => ({ ...p, rilievi: [newR] }));
     setSelectedRilievo(newR);
-  }, [selectedCM?.id, selectedRilievo]);
+    setAutoPickDoneForCm(selectedCM.id);
+  }, [selectedCM?.id, selectedRilievo, autoPickDoneForCm]);
 
 
   if (!selectedCM) return null;
