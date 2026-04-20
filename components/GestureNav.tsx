@@ -214,7 +214,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
               setHoldFired(nid);
               console.log("[GN] HOLD FIRED", nid);
               try { if ("vibrate" in navigator) (navigator as any).vibrate([50, 40, 80, 40, 100]); } catch(e) {}
-            }, 300);
+            }, 1200);
           }
         }
       } else if (s.side === "left" && dx > ACTIVATION_DIST) {
@@ -239,7 +239,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
               setHoldFired(nid);
               console.log("[GN] HOLD FIRED", nid);
               try { if ("vibrate" in navigator) (navigator as any).vibrate([50, 40, 80, 40, 100]); } catch(e) {}
-            }, 300);
+            }, 1200);
           }
         }
       } else if (s.side === "bottom" && -dy > ACTIVATION_DIST) {
