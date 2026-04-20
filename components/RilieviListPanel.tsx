@@ -771,29 +771,105 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
     const [rilTab, setRilTab] = (window as any).__rilTab__ || [null, null];
     // Use local state via component trick: riutilizza cmSubTab per il tab rilievi/report
     return (
-      <div style={{ paddingBottom: 80 }}>
-        {/* Header */}
-        <div style={S.header}>
-          <div onClick={() => { setSelectedCM(null); setSelectedRilievo(null); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={L.sub} /></div>
-          <div style={{ flex: 1 }}>
-            <div style={S.headerTitle}>{c.code} · {c.cliente} {c.cognome || ""}</div>
-            <div style={S.headerSub}>{c.indirizzo}</div>
+      <div style={{ paddingBottom: 80, background: "#E4F2F2", minHeight: "100vh", fontFamily: "'Manrope', -apple-system, system-ui, sans-serif" }}>
+        {/* ═══ HERO TEAL fliwoX ═══ */}
+        <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0" }}>
+          <div style={{
+            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            borderRadius: 22, padding: "14px 16px 14px",
+            position: "relative", overflow: "hidden",
+            boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+            marginBottom: 12,
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
+              <div onClick={() => { setSelectedCM(null); setSelectedRilievo(null); }} style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", flexShrink: 0,
+                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "1px", textTransform: "uppercase" }}>{c.code}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px", marginTop: 1, textShadow: "0 2px 4px rgba(0,0,0,0.2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {c.cliente} {c.cognome || ""}
+                </div>
+                {c.indirizzo && (
+                  <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.85)", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {c.indirizzo}
+                  </div>
+                )}
+              </div>
+              {c.fase === "chiusura" && (
+                <span style={{
+                  padding: "5px 11px", borderRadius: 9,
+                  background: "linear-gradient(145deg, #8BC443, #6A9A26)",
+                  color: "#fff", fontSize: 10, fontWeight: 800,
+                  letterSpacing: "0.4px", flexShrink: 0,
+                  boxShadow: "0 2px 6px rgba(106,154,38,0.4)",
+                }}>ARCHIVIATA</span>
+              )}
+            </div>
           </div>
-          {c.fase === "chiusura" && (
-            <span style={{ padding: "6px 14px", borderRadius: 9, background: "#28A0A018", color: "#28A0A0", fontSize: 11, fontWeight: 800, border: "1.5px solid #28A0A0" }}>ARCHIVIATA</span>
-          )}
         </div>
 
         {/* Info badges */}
         <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           <PipelineBar fase={c.fase} cm={c} />
         </div>
-        <div style={{ padding: "0 16px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {c.sistema && <span style={S.badge("#dbeafe", "#3b7fe0")}>{c.sistema}</span>}
-          {c.tipo === "nuova" && <span style={S.badge("#d1fae5", L.green)}>🆕 Nuova</span>}
-          {c.tipo === "riparazione" && <span style={S.badge("#fff7ed", L.amber)}>Riparazione</span>}
-          {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge("#d1fae5", L.green), cursor: "pointer" }}>{c.telefono}</span>}
-          {c.euro > 0 && <span style={S.badge(L.amberBg, L.primary)}>€{c.euro.toLocaleString("it-IT")}</span>}
+        <div style={{ padding: "0 12px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {c.sistema && (
+            <span style={{
+              padding: "5px 11px", borderRadius: 14,
+              background: "linear-gradient(145deg, #FFFFFF, #F5FBFB)",
+              border: "1px solid #C8E4E4",
+              color: "#3B7FE0", fontSize: 11, fontWeight: 800,
+              boxShadow: "0 2px 6px rgba(31,120,120,0.08)",
+            }}>{c.sistema}</span>
+          )}
+          {c.tipo === "nuova" && (
+            <span style={{
+              padding: "5px 11px", borderRadius: 14,
+              background: "linear-gradient(145deg, #A3DC5E, #6A9A26)",
+              color: "#fff", fontSize: 11, fontWeight: 800,
+              boxShadow: "0 3px 8px rgba(106,154,38,0.3)",
+              letterSpacing: "0.3px",
+            }}>NUOVA</span>
+          )}
+          {c.tipo === "riparazione" && (
+            <span style={{
+              padding: "5px 11px", borderRadius: 14,
+              background: "linear-gradient(145deg, #FFA94D, #C97716)",
+              color: "#fff", fontSize: 11, fontWeight: 800,
+              boxShadow: "0 3px 8px rgba(201,119,22,0.3)",
+              letterSpacing: "0.3px",
+            }}>RIPARAZIONE</span>
+          )}
+          {c.telefono && (
+            <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{
+              padding: "5px 11px", borderRadius: 14,
+              background: "linear-gradient(145deg, #FFFFFF, #F5FBFB)",
+              border: "1px solid #C8E4E4",
+              color: "#1A7A7A", fontSize: 11, fontWeight: 800,
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(31,120,120,0.08)",
+            }}>{c.telefono}</span>
+          )}
+          {c.euro > 0 && (
+            <span style={{
+              padding: "5px 11px", borderRadius: 14,
+              background: "linear-gradient(145deg, #0D1F1F, #1A3535)",
+              color: "#5FD0D0", fontSize: 11, fontWeight: 900,
+              fontFamily: "'JetBrains Mono', monospace",
+              boxShadow: "0 3px 8px rgba(13,31,31,0.25), inset 0 1px 1px rgba(95,208,208,0.1)",
+              letterSpacing: "-0.2px",
+            }}>€{c.euro.toLocaleString("it-IT")}</span>
+          )}
         </div>
 
 
