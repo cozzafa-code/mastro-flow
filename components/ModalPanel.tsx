@@ -317,7 +317,23 @@ Fabio Cozza - Walter Cozza Serramenti` },
                 )}
               </div>
               <button style={S.btn} onClick={addTask}>Crea task</button>
-              <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
+              <button onClick={() => setShowModal(null)} style={{
+                width: "100%", marginTop: 8, padding: "13px 16px",
+                borderRadius: 13,
+                background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+                border: "1.5px solid #C8E4E4",
+                color: "#5A7878",
+                fontSize: 14, fontWeight: 800,
+                cursor: "pointer", fontFamily: "inherit",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                boxShadow: "0 2px 6px rgba(31,120,120,0.06)",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A7878" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"/>
+                  <polyline points="12 19 5 12 12 5"/>
+                </svg>
+                Indietro
+              </button>
             </>
           )}
 
@@ -766,7 +782,23 @@ Fabio Cozza - Walter Cozza Serramenti` },
                         onClick={addCommessa} disabled={!newCM.cliente.trim()}>
                         ✓ Crea commessa {previewCode}
                       </button>
-                      <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
+                      <button onClick={() => setShowModal(null)} style={{
+                width: "100%", marginTop: 8, padding: "13px 16px",
+                borderRadius: 13,
+                background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+                border: "1.5px solid #C8E4E4",
+                color: "#5A7878",
+                fontSize: 14, fontWeight: 800,
+                cursor: "pointer", fontFamily: "inherit",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                boxShadow: "0 2px 6px rgba(31,120,120,0.06)",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A7878" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="19" y1="12" x2="5" y2="12"/>
+                  <polyline points="12 19 5 12 12 5"/>
+                </svg>
+                Indietro
+              </button>
                     </div>
                   </>
                 );
