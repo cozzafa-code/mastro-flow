@@ -135,6 +135,12 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
   const [touchY, setTouchY] = useState(0);
   const [actionSheet, setActionSheet] = useState(false);
   const [hintOn, setHintOn] = useState(true);
+  const [holdVoice, setHoldVoice] = useState<string | null>(null);
+  const [holdFired, setHoldFired] = useState<string | null>(null);
+  const holdTimerRef = useRef<any>(null);
+  const holdVoiceRef = useRef<string | null>(null);
+  const holdFiredRef = useRef<string | null>(null);
+  const nearestIdRef = useRef<string | null>(null);
 
   const startRef = useRef<{ x: number; y: number; side: "right" | "left" | "bottom" | null }>({ x: 0, y: 0, side: null });
   const zoneRightRef = useRef<HTMLDivElement>(null);
@@ -155,6 +161,16 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
     { id: "altro", label: "Altro", icon: iconSvg(IC.altro) },
   ];
   stateRef.current.voices = voices;
+
+  // Mappa voice.id → quick handler (crea veloce)
+  const quickHandlers: Record<string, (() => void) | undefined> = {
+    home: undefined,
+    commesse: onQuickCommessa,
+    agenda: onQuickEvento,
+    messaggi: undefined,
+    altro: undefined,
+  };
+
 
   useEffect(() => { stateRef.current.menuSide = menuSide; }, [menuSide]);
   useEffect(() => { stateRef.current.actionSheet = actionSheet; }, [actionSheet]);
@@ -178,9 +194,48 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
       if (s.side === "right" && -dx > ACTIVATION_DIST) {
         if (!stateRef.current.menuSide) setMenuSide("right");
         setTouchX(t.clientX); setTouchY(t.clientY);
+        // Track hold su nearest
+        const ms = stateRef.current.menuSide || "right";
+        const near = getNearestVoice(ms as any, t.clientX, t.clientY, stateRef.current.voices);
+        const nid = near?.id || null;
+        if (nid !== nearestIdRef.current) {
+          nearestIdRef.current = nid;
+          if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
+          holdVoiceRef.current = null;
+          setHoldVoice(null);
+          if (nid && quickHandlers[nid]) {
+            holdVoiceRef.current = nid;
+            setHoldVoice(nid);
+            try { if ("vibrate" in navigator) (navigator as any).vibrate(8); } catch(e) {}
+            holdTimerRef.current = setTimeout(() => {
+              holdFiredRef.current = nid;
+              setHoldFired(nid);
+              try { if ("vibrate" in navigator) (navigator as any).vibrate([40, 30, 60]); } catch(e) {}
+            }, 400);
+          }
+        }
       } else if (s.side === "left" && dx > ACTIVATION_DIST) {
         if (!stateRef.current.menuSide) setMenuSide("left");
         setTouchX(t.clientX); setTouchY(t.clientY);
+        const ms = stateRef.current.menuSide || "left";
+        const near = getNearestVoice(ms as any, t.clientX, t.clientY, stateRef.current.voices);
+        const nid = near?.id || null;
+        if (nid !== nearestIdRef.current) {
+          nearestIdRef.current = nid;
+          if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
+          holdVoiceRef.current = null;
+          setHoldVoice(null);
+          if (nid && quickHandlers[nid]) {
+            holdVoiceRef.current = nid;
+            setHoldVoice(nid);
+            try { if ("vibrate" in navigator) (navigator as any).vibrate(8); } catch(e) {}
+            holdTimerRef.current = setTimeout(() => {
+              holdFiredRef.current = nid;
+              setHoldFired(nid);
+              try { if ("vibrate" in navigator) (navigator as any).vibrate([40, 30, 60]); } catch(e) {}
+            }, 400);
+          }
+        }
       } else if (s.side === "bottom" && -dy > ACTIVATION_DIST) {
         if (!stateRef.current.actionSheet) setActionSheet(true);
       }
@@ -189,13 +244,26 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
 
     const handleEnd = () => {
       const ms = stateRef.current.menuSide;
+      const firedId = holdFiredRef.current;
       if (ms) {
-        const picked = getNearestVoice(ms, stateRef.current.tx, stateRef.current.ty, stateRef.current.voices);
-        if (picked) {
-          if (picked.id !== "commesse") setSelectedCM(null);
-          setTab(picked.id);
+        if (firedId && quickHandlers[firedId]) {
+          // QUICK mode: pressione prolungata -> crea veloce, no navigazione
+          try { quickHandlers[firedId]?.(); } catch(e) {}
+        } else {
+          const picked = getNearestVoice(ms, stateRef.current.tx, stateRef.current.ty, stateRef.current.voices);
+          if (picked) {
+            if (picked.id !== "commesse") setSelectedCM(null);
+            setTab(picked.id);
+          }
         }
       }
+      // Cleanup hold
+      if (holdTimerRef.current) { clearTimeout(holdTimerRef.current); holdTimerRef.current = null; }
+      holdVoiceRef.current = null;
+      holdFiredRef.current = null;
+      nearestIdRef.current = null;
+      setHoldVoice(null);
+      setHoldFired(null);
       setMenuSide(null);
       startRef.current = { x: 0, y: 0, side: null };
     };
@@ -267,6 +335,15 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
     return { ...base, bottom: 0, left: EDGE_ZONE, right: EDGE_ZONE, height: BOTTOM_ZONE };
   };
 
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (document.getElementById("mastro-hold-pulse-kf")) return;
+    const style = document.createElement("style");
+    style.id = "mastro-hold-pulse-kf";
+    style.textContent = "@keyframes mastroHoldPulse { 0%,100% { filter: brightness(1) } 50% { filter: brightness(1.3) } }";
+    document.head.appendChild(style);
+  }, []);
+
   return (
     <>
       <div ref={zoneRightRef} style={zoneStyle("right")} />
@@ -296,16 +373,28 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
             const x = cx + Math.cos(a) * r;
             const y = cy + Math.sin(a) * r;
             const isNear = nearest?.id === v.id;
+            const isHolding = holdVoice === v.id && !holdFired;
+            const isFired = holdFired === v.id;
+            const hasQuick = !!quickHandlers[v.id];
             return (
               <div key={v.id} style={{
                 position: "absolute", left: x - 28, top: y - 28,
                 width: 56, height: 56, borderRadius: "50%",
-                background: isNear ? TEAL : "rgba(13,31,31,0.85)",
-                border: `2px solid ${isNear ? WHITE : "rgba(40,160,160,0.5)"}`,
-                boxShadow: isNear ? `0 6px 20px ${TEAL}80` : "0 3px 10px rgba(0,0,0,0.4)",
+                background: isFired
+                  ? "linear-gradient(145deg, #8BC443, #6A9A26)"
+                  : isHolding
+                    ? `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`
+                    : isNear ? TEAL : "rgba(13,31,31,0.85)",
+                border: `${isFired ? 3 : 2}px solid ${isFired ? "#FFF" : isHolding ? "#FFF" : isNear ? WHITE : "rgba(40,160,160,0.5)"}`,
+                boxShadow: isFired
+                  ? "0 0 30px rgba(139,196,67,0.9), 0 0 60px rgba(139,196,67,0.5)"
+                  : isHolding
+                    ? `0 0 24px ${TEAL}, 0 6px 22px ${TEAL}90`
+                    : isNear ? `0 6px 20px ${TEAL}80` : "0 3px 10px rgba(0,0,0,0.4)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "background 0.12s, transform 0.12s, border 0.12s",
-                transform: isNear ? "scale(1.15)" : "scale(1)",
+                transition: "background 0.12s, transform 0.12s, border 0.12s, box-shadow 0.12s",
+                transform: isFired ? "scale(1.5)" : isHolding ? "scale(1.3)" : isNear ? "scale(1.15)" : "scale(1)",
+                animation: isHolding ? "mastroHoldPulse 0.6s ease-in-out infinite" : undefined,
               }}>
                 {v.icon}
                 {!!v.badge && v.badge > 0 && (
