@@ -1142,14 +1142,20 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>{nextTitle}</div>
                         <div style={{ fontSize: 11, color: "#5A7878", marginBottom: 9, fontWeight: 500 }}>{nextDesc}</div>
-                        <button onClick={() => { window.scrollBy({ top: 200, behavior: "smooth" }); }} style={{
-                          width: "100%", padding: "11px", borderRadius: 11, border: "none",
-                          background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-                          color: "#fff", fontSize: 12, fontWeight: 900, cursor: "pointer",
-                          boxShadow: "0 6px 14px rgba(31,120,120,0.35), inset 0 1px 2px rgba(255,255,255,0.3)",
-                          letterSpacing: "0.4px",
+                        {/* indicatore visivo non cliccabile */}
+                        <div style={{
+                          padding: "7px 11px", borderRadius: 9,
+                          background: "rgba(40,160,160,0.1)",
+                          border: "1px dashed rgba(40,160,160,0.3)",
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                        }}>{nextBtn} <span>→</span></button>
+                          fontSize: 10, fontWeight: 700, color: "#1A7A7A",
+                          letterSpacing: "0.3px", textTransform: "uppercase" as const,
+                        }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1A7A7A" strokeWidth="2" strokeLinecap="round">
+                            <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                          </svg>
+                          Continua dalle fasi sotto
+                        </div>
                       </div>
 
                       {/* Alert */}
