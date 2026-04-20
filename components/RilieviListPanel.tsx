@@ -1026,22 +1026,45 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
           const progress = Math.round((doneCount / steps.length) * 100);
 
           return (
-            <div style={{ margin: "0 16px 12px" }}>
-              {/* Header with progress */}
-              <div style={{ background: L.surface, borderRadius: "16px 16px 0 0", border: `1px solid ${T.bdr}`, borderBottom: "none", padding: "14px 16px" }}>
+            <div style={{ margin: "0 12px 12px" }}>
+              {/* ═══ Centro Comando fliwoX ═══ */}
+              <div style={{
+                background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+                borderRadius: "18px 18px 0 0",
+                borderLeft: "1px solid rgba(200,228,228,0.5)",
+                borderRight: "1px solid rgba(200,228,228,0.5)",
+                borderTop: "1px solid rgba(200,228,228,0.5)",
+                padding: "14px 16px",
+                boxShadow: "0 6px 18px rgba(31,120,120,0.08)",
+              }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: L.text }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Centro Comando</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 9,
+                      background: "linear-gradient(145deg, #DDEFEF, #BDE0E0)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: "inset 1.5px 1.5px 3px rgba(26,122,122,0.12), inset -1.5px -1.5px 3px rgba(255,255,255,0.95)",
+                    }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", letterSpacing: "-0.2px" }}>Centro Comando</div>
+                  </div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: L.primary, fontFamily: FM }}>{doneCount}/{steps.length} · {progress}%</div>
                 </div>
-                <div style={{ height: 6, background: L.bg, borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{ height: "100%", background: `linear-gradient(90deg, #28A0A0, ${T.acc})`, width: `${progress}%`, borderRadius: 3, transition: "width 0.5s" }} />
+                <div style={{ height: 7, background: "rgba(200,228,228,0.5)", borderRadius: 4, overflow: "hidden", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.08)" }}>
+                  <div style={{ height: "100%", background: "linear-gradient(90deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)", width: `${progress}%`, borderRadius: 4, transition: "width 0.5s", boxShadow: `0 0 10px #28A0A080` }} />
                 </div>
                 {/* Stato misure automatico */}
                 {rilievi.length > 0 && (
-                  <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, textAlign: "center",
-                    background: hasFirma ? "#28A0A012" : "#ff950012",
-                    color: hasFirma ? "#28A0A0" : "#ff9500",
-                    border: `1px solid ${hasFirma ? "#28A0A030" : "#ff950030"}`,
+                  <div style={{
+                    marginTop: 10, padding: "8px 12px", borderRadius: 11,
+                    fontSize: 11, fontWeight: 800, textAlign: "center",
+                    letterSpacing: "0.2px",
+                    background: hasFirma
+                      ? "linear-gradient(145deg, rgba(139,196,67,0.15), rgba(106,154,38,0.1))"
+                      : "linear-gradient(145deg, rgba(245,160,48,0.18), rgba(201,119,22,0.1))",
+                    color: hasFirma ? "#5F8D20" : "#C97716",
+                    border: `1px solid ${hasFirma ? "rgba(139,196,67,0.35)" : "rgba(245,160,48,0.4)"}`,
                   }}>
                     {hasFirma 
                       ? "Misure definitive — cliente ha firmato il preventivo" 
@@ -1058,11 +1081,23 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, padding: "0 2px" }}>
                   {steps.map((s, i) => (
                     <div key={s.id} style={{
-                      width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12,
-                      background: s.done ? "#28A0A0" : i === currentIdx ? L.primary : L.bg,
-                      color: s.done || i === currentIdx ? "#fff" : L.sub, fontWeight: 700,
-                      boxShadow: i === currentIdx ? `0 0 0 3px ${T.acc}40` : "none",
-                    }}>{s.done ? "" : s.icon}</div>
+                      width: 26, height: 26, borderRadius: "50%",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 12, fontWeight: 700,
+                      background: s.done
+                        ? "linear-gradient(145deg, #5FD0D0, #1A7A7A)"
+                        : i === currentIdx
+                          ? "linear-gradient(145deg, #0D1F1F, #1A3535)"
+                          : "#EEF8F8",
+                      color: s.done ? "#fff" : i === currentIdx ? "#5FD0D0" : "#8FA8A8",
+                      border: i === currentIdx ? "2px solid #5FD0D0" : "1px solid rgba(200,228,228,0.6)",
+                      boxShadow: i === currentIdx
+                        ? "0 0 14px rgba(95,208,208,0.55), 0 3px 8px rgba(13,31,31,0.2)"
+                        : s.done
+                          ? "0 2px 6px rgba(31,120,120,0.25)"
+                          : "none",
+                      transition: "all 0.2s",
+                    }}>{s.done ? "✓" : s.icon || (i + 1)}</div>
                   ))}
                 </div>
               </div>
@@ -1152,8 +1187,13 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                             <div>
                               <div style={{ fontSize: 11, color: L.sub, marginBottom: 8 }}>Crea il primo rilievo con i vani da misurare</div>
                               <button onClick={() => setShowRilieviForm(true)}
-                                style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                                  boxShadow: "0 2px 8px rgba(40,160,160,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                style={{ width: "100%", padding: 15, borderRadius: 13, border: "none",
+                                  background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+                                  color: "#fff", fontSize: 14, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+                                  boxShadow: "0 8px 20px rgba(31,120,120,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
+                                  textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                                  letterSpacing: "0.4px",
+                                  display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                                 CREA RILIEVO
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -1199,8 +1239,12 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                 </div>
                                 {/* CTA */}
                                 <button onClick={() => { salvaRilievo(); setShowRilieviForm(false); }}
-                                  style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
-                                    boxShadow: "0 2px 8px rgba(40,160,160,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                  style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none",
+                                    background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+                                    color: "#fff", fontSize: 14, fontWeight: 900, cursor: "pointer",
+                                    boxShadow: "0 6px 16px rgba(31,120,120,0.38), inset 0 1px 2px rgba(255,255,255,0.3)",
+                                    letterSpacing: "0.3px",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                                   Crea Rilievo #{rilievi.length + 1}
                                 </button>
@@ -1224,7 +1268,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               const ril = rilievi[rilievi.length - 1];
                               setSelectedRilievo(ril);
                               if (ril.vani?.length > 0) { setSelectedVano(ril.vani[0]); }
-                            }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: L.primary, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                            }} style={{ width: "100%", padding: 15, borderRadius: 13, border: "none", background: "linear-gradient(145deg, #0D1F1F, #1A3535)", color: "#5FD0D0", fontSize: 14, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 16px rgba(13,31,31,0.3), inset 0 1px 2px rgba(255,255,255,0.08)", letterSpacing: "0.3px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21.73 18l-8-14a2 2 0 00-3.48 0l-8 14A2 2 0 004 21h16a2 2 0 001.73-3z"/><path d="M12 17V9"/><path d="M8 17V13"/><path d="M16 17V13"/></svg> {!hasVani ? "AGGIUNGI VANI →" : vaniConMisure.length < vani.length ? "COMPLETA MISURE →" : "APRI RILIEVO →"}
                             </button>
                           )}
