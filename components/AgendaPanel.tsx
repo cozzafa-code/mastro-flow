@@ -76,12 +76,13 @@ const IcoChevR = ({ color = TH.teal }: any) => (
 export default function AgendaPanel() {
   const {
     agendaView, cantieri, deleteEvent, events, montaggiDB, fattureDB, fatturePassive,
-    ordiniFornDB, squadreDB, selDate, selectedEvent,
+    ordiniFornDB, squadreDB, selDate, selectedEvent, tasks, setTasks,
     setAgendaView, setSelDate, setSelectedCM, setSelectedEvent, setShowNewEvent, setTab,
     agendaFilters,
   } = useMastro();
 
   const todayStr = dateStr(new Date());
+  const [agendaFilter, setAgendaFilter] = React.useState<"tutti"|"eventi"|"task">("tutti");
 
   const montaggiItems = (montaggiDB || []).filter(m => m.data).map(m => {
     const sq = (squadreDB || []).find(s => s.id === m.squadraId);
@@ -91,7 +92,28 @@ export default function AgendaPanel() {
     ...(fattureDB || []).filter(f => !f.pagata && f.scadenza).map(f => ({ id: "scad_e_" + f.id, date: f.scadenza, time: "", text: "Incasso " + f.cliente, persona: f.cliente, cm: f.cmCode || "", color: TH.green, _isScadenza: true, _importo: f.importo, _tipo: "incasso" })),
     ...(fatturePassive || []).filter(f => !f.pagata && f.scadenza).map(f => ({ id: "scad_p_" + f.id, date: f.scadenza, time: "", text: "Pagamento " + (typeof f.fornitore === "object" ? f.fornitore?.nome : f.fornitore || ""), color: TH.amber, _isScadenza: true, _importo: f.importo || 0, _tipo: "pagamento" })),
   ];
-  const allItems = [...events, ...montaggiItems, ...scadenzeItems];
+  const taskItems = (tasks || []).filter((t: any) => t.date).map((t: any) => ({
+    id: "task_" + t.id,
+    date: t.date,
+    time: t.time || "",
+    text: t.text || "Task",
+    persona: t.persona || "",
+    cm: t.cm || "",
+    color: TH.amber,
+    _isTask: true,
+    _done: t.done,
+    _priority: t.priority,
+    _meta: t.meta,
+    _rawTask: t,
+  }));
+
+  // Toggle filtro: tutti / eventi / task
+  const allItemsFull = [...events, ...montaggiItems, ...scadenzeItems, ...taskItems];
+  const allItems = agendaFilter === "task"
+    ? taskItems
+    : agendaFilter === "eventi"
+    ? [...events, ...montaggiItems, ...scadenzeItems]
+    : allItemsFull;
   const eventsOn = (d: Date) => allItems.filter(e => e.date === dateStr(d));
   const dayEvents = allItems.filter(e => e.date === dateStr(selDate)).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
 
@@ -279,7 +301,7 @@ export default function AgendaPanel() {
                   {evts.length > 0 ? (
                     <div style={{ display: "flex", gap: 2 }}>
                       {evts.slice(0, 2).map((ev, ei) => {
-                        const c = ev._isMontaggio ? TH.teal : ((ev.tipo || "").toLowerCase() === "sopralluogo" ? TH.blu : TH.amber);
+                        const c = ev._isTask ? TH.amber : ev._isMontaggio ? TH.teal : ((ev.tipo || "").toLowerCase() === "sopralluogo" ? TH.blu : TH.tealBright);
                         return <span key={ei} style={{ width: 4, height: 4, borderRadius: "50%", background: c, display: "inline-block" }} />;
                       })}
                     </div>
@@ -419,6 +441,41 @@ export default function AgendaPanel() {
                 letterSpacing: "0.3px",
                 transition: "all 0.15s",
               }}>{label}</div>
+            );
+          })}
+        </div>
+
+        {/* Toggle Tutti / Eventi / Task */}
+        <div style={{
+          position: "relative" as any, zIndex: 2, marginTop: 8,
+          display: "flex", gap: 6,
+        }}>
+          {[
+            { id: "tutti", l: "Tutti", c: "#fff" },
+            { id: "eventi", l: "Eventi", c: TH.tealBright },
+            { id: "task", l: "Task", c: TH.amber },
+          ].map(f => {
+            const sel = agendaFilter === f.id;
+            return (
+              <div key={f.id} onClick={() => setAgendaFilter(f.id as any)} style={{
+                flex: 1, padding: "7px 4px", textAlign: "center" as any,
+                fontSize: 10, fontWeight: 800, cursor: "pointer",
+                borderRadius: 9, letterSpacing: "0.4px",
+                background: sel ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.08)",
+                color: sel ? "#fff" : "rgba(255,255,255,0.75)",
+                border: sel ? "1px solid rgba(255,255,255,0.35)" : "1px solid rgba(255,255,255,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                textTransform: "uppercase" as any,
+              }}>
+                {f.id !== "tutti" && (
+                  <span style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: f.c, display: "inline-block",
+                    boxShadow: `0 0 6px ${f.c}80`,
+                  }} />
+                )}
+                {f.l}
+              </div>
             );
           })}
         </div>
