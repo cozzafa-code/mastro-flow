@@ -169,7 +169,14 @@ export default function HomeWidgetsDynamic() {
             onTouchStart={(e) => onTouchStart(e, wid)}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            style={{ touchAction: dragId ? "none" : "pan-y" }}
+            onContextMenu={(e) => e.preventDefault()}
+            style={{
+              touchAction: dragId ? "none" : "pan-y",
+              userSelect: "none",
+              WebkitUserSelect: "none",
+              WebkitTouchCallout: "none",
+              WebkitTapHighlightColor: "transparent",
+            } as any}
           >
             <WidgetEB>
               <WCard
