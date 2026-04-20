@@ -22,8 +22,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#F2F1EC', overflowX: 'hidden' }}>
-      <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#F2F1EC', overflowX: 'hidden', maxWidth: '100vw' }}>
+    <html lang="it" suppressHydrationWarning style={{ backgroundColor: '#EEF8F8', overflowX: 'hidden' }}>
+      <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#EEF8F8', overflowX: 'hidden', maxWidth: '100vw' }}>
         {/* Safe area iOS: solo top/bottom per notch + home indicator. LEFT/RIGHT rimossi perché su alcuni iPhone con viewportFit:cover creano padding asimmetrico (contenuto spostato a destra). */}
         <div style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '100vh', boxSizing: 'border-box' }}>
           {children}

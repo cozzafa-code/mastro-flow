@@ -8,7 +8,7 @@
 
 body {
   overscroll-behavior: none;
-  background: #F2F1EC;
+  background: #EEF8F8;
   color: #1A1A1C;
 }
 
@@ -16,7 +16,7 @@ body {
   width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #F2F1EC;
+  background: #EEF8F8;
 }
 ::-webkit-scrollbar-thumb {
   background: #DCDCD7;
