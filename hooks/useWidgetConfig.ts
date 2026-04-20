@@ -114,5 +114,11 @@ export function useWidgetConfig(aziendaId?: string) {
     });
   }, [persist, trackEvent]);
 
-  return { widgets, loading, addWidget, removeWidget, trackEvent };
+  const reorderWidgets = useCallback((next: string[]) => {
+    setWidgets(next);
+    persist(next);
+    trackEvent("widgets_reordered", "all", { order: next });
+  }, [persist, trackEvent]);
+
+  return { widgets, loading, addWidget, removeWidget, reorderWidgets, trackEvent };
 }
