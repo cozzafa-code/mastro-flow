@@ -49,6 +49,85 @@ const iconSvg = (path: React.ReactNode, size = 22, color = WHITE) => (
     strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
 );
 
+
+// ─── ActionTile: bottone action sheet con long-press ────────────────
+function ActionTile({ action, TEAL, TEAL_DARK, DARK, WHITE, iconSvg }: any) {
+  const [pressing, setPressing] = React.useState(false);
+  const [fired, setFired] = React.useState(false);
+  const tmr = React.useRef<any>(null);
+
+  const onStart = () => {
+    setPressing(true);
+    setFired(false);
+    if (tmr.current) clearTimeout(tmr.current);
+    tmr.current = setTimeout(() => {
+      setFired(true);
+      try { if ("vibrate" in navigator) (navigator as any).vibrate([30, 40, 60]); } catch(e) {}
+      if (action.onLongPress) action.onLongPress();
+      setTimeout(() => { setPressing(false); setFired(false); }, 200);
+    }, 350);
+  };
+
+  const onCancel = () => {
+    setPressing(false);
+    if (tmr.current) { clearTimeout(tmr.current); tmr.current = null; }
+  };
+
+  const onClick = () => {
+    if (fired) { setFired(false); return; }
+    if (action.onClick) action.onClick();
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      onTouchStart={onStart}
+      onTouchEnd={onCancel}
+      onTouchMove={onCancel}
+      onTouchCancel={onCancel}
+      onMouseDown={onStart}
+      onMouseUp={onCancel}
+      onMouseLeave={onCancel}
+      onContextMenu={(e) => e.preventDefault()}
+      style={{
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+        padding: "18px 10px", borderRadius: 14,
+        background: fired
+          ? `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`
+          : pressing
+            ? "linear-gradient(145deg, #DDEFEF, #BDE0E0)"
+            : "linear-gradient(145deg, #EEF8F8, #DDEFEF)",
+        border: `1px solid ${pressing ? TEAL : "#C8E4E4"}`,
+        cursor: "pointer",
+        fontFamily: "'Inter', sans-serif",
+        transform: fired ? "scale(0.94)" : pressing ? "scale(1.04)" : "scale(1)",
+        boxShadow: pressing ? `0 8px 22px ${TEAL}55` : "none",
+        transition: "transform 0.12s, box-shadow 0.12s, background 0.12s",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+        WebkitTapHighlightColor: "transparent",
+      } as any}
+    >
+      <div style={{
+        width: 42, height: 42, borderRadius: 12,
+        background: fired ? `linear-gradient(145deg, ${WHITE}, ${WHITE})` : `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: pressing ? `0 6px 14px ${TEAL}70` : `0 4px 10px ${TEAL}40`,
+        transition: "all 0.15s",
+      }}>{iconSvg(action.icon, 20, fired ? TEAL_DARK : WHITE)}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: fired ? WHITE : DARK }}>
+        {fired ? "Creato!" : action.label}
+      </div>
+      {action.hint && !pressing && (
+        <div style={{ fontSize: 9, fontWeight: 600, color: "#8FA8A8", letterSpacing: "0.2px", marginTop: -4 }}>
+          {action.hint}
+        </div>
+      )}
+    </button>
+  );
+}
+
 export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNuovaCommessa, onNuovoEvento, onNuovaSpesa, onNuovaNota, onQuickCommessa, onQuickEvento, onQuickSpesa, onQuickNota }: Props) {
 
   const [menuSide, setMenuSide] = useState<"right" | "left" | null>(null);
@@ -272,21 +351,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
             <div style={{ fontSize: 12, fontWeight: 900, color: DARK, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 14, fontFamily: "'Inter', sans-serif" }}>Nuovo</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
               {getActions().map((a, i) => (
-                <button key={i} onClick={a.onClick} style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                  padding: "18px 10px", borderRadius: 14,
-                  background: "linear-gradient(145deg, #EEF8F8, #DDEFEF)",
-                  border: "1px solid #C8E4E4", cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                }}>
-                  <div style={{
-                    width: 42, height: 42, borderRadius: 12,
-                    background: `linear-gradient(145deg, ${TEAL}, ${TEAL_DARK})`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: `0 4px 10px ${TEAL}40`,
-                  }}>{iconSvg(a.icon, 20, WHITE)}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{a.label}</div>
-                </button>
+                <ActionTile key={i} action={a} TEAL={TEAL} TEAL_DARK={TEAL_DARK} DARK={DARK} WHITE={WHITE} iconSvg={iconSvg} />
               ))}
             </div>
           </div>
