@@ -4376,6 +4376,18 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             onNuovoEvento={() => setShowNewEvent(true)}
             onNuovaSpesa={() => setShowModal("spesa")}
             onNuovaNota={() => setShowAllegatiModal("nota")}
+            onQuickCommessa={() => {
+              const code = "C-" + Date.now().toString().slice(-5);
+              setCantieri((cs: any[]) => [{ id: Date.now(), code, cliente: "Nuovo cliente", cognome: "", indirizzo: "", fase: "sopralluogo", creato: new Date().toISOString().split("T")[0], euro: "0" } as any, ...cs]);
+              try { toast?.("Commessa creata", "success"); } catch(e) {}
+              setTab("commesse");
+            }}
+            onQuickEvento={() => {
+              const today = new Date().toISOString().split("T")[0];
+              setEvents((es: any[]) => [...es, { id: Date.now(), text: "Nuovo evento", date: today, time: "", tipo: "sopralluogo", persona: "", cm: "", addr: "" } as any]);
+              try { toast?.("Evento creato per oggi", "success"); } catch(e) {}
+              setTab("agenda");
+            }}
           />
         )}
 
