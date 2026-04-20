@@ -165,6 +165,232 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         </Row>
       ));
     }
+
+    case "preventivi_scadenza": {
+      const prev = cantieri.filter((c: any) => c?.fase === "preventivo" || c?.fase === "PREVENTIVO");
+      const inScad = prev.filter((c: any) => {
+        if (!c.prevScadenza && !c.validita) return false;
+        const sc = c.prevScadenza || c.validita;
+        return sc >= td && sc <= data?._d7;
+      });
+      const list = inScad.length > 0 ? inScad : prev.slice(0, 5);
+      if (list.length === 0) return <Empty msg="Nessun preventivo in scadenza" />;
+      return list.slice(0, 4).map((c: any, i: number) => (
+        <Row key={c.id || i} last={i === Math.min(list.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {c.cliente}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{c.prevScadenza || c.validita || "—"}</div>
+          </div>
+          <Badge text="SCAD" bg={AMBER} fg="#fff" />
+        </Row>
+      ));
+    }
+
+    case "preventivi_da_inviare": {
+      const bozze = cantieri.filter((c: any) =>
+        (c?.fase === "preventivo" || c?.fase === "PREVENTIVO") && !c?.prevInviato && !c?.inviato
+      );
+      if (bozze.length === 0) return <Empty msg="Nessuna bozza in attesa" />;
+      return bozze.slice(0, 4).map((c: any, i: number) => (
+        <Row key={c.id || i} last={i === Math.min(bozze.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {c.cliente}</div>
+            <div style={{ fontSize: 11, color: SUB }}>Da inviare</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "rilievi_da_confermare": {
+      const r = cantieri.filter((c: any) =>
+        (c?.fase === "rilievo" || c?.fase === "RILIEVO" || c?.fase === "sopralluogo") &&
+        !c?.rilievoConfermato
+      );
+      if (r.length === 0) return <Empty msg="Nessun rilievo in attesa" />;
+      return r.slice(0, 4).map((c: any, i: number) => (
+        <Row key={c.id || i} last={i === Math.min(r.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {c.cliente}</div>
+            <div style={{ fontSize: 11, color: SUB }}>Rilievo da confermare</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "prossime_consegne": {
+      const d7 = data?._d7 || td;
+      const c7 = cantieri.filter((c: any) => c?.consegnaPrevista && c.consegnaPrevista >= td && c.consegnaPrevista <= d7);
+      if (c7.length === 0) return <Empty msg="Nessuna consegna nei 7gg" />;
+      return c7.slice(0, 4).map((c: any, i: number) => (
+        <Row key={c.id || i} last={i === Math.min(c7.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {c.cliente}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{c.consegnaPrevista}</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "pipeline_commesse": {
+      const fasi: Record<string, number> = {};
+      cantieri.forEach((c: any) => {
+        const f = c?.fase || "—";
+        fasi[f] = (fasi[f] || 0) + 1;
+      });
+      const keys = Object.keys(fasi);
+      if (keys.length === 0) return <Empty msg="Nessuna commessa in pipeline" />;
+      return keys.slice(0, 5).map((f, i) => (
+        <Row key={f} last={i === Math.min(keys.length, 5) - 1} onClick={() => nav?.goto?.("commesse")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, textTransform: "capitalize" }}>{f}</div>
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: TEAL_DARK }}>{fasi[f]}</div>
+        </Row>
+      ));
+    }
+
+    case "ordini_attesa": {
+      const ord = data?.ordiniFornDB || [];
+      const attesa = ord.filter((o: any) => o?.stato === "attesa" || o?.stato === "bozza" || !o?.confermato);
+      if (attesa.length === 0) return <Empty msg="Nessun ordine in attesa" />;
+      return attesa.slice(0, 4).map((o: any, i: number) => (
+        <Row key={o.id || i} last={i === Math.min(attesa.length, 4) - 1} onClick={() => nav?.goto?.("ordini")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{o.fornitore || o.ragione_sociale}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{o.numero || o.id}</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "ordini_settimana": {
+      const d7 = data?._d7 || td;
+      const ord = data?.ordiniFornDB || [];
+      const sett = ord.filter((o: any) => o?.consegnaPrevista && o.consegnaPrevista >= td && o.consegnaPrevista <= d7);
+      if (sett.length === 0) return <Empty msg="Nessuna consegna nei 7gg" />;
+      return sett.slice(0, 4).map((o: any, i: number) => (
+        <Row key={o.id || i} last={i === Math.min(sett.length, 4) - 1} onClick={() => nav?.goto?.("ordini")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{o.fornitore}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{o.consegnaPrevista}</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "spese_mese": {
+      const spese = data?.spese || [];
+      const mese = td.slice(0, 7);
+      const m = spese.filter((s: any) => (s?.data || s?.date || "").startsWith(mese));
+      const tot = m.reduce((acc: number, s: any) => acc + (s?.importo || 0), 0);
+      if (tot === 0) return <Empty msg="Nessuna spesa registrata" />;
+      return (
+        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{m.length} spese nel mese</div>
+        </div>
+      );
+    }
+
+    case "fatturato_mese": {
+      const mese = td.slice(0, 7);
+      const pag = fattureDB.filter((f: any) => f?.pagata && (f?.data || "").startsWith(mese));
+      const tot = pag.reduce((s: number, f: any) => s + (f?.importo || 0), 0);
+      if (tot === 0) return <Empty msg="Nessun incasso nel mese" />;
+      return (
+        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{pag.length} fatture incassate</div>
+        </div>
+      );
+    }
+
+    case "pagamenti_arrivo": {
+      const d7 = data?._d7 || td;
+      const att = fattureDB.filter((f: any) => !f?.pagata && f?.scadenza && f.scadenza >= td && f.scadenza <= d7);
+      if (att.length === 0) return <Empty msg="Nessun pagamento atteso" />;
+      const tot = att.reduce((s: number, f: any) => s + (f?.importo || 0), 0);
+      return (
+        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: GREEN, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{att.length} fatture in arrivo entro 7gg</div>
+        </div>
+      );
+    }
+
+    case "margine_medio": {
+      const chiuse = cantieri.filter((c: any) => c?.totale && c?.costoTotale);
+      if (chiuse.length === 0) return <Empty msg="Dati margine non disponibili" />;
+      const margini = chiuse.map((c: any) => ((c.totale - c.costoTotale) / c.totale) * 100);
+      const avg = margini.reduce((s: number, m: number) => s + m, 0) / margini.length;
+      return (
+        <div style={{ padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: DARK }}>{avg.toFixed(1)}%</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>Su {chiuse.length} commesse</div>
+        </div>
+      );
+    }
+
+    case "clienti_insolventi": {
+      const scad = fattureDB.filter((f: any) => !f?.pagata && f?.scadenza && f.scadenza < td);
+      const perCli: Record<string, { cli: string; count: number; tot: number }> = {};
+      scad.forEach((f: any) => {
+        const k = f?.cliente || f?.ragione_sociale || "—";
+        if (!perCli[k]) perCli[k] = { cli: k, count: 0, tot: 0 };
+        perCli[k].count += 1;
+        perCli[k].tot += (f?.importo || 0);
+      });
+      const list = Object.values(perCli).sort((a: any, b: any) => b.tot - a.tot);
+      if (list.length === 0) return <Empty msg="Nessun cliente insolvente" />;
+      return list.slice(0, 4).map((c: any, i: number) => (
+        <Row key={i} last={i === Math.min(list.length, 4) - 1} onClick={() => nav?.goto?.("contabilita")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.cli}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{c.count} fatture scadute</div>
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 900, color: RED }}>€ {Math.round(c.tot).toLocaleString("it-IT")}</div>
+        </Row>
+      ));
+    }
+
+    case "top_clienti": {
+      const perCli: Record<string, { cli: string; tot: number }> = {};
+      fattureDB.filter((f: any) => f?.pagata).forEach((f: any) => {
+        const k = f?.cliente || f?.ragione_sociale || "—";
+        if (!perCli[k]) perCli[k] = { cli: k, tot: 0 };
+        perCli[k].tot += (f?.importo || 0);
+      });
+      const list = Object.values(perCli).sort((a: any, b: any) => b.tot - a.tot).slice(0, 5);
+      if (list.length === 0) return <Empty msg="Nessun dato clienti" />;
+      return list.map((c: any, i: number) => (
+        <Row key={i} last={i === list.length - 1}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: TEAL_DARK, width: 20, flexShrink: 0 }}>{i + 1}°</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cli}</div>
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 900, color: GREEN }}>€ {Math.round(c.tot).toLocaleString("it-IT")}</div>
+        </Row>
+      ));
+    }
+
+    case "iva_versare": {
+      // Stima semplice: 22% dei ricavi del trimestre corrente meno IVA su spese
+      const mese = parseInt(td.slice(5, 7), 10);
+      const trimStart = mese <= 3 ? "01" : mese <= 6 ? "04" : mese <= 9 ? "07" : "10";
+      const yr = td.slice(0, 4);
+      const trimPrefix = yr + "-" + trimStart.padStart(2, "0");
+      const ric = fattureDB
+        .filter((f: any) => f?.pagata && (f?.data || "") >= trimPrefix)
+        .reduce((s: number, f: any) => s + (f?.importo || 0), 0);
+      const ivaStimata = ric * 0.22 / 1.22;
+      if (ric === 0) return <Empty msg="Nessun dato per calcolo IVA" />;
+      return (
+        <div style={{ padding: "4px 0" }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: DARK }}>€ {Math.round(ivaStimata).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>Stima trimestre corrente</div>
+        </div>
+      );
+    }
     default:
       return <Empty msg="In arrivo nei prossimi aggiornamenti" />;
   }

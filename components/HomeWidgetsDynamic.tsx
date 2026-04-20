@@ -71,6 +71,7 @@ export default function HomeWidgetsDynamic() {
   const { widgets, addWidget, removeWidget, trackEvent } = useWidgetConfig(aziendaId);
 
   // Dati dal context (tutti opzionali, fallback a [])
+  const d7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const data = {
     tasks: ctx?.tasks || [],
     cantieri: ctx?.cantieri || [],
@@ -79,6 +80,9 @@ export default function HomeWidgetsDynamic() {
     msgs: ctx?.msgs || ctx?.messaggi || [],
     problemi: ctx?.problemi || [],
     events: ctx?.events || [],
+    ordiniFornDB: ctx?.ordiniFornDB || ctx?.ordini || [],
+    spese: ctx?.spese || ctx?.speseDB || [],
+    _d7: d7,
   };
 
   const FIXED = ["oggi_devi_fare", "squadra", "produzione"];
