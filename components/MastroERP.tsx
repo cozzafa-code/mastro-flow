@@ -1,5 +1,6 @@
 "use client";
 import DraggableFAB from "@/components/DraggableFAB";
+import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
 // =======================================================
 // MASTRO ERP v2 - PARTE 1/5
@@ -4595,138 +4596,17 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
         {/* NEW EVENT MODAL */}
         {showNewEvent && (
-          <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowNewEvent(false)}>
-            <div style={S.modalInner}>
-              <div style={S.modalTitle}>{newEvent.tipo === "task" ? "Nuovo task" : "Nuovo evento"}</div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Titolo</label>
-                <input style={S.input} placeholder="es. Sopralluogo, consegna materiale..." value={newEvent.text} onChange={e => setNewEvent(ev => ({ ...ev, text: e.target.value }))} />
-              </div>
-              <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={S.fieldLabel}>Data</label>
-                  <input style={S.input} type="date" value={newEvent.date || selDate.toISOString().split("T")[0]} onChange={e => setNewEvent(ev => ({ ...ev, date: e.target.value }))} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={S.fieldLabel}>Ora (opz.)</label>
-                  <input style={S.input} type="time" value={newEvent.time} onChange={e => setNewEvent(ev => ({ ...ev, time: e.target.value }))} />
-                </div>
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Tipo</label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {[{ id: "task", l: "Task", ico: "checkCircle", c: T.orange }, ...TIPI_EVENTO].map(t => (
-                    <div key={t.id} onClick={() => setNewEvent(ev => ({ ...ev, tipo: t.id }))} style={{ padding: "8px 10px", borderRadius: 8, border: `1px solid ${newEvent.tipo === t.id ? t.c : T.bdr}`, background: newEvent.tipo === t.id ? t.c + "18" : "transparent", textAlign: "center", fontSize: 11, fontWeight: 600, color: newEvent.tipo === t.id ? t.c : T.sub, cursor: "pointer" }}>
-                      {t.l}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* --- TASK-SPECIFIC FIELDS --- */}
-              {newEvent.tipo === "task" && (<>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Priorità</label>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {[{ id: "alta", l: "Alta", c: "#FF3B30" }, { id: "media", l: "Media", c: "#FF9500" }, { id: "bassa", l: "â— Bassa", c: "#8E8E93" }].map(p => (
-                    <div key={p.id} onClick={() => setNewEvent(ev => ({ ...ev, _taskPriority: p.id } as any))} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: `1px solid ${((newEvent as any)._taskPriority || "media") === p.id ? p.c : T.bdr}`, background: ((newEvent as any)._taskPriority || "media") === p.id ? p.c + "18" : "transparent", textAlign: "center", fontSize: 12, fontWeight: 600, color: ((newEvent as any)._taskPriority || "media") === p.id ? p.c : T.sub, cursor: "pointer" }}>
-                      {p.l}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Collega a commessa</label>
-                <select style={S.select} value={newEvent.cm} onChange={e => setNewEvent(ev => ({ ...ev, cm: e.target.value }))}>
-                  <option value=""> -  Nessuna  - </option>
-                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} Â· {c.cliente}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Assegna a persona</label>
-                <select style={S.select} value={newEvent.persona} onChange={e => setNewEvent(ev => ({ ...ev, persona: e.target.value }))}>
-                  <option value=""> -  Nessuno  - </option>
-                  {[...contatti.filter(ct => ct.tipo === "cliente"), ...team].map(m => <option key={m.id} value={m.nome}>{m.nome}{(m as any).ruolo ? " - " + (m as any).ruolo : ""}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Note (opz.)</label>
-                <input style={S.input} placeholder="Dettagli, materiale da portare..." value={(newEvent as any)._taskMeta || ""} onChange={e => setNewEvent(ev => ({ ...ev, _taskMeta: e.target.value } as any))} />
-              </div>
-              </>)}
-              {/* --- EVENT-SPECIFIC FIELDS --- */}
-              {newEvent.tipo !== "task" && (<>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Cliente</label>
-                <select style={S.select} value={newEvent.persona || ""} onChange={e => {
-                  const val = e.target.value;
-                  if (val === "__new__") { setNewEvent(ev => ({ ...ev, persona: "", _newCliente: true } as any)); }
-                  else { const ct = contatti.find(c => c.nome === val); setNewEvent(ev => ({ ...ev, persona: val, addr: ct?.indirizzo || ev.addr, text: ev.text || ("Appuntamento " + val), _newCliente: false } as any)); }
-                }}>
-                  <option value=""> -  Seleziona cliente  - </option>
-                  {contatti.filter(ct => ct.tipo === "cliente").map(ct => <option key={ct.id || ct.nome} value={ct.nome}>{ct.nome}{ct.cognome ? " " + ct.cognome : ""}</option>)}
-                  <option value="__new__"><I d={ICO.plus} /> Nuovo cliente...</option>
-                </select>
-                {(newEvent as any)._newCliente && (
-                  <div style={{ background: T.bgSec, borderRadius: 10, padding: 12, marginTop: 8, border: `1px solid ${T.bdr}` }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}><I d={ICO.user} /> Nuovo cliente</div>
-                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                      <input style={{ ...S.input, flex: 1 }} placeholder="Nome" value={(newEvent as any)._nomeCliente || ""} onChange={e => setNewEvent(ev => ({ ...ev, _nomeCliente: e.target.value } as any))} />
-                      <input style={{ ...S.input, flex: 1 }} placeholder="Cognome" value={(newEvent as any)._cognomeCliente || ""} onChange={e => setNewEvent(ev => ({ ...ev, _cognomeCliente: e.target.value } as any))} />
-                    </div>
-                    <input style={{ ...S.input, marginBottom: 8 }} placeholder="Telefono" value={(newEvent as any)._telCliente || ""} onChange={e => setNewEvent(ev => ({ ...ev, _telCliente: e.target.value } as any))} />
-                    <input style={S.input} placeholder="Indirizzo" value={(newEvent as any)._addrCliente || ""} onChange={e => setNewEvent(ev => ({ ...ev, _addrCliente: e.target.value, addr: e.target.value } as any))} />
-                  </div>
-                )}
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Collega a commessa</label>
-                <select style={S.select} value={newEvent.cm} onChange={e => setNewEvent(ev => ({ ...ev, cm: e.target.value }))}>
-                  <option value=""> -  Nessuna  - </option>
-                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} Â· {c.cliente}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Assegna a persona</label>
-                <select style={S.select} value={newEvent.persona} onChange={e => setNewEvent(ev => ({ ...ev, persona: e.target.value }))}>
-                  <option value=""> -  Nessuno  - </option>
-                  {team.map(m => <option key={m.id} value={m.nome}>{m.nome} - {m.ruolo}</option>)}
-                </select>
-              </div>
-              {/* Indirizzo */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Indirizzo (opz.)</label>
-                <input style={S.input} placeholder="Via Roma 12, Cosenza..." value={newEvent.addr||""} onChange={e => setNewEvent(ev => ({ ...ev, addr: e.target.value }))} />
-              </div>
-              {/* Reminder */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={S.fieldLabel}><I d={ICO.clock} /> Reminder al cliente</label>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {[
-                    { id: "", l: "Nessuno" },
-                    { id: "24h", l: "24h prima" },
-                    { id: "1h", l: "1h prima" },
-                    { id: "giorno", l: "Il giorno" },
-                  ].map(r => (
-                    <div key={r.id} onClick={() => setNewEvent(ev => ({ ...ev, reminder: r.id }))}
-                      style={{ flex: 1, padding: "8px 4px", borderRadius: 8, textAlign: "center", fontSize: 11, fontWeight: 700, cursor: "pointer",
-                        border: `1px solid ${newEvent.reminder === r.id ? T.acc : T.bdr}`,
-                        background: newEvent.reminder === r.id ? T.accLt : "transparent",
-                        color: newEvent.reminder === r.id ? T.acc : T.sub }}>
-                      {r.l}
-                    </div>
-                  ))}
-                </div>
-                {newEvent.reminder && (
-                  <div style={{ marginTop: 6, fontSize: 10, color: T.sub, padding: "5px 8px", background: T.accLt, borderRadius: 6 }}>
-                    <I d={ICO.mail} /> MASTRO ti avviserà di inviare il reminder - lo farai con 1 click dal banner in agenda
-                  </div>
-                )}
-              </div>
-              </>)}
-              <button style={S.btn} onClick={addEvent}>{newEvent.tipo === "task" ? "Crea task" : "Crea evento"}</button>
-              <button style={S.btnCancel} onClick={() => setShowNewEvent(false)}>Annulla</button>
-            </div>
-          </div>
+          <NewEventModal
+            newEvent={newEvent}
+            setNewEvent={setNewEvent}
+            selDate={selDate}
+            cantieri={cantieri}
+            contatti={contatti}
+            team={team}
+            TIPI_EVENTO={TIPI_EVENTO}
+            addEvent={addEvent}
+            onClose={() => setShowNewEvent(false)}
+          />
         )}
 
         {/* FASE ADVANCE NOTIFICATION */}
