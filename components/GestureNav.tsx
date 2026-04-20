@@ -15,7 +15,7 @@ const BOTTOM_ZONE = 32;
 const ACTIVATION_DIST = 30;
 const SELECT_DIST = 70;
 
-type Voice = { id: string; label: string; badge?: number; icon: React.ReactNode };
+type Voice = { id: string; label: string; badge?: number; icon: React.ReactNode; onLongPress?: () => void; hint?: string };
 
 interface Props {
   tab: string;
@@ -62,7 +62,8 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
   const zoneLeftRef = useRef<HTMLDivElement>(null);
   const zoneBottomRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef({ menuSide: null as "right"|"left"|null, actionSheet: false, tx: 0, ty: 0, voices: [] as Voice[] });
-  const lastTapRef = useRef<Record<string, number>>({});
+  const lpTimerRef = useRef<any>(null);
+  const lpFiredRef = useRef<boolean>(false);
 
   useEffect(() => { const t = setTimeout(() => setHintOn(false), 6000); return () => clearTimeout(t); }, []);
 
@@ -163,30 +164,18 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
   const nearest = menuSide ? getNearestVoice(menuSide, touchX, touchY, voices) : null;
 
   const getActions = () => [
-    { label: "Nuova commessa", hint: "2x: crea veloce", icon: IC.folder, onClick: () => {
-      const now = Date.now(); const prev = lastTapRef.current["commessa"] || 0;
-      if (now - prev < 320) { onQuickCommessa?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
-      else { onNuovaCommessa?.(); }
-      lastTapRef.current["commessa"] = now; setActionSheet(false);
-    } },
-    { label: "Nuovo evento", hint: "2x: crea veloce", icon: IC.calendar, onClick: () => {
-      const now = Date.now(); const prev = lastTapRef.current["evento"] || 0;
-      if (now - prev < 320) { onQuickEvento?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
-      else { onNuovoEvento?.(); }
-      lastTapRef.current["evento"] = now; setActionSheet(false);
-    } },
-    { label: "Nuova spesa", hint: "2x: crea veloce", icon: IC.euro, onClick: () => {
-      const now = Date.now(); const prev = lastTapRef.current["spesa"] || 0;
-      if (now - prev < 320) { onQuickSpesa?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
-      else { onNuovaSpesa?.(); }
-      lastTapRef.current["spesa"] = now; setActionSheet(false);
-    } },
-    { label: "Nuova nota", hint: "2x: crea veloce", icon: IC.note, onClick: () => {
-      const now = Date.now(); const prev = lastTapRef.current["nota"] || 0;
-      if (now - prev < 320) { onQuickNota?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
-      else { onNuovaNota?.(); }
-      lastTapRef.current["nota"] = now; setActionSheet(false);
-    } },
+    { label: "Nuova commessa", hint: "Tieni premuto: veloce", icon: IC.folder,
+      onClick: () => { onNuovaCommessa?.(); setActionSheet(false); },
+      onLongPress: () => { onQuickCommessa?.(); setActionSheet(false); } },
+    { label: "Nuovo evento", hint: "Tieni premuto: veloce", icon: IC.calendar,
+      onClick: () => { onNuovoEvento?.(); setActionSheet(false); },
+      onLongPress: () => { onQuickEvento?.(); setActionSheet(false); } },
+    { label: "Nuova spesa", hint: "Tieni premuto: veloce", icon: IC.euro,
+      onClick: () => { onNuovaSpesa?.(); setActionSheet(false); },
+      onLongPress: () => { onQuickSpesa?.(); setActionSheet(false); } },
+    { label: "Nuova nota", hint: "Tieni premuto: veloce", icon: IC.note,
+      onClick: () => { onNuovaNota?.(); setActionSheet(false); },
+      onLongPress: () => { onQuickNota?.(); setActionSheet(false); } },
   ];
 
   const zoneStyle = (side: "right" | "left" | "bottom"): React.CSSProperties => {
