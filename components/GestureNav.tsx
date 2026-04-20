@@ -24,6 +24,10 @@ interface Props {
   msgs?: any[];
   onNuovaCommessa?: () => void;
   onNuovoEvento?: () => void;
+  onQuickCommessa?: () => void;
+  onQuickEvento?: () => void;
+  onQuickSpesa?: () => void;
+  onQuickNota?: () => void;
   onNuovaSpesa?: () => void;
   onNuovaNota?: () => void;
 }
@@ -45,7 +49,7 @@ const iconSvg = (path: React.ReactNode, size = 22, color = WHITE) => (
     strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
 );
 
-export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNuovaCommessa, onNuovoEvento, onNuovaSpesa, onNuovaNota }: Props) {
+export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNuovaCommessa, onNuovoEvento, onNuovaSpesa, onNuovaNota, onQuickCommessa, onQuickEvento, onQuickSpesa, onQuickNota }: Props) {
 
   const [menuSide, setMenuSide] = useState<"right" | "left" | null>(null);
   const [touchX, setTouchX] = useState(0);
@@ -58,6 +62,7 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
   const zoneLeftRef = useRef<HTMLDivElement>(null);
   const zoneBottomRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef({ menuSide: null as "right"|"left"|null, actionSheet: false, tx: 0, ty: 0, voices: [] as Voice[] });
+  const lastTapRef = useRef<Record<string, number>>({});
 
   useEffect(() => { const t = setTimeout(() => setHintOn(false), 6000); return () => clearTimeout(t); }, []);
 
@@ -158,10 +163,30 @@ export default function GestureNav({ tab, setTab, setSelectedCM, msgs = [], onNu
   const nearest = menuSide ? getNearestVoice(menuSide, touchX, touchY, voices) : null;
 
   const getActions = () => [
-    { label: "Nuova commessa", icon: IC.folder, onClick: () => { onNuovaCommessa?.(); setActionSheet(false); } },
-    { label: "Nuovo evento", icon: IC.calendar, onClick: () => { onNuovoEvento?.(); setActionSheet(false); } },
-    { label: "Nuova spesa", icon: IC.euro, onClick: () => { onNuovaSpesa?.(); setActionSheet(false); } },
-    { label: "Nuova nota", icon: IC.note, onClick: () => { onNuovaNota?.(); setActionSheet(false); } },
+    { label: "Nuova commessa", hint: "2x: crea veloce", icon: IC.folder, onClick: () => {
+      const now = Date.now(); const prev = lastTapRef.current["commessa"] || 0;
+      if (now - prev < 320) { onQuickCommessa?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
+      else { onNuovaCommessa?.(); }
+      lastTapRef.current["commessa"] = now; setActionSheet(false);
+    } },
+    { label: "Nuovo evento", hint: "2x: crea veloce", icon: IC.calendar, onClick: () => {
+      const now = Date.now(); const prev = lastTapRef.current["evento"] || 0;
+      if (now - prev < 320) { onQuickEvento?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
+      else { onNuovoEvento?.(); }
+      lastTapRef.current["evento"] = now; setActionSheet(false);
+    } },
+    { label: "Nuova spesa", hint: "2x: crea veloce", icon: IC.euro, onClick: () => {
+      const now = Date.now(); const prev = lastTapRef.current["spesa"] || 0;
+      if (now - prev < 320) { onQuickSpesa?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
+      else { onNuovaSpesa?.(); }
+      lastTapRef.current["spesa"] = now; setActionSheet(false);
+    } },
+    { label: "Nuova nota", hint: "2x: crea veloce", icon: IC.note, onClick: () => {
+      const now = Date.now(); const prev = lastTapRef.current["nota"] || 0;
+      if (now - prev < 320) { onQuickNota?.(); if ("vibrate" in navigator) navigator.vibrate([15,30,15]); }
+      else { onNuovaNota?.(); }
+      lastTapRef.current["nota"] = now; setActionSheet(false);
+    } },
   ];
 
   const zoneStyle = (side: "right" | "left" | "bottom"): React.CSSProperties => {
