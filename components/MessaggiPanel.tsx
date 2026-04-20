@@ -95,40 +95,95 @@ export default function MessaggiPanel() {
     }).sort((a, b) => (b.preferito ? 1 : 0) - (a.preferito ? 1 : 0) || a.nome.localeCompare(b.nome));
 
     return (
-      <div style={{ paddingBottom:80, backgroundColor:"#F5F4F0", minHeight:"100vh" }}>
-        {/* fliwoX Topbar */}
-        <div style={{ background:"#0D1F1F", padding:"13px 16px", display:"flex", alignItems:"center", gap:12, position:"sticky", top:0, zIndex:20 }}>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:19, fontWeight:900, color:"white", letterSpacing:"-0.3px" }}>Messaggi</div>
-            <div style={{ fontSize:10, color:"#5A8A8A", fontWeight:500, marginTop:1 }}>{unread > 0 ? `${unread} non letti` : "Tutti letti"} · {msgs.length} conversazioni</div>
-          </div>
-          <div onClick={() => setShowCompose(true)} style={{ width:36, height:36, borderRadius:10, background:"#28A0A0", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 8px rgba(40,160,160,0.4)" }}>
-            <Ico d={ICO.pen} s={16} c="#28A0A0" />
-          </div>
-        </div>
+      <div style={{ paddingBottom:110, backgroundColor:"#E4F2F2", minHeight:"100vh", fontFamily:"'Manrope', -apple-system, system-ui, sans-serif" }}>
+        {/* ═══ HERO TEAL fliwoX ═══ */}
+        <div style={{ padding:"calc(env(safe-area-inset-top, 0px) + 8px) 12px 0" }}>
+          <div style={{
+            background:"linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            borderRadius:22, padding:"14px 16px 14px",
+            position:"relative" as const, overflow:"hidden" as const,
+            boxShadow:"0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+          }}>
+            <div style={{ position:"absolute", top:-40, right:-30, width:130, height:130, borderRadius:"50%", background:"radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents:"none" as const }} />
+            <div style={{ position:"absolute", top:0, left:0, right:0, height:"50%", background:"linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius:"22px 22px 0 0", pointerEvents:"none" as const }} />
 
-        {/* fliwoX Sub-tabs */}
-        <div style={{ display:"flex", background:"#0D1F1F", padding:"0 12px 14px", gap:3 }}>
-          {[
-            { id:"chat", l:"Chat", ico:ICO.messageCircle, count:unread },
-            { id:"email", l:"Email", ico:ICO.mail, count:gmailMessages.filter(m => m.unread).length },
-            { id:"ai", l:"Assistente", ico:ICO.cpu, count:aiInbox.filter(m => !m.read).length },
-            { id:"rubrica", l:"Rubrica", ico:ICO.users, count:0 },
-            { id:"tecnico", l:"Tecnico", ico:ICO.cpu, count:0 }
-          ].map(st => (
-            <div key={st.id} onClick={() => setMsgSubTab(st.id)} style={{ flex:1, padding:"7px 3px", textAlign:"center", fontSize:10, fontWeight: msgSubTab === st.id ? 700 : 500, cursor:"pointer", background: msgSubTab === st.id ? "rgba(40,160,160,0.2)" : "transparent", color: msgSubTab === st.id ? "#28A0A0" : "#5A8A8A", borderRadius:10, position:"relative" }}>
-              <span style={{display:"inline-flex",alignItems:"center",gap:3}}><Ico d={st.ico} s={12} c={msgSubTab === st.id ? "white" : "#4A7070"} /> {st.l}</span>
-              {st.count > 0 && <span style={{ marginLeft:3, fontSize:9, fontWeight:900, padding:"1px 5px", borderRadius:8, background: msgSubTab === st.id ? "rgba(255,255,255,0.3)" : "#DC4444", color:"white" }}>{st.count}</span>}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", position:"relative" as const, zIndex:2, marginBottom:12 }}>
+              <div>
+                <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.75)", letterSpacing:"1px", textTransform:"uppercase" as const }}>Comunicazione</div>
+                <div style={{ fontSize:26, fontWeight:800, color:"#fff", letterSpacing:"-0.5px", marginTop:2, textShadow:"0 2px 4px rgba(0,0,0,0.2)" }}>Messaggi</div>
+                <div style={{ fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.85)", marginTop:4, display:"flex", gap:8, alignItems:"center" }}>
+                  <span>{unread > 0 ? `${unread} non letti` : "Tutti letti"} · {msgs.length} conversazioni</span>
+                </div>
+              </div>
+
+              <div onClick={() => setShowCompose(true)} style={{
+                width:40, height:40, borderRadius:11,
+                background:"linear-gradient(145deg, #FFF, #D8EEEE)",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                cursor:"pointer",
+                boxShadow:"0 4px 12px rgba(0,0,0,0.2), 0 0 0 2px rgba(255,255,255,0.25)",
+              }}>
+                <Ico d={ICO.pen} s={17} c="#1A7A7A" />
+              </div>
             </div>
-          ))}
+
+            {/* Tab switch dentro hero */}
+            <div style={{
+              position:"relative" as const, zIndex:2,
+              display:"flex", gap:2, padding:3,
+              background:"rgba(255,255,255,0.15)", borderRadius:12,
+              boxShadow:"inset 0 1px 2px rgba(0,0,0,0.15)",
+            }}>
+              {[
+                { id:"chat", l:"Chat", ico:ICO.messageCircle, count:unread },
+                { id:"email", l:"Email", ico:ICO.mail, count:gmailMessages.filter(m => m.unread).length },
+                { id:"ai", l:"Assistente", ico:ICO.cpu, count:aiInbox.filter(m => !m.read).length },
+                { id:"rubrica", l:"Rubrica", ico:ICO.users, count:0 },
+                { id:"tecnico", l:"Tecnico", ico:ICO.cpu, count:0 }
+              ].map(st => {
+                const active = msgSubTab === st.id;
+                return (
+                  <div key={st.id} onClick={() => setMsgSubTab(st.id)} style={{
+                    flex:1, padding:"8px 3px", textAlign:"center" as const,
+                    fontSize:11, fontWeight:800, cursor:"pointer",
+                    background: active ? "#fff" : "transparent",
+                    color: active ? "#1A7A7A" : "rgba(255,255,255,0.85)",
+                    borderRadius:9,
+                    boxShadow: active ? "0 2px 6px rgba(0,0,0,0.15)" : "none",
+                    letterSpacing:"0.2px",
+                    transition:"all 0.15s",
+                    display:"flex", alignItems:"center", justifyContent:"center", gap:4,
+                    position:"relative" as const,
+                  }}>
+                    <Ico d={st.ico} s={12} c={active ? "#1A7A7A" : "rgba(255,255,255,0.85)"} />
+                    {st.l}
+                    {st.count > 0 && (
+                      <span style={{
+                        fontSize:9, fontWeight:900, padding:"1px 5px",
+                        borderRadius:8,
+                        background: active ? "#DC4444" : "rgba(255,255,255,0.3)",
+                        color:"#fff",
+                      }}>{st.count}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* == CHAT TAB == */}
         {msgSubTab === "chat" && (<>
           <div style={{ padding:"10px 14px 8px" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, padding:"11px 14px", background:"rgba(255,255,255,0.06)", borderRadius:12, border:"0.5px solid rgba(255,255,255,0.1)" }}>
+            <div style={{
+              display:"flex", alignItems:"center", gap:8, padding:"11px 14px",
+              background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+              borderRadius:13,
+              boxShadow:"0 6px 16px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
+              border:"1px solid rgba(200,228,228,0.5)",
+            }}>
               <Ico d={ICO.search} s={14} c="#4A7070" />
-              <input style={{ flex:1, border:"none", background:"transparent", fontSize:14, fontWeight:700, color:"#0D1F1F", outline:"none", fontFamily:"inherit", color:"#fff" }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
+              <input style={{ flex:1, border:"none", background:"transparent", fontSize:14, fontWeight:600, color:"#0D1F1F", outline:"none", fontFamily:"inherit" }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
               {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor:"pointer", fontSize:16, color:"#4A7070" }}>×</div>}
             </div>
           </div>
@@ -143,7 +198,7 @@ export default function MessaggiPanel() {
               const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
               const sel = msgFilter === f.id;
               return (
-                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"7px 13px", borderRadius:20, border:`1.5px solid ${sel ? f.c : "#C8E4E4"}`, background: sel ? f.c : "white", fontSize:11, fontWeight:900, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#4A7070", display:"flex", alignItems:"center", gap:4, boxShadow: "none" }}>
+                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding:"8px 14px", borderRadius:18, border: sel ? "none" : "1px solid #C8E4E4", background: sel ? `linear-gradient(145deg, ${f.c}, ${f.c}CC)` : "linear-gradient(155deg, #FFFFFF, #F5FBFB)", fontSize:11, fontWeight:800, cursor:"pointer", whiteSpace:"nowrap" as const, color: sel ? "white" : "#4A7070", display:"flex", alignItems:"center", gap:5, boxShadow: sel ? `0 4px 10px ${f.c}40, inset 0 1px 1px rgba(255,255,255,0.2)` : "0 2px 6px rgba(31,120,120,0.08)", letterSpacing:"0.2px" }}>
                   {f.ico && <Ico d={f.ico} s={12} c={sel ? "white" : "#4A7070"} />}{f.l}
                   {unr > 0 && <span style={{ width:16, height:16, borderRadius:"50%", background: sel ? "rgba(255,255,255,0.3)" : f.c, color:"white", fontSize:9, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{unr}</span>}
                 </div>
@@ -154,7 +209,7 @@ export default function MessaggiPanel() {
             {filteredMsgs.length === 0 ? (
               <div style={{ padding:30, textAlign:"center", color:"#4A7070", fontSize:13, fontWeight:700 }}>Nessun messaggio</div>
             ) : (
-              <div style={{ background:"#fff", borderRadius:16, overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(31,120,120,0.1)", border:"1px solid rgba(200,228,228,0.5)" }}>
                 {filteredMsgs.map(m => (
                   <div key={m.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"13px 14px", borderBottom:"0.5px solid #F0EFEC", cursor:"pointer", background: m.read ? "transparent" : "rgba(40,160,160,0.05)" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
                     <div style={{ width:44, height:44, borderRadius:12, background: chBg[m.canale] || "#EEF8F8", border:`2px solid ${chCol[m.canale] || "#C8E4E4"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:17, fontWeight:900, color: chCol[m.canale] || "#28A0A0", flexShrink:0, position:"relative", boxShadow:"0 2px 6px rgba(0,0,0,0.1)" }}>
@@ -719,7 +774,7 @@ Grazie per il suo messaggio.
             );})}
           </div>
           <div style={{ padding:"0 14px" }}>
-            <div style={{ background:"#fff", borderRadius:16, overflow:"hidden", boxShadow:"0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div style={{ background:"linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius:18, overflow:"hidden", boxShadow:"0 6px 20px rgba(31,120,120,0.1)", border:"1px solid rgba(200,228,228,0.5)" }}>
               {filteredContatti.length === 0 ? (
                 <div style={{ padding:30, textAlign:"center", color:"#4A7070", fontSize:13, fontWeight:700 }}>Nessun contatto trovato</div>
               ) : filteredContatti.map(c => {
