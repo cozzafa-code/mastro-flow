@@ -43,35 +43,45 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
 
   switch (id) {
     case "oggi_devi_fare": {
-      const urg = tasks.filter((t: any) => !t?.done && (t?.prio === "alta" || t?.urgent));
-      if (urg.length === 0) return <Empty msg="Nessuna azione urgente" />;
-      return urg.slice(0, 4).map((t: any, i: number) => (
-        <Row key={t.id || i} last={i === Math.min(urg.length, 4) - 1} onClick={() => nav?.openTask?.(t)}>
+      // Mostra task non completati (priorità alta o scadenza oggi). Fallback: primi task non fatti.
+      const td2 = today();
+      const notDone = tasks.filter((t: any) => !t?.done);
+      const alta = notDone.filter((t: any) => t?.priority === "alta" || t?.prio === "alta" || t?.urgent);
+      const oggi = notDone.filter((t: any) => t?.date === td2);
+      const lista = alta.length > 0 ? alta : (oggi.length > 0 ? oggi : notDone);
+      if (lista.length === 0) return <Empty msg="Nessuna azione urgente" />;
+      return lista.slice(0, 4).map((t: any, i: number) => (
+        <Row key={t.id || i} last={i === Math.min(lista.length, 4) - 1} onClick={() => nav?.openTask?.(t)}>
           <div style={{ width: 22, height: 22, borderRadius: 7, border: "1.5px solid #BDE0E0", flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || t.text || "Task"}</div>
             <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>{t.cm || t.meta || ""}</div>
           </div>
-          {t.urgent && <Badge text="ORA" bg={AMBER} fg="#fff" />}
+          {(t.priority === "alta" || t.urgent) && <Badge text="ORA" bg={AMBER} fg="#fff" />}
         </Row>
       ));
     }
     case "squadra": {
       if (team.length === 0) return <Empty msg="Nessun operatore configurato" />;
-      const attivi = team.filter((m: any) => m?.attivo || m?.inCantiere);
-      if (attivi.length === 0) return <Empty msg="Nessun operatore in cantiere" />;
-      return attivi.slice(0, 5).map((m: any, i: number) => (
-        <Row key={m.id || i} last={i === Math.min(attivi.length, 5) - 1} onClick={() => nav?.goto?.("team")}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore || TEAL, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-            {(m.nome || "?").slice(0, 2).toUpperCase()}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{m.nome}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{m.ruolo || "Operatore"}</div>
-          </div>
-          <Badge text="ATTIVO" bg={GREEN + "20"} fg={GREEN} />
-        </Row>
-      ));
+      // Fallback: se nessuno marcato attivo, mostra tutti gli operatori
+      const attivi = team.filter((m: any) => m?.attivo || m?.inCantiere || m?.stato_oggi === "in cantiere" || m?.stato_oggi === "in rilievo" || m?.stato_oggi === "online");
+      const lista = attivi.length > 0 ? attivi : team;
+      return lista.slice(0, 5).map((m: any, i: number) => {
+        const stato = m?.stato_oggi || (m?.attivo ? "attivo" : "offline");
+        const inServizio = ["in cantiere", "in rilievo", "online", "attivo"].includes(stato);
+        return (
+          <Row key={m.id || i} last={i === Math.min(lista.length, 5) - 1} onClick={() => nav?.goto?.("team")}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore || TEAL, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+              {((m.nome || "?")[0] + (m.cognome || "?")[0]).toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{m.nome} {m.cognome || ""}</div>
+              <div style={{ fontSize: 11, color: SUB }}>{m.ruolo || "Operatore"}</div>
+            </div>
+            <Badge text={inServizio ? "ATTIVO" : "OFFLINE"} bg={inServizio ? GREEN + "20" : "#BDBDBD30"} fg={inServizio ? GREEN : SUB} />
+          </Row>
+        );
+      });
     }
     case "produzione": {
       const aperti = problemi.filter((p: any) => p?.stato !== "risolto" && p?.stato !== "chiuso");
