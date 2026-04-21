@@ -1057,7 +1057,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       danger: true,
       onConfirm: () => {
         setCantieri(cs => cs.filter(c => c.id !== cmId));
-        if (selectedCM?.id === cmId) { setSelectedCM(null); setSelectedVano(null); }
+        if (selectedCM?.id === cmId) {
+          setSelectedCM(null);
+          setSelectedVano(null);
+          setSelectedRilievo(null);
+          setCmSubTab("sopralluoghi");
+          setTab("commesse");
+        }
         toast("Commessa eliminata", "success");
       },
     });
