@@ -2,12 +2,12 @@
 import React from "react";
 
 const TEAL = "#28A0A0";
-const TEAL_DARK = "#1A7A7A";
+const TEAL_DARK = "#1F7A7A";
 const DARK = "#0D1F1F";
 const SUB = "#5A7878";
 const AMBER = "#F5A030";
 const RED = "#DC4444";
-const GREEN = "#1A9E73";
+const GREEN = "#28A0A0";
 
 const Empty = ({ msg }: { msg: string }) => (
   <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>{msg}</p>
@@ -31,6 +31,31 @@ const Badge = ({ text, bg, fg }: any) => (
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+const daysSince = (date: any): number => {
+  if (!date) return 0;
+  const d = typeof date === "string" ? new Date(date) : date;
+  const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+  return Math.floor(diff);
+};
+
+const eur = (n: number): string => {
+  if (!n) return "—";
+  if (n >= 1000) return `€${(n / 1000).toFixed(1)}k`;
+  return `€${Math.round(n)}`;
+};
+
+const faseColor = (f: string): string => {
+  const k = (f || "").toLowerCase();
+  if (k.includes("rilievo") || k.includes("sopral")) return "#5856D6";
+  if (k.includes("preventivo")) return AMBER;
+  if (k.includes("conferma") || k.includes("ordine")) return TEAL;
+  if (k.includes("produzione")) return "#EA580C";
+  if (k.includes("posa") || k.includes("montag")) return "#2563EB";
+  if (k.includes("collaudo") || k.includes("consegna")) return "#22C55E";
+  if (k.includes("fattur") || k.includes("saldo")) return "#D08008";
+  return TEAL_DARK;
+};
+
 function safeRender(id: string, data: any, nav: any): React.ReactNode {
   const tasks = data?.tasks || [];
   const cantieri = data?.cantieri || [];
@@ -43,27 +68,82 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
 
   switch (id) {
     case "oggi_devi_fare": {
-      // Mostra task non completati (priorità alta o scadenza oggi). Fallback: primi task non fatti.
       const td2 = today();
-      const notDone = tasks.filter((t: any) => !t?.done);
-      const alta = notDone.filter((t: any) => t?.priority === "alta" || t?.prio === "alta" || t?.urgent);
-      const oggi = notDone.filter((t: any) => t?.date === td2);
-      const lista = alta.length > 0 ? alta : (oggi.length > 0 ? oggi : notDone);
-      if (lista.length === 0) return <Empty msg="Nessuna azione urgente" />;
-      return lista.slice(0, 4).map((t: any, i: number) => (
-        <Row key={t.id || i} last={i === Math.min(lista.length, 4) - 1} onClick={() => nav?.openTask?.(t)}>
-          <div style={{ width: 22, height: 22, borderRadius: 7, border: "1.5px solid #BDE0E0", flexShrink: 0 }} />
+      const actions: any[] = [];
+
+      tasks.filter((t: any) => !t?.done).forEach((t: any) => {
+        const isAlta = t?.priority === "alta" || t?.prio === "alta" || t?.urgent;
+        const scadOggi = t?.date === td2 || t?.scadenza === td2;
+        actions.push({
+          icon: isAlta ? "🔴" : scadOggi ? "🟠" : "🟡",
+          title: t.title || t.text || "Task",
+          meta: t.cm || t.meta || "",
+          priority: isAlta ? 3 : scadOggi ? 2 : 1,
+          onClick: () => nav?.openTask?.(t),
+          badge: isAlta ? "ORA" : scadOggi ? "OGGI" : null,
+          badgeBg: isAlta ? RED : AMBER,
+        });
+      });
+
+      cantieri.forEach((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        if (f === "preventivo") {
+          const gg = daysSince(c?.data_preventivo || c?.aggiornato || c?.creato);
+          if (gg >= 7) {
+            actions.push({
+              icon: "📞",
+              title: `Richiama ${c.cliente || c.cliente_nome || c.cognome || c.code}`,
+              meta: `Preventivo ${c.code || c.numero} · ${eur(c.euro || c.valore_totale || 0)} · fermo ${gg}gg`,
+              priority: gg >= 15 ? 3 : 2,
+              onClick: () => nav?.openCM?.(c),
+              badge: gg >= 15 ? "URGENTE" : `${gg}gg`,
+              badgeBg: gg >= 15 ? RED : AMBER,
+            });
+          }
+        }
+      });
+
+      events.filter((e: any) => e?.date === td2 || (e?.start_time || "").startsWith(td2)).forEach((e: any) => {
+        actions.push({
+          icon: "📅",
+          title: e.text || e.titolo || e.title || "Evento",
+          meta: `${e.time || (e.start_time || "").slice(11, 16) || ""} · ${e.persona || e.client_name || e.addr || ""}`,
+          priority: 2,
+          onClick: () => nav?.openEvent?.(e),
+          badge: null,
+        });
+      });
+
+      fattureDB.filter((f: any) => !f?.pagata && f?.scadenza && f.scadenza < td2).slice(0, 2).forEach((f: any) => {
+        const gg = daysSince(f.scadenza);
+        actions.push({
+          icon: "💰",
+          title: `Sollecito ${f.cliente || f.ragione_sociale}`,
+          meta: `${eur(f.importo || 0)} · scaduta ${gg}gg fa`,
+          priority: 3,
+          onClick: () => nav?.goto?.("contabilita"),
+          badge: "SCADUTA",
+          badgeBg: RED,
+        });
+      });
+
+      actions.sort((a, b) => b.priority - a.priority);
+      if (actions.length === 0) return <Empty msg="Tutto in ordine oggi" />;
+
+      return actions.slice(0, 5).map((a, i) => (
+        <Row key={i} last={i === Math.min(actions.length, 5) - 1} onClick={a.onClick}>
+          <div style={{ fontSize: 14, width: 20, flexShrink: 0, textAlign: "center" }}>{a.icon}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.title || t.text || "Task"}</div>
-            <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>{t.cm || t.meta || ""}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</div>
+            {a.meta && <div style={{ fontSize: 11, color: SUB, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.meta}</div>}
           </div>
-          {(t.priority === "alta" || t.urgent) && <Badge text="ORA" bg={AMBER} fg="#fff" />}
+          {a.badge && <Badge text={a.badge} bg={a.badgeBg || AMBER} fg="#fff" />}
         </Row>
       ));
     }
+
     case "squadra": {
       if (team.length === 0) return <Empty msg="Nessun operatore configurato" />;
-      // Fallback: se nessuno marcato attivo, mostra tutti gli operatori
       const attivi = team.filter((m: any) => m?.attivo || m?.inCantiere || m?.stato_oggi === "in cantiere" || m?.stato_oggi === "in rilievo" || m?.stato_oggi === "online");
       const lista = attivi.length > 0 ? attivi : team;
       return lista.slice(0, 5).map((m: any, i: number) => {
@@ -83,6 +163,7 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         );
       });
     }
+
     case "produzione": {
       const aperti = problemi.filter((p: any) => p?.stato !== "risolto" && p?.stato !== "chiuso");
       if (aperti.length === 0) return <Empty msg="Nessun problema attivo" />;
@@ -100,6 +181,7 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         );
       });
     }
+
     case "fatture_incassare": {
       const aperte = fattureDB.filter((f: any) => !f?.pagata);
       const tot = aperte.reduce((s: number, f: any) => s + (f?.importo || 0), 0);
@@ -111,6 +193,7 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         </div>
       );
     }
+
     case "fatture_scadute": {
       const scad = fattureDB.filter((f: any) => !f?.pagata && f?.scadenza && f.scadenza < td);
       if (scad.length === 0) return <Empty msg="Tutto regolare" />;
@@ -124,19 +207,47 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         </Row>
       ));
     }
+
     case "eventi_oggi": {
-      const oggi = events.filter((e: any) => e?.date === td);
+      const oggi = events.filter((e: any) => e?.date === td || (e?.start_time || "").startsWith(td));
       if (oggi.length === 0) return <Empty msg="Nessun evento oggi" />;
-      return oggi.slice(0, 5).map((e: any, i: number) => (
-        <Row key={e.id || i} last={i === Math.min(oggi.length, 5) - 1} onClick={() => nav?.openEvent?.(e)}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: TEAL_DARK, width: 44, flexShrink: 0 }}>{e.time || "—"}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.text || e.titolo}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{e.persona || e.addr || ""}</div>
-          </div>
-        </Row>
-      ));
+
+      oggi.sort((a: any, b: any) => {
+        const ta = a.time || (a.start_time || "").slice(11, 16) || "99:99";
+        const tb = b.time || (b.start_time || "").slice(11, 16) || "99:99";
+        return ta.localeCompare(tb);
+      });
+
+      return oggi.slice(0, 5).map((e: any, i: number) => {
+        const time = e.time || (e.start_time || "").slice(11, 16) || "—";
+        const tipo = (e.event_type || e.tipo || e.type || "").toUpperCase();
+        const cliente = e.client_name || e.cliente || e.persona || "";
+        const addr = e.address || e.addr || e.indirizzo || "";
+        const squadra = Array.isArray(e.assigned_to) && e.assigned_to.length > 0
+          ? e.assigned_to[0]
+          : (e.assegnato_a || e.squadra || "");
+        const col = faseColor(tipo);
+        return (
+          <Row key={e.id || i} last={i === Math.min(oggi.length, 5) - 1} onClick={() => nav?.openEvent?.(e)}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 46, flexShrink: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: TEAL_DARK, lineHeight: 1 }}>{time}</div>
+              {tipo && <div style={{ fontSize: 8, fontWeight: 700, color: col, marginTop: 3, letterSpacing: "0.3px" }}>{tipo.slice(0, 6)}</div>}
+            </div>
+            <div style={{ width: 3, height: 32, borderRadius: 2, background: col, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {e.title || e.text || e.titolo || cliente || "Evento"}
+              </div>
+              <div style={{ fontSize: 11, color: SUB, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {addr || cliente}{squadra ? ` · ${squadra}` : ""}
+              </div>
+            </div>
+            {(e.priority === "urgent" || e.priorita === "urgente") && <Badge text="!" bg={RED} fg="#fff" />}
+          </Row>
+        );
+      });
     }
+
     case "messaggi_non_letti": {
       const nuovi = msgs.filter((m: any) => !m?.letto);
       if (nuovi.length === 0) return <Empty msg="Nessun messaggio nuovo" />;
@@ -150,6 +261,7 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         </Row>
       ));
     }
+
     case "commesse_ritardo": {
       const r = cantieri.filter((c: any) => c?.scadenza && c.scadenza < td && c.fase !== "chiusura");
       if (r.length === 0) return <Empty msg="Tutto in orario" />;
@@ -163,17 +275,49 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         </Row>
       ));
     }
+
     case "lavori_in_corso": {
-      const a = cantieri.filter((c: any) => c?.fase && c.fase !== "chiusura" && c.fase !== "consegnato");
+      const a = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        return c?.fase && !f.includes("chius") && !f.includes("consegn") && !f.includes("saldo");
+      });
       if (a.length === 0) return <Empty msg="Nessun lavoro attivo" />;
-      return a.slice(0, 5).map((c: any, i: number) => (
-        <Row key={c.id || i} last={i === Math.min(a.length, 5) - 1} onClick={() => nav?.openCM?.(c)}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.code} · {c.cliente}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{c.fase}</div>
-          </div>
-        </Row>
-      ));
+
+      a.sort((x: any, y: any) => {
+        const ggX = daysSince(x?.aggiornato || x?.updated_at || x?.creato);
+        const ggY = daysSince(y?.aggiornato || y?.updated_at || y?.creato);
+        return ggY - ggX;
+      });
+
+      return a.slice(0, 5).map((c: any, i: number) => {
+        const fase = c.fase || "—";
+        const col = faseColor(fase);
+        const cliente = c.cliente || c.cliente_nome || c.cognome || "—";
+        const valore = c.euro || c.valore_totale || c.totale || 0;
+        const gg = daysSince(c?.aggiornato || c?.updated_at || c?.creato);
+        const fermo = gg >= 7;
+        return (
+          <Row key={c.id || i} last={i === Math.min(a.length, 5) - 1} onClick={() => nav?.openCM?.(c)}>
+            <div style={{ width: 4, height: 36, borderRadius: 2, background: col, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                  {c.code || c.numero} · {cliente}
+                </div>
+                {valore > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: TEAL_DARK, flexShrink: 0 }}>{eur(valore)}</div>}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.3px" }}>{fase}</span>
+                <span style={{ fontSize: 10, color: SUB }}>·</span>
+                <span style={{ fontSize: 10, color: fermo ? RED : SUB, fontWeight: fermo ? 700 : 500 }}>
+                  {gg === 0 ? "oggi" : `${gg}gg in fase`}
+                </span>
+              </div>
+            </div>
+            {fermo && <Badge text="FERMO" bg={AMBER} fg="#fff" />}
+          </Row>
+        );
+      });
     }
 
     case "preventivi_scadenza": {
@@ -242,21 +386,56 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
     }
 
     case "pipeline_commesse": {
-      const fasi: Record<string, number> = {};
+      const fasi: Record<string, { count: number; val: number }> = {};
       cantieri.forEach((c: any) => {
         const f = c?.fase || "—";
-        fasi[f] = (fasi[f] || 0) + 1;
+        if (!fasi[f]) fasi[f] = { count: 0, val: 0 };
+        fasi[f].count += 1;
+        fasi[f].val += (c?.euro || c?.valore_totale || c?.totale || 0);
       });
       const keys = Object.keys(fasi);
       if (keys.length === 0) return <Empty msg="Nessuna commessa in pipeline" />;
-      return keys.slice(0, 5).map((f, i) => (
-        <Row key={f} last={i === Math.min(keys.length, 5) - 1} onClick={() => nav?.goto?.("commesse")}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, textTransform: "capitalize" }}>{f}</div>
+
+      const order = ["rilievo", "sopralluogo", "preventivo", "conferma", "ordine", "produzione", "posa", "montaggio", "collaudo", "consegna", "fattura", "saldo", "chiusura"];
+      keys.sort((a, b) => {
+        const ia = order.findIndex(o => a.toLowerCase().includes(o));
+        const ib = order.findIndex(o => b.toLowerCase().includes(o));
+        if (ia === -1 && ib === -1) return fasi[b].count - fasi[a].count;
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+
+      const maxCount = Math.max(...keys.map(k => fasi[k].count));
+      const totVal = keys.reduce((s, k) => s + fasi[k].val, 0);
+
+      return (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "2px 0 6px", borderBottom: "1px solid rgba(40,160,160,0.1)", marginBottom: 4 }}>
+            <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>Totale pipeline</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: TEAL_DARK }}>{eur(totVal)}</span>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: TEAL_DARK }}>{fasi[f]}</div>
-        </Row>
-      ));
+          {keys.slice(0, 6).map((f, i) => {
+            const d = fasi[f];
+            const pct = maxCount > 0 ? (d.count / maxCount) * 100 : 0;
+            const col = faseColor(f);
+            return (
+              <div key={f} onClick={() => nav?.goto?.("commesse")} style={{ padding: "7px 2px", cursor: "pointer", borderBottom: i === Math.min(keys.length, 6) - 1 ? "none" : "1px solid rgba(40,160,160,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: DARK, textTransform: "capitalize" }}>{f}</span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    {d.val > 0 && <span style={{ fontSize: 10, color: SUB, fontWeight: 600 }}>{eur(d.val)}</span>}
+                    <span style={{ fontSize: 14, fontWeight: 900, color: col }}>{d.count}</span>
+                  </div>
+                </div>
+                <div style={{ height: 4, background: "rgba(40,160,160,0.08)", borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: col, borderRadius: 2, transition: "width 0.3s" }} />
+                </div>
+              </div>
+            );
+          })}
+        </>
+      );
     }
 
     case "ordini_attesa": {
@@ -384,7 +563,6 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
     }
 
     case "iva_versare": {
-      // Stima semplice: 22% dei ricavi del trimestre corrente meno IVA su spese
       const mese = parseInt(td.slice(5, 7), 10);
       const trimStart = mese <= 3 ? "01" : mese <= 6 ? "04" : mese <= 9 ? "07" : "10";
       const yr = td.slice(0, 4);
