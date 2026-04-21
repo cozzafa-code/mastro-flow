@@ -1443,6 +1443,50 @@ export default function CMDetailPanel() {
                           setCcDone("✓ Completato"); setTimeout(() => setCcDone(null), 3000);
                         }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gi+ inviato? Segna come completato</span>
                       </div>
+
+                      {/* CARD TAVOLA TECNICA */}
+                      {(() => {
+                        const vaniAttivi = (selectedRilievo?.vani || []).filter((v) => !!v.sistema && (v.misure?.lCentro || v.misure?.lAlto) && (v.misure?.hCentro || v.misure?.hSx));
+                        const canGenerate = vaniAttivi.length > 0;
+                        return (
+                          <div style={{ marginTop: 14, padding: 14, background: "#F4F9F9", borderRadius: 12, border: `1px solid ${T.bdr}` }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <div style={{ width: 32, height: 32, borderRadius: 8, background: canGenerate ? "linear-gradient(135deg, #2D7A6B, #1A9E73)" : "#C8D4D4", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+                                <I d={ICO.ruler} />
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Tavola Tecnica</div>
+                                <div style={{ fontSize: 10, color: T.sub }}>Vista frontale - Nodi - Specifiche - Trasmittanza Uw</div>
+                              </div>
+                              {canGenerate && <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: `${T.grn}15`, color: T.grn }}>{vaniAttivi.length} vani</span>}
+                            </div>
+                            {canGenerate ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                {vaniAttivi.map((v) => (
+                                  <button key={v.id} onClick={() => {
+                                    try {
+                                      const ctx = { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [],
+                                        cliente: c.cliente || c.nome || "", cognome: c.cognome || "",
+                                        commessaCode: c.code || c.id || "", commessaData: c.data || "" };
+                                      generaTavolaTecnica(v, ctx);
+                                    } catch(err) {
+                                      alert("Errore Tavola Tecnica: " + (err?.message || err));
+                                    }
+                                  }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: "#fff", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{v.nome || `Vano ${v.id}`}</div>
+                                      <div style={{ fontSize: 9, color: T.sub }}>{v.tipo || "-"} - {v.sistema || "-"} - {v.misure?.lCentro || v.misure?.lAlto || "?"}x{v.misure?.hCentro || v.misure?.hSx || "?"}mm</div>
+                                    </div>
+                                    <span style={{ fontSize: 11, color: T.acc, fontWeight: 800 }}>PDF</span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 11, color: T.sub, textAlign: "center", padding: "10px 4px", fontStyle: "italic" }}>Completa misure e sistema di almeno un vano per generare</div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
