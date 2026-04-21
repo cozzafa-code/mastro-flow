@@ -2,6 +2,7 @@
 // @ts-nocheck
 // MASTRO ERP — AgendaPanel v4 — Restyled "Sistema Operativo"
 import React from "react";
+import CentroControlloOggi from "./CentroControlloOggi";
 import { useMastro } from "./MastroContext";
 import { ICO, I } from "./mastro-constants";
 
@@ -372,6 +373,8 @@ export default function AgendaPanel() {
 
   // ── RENDER ──
   const views = ["mese", "settimana", "giorno"] as const;
+
+  if (agendaView === "oggi") return <CentroControlloOggi />;
 
   return (
     <div style={{
