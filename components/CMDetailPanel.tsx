@@ -62,41 +62,26 @@ export default function CMDetailPanel() {
     aziendaInfo,
   } = useMastro();
 
-  // AUTO_PICK_OR_DRAFT: se commessa aperta senza rilievo, usa l'ultimo o crea bozza
+  // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
   React.useEffect(() => {
     if (!selectedCM) { setAutoPickDoneForCm(null); return; }
     if (selectedRilievo) return;
-    if (autoPickDoneForCm === selectedCM.id) return; // gia' gestita questa commessa
+    if (autoPickDoneForCm === selectedCM.id) return;
     const rilievi = selectedCM.rilievi || [];
     if (rilievi.length > 0) {
       setSelectedRilievo(rilievi[rilievi.length - 1]);
       setAutoPickDoneForCm(selectedCM.id);
       return;
     }
-    // 0 rilievi: crea bozza R1 vuoto
-    const oggiISO = new Date().toISOString().split("T")[0];
-    const newR = {
-      id: Date.now(),
-      n: 1,
-      tipo: "indicativa",
-      data: oggiISO,
-      ora: new Date().toTimeString().slice(0,5),
-      rilevatore: "",
-      vani: [],
-      note: "",
-    };
-    setCantieri((cs: any[]) => cs.map(cm => cm.id === selectedCM.id ? { ...cm, rilievi: [newR] } : cm));
-    setSelectedCM((p: any) => ({ ...p, rilievi: [newR] }));
-    setSelectedRilievo(newR);
+    // 0 rilievi: NON creare bozza. L'utente deve cliccare "Crea rilievo" in Centro Comando.
     setAutoPickDoneForCm(selectedCM.id);
   }, [selectedCM?.id, selectedRilievo, autoPickDoneForCm]);
 
 
-  if (!selectedCM) return null;
-
+  // STATES (tutti prima del null guard — React Rules of Hooks)
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
-    const [workWeekend, setWorkWeekend] = useState<boolean | null>(null); // null=non chiesto, true=s, false=no
+    const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [accontoImporto, setAccontoImporto] = useState<string>("");
     const [showOrdinePreview, setShowOrdinePreview] = useState(false);
@@ -109,6 +94,14 @@ export default function CMDetailPanel() {
     const [fascicoloLinkCopied, setFascicoloLinkCopied] = useState(false);
     const [fascicoloStep, setFascicoloStep] = useState<"idle"|"generato">("idle");
     const [fascicoliStorico, setFascicoliStorico] = useState<any[]>([]);
+    // Modal "Crea nuovo rilievo" dentro Centro Comando
+    const [showNuovoRilievoModal, setShowNuovoRilievoModal] = useState(false);
+    const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere">("provvisorio");
+    const [nuovoRilievoRilevatore, setNuovoRilievoRilevatore] = useState("");
+    const [nuovoRilievoNote, setNuovoRilievoNote] = useState("");
+
+  // NULL GUARD: tutti gli hook devono essere dichiarati prima di questo return
+  if (!selectedCM) return null;
 
   // · CAD DRAW FULLSCREEN ·
   if (showCadDraw) {
@@ -1297,30 +1290,67 @@ export default function CMDetailPanel() {
                     </div>
                   )}
 
-                  {/*  SOPRALLUOGO  */}
+                  {/*  SOPRALLUOGO · Lista rilievi + Crea nuovo  */}
                   {curCC.id === "sopralluogo" && (
                     <div>
-                      {rilieviCC.length === 0 ? (
-                        <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Vai al cantiere e prendi le misure dei vani</div>
-                      ) : vaniCC.length === 0 ? (
-                        <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>
-                          {rilieviCC.length} rilievo creato · Aggiungi i vani da misurare
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>
-                          {rilieviCC.length} rilievo · {vaniCC.length} vani {vaniCC.length > 0 ? "· aggiungi misure a tutti i vani" : ""}
+                      {/* Lista rilievi esistenti */}
+                      {rilieviCC.length > 0 && (
+                        <div style={{ marginBottom: 10 }}>
+                          {rilieviCC.map((ril, ri) => {
+                            const vaniDelRil = (ril.vani || []).length;
+                            const tipoR = ril.tipo || "provvisorio";
+                            const tipoMap: any = {
+                              provvisorio: { l: "Provvisorio", c: "#D08008", bg: "#D0800815" },
+                              verificato:  { l: "Verificato",  c: "#D08008", bg: "#D0800815" },
+                              definitivo:  { l: "Definitivo",  c: "#28A0A0", bg: "#28A0A015" },
+                              da_rivedere: { l: "Da rivedere", c: "#DC4444", bg: "#DC444415" },
+                              indicativa:  { l: "Provvisorio", c: "#D08008", bg: "#D0800815" },
+                            };
+                            const tt = tipoMap[tipoR] || tipoMap.provvisorio;
+                            return (
+                              <div key={ril.id} onClick={() => { setSelectedRilievo(ril); setCmSubTab("sopralluoghi"); }} style={{
+                                background: T.card, border: `1.5px solid ${T.bdr}`, borderRadius: 10,
+                                padding: "10px 12px", marginBottom: 6, cursor: "pointer",
+                                display: "flex", alignItems: "center", gap: 10,
+                              }}>
+                                <div style={{ width: 34, height: 34, borderRadius: 8, background: tt.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                  <I d={ICO.ruler} s={16} c={tt.c} />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>R{ril.n || ri + 1}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5, background: tt.bg, color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{tt.l}</span>
+                                  </div>
+                                  <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>
+                                    {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "·"}
+                                    {ril.rilevatore ? ` · ${ril.rilevatore}` : ""}
+                                    {` · ${vaniDelRil} ${vaniDelRil === 1 ? "vano" : "vani"}`}
+                                  </div>
+                                </div>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
-                      {/* BOTTONE APRI RILIEVO */}
+
+                      {/* Info se zero rilievi */}
+                      {rilieviCC.length === 0 && (
+                        <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, textAlign: "center" as any, padding: "4px 0" }}>
+                          Nessun rilievo ancora · Crea il primo sopralluogo
+                        </div>
+                      )}
+
+                      {/* Bottone CREA NUOVO RILIEVO */}
                       <button onClick={() => {
-                        const ril = rilieviCC.length > 0 ? rilieviCC[rilieviCC.length - 1] : null;
-                        if (ril) {
-                          setSelectedRilievo(ril);
-                          setCmSubTab("sopralluoghi");
-                        }
-                      }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>
-                        <I d={ICO.ruler} /> APRI RILIEVO · GESTISCI VANI →
+                        setNuovoRilievoTipo("provvisorio");
+                        setNuovoRilievoRilevatore("");
+                        setNuovoRilievoNote("");
+                        setShowNuovoRilievoModal(true);
+                      }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                        <I d={ICO.ruler} /> + CREA {rilieviCC.length > 0 ? "NUOVO " : ""}RILIEVO
                       </button>
+
                       {vaniCC.length > 0 && (
                         <div style={{ fontSize: 12, color: "#28A0A0", fontWeight: 700, textAlign: "center", marginTop: 8 }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
@@ -2393,6 +2423,86 @@ export default function CMDetailPanel() {
           {c.fase === "chiusura" && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>✓ Commessa chiusa</div>}
           <span onClick={() => deleteCommessa(c.id)} style={{ fontSize: 11, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>Elimina commessa</span>
         </div>
+
+        {/*  MODAL NUOVO RILIEVO  */}
+        {showNuovoRilievoModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9500, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowNuovoRilievoModal(false)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#0D1F1F" }}>Nuovo rilievo</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Commessa {c.code} · {c.cliente}</div>
+                </div>
+                <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>
+              </div>
+
+              {/* TIPO RILIEVO */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo misure</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                  {[
+                    { id: "provvisorio", l: "Provvisorie", d: "Prima visita, misure indicative", c: "#D08008" },
+                    { id: "verificato",  l: "Verificate",  d: "Controllate sul posto", c: "#D08008" },
+                    { id: "definitivo",  l: "Definitive",  d: "Misure finali, preventivo sbloccato", c: "#28A0A0" },
+                    { id: "da_rivedere", l: "Da rivedere", d: "Discrepanze, ricontrollare", c: "#DC4444" },
+                  ].map(t => {
+                    const on = nuovoRilievoTipo === t.id;
+                    return (
+                      <div key={t.id} onClick={() => setNuovoRilievoTipo(t.id as any)} style={{
+                        padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                        background: on ? `${t.c}15` : T.card,
+                        border: `1.5px solid ${on ? t.c : T.bdr}`,
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: on ? t.c : T.text }}>{t.l}</div>
+                        <div style={{ fontSize: 9, color: T.sub, marginTop: 2, lineHeight: 1.4 }}>{t.d}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RILEVATORE */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>Chi ha fatto il rilievo</div>
+                <input type="text" value={nuovoRilievoRilevatore} onChange={e => setNuovoRilievoRilevatore(e.target.value)} placeholder="Nome rilevatore" style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, background: T.card }} />
+              </div>
+
+              {/* NOTE */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>Note (opzionale)</div>
+                <textarea value={nuovoRilievoNote} onChange={e => setNuovoRilievoNote(e.target.value)} placeholder="Es. Seconda visita dopo modifiche richieste dal cliente" style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any, background: T.card }} />
+              </div>
+
+              {/* Azioni */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setShowNuovoRilievoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                <button onClick={() => {
+                  const oggiISO = new Date().toISOString().split("T")[0];
+                  const rilieviAtt = c.rilievi || [];
+                  const nextN = rilieviAtt.length + 1;
+                  const newR = {
+                    id: Date.now(),
+                    n: nextN,
+                    tipo: nuovoRilievoTipo,
+                    data: oggiISO,
+                    ora: new Date().toTimeString().slice(0,5),
+                    rilevatore: nuovoRilievoRilevatore || "",
+                    note: nuovoRilievoNote || "",
+                    vani: [],
+                  };
+                  setCantieri((cs: any[]) => cs.map(cm => cm.id === c.id ? { ...cm, rilievi: [...(cm.rilievi || []), newR] } : cm));
+                  setSelectedCM((prev: any) => prev ? ({ ...prev, rilievi: [...(prev.rilievi || []), newR] }) : prev);
+                  setSelectedRilievo(newR);
+                  setShowNuovoRilievoModal(false);
+                  setCmSubTab("sopralluoghi");
+                }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                  ✓ Crea rilievo · Aggiungi vani
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/*  INTERVENTO FLOW PANEL (fixed overlay)  */}
         {interventoOpen && (
