@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // 
 // MASTRO ERP · CMDetailPanel
@@ -551,17 +551,7 @@ export default function CMDetailPanel() {
                 <button onClick={() => { try { console.log("[PDF] click"); generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[PDF]", err); alert("Errore PDF: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
                 <button onClick={() => { try { console.log("[Anteprima] click"); generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[Anteprima]", err); alert("Errore Anteprima: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
               </div>
-              <button onClick={async () => {
-                try {
-                console.log("[GENERA+INVIA] click", c);
-                generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
-                const url = await generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
-                updCM("preventivoInviato", true);
-                updCM("dataPreventivoInvio", new Date().toISOString().split("T")[0]);
-                if (url) updCM("linkPreventivo", url);
-                setCcDone("📐 PDF scaricato + link firma inviato!"); setTimeout(() => setCcDone(null), 3000);
-                } catch(err) { console.error("[GENERA+INVIA]", err); alert("Errore invio: " + (err?.message || err)); }
-              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)" }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA →</button>
+              <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)" }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA -></button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Scarica PDF e apre WhatsApp con link firma elettronica</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
                 <span onClick={() => { updCM("preventivoInviato", true); setCcDone("✓ Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>✓ Segna completato</span>
@@ -1440,11 +1430,7 @@ export default function CMDetailPanel() {
                       )}
                       {firmaStep === 0 ? (
                         <div>
-                          <button onClick={async () => {
-                            generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
-                            await generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
-                            setFirmaStep(1);
-                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#25d366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA →</button>
+                          <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA -></button>
                           <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
                           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                             <span onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}><I d={ICO.fileText} /> Solo PDF</span>
@@ -2699,6 +2685,23 @@ export default function CMDetailPanel() {
           </div>
         )}
       </div>
+
+      {showModalFirma && c && (
+        <ModalFirma
+          commessaId={c.id || c.cm_id || ""}
+          clienteNome={c.cliente || c.nomeCliente || "Cliente"}
+          clienteTelefono={c.telefono || null}
+          clienteEmail={c.email || null}
+          onClose={() => setShowModalFirma(false)}
+          onSuccess={() => {
+            updCM("preventivoInviato", true);
+            updCM("dataPreventivoInvio", new Date().toISOString().split("T")[0]);
+            setCcDone("Firma inviata al cliente");
+            setTimeout(() => setCcDone(null), 3000);
+          }}
+        />
+      )}
+
     );
 
 }
