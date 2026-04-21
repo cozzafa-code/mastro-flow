@@ -81,13 +81,13 @@ export default function PreventivoModal() {
   };
 
   const handleGeneraPDF = () => {
-    if (!bloccato) { generaPreventivoPDF(c); toast && toast("PDF generato", "success"); }
+    if (!bloccato) { generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); toast && toast("PDF generato", "success"); }
   };
 
   const handleInviaLink = async () => {
     setInvioLink(true);
     try {
-      const url = await generaPreventivoCondivisibile(c);
+      const url = await generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
       if (url) {
         await navigator.clipboard.writeText(url);
         setLinkCopiato(true);

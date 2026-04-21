@@ -1395,7 +1395,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                           {firmaStep === 0 && (
                             <div>
                               <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                                <button onClick={() => generaPreventivoPDF(c)} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: L.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.acc}`, background: `${T.acc}08`, color: L.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Scarica PDF
                                 </button>
                                 <button onClick={() => setShowPreventivoModal(true)} style={{ flex: 1, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: L.surface, color: L.sub, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
@@ -1404,9 +1404,9 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                               </div>
                               <button onClick={async () => {
                                 // 1. Genera PDF scaricabile
-                                generaPreventivoPDF(c);
+                                generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
                                 // 2. Genera pagina con firma elettronica + invia WhatsApp
-                                await generaPreventivoCondivisibile(c);
+                                await generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
                                 setFirmaStep(1);
                               }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#25d366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> GENERA PDF + INVIA CON FIRMA →

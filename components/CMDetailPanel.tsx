@@ -1459,13 +1459,13 @@ export default function CMDetailPanel() {
                       {firmaStep === 0 ? (
                         <div>
                           <button onClick={async () => {
-                            generaPreventivoPDF(c);
-                            await generaPreventivoCondivisibile(c);
+                            generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
+                            await generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
                             setFirmaStep(1);
                           }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#25d366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA →</button>
                           <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
                           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                            <span onClick={() => generaPreventivoPDF(c)} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}><I d={ICO.fileText} /> Solo PDF</span>
+                            <span onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}><I d={ICO.fileText} /> Solo PDF</span>
                             <span onClick={() => setFirmaStep(1)} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gi+ inviato? Carica firma</span>
                           </div>
                         </div>
