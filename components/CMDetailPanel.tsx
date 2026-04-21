@@ -1139,8 +1139,18 @@ export default function CMDetailPanel() {
                           {rilieviCC.length} rilievo · {vaniCC.length} vani {vaniCC.length > 0 ? "· aggiungi misure a tutti i vani" : ""}
                         </div>
                       )}
+                      {/* BOTTONE APRI RILIEVO */}
+                      <button onClick={() => {
+                        const ril = rilieviCC.length > 0 ? rilieviCC[rilieviCC.length - 1] : null;
+                        if (ril) {
+                          setSelectedRilievo(ril);
+                          setCmSubTab("sopralluoghi");
+                        }
+                      }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>
+                        <I d={ICO.ruler} /> APRI RILIEVO · GESTISCI VANI →
+                      </button>
                       {vaniCC.length > 0 && (
-                        <div style={{ fontSize: 12, color: "#28A0A0", fontWeight: 700, textAlign: "center" }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
+                        <div style={{ fontSize: 12, color: "#28A0A0", fontWeight: 700, textAlign: "center", marginTop: 8 }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
                     </div>
                   )}
