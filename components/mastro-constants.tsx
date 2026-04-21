@@ -81,7 +81,7 @@ export const THEMES = {
     text: "#1a1c1d", sub: "#44474d", sub2: "#75777e",
     pri: "#031631",
     acc: "#031631", accD: "#1a2b47", accLt: "rgba(3,22,49,0.06)", accBg: "linear-gradient(135deg,#031631,#1a2b47)",
-    grn: "#1a9e73", grnLt: "rgba(26,158,115,0.08)",
+    grn: "#28A0A0", grnLt: "rgba(40,160,160,0.08)",
     red: "#dc4444", redLt: "rgba(220,68,68,0.08)",
     orange: "#e4c18c", orangeLt: "rgba(228,193,140,0.15)",
     blue: "#3b7fe0", blueLt: "rgba(59,127,224,0.08)",
@@ -96,9 +96,9 @@ export const THEMES = {
     name: "Chiaro", emoji: "sun",
     bg: "#F8FAFC", bg2: "#F1F5F9", card: "#FFFFFF", card2: "#F8FAFC",
     bdr: "#E2E8F0", bdrL: "#F1F5F9", text: "#0F172A", sub: "#64748B", sub2: "#94A3B8",
-    pri: "#14B8A6",
-    acc: "#14B8A6", accD: "#0F766E", accLt: "rgba(20,184,166,0.08)", accBg: "linear-gradient(135deg,#14B8A6,#0F766E)",
-    grn: "#1A9E73", grnLt: "rgba(26,158,115,0.08)",
+    pri: "#28A0A0",
+    acc: "#28A0A0", accD: "#1F7A7A", accLt: "rgba(40,160,160,0.08)", accBg: "linear-gradient(135deg,#28A0A0,#1F7A7A)",
+    grn: "#28A0A0", grnLt: "rgba(40,160,160,0.08)",
     red: "#DC4444", redLt: "rgba(220,68,68,0.08)",
     orange: "#E8A020", orangeLt: "rgba(232,160,32,0.08)",
     blue: "#3B7FE0", blueLt: "rgba(59,127,224,0.08)",
@@ -205,7 +205,7 @@ export const PLANS = {
 export const PIPELINE_DEFAULT = [
   { id: "sopralluogo", nome: "Sopralluogo", ico: "search", color: "#3B7FE0", attiva: true, desc: "Vai al cantiere, prendi misure, foto, note" },
   { id: "preventivo", nome: "Preventivo", ico: "clipboard", color: "#F5A623", attiva: true, desc: "Rivedi misure, calcola prezzi, sconti, condizioni" },
-  { id: "conferma", nome: "Conferma", ico: "signatureEdit", color: "#0D7C6B", attiva: true, desc: "Firma del cliente, conferma ordine, acconto" },
+  { id: "conferma", nome: "Conferma", ico: "signatureEdit", color: "#28A0A0", attiva: true, desc: "Firma del cliente, conferma ordine, acconto" },
   { id: "ordini", nome: "Ordini", ico: "package", color: "#EF4444", attiva: true, desc: "Ordina materiali ai fornitori" },
   { id: "produzione", nome: "Produzione", ico: "factory", color: "#F59E0B", attiva: true, desc: "In lavorazione, attesa materiali" },
   { id: "posa", nome: "Posa", ico: "hammer", color: "#F97316", attiva: true, desc: "Montaggio al cantiere" },
@@ -501,7 +501,7 @@ export const MSGS_INIT = [
 ];
 
 export const TEAM_INIT = [
-  { id: 1, nome: "", ruolo: "Titolare", compiti: "Gestione commesse, preventivi, rapporti clienti", colore: "#0D7C6B" },
+  { id: 1, nome: "", ruolo: "Titolare", compiti: "Gestione commesse, preventivi, rapporti clienti", colore: "#28A0A0" },
 ];
 
 export const CONTATTI_INIT = [
@@ -687,7 +687,7 @@ export const LAMIERE_INIT = [
 export const Ico = ({ d, s = 20, c = "#888", sw = 1.8 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>
 );
-// Inline icon helper (replaces emoji spans) ÔÇö usage: <I d={ICO.package} c="#0D7C6B" />
+// Inline icon helper (replaces emoji spans) ÔÇö usage: <I d={ICO.package} c="#28A0A0" />
 export const I = ({ d, s = 16, c = "currentColor", sw = 2 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",flexShrink:0}}>{d}</svg>
 );
