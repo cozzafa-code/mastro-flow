@@ -14,6 +14,7 @@ import InterventoTab from "./InterventoTab";
 import InterventoFlowPanel from "./InterventoFlowPanel";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
 import GuidaIvaDetrazioni from "./GuidaIvaDetrazioni";
+import TabFiscale from "./TabFiscale";
 import DisegnoTecnico from "./DisegnoTecnico";
 // @cadDraw state added below
 
@@ -387,82 +388,16 @@ export default function CMDetailPanel() {
 
           {/*  TAB FISCALE (IVA · Detrazioni · Pratica · Guida completa)  */}
           {prevTab === "fiscale" && (
-            <div style={{ padding: "0 12px 20px" }}>
-              {/* CARD IVA - selettore rapido */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#28A0A0" /></div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Aliquota IVA commessa</div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-                  {[4, 10, 22].map(p => (
-                    <div key={p} onClick={() => updCM("ivaPerc", p)} style={{
-                      padding: "12px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
-                      background: pwIvaDefault === p ? T.acc : T.card,
-                      border: `1.5px solid ${pwIvaDefault === p ? T.acc : T.bdr}`,
-                      color: pwIvaDefault === p ? "#fff" : T.text,
-                      fontSize: 14, fontWeight: 900,
-                      boxShadow: pwIvaDefault === p ? `0 3px 0 ${T.acc}40` : "none",
-                    }}>{p}%</div>
-                  ))}
-                  <div onClick={() => { const v = prompt("IVA personalizzata (%)", String(pwIvaDefault)); if (v != null) { const n = parseFloat(v); if (!isNaN(n)) updCM("ivaPerc", n); } }} style={{
-                    padding: "12px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
-                    background: ![4,10,22].includes(pwIvaDefault) ? T.acc : T.card,
-                    border: `1.5px solid ${![4,10,22].includes(pwIvaDefault) ? T.acc : T.bdr}`,
-                    color: ![4,10,22].includes(pwIvaDefault) ? "#fff" : T.sub,
-                    fontSize: 13, fontWeight: 800,
-                  }}>{![4,10,22].includes(pwIvaDefault) ? `${pwIvaDefault}%` : "Altra"}</div>
-                </div>
-              </div>
-
-              {/* CARD DETRAZIONE - selettore rapido */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(245,166,35,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.building} s={14} c="#D08008" /></div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Detrazione fiscale cliente</div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                  {DETRAZIONI_OPT.map(d => (
-                    <div key={d.id} onClick={() => updCM("detrazione", d.id)} style={{
-                      padding: "11px 10px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
-                      background: pwDetr === d.id ? "#D08008" : T.card,
-                      border: `1.5px solid ${pwDetr === d.id ? "#D08008" : T.bdr}`,
-                      color: pwDetr === d.id ? "#fff" : T.text,
-                      fontSize: 12, fontWeight: 800,
-                      boxShadow: pwDetr === d.id ? "0 3px 0 #D0800840" : "none",
-                    }}>{d.l}</div>
-                  ))}
-                </div>
-              </div>
-
-              {/* CARD SCONTO */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(220,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.tag} s={14} c="#DC4444" /></div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Sconto commerciale</div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
-                  {[0, 5, 10, 15, 20].map(p => (
-                    <div key={p} onClick={() => updCM("scontoPerc", p)} style={{
-                      padding: "10px 4px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
-                      background: pwSconto === p ? "#DC4444" : T.card,
-                      border: `1.5px solid ${pwSconto === p ? "#DC4444" : T.bdr}`,
-                      color: pwSconto === p ? "#fff" : T.text,
-                      fontSize: 13, fontWeight: 800,
-                    }}>{p === 0 ? "No" : p + "%"}</div>
-                  ))}
-                </div>
-              </div>
-
-              {/* GUIDA COMPLETA: IVA 4/10 + Detrazioni 50/65/75 con requisiti, checklist documenti, testo fattura */}
-              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #3B7FE030`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(59,127,224,0.08)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(59,127,224,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.fileText} s={14} c="#3B7FE0" /></div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Guida pratica fiscale 2026</div>
-                </div>
-                <GuidaIvaDetrazioni />
-              </div>
-            </div>
+            <TabFiscale
+              T={T} ICO={ICO} I={I}
+              commessa={c}
+              aziendaInfo={aziendaInfo}
+              DETRAZIONI_OPT={DETRAZIONI_OPT}
+              updCM={updCM}
+              pwIvaDefault={pwIvaDefault}
+              pwDetr={pwDetr}
+              pwSconto={pwSconto}
+            />
           )}
 
           {/*  TAB CONDIZIONI (pagamento · consegna · garanzia)  */}
