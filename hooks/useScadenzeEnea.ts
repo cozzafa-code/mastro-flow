@@ -7,13 +7,13 @@ import { supabase } from '@/lib/supabaseClient';
 export interface ScadenzaEnea {
   praticaId: string;
   commessaId: string;
-  commessaNumero: string;
+  commessaCode: string;
   clienteNome: string;
   detrazione: '65' | '75';
   dataFineLavori: string;
   dataScadenza: Date;
   giorniAllaScadenza: number;
-  statoEnea: string;
+  statoEnea: string | null;
 }
 
 export function useScadenzeEnea(aziendaId: string | null) {
@@ -29,35 +29,36 @@ export function useScadenzeEnea(aziendaId: string | null) {
     const { data, error } = await supabase
       .from('fiscale_pratica')
       .select(`
-        id, commessa_id, detrazione, data_fine_lavori, stato_enea,
-        commessa:commessa_id(numero, cliente:cliente_id(nome, cognome))
+        id, commessa_id, detrazione_raccomandata, data_fine_lavori, stato_enea,
+        commessa:commessa_id!inner(code, azienda_id, cliente, cognome)
       `)
-      .eq('azienda_id', aziendaId)
-      .in('detrazione', ['65', '75'])
-      .not('data_fine_lavori', 'is', null)
-      .in('stato_enea', ['da_inviare', 'errore', 'scaduta']);
+      .in('detrazione_raccomandata', ['65', '75'])
+      .not('data_fine_lavori', 'is', null);
 
     if (error) { setError(error.message); setLoading(false); return; }
 
     const oggi = new Date();
-    const mapped: ScadenzaEnea[] = (data || []).map((p: any) => {
-      const fine = new Date(p.data_fine_lavori);
-      const scad = new Date(fine);
-      scad.setDate(scad.getDate() + 90);
-      const giorni = Math.ceil((scad.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
-      const cl = p.commessa?.cliente;
-      return {
-        praticaId: p.id,
-        commessaId: p.commessa_id,
-        commessaNumero: p.commessa?.numero || '',
-        clienteNome: cl ? `${cl.nome || ''} ${cl.cognome || ''}`.trim() : '',
-        detrazione: p.detrazione,
-        dataFineLavori: p.data_fine_lavori,
-        dataScadenza: scad,
-        giorniAllaScadenza: giorni,
-        statoEnea: p.stato_enea,
-      };
-    });
+    const mapped: ScadenzaEnea[] = (data || [])
+      .filter((p: any) => p.commessa?.azienda_id === aziendaId)
+      .filter((p: any) => p.stato_enea !== 'inviata' && p.stato_enea !== 'confermata')
+      .map((p: any) => {
+        const fine = new Date(p.data_fine_lavori);
+        const scad = new Date(fine);
+        scad.setDate(scad.getDate() + 90);
+        const giorni = Math.ceil((scad.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
+        const nome = [p.commessa?.cliente, p.commessa?.cognome].filter(Boolean).join(' ').trim();
+        return {
+          praticaId: p.id,
+          commessaId: p.commessa_id,
+          commessaCode: p.commessa?.code || '',
+          clienteNome: nome,
+          detrazione: p.detrazione_raccomandata,
+          dataFineLavori: p.data_fine_lavori,
+          dataScadenza: scad,
+          giorniAllaScadenza: giorni,
+          statoEnea: p.stato_enea,
+        };
+      });
 
     mapped.sort((a, b) => a.giorniAllaScadenza - b.giorniAllaScadenza);
     setScadenze(mapped);

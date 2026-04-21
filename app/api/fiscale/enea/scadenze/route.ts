@@ -1,34 +1,39 @@
 // app/api/fiscale/enea/scadenze/route.ts
-// POST: esegue scansione pratiche 65/75 non ancora inviate con data_fine_lavori impostata.
-// Crea evento agenda a (fine_lavori + 90gg - 7) con tipo 'scadenza_enea'.
-// Idempotente: se evento esiste già (per pratica_fiscale_id), aggiorna la data.
-// Richiamabile da cron Vercel o manualmente.
+// Cron giornaliero: scansiona pratiche 65/75 con data_fine_lavori → crea evento in `eventi`
+// a (fine_lavori + 90gg - 7) con tipo='scadenza_enea'.
+// Idempotente su pratica_fiscale_id.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
-    // Pratiche 65/75 con fine lavori impostata ma non ancora inviate a ENEA
     const { data: pratiche, error } = await supabase
       .from('fiscale_pratica')
-      .select('id, azienda_id, commessa_id, detrazione, data_fine_lavori, stato_enea, commessa:commessa_id(numero, cliente_id, cliente:cliente_id(nome, cognome))')
-      .in('detrazione', ['65', '75'])
-      .not('data_fine_lavori', 'is', null)
-      .in('stato_enea', ['da_inviare', 'errore']);
+      .select(`
+        id, commessa_id, detrazione_raccomandata, data_fine_lavori, stato_enea,
+        commessa:commessa_id(code, azienda_id, cliente, cognome)
+      `)
+      .in('detrazione_raccomandata', ['65', '75'])
+      .not('data_fine_lavori', 'is', null);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (!pratiche?.length) return NextResponse.json({ ok: true, processate: 0 });
 
+    // Filtra pratiche non già inviate (da_inviare/errore/null)
+    const filtrate = pratiche.filter((p: any) =>
+      p.stato_enea !== 'inviata' && p.stato_enea !== 'confermata'
+    );
+
     let create = 0, update = 0, scaduteTot = 0;
 
-    for (const p of pratiche) {
-      const fine = new Date(p.data_fine_lavori!);
+    for (const p of filtrate as any[]) {
+      const fine = new Date(p.data_fine_lavori);
       const scadenzaEnea = new Date(fine);
       scadenzaEnea.setDate(scadenzaEnea.getDate() + 90);
 
@@ -38,46 +43,56 @@ export async function POST(req: NextRequest) {
       const oggi = new Date();
       const giorniAllaScadenza = Math.ceil((scadenzaEnea.getTime() - oggi.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Marca scadute
+      // Scadute → marca pratica e non creare evento
       if (giorniAllaScadenza < 0 && p.stato_enea !== 'scaduta') {
         await supabase.from('fiscale_pratica').update({ stato_enea: 'scaduta' }).eq('id', p.id);
         scaduteTot++;
         continue;
       }
 
-      const cliente = (p.commessa as any)?.cliente;
-      const numero = (p.commessa as any)?.numero;
-      const nomeCliente = cliente ? `${cliente.nome || ''} ${cliente.cognome || ''}`.trim() : 'cliente';
+      const commessa = p.commessa;
+      const nomeCliente = [commessa?.cliente, commessa?.cognome].filter(Boolean).join(' ').trim() || 'cliente';
+      const code = commessa?.code || '';
+      const aziendaId = commessa?.azienda_id;
+      if (!aziendaId) continue;
 
-      const titolo = `⚠️ ENEA — ${giorniAllaScadenza <= 7 ? 'SCADENZA IMMINENTE' : 'Scadenza tra 90gg'}`;
-      const descrizione = `Invio pratica ENEA ${p.detrazione}% per ${nomeCliente} (commessa ${numero}). Fine lavori: ${fine.toLocaleDateString('it-IT')}. Scadenza legale: ${scadenzaEnea.toLocaleDateString('it-IT')}.`;
+      const titolo = giorniAllaScadenza <= 7
+        ? `ENEA — SCADENZA IMMINENTE (${giorniAllaScadenza}gg)`
+        : `ENEA — Scadenza comunicazione`;
+      const note = `Invio pratica ENEA ${p.detrazione_raccomandata}% per ${nomeCliente} (commessa ${code}). Fine lavori: ${fine.toLocaleDateString('it-IT')}. Scadenza legale: ${scadenzaEnea.toLocaleDateString('it-IT')}.`;
 
-      // Verifica evento esistente
+      const dataAlert = alertDate.toISOString().slice(0, 10);
+      const linkModulo = `/commesse/${p.commessa_id}?tab=fiscale&wizard=enea&pratica=${p.id}`;
+
       const { data: esistente } = await supabase
-        .from('agenda_eventi')
+        .from('eventi')
         .select('id')
         .eq('pratica_fiscale_id', p.id)
-        .eq('tipo_evento', 'scadenza_enea')
+        .eq('tipo', 'scadenza_enea')
         .maybeSingle();
 
       if (esistente) {
-        await supabase.from('agenda_eventi').update({
-          data_inizio: alertDate.toISOString(),
-          data_fine: scadenzaEnea.toISOString(),
+        await supabase.from('eventi').update({
+          data: dataAlert,
           titolo,
-          descrizione,
+          note,
+          link_modulo: linkModulo,
+          colore: giorniAllaScadenza <= 7 ? '#EF4444' : '#F59E0B',
         }).eq('id', esistente.id);
         update++;
       } else {
-        await supabase.from('agenda_eventi').insert({
-          azienda_id: p.azienda_id,
+        await supabase.from('eventi').insert({
+          azienda_id: aziendaId,
+          commessa_id: p.commessa_id,
           titolo,
-          descrizione,
-          data_inizio: alertDate.toISOString(),
-          data_fine: scadenzaEnea.toISOString(),
-          tipo_evento: 'scadenza_enea',
-          link_modulo: `/commesse/${p.commessa_id}?tab=fiscale&wizard=enea&pratica=${p.id}`,
+          tipo: 'scadenza_enea',
+          data: dataAlert,
+          ora: '09:00',
+          note,
+          colore: giorniAllaScadenza <= 7 ? '#EF4444' : '#F59E0B',
+          link_modulo: linkModulo,
           pratica_fiscale_id: p.id,
+          completato: false,
         });
         create++;
       }
@@ -85,7 +100,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      processate: pratiche.length,
+      processate: filtrate.length,
       eventi_creati: create,
       eventi_aggiornati: update,
       pratiche_scadute: scaduteTot,
@@ -96,7 +111,6 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET: utile per cron Vercel (stesso comportamento)
 export async function GET(req: NextRequest) {
   return POST(req);
 }

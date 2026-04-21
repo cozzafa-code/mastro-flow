@@ -1,10 +1,9 @@
 // lib/fiscale/pdfGenerator.ts
-// Genera PDF fiscali dal wizard: dichiarazione sostitutiva, scheda tecnica,
-// istruzioni bonifico parlante, checklist commercialista.
-// Output: salva su bucket 'fiscale-docs' + aggiorna fiscale_pratica.documenti_pdf[]
+// Genera PDF fiscali: dichiarazione sostitutiva, scheda tecnica, bonifico parlante, checklist.
+// Salva su bucket 'fiscale-docs' + aggiorna fiscale_pratica.documenti_pdf[]
 
 import jsPDF from 'jspdf';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const T = {
   dark: '#0D1F1F',
@@ -19,28 +18,23 @@ type Detrazione = '50' | '65' | '75';
 
 export interface DatiFiscalePDF {
   azienda: {
-    ragione_sociale: string;
+    ragione: string;
     piva: string;
-    cf?: string;
-    indirizzo?: string;
-    iban?: string;
-    logo_url?: string;
+    codice_fiscale?: string | null;
+    indirizzo?: string | null;
+    iban?: string | null;
   };
   cliente: {
     nome: string;
-    cf: string;
+    codice_fiscale: string;
     indirizzo_immobile: string;
-    foglio?: string;
-    particella?: string;
-    subalterno?: string;
   };
   commessa: {
     id: string;
-    numero: string;
+    code: string;
     importo_totale: number;
     iva_aliquota: number;
-    data_inizio?: string;
-    data_fine?: string;
+    data_fine_lavori?: string | null;
   };
   detrazione: Detrazione;
   praticaId: string;
@@ -52,7 +46,7 @@ function header(doc: jsPDF, titolo: string, azienda: DatiFiscalePDF['azienda']) 
   doc.setTextColor(T.light);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(azienda.ragione_sociale, 15, 10);
+  doc.text(azienda.ragione, 15, 10);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.text(`P.IVA ${azienda.piva}`, 15, 16);
@@ -69,64 +63,51 @@ function footer(doc: jsPDF, pagina: number) {
   doc.setTextColor(T.muted);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Documento generato da MASTRO Suite — ${new Date().toLocaleDateString('it-IT')}`, 15, 287);
+  doc.text(`Generato da MASTRO Suite — ${new Date().toLocaleDateString('it-IT')}`, 15, 287);
   doc.text(`Pag. ${pagina}`, 195, 287, { align: 'right' });
 }
 
-// ────────────────────────────────────────────────────────────
-// 1. Dichiarazione sostitutiva detrazione
-// ────────────────────────────────────────────────────────────
 export function pdfDichiarazione(d: DatiFiscalePDF): Blob {
   const doc = new jsPDF();
   header(doc, `Dichiarazione sostitutiva — Detrazione ${d.detrazione}%`, d.azienda);
-
   doc.setTextColor(T.text);
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
 
   let y = 50;
   doc.text(`Il/La sottoscritto/a ${d.cliente.nome}`, 15, y); y += 6;
-  doc.text(`C.F. ${d.cliente.cf}`, 15, y); y += 6;
+  doc.text(`C.F. ${d.cliente.codice_fiscale}`, 15, y); y += 6;
   doc.text(`residente/proprietario dell'immobile sito in:`, 15, y); y += 6;
-  doc.text(d.cliente.indirizzo_immobile, 15, y); y += 6;
-  if (d.cliente.foglio) {
-    doc.text(`Dati catastali — Foglio: ${d.cliente.foglio}  Particella: ${d.cliente.particella || '-'}  Sub: ${d.cliente.subalterno || '-'}`, 15, y);
-    y += 8;
-  } else y += 2;
+  const indLines = doc.splitTextToSize(d.cliente.indirizzo_immobile, 180);
+  doc.text(indLines, 15, y); y += indLines.length * 5 + 6;
 
   doc.setFont('helvetica', 'bold');
   doc.text('DICHIARA', 105, y, { align: 'center' }); y += 10;
   doc.setFont('helvetica', 'normal');
 
   const testo = d.detrazione === '50'
-    ? `che l'intervento oggetto del presente documento (sostituzione serramenti, commessa n. ${d.commessa.numero}) rientra tra gli interventi di recupero del patrimonio edilizio di cui all'art. 16-bis TUIR, e di voler beneficiare della detrazione IRPEF del 50%.`
+    ? `che l'intervento (sostituzione serramenti, commessa n. ${d.commessa.code}) rientra tra gli interventi di recupero del patrimonio edilizio di cui all'art. 16-bis TUIR, e di voler beneficiare della detrazione IRPEF del 50%.`
     : d.detrazione === '65'
-    ? `che l'intervento oggetto del presente documento (sostituzione serramenti con miglioramento delle prestazioni energetiche, commessa n. ${d.commessa.numero}) rientra tra gli interventi di riqualificazione energetica di cui all'art. 14 DL 63/2013, e di voler beneficiare della detrazione IRPEF/IRES del 65% (Ecobonus). Dichiara inoltre di aver provveduto (o di provvedere entro 90 giorni dal fine lavori) alla comunicazione ENEA obbligatoria.`
-    : `che l'intervento oggetto del presente documento (sostituzione serramenti su parti comuni condominiali con miglioramento delle prestazioni energetiche, commessa n. ${d.commessa.numero}) rientra tra gli interventi condominiali di riqualificazione energetica, e di voler beneficiare della detrazione IRPEF del 75% (Ecobonus condominiale). Dichiara inoltre l'obbligo di comunicazione ENEA entro 90 giorni dal fine lavori.`;
+    ? `che l'intervento (sostituzione serramenti con miglioramento prestazioni energetiche, commessa n. ${d.commessa.code}) rientra tra gli interventi di riqualificazione energetica di cui all'art. 14 DL 63/2013, e di voler beneficiare della detrazione del 65% (Ecobonus). Si dichiara l'obbligo di comunicazione ENEA entro 90 giorni dal fine lavori.`
+    : `che l'intervento (sostituzione serramenti su parti comuni condominiali, commessa n. ${d.commessa.code}) rientra tra gli interventi condominiali di riqualificazione energetica, e di voler beneficiare della detrazione del 75%. Si dichiara l'obbligo di comunicazione ENEA entro 90 giorni dal fine lavori.`;
 
   const lines = doc.splitTextToSize(testo, 180);
   doc.text(lines, 15, y);
   y += lines.length * 5 + 10;
 
   doc.setFont('helvetica', 'bold');
-  doc.text(`Importo lavori: € ${d.commessa.importo_totale.toFixed(2)}  —  IVA ${d.commessa.iva_aliquota}%`, 15, y);
+  doc.text(`Importo lavori: € ${Number(d.commessa.importo_totale || 0).toFixed(2)}  —  IVA ${d.commessa.iva_aliquota}%`, 15, y);
   y += 15;
 
   doc.setFont('helvetica', 'normal');
   doc.text('Data: _______________________', 15, y);
   doc.text('Firma: _______________________________', 110, y);
-
   footer(doc, 1);
   return doc.output('blob');
 }
 
-// ────────────────────────────────────────────────────────────
-// 2. Scheda tecnica detrazione (riassunto normativo per cliente)
-// ────────────────────────────────────────────────────────────
 export function pdfSchedaTecnica(d: DatiFiscalePDF): Blob {
   const doc = new jsPDF();
   header(doc, `Scheda tecnica — Detrazione ${d.detrazione}%`, d.azienda);
-
   doc.setTextColor(T.text);
   doc.setFontSize(10);
   let y = 50;
@@ -136,139 +117,112 @@ export function pdfSchedaTecnica(d: DatiFiscalePDF): Blob {
     ['Aliquota', ['50% su spese documentate']],
     ['Massimale', ['€ 96.000 per unità immobiliare']],
     ['Rate', ['10 rate annuali di pari importo']],
-    ['Pagamento', ['OBBLIGATORIO bonifico parlante (causale specifica)']],
-    ['Documenti richiesti', ['Fattura con descrizione lavori', 'Bonifico parlante', 'Abilitazioni edilizie (se necessarie)']],
-    ['ENEA', ['NON obbligatorio per sostituzione serramenti in Bonus 50%']],
+    ['Pagamento', ['OBBLIGATORIO bonifico parlante']],
+    ['Documenti', ['Fattura', 'Bonifico parlante', 'Abilitazioni edilizie se necessarie']],
+    ['ENEA', ['NON obbligatoria per Bonus 50% serramenti']],
   ] : d.detrazione === '65' ? [
     ['Tipo detrazione', ['Ecobonus — Riqualificazione energetica', 'Art. 14 DL 63/2013']],
     ['Aliquota', ['65% su spese documentate']],
-    ['Massimale', ['€ 60.000 per unità immobiliare (serramenti)']],
+    ['Massimale', ['€ 60.000 per unità immobiliare']],
     ['Rate', ['10 rate annuali di pari importo']],
     ['Pagamento', ['OBBLIGATORIO bonifico parlante']],
-    ['Documenti richiesti', ['Fattura', 'Bonifico parlante', 'Asseverazione tecnica (se richiesta)', 'Scheda descrittiva intervento']],
+    ['Documenti', ['Fattura', 'Bonifico parlante', 'Asseverazione tecnica se richiesta', 'Scheda descrittiva']],
     ['ENEA', ['OBBLIGATORIA entro 90 giorni dal fine lavori', 'Pena decadenza detrazione']],
   ] : [
     ['Tipo detrazione', ['Ecobonus condominiale', 'Art. 14 DL 63/2013']],
     ['Aliquota', ['75% su parti comuni condominiali']],
     ['Massimale', ['€ 40.000 × numero unità immobiliari']],
     ['Rate', ['10 rate annuali di pari importo']],
-    ['Pagamento', ['OBBLIGATORIO bonifico parlante (condominio)']],
-    ['Documenti richiesti', ['Fattura intestata al condominio', 'Delibera assembleare', 'Bonifico parlante', 'Asseverazione tecnica', 'APE ante/post operam']],
+    ['Pagamento', ['OBBLIGATORIO bonifico parlante del condominio']],
+    ['Documenti', ['Fattura intestata al condominio', 'Delibera assembleare', 'Asseverazione tecnica', 'APE ante/post operam']],
     ['ENEA', ['OBBLIGATORIA entro 90 giorni dal fine lavori']],
   ];
 
-  for (const [etichetta, righe] of blocchi) {
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(T.teal);
-    doc.text(etichetta, 15, y);
-    y += 5;
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(T.text);
-    for (const riga of righe) {
-      const wrapped = doc.splitTextToSize(`• ${riga}`, 175);
-      doc.text(wrapped, 20, y);
-      y += wrapped.length * 5;
+  for (const [et, righe] of blocchi) {
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(T.teal);
+    doc.text(et, 15, y); y += 5;
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(T.text);
+    for (const r of righe) {
+      const w = doc.splitTextToSize(`• ${r}`, 175);
+      doc.text(w, 20, y); y += w.length * 5;
     }
     y += 4;
     if (y > 260) { footer(doc, 1); doc.addPage(); y = 20; }
   }
-
   footer(doc, 1);
   return doc.output('blob');
 }
 
-// ────────────────────────────────────────────────────────────
-// 3. Istruzioni bonifico parlante
-// ────────────────────────────────────────────────────────────
 export function pdfBonificoParlante(d: DatiFiscalePDF): Blob {
   const doc = new jsPDF();
   header(doc, 'Istruzioni bonifico parlante', d.azienda);
-
   doc.setTextColor(T.text);
   doc.setFontSize(10);
   let y = 50;
 
   doc.setFont('helvetica', 'bold');
-  doc.text('IMPORTANTE: la detrazione richiede bonifico parlante con causale specifica.', 15, y);
-  y += 8;
+  doc.text('La detrazione richiede bonifico parlante con causale specifica.', 15, y); y += 8;
   doc.setFont('helvetica', 'normal');
-  doc.text('Non è valido un bonifico ordinario. La banca applica una ritenuta d\'acconto dell\'8%.', 15, y);
-  y += 12;
+  doc.text('Non è valido un bonifico ordinario. La banca applica ritenuta d\'acconto 8%.', 15, y); y += 12;
 
-  // Box beneficiario
   doc.setFillColor(T.light);
   doc.rect(15, y, 180, 32, 'F');
-  doc.setDrawColor(T.border);
-  doc.rect(15, y, 180, 32);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(T.teal);
+  doc.setDrawColor(T.border); doc.rect(15, y, 180, 32);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(T.teal);
   doc.text('BENEFICIARIO', 20, y + 6);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(T.text);
-  doc.text(d.azienda.ragione_sociale, 20, y + 13);
-  doc.text(`P.IVA ${d.azienda.piva}${d.azienda.cf ? `  —  C.F. ${d.azienda.cf}` : ''}`, 20, y + 19);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(T.text);
+  doc.text(d.azienda.ragione, 20, y + 13);
+  doc.text(`P.IVA ${d.azienda.piva}${d.azienda.codice_fiscale ? `  —  C.F. ${d.azienda.codice_fiscale}` : ''}`, 20, y + 19);
   if (d.azienda.iban) doc.text(`IBAN ${d.azienda.iban}`, 20, y + 25);
   y += 40;
 
-  // Causale
   const causale = d.detrazione === '50'
-    ? `Bonifico per interventi di recupero del patrimonio edilizio ex art. 16-bis TUIR — C.F. ${d.cliente.cf} — P.IVA ${d.azienda.piva} — Commessa ${d.commessa.numero}`
-    : `Bonifico per riqualificazione energetica ex art. 14 DL 63/2013 — C.F. ${d.cliente.cf} — P.IVA ${d.azienda.piva} — Commessa ${d.commessa.numero}`;
+    ? `Bonifico per interventi di recupero patrimonio edilizio ex art. 16-bis TUIR — C.F. ${d.cliente.codice_fiscale} — P.IVA ${d.azienda.piva} — Commessa ${d.commessa.code}`
+    : `Bonifico per riqualificazione energetica ex art. 14 DL 63/2013 — C.F. ${d.cliente.codice_fiscale} — P.IVA ${d.azienda.piva} — Commessa ${d.commessa.code}`;
 
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(T.teal);
-  doc.text('CAUSALE DA INSERIRE (copiare integralmente)', 15, y);
-  y += 6;
-  doc.setFont('courier', 'normal');
-  doc.setTextColor(T.text);
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(T.teal);
+  doc.text('CAUSALE DA INSERIRE (copiare integralmente)', 15, y); y += 6;
+  doc.setFont('courier', 'normal'); doc.setTextColor(T.text);
   doc.setFillColor(T.light);
-  const causaleLines = doc.splitTextToSize(causale, 175);
-  doc.rect(15, y - 4, 180, causaleLines.length * 5 + 6, 'F');
-  doc.text(causaleLines, 18, y);
-  y += causaleLines.length * 5 + 12;
+  const cLines = doc.splitTextToSize(causale, 175);
+  doc.rect(15, y - 4, 180, cLines.length * 5 + 6, 'F');
+  doc.text(cLines, 18, y);
+  y += cLines.length * 5 + 12;
 
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(T.text);
-  doc.text(`Importo: € ${d.commessa.importo_totale.toFixed(2)}`, 15, y);
-  y += 10;
+  doc.setFont('helvetica', 'bold'); doc.setTextColor(T.text);
+  doc.text(`Importo: € ${Number(d.commessa.importo_totale || 0).toFixed(2)}`, 15, y); y += 10;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.text('Conservare copia del bonifico firmato per 10 anni (durata della detrazione).', 15, y);
-
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.text('Conservare copia firmata del bonifico per 10 anni.', 15, y);
   footer(doc, 1);
   return doc.output('blob');
 }
 
-// ────────────────────────────────────────────────────────────
-// 4. Checklist commercialista
-// ────────────────────────────────────────────────────────────
 export function pdfChecklistCommercialista(d: DatiFiscalePDF): Blob {
   const doc = new jsPDF();
   header(doc, 'Checklist documenti per commercialista', d.azienda);
-
   doc.setTextColor(T.text);
   doc.setFontSize(10);
   let y = 50;
 
-  doc.text(`Cliente: ${d.cliente.nome}  —  C.F. ${d.cliente.cf}`, 15, y); y += 6;
-  doc.text(`Commessa: ${d.commessa.numero}  —  Detrazione: ${d.detrazione}%`, 15, y); y += 10;
+  doc.text(`Cliente: ${d.cliente.nome}  —  C.F. ${d.cliente.codice_fiscale}`, 15, y); y += 6;
+  doc.text(`Commessa: ${d.commessa.code}  —  Detrazione: ${d.detrazione}%`, 15, y); y += 10;
 
   const items = [
     'Fattura elettronica (copia PDF + XML)',
-    'Bonifico parlante firmato e timbrato',
-    'Dichiarazione sostitutiva cliente (firmata)',
+    'Bonifico parlante firmato',
+    'Dichiarazione sostitutiva cliente firmata',
     'Scheda tecnica intervento',
     ...(d.detrazione !== '50' ? [
-      'Ricevuta trasmissione ENEA (entro 90gg fine lavori)',
-      'Asseverazione tecnica (se importo > soglia)',
+      'Ricevuta trasmissione ENEA (entro 90gg)',
+      'Asseverazione tecnica (se richiesta)',
     ] : []),
     ...(d.detrazione === '75' ? [
       'Delibera assembleare condominiale',
       'APE ante operam',
       'APE post operam',
     ] : []),
-    'Certificazione CE serramenti installati',
+    'Certificazione CE serramenti',
     'Scheda prodotto (trasmittanza Uw)',
   ];
 
@@ -280,26 +234,18 @@ export function pdfChecklistCommercialista(d: DatiFiscalePDF): Blob {
   }
 
   y += 8;
-  doc.setFontSize(9);
-  doc.setTextColor(T.muted);
-  doc.text('Conservare la documentazione per almeno 10 anni (durata rateizzazione detrazione).', 15, y);
-
+  doc.setFontSize(9); doc.setTextColor(T.muted);
+  doc.text('Conservare per almeno 10 anni (durata rateizzazione).', 15, y);
   footer(doc, 1);
   return doc.output('blob');
 }
 
-// ────────────────────────────────────────────────────────────
-// Orchestratore: genera tutti i PDF + carica su storage + aggiorna DB
-// ────────────────────────────────────────────────────────────
 export async function generaEcaricaPDFFiscali(
   d: DatiFiscalePDF,
-  supabaseUrl: string,
-  supabaseKey: string,
+  supabase: SupabaseClient,
 ): Promise<{ ok: boolean; urls: string[]; error?: string }> {
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
     const base = `${d.praticaId}/${Date.now()}`;
-
     const docs: { nome: string; blob: Blob }[] = [
       { nome: 'dichiarazione-sostitutiva.pdf', blob: pdfDichiarazione(d) },
       { nome: 'scheda-tecnica.pdf', blob: pdfSchedaTecnica(d) },
@@ -307,6 +253,9 @@ export async function generaEcaricaPDFFiscali(
       { nome: 'checklist-commercialista.pdf', blob: pdfChecklistCommercialista(d) },
     ];
 
+    // Bucket fiscale-docs è PRIVATO → salviamo il path, non l'URL pubblico.
+    // Il download side userà createSignedUrl(path, 3600) al momento.
+    const paths: string[] = [];
     const urls: string[] = [];
     for (const doc of docs) {
       const path = `${base}/${doc.nome}`;
@@ -314,13 +263,18 @@ export async function generaEcaricaPDFFiscali(
         .from('fiscale-docs')
         .upload(path, doc.blob, { contentType: 'application/pdf', upsert: true });
       if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from('fiscale-docs').getPublicUrl(path);
-      urls.push(publicUrl);
+      paths.push(path);
+      // Signed URL con validità 7 giorni per la prima visualizzazione
+      const { data: signed } = await supabase.storage
+        .from('fiscale-docs')
+        .createSignedUrl(path, 60 * 60 * 24 * 7);
+      urls.push(signed?.signedUrl || '');
     }
 
-    const documenti_pdf = urls.map((url, i) => ({
+    const documenti_pdf = paths.map((path, i) => ({
       nome: docs[i].nome,
-      url,
+      path,
+      signed_url: urls[i],
       generato_il: new Date().toISOString(),
     }));
 
@@ -328,11 +282,19 @@ export async function generaEcaricaPDFFiscali(
       .from('fiscale_pratica')
       .update({ documenti_pdf })
       .eq('id', d.praticaId);
-
     if (updErr) throw updErr;
 
     return { ok: true, urls };
   } catch (e: any) {
     return { ok: false, urls: [], error: e.message || String(e) };
   }
+}
+
+export async function generaPDFFiscaliFromClient(
+  d: DatiFiscalePDF,
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+) {
+  const sb = createClient(supabaseUrl, supabaseAnonKey);
+  return generaEcaricaPDFFiscali(d, sb);
 }

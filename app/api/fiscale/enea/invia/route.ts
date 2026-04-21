@@ -1,7 +1,5 @@
 // app/api/fiscale/enea/invia/route.ts
-// POST /api/fiscale/enea/invia { praticaId }
-// Invia pratica ENEA (Ecobonus 65/75) e salva numero_pratica + data_invio.
-// Richiede credenziali ENEA in aziende_info.
+// POST { praticaId } — invia pratica ENEA (Ecobonus 65/75) e salva numero pratica.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -18,13 +16,14 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
-    // 1. Leggi pratica + azienda + commessa
+    // 1. Leggi pratica + commessa (per avere azienda_id e dati cliente via contatto)
     const { data: pratica, error: pErr } = await supabase
       .from('fiscale_pratica')
       .select(`
-        id, azienda_id, commessa_id, detrazione, data_fine_lavori, stato_enea,
-        commessa:commessa_id(numero, cliente_id, importo_totale,
-          cliente:cliente_id(nome, cognome, codice_fiscale, indirizzo)
+        id, commessa_id, detrazione_raccomandata, data_fine_lavori, stato_enea, importo_totale,
+        commessa:commessa_id(
+          code, azienda_id, cliente, cognome, indirizzo, contatto_id,
+          contatto:contatto_id(nome, cognome, indirizzo, citta, cap)
         )
       `)
       .eq('id', praticaId)
@@ -34,7 +33,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: pErr?.message || 'pratica non trovata' }, { status: 404 });
     }
 
-    if (!['65', '75'].includes(pratica.detrazione)) {
+    const detrazione = (pratica as any).detrazione_raccomandata;
+    if (!['65', '75'].includes(detrazione)) {
       return NextResponse.json({ error: 'ENEA obbligatoria solo per detrazioni 65% e 75%' }, { status: 400 });
     }
 
@@ -42,42 +42,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'pratica già inviata a ENEA' }, { status: 409 });
     }
 
-    // 2. Credenziali azienda
+    const commessa = (pratica as any).commessa;
+    if (!commessa?.azienda_id) {
+      return NextResponse.json({ error: 'commessa senza azienda_id' }, { status: 500 });
+    }
+
+    // 2. Credenziali ENEA azienda
     const { data: azienda, error: aErr } = await supabase
-      .from('aziende_info')
-      .select('enea_user, enea_token, enea_codice_fiscale, ragione_sociale, piva')
-      .eq('id', pratica.azienda_id)
+      .from('aziende')
+      .select('enea_user, enea_token, enea_codice_fiscale, ragione, piva')
+      .eq('id', commessa.azienda_id)
       .single();
 
     if (aErr || !azienda?.enea_user || !azienda?.enea_token) {
       return NextResponse.json({
-        error: 'Credenziali ENEA mancanti: configurale in Impostazioni → Fiscale',
+        error: 'Credenziali ENEA mancanti. Configurale in Impostazioni → Fiscale.',
       }, { status: 400 });
     }
 
-    // 3. Payload ENEA (struttura da adeguare alla API ufficiale quando disponibile)
+    // Dati cliente: prova dal contatto, fallback sui campi della commessa
+    const contatto = commessa.contatto;
+    const nomeCliente = contatto?.nome || commessa.cliente || '';
+    const cognomeCliente = contatto?.cognome || commessa.cognome || '';
+    const indirizzoImmobile = contatto?.indirizzo || commessa.indirizzo || '';
+
     const payload = {
-      soggetto_beneficiario: {
-        codice_fiscale: (pratica.commessa as any)?.cliente?.codice_fiscale,
-        nome: (pratica.commessa as any)?.cliente?.nome,
-        cognome: (pratica.commessa as any)?.cliente?.cognome,
-        indirizzo_immobile: (pratica.commessa as any)?.cliente?.indirizzo,
+      beneficiario: {
+        nome: nomeCliente,
+        cognome: cognomeCliente,
+        indirizzo_immobile: indirizzoImmobile,
       },
       intervento: {
         tipo: 'sostituzione_serramenti',
-        detrazione: pratica.detrazione,
-        importo: (pratica.commessa as any)?.importo_totale,
+        detrazione,
+        importo: (pratica as any).importo_totale,
         data_fine_lavori: pratica.data_fine_lavori,
       },
       impresa: {
         piva: azienda.piva,
-        ragione_sociale: azienda.ragione_sociale,
+        ragione_sociale: azienda.ragione,
         codice_fiscale: azienda.enea_codice_fiscale,
       },
-      commessa_riferimento: (pratica.commessa as any)?.numero,
+      commessa_riferimento: commessa.code,
     };
 
-    // 4. Chiamata ENEA
     let numeroPratica: string | null = null;
     let statoEnea: 'inviata' | 'errore' = 'errore';
     let errorMessage: string | null = null;
@@ -92,9 +100,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify(payload),
       });
-
       const body = await res.json().catch(() => ({}));
-
       if (res.ok && body?.numero_pratica) {
         numeroPratica = body.numero_pratica;
         statoEnea = 'inviata';
@@ -105,7 +111,6 @@ export async function POST(req: NextRequest) {
       errorMessage = err.message || 'errore di rete verso ENEA';
     }
 
-    // 5. Aggiorna pratica + log
     const logEntry = {
       ts: new Date().toISOString(),
       azione: 'invio_enea',
@@ -119,8 +124,7 @@ export async function POST(req: NextRequest) {
       .select('log_enea')
       .eq('id', praticaId)
       .single();
-
-    const nuovoLog = [...(current?.log_enea || []), logEntry];
+    const nuovoLog = [...((current?.log_enea as any[]) || []), logEntry];
 
     await supabase
       .from('fiscale_pratica')
