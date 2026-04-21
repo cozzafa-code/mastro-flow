@@ -490,11 +490,11 @@ export default function CMDetailPanel() {
 
           {/*  TAB RIEPILOGO  */}
           {prevTab === "riepilogo" && (
-            <div style={{ padding: "0 12px 20px" }}>
-              <div style={{ background: T.topbar || "#1A1A1C", borderRadius: 12, padding: 16, marginBottom: 12, color: "#fff" }}>
+            <div style={{ padding: "0 12px 20px", background: "#EEF8F8", minHeight: "100%" }}>
+              <div style={{ background: "linear-gradient(135deg, #0D1F1F 0%, #143636 100%)", borderRadius: 14, padding: 18, marginBottom: 10, color: "#fff" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div><div style={{ fontSize: 10, color: "#ffffff60" }}>PREVENTIVO</div><div style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>€{pwFmt(pwTotale)}</div></div>
-                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: `${T.grn}30`, borderRadius: 8, padding: "6px 10px", textAlign: "right" as any }}><div style={{ fontSize: 9, color: "#ffffffa0" }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>-€{pwFmt(pwDetraibile)}</div></div>)}
+                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: "#28A0A030", borderRadius: 8, padding: "6px 10px", textAlign: "right" as any, border: "1px solid #28A0A060" }}><div style={{ fontSize: 9, color: "#ffffffa0", fontWeight: 700 }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#7FE5E5" }}>−€{pwFmt(pwDetraibile)}</div></div>)}
                 </div>
                 <div style={{ fontSize: 10, color: "#ffffff60", marginTop: 6 }}>{c.code} · {c.cliente} · {pwVani.length} vani · {pwVani.reduce((s, v) => s + (v.pezzi || 1), 0)}pz</div>
               </div>
@@ -529,9 +529,9 @@ export default function CMDetailPanel() {
                   <span style={{ fontSize: 22, fontWeight: 900, color: T.acc }}>€{pwFmt(pwTotale)}</span>
                 </div>
                 {pwDetrObj && pwDetrObj.perc > 0 && (<>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: `${T.grn}10`, borderRadius: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: T.grn }}><I d={ICO.building} /> {pwDetrObj.l}</span>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: T.grn }}>-€{pwFmt(pwDetraibile)}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: "#28A0A010", borderRadius: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0" }}><I d={ICO.building} /> {pwDetrObj.l}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: "#28A0A0" }}>-€{pwFmt(pwDetraibile)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 700 }}>Costo effettivo</span>
@@ -548,7 +548,7 @@ export default function CMDetailPanel() {
               )}
 
               <div style={{ marginTop: 16, display: "flex", gap: 8, marginBottom: 8 }}>
-                <button onClick={() => { try { console.log("[PDF] click"); generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[PDF]", err); alert("Errore PDF: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: `${T.acc}10`, color: T.acc, border: `1.5px solid ${T.acc}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
+                <button onClick={() => { try { console.log("[PDF] click"); generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[PDF]", err); alert("Errore PDF: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
                 <button onClick={() => { try { console.log("[Anteprima] click"); generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[Anteprima]", err); alert("Errore Anteprima: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
               </div>
               <button onClick={async () => {
@@ -561,7 +561,7 @@ export default function CMDetailPanel() {
                 if (url) updCM("linkPreventivo", url);
                 setCcDone("📐 PDF scaricato + link firma inviato!"); setTimeout(() => setCcDone(null), 3000);
                 } catch(err) { console.error("[GENERA+INVIA]", err); alert("Errore invio: " + (err?.message || err)); }
-              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "#25d366", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA →</button>
+              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)" }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA →</button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Scarica PDF e apre WhatsApp con link firma elettronica</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
                 <span onClick={() => { updCM("preventivoInviato", true); setCcDone("✓ Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>✓ Segna completato</span>
@@ -577,11 +577,11 @@ export default function CMDetailPanel() {
                     const storico = await getFascicoliCommessa(c.id);
                     setFascicoliStorico(storico);
                   }}
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #28A0A0", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
-                  <span style={{ fontSize: 16 }}><I d={ICO.ruler} /></span> Fascicolo Geometra
+                  <span style={{ fontSize: 16 }}><I d={ICO.ruler} /></span> Documenti tecnici commessa
                 </button>
-                <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico · Link cliente · Excel ENEA</div>
+                <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico Uw · Link cliente firma · Excel pratica ENEA</div>
               </div>
               {/* Avanti dopo invio · solo se non ancora confermato */}
               {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (
