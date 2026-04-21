@@ -1301,14 +1301,17 @@ export default function CMDetailPanel() {
                             };
                             const tt = tipoMap[tipoR] || tipoMap.provvisorio;
                             return (
-                              <div key={ril.id} onClick={() => {
+                              <div key={ril.id} onClick={(e) => {
+                                e.stopPropagation();
+                                console.log("[CLICK RILIEVO]", ril.id, "vani:", (ril.vani||[]).length);
                                 setSelectedRilievo(ril);
                                 setCmSubTab("sopralluoghi");
                                 // Scroll alla sezione vani dopo render
                                 setTimeout(() => {
-                                  const el = document.getElementById("cm-tab-vani");
-                                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                                }, 100);
+                                  const el = document.getElementById("cm-tab-vani") || document.querySelector('[data-tab="sopralluoghi"]');
+                                  if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+                                  else window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+                                }, 150);
                               }} style={{
                                 background: T.card, border: `1.5px solid ${T.bdr}`, borderRadius: 10,
                                 padding: "10px 12px", marginBottom: 6, cursor: "pointer",
