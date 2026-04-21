@@ -1,8 +1,8 @@
-// hooks/useScadenzeEnea.ts
+﻿// hooks/useScadenzeEnea.ts
 // Legge scadenze ENEA imminenti per l'azienda corrente + trigger manuale rescan.
 
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 
 export interface ScadenzaEnea {
   praticaId: string;

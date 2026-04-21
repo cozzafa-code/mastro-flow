@@ -1,9 +1,9 @@
-// components/SettingsFirmaDigitale.tsx
+﻿// components/SettingsFirmaDigitale.tsx
 // Card impostazioni per configurare provider firma certificata (Namirial/InfoCert/Aruba).
 // Stile unificato fliwoX (CM / RILIEVO MISURE).
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 type Provider = "namirial" | "infocert" | "aruba";
 type LivelloDefault = "fea_otp" | "feq_spid";

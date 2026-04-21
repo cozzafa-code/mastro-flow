@@ -1,4 +1,4 @@
-// app/firma/completata/page.tsx
+﻿// app/firma/completata/page.tsx
 // Landing page cliente dopo firma certificata completata.
 // Mostra conferma + ringraziamento + link download PDF firmato.
 
@@ -6,7 +6,7 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 export default function FirmaCompletataPage() {
   return (
