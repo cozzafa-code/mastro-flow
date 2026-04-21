@@ -3419,12 +3419,18 @@ export default function VanoDetailPanel() {
               )}
               {/* Genera Tavola Tecnica */}
               <div onClick={() => {
-                const ctx = { aziendaInfo, sistemiDB, vetriDB,
-                  cliente: selectedCM?.cliente || selectedCM?.nome || "",
-                  cognome: selectedCM?.cognome || "",
-                  commessaCode: selectedCM?.code || selectedCM?.id || "",
-                  commessaData: selectedCM?.data || "" };
-                generaTavolaTecnica(v, ctx);
+                try {
+                  console.log("[TavolaTecnica] click", { v, aziendaInfo, sistemiDB: (sistemiDB||[]).length, vetriDB: (vetriDB||[]).length });
+                  const ctx = { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [],
+                    cliente: selectedCM?.cliente || selectedCM?.nome || "",
+                    cognome: selectedCM?.cognome || "",
+                    commessaCode: selectedCM?.code || selectedCM?.id || "",
+                    commessaData: selectedCM?.data || "" };
+                  generaTavolaTecnica(v, ctx);
+                } catch (err) {
+                  console.error("[TavolaTecnica] ERRORE:", err);
+                  alert("Errore generazione PDF: " + (err?.message || err));
+                }
               }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
                 padding: "14px 16px", borderRadius: 12, cursor: "pointer",
                 background: "linear-gradient(135deg, #2D7A6B 0%, #1A9E73 100%)",
