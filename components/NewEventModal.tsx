@@ -1,6 +1,6 @@
 "use client";
 // @ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
    NewEventModal — 3 step: Quando / Chi / Dove
@@ -34,6 +34,16 @@ export default function NewEventModal({
 }: Props) {
   const [step, setStep] = useState(1);
   const isTask = newEvent.tipo === "task";
+
+  // Auto-suggerisci titolo all'apertura se vuoto
+  useEffect(() => {
+    if (!newEvent.text || !newEvent.text.trim()) {
+      const allTipi = [{ id: "task", l: "Task" }, ...TIPI_EVENTO];
+      const match = allTipi.find((t: any) => t.id === newEvent.tipo);
+      if (match) setNewEvent((prev: any) => ({ ...prev, text: match.l }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const input = {
     width: "100%",
