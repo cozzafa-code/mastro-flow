@@ -33,9 +33,11 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 // Accetta sia ISO timestamp sia date string - ritorna giorni interi da allora
 const daysSince = (date: any): number => {
-    if (!date) return 0;
+    if (!date || date === 0 || date === "0") return 0;
     const d = new Date(date);
     if (isNaN(d.getTime())) return 0;
+    // Ignora date assurde (prima del 2020) = bug su created_at/fase_start null in localStorage
+    if (d.getTime() < 1577836800000) return 0;
     const diff = Date.now() - d.getTime();
     const gg = Math.floor(diff / 86400000);
     return gg < 0 ? 0 : gg;
