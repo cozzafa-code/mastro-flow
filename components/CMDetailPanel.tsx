@@ -242,9 +242,10 @@ export default function CMDetailPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", background: T.card, borderBottom: `1px solid ${T.bdr}`, position: "sticky", top: 52, zIndex: 10 }}>
-            <div onClick={() => setPrevTab("sopralluogo")} style={tabPw("sopralluogo")}><I d={ICO.search} /> Report</div>
-            <div onClick={() => setPrevTab("preventivo")} style={tabPw("preventivo")}><I d={ICO.clipboard} /> Preventivo</div>
             <div onClick={() => setPrevTab("riepilogo")} style={tabPw("riepilogo")}><I d={ICO.barChart} /> Riepilogo</div>
+            <div onClick={() => setPrevTab("fiscale")} style={tabPw("fiscale")}><I d={ICO.euro} /> Fiscale</div>
+            <div onClick={() => setPrevTab("condizioni")} style={tabPw("condizioni")}><I d={ICO.fileText} /> Condizioni</div>
+            <div onClick={() => setPrevTab("sopralluogo")} style={tabPw("sopralluogo")}><I d={ICO.search} /> Report</div>
             <div onClick={() => setPrevTab("importa")} style={tabPw("importa")}><I d={ICO.download} /> Importa</div>
             <div onClick={() => setPrevTab("cad")} style={tabPw("cad")}>✓+ Disegna</div>
           </div>
@@ -392,9 +393,180 @@ export default function CMDetailPanel() {
           )}
 
           {/*  TAB PREVENTIVO (EDITOR)  */}
-          {prevTab === "preventivo" && (
+          {/*  TAB FISCALE (IVA · Detrazioni · Pratica)  */}
+          {prevTab === "fiscale" && (
             <div style={{ padding: "0 12px 20px" }}>
-              <PreventivoConfiguratoreTab />
+              {/* CARD IVA */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#28A0A0" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Aliquota IVA commessa</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {[4, 10, 22].map(p => (
+                    <div key={p} onClick={() => updCM("ivaPerc", p)} style={{
+                      padding: "12px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: pwIvaDefault === p ? T.acc : T.card,
+                      border: `1.5px solid ${pwIvaDefault === p ? T.acc : T.bdr}`,
+                      color: pwIvaDefault === p ? "#fff" : T.text,
+                      fontSize: 14, fontWeight: 900,
+                      boxShadow: pwIvaDefault === p ? `0 3px 0 ${T.acc}40` : "none",
+                    }}>{p}%</div>
+                  ))}
+                  <div onClick={() => { const v = prompt("IVA personalizzata (%)", String(pwIvaDefault)); if (v != null) { const n = parseFloat(v); if (!isNaN(n)) updCM("ivaPerc", n); } }} style={{
+                    padding: "12px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                    background: ![4,10,22].includes(pwIvaDefault) ? T.acc : T.card,
+                    border: `1.5px solid ${![4,10,22].includes(pwIvaDefault) ? T.acc : T.bdr}`,
+                    color: ![4,10,22].includes(pwIvaDefault) ? "#fff" : T.sub,
+                    fontSize: 13, fontWeight: 800,
+                  }}>{![4,10,22].includes(pwIvaDefault) ? `${pwIvaDefault}%` : "Altra"}</div>
+                </div>
+                <div style={{ marginTop: 10, padding: "8px 10px", background: "#F7FBFB", borderRadius: 8, border: `1px solid ${T.bdr}` }}>
+                  <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.5 }}>
+                    <b style={{ color: "#0D1F1F" }}>Guida IVA serramenti:</b><br/>
+                    <b>10%</b> — sostituzione in abitazione esistente (manutenzione straordinaria)<br/>
+                    <b>22%</b> — nuova costruzione, lavori su aziende<br/>
+                    <b>4%</b> — prima casa in costruzione (con dichiarazione)
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD DETRAZIONI */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(245,166,35,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.building} s={14} c="#D08008" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Detrazione fiscale cliente</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                  {DETRAZIONI_OPT.map(d => (
+                    <div key={d.id} onClick={() => updCM("detrazione", d.id)} style={{
+                      padding: "11px 10px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: pwDetr === d.id ? "#D08008" : T.card,
+                      border: `1.5px solid ${pwDetr === d.id ? "#D08008" : T.bdr}`,
+                      color: pwDetr === d.id ? "#fff" : T.text,
+                      fontSize: 12, fontWeight: 800,
+                      boxShadow: pwDetr === d.id ? "0 3px 0 #D0800840" : "none",
+                    }}>{d.l}</div>
+                  ))}
+                </div>
+                {pwDetrObj && pwDetrObj.perc > 0 && (
+                  <div style={{ marginTop: 10, padding: "10px 12px", background: "#D0800810", borderRadius: 10, border: "1px solid #D0800830" }}>
+                    <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.5 }}>
+                      <b style={{ color: "#D08008" }}>Pratica fiscale {pwDetrObj.l}:</b><br/>
+                      {pwDetr === "50" && "Bonus Casa — bonifico parlante con causale specifica, detrazione in 10 anni. Invio documentazione ENEA entro 90gg dalla fine lavori."}
+                      {pwDetr === "65" && "Ecobonus — serramenti con Uw conforme. Bonifico parlante + comunicazione ENEA + asseverazione tecnica. Detrazione 10 anni."}
+                      {pwDetr === "75" && "Bonus Barriere — abbattimento barriere architettoniche. Asseverazione tecnica + bonifico parlante. Detrazione 5 anni."}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* CARD SCONTO */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(220,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.tag} s={14} c="#DC4444" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Sconto commerciale</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+                  {[0, 5, 10, 15, 20].map(p => (
+                    <div key={p} onClick={() => updCM("scontoPerc", p)} style={{
+                      padding: "10px 4px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: pwSconto === p ? "#DC4444" : T.card,
+                      border: `1.5px solid ${pwSconto === p ? "#DC4444" : T.bdr}`,
+                      color: pwSconto === p ? "#fff" : T.text,
+                      fontSize: 13, fontWeight: 800,
+                    }}>{p === 0 ? "No" : p + "%"}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/*  TAB CONDIZIONI (pagamento · consegna · garanzia)  */}
+          {prevTab === "condizioni" && (
+            <div style={{ padding: "0 12px 20px" }}>
+              {/* CARD PAGAMENTO */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#28A0A0" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Modalit+ di pagamento</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+                  {[
+                    { id: "30-70", l: "30% + 70%", d: "Acconto 30% · saldo a consegna" },
+                    { id: "50-50", l: "50% + 50%", d: "Acconto 50% · saldo a consegna" },
+                    { id: "30-40-30", l: "30+40+30", d: "Acconto · produzione · saldo" },
+                    { id: "unico", l: "Pagamento unico", d: "100% a consegna" },
+                  ].map(p => (
+                    <div key={p.id} onClick={() => updCM("condPagamento", p.id)} style={{
+                      padding: "10px 10px", borderRadius: 10, cursor: "pointer",
+                      background: c.condPagamento === p.id ? `${T.acc}15` : T.card,
+                      border: `1.5px solid ${c.condPagamento === p.id ? T.acc : T.bdr}`,
+                    }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: c.condPagamento === p.id ? T.acc : T.text }}>{p.l}</div>
+                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>{p.d}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 4 }}>METODO</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as any }}>
+                    {["Bonifico", "Assegno", "Contanti", "POS"].map(m => (
+                      <div key={m} onClick={() => updCM("metodoPag", m)} style={{
+                        padding: "7px 12px", borderRadius: 20, cursor: "pointer",
+                        background: c.metodoPag === m ? T.acc : T.card,
+                        border: `1.5px solid ${c.metodoPag === m ? T.acc : T.bdr}`,
+                        color: c.metodoPag === m ? "#fff" : T.text,
+                        fontSize: 11, fontWeight: 700,
+                      }}>{m}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD CONSEGNA */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(123,107,165,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.package} s={14} c="#7B6BA5" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Tempi di consegna</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {["30gg", "45gg", "60gg", "90gg"].map(t => (
+                    <div key={t} onClick={() => updCM("tempiConsegna", t)} style={{
+                      padding: "12px 4px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: c.tempiConsegna === t ? "#7B6BA5" : T.card,
+                      border: `1.5px solid ${c.tempiConsegna === t ? "#7B6BA5" : T.bdr}`,
+                      color: c.tempiConsegna === t ? "#fff" : T.text,
+                      fontSize: 13, fontWeight: 800,
+                    }}>{t}</div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CARD GARANZIA */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(16,185,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.shieldCheck} s={14} c="#10B981" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Garanzia</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {["2 anni", "5 anni", "10 anni", "15 anni"].map(g => (
+                    <div key={g} onClick={() => updCM("garanzia", g)} style={{
+                      padding: "12px 4px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: c.garanzia === g ? "#10B981" : T.card,
+                      border: `1.5px solid ${c.garanzia === g ? "#10B981" : T.bdr}`,
+                      color: c.garanzia === g ? "#fff" : T.text,
+                      fontSize: 12, fontWeight: 800,
+                    }}>{g}</div>
+                  ))}
+                </div>
+              </div>
+
+              {/* NOTE */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, letterSpacing: "0.5px", marginBottom: 6 }}>NOTE PREVENTIVO (visibili al cliente)</div>
+                <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)} placeholder="Es. Prezzo comprensivo di posa in opera standard. Lavori supplementari da concordare." style={{ width: "100%", minHeight: 80, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any }} />
+              </div>
             </div>
           )}
 
@@ -1167,7 +1339,7 @@ export default function CMDetailPanel() {
                       </div>
 
                       {/* BOTTONE PRINCIPALE */}
-                      <button onClick={() => { setPrevWorkspace(true); setPrevTab("preventivo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
+                      <button onClick={() => { setPrevWorkspace(true); setPrevTab("riepilogo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
 
                       <div style={{ textAlign: "center", marginTop: 2 }}>
                         <span onClick={() => {
