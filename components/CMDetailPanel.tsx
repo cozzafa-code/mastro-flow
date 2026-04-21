@@ -5,6 +5,7 @@
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
 import React, { useState } from "react";
+import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey } from "./mastro-constants";
@@ -183,6 +184,33 @@ export default function CMDetailPanel() {
         setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, [field]: val } : cm));
         setSelectedCM(prev => ({ ...prev, [field]: val }));
       };
+
+      // -- AUTO-SYNC SUPABASE --
+      const _isUuid = (v: any): boolean => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+      const _syncTimerRef = React.useRef<any>(null);
+      const _syncedKeyRef = React.useRef<string>('');
+      React.useEffect(() => {
+        if (!c || !c.code) return;
+        const key = JSON.stringify({ id: c.id, fase: c.fase, tot: c.totalePreventivo, sc: c.scontoPerc, detr: c.detrazione, iva: c.ivaPerc, sent: c.preventivoInviato });
+        if (key === _syncedKeyRef.current) return;
+        _syncedKeyRef.current = key;
+        if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current);
+        _syncTimerRef.current = setTimeout(async () => {
+          try {
+            const azId = await getAziendaIdDB();
+            if (!azId) return;
+            const saved = await saveCantiereSync(azId, c);
+            if (saved && saved.id && !_isUuid(c.id)) {
+              const newId = saved.id;
+              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, id: newId } : cm));
+              setSelectedCM(prev => prev && prev.id === c.id ? { ...prev, id: newId } : prev);
+              console.log('[autosync] ID:', c.id, '->', newId);
+            }
+          } catch (err) { console.warn('[autosync] fail:', err); }
+        }, 800);
+        return () => { if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current); };
+      }, [c?.id, c?.fase, c?.totalePreventivo, c?.scontoPerc, c?.detrazione, c?.ivaPerc, c?.preventivoInviato]);
+
       const pwUpdVano = (vanoId, field, val) => {
         setCantieri(cs => cs.map(cm => {
           if (cm.id !== c.id) return cm;

@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // MASTRO ERP — Supabase Sync Layer (new normalized schema)
 // lib/supabase-sync.ts
 // ============================================================
@@ -536,4 +536,31 @@ export async function saveMateriali(azId: string, data: {
       // colori, vetri, coprifili, lamiere follow same pattern — skip for brevity
     } catch (e) { console.error("Save materiali:", e); }
   });
+}
+
+
+// -- Save Commessa SYNC (non-debounced, returns record with UUID) --
+export async function saveCantiereSync(azId: string, c: any): Promise<{ id: string; code: string } | null> {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isUUID = typeof c.id === 'string' && UUID_RE.test(c.id);
+  const row: any = {
+    azienda_id: azId, code: c.code, cliente: c.cliente, cognome: c.cognome || '',
+    indirizzo: c.indirizzo || '', telefono: c.telefono || '', email: c.email || '',
+    fase: c.fase, tipo: c.tipo || 'nuova', sistema: c.sistema || '',
+    difficolta_salita: c.difficoltaSalita || '', mezzo_salita: c.mezzoSalita || '',
+    foro_scale: c.foroScale || '', piano_edificio: c.pianoEdificio || '',
+    note: c.note || '', totale_preventivo: c.totalePreventivo || null,
+    sconto_perc: c.scontoPerc || null, totale_finale: c.totaleFinale || null,
+    firma_cliente: c.firmaCliente || null,
+  };
+  if (isUUID) row.id = c.id;
+  try {
+    if (!isUUID && c.code) {
+      const { data: existing } = await supabase.from('commesse').select('id').eq('azienda_id', azId).eq('code', c.code).maybeSingle();
+      if (existing?.id) row.id = existing.id;
+    }
+    const { data, error } = await supabase.from('commesse').upsert(row, { onConflict: 'id' }).select('id, code').single();
+    if (error) { console.error('[saveCantiereSync] error:', error); return null; }
+    return data as any;
+  } catch (e) { console.error('[saveCantiereSync] exception:', e); return null; }
 }
