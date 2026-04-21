@@ -33,12 +33,13 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 // Accetta sia ISO timestamp sia date string - ritorna giorni interi da allora
 const daysSince = (date: any): number => {
-  if (!date) return 0;
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return 0;
-  const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
-  return Math.floor(diff);
-};
+    if (!date) return 0;
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return 0;
+    const diff = Date.now() - d.getTime();
+    const gg = Math.floor(diff / 86400000);
+    return gg < 0 ? 0 : gg;
+  }
 
 // Formatta euro compatto (€4.2k, €850)
 const eur = (n: number): string => {

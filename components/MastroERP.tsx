@@ -659,10 +659,12 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return null;
   };
   const giorniFermaCM = (c) => {
-    const oggi0 = new Date(); oggi0.setHours(0,0,0,0);
-    const d = parseDataCM(c.aggiornato);
-    if(!d) return 0;
-    return Math.floor((oggi0 - d) / 86400000);
+    const start = c?.ferma_dal || c?.fase_start || c?.updated_at || c?.aggiornato || c?.created_at || c?.creato;
+    if (!start) return 0;
+    const d = new Date(start);
+    if (isNaN(d.getTime())) return 0;
+    const gg = Math.floor((Date.now() - d.getTime()) / 86400000);
+    return gg < 0 ? 0 : gg;
   };
 
   // === GMAIL INTEGRATION ===
