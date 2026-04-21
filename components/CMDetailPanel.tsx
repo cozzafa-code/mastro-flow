@@ -89,6 +89,7 @@ export default function CMDetailPanel() {
 
   React.useEffect(() => {
     const cm = selectedCM;
+    console.log("[autosync] effect fired. cm?", !!cm, "code?", cm?.code, "id type:", typeof cm?.id);
     if (!cm || !cm.code) return;
     const key = JSON.stringify({ id: cm.id, fase: cm.fase, tot: cm.totalePreventivo, sc: cm.scontoPerc, detr: cm.detrazione, iva: cm.ivaPerc, sent: cm.preventivoInviato });
     if (key === _syncedKeyRef.current) return;
