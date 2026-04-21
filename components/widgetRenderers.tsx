@@ -396,10 +396,9 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         const fermo = c?.ferma === true || gg >= 7;
         return (
           <Row key={c.id || i} last={i === Math.min(a.length, 5) - 1} onClick={() => nav?.openCM?.(c)}>
-            <div style={{ width: 4, height: 36, borderRadius: 2, background: col, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, flexShrink: 0, display: "inline-block", marginRight: 6 }} /><div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                   {c.code || ""} · {cliente}
                 </div>
                 {valore > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: TEAL_DARK, flexShrink: 0 }}>{eur(valore)}</div>}
