@@ -13,6 +13,7 @@ import { generaExcelFascicolo } from "../lib/excel-fascicolo";
 import InterventoTab from "./InterventoTab";
 import InterventoFlowPanel from "./InterventoFlowPanel";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
+import GuidaIvaDetrazioni from "./GuidaIvaDetrazioni";
 import DisegnoTecnico from "./DisegnoTecnico";
 // @cadDraw state added below
 
@@ -240,7 +241,6 @@ export default function CMDetailPanel() {
             <div onClick={() => setPrevTab("condizioni")} style={tabPw("condizioni")}><I d={ICO.fileText} /> Condizioni</div>
             <div onClick={() => setPrevTab("sopralluogo")} style={tabPw("sopralluogo")}><I d={ICO.search} /> Report</div>
             <div onClick={() => setPrevTab("importa")} style={tabPw("importa")}><I d={ICO.download} /> Importa</div>
-            <div onClick={() => setPrevTab("cad")} style={tabPw("cad")}>✓+ Disegna</div>
           </div>
 
           <div style={{ paddingTop: 12 }}>
@@ -385,11 +385,10 @@ export default function CMDetailPanel() {
             </div>
           )}
 
-          {/*  TAB PREVENTIVO (EDITOR)  */}
-          {/*  TAB FISCALE (IVA · Detrazioni · Pratica)  */}
+          {/*  TAB FISCALE (IVA · Detrazioni · Pratica · Guida completa)  */}
           {prevTab === "fiscale" && (
             <div style={{ padding: "0 12px 20px" }}>
-              {/* CARD IVA */}
+              {/* CARD IVA - selettore rapido */}
               <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#28A0A0" /></div>
@@ -414,17 +413,9 @@ export default function CMDetailPanel() {
                     fontSize: 13, fontWeight: 800,
                   }}>{![4,10,22].includes(pwIvaDefault) ? `${pwIvaDefault}%` : "Altra"}</div>
                 </div>
-                <div style={{ marginTop: 10, padding: "8px 10px", background: "#F7FBFB", borderRadius: 8, border: `1px solid ${T.bdr}` }}>
-                  <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.5 }}>
-                    <b style={{ color: "#0D1F1F" }}>Guida IVA serramenti:</b><br/>
-                    <b>10%</b> — sostituzione in abitazione esistente (manutenzione straordinaria)<br/>
-                    <b>22%</b> — nuova costruzione, lavori su aziende<br/>
-                    <b>4%</b> — prima casa in costruzione (con dichiarazione)
-                  </div>
-                </div>
               </div>
 
-              {/* CARD DETRAZIONI */}
+              {/* CARD DETRAZIONE - selettore rapido */}
               <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                   <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(245,166,35,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.building} s={14} c="#D08008" /></div>
@@ -442,16 +433,6 @@ export default function CMDetailPanel() {
                     }}>{d.l}</div>
                   ))}
                 </div>
-                {pwDetrObj && pwDetrObj.perc > 0 && (
-                  <div style={{ marginTop: 10, padding: "10px 12px", background: "#D0800810", borderRadius: 10, border: "1px solid #D0800830" }}>
-                    <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.5 }}>
-                      <b style={{ color: "#D08008" }}>Pratica fiscale {pwDetrObj.l}:</b><br/>
-                      {pwDetr === "50" && "Bonus Casa — bonifico parlante con causale specifica, detrazione in 10 anni. Invio documentazione ENEA entro 90gg dalla fine lavori."}
-                      {pwDetr === "65" && "Ecobonus — serramenti con Uw conforme. Bonifico parlante + comunicazione ENEA + asseverazione tecnica. Detrazione 10 anni."}
-                      {pwDetr === "75" && "Bonus Barriere — abbattimento barriere architettoniche. Asseverazione tecnica + bonifico parlante. Detrazione 5 anni."}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* CARD SCONTO */}
@@ -471,6 +452,15 @@ export default function CMDetailPanel() {
                     }}>{p === 0 ? "No" : p + "%"}</div>
                   ))}
                 </div>
+              </div>
+
+              {/* GUIDA COMPLETA: IVA 4/10 + Detrazioni 50/65/75 con requisiti, checklist documenti, testo fattura */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #3B7FE030`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(59,127,224,0.08)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(59,127,224,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.fileText} s={14} c="#3B7FE0" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Guida pratica fiscale 2026</div>
+                </div>
+                <GuidaIvaDetrazioni />
               </div>
             </div>
           )}
