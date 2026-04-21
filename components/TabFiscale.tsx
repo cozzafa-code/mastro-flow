@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFiscale, TemplateFiscale } from "../hooks/useFiscale";
 import TabFiscaleDocs from "./TabFiscaleDocs";
 import SchedaNormativa from "./SchedaNormativa";
+import WizardFiscale from "./WizardFiscale";
 
 type Props = {
   T: any; ICO: any; I: any;
@@ -38,6 +39,9 @@ export default function TabFiscale({
   const [editingTplId, setEditingTplId] = useState<string | null>(null);
   const [tplDraft, setTplDraft] = useState("");
   const [tplCanale, setTplCanale] = useState<"whatsapp" | "email">("whatsapp");
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardDocs, setWizardDocs] = useState<any[]>([]);
+  const [wizardMotivazione, setWizardMotivazione] = useState<string>("");
 
   // Calcolo live: imponibile / IVA / totale / detraibile / costo effettivo
   const imponibile = Number(commessa?.totale_imponibile || commessa?.totale || 0);
@@ -97,6 +101,29 @@ export default function TabFiscale({
 
   return (
     <div style={{ padding: "0 12px 20px" }}>
+
+      {/* ===== WIZARD AUTOMATICO ===== */}
+      <div onClick={() => setShowWizard(true)} style={{
+        background: "linear-gradient(135deg, #0D1F1F, #28A0A0)",
+        borderRadius: 14, padding: 16, marginBottom: 12, color: "#fff",
+        cursor: "pointer", boxShadow: "0 4px 12px rgba(40,160,160,0.2)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: "#ffffff20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900 }}>⚡</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 900 }}>Pratica fiscale automatica</div>
+            <div style={{ fontSize: 10, opacity: 0.8, marginTop: 2 }}>Rispondi a 5 domande, MASTRO configura tutto</div>
+          </div>
+          <span style={{ fontSize: 20 }}>→</span>
+        </div>
+      </div>
+
+      {wizardMotivazione && (
+        <div style={{ background: "#F4F9F9", border: `1px solid #28A0A0`, borderRadius: 12, padding: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "#28A0A0", marginBottom: 4, textTransform: "uppercase" as any }}>✓ Configurato dal wizard</div>
+          <div style={{ fontSize: 11, color: "#0D1F1F", lineHeight: 1.5 }}>{wizardMotivazione}</div>
+        </div>
+      )}
 
       {/* ===== SETTINGS: IVA + DETRAZIONE + SCONTO ===== */}
       <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 14, marginBottom: 12 }}>
@@ -254,6 +281,18 @@ export default function TabFiscale({
         />
       </div>
 
+      {/* ===== DOCUMENTI AUTO-GENERATI DAL WIZARD ===== */}
+      {wizardDocs.length > 0 && (
+        <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 14, marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F", marginBottom: 10 }}>Documenti auto-generati</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {wizardDocs.filter((d: any) => d.contenuto).map((d: any, i: number) => (
+              <DocGenerato key={i} T={T} doc={d} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ===== COMUNICAZIONI INVIATE ===== */}
       {fiscale.comunicazioni.length > 0 && (
         <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 14, marginBottom: 12 }}>
@@ -274,6 +313,58 @@ export default function TabFiscale({
         </div>
       )}
 
+      {/* ===== MODAL WIZARD ===== */}
+      {showWizard && (
+        <div style={{ position: "fixed" as any, inset: 0, background: "#0D1F1F99", zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowWizard(false)}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto" as any, borderRadius: "16px 16px 0 0", boxShadow: "0 -8px 40px rgba(0,0,0,0.3)" }}>
+            <WizardFiscale
+              T={T}
+              commessa={commessa}
+              aziendaInfo={aziendaInfo}
+              onClose={() => setShowWizard(false)}
+              onDecisione={(dec, inp) => {
+                updCM("ivaPerc", dec.iva);
+                updCM("detrazione", dec.detrazione);
+                setWizardDocs(dec.documentiDaGenerare || []);
+                setWizardMotivazione(`IVA ${dec.iva}% + ${dec.detrazione === "nessuna" ? "nessuna detrazione" : `detrazione ${dec.detrazionePerc}%`}. ${dec.detrazioneMotivazione.substring(0, 160)}...`);
+                setShowWizard(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Sub-component per documento generato (copiabile/scaricabile)
+function DocGenerato({ T, doc }: { T: any; doc: any }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copia = () => {
+    navigator.clipboard.writeText(doc.contenuto || "");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div style={{ borderRadius: 10, border: `1px solid ${T.bdr}`, background: "#fff" }}>
+      <div onClick={() => setOpen(!open)} style={{ padding: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{doc.titolo}</div>
+          <div style={{ fontSize: 10, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{doc.chi}</div>
+        </div>
+        <span style={{ fontSize: 14, color: T.sub, transform: open ? "rotate(90deg)" : "none", transition: "transform .2s" }}>›</span>
+      </div>
+      {open && (
+        <div style={{ borderTop: `1px solid ${T.bdr}`, padding: 12 }}>
+          <div style={{ whiteSpace: "pre-wrap" as any, fontSize: 10, background: "#F8FBFB", padding: 10, borderRadius: 6, color: T.text, lineHeight: 1.5, maxHeight: 280, overflowY: "auto" as any, fontFamily: "monospace" as any }}>
+            {doc.contenuto}
+          </div>
+          <button onClick={copia} style={{ marginTop: 8, padding: "8px 14px", borderRadius: 6, border: "none", background: copied ? "#28A0A0" : "#0D1F1F", color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" as any }}>
+            {copied ? "✓ Copiato" : "Copia testo"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
