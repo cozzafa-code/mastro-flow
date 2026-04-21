@@ -216,7 +216,7 @@ export default function CMDetailPanel() {
       const chipPw = (on) => ({ padding: "7px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: "pointer", background: on ? `${T.acc}15` : T.card, color: on ? T.acc : T.sub, border: `1.5px solid ${on ? T.acc : T.bdr}` });
       const chipPwGrn = (on) => ({ padding: "7px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: "pointer", background: on ? `${T.grn}15` : T.card, color: on ? T.grn : T.sub, border: `1.5px solid ${on ? T.grn : T.bdr}` });
       const inputPw = { width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" as any, background: T.card };
-      const tabPw = (t) => ({ flex: 1, padding: "10px 4px", textAlign: "center" as any, fontSize: 11, fontWeight: 700, cursor: "pointer", borderBottom: `2.5px solid ${prevTab === t ? T.acc : "transparent"}`, color: prevTab === t ? T.acc : T.sub });
+      const tabPw = (t) => ({ flex: 1, padding: "10px 6px", textAlign: "center" as any, fontSize: 11, fontWeight: 700, cursor: "pointer", color: prevTab === t ? "#fff" : "#6A8484", background: prevTab === t ? "#28A0A0" : "transparent", borderRadius: 8, margin: "4px 2px", transition: "all .15s" });
 
       return (
         <div style={{ paddingBottom: 80 }}>
