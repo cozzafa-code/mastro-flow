@@ -1366,8 +1366,62 @@ export default function CMDetailPanel() {
                         <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{fmtCC(totIvaCC)}</span>
                       </div>
 
+                      {/* SHORTCUT FISCALE · IVA · Detrazione · Documenti da allegare */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 8 }}>
+                        <div onClick={() => { setPrevWorkspace(true); setPrevTab("fiscale"); }} style={{
+                          padding: "10px 10px", borderRadius: 10, cursor: "pointer",
+                          background: "rgba(59,127,224,0.08)", border: "1.5px solid #3B7FE030",
+                          display: "flex", alignItems: "center", gap: 8,
+                        }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "#3B7FE015", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <I d={ICO.euro} s={13} c="#3B7FE0" />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: "#3B7FE0" }}>Fiscale</div>
+                            <div style={{ fontSize: 9, color: T.sub }}>IVA {pwIvaDefault}% · {pwDetrObj?.l || "Nessuna detr."}</div>
+                          </div>
+                        </div>
+                        <div onClick={() => { setPrevWorkspace(true); setPrevTab("condizioni"); }} style={{
+                          padding: "10px 10px", borderRadius: 10, cursor: "pointer",
+                          background: "rgba(123,107,165,0.08)", border: "1.5px solid #7B6BA530",
+                          display: "flex", alignItems: "center", gap: 8,
+                        }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 7, background: "#7B6BA515", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <I d={ICO.fileText} s={13} c="#7B6BA5" />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: "#7B6BA5" }}>Condizioni</div>
+                            <div style={{ fontSize: 9, color: T.sub }}>{c.condPagamento || "—"} · {c.tempiConsegna || "—"}</div>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* BOTTONE PRINCIPALE */}
                       <button onClick={() => { setPrevWorkspace(true); setPrevTab("riepilogo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
+
+                      {/* BOTTONE INVIA DOCUMENTI AL CLIENTE */}
+                      {pwDetrObj && pwDetrObj.perc > 0 && (
+                        <button onClick={() => {
+                          const detrLabel = pwDetrObj.l;
+                          const tel = c.telefono || "";
+                          const nome = c.cliente || "";
+                          // Checklist documenti per detrazione
+                          const docMap: any = {
+                            "50": ["Bonifico parlante con causale specifica", "Fattura intestata al proprietario", "Comunicazione ENEA entro 90 gg fine lavori", "Codice fiscale proprietario"],
+                            "65": ["Bonifico parlante", "Fattura intestata beneficiario", "Scheda tecnica infisso con Uw", "Asseverazione tecnico (geometra/ingegnere/arch)", "Trasmissione ENEA entro 90 gg"],
+                            "75": ["Bonifico parlante", "Fattura con descrizione specifica intervento", "Eventuale CILA/SCIA al Comune"],
+                          };
+                          const docs = docMap[pwDetr] || [];
+                          const msg = `Ciao ${nome},\n\nPer poter usufruire della *${detrLabel}* sui tuoi nuovi infissi, servono questi documenti:\n\n${docs.map((d: string, i: number) => `${i+1}. ${d}`).join("\n")}\n\nTi invio anche il preventivo in PDF. Se hai domande sulla pratica fiscale, chiamami.\n\nGrazie!`;
+                          const cleanTel = tel.replace(/[^0-9+]/g, "");
+                          const wa = `https://wa.me/${cleanTel.startsWith("+") ? cleanTel.slice(1) : "39" + cleanTel}?text=${encodeURIComponent(msg)}`;
+                          window.open(wa, "_blank");
+                          setCcDone("✓ WhatsApp aperto con documenti");
+                          setTimeout(() => setCcDone(null), 3000);
+                        }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "1.5px solid #25d366", background: "#25d36610", color: "#25d366", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 6 }}>
+                          📋 Invia checklist documenti {pwDetrObj.l} via WhatsApp
+                        </button>
+                      )}
 
                       <div style={{ textAlign: "center", marginTop: 2 }}>
                         <span onClick={() => {
