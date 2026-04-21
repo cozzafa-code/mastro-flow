@@ -221,6 +221,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     { id: "f4", nome: "Roto Frank", ragioneSociale: "Roto Frank AG", piva: "", cf: "", tipo: "Ferramenta", categoria: "ferramenta", indirizzo: "", cap: "", citta: "Bolzano", provincia: "BZ", telefono: "+39 0471 345678", cellulare: "", email: "italia@roto-frank.com", pec: "", sito: "", referente: "", telReferente: "", emailReferente: "", banca: "", iban: "", pagamento: "30gg_fm", scontoBase: 25, tempoConsegna: 8, sistemiTrattati: "", note: "", rating: 4.5, preferito: false, attivo: true },
   ]; });
   const [showFornitoreDetail, setShowFornitoreDetail] = useState<any>(null);
+  const [showShareEvent, setShowShareEvent] = useState<any>(null);
   const [showFornitoreForm, setShowFornitoreForm] = useState(false);
   const [fornitoreEdit, setFornitoreEdit] = useState<any>(null);
 
