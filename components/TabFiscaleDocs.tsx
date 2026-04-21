@@ -1,32 +1,35 @@
 // components/TabFiscaleDocs.tsx
-// Checklist documenti cliente + upload + stato
 import { useRef, useState } from "react";
 import type { DocFiscale } from "../hooks/useFiscale";
 
+const F = {
+  darkBg: "#0D1F1F", teal: "#28A0A0", lightBg: "#EEF8F8",
+  cardBg: "#FFFFFF", border: "#C8E4E4", textDark: "#0D1F1F", textSub: "#6A8484",
+};
+
 type Props = {
   T: any; ICO: any; I: any;
-  detrazione: string;     // "nessuna" | "50" | "65" | "75"
+  detrazione: string;
   docs: DocFiscale[];
   onUpload: (file: File, sotto_categoria: string) => Promise<any>;
   onDelete: (id: string) => Promise<any>;
   onStato: (id: string, stato: string) => Promise<any>;
 };
 
-// Documenti richiesti per ciascuna detrazione
 const DOCS_REQUIRED: Record<string, { key: string; label: string; obbligatorio: boolean; info?: string }[]> = {
   "50": [
-    { key: "bonifico_parlante", label: "Bonifico parlante", obbligatorio: true, info: "Con causale specifica art.16-bis DPR 917/86" },
+    { key: "bonifico_parlante", label: "Bonifico parlante", obbligatorio: true, info: "Causale art.16-bis DPR 917/86" },
     { key: "fattura", label: "Fattura intestata al proprietario", obbligatorio: true },
     { key: "cf_proprietario", label: "Codice fiscale proprietario", obbligatorio: true },
-    { key: "enea", label: "Comunicazione ENEA (se migliora classe)", obbligatorio: false, info: "Entro 90gg fine lavori" },
+    { key: "enea", label: "Comunicazione ENEA", obbligatorio: false, info: "Solo se migliora classe energetica · 90gg" },
   ],
   "65": [
     { key: "bonifico_parlante", label: "Bonifico parlante", obbligatorio: true, info: "Causale Legge 296/2006" },
     { key: "fattura", label: "Fattura al beneficiario", obbligatorio: true },
     { key: "scheda_tecnica", label: "Scheda tecnica infissi con Uw", obbligatorio: true, info: "Fornita da te" },
-    { key: "asseverazione", label: "Asseverazione tecnico abilitato", obbligatorio: true, info: "Geometra/ing/arch" },
-    { key: "enea", label: "Trasmissione ENEA", obbligatorio: true, info: "OBBLIGATORIA entro 90gg" },
-    { key: "ape", label: "APE pre e post (se richiesto)", obbligatorio: false },
+    { key: "asseverazione", label: "Asseverazione tecnico", obbligatorio: true, info: "Geometra/ing/arch" },
+    { key: "enea", label: "Trasmissione ENEA", obbligatorio: true, info: "Obbligatoria entro 90gg" },
+    { key: "ape", label: "APE pre e post", obbligatorio: false },
   ],
   "75": [
     { key: "bonifico_parlante", label: "Bonifico parlante", obbligatorio: true, info: "Causale art.119-ter DL 34/2020" },
@@ -36,15 +39,18 @@ const DOCS_REQUIRED: Record<string, { key: string; label: string; obbligatorio: 
   ],
 };
 
-export default function TabFiscaleDocs({ T, ICO, I, detrazione, docs, onUpload, onDelete, onStato }: Props) {
+export default function TabFiscaleDocs({ detrazione, docs, onUpload, onDelete, onStato }: Props) {
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [pendingKey, setPendingKey] = useState<string>("");
 
   if (detrazione === "nessuna" || !DOCS_REQUIRED[detrazione]) {
     return (
-      <div style={{ padding: 20, textAlign: "center" as any, color: T.sub, fontSize: 12, fontStyle: "italic" }}>
-        Seleziona una detrazione per vedere i documenti richiesti.
+      <div style={{
+        padding: "20px 10px", textAlign: "center" as any, color: F.textSub,
+        fontSize: 12, fontStyle: "italic" as any,
+      }}>
+        Seleziona una detrazione per vedere i documenti richiesti
       </div>
     );
   }
@@ -57,11 +63,7 @@ export default function TabFiscaleDocs({ T, ICO, I, detrazione, docs, onUpload, 
   }).length;
   const pct = Math.round((completed / total) * 100);
 
-  const triggerUpload = (key: string) => {
-    setPendingKey(key);
-    fileRef.current?.click();
-  };
-
+  const triggerUpload = (key: string) => { setPendingKey(key); fileRef.current?.click(); };
   const handleFileChange = async (e: any) => {
     const file = e.target.files?.[0];
     if (!file || !pendingKey) return;
@@ -74,19 +76,27 @@ export default function TabFiscaleDocs({ T, ICO, I, detrazione, docs, onUpload, 
 
   return (
     <div>
-      {/* Progress bar */}
+      {/* Progress */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: T.text }}>Pratica {detrazione}%</span>
-          <span style={{ fontSize: 11, fontWeight: 800, color: pct === 100 ? "#28A0A0" : T.sub }}>{completed}/{total} · {pct}%</span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: F.teal, textTransform: "uppercase" as any, letterSpacing: "0.5px" }}>
+            Pratica {detrazione}%
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: pct === 100 ? F.teal : F.textSub }}>
+            {completed}/{total} · {pct}%
+          </span>
         </div>
-        <div style={{ height: 6, borderRadius: 3, background: "#EEF8F8", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? "#28A0A0" : "#28A0A099", transition: "width .3s" }} />
+        <div style={{ height: 4, borderRadius: 2, background: F.lightBg, overflow: "hidden" }}>
+          <div style={{
+            height: "100%", width: `${pct}%`,
+            background: pct === 100 ? F.teal : `${F.teal}99`,
+            transition: "width .3s",
+          }} />
         </div>
       </div>
 
-      {/* Lista documenti */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* Lista */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {required.map(req => {
           const doc = docs.find(d => d.sotto_categoria === req.key);
           const caricato = !!doc;
@@ -94,63 +104,81 @@ export default function TabFiscaleDocs({ T, ICO, I, detrazione, docs, onUpload, 
 
           return (
             <div key={req.key} style={{
-              padding: 12, borderRadius: 10, border: `1.5px solid ${caricato ? (verificato ? "#28A0A0" : "#C8E4E4") : "#E5E5E5"}`,
-              background: caricato ? "#F4F9F9" : "#fff",
+              padding: 12, borderRadius: 10,
+              border: `1px solid ${verificato ? F.teal : caricato ? `${F.teal}60` : F.border}`,
+              background: caricato ? F.lightBg : "#fff",
             }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                {/* Check icon */}
                 <div style={{
-                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-                  background: verificato ? "#28A0A0" : caricato ? "#28A0A033" : "#E5E5E5",
-                  color: verificato ? "#fff" : caricato ? "#28A0A0" : "#999",
+                  width: 22, height: 22, borderRadius: "50%", flexShrink: 0, marginTop: 1,
+                  background: verificato ? F.teal : caricato ? `${F.teal}22` : "#E5EBEB",
+                  color: verificato ? "#fff" : caricato ? F.teal : "#9AABAB",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, fontWeight: 900, marginTop: 1,
+                  fontSize: 12, fontWeight: 900, border: caricato && !verificato ? `1.5px solid ${F.teal}` : "none",
                 }}>
                   {verificato ? "✓" : caricato ? "•" : ""}
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: F.textDark }}>
                     {req.label}
-                    {req.obbligatorio && <span style={{ color: "#DC4444", marginLeft: 4 }}>*</span>}
+                    {req.obbligatorio && <span style={{ color: F.teal, marginLeft: 4 }}>*</span>}
                   </div>
-                  {req.info && <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>{req.info}</div>}
+                  {req.info && (
+                    <div style={{ fontSize: 10, color: F.textSub, marginTop: 2, fontWeight: 500 }}>
+                      {req.info}
+                    </div>
+                  )}
 
                   {caricato && doc && (
-                    <div style={{ marginTop: 6, padding: "6px 8px", background: "#fff", borderRadius: 6, border: `1px solid ${T.bdr}` }}>
+                    <div style={{
+                      marginTop: 8, padding: "8px 10px", background: "#fff",
+                      borderRadius: 6, border: `1px solid ${F.border}`,
+                    }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 10, color: T.sub, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          📎 {doc.nome}
+                        <span style={{ fontSize: 10, color: F.textSub, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>
+                          {doc.nome}
                         </span>
                         {doc.file_url && (
-                          <a href={doc.file_url} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: "#28A0A0", fontWeight: 700, textDecoration: "none" }}>APRI</a>
+                          <a href={doc.file_url} target="_blank" rel="noreferrer" style={{
+                            fontSize: 10, color: F.teal, fontWeight: 800,
+                            textDecoration: "none", padding: "3px 8px",
+                            border: `1px solid ${F.teal}`, borderRadius: 4,
+                          }}>APRI</a>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                        {!verificato && (
-                          <button onClick={() => onStato(doc.id, "verificato")} style={{ padding: "4px 8px", borderRadius: 6, border: "none", background: "#28A0A0", color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                            ✓ Verifica
-                          </button>
+                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                        {!verificato ? (
+                          <button onClick={() => onStato(doc.id, "verificato")} style={{
+                            padding: "5px 10px", borderRadius: 5, border: "none",
+                            background: F.teal, color: "#fff", fontSize: 10, fontWeight: 800,
+                            cursor: "pointer", fontFamily: "inherit" as any,
+                          }}>Verifica</button>
+                        ) : (
+                          <button onClick={() => onStato(doc.id, "caricato")} style={{
+                            padding: "5px 10px", borderRadius: 5,
+                            border: `1px solid ${F.border}`, background: "#fff",
+                            color: F.textSub, fontSize: 10, fontWeight: 700,
+                            cursor: "pointer", fontFamily: "inherit" as any,
+                          }}>Annulla verifica</button>
                         )}
-                        {verificato && (
-                          <button onClick={() => onStato(doc.id, "caricato")} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: "#fff", color: T.sub, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                            Annulla verifica
-                          </button>
-                        )}
-                        <button onClick={() => { if (confirm("Eliminare il documento?")) onDelete(doc.id); }} style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: "#fff", color: "#DC4444", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                          Elimina
-                        </button>
+                        <button onClick={() => { if (confirm("Eliminare il documento?")) onDelete(doc.id); }} style={{
+                          padding: "5px 10px", borderRadius: 5,
+                          border: `1px solid ${F.border}`, background: "#fff",
+                          color: F.textSub, fontSize: 10, fontWeight: 700,
+                          cursor: "pointer", fontFamily: "inherit" as any,
+                        }}>Elimina</button>
                       </div>
                     </div>
                   )}
 
                   {!caricato && (
                     <button onClick={() => triggerUpload(req.key)} disabled={uploadingKey === req.key} style={{
-                      marginTop: 6, padding: "6px 10px", borderRadius: 6,
-                      border: `1px solid #28A0A0`, background: "#fff", color: "#28A0A0",
-                      fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      marginTop: 8, padding: "7px 12px", borderRadius: 6,
+                      border: `1px solid ${F.teal}`, background: "#fff", color: F.teal,
+                      fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" as any,
                     }}>
-                      {uploadingKey === req.key ? "Caricamento..." : "+ Carica documento"}
+                      {uploadingKey === req.key ? "Caricamento…" : "+ Carica"}
                     </button>
                   )}
                 </div>

@@ -1,7 +1,12 @@
 // components/SchedaNormativa.tsx
-// Scheda normativa contestuale: mostra regole + requisiti + trappole per IVA + Detrazione selezionate
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+
+const F = {
+  darkBg: "#0D1F1F", teal: "#28A0A0", lightBg: "#EEF8F8",
+  border: "#C8E4E4", textDark: "#0D1F1F", textSub: "#6A8484",
+  warn: "#D08008", danger: "#DC4444",
+};
 
 type Normativa = {
   id: string;
@@ -18,27 +23,19 @@ type Normativa = {
   avvertenze: string | null;
 };
 
-type Props = {
-  T: any;
-  ivaPerc: number;
-  detrazione: string;
-};
+type Props = { T: any; ivaPerc: number; detrazione: string };
 
-export default function SchedaNormativa({ T, ivaPerc, detrazione }: Props) {
+export default function SchedaNormativa({ ivaPerc, detrazione }: Props) {
   const [normative, setNormative] = useState<Normativa[]>([]);
   const [openCodice, setOpenCodice] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("fiscale_normative")
-        .select("*")
-        .eq("attivo", true);
+      const { data } = await supabase.from("fiscale_normative").select("*").eq("attivo", true);
       setNormative((data as Normativa[]) || []);
     })();
   }, []);
 
-  // Codici normative correnti in base a selezione
   const ivaCodice = ivaPerc === 4 ? "iva_4" : ivaPerc === 10 ? "iva_10" : "iva_22";
   const detrCodice = detrazione !== "nessuna" ? `detr_${detrazione}` : null;
 
@@ -46,52 +43,66 @@ export default function SchedaNormativa({ T, ivaPerc, detrazione }: Props) {
   const detrN = detrCodice ? normative.find(n => n.codice === detrCodice) : null;
   const cumulN = normative.find(n => n.codice === "cumul_regole");
 
-  // Alert combinazioni sbagliate
   const warn: string[] = [];
   if (ivaPerc === 4 && detrazione !== "nessuna") {
-    warn.push("IVA 4% (prima casa nuova costruzione) è raramente compatibile con detrazione ristrutturazione 50/65/75 sullo stesso intervento. Verifica caso.");
+    warn.push("IVA 4% è compatibile con detrazione solo in casi specifici di nuova costruzione. Verifica con commercialista.");
   }
   if (ivaPerc === 22 && detrazione !== "nessuna") {
     warn.push("Hai selezionato IVA 22%. Per infissi residenziali di solito si applica IVA 10% (manutenzione straordinaria). Verifica se è corretto.");
   }
 
-  const Card = ({ n, accent }: { n: Normativa; accent: string }) => {
+  const Card = ({ n }: { n: Normativa }) => {
     const isOpen = openCodice === n.codice;
+    const code = n.codice.startsWith("iva") ? `${n.codice.split("_")[1]}%` :
+                 n.codice.startsWith("detr") ? `${n.codice.split("_")[1]}%` : "i";
     return (
       <div style={{
-        background: "#fff", borderRadius: 10, border: `1.5px solid ${isOpen ? accent : "#E5E5E5"}`,
-        marginBottom: 8, overflow: "hidden",
+        background: "#fff", borderRadius: 10,
+        border: `1px solid ${isOpen ? F.teal : F.border}`,
+        marginBottom: 6, overflow: "hidden", transition: "border-color .15s",
       }}>
         <div onClick={() => setOpenCodice(isOpen ? null : n.codice)} style={{
-          padding: "12px 14px", cursor: "pointer",
+          padding: "11px 12px", cursor: "pointer",
           display: "flex", alignItems: "center", gap: 10,
         }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: `${accent}15`, color: accent,
+            width: 38, height: 38, borderRadius: 8,
+            background: F.lightBg, color: F.teal,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 900, flexShrink: 0,
+            fontSize: 11, fontWeight: 900, flexShrink: 0, letterSpacing: "-0.3px",
           }}>
-            {n.codice.startsWith("iva") ? `${n.codice.split("_")[1]}%` :
-              n.codice.startsWith("detr") ? `${n.codice.split("_")[1]}%` : "?"}
+            {code}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: T.text }}>{n.titolo}</div>
-            {n.sottotitolo && <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>{n.sottotitolo}</div>}
+            <div style={{ fontSize: 12, fontWeight: 800, color: F.textDark }}>{n.titolo}</div>
+            {n.sottotitolo && (
+              <div style={{ fontSize: 10, color: F.textSub, marginTop: 1, fontWeight: 500 }}>
+                {n.sottotitolo}
+              </div>
+            )}
           </div>
-          <span style={{ fontSize: 14, color: T.sub, transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .2s" }}>›</span>
+          <span style={{
+            fontSize: 14, color: F.textSub,
+            transform: isOpen ? "rotate(90deg)" : "none", transition: "transform .2s",
+          }}>›</span>
         </div>
         {isOpen && (
-          <div style={{ padding: "0 14px 14px", borderTop: `1px solid #E5E5E5`, fontSize: 11, lineHeight: 1.55, color: T.text }}>
-            <Section title="Quando si applica" text={n.quando_si_applica} accent={accent} />
-            <Section title="Requisiti documentali" text={n.requisiti} accent={accent} />
-            {n.massimale && <Section title="Massimale" text={n.massimale} accent={accent} />}
-            {n.durata && <Section title="Durata recupero" text={n.durata} accent={accent} />}
-            {n.note_operative && <Section title="Note operative" text={n.note_operative} accent="#28A0A0" />}
-            {n.avvertenze && <Section title="⚠ Avvertenze" text={n.avvertenze} accent="#DC4444" />}
+          <div style={{
+            padding: "12px", borderTop: `1px solid ${F.border}`,
+            background: F.lightBg, fontSize: 11, lineHeight: 1.55,
+          }}>
+            <Section label="Quando si applica" text={n.quando_si_applica} />
+            <Section label="Requisiti documentali" text={n.requisiti} />
+            {n.massimale && <Section label="Massimale" text={n.massimale} />}
+            {n.durata && <Section label="Durata recupero" text={n.durata} />}
+            {n.note_operative && <Section label="Note operative" text={n.note_operative} />}
+            {n.avvertenze && <Section label="Avvertenze" text={n.avvertenze} warn />}
             {n.riferimento_legge && (
-              <div style={{ marginTop: 10, fontSize: 10, color: T.sub, fontStyle: "italic" as any }}>
-                Rif: {n.riferimento_legge}
+              <div style={{
+                marginTop: 10, paddingTop: 8, borderTop: `1px solid ${F.border}`,
+                fontSize: 9, color: F.textSub, fontStyle: "italic" as any,
+              }}>
+                Riferimento: {n.riferimento_legge}
               </div>
             )}
           </div>
@@ -102,34 +113,44 @@ export default function SchedaNormativa({ T, ivaPerc, detrazione }: Props) {
 
   return (
     <div>
-      {/* Alert combinazioni */}
-      {warn.length > 0 && (
-        <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: "#FFF3E0", border: "1px solid #D08008" }}>
-          {warn.map((w, i) => (
-            <div key={i} style={{ fontSize: 11, color: "#6B4A08", fontWeight: 600 }}>⚠ {w}</div>
-          ))}
+      {warn.length > 0 && warn.map((w, i) => (
+        <div key={i} style={{
+          marginBottom: 8, padding: "10px 12px", borderRadius: 8,
+          background: "#FFF4E0", border: `1px solid ${F.warn}40`,
+          fontSize: 11, color: "#6B4A08", lineHeight: 1.5, fontWeight: 600,
+          display: "flex", gap: 8, alignItems: "flex-start",
+        }}>
+          <span style={{ color: F.warn, fontWeight: 900 }}>⚠</span>
+          <span>{w}</span>
         </div>
-      )}
+      ))}
 
-      {/* Schede correnti */}
-      {ivaN && <Card n={ivaN} accent="#28A0A0" />}
-      {detrN && <Card n={detrN} accent="#0D1F1F" />}
-      {detrN && cumulN && <Card n={cumulN} accent="#7B6BA5" />}
+      {ivaN && <Card n={ivaN} />}
+      {detrN && <Card n={detrN} />}
+      {detrN && cumulN && <Card n={cumulN} />}
 
       {normative.length === 0 && (
-        <div style={{ padding: 16, textAlign: "center" as any, fontSize: 11, color: T.sub, fontStyle: "italic" as any }}>
-          Caricamento normative...
+        <div style={{ padding: "16px 10px", textAlign: "center" as any, fontSize: 11, color: F.textSub, fontStyle: "italic" as any }}>
+          Caricamento normative…
         </div>
       )}
     </div>
   );
 }
 
-function Section({ title, text, accent }: { title: string; text: string; accent: string }) {
+function Section({ label, text, warn }: { label: string; text: string; warn?: boolean }) {
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: 10, fontWeight: 800, color: accent, marginBottom: 3, textTransform: "uppercase" as any, letterSpacing: "0.5px" }}>{title}</div>
-      <div style={{ whiteSpace: "pre-wrap" as any, fontSize: 11, color: "#0D1F1F" }}>{text}</div>
+      <div style={{
+        fontSize: 9, fontWeight: 800,
+        color: warn ? F.danger : F.teal,
+        marginBottom: 3, textTransform: "uppercase" as any, letterSpacing: "0.6px",
+      }}>
+        {warn && "⚠ "}{label}
+      </div>
+      <div style={{ whiteSpace: "pre-wrap" as any, fontSize: 11, color: F.textDark }}>
+        {text}
+      </div>
     </div>
   );
 }
