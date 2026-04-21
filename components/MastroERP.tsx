@@ -4038,11 +4038,14 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                     {TIPI_EVENTO.map(t => <option key={t.id} value={t.id}>{t.l}</option>)}
                   </select>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 8 }}>
-                  {ev.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr))} style={{ padding: "12px 4px", borderRadius: 10, background: T.blueLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.blue }}><I d={ICO.mapPin} s={12} c={T.blue} /> Mappa</div>}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 8 }}>
+                  {ev.addr && <div onClick={() => window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr))} style={{ padding: "12px 4px", borderRadius: 10, background: T.blueLt, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: T.blue }}><I d={ICO.mapPin} s={12} c={T.blue} /> Mappa</div>}
                   <div onClick={() => { const tel = cmObj?.telefono || contatti.find(c => c.nome === ev.persona)?.telefono; if (tel) window.location.href="tel:" + tel; }} style={{ padding: "12px 4px", borderRadius: 10, background: T.grnLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.grn }}><Ico d={ICO.phone} s={14} c={T.grn} /> Chiama</div>
                   <div onClick={() => { const cliente = cmObj ? `${cmObj.cliente} ${cmObj.cognome||""}`.trim() : (ev.persona || "Cliente"); const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" }); setMailBody(`Gentile ${cliente},\n\nLe confermo l'appuntamento:\n\n${dataFmt}${ev.time ? " alle " + ev.time : ""}\n${ev.addr || ""}\n\n${ev.text}\n\nCordiali saluti,\nFabio Cozza`); setShowMailModal({ ev, cm: cmObj }); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.accLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.acc }}>{"ï¸"} Mail</div>
-                  <div onClick={() => { deleteEvent(ev.id); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.redLt, textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.red }}><Ico d={ICO.trash} s={14} c={T.red} /> Elimina</div>
+                  <div onClick={() => setShowShareEvent({ ev, cm: cmObj })} style={{ padding: "12px 4px", borderRadius: 10, background: "rgba(95,208,208,0.15)", border: "1px solid rgba(40,160,160,0.3)", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#1A7A7A" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1A7A7A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Condividi
+                  </div>
+                  <div onClick={() => { deleteEvent(ev.id); setSelectedEvent(null); }} style={{ padding: "12px 4px", borderRadius: 10, background: T.redLt, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: T.red }}><Ico d={ICO.trash} s={14} c={T.red} /> Elimina</div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                   <div onClick={() => { if (cmObj) { setSelectedCM(cmObj); } else { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: ev.text }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); } setSelectedEvent(null); setTab("commesse"); }} style={{ padding: "12px 4px", borderRadius: 12, background: "linear-gradient(135deg, #0D7C6B15, #0D7C6B08)", border: "1px solid #0D7C6B25", textAlign: "center", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "#0D7C6B" }}><Ico d={ICO.folder} s={14} c="currentColor" /> Commessa</div>
@@ -4053,6 +4056,104 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
             </div>
           );
         })()}
+
+        {/* SHARE_EVENT_SHEET - condividi evento */}
+        {showShareEvent && (() => {
+          const ev = showShareEvent.ev;
+          const cm = showShareEvent.cm;
+          const cliente = cm ? `${cm.cliente} ${cm.cognome||""}`.trim() : (ev.persona || "");
+          const tel = cm?.telefono || "";
+          const email = cm?.email || "";
+          const dataFmt = new Date(ev.date).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+          const oraFmt = ev.time ? " alle " + ev.time : "";
+          const riepilogo = `${ev.text}\n\n${dataFmt}${oraFmt}\n${ev.addr || ""}`;
+
+          const shareWhatsapp = (num: string) => {
+            const msg = `Gentile ${cliente || "Cliente"},\n\nLe ricordo l'appuntamento:\n\n${ev.text}\n${dataFmt}${oraFmt}\n${ev.addr || ""}\n\nCordiali saluti,\nFabio Cozza`;
+            const cleanNum = num.replace(/[^0-9+]/g, "").replace(/^\+/, "");
+            window.open(`https://wa.me/${cleanNum}?text=${encodeURIComponent(msg)}`, "_blank");
+            setShowShareEvent(null);
+          };
+          const shareEmail = () => {
+            const subj = `Appuntamento: ${ev.text} - ${dataFmt}`;
+            const body = `Gentile ${cliente || "Cliente"},\n\nLe confermo l'appuntamento:\n\n${ev.text}\n${dataFmt}${oraFmt}\n${ev.addr || ""}\n\nCordiali saluti,\nFabio Cozza`;
+            window.location.href = `mailto:${email || ""}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+            setShowShareEvent(null);
+          };
+          const shareGoogle = () => {
+            const start = ev.date.replace(/-/g, "") + (ev.time ? "T" + ev.time.replace(":", "") + "00" : "T090000");
+            const endH = ev.time ? ((parseInt(ev.time.split(":")[0]) + 1).toString().padStart(2, "0") + ":" + (ev.time.split(":")[1] || "00")) : "10:00";
+            const end = ev.date.replace(/-/g, "") + "T" + endH.replace(":", "") + "00";
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.text)}&dates=${start}/${end}&details=${encodeURIComponent(riepilogo)}&location=${encodeURIComponent(ev.addr || "")}`;
+            window.open(url, "_blank");
+            setShowShareEvent(null);
+          };
+          const copyLink = async () => {
+            try { await navigator.clipboard.writeText(riepilogo); alert("Riepilogo copiato"); } catch { alert("Copia fallita"); }
+            setShowShareEvent(null);
+          };
+          const shareNative = async () => {
+            if ((navigator as any).share) {
+              try { await (navigator as any).share({ title: ev.text, text: riepilogo }); } catch {}
+            } else {
+              copyLink();
+            }
+            setShowShareEvent(null);
+          };
+
+          return (
+            <div style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowShareEvent(null)}>
+              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
+              <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", zIndex: 10001, background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius: "22px 22px 0 0", padding: "20px 16px 28px", width: "100%", maxWidth: 500, boxShadow: "0 -10px 40px rgba(0,0,0,0.25)" }}>
+                <div style={{ width: 40, height: 4, background: "#C8E4E4", borderRadius: 2, margin: "0 auto 14px" }} />
+                <div style={{ fontSize: 16, fontWeight: 900, color: "#0D1F1F", marginBottom: 4 }}>Condividi evento</div>
+                <div style={{ fontSize: 11, color: "#5A7878", marginBottom: 16, fontWeight: 500 }}>{ev.text} {dataFmt}{oraFmt}</div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 10 }}>
+                  {tel ? (
+                    <div onClick={() => shareWhatsapp(tel)} style={{ padding: "14px 4px", borderRadius: 12, background: "linear-gradient(145deg, #25D366, #1EB555)", color: "#fff", textAlign: "center", cursor: "pointer", boxShadow: "0 4px 10px rgba(37,211,102,0.3)" }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" style={{ marginBottom: 4 }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/></svg>
+                      <div style={{ fontSize: 10, fontWeight: 800 }}>WhatsApp</div>
+                      <div style={{ fontSize: 8, opacity: 0.85 }}>al cliente</div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: "14px 4px", borderRadius: 12, background: "#F0F0F0", color: "#999", textAlign: "center", fontSize: 10, fontWeight: 700, opacity: 0.6 }}>WhatsApp<br /><span style={{ fontSize: 8 }}>no tel</span></div>
+                  )}
+
+                  {email ? (
+                    <div onClick={shareEmail} style={{ padding: "14px 4px", borderRadius: 12, background: "linear-gradient(145deg, #3B7FE0, #2659A8)", color: "#fff", textAlign: "center", cursor: "pointer", boxShadow: "0 4px 10px rgba(59,127,224,0.3)" }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 4 }}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+                      <div style={{ fontSize: 10, fontWeight: 800 }}>Email</div>
+                      <div style={{ fontSize: 8, opacity: 0.85 }}>al cliente</div>
+                    </div>
+                  ) : (
+                    <div style={{ padding: "14px 4px", borderRadius: 12, background: "#F0F0F0", color: "#999", textAlign: "center", fontSize: 10, fontWeight: 700, opacity: 0.6 }}>Email<br /><span style={{ fontSize: 8 }}>no mail</span></div>
+                  )}
+
+                  <div onClick={shareGoogle} style={{ padding: "14px 4px", borderRadius: 12, background: "linear-gradient(145deg, #FFFFFF, #F5FBFB)", border: "1px solid #C8E4E4", color: "#1A7A7A", textAlign: "center", cursor: "pointer", boxShadow: "0 2px 6px rgba(31,120,120,0.08)" }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 4 }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <div style={{ fontSize: 10, fontWeight: 800 }}>Google Cal.</div>
+                    <div style={{ fontSize: 8, opacity: 0.75 }}>+1 click</div>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div onClick={shareNative} style={{ padding: "12px 4px", borderRadius: 12, background: "linear-gradient(145deg, #0D1F1F, #1A3535)", color: "#5FD0D0", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800, boxShadow: "0 4px 10px rgba(13,31,31,0.25)" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5FD0D0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:4}}><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                    Altro
+                  </div>
+                  <div onClick={copyLink} style={{ padding: "12px 4px", borderRadius: 12, background: "linear-gradient(145deg, #FFFFFF, #F5FBFB)", border: "1px solid #C8E4E4", color: "#5A7878", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 800 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5A7878" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:4}}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    Copia
+                  </div>
+                </div>
+
+                <div onClick={() => setShowShareEvent(null)} style={{ marginTop: 14, padding: "12px", borderRadius: 11, textAlign: "center", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "#5A7878", background: "rgba(200,228,228,0.3)" }}>Annulla</div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* TASK DETAIL MODAL */}
         {selectedTask && (() => {
           const t = tasks.find(x => x.id === selectedTask.id) || selectedTask;
