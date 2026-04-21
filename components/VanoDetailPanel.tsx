@@ -137,7 +137,7 @@ export default function VanoDetailPanel() {
     // Voice
     voiceActive, voiceTranscript, startVoice, stopVoice,
     // Catalogo
-    sistemiDB, coloriDB, vetriDB, coprifiliDB, lamiereDB, libreriaDB,
+    sistemiDB, coloriDB, vetriDB, coprifiliDB, lamiereDB, libreriaDB, aziendaInfo,
     tipoMisuraDB, tipoMisuraTappDB, tipoMisuraZanzDB, tipoCassonettoDB,
     posPersianaDB, telaiPersianaDB,
     ctProfDB, ctSezioniDB, ctCieliniDB, ctOffset,
