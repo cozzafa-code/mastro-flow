@@ -708,6 +708,14 @@ export default function VanoDetailPanel() {
               badge: v.stanza?`${v.stanza}`:null, filled: [v.stanza].filter(Boolean).length, total: 1,
               body: <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <div>
+                  <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>PEZZI</div>
+                  <div style={{display:"flex",alignItems:"center",gap:4,maxWidth:120}}>
+                    <div onClick={()=>updateV("pezzi",Math.max(1,(v.pezzi||1)-1))} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>−</div>
+                    <div style={{flex:1,textAlign:"center",fontSize:18,fontWeight:800,color:T.acc}}>{v.pezzi||1}</div>
+                    <div onClick={()=>updateV("pezzi",(v.pezzi||1)+1)} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>+</div>
+                  </div>
+                </div>
+                <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.5px"}}>STANZA</div>
                   <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
                     {["Soggiorno","Cucina","Camera","Cameretta","Bagno","Studio","Ingresso","Corridoio","Altro"].map(x=>(
@@ -716,14 +724,6 @@ export default function VanoDetailPanel() {
                         {x}
                       </div>
                     ))}
-                  </div>
-                </div>
-                <div>
-                  <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>PEZZI</div>
-                  <div style={{display:"flex",alignItems:"center",gap:4,maxWidth:120}}>
-                    <div onClick={()=>updateV("pezzi",Math.max(1,(v.pezzi||1)-1))} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>−</div>
-                    <div style={{flex:1,textAlign:"center",fontSize:18,fontWeight:800,color:T.acc}}>{v.pezzi||1}</div>
-                    <div onClick={()=>updateV("pezzi",(v.pezzi||1)+1)} style={{width:32,height:32,borderRadius:8,background:T.bg,border:"1px solid "+T.bdr,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:16,fontWeight:700,color:T.sub}}>+</div>
                   </div>
                 </div>
               </div>
