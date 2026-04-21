@@ -1477,10 +1477,50 @@ export default function CMDetailPanel() {
                   {/*  POSA  */}
                   {curCC.id === "posa" && (
                     <div>
+                      {/* Montaggi gi+ pianificati */}
+                      {montCC.length > 0 && (
+                        <div style={{ marginBottom: 10 }}>
+                          {montCC.map((m, mi) => {
+                            const st = m.interventoStato || m.stato || "programmato";
+                            const isDone = ["completato","collaudo","chiuso"].includes(st);
+                            const sq = squadreDB.find(s => s.id === m.squadraId);
+                            return (
+                              <div key={mi} style={{ background: T.card, border: `1.5px solid ${isDone ? "#28A0A040" : T.bdr}`, borderRadius: 10, padding: "10px 12px", marginBottom: 6 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                  <div>
+                                    <div style={{ fontSize: 12, fontWeight: 800, color: T.text }}>
+                                      {m.data ? new Date(m.data + "T12:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" }) : "Data da definire"} · {m.orario || ""}
+                                    </div>
+                                    <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>
+                                      {sq?.nome || "Squadra"} · {m.durata || `${m.giorni || 1}g`}
+                                    </div>
+                                  </div>
+                                  <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: isDone ? "#28A0A020" : "#F5A62320", color: isDone ? "#28A0A0" : "#D08008", textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>
+                                    {st}
+                                  </span>
+                                </div>
+                                {!isDone && (
+                                  <button onClick={() => {
+                                    setMontaggiDB(prev => prev.map(x => x.id === m.id ? { ...x, stato: "completato", interventoStato: "completato", dataCompletamento: new Date().toISOString() } : x));
+                                    setCcDone("✓ Montaggio completato!"); setTimeout(() => setCcDone(null), 3000);
+                                  }} style={{ width: "100%", padding: 10, borderRadius: 8, border: "none", background: "#28A0A0", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                                    <I d={ICO.check} /> Montaggio completato
+                                  </button>
+                                )}
+                                {isDone && (
+                                  <div style={{ fontSize: 11, color: "#28A0A0", fontWeight: 700, textAlign: "center", padding: "4px 0" }}>
+                                    ✓ Completato · vai al Collaudo
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                       {!montFormOpen ? (
                         <div>
                           <div style={{ fontSize: 11, color: T.sub, marginBottom: 6 }}>{vaniCC.length} vani · {c.indirizzo || "·"}</div>
-                          <button onClick={() => { setMontFormOpen(true); setMontGiorni(1); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: squadreDB[0]?.id || "", note: "" }); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.wrench} /> PIANIFICA MONTAGGIO →</button>
+                          <button onClick={() => { setMontFormOpen(true); setMontGiorni(1); setMontFormData({ data: "", orario: "08:00", durata: "giornata", squadraId: squadreDB[0]?.id || "", note: "" }); }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.wrench} /> {montCC.length > 0 ? "AGGIUNGI MONTAGGIO →" : "PIANIFICA MONTAGGIO →"}</button>
                         </div>
                       ) : (
                         <div style={{ background: T.bg, borderRadius: 10, padding: 10, border: `1px solid ${T.bdr}` }}>
