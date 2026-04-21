@@ -495,25 +495,53 @@ export default function VanoDetailPanel() {
 
 
     return (
-      <div style={{ paddingBottom: showLamieraDisegno ? 0 : 80, backgroundColor: "#F5F4F0" }}>
-        {/* fliwoX Topbar */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#0D1F1F", position: "sticky", top: 0, zIndex: 20 }}>
-          <div onClick={() => { setSelectedVano(null); setVanoStep(0); }} style={{ cursor: "pointer", width: 34, height: 34, background: "rgba(255,255,255,0.08)", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.12)", flexShrink: 0 }}>
-            <Ico d={ICO.back} s={16} c="white" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 900, color: "white", letterSpacing: "-0.2px" }}>{v.nome}</div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, marginTop: 1 }}>{TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo} · {v.stanza} · {v.piano}</div>
-          </div>
-          {/* BADGE STATO MISURE */}
-          {(() => {
-            const sm = getStatoMisure(v);
-            return (
-              <div onClick={() => setShowStatoMisurePanel(true)} style={{ padding: "5px 11px", borderRadius: 20, background: sm.bg, border: `1.5px solid ${sm.color}50`, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, boxShadow: `0 3px 0 0 ${sm.color}40` }}>
-                <span style={{ fontSize: 9, fontWeight: 900, color: sm.color, whiteSpace: "nowrap" }}>{sm.label}</span>
+      <div style={{ paddingBottom: showLamieraDisegno ? 0 : 80, backgroundColor: "#E4F2F2" }}>
+        {/* HERO TEAL fliwoX */}
+        <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2", position: "sticky", top: 0, zIndex: 20 }}>
+          <div style={{
+            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+            borderRadius: 22, padding: "14px 16px 14px",
+            position: "relative", overflow: "hidden",
+            boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+            marginBottom: 10,
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
+              <div onClick={() => { setSelectedVano(null); setVanoStep(0); }} style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", flexShrink: 0,
+                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </div>
-            );
-          })()}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "1px", textTransform: "uppercase" }}>
+                  {TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo || "VANO"}{v.stanza ? ` · ${v.stanza}` : ""}{v.piano ? ` · ${v.piano}` : ""}
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px", marginTop: 1, textShadow: "0 2px 4px rgba(0,0,0,0.2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {v.nome}
+                </div>
+              </div>
+              {/* BADGE STATO MISURE */}
+              {(() => {
+                const sm = getStatoMisure(v);
+                return (
+                  <div onClick={() => setShowStatoMisurePanel(true)} style={{
+                    padding: "6px 12px", borderRadius: 20,
+                    background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)",
+                    cursor: "pointer", flexShrink: 0,
+                    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)",
+                  }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", letterSpacing: "0.3px" }}>{sm.label}</span>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         </div>
 
         {/* ═══ STORICO: BANNER SOLA LETTURA ═══ */}
@@ -530,10 +558,10 @@ export default function VanoDetailPanel() {
         <div style={{ margin: "8px 16px" }}>
           {/* Main button */}
           <div onClick={vrActive ? vrStop : vrStart}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderRadius: 10,
-              background: vrActive ? "#DC4444" : "#0F766E",
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", borderRadius: 12,
+              background: vrActive ? "#DC4444" : "#28A0A0",
               border: "none", cursor: "pointer", justifyContent: "center",
-              boxShadow: vrActive ? "0 4px 0 #991B1B" : "0 4px 0 #0D5C56",
+              boxShadow: vrActive ? "0 4px 0 #991B1B" : "0 4px 0 #1A7A7A",
               transition: "all 0.1s" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
               <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
