@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
    widgets di default. La home non crasha MAI a causa di questo hook.
    ═══════════════════════════════════════════════════════════════ */
 
-export const DEFAULT_WIDGETS = ["oggi_devi_fare", "squadra", "produzione"];
+export const DEFAULT_WIDGETS = ["oggi_devi_fare", "lavori_in_corso", "pipeline_commesse", "eventi_oggi"];
 
 let cachedClient: any = null;
 
