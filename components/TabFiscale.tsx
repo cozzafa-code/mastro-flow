@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFiscale, TemplateFiscale } from "../hooks/useFiscale";
 import TabFiscaleDocs from "./TabFiscaleDocs";
+import SchedaNormativa from "./SchedaNormativa";
 
 type Props = {
   T: any; ICO: any; I: any;
@@ -155,6 +156,12 @@ export default function TabFiscale({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* ===== SCHEDA NORMATIVA CONTESTUALE ===== */}
+      <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 14, marginBottom: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F", marginBottom: 10 }}>Scheda normativa applicabile</div>
+        <SchedaNormativa T={T} ivaPerc={pwIvaDefault} detrazione={pwDetr} />
       </div>
 
       {/* ===== CALCOLO LIVE ===== */}
