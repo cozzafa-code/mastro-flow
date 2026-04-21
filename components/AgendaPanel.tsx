@@ -372,7 +372,7 @@ export default function AgendaPanel() {
   };
 
   // ── RENDER ──
-  const views = ["mese", "settimana", "giorno"] as const;
+  const views = ["oggi", "mese", "settimana", "giorno"] as const;
 
   if (agendaView === "oggi") return <CentroControlloOggi />;
 
