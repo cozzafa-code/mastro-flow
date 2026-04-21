@@ -82,6 +82,36 @@ export default function CMDetailPanel() {
     setAutoPickDoneForCm(selectedCM.id);
   }, [selectedCM?.id, selectedRilievo, autoPickDoneForCm]);
 
+  // -- AUTO-SYNC SUPABASE (top-level, fuori da qualsiasi condizione) --
+  const _isUuidCM = (v: any): boolean => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  const _syncTimerRef = React.useRef<any>(null);
+  const _syncedKeyRef = React.useRef<string>('');
+
+  React.useEffect(() => {
+    const cm = selectedCM;
+    if (!cm || !cm.code) return;
+    const key = JSON.stringify({ id: cm.id, fase: cm.fase, tot: cm.totalePreventivo, sc: cm.scontoPerc, detr: cm.detrazione, iva: cm.ivaPerc, sent: cm.preventivoInviato });
+    if (key === _syncedKeyRef.current) return;
+    _syncedKeyRef.current = key;
+
+    if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current);
+    _syncTimerRef.current = setTimeout(async () => {
+      try {
+        const azId = await getAziendaIdDB();
+        if (!azId) return;
+        const saved = await saveCantiereSync(azId, cm);
+        if (saved && saved.id && !_isUuidCM(cm.id)) {
+          const newId = saved.id;
+          setCantieri((cs: any[]) => cs.map((c: any) => c.id === cm.id ? { ...c, id: newId } : c));
+          setSelectedCM((prev: any) => prev && prev.id === cm.id ? { ...prev, id: newId } : prev);
+          console.log('[autosync] ID:', cm.id, '->', newId);
+        }
+      } catch (err) { console.warn('[autosync] fail:', err); }
+    }, 800);
+    return () => { if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current); };
+  }, [selectedCM?.id, selectedCM?.fase, selectedCM?.totalePreventivo, selectedCM?.scontoPerc, selectedCM?.detrazione, selectedCM?.ivaPerc, selectedCM?.preventivoInviato]);
+
+
 
   // STATES (tutti prima del null guard — React Rules of Hooks)
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
@@ -185,31 +215,6 @@ export default function CMDetailPanel() {
         setSelectedCM(prev => ({ ...prev, [field]: val }));
       };
 
-      // -- AUTO-SYNC SUPABASE --
-      const _isUuid = (v: any): boolean => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
-      const _syncTimerRef = React.useRef<any>(null);
-      const _syncedKeyRef = React.useRef<string>('');
-      React.useEffect(() => {
-        if (!c || !c.code) return;
-        const key = JSON.stringify({ id: c.id, fase: c.fase, tot: c.totalePreventivo, sc: c.scontoPerc, detr: c.detrazione, iva: c.ivaPerc, sent: c.preventivoInviato });
-        if (key === _syncedKeyRef.current) return;
-        _syncedKeyRef.current = key;
-        if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current);
-        _syncTimerRef.current = setTimeout(async () => {
-          try {
-            const azId = await getAziendaIdDB();
-            if (!azId) return;
-            const saved = await saveCantiereSync(azId, c);
-            if (saved && saved.id && !_isUuid(c.id)) {
-              const newId = saved.id;
-              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, id: newId } : cm));
-              setSelectedCM(prev => prev && prev.id === c.id ? { ...prev, id: newId } : prev);
-              console.log('[autosync] ID:', c.id, '->', newId);
-            }
-          } catch (err) { console.warn('[autosync] fail:', err); }
-        }, 800);
-        return () => { if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current); };
-      }, [c?.id, c?.fase, c?.totalePreventivo, c?.scontoPerc, c?.detrazione, c?.ivaPerc, c?.preventivoInviato]);
 
       const pwUpdVano = (vanoId, field, val) => {
         setCantieri(cs => cs.map(cm => {
