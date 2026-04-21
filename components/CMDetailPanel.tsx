@@ -1308,7 +1308,15 @@ export default function CMDetailPanel() {
                             };
                             const tt = tipoMap[tipoR] || tipoMap.provvisorio;
                             return (
-                              <div key={ril.id} onClick={() => { setSelectedRilievo(ril); setCmSubTab("sopralluoghi"); }} style={{
+                              <div key={ril.id} onClick={() => {
+                                setSelectedRilievo(ril);
+                                setCmSubTab("sopralluoghi");
+                                // Scroll alla sezione vani dopo render
+                                setTimeout(() => {
+                                  const el = document.getElementById("cm-tab-vani");
+                                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }, 100);
+                              }} style={{
                                 background: T.card, border: `1.5px solid ${T.bdr}`, borderRadius: 10,
                                 padding: "10px 12px", marginBottom: 6, cursor: "pointer",
                                 display: "flex", alignItems: "center", gap: 10,
@@ -1990,7 +1998,7 @@ export default function CMDetailPanel() {
         </div>
 
         {/* == TAB: vani / visite / info == */}
-        <div style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
+        <div id="cm-tab-vani" style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
           {[
             {k:"sopralluoghi",l:`Vani (${vaniList.length})`},
             {k:"visite",l:`Visite (${(c.rilievi||[]).length})`},
