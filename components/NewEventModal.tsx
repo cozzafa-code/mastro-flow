@@ -173,7 +173,16 @@ export default function NewEventModal({
                   {[{ id: "task", l: "Task", c: AMBER }, ...TIPI_EVENTO].map(t => {
                     const sel = newEvent.tipo === t.id;
                     return (
-                      <div key={t.id} onClick={() => setField("tipo", t.id)} style={{
+                      <div key={t.id} onClick={() => {
+                        const tipiLabels = [{ id: "task", l: "Task" }, ...TIPI_EVENTO].map((x: any) => x.l);
+                        const cur = (newEvent.text || "").trim();
+                        const isAutoFilled = cur === "" || tipiLabels.includes(cur);
+                        setNewEvent((prev: any) => ({
+                          ...prev,
+                          tipo: t.id,
+                          text: isAutoFilled ? t.l : prev.text,
+                        }));
+                      }} style={{
                         padding: "9px 14px",
                         borderRadius: 11,
                         border: `1.5px solid ${sel ? (t.c || TEAL) : BORDER}`,
