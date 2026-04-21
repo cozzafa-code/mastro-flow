@@ -1,7 +1,7 @@
 // hooks/useFiscale.ts
 // Dati fiscali commessa: template, documenti, comunicazioni
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "@supabase/supabase-js";
 
 export type TemplateFiscale = {
   id: string;
