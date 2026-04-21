@@ -5,17 +5,29 @@
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
 import React, { useState } from "react";
+import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
+import ModalFirma from "./ModalFirma";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey } from "./mastro-constants";
+import ModalFirma from "./ModalFirma";
 import { buildSnapshot, creaFascicolo, getFascicoliCommessa, revocaFascicolo } from "../lib/fascicolo-service";
+import ModalFirma from "./ModalFirma";
 import { generaFascicoloGeometraPDF } from "../lib/pdf-fascicolo";
+import ModalFirma from "./ModalFirma";
 import { generaExcelFascicolo } from "../lib/excel-fascicolo";
+import ModalFirma from "./ModalFirma";
 import InterventoTab from "./InterventoTab";
+import ModalFirma from "./ModalFirma";
 import InterventoFlowPanel from "./InterventoFlowPanel";
+import ModalFirma from "./ModalFirma";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
+import ModalFirma from "./ModalFirma";
 import GuidaIvaDetrazioni from "./GuidaIvaDetrazioni";
+import ModalFirma from "./ModalFirma";
 import TabFiscale from "./TabFiscale";
+import ModalFirma from "./ModalFirma";
 import DisegnoTecnico from "./DisegnoTecnico";
+import ModalFirma from "./ModalFirma";
 // @cadDraw state added below
 
 export default function CMDetailPanel() {
