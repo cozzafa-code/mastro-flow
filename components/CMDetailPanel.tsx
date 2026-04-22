@@ -652,7 +652,7 @@ export default function CMDetailPanel() {
               </div>
               <button onClick={async () => {
                 // 1. Genera PDF (non blocca se fallisce)
-                try { generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(e) { console.error("[PDF fail]", e); }
+                // PDF disabilitato temporaneamente per test modal
                 // 2. Segna inviato
                 try {
                   setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
