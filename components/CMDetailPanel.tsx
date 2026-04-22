@@ -5,6 +5,7 @@
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
 import React, { useState } from "react";
+import PassaggiSaltati from "./PassaggiSaltati";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
@@ -1229,20 +1230,15 @@ export default function CMDetailPanel() {
                   {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
 
                   {/* Skipped steps log */}
-                  {(c.skipLog || []).length > 0 && (
-                    <div style={{ marginBottom: 8, padding: "6px 10px", borderRadius: 8, background: "#ff950010", border: "1px solid #ff950030" }}>
-                      <div style={{ fontSize: 9, fontWeight: 800, color: "#ff9500", textTransform: "uppercase", marginBottom: 3 }}>Passaggi saltati</div>
-                      {(c.skipLog || []).map((skip, si) => {
-                        const stepInfo = stepsCC.find(s => s.id === skip.fase);
-                        return (
-                          <div key={si} style={{ fontSize: 10, color: T.text, display: "flex", gap: 6, padding: "2px 0" }}>
-                            <span style={{ color: "#ff9500", fontWeight: 700 }}>⏭ {stepInfo?.l || skip.fase}</span>
-                            <span style={{ color: T.sub, flex: 1 }}>{skip.motivo || "·"}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <PassaggiSaltati
+                    skipLog={c.skipLog || []}
+                    steps={stepsCC}
+                    onRiprendi={(si, faseId) => {
+                      setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: (cm.skipLog || []).filter((_, i) => i !== si), fase: faseId } : cm));
+                      setSelectedCM((prev: any) => ({ ...prev, skipLog: (prev.skipLog || []).filter((_: any, i: number) => i !== si), fase: faseId }));
+                      setCcDone("Riaperto"); setTimeout(() => setCcDone(null), 2500);
+                    }}
+                  />
 
                   {/*  SOPRALLUOGO · Lista rilievi + Crea nuovo  */}
                   {curCC.id === "sopralluogo" && (
