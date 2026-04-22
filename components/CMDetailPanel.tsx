@@ -119,6 +119,7 @@ export default function CMDetailPanel() {
 
   // STATES (tutti prima del null guard — React Rules of Hooks)
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
+    const [selectedVaniBulk, setSelectedVaniBulk] = React.useState<number[]>([]);
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
