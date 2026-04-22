@@ -2083,6 +2083,18 @@ export default function CMDetailPanel() {
                 : `+ Misure indicative · ${(c.rilievi||[]).length} ${(c.rilievi||[]).length === 1 ? "visita" : "visite"} effettuate`}
             </div>
 
+            {/* Bottone nuovo rilievo in tab Visite */}
+            {!c.firmaCliente && (
+              <button onClick={() => {
+                setNuovoRilievoTipo("provvisorio");
+                setNuovoRilievoRilevatore("");
+                setNuovoRilievoNote("");
+                setShowNuovoRilievoModal(true);
+              }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
+                + NUOVO RILIEVO
+              </button>
+            )}
+
             {/* Timeline visite */}
             {(c.rilievi||[]).length === 0 ? (
               <div style={{ textAlign: "center", padding: "28px 16px", color: T.sub }}>
