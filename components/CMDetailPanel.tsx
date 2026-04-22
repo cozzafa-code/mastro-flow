@@ -2938,7 +2938,7 @@ export default function CMDetailPanel() {
           </div>
         )}
       {showSendModal && (
-        <div onClick={() => setShowSendModal(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div onClick={() => setShowSendModal(null)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
             <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>Invia preventivo al cliente</div>
             <div style={{ fontSize: 12, color: "#6A8484", marginBottom: 16 }}>{showSendModal.nome} {showSendModal.tel ? "- " + showSendModal.tel : ""}</div>
@@ -3003,7 +3003,7 @@ export default function CMDetailPanel() {
         </div>
       )}
       {quickEditCliente && (
-        <div onClick={() => setQuickEditCliente(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div onClick={() => setQuickEditCliente(null)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
             <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4, color: "#0D1F1F" }}>
               Aggiungi {quickEditCliente === "telefono" ? "telefono" : "email"} cliente
