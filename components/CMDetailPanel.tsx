@@ -635,15 +635,32 @@ export default function CMDetailPanel() {
                 <button onClick={() => { try { console.log("[PDF] click"); generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[PDF]", err); alert("Errore PDF: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
                 <button onClick={() => { try { console.log("[Anteprima] click"); generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[Anteprima]", err); alert("Errore Anteprima: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
               </div>
-              <button onClick={() => {
+              <button onClick={async () => {
                 try {
                   generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
                   const link = generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
                   setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                   setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }));
+                  // Genera link pubblico 1-click
+                  let linkPubblico = "";
+                  try {
+                    const snapshot = {
+                      cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
+                      totale: totIva || 0,
+                      vani: (vani || []).map((v, i) => ({
+                        nome: v.nome || v.tipo || "Vano " + (i+1),
+                        tipo: v.tipo,
+                        misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
+                        prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
+                      })),
+                      azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
+                    };
+                    const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }) });
+                    if (r.ok) { const d = await r.json(); linkPubblico = window.location.origin + d.url; }
+                  } catch {}
                   const nome = c.cliente || "";
                   const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                  const wa = `https://wa.me/${tel.startsWith("+") ? tel.slice(1) : "39" + tel}?text=` + encodeURIComponent(`Ciao ${nome}, ecco il tuo preventivo. Rispondi OK se va bene o dimmi cosa modificare. Grazie!`);
+                  const wa = `https://wa.me/${tel.startsWith("+") ? tel.slice(1) : "39" + tel}?text=` + encodeURIComponent(linkPubblico ? `Ciao ${nome}, ecco il preventivo ${c.code}. Clicca qui per vedere i dettagli e rispondere: ${linkPubblico}` : `Ciao ${nome}, ecco il tuo preventivo. Rispondi OK se va bene o dimmi cosa modificare. Grazie!`);
                   window.open(wa, "_blank");
                   setCcDone("✓ Preventivo inviato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
                 } catch(err: any) { alert("Errore: " + (err?.message || err)); }
