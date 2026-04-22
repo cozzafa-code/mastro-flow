@@ -24,9 +24,27 @@ type Normativa = {
   modelli_documenti?: Array<{ id: string; nome: string; descrizione: string; template: string }>;
 };
 
-type Props = { T: any; ivaPerc: number; detrazione: string };
+type Props = { T: any; ivaPerc: number; detrazione: string; commessa?: any; azienda?: any };
 
-export default function SchedaNormativa({ ivaPerc, detrazione }: Props) {
+export default function SchedaNormativa({ ivaPerc, detrazione, commessa, azienda }: Props) {
+  const fillPlaceholders = (txt: string) => {
+    const c = commessa || {};
+    const a = azienda || {};
+    return (txt || "")
+      .replace(/\{\{NOME_CLIENTE\}\}/g, `${c.cliente || ""} ${c.cognome || ""}`.trim() || "[nome cliente]")
+      .replace(/\{\{CF_CLIENTE\}\}/g, c.codiceFiscale || "[codice fiscale]")
+      .replace(/\{\{INDIRIZZO_CLIENTE\}\}/g, c.indirizzoCliente || c.indirizzo || "[indirizzo]")
+      .replace(/\{\{CITTA_CLIENTE\}\}/g, c.citta || "[città]")
+      .replace(/\{\{CAP_CLIENTE\}\}/g, c.cap || "[CAP]")
+      .replace(/\{\{INDIRIZZO_IMMOBILE\}\}/g, c.indirizzo || "[indirizzo immobile]")
+      .replace(/\{\{CATASTO\}\}/g, c.catasto || "Foglio ___ Particella ___ Sub ___")
+      .replace(/\{\{CODICE_COMMESSA\}\}/g, c.code || "[codice]")
+      .replace(/\{\{NOME_AZIENDA\}\}/g, a.ragioneSociale || a.nome || "[nome azienda]")
+      .replace(/\{\{PIVA_AZIENDA\}\}/g, a.piva || "[P.IVA]")
+      .replace(/\{\{TEL_AZIENDA\}\}/g, a.telefono || "[telefono]")
+      .replace(/\{\{EMAIL_AZIENDA\}\}/g, a.email || "[email]")
+      .replace(/\{\{NUM_FATTURA\}\}/g, c.numFattura || "[num. fattura]");
+  };
   const [normative, setNormative] = useState<Normativa[]>([]);
   const [openCodice, setOpenCodice] = useState<string | null>(null);
 
@@ -109,7 +127,7 @@ export default function SchedaNormativa({ ivaPerc, detrazione }: Props) {
                     <div style={{ fontSize: 10, color: F.textSub, marginBottom: 8 }}>{m.descrizione}</div>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => {
-                        const blob = new Blob([m.template], { type: "text/plain;charset=utf-8" });
+                        const blob = new Blob([fillPlaceholders(m.template)], { type: "text/plain;charset=utf-8" });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
@@ -120,7 +138,7 @@ export default function SchedaNormativa({ ivaPerc, detrazione }: Props) {
                         Scarica modello
                       </button>
                       <button onClick={() => {
-                        navigator.clipboard.writeText(m.template).then(() => alert("Testo copiato negli appunti. Incollalo in WhatsApp/email per il cliente."));
+                        navigator.clipboard.writeText(fillPlaceholders(m.template)).then(() => alert("Testo copiato negli appunti. Incollalo in WhatsApp/email per il cliente."));
                       }} style={{ flex: 1, padding: "7px 10px", borderRadius: 6, background: "#fff", color: F.textSub, border: `1px solid ${F.border}`, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
                         Copia testo
                       </button>

@@ -1,4 +1,4 @@
-// components/TabFiscale.tsx
+﻿// components/TabFiscale.tsx
 // Tab Fiscale — stile unificato Centro Comando / RILIEVO MISURE
 import { useState } from "react";
 import { useFiscale } from "../hooks/useFiscale";
@@ -148,7 +148,7 @@ export default function TabFiscale({
       {/* ===== SCHEDA NORMATIVA ===== */}
       <div style={card}>
         <div style={title}>Scheda normativa</div>
-        <SchedaNormativa T={T} ivaPerc={pwIvaDefault} detrazione={pwDetr} />
+        <SchedaNormativa T={T} ivaPerc={pwIvaDefault} detrazione={pwDetr} commessa={commessa} azienda={aziendaInfo} />
       </div>
 
       {/* ===== TEMPLATE + DOCS GENERATI + DOCS CLIENTE + LOG ===== */}
