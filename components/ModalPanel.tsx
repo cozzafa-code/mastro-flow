@@ -717,6 +717,18 @@ Fabio Cozza - Walter Cozza Serramenti` },
                         <input style={{...S.input,flex:1}} placeholder="Telefono" inputMode="tel" value={newCM.telefono} onChange={e=>setNewCM(c=>({...c,telefono:e.target.value}))}/>
                         <input style={{...S.input,flex:1}} placeholder="Email" inputMode="email" value={newCM.email||""} onChange={e=>setNewCM(c=>({...c,email:e.target.value}))}/>
                       </div>
+                      <div style={{ display:"flex", gap:8, marginTop:8 }}>
+                        <input style={{...S.input,flex:1}} placeholder="Codice fiscale" value={newCM.codiceFiscale||""} onChange={e=>setNewCM(c=>({...c,codiceFiscale:e.target.value.toUpperCase()}))}/>
+                        <input style={{...S.input,flex:1}} placeholder="P.IVA (se azienda)" inputMode="numeric" value={newCM.piva||""} onChange={e=>setNewCM(c=>({...c,piva:e.target.value}))}/>
+                      </div>
+                      <div style={{ display:"flex", gap:8, marginTop:8 }}>
+                        <input style={{...S.input,flex:2}} placeholder="Citta residenza" value={newCM.citta||""} onChange={e=>setNewCM(c=>({...c,citta:e.target.value}))}/>
+                        <input style={{...S.input,flex:1}} placeholder="CAP" inputMode="numeric" value={newCM.cap||""} onChange={e=>setNewCM(c=>({...c,cap:e.target.value}))}/>
+                      </div>
+                      <div style={{ display:"flex", gap:8, marginTop:8 }}>
+                        <input style={{...S.input,flex:1}} placeholder="PEC (per fattura elettronica)" inputMode="email" value={newCM.pec||""} onChange={e=>setNewCM(c=>({...c,pec:e.target.value}))}/>
+                        <input style={{...S.input,flex:1}} placeholder="Codice SDI" value={newCM.sdi||""} onChange={e=>setNewCM(c=>({...c,sdi:e.target.value.toUpperCase()}))}/>
+                      </div>
                     </div>
 
                     <AccordionSection id="accesso" icon="→" label="Accesso / Difficoltà salita"
