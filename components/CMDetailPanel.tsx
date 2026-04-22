@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import PassaggiSaltati from "./PassaggiSaltati";
 import VanoCardPreventivo from "./VanoCardPreventivo";
+import BulkEditBar from "./BulkEditBar";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
@@ -315,10 +316,58 @@ export default function CMDetailPanel() {
                   vano={v}
                   commessa={c}
                   index={idx}
-                  onClickEdit={() => { setSelectedVano(v); }}
+                  isSelected={selectedVaniBulk.includes(v.id)}
+                  onToggleSelect={() => setSelectedVaniBulk(p => p.includes(v.id) ? p.filter(x => x !== v.id) : [...p, v.id])}
+                  onClickEdit={() => { if (selectedVaniBulk.length > 0) { setSelectedVaniBulk(p => p.includes(v.id) ? p.filter(x => x !== v.id) : [...p, v.id]); return; } setSelectedVano(v); }}
                   onCalcPrezzo={(vv) => calcolaVanoPrezzo(vv, c)}
                 />
               ))}
+              <BulkEditBar
+                selectedIds={selectedVaniBulk}
+                totalVani={pwVani.length}
+                onClearSelection={() => setSelectedVaniBulk([])}
+                onSelectAll={() => setSelectedVaniBulk(pwVani.map(v => v.id))}
+                onApply={(action, value) => {
+                  const ids = selectedVaniBulk;
+                  if (action === "elimina") {
+                    pwVani.filter(v => ids.includes(v.id)).forEach(v => deleteVano(c.id, v.id));
+                    setSelectedVaniBulk([]);
+                    return;
+                  }
+                  if (action === "duplica") {
+                    const toDup = pwVani.filter(v => ids.includes(v.id));
+                    for (let i = 0; i < (value as number); i++) {
+                      toDup.forEach(v => pwDuplicaVano(v, false));
+                    }
+                    setSelectedVaniBulk([]);
+                    return;
+                  }
+                  ids.forEach(id => {
+                    if (action === "sconto_perc") {
+                      const vv = pwVani.find(x => x.id === id);
+                      if (vv) {
+                        const prezzoBase = calcolaVanoPrezzo(vv, c);
+                        const nuovo = prezzoBase * (1 + (value / 100));
+                        pwUpdVano(id, "prezzoManuale", Math.round(nuovo * 100) / 100);
+                      }
+                      return;
+                    }
+                    if (action === "note_append") {
+                      const vv = pwVani.find(x => x.id === id);
+                      const prev = vv?.note || "";
+                      pwUpdVano(id, "note", prev ? prev + "\n" + value : value);
+                      return;
+                    }
+                    if (action === "tapparella" || action === "persiana" || action === "zanzariera") {
+                      const vv = pwVani.find(x => x.id === id);
+                      const prevAcc = vv?.accessori || {};
+                      pwUpdVano(id, "accessori", { ...prevAcc, [action]: value });
+                      return;
+                    }
+                    pwUpdVano(id, action, value);
+                  });
+                }}
+              />
             </div>
           )}
 

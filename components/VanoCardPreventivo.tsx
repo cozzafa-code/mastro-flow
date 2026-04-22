@@ -1,4 +1,4 @@
-// components/VanoCardPreventivo.tsx
+﻿// components/VanoCardPreventivo.tsx
 // Card "galattica" per il vano nel workspace preventivo.
 // SOLO VISTA: click apre VanoDetailPanel fullscreen per edit completo.
 // Preview SVG a sinistra, info ricche al centro, prezzo destra, barra status sotto.
@@ -9,6 +9,8 @@ type Props = {
   vano: any;
   commessa: any;
   index: number;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
   onClickEdit: () => void;
   onCalcPrezzo: (v: any) => number;
 };
@@ -35,6 +37,8 @@ export default function VanoCardPreventivo({
   vano,
   commessa,
   index,
+  isSelected = false,
+  onToggleSelect,
   onClickEdit,
   onCalcPrezzo,
 }: Props) {
@@ -79,10 +83,11 @@ export default function VanoCardPreventivo({
       style={{
         background: T.cardBg,
         borderRadius: 12,
-        border: `1px solid ${T.border}`,
+        border: `2px solid ${isSelected ? T.teal : T.border}`,
         marginBottom: 10,
         overflow: "hidden",
         cursor: "pointer",
+        boxShadow: isSelected ? `0 0 0 3px ${T.teal}20` : "none",
       }}
     >
       {/* ── HEADER ── */}
@@ -101,6 +106,20 @@ export default function VanoCardPreventivo({
             fontSize: 10, fontWeight: 700,
             padding: "2px 7px", borderRadius: 6,
           }}>#{index + 1}</div>
+          {onToggleSelect && (
+            <div onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}
+              style={{
+                position: "absolute", top: 6, right: 6,
+                width: 22, height: 22, borderRadius: 6,
+                background: isSelected ? T.teal : "rgba(255,255,255,0.15)",
+                border: `2px solid ${isSelected ? T.teal : "rgba(255,255,255,0.4)"}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#fff", fontSize: 13, fontWeight: 900,
+                cursor: "pointer",
+              }}>
+              {isSelected ? "✓" : ""}
+            </div>
+          )}
           <svg viewBox="0 0 60 72" width="48" height="58" style={{ marginTop: 10 }}>
             <rect x="2" y="2" width="56" height="68" fill="none" stroke={T.teal} strokeWidth="2" rx="2"/>
             {(v.tipo || "").startsWith("F2") || (v.tipo || "").startsWith("PF2") ? (
