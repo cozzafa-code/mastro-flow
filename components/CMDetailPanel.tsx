@@ -1601,6 +1601,31 @@ export default function CMDetailPanel() {
                   {curCC.id === "conferma" && (
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: €{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
+                      {c.firmaCliente && (
+                        <div style={{ marginBottom: 10, padding: 12, borderRadius: 10, background: "#28A0A012", border: "1px solid #28A0A030" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 18 }}>✓</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: "#28A0A0" }}>Firma ricevuta</div>
+                              <div style={{ fontSize: 10, color: T.sub }}>{c.dataFirma ? new Date(c.dataFirma).toLocaleDateString("it-IT") : ""}</div>
+                            </div>
+                          </div>
+                          {c.firmaDocumento?.dataUrl && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button onClick={() => {
+                                if (!c.firmaDocumento?.dataUrl) return;
+                                const w = window.open("");
+                                w?.document.write(`<iframe src="${c.firmaDocumento.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
+                              }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#fff", color: "#28A0A0", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                                Vedi documento
+                              </button>
+                              <a href={c.firmaDocumento.dataUrl} download={c.firmaDocumento.nome || "documento_firmato.pdf"} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#28A0A0", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
+                                Scarica PDF
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {hasFattCC && !fattCC.every(f => f.pagata) && (
                         <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#D0800815", border: "1px solid #D0800830", display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{ fontSize: 13 }}>📋</span>
