@@ -651,33 +651,34 @@ export default function CMDetailPanel() {
                 <button onClick={() => { try { console.log("[Anteprima] click"); generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[Anteprima]", err); alert("Errore Anteprima: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
               </div>
               <button onClick={async () => {
+                // 1. Genera PDF (non blocca se fallisce)
+                try { generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(e) { console.error("[PDF fail]", e); }
+                // 2. Segna inviato
                 try {
-                  try { generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(e) { console.error("[PDF fail]", e); }
                   setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                   setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }));
-                  // Genera link pubblico 1-click
-                  let linkPubblico = "";
-                  try {
-                    const snapshot = {
-                      cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
-                      totale: totIva || 0,
-                      vani: (vani || []).map((v, i) => ({
-                        nome: v.nome || v.tipo || "Vano " + (i+1),
-                        tipo: v.tipo,
-                        misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
-                        prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
-                      })),
-                      azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
-                    };
-                    const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }) });
-                    if (r.ok) { const d = await r.json(); linkPubblico = window.location.origin + d.url; }
-                  } catch {}
-                  const nome = c.cliente || "";
-                  const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                  setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
-                  setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }));
-                  setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
-                } catch(err: any) { alert("Errore: " + (err?.message || err)); }
+                } catch(e) { console.error("[setCantieri fail]", e); }
+                // 3. Genera link pubblico (non blocca se fallisce)
+                let linkPubblico = "";
+                try {
+                  const snapshot = {
+                    cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
+                    totale: totIva || 0,
+                    vani: (vani || []).map((v, i) => ({
+                      nome: v.nome || v.tipo || "Vano " + (i+1),
+                      tipo: v.tipo,
+                      misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
+                      prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
+                    })),
+                    azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
+                  };
+                  const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }) });
+                  if (r.ok) { const d = await r.json(); linkPubblico = window.location.origin + d.url; }
+                } catch(e) { console.error("[link fail]", e); }
+                // 4. Apri modal SEMPRE
+                const nome = c.cliente || "";
+                const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
               }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)" }}><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE -></button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Invia PDF via WhatsApp. La firma verrà richiesta solo dopo la conferma del cliente.</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
