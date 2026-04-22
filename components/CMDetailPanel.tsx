@@ -120,6 +120,8 @@ export default function CMDetailPanel() {
   // STATES (tutti prima del null guard — React Rules of Hooks)
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
     const [selectedVaniBulk, setSelectedVaniBulk] = React.useState<number[]>([]);
+    const [quickEditCliente, setQuickEditCliente] = React.useState<null | "telefono" | "email">(null);
+    const [quickEditValue, setQuickEditValue] = React.useState("");
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
@@ -2820,6 +2822,35 @@ export default function CMDetailPanel() {
             </div>
           </div>
         )}
+      {quickEditCliente && (
+        <div onClick={() => setQuickEditCliente(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4, color: "#0D1F1F" }}>
+              Aggiungi {quickEditCliente === "telefono" ? "telefono" : "email"} cliente
+            </div>
+            <div style={{ fontSize: 11, color: "#6A8484", marginBottom: 14 }}>{c.cliente} {c.cognome || ""}</div>
+            <input
+              type={quickEditCliente === "email" ? "email" : "tel"}
+              value={quickEditValue}
+              onChange={(e) => setQuickEditValue(e.target.value)}
+              placeholder={quickEditCliente === "telefono" ? "es. 3401234567" : "es. cliente@esempio.it"}
+              autoFocus
+              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #C8E4E4", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as const, marginBottom: 14 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setQuickEditCliente(null)} style={{ flex: 1, padding: 12, borderRadius: 10, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+              <button onClick={() => {
+                if (!quickEditValue.trim()) return;
+                const field = quickEditCliente as string;
+                updCM(field, quickEditValue.trim());
+                setQuickEditCliente(null);
+                setCcDone("Dato salvato!");
+                setTimeout(() => { setCcDone(null); setShowModalFirma(true); }, 800);
+              }} style={{ flex: 2, padding: 12, borderRadius: 10, background: "#28A0A0", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Salva e torna a firma</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showModalFirma && c && (
         <ModalFirma
           commessaId={c.id || c.cm_id || ""}

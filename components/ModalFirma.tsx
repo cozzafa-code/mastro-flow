@@ -1,4 +1,4 @@
-// components/ModalFirma.tsx
+﻿// components/ModalFirma.tsx
 // Modal per avviare firma certificata: scelta tipo PDF + livello firma (FEA/FEQ) + canale invio.
 // Chiama /api/firma/crea, riceve signer_url, apre WhatsApp/email con link.
 // Stile unificato Centro Comando / RILIEVO MISURE.
@@ -17,6 +17,7 @@ type Props = {
   clienteTelefono?: string | null;
   clienteEmail?: string | null;
   onClose: () => void;
+  onEditCliente?: () => void;
   onSuccess?: (info: { token: string; signerUrl: string; canale: Canale }) => void;
 };
 
@@ -36,7 +37,7 @@ const T = {
 
 export default function ModalFirma({
   commessaId, clienteNome, clienteTelefono, clienteEmail,
-  onClose, onSuccess,
+  onClose, onSuccess, onEditCliente,
 }: Props) {
   const [tipoDoc, setTipoDoc] = useState<TipoDocumento>("conferma_ordine");
   const [livello, setLivello] = useState<Livello>("fea_otp");
@@ -225,14 +226,14 @@ export default function ModalFirma({
                 );
               })}
             </div>
-            {canale === "whatsapp" && !clienteTelefono && (
-              <div style={{ fontSize: 10, color: T.danger, marginTop: 4 }}>
-                Manca telefono cliente
-              </div>
-            )}
-            {canale === "email" && !clienteEmail && (
-              <div style={{ fontSize: 10, color: T.danger, marginTop: 4 }}>
-                Manca email cliente
+            {((canale === "whatsapp" && !clienteTelefono) || (canale === "email" && !clienteEmail)) && (
+              <div style={{ fontSize: 10, color: T.danger, marginTop: 4, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "6px 8px", background: "#FEE2E2", borderRadius: 6 }}>
+                <span>Manca {canale === "whatsapp" ? "telefono" : "email"} cliente</span>
+                {onEditCliente && (
+                  <button onClick={() => { onClose(); onEditCliente(); }} style={{ padding: "4px 10px", borderRadius: 5, background: "#fff", border: `1px solid ${T.danger}`, color: T.danger, fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                    Aggiungi ora
+                  </button>
+                )}
               </div>
             )}
           </div>
