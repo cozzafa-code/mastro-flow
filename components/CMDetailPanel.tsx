@@ -311,6 +311,22 @@ export default function CMDetailPanel() {
                 ))}
               </div>
 
+              {pwVani.length > 0 && (
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+                  <button
+                    onClick={() => setSelectedVaniBulk(selectedVaniBulk.length === pwVani.length ? [] : pwVani.map(v => v.id))}
+                    style={{
+                      padding: "6px 12px", borderRadius: 6,
+                      background: selectedVaniBulk.length === pwVani.length ? "#28A0A0" : "#fff",
+                      color: selectedVaniBulk.length === pwVani.length ? "#fff" : "#28A0A0",
+                      border: "1px solid #28A0A0",
+                      fontSize: 11, fontWeight: 700, cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}>
+                    {selectedVaniBulk.length === pwVani.length ? "✓ Tutti selezionati" : "☐ Seleziona tutti"}
+                  </button>
+                </div>
+              )}
               {pwVani.map((v, idx) => (
                 <VanoCardPreventivo
                   key={v.id}
