@@ -2614,7 +2614,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
 
   // Crea nuovo ordine fornitore da commessa
-  const creaOrdineFornitore = (c, fornitoreNome = "") => {
+  const creaOrdineFornitore = (c, fornitoreNome = "", noteGenerali = "") => {
     const vani = getVaniAttivi(c);
     // Auto-genera righe da vani commessa con prezzi
     const righe = vani.map(v => {
@@ -2648,6 +2648,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         piva: "",
         referente: "",
       },
+      note: noteGenerali,
       righe,
       totale: righe.reduce((s, r) => s + r.totale, 0),
       iva: 22, // IVA fornitore standard
