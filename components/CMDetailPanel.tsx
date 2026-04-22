@@ -6,7 +6,7 @@
 // 
 import React, { useState } from "react";
 import PassaggiSaltati from "./PassaggiSaltati";
-import VanoEditorAccordion from "./VanoEditorAccordion";
+import VanoCardPreventivo from "./VanoCardPreventivo";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
