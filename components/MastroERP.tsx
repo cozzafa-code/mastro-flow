@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import DraggableFAB from "@/components/DraggableFAB";
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
@@ -1405,7 +1405,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       return;
     }
     if ((newEvent as any)._newCliente && (newEvent as any)._nomeCliente) {
-      const nc = { id: "CT-" + Date.now(), nome: (newEvent as any)._nomeCliente, cognome: (newEvent as any)._cognomeCliente || "", tipo: "cliente", telefono: (newEvent as any)._telCliente || "", indirizzo: (newEvent as any)._addrCliente || "" };
+      const nc = { id: "CT-" + Date.now(), nome: (newEvent as any)._nomeCliente, cognome: (newEvent as any)._cognomeCliente || "", tipo: "cliente", telefono: (newEvent as any)._telCliente || "", indirizzo: (newEvent as any)._addrCliente || "", email: (newEvent as any)._emailCliente || "", codiceFiscale: (newEvent as any)._cfCliente || "", citta: (newEvent as any)._cittaCliente || "", cap: (newEvent as any)._capCliente || "" };
       setContatti(prev => [...prev, nc]);
       newEvent.persona = nc.nome + (nc.cognome ? " " + nc.cognome : "");
     }

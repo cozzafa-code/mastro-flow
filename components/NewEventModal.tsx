@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
 
@@ -308,6 +308,35 @@ export default function NewEventModal({
                           setNewEvent((ev: any) => ({ ...ev, _addrCliente: v, addr: v }));
                         }}
                       />
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <input
+                          style={{ ...input, flex: 1 }}
+                          type="email"
+                          placeholder="Email"
+                          value={newEvent._emailCliente || ""}
+                          onChange={e => setField("_emailCliente", e.target.value)}
+                        />
+                        <input
+                          style={{ ...input, flex: 1 }}
+                          placeholder="Codice fiscale"
+                          value={newEvent._cfCliente || ""}
+                          onChange={e => setField("_cfCliente", e.target.value.toUpperCase())}
+                        />
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <input
+                          style={{ ...input, flex: 2 }}
+                          placeholder="Città"
+                          value={newEvent._cittaCliente || ""}
+                          onChange={e => setField("_cittaCliente", e.target.value)}
+                        />
+                        <input
+                          style={{ ...input, flex: 1 }}
+                          placeholder="CAP"
+                          value={newEvent._capCliente || ""}
+                          onChange={e => setField("_capCliente", e.target.value)}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
