@@ -124,6 +124,20 @@ export default function CMDetailPanel() {
     const [quickEditValue, setQuickEditValue] = React.useState("");
     const [firmaLinkCopiato, setFirmaLinkCopiato] = React.useState(false);
     const [firmaToken, setFirmaToken] = React.useState<string | null>(null);
+    const [rispostaCliente, setRispostaCliente] = React.useState<any>(null);
+    React.useEffect(() => {
+      if (!selectedCM?.preventivoInviato || !selectedCM?.id) { setRispostaCliente(null); return; }
+      let alive = true;
+      const fetchRisposta = () => {
+        fetch("/api/preventivo-link?cm_id=" + encodeURIComponent(selectedCM.id))
+          .then(r => r.json())
+          .then(d => { if (alive && d?.found) setRispostaCliente(d); })
+          .catch(() => {});
+      };
+      fetchRisposta();
+      const iv = setInterval(fetchRisposta, 15000);
+      return () => { alive = false; clearInterval(iv); };
+    }, [selectedCM?.id, selectedCM?.preventivoInviato]);
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
@@ -1487,6 +1501,28 @@ export default function CMDetailPanel() {
                           <div style={{ fontSize: 10, color: T.sub, marginBottom: 10 }}>
                             Preventivo inviato{c.dataPreventivoInvio ? ` il ${new Date(c.dataPreventivoInvio).toLocaleDateString("it-IT")}` : ""}. Segna la risposta quando arriva.
                           </div>
+                          {rispostaCliente && rispostaCliente.risposta && (
+                            <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: rispostaCliente.risposta === "accettato" ? "#D1FAE5" : rispostaCliente.risposta === "modifiche" ? "#FEF3C7" : "#DBEAFE", border: "1px solid " + (rispostaCliente.risposta === "accettato" ? "#10B981" : rispostaCliente.risposta === "modifiche" ? "#F59E0B" : "#3B82F6") }}>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>
+                                {rispostaCliente.risposta === "accettato" && "✓ Cliente ha accettato dal link!"}
+                                {rispostaCliente.risposta === "modifiche" && "↻ Cliente chiede modifiche dal link"}
+                                {rispostaCliente.risposta === "chiamare" && "📞 Cliente vuole essere chiamato"}
+                              </div>
+                              {rispostaCliente.risposta_nota && (
+                                <div style={{ fontSize: 11, color: T.text, fontStyle: "italic", marginBottom: 4 }}>
+                                  "{rispostaCliente.risposta_nota}"
+                                </div>
+                              )}
+                              <div style={{ fontSize: 9, color: T.sub }}>
+                                {rispostaCliente.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT") : ""}
+                              </div>
+                            </div>
+                          )}
+                          {rispostaCliente && !rispostaCliente.risposta && rispostaCliente.visualizzato && (
+                            <div style={{ marginBottom: 10, padding: 8, borderRadius: 8, background: "#F3F4F6", fontSize: 10, color: T.sub }}>
+                              👁 Cliente ha visualizzato il link{rispostaCliente.visualizzato_at ? " " + new Date(rispostaCliente.visualizzato_at).toLocaleString("it-IT") : ""} — sta decidendo
+                            </div>
+                          )}
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                             <button onClick={() => {
                               setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] } : cm));

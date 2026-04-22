@@ -72,10 +72,26 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get("token");
+    const cm_id = url.searchParams.get("cm_id");
+    const sb2 = sbAdmin();
+    if (cm_id && !token) {
+      // Lookup per titolare: trova ultimo token per commessa
+      const { data: rows } = await sb2.from("preventivo_tokens").select("*").eq("cm_id", cm_id).order("created_at", { ascending: false }).limit(1);
+      if (!rows || !rows[0]) return NextResponse.json({ found: false });
+      const t = rows[0];
+      return NextResponse.json({
+        found: true,
+        token: t.token,
+        risposta: t.risposta,
+        risposta_nota: t.risposta_nota,
+        risposta_at: t.risposta_at,
+        visualizzato: t.visualizzato,
+        visualizzato_at: t.visualizzato_at,
+      });
+    }
     if (!token) return NextResponse.json({ error: "missing token" }, { status: 400 });
 
-    const sb = sbAdmin();
-    const { data, error } = await sb
+    const { data, error } = await sb2
       .from("preventivo_tokens")
       .select("*")
       .eq("token", token)
@@ -90,7 +106,7 @@ export async function GET(req: NextRequest) {
 
     // Marca come visualizzato (solo prima volta)
     if (!data.visualizzato) {
-      await sb.from("preventivo_tokens")
+      await sb2.from("preventivo_tokens")
         .update({ visualizzato: true, visualizzato_at: new Date().toISOString() })
         .eq("token", token);
     }
