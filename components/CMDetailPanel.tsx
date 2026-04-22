@@ -663,7 +663,7 @@ export default function CMDetailPanel() {
                 try {
                   const snapshot = {
                     cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
-                    totale: totIvaCC || 0,
+                    totale: (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0,
                     vani: (vani || []).map((v, i) => ({
                       nome: v.nome || v.tipo || "Vano " + (i+1),
                       tipo: v.tipo,
