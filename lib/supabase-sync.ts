@@ -7,8 +7,11 @@ import { supabase } from "./supabase";
 
 // ── Get azienda_id from profili ──
 export async function getAziendaId(): Promise<string | null> {
-  // 1. Priorita: operatore loggato via PIN (sessionStorage)
   if (typeof window !== 'undefined') {
+    // 1. localStorage mastro_azienda_id (iniettato da dashboard)
+    const direct = localStorage.getItem('mastro_azienda_id');
+    if (direct) return direct;
+    // 2. Operatore loggato via PIN (sessionStorage)
     try {
       const raw = sessionStorage.getItem('mastro_operatore');
       if (raw) {
@@ -17,7 +20,7 @@ export async function getAziendaId(): Promise<string | null> {
       }
     } catch {}
   }
-  // 2. Fallback: sessione Supabase Auth
+  // 3. Fallback: sessione Supabase Auth
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data } = await supabase
