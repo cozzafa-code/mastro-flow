@@ -575,6 +575,58 @@ export default function CMDetailPanel() {
                 </div>
               )}
 
+              {/* SCHEDE COMMERCIALI */}
+              <div style={{ marginTop: 14, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#28A0A0", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE COMMERCIALI</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div onClick={() => alert("Scheda tecnica in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Scheda tecnica</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Tutti i vani in 1 PDF</div>
+                  </div>
+                  <div onClick={() => alert("Simulazione fiscale in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Simulazione fiscale</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Risparmio detrazione</div>
+                  </div>
+                  <div onClick={() => alert("Tempi e garanzie in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Tempi e garanzie</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Consegna + posa + gar.</div>
+                  </div>
+                  <div onClick={() => alert("Condizioni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Condizioni</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Pagamento e accordi</div>
+                  </div>
+                </div>
+              </div>
+              {/* SCHEDE TECNICHE */}
+              <div style={{ marginTop: 10, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#28A0A0", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE TECNICHE DETTAGLIATE</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div onClick={() => alert("Trasmittanze in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Trasmittanze</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Uw / Ug / Uf per vano</div>
+                  </div>
+                  <div onClick={() => alert("Profilo in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Profilo</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Sezioni e camere</div>
+                  </div>
+                  <div onClick={() => alert("Vetro in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Vetro</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Stratigrafia e gas</div>
+                  </div>
+                  <div onClick={() => alert("Disegni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Disegni tecnici</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>CAD per ogni vano</div>
+                  </div>
+                  <div onClick={() => alert("Accessori in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Accessori</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Tapp./zanz./pers.</div>
+                  </div>
+                  <div onClick={() => alert("Certificazioni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
+                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Certificazioni</div>
+                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>CE acustico/termico</div>
+                  </div>
+                </div>
+              </div>
               <div style={{ marginTop: 16, display: "flex", gap: 8, marginBottom: 8 }}>
                 <button onClick={() => { try { console.log("[PDF] click"); generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[PDF]", err); alert("Errore PDF: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
                 <button onClick={() => { try { console.log("[Anteprima] click"); generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[Anteprima]", err); alert("Errore Anteprima: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
