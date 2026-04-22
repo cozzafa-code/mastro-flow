@@ -1626,10 +1626,23 @@ export default function CMDetailPanel() {
                           )}
                         </div>
                       )}
-                      {hasFattCC && !fattCC.every(f => f.pagata) && (
-                        <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#D0800815", border: "1px solid #D0800830", display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 13 }}>📋</span>
-                          <span style={{ fontSize: 11, color: "#D08008", fontWeight: 600 }}>Fattura acconto emessa · verifica pagamento in Contabilit+</span>
+                      {fattCC.length > 0 && (
+                        <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: "#fff", border: "1px solid " + T.bdr }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Fatture emesse</div>
+                          {fattCC.map((f, i) => (
+                            <div key={f.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < fattCC.length - 1 ? "1px solid " + T.bdr : "none" }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>N° {f.numero}/{f.anno} · €{fmtCC(f.importo || 0)}</div>
+                                <div style={{ fontSize: 10, color: T.sub }}>{f.tipo} · {f.data}</div>
+                              </div>
+                              <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 5, background: f.pagata ? "#D1FAE5" : "#FEF3C7", color: f.pagata ? "#10B981" : "#D08008" }}>
+                                {f.pagata ? "Pagata" : "Da incassare"}
+                              </span>
+                            </div>
+                          ))}
+                          <button onClick={() => { if (typeof setTab === "function") setTab("contabilita"); }} style={{ marginTop: 8, width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid " + T.acc, background: "#fff", color: T.acc, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                            Apri contabilità →
+                          </button>
                         </div>
                       )}
                       {firmaStep === 0 ? (
