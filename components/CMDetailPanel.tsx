@@ -1401,8 +1401,43 @@ export default function CMDetailPanel() {
                           setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                           setSelectedCM(prev => ({ ...prev, preventivoInviato: true }));
                           setCcDone("✓ Completato"); setTimeout(() => setCcDone(null), 3000);
-                        }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gi+ inviato? Segna come completato</span>
+                        }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Già inviato? Segna come completato</span>
                       </div>
+
+                      {/* STATO POST-INVIO: attesa cliente */}
+                      {c.preventivoInviato && (
+                        <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#fff8e1", border: "1px solid #ffc107" }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: "#b8860b", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>In attesa risposta cliente</div>
+                          <div style={{ fontSize: 10, color: T.sub, marginBottom: 10 }}>
+                            Preventivo inviato{c.dataPreventivoInvio ? ` il ${new Date(c.dataPreventivoInvio).toLocaleDateString("it-IT")}` : ""}. Segna la risposta quando arriva.
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            <button onClick={() => {
+                              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] } : cm));
+                              setSelectedCM((prev: any) => ({ ...prev, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] }));
+                              setFaseTo(c.id, "conferma");
+                              setCcDone("✓ Cliente accettato → Conferma"); setTimeout(() => setCcDone(null), 3000);
+                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "none", background: "#28A0A0", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                              ✓ Cliente OK
+                            </button>
+                            <button onClick={() => {
+                              const nota = prompt("Cosa vuole modificare il cliente?");
+                              if (nota === null) return;
+                              const revEntry = { motivo: nota || "Modifiche richieste", quando: new Date().toISOString() };
+                              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: false, preventivoRevisioni: [...(cm.preventivoRevisioni || []), revEntry] } : cm));
+                              setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: false, preventivoRevisioni: [...(prev.preventivoRevisioni || []), revEntry] }));
+                              setCcDone("Riaperto per modifiche"); setTimeout(() => setCcDone(null), 3000);
+                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "1.5px solid #ff9500", background: "#fff", color: "#ff9500", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                              ↻ Richiede modifiche
+                            </button>
+                          </div>
+                          {(c.preventivoRevisioni && c.preventivoRevisioni.length > 0) && (
+                            <div style={{ marginTop: 10, padding: "6px 8px", background: "#fff", borderRadius: 6, fontSize: 10, color: T.sub }}>
+                              <strong>Revisioni ({c.preventivoRevisioni.length})</strong>: {c.preventivoRevisioni[c.preventivoRevisioni.length-1].motivo}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* CARD TAVOLA TECNICA */}
                       {(() => {
