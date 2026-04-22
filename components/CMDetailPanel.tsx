@@ -390,11 +390,16 @@ export default function CMDetailPanel() {
                   });
                 }}
               />
+              <div style={{ marginTop: 24, padding: "16px 0" }}>
+                <button onClick={() => setPrevTab("fiscale")} style={{ width: "100%", padding: 18, borderRadius: 12, background: "#28A0A0", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(40,160,160,0.25)" }}>
+                  Prossimo: Imposta fiscalitÃ 
+                </button>
+              </div>
             </div>
           )}
 
           {/*  TAB FISCALE (IVA · Detrazioni · Pratica · Guida completa)  */}
-          {prevTab === "fiscale" && (
+          {prevTab === "fiscale" && (<>
             <TabFiscale
               T={T} ICO={ICO} I={I}
               commessa={c}
@@ -405,7 +410,15 @@ export default function CMDetailPanel() {
               pwDetr={pwDetr}
               pwSconto={pwSconto}
             />
-          )}
+              <div style={{ display: "flex", gap: 8, padding: "20px 12px" }}>
+                <button onClick={() => setPrevTab("sopralluogo")} style={{ padding: 14, borderRadius: 10, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
+                  Indietro
+                </button>
+                <button onClick={() => setPrevTab("condizioni")} style={{ flex: 1, padding: 14, borderRadius: 10, background: "#28A0A0", color: "#fff", border: "none", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                  Prossimo: Condizioni
+                </button>
+              </div>
+          </>)}
 
           {/*  TAB CONDIZIONI (pagamento · consegna · garanzia)  */}
           {prevTab === "condizioni" && (
@@ -491,6 +504,14 @@ export default function CMDetailPanel() {
               <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, letterSpacing: "0.5px", marginBottom: 6 }}>NOTE PREVENTIVO (visibili al cliente)</div>
                 <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)} placeholder="Es. Prezzo comprensivo di posa in opera standard. Lavori supplementari da concordare." style={{ width: "100%", minHeight: 80, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any }} />
+              </div>
+              <div style={{ marginTop: 24, padding: "16px 0", display: "flex", gap: 8 }}>
+                <button onClick={() => setPrevTab("fiscale")} style={{ padding: 18, borderRadius: 12, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
+                  Indietro
+                </button>
+                <button onClick={() => setPrevTab("riepilogo")} style={{ flex: 1, padding: 18, borderRadius: 12, background: "#28A0A0", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(40,160,160,0.25)" }}>
+                  Prossimo: Vedi riepilogo
+                </button>
               </div>
             </div>
           )}
