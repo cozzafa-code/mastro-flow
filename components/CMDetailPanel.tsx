@@ -2018,8 +2018,10 @@ export default function CMDetailPanel() {
                         if (skipIdx >= 0 && skipIdx < stepsCC.length - 1) {
                           const skipNote = prompt("Motivo per saltare '" + curCC.l + "':");
                           if (skipNote !== null) {
-                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: [...(cm.skipLog || []), { fase: curCC.id, motivo: skipNote, quando: new Date().toISOString() }] } : cm));
+                            const nuovoSkip = { fase: curCC.id, motivo: skipNote, quando: new Date().toISOString() };
                             const nextStep = stepsCC[skipIdx + 1];
+                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: [...(cm.skipLog || []), nuovoSkip], fase: nextStep?.id || cm.fase } : cm));
+                            setSelectedCM((prev: any) => ({ ...prev, skipLog: [...(prev.skipLog || []), nuovoSkip], fase: nextStep?.id || prev.fase }));
                             if (nextStep) setFaseTo(c.id, nextStep.id);
                             setCcDone(`⏭ ${curCC.l} saltato`); setTimeout(() => setCcDone(null), 3000);
                           }
