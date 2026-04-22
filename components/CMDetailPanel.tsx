@@ -272,7 +272,12 @@ export default function CMDetailPanel() {
                 {fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "✓ Pagata" : "📋 Fattura"}
               </span>
             )}
-            <div style={{ background: T.acc, padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 900, color: "#fff", flexShrink: 0 }}>€{pwFmt(pwTotale)}</div>
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+              <div style={{ background: "rgba(255,255,255,0.08)", padding: "5px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#9FE1CB", border: "1px solid rgba(255,255,255,0.15)" }}>
+                {pwVani.reduce((s, v) => { const l = v.misure?.lCentro || v.larghezza || 0; const h = v.misure?.hCentro || v.altezza || 0; const p = v.pezzi || 1; return s + ((l*h)/1000000)*p; }, 0).toFixed(2)} m²
+              </div>
+              <div style={{ background: T.acc, padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 900, color: "#fff" }}>€{pwFmt(pwTotale)}</div>
+            </div>
           </div>
 
           {/* Tabs */}
