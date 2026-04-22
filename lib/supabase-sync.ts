@@ -552,26 +552,21 @@ export async function saveMateriali(azId: string, data: {
 
 // -- Save Commessa SYNC (non-debounced, returns record with UUID) --
 export async function saveCantiereSync(azId: string, c: any): Promise<{ id: string; code: string } | null> {
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const isUUID = typeof c.id === 'string' && UUID_RE.test(c.id);
-  const row: any = {
-    azienda_id: azId, code: c.code, cliente: c.cliente, cognome: c.cognome || '',
-    indirizzo: c.indirizzo || '', telefono: c.telefono || '', email: c.email || '',
-    fase: c.fase, tipo: c.tipo || 'nuova', sistema: c.sistema || '',
-    difficolta_salita: c.difficoltaSalita || '', mezzo_salita: c.mezzoSalita || '',
-    foro_scale: c.foroScale || '', piano_edificio: c.pianoEdificio || '',
-    note: c.note || '', totale_preventivo: c.totalePreventivo || null,
-    sconto_perc: c.scontoPerc || null, totale_finale: c.totaleFinale || null,
-    firma_cliente: c.firmaCliente || null,
-  };
-  if (isUUID) row.id = c.id;
   try {
-    if (!isUUID && c.code) {
-      const { data: existing } = await supabase.from('commesse').select('id').eq('azienda_id', azId).eq('code', c.code).maybeSingle();
-      if (existing?.id) row.id = existing.id;
+    const res = await fetch('/api/sync/commessa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ aziendaId: azId, commessa: c }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error('[saveCantiereSync] server error:', err);
+      return null;
     }
-    const { data, error } = await supabase.from('commesse').upsert(row, { onConflict: 'id' }).select('id, code').single();
-    if (error) { console.error('[saveCantiereSync] error:', error); return null; }
-    return data as any;
-  } catch (e) { console.error('[saveCantiereSync] exception:', e); return null; }
+    const { commessa } = await res.json();
+    return commessa || null;
+  } catch (e) {
+    console.error('[saveCantiereSync] fetch exception:', e);
+    return null;
+  }
 }
