@@ -1,4 +1,4 @@
-// components/VanoEditorAccordion.tsx
+﻿// components/VanoEditorAccordion.tsx
 // Editor inline per un vano dentro il workspace preventivo.
 // Mostra form compatto quando espanso + bottone "Apri costruttore" per CAD fullscreen.
 
@@ -231,19 +231,20 @@ export default function VanoEditorAccordion({
 
           {/* BOTTONI AZIONE */}
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <button onClick={onOpenCAD} style={{
+            <button onClick={() => alert("Costruttore CAD in arrivo — per ora modifica via form sopra.")} style={{
               flex: 1,
               padding: "10px 12px",
               borderRadius: 8,
-              border: `1.5px solid ${T.teal}`,
-              background: "#fff",
-              color: T.teal,
+              border: `1px solid ${T.border}`,
+              background: T.lightBg,
+              color: T.textSub,
               fontSize: 12,
               fontWeight: 700,
               cursor: "pointer",
               fontFamily: "inherit",
+              opacity: 0.6,
             }}>
-              🎨 Apri costruttore
+              🎨 Costruttore (prossimamente)
             </button>
             {onDuplicate && (
               <button onClick={onDuplicate} style={{
