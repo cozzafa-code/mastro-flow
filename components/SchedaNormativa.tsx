@@ -1,4 +1,4 @@
-// components/SchedaNormativa.tsx
+﻿// components/SchedaNormativa.tsx
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -21,6 +21,7 @@ type Normativa = {
   riferimento_legge: string | null;
   note_operative: string | null;
   avvertenze: string | null;
+  modelli_documenti?: Array<{ id: string; nome: string; descrizione: string; template: string }>;
 };
 
 type Props = { T: any; ivaPerc: number; detrazione: string };
@@ -97,6 +98,37 @@ export default function SchedaNormativa({ ivaPerc, detrazione }: Props) {
             {n.durata && <Section label="Durata recupero" text={n.durata} />}
             {n.note_operative && <Section label="Note operative" text={n.note_operative} />}
             {n.avvertenze && <Section label="Avvertenze" text={n.avvertenze} warn />}
+            {n.modelli_documenti && n.modelli_documenti.length > 0 && (
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${F.border}` }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: F.teal, textTransform: "uppercase" as any, letterSpacing: 0.5, marginBottom: 8 }}>
+                  Modelli documenti
+                </div>
+                {n.modelli_documenti.map((m) => (
+                  <div key={m.id} style={{ background: "#fff", border: `1px solid ${F.border}`, borderRadius: 8, padding: 10, marginBottom: 6 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: F.textDark, marginBottom: 2 }}>{m.nome}</div>
+                    <div style={{ fontSize: 10, color: F.textSub, marginBottom: 8 }}>{m.descrizione}</div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => {
+                        const blob = new Blob([m.template], { type: "text/plain;charset=utf-8" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = m.nome.replace(/[^a-zA-Z0-9]/g, "_") + ".txt";
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }} style={{ flex: 1, padding: "7px 10px", borderRadius: 6, background: F.lightBg, color: F.teal, border: `1px solid ${F.teal}`, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                        Scarica modello
+                      </button>
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(m.template).then(() => alert("Testo copiato negli appunti. Incollalo in WhatsApp/email per il cliente."));
+                      }} style={{ flex: 1, padding: "7px 10px", borderRadius: 6, background: "#fff", color: F.textSub, border: `1px solid ${F.border}`, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                        Copia testo
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {n.riferimento_legge && (
               <div style={{
                 marginTop: 10, paddingTop: 8, borderTop: `1px solid ${F.border}`,
