@@ -109,15 +109,16 @@ export default function VanoCardPreventivo({
           {onToggleSelect && (
             <div onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}
               style={{
-                position: "absolute", top: 6, right: 6,
-                width: 22, height: 22, borderRadius: 6,
-                background: isSelected ? T.teal : "rgba(255,255,255,0.15)",
-                border: `2px solid ${isSelected ? T.teal : "rgba(255,255,255,0.4)"}`,
+                position: "absolute", top: 4, right: 4,
+                width: 30, height: 30, borderRadius: 8,
+                background: isSelected ? T.teal : "#fff",
+                border: `2px solid ${isSelected ? T.teal : T.teal}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#fff", fontSize: 13, fontWeight: 900,
+                color: isSelected ? "#fff" : T.teal, fontSize: 18, fontWeight: 900,
                 cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
               }}>
-              {isSelected ? "✓" : ""}
+              {isSelected ? "✓" : "◻"}
             </div>
           )}
           <svg viewBox="0 0 60 72" width="48" height="58" style={{ marginTop: 10 }}>
