@@ -1465,8 +1465,8 @@ export default function CMDetailPanel() {
                           <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA -></button>
                           <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
                           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                            <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #C8E4E4", background: "#fff", color: "#0D1F1F", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> Solo PDF</button>
-                            <button onClick={() => setFirmaStep(1)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #C8E4E4", background: "#fff", color: "#0D1F1F", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Già firmato? Carica</button>
+                            <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #28A0A0", background: "#28A0A012", color: "#28A0A0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> Solo PDF</button>
+                            <button onClick={() => setFirmaStep(1)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #28A0A0", background: "#28A0A012", color: "#28A0A0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Già firmato? Carica</button>
                           </div>
                         </div>
                       ) : !firmaFileUrl ? (
@@ -2024,7 +2024,7 @@ export default function CMDetailPanel() {
                             setCcDone(`⏭ ${curCC.l} saltato`); setTimeout(() => setCcDone(null), 3000);
                           }
                         }
-                      }} style={{ display: "inline-block", marginTop: 8, padding: "6px 14px", borderRadius: 6, border: "1px solid #C8E4E4", background: "#fff", color: "#6A8484", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>⏭ Salta questo passaggio</span>
+                      }} style={{ display: "inline-block", marginTop: 8, padding: "6px 14px", borderRadius: 6, border: "1px solid #ff950050", background: "#ff950012", color: "#ff9500", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>⏭ Salta questo passaggio</span>
                     </div>
                   )}
                 </div>
