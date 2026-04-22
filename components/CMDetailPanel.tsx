@@ -2057,8 +2057,8 @@ export default function CMDetailPanel() {
         {/* == TAB: vani / visite / info == */}
         <div id="cm-tab-vani" style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
           {[
+            {k:"visite",l:`Rilievi (${(c.rilievi||[]).length})`},
             {k:"sopralluoghi",l:`Vani (${vaniList.length})`},
-            {k:"visite",l:`Visite (${(c.rilievi||[]).length})`},
             {k:"info",l:"ℹ Info"},
           ].map(t => (
             <div key={t.k} onClick={() => setCmSubTab(t.k)} style={{
