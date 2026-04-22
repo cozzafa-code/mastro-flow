@@ -9,6 +9,7 @@ import { useMastro } from "./MastroContext";
 import { FM } from "./mastro-constants";
 
 export default function ModalPanel() {
+  const [ripStep, setRipStep] = React.useState(0);
   const {
     T, S, isDesktop, fs,
     // State
@@ -390,7 +391,6 @@ Fabio Cozza - Walter Cozza Serramenti` },
 
               {/* == FLUSSO RIPARAZIONE WIZARD FLASH == */}
               {newCM.tipo === "riparazione" && (() => {
-                const [ripStep, setRipStep] = React.useState(0);
                 const STEPS_RIP = ["Cliente","Problema","Dettagli","Foto"];
                 const addRipFoto = (e) => {
                   const file = e.target.files?.[0]; if(!file) return;
