@@ -122,6 +122,8 @@ export default function CMDetailPanel() {
     const [selectedVaniBulk, setSelectedVaniBulk] = React.useState<number[]>([]);
     const [quickEditCliente, setQuickEditCliente] = React.useState<null | "telefono" | "email">(null);
     const [quickEditValue, setQuickEditValue] = React.useState("");
+    const [firmaLinkCopiato, setFirmaLinkCopiato] = React.useState(false);
+    const [firmaToken, setFirmaToken] = React.useState<string | null>(null);
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
