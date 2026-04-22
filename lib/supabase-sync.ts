@@ -7,6 +7,17 @@ import { supabase } from "./supabase";
 
 // ── Get azienda_id from profili ──
 export async function getAziendaId(): Promise<string | null> {
+  // 1. Priorita: operatore loggato via PIN (sessionStorage)
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = sessionStorage.getItem('mastro_operatore');
+      if (raw) {
+        const op = JSON.parse(raw);
+        if (op?.azienda_id) return op.azienda_id;
+      }
+    } catch {}
+  }
+  // 2. Fallback: sessione Supabase Auth
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data } = await supabase
