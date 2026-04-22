@@ -6,6 +6,7 @@
 // 
 import React, { useState } from "react";
 import PassaggiSaltati from "./PassaggiSaltati";
+import VanoEditorAccordion from "./VanoEditorAccordion";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
@@ -309,115 +310,19 @@ export default function CMDetailPanel() {
               </div>
 
               {pwVani.map(v => {
-                const mis = v.misure || {};
-                const nMis = Object.values(mis).filter(x => (x as number) > 0).length;
-                const misOk = nMis >= 6;
-                const lv = mis.lCentro || v.larghezza || v.l || 0;
-                const hv = mis.hCentro || v.altezza || v.h || 0;
-                const hasModifica = v.parentId || pwVani.some(vx => vx.parentId === v.id);
+                const prezzoV = calcolaVanoPrezzo(v, c);
                 return (
-                  <div key={v.id} style={{ background: T.card, borderRadius: 12, padding: 12, marginBottom: 10, border: `1px solid ${T.bdr}`, borderLeft: `4px solid ${misOk ? T.grn : T.orange}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 800 }}>{v.nome || `Vano ${v.id}`}
-                          {v.versione > 1 && <span style={{ fontSize: 9, background: `${T.purple}15`, color: T.purple, padding: "2px 6px", borderRadius: 4, marginLeft: 6 }}>v{v.versione}</span>}
-                          {v.parentId && <span style={{ fontSize: 9, background: `${T.orange}15`, color: T.orange, padding: "2px 6px", borderRadius: 4, marginLeft: 4 }}>MODIFICA</span>}
-                        </div>
-                        <div style={{ fontSize: 10, color: T.sub }}>{v.tipo || "F2A"} · {v.stanza || "·"} · {v.piano || "PT"} · {v.pezzi || 1}pz</div>
-                      </div>
-                      <span style={{ fontSize: 10, background: misOk ? `${T.grn}15` : `${T.red}15`, color: misOk ? T.grn : T.red, padding: "3px 8px", borderRadius: 6, fontWeight: 700, height: "fit-content" }}>{misOk ? `✓ ${nMis}` : `⏹+ ${nMis}/6`}</span>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, marginBottom: 8 }}>
-                      {[{ l: "Larg.", val: lv }, { l: "Alt.", val: hv }, { l: "mq", val: ((lv * hv) / 1000000).toFixed(2) }].map((m, mi) => (
-                        <div key={mi} style={{ background: T.bg, borderRadius: 8, padding: 8, textAlign: "center" }}>
-                          <div style={{ fontSize: 9, color: T.sub }}>{m.l}</div>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: mi === 2 ? T.acc : T.text }}>{m.val}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.8 }}>
-                      <I d={ICO.building} /> {v.sistema || c.sistema || "·"} · <I d={ICO.palette} /> {v.colore || "Bianco"} · <I d={ICO.grid} /> {v.vetro || "Standard"}
-                      {v.controtelaio && v.controtelaio !== "Nessuno" && ` · 🪟 ${v.controtelaio}`}
-                      {v.accessori?.tapparella?.attivo && ` · Tapp. ${v.accessori.tapparella.tipo || ""}`}
-                      {v.accessori?.persiana?.attivo && ` · Pers. ${v.accessori.persiana.tipo || ""}`}
-                      {v.accessori?.zanzariera?.attivo && ` · Zanz. ${v.accessori.zanzariera.tipo || ""}`}
-                      {v.coprifilo && ` · Coprifilo ${v.coprifilo}`}
-                      {v.soglia && ` · Soglia ${v.soglia}`}
-                      {v.davanzale && ` · Davanz. ${v.davanzale}`}
-                    </div>
-                    {v.note && <div style={{ fontSize: 11, color: T.orange, fontWeight: 600, marginTop: 4 }}><I d={ICO.mapPin} /> {v.note}</div>}
-
-                    {/* PDF Tecnico Fornitore badge */}
-                    {v.pdfFornitore ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, padding: "7px 10px", borderRadius: 8, background: "#3B7FE010", border: "1px solid #3B7FE030" }}>
-                        <span style={{ fontSize: 14 }}>📐</span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: "#3B7FE0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {v.pdfFornitoreNome || "Disegno tecnico.pdf"}
-                          </div>
-                          <div style={{ fontSize: 9, color: T.sub }}>{v.pdfFornitoreData || ""}</div>
-                        </div>
-                        <div onClick={() => {
-                          const link = document.createElement("a");
-                          link.href = v.pdfFornitore;
-                          link.download = v.pdfFornitoreNome || "disegno_tecnico.pdf";
-                          link.click();
-                        }} style={{ padding: "4px 10px", borderRadius: 6, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0", whiteSpace: "nowrap" as const }}>
-                          🔗 Apri
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "#D0800808", border: "1px dashed #D0800840", fontSize: 10, color: T.sub, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>📐</span> PDF tecnico fornitore non caricato · aprire il vano per aggiungerlo
-                      </div>
-                    )}
-
-                    {/* Foto gallery */}
-                    {(Array.isArray(v.foto) && v.foto.length > 0) && (
-                      <div style={{ display: "flex", gap: 6, marginTop: 8, overflowX: "auto" }}>
-                        {v.foto.map((f, fi) => (
-                          <div key={fi} style={{ minWidth: 64, height: 64, borderRadius: 8, background: `${T.blue}08`, border: `1px solid ${T.blue}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <span style={{ fontSize: 22 }}><I d={ICO.camera} /></span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Diff: se c' una modifica, mostra differenze */}
-                    {v.parentId && (() => {
-                      const orig = pwVani.find(vx => vx.id === v.parentId);
-                      if (!orig) return null;
-                      const diffs = [];
-                      if ((orig.tipo || "") !== (v.tipo || "")) diffs.push({ l: "Tipo", da: orig.tipo, a: v.tipo });
-                      if ((orig.colore || "") !== (v.colore || "")) diffs.push({ l: "Colore", da: orig.colore, a: v.colore });
-                      if ((orig.vetro || "") !== (v.vetro || "")) diffs.push({ l: "Vetro", da: orig.vetro, a: v.vetro });
-                      if ((orig.sistema || "") !== (v.sistema || "")) diffs.push({ l: "Sistema", da: orig.sistema, a: v.sistema });
-                      if ((orig.controtelaio || "") !== (v.controtelaio || "")) diffs.push({ l: "Controtelaio", da: orig.controtelaio, a: v.controtelaio });
-                      const origL = orig.misure?.lCentro || orig.larghezza || orig.l || 0;
-                      const origH = orig.misure?.hCentro || orig.altezza || orig.h || 0;
-                      if (origL !== lv) diffs.push({ l: "Larghezza", da: origL, a: lv });
-                      if (origH !== hv) diffs.push({ l: "Altezza", da: origH, a: hv });
-                      if (diffs.length === 0) return null;
-                      return (
-                        <div style={{ marginTop: 8, padding: 8, background: `${T.purple}08`, borderRadius: 8, border: `1px solid ${T.purple}20` }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, color: T.purple, marginBottom: 4 }}><I d={ICO.refreshCw} /> Differenze da originale</div>
-                          {diffs.map((d, di) => (
-                            <div key={di} style={{ fontSize: 10, display: "flex", gap: 4, marginBottom: 2 }}>
-                              <span style={{ fontWeight: 700, color: T.sub, width: 70 }}>{d.l}:</span>
-                              <span style={{ color: T.red, textDecoration: "line-through" }}>{d.da || "·"}</span>
-                              <span style={{ color: T.sub }}>→</span>
-                              <span style={{ color: T.grn, fontWeight: 700 }}>{d.a || "·"}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Quick actions */}
-                    <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                      <div onClick={() => { setPrevTab("preventivo"); setEditingVanoId(v.id); }} style={{ flex: 1, padding: "6px 0", borderRadius: 6, textAlign: "center", fontSize: 10, fontWeight: 700, color: T.acc, background: `${T.acc}08`, cursor: "pointer", border: `1px solid ${T.acc}20` }}><I d={ICO.clipboard} /> Modifica nel preventivo</div>
-                    </div>
-                  </div>
+                  <VanoEditorAccordion
+                    key={v.id}
+                    vano={v}
+                    commessa={c}
+                    sistemiDB={sistemiDB || []}
+                    isExpanded={editingVanoId === v.id}
+                    onToggle={() => setEditingVanoId(editingVanoId === v.id ? null : v.id)}
+                    onUpdate={(field, val) => pwUpdVano(v.id, field, val)}
+                    onOpenCAD={() => setShowCadDraw(true)}
+                    onCalcPrezzo={(vv) => calcolaVanoPrezzo(vv, c)}
+                  />
                 );
               })}
             </div>
