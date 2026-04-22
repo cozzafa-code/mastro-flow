@@ -1783,6 +1783,26 @@ export default function CMDetailPanel() {
                           )}
                         </div>
                       )}
+                      {ordCC.length > 0 && (
+                        <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: "#fff", border: "1px solid " + T.bdr }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Ordini creati</div>
+                          {ordCC.map((o, i) => {
+                            const fornNome = typeof o.fornitore === "object" ? (o.fornitore?.nome || "Fornitore") : (o.fornitore || "Fornitore");
+                            return (
+                              <div key={o.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < ordCC.length - 1 ? "1px solid " + T.bdr : "none" }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>N {o.numero}/{o.anno} - {fornNome || "Da assegnare"}</div>
+                                  <div style={{ fontSize: 10, color: T.sub }}>{(o.righe?.length) || 0} voci - {o.dataOrdine}</div>
+                                </div>
+                                <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 5, background: o.conferma?.ricevuta ? "#D1FAE5" : "#FEF3C7", color: o.conferma?.ricevuta ? "#10B981" : "#D08008" }}>
+                                  {o.conferma?.ricevuta ? "Confermato" : "Inviato"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                       <button onClick={() => setShowOrdinePreview(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.package} /> CREA ORDINE FORNITORE →</button>
 
                       {/* · MODAL ANTEPRIMA ORDINE FORNITORE · */}
