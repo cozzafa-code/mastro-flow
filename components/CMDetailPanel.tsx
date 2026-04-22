@@ -1235,11 +1235,28 @@ export default function CMDetailPanel() {
                       {(c.skipLog || []).map((skip, si) => {
                         const stepInfo = stepsCC.find(s => s.id === skip.fase);
                         return (
-                          <div key={si} style={{ fontSize: 10, color: T.text, display: "flex", gap: 6, padding: "2px 0" }}>
-                            <span style={{ color: "#ff9500", fontWeight: 700 }}>⏭ {stepInfo?.l || skip.fase}</span>
+                          <div key={si} style={{ fontSize: 10, color: T.text, display: "flex", gap: 6, padding: "4px 0", alignItems: "center" }}>
+                            <span style={{ color: "#ff9500", fontWeight: 700, minWidth: 70 }}>⏭ {stepInfo?.l || skip.fase}</span>
                             <span style={{ color: T.sub, flex: 1 }}>{skip.motivo || "·"}</span>
+                            <span onClick={(e) => {
+                              e.stopPropagation();
+                              setCantieri(cs => cs.map(cm => cm.id === c.id ? {
+                                ...cm,
+                                skipLog: (cm.skipLog || []).filter((_, i) => i !== si),
+                                fase: skip.fase
+                              } : cm));
+                              setSelectedCM(prev => ({
+                                ...prev,
+                                skipLog: (prev.skipLog || []).filter((_, i) => i !== si),
+                                fase: skip.fase
+                              }));
+                              setCcDone(`✓ ${stepInfo?.l || skip.fase} riaperto`); setTimeout(() => setCcDone(null), 2500);
+                            }} style={{
+                              fontSize: 10, fontWeight: 700, color: "#fff",
+                              background: "#28A0A0", padding: "4px 10px",
+                              borderRadius: 6, cursor: "pointer", userSelect: "none"
+                            }}>Riprendi</span>
                           </div>
-                        );
                       })}
                     </div>
                   )}
