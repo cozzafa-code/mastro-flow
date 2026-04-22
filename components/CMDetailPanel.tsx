@@ -315,7 +315,7 @@ export default function CMDetailPanel() {
                   vano={v}
                   commessa={c}
                   index={idx}
-                  onClickEdit={() => { setSelectedVano(v); setPrevWorkspace(false); }}
+                  onClickEdit={() => { setSelectedVano(v); }}
                   onCalcPrezzo={(vv) => calcolaVanoPrezzo(vv, c)}
                 />
               ))}
