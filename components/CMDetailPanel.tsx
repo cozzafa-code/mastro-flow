@@ -309,22 +309,16 @@ export default function CMDetailPanel() {
                 ))}
               </div>
 
-              {pwVani.map(v => {
-                const prezzoV = calcolaVanoPrezzo(v, c);
-                return (
-                  <VanoEditorAccordion
-                    key={v.id}
-                    vano={v}
-                    commessa={c}
-                    sistemiDB={sistemiDB || []}
-                    isExpanded={editingVanoId === v.id}
-                    onToggle={() => setEditingVanoId(editingVanoId === v.id ? null : v.id)}
-                    onUpdate={(field, val) => pwUpdVano(v.id, field, val)}
-                    onOpenCAD={() => setShowCadDraw(true)}
-                    onCalcPrezzo={(vv) => calcolaVanoPrezzo(vv, c)}
-                  />
-                );
-              })}
+              {pwVani.map((v, idx) => (
+                <VanoCardPreventivo
+                  key={v.id}
+                  vano={v}
+                  commessa={c}
+                  index={idx}
+                  onClickEdit={() => { setSelectedVano(v); setPrevWorkspace(false); }}
+                  onCalcPrezzo={(vv) => calcolaVanoPrezzo(vv, c)}
+                />
+              ))}
             </div>
           )}
 
