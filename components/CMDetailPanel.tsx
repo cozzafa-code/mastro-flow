@@ -274,10 +274,10 @@ export default function CMDetailPanel() {
 
           {/* Tabs */}
           <div style={{ display: "flex", background: T.card, borderBottom: `1px solid ${T.bdr}`, position: "sticky", top: 52, zIndex: 10 }}>
-            <div onClick={() => setPrevTab("riepilogo")} style={tabPw("riepilogo")}><I d={ICO.barChart} /> Riepilogo</div>
+            <div onClick={() => setPrevTab("sopralluogo")} style={tabPw("sopralluogo")}><I d={ICO.ruler} /> Vani</div>
             <div onClick={() => setPrevTab("fiscale")} style={tabPw("fiscale")}><I d={ICO.euro} /> Fiscale</div>
             <div onClick={() => setPrevTab("condizioni")} style={tabPw("condizioni")}><I d={ICO.fileText} /> Condizioni</div>
-            <div onClick={() => setPrevTab("sopralluogo")} style={tabPw("sopralluogo")}><I d={ICO.search} /> Report</div>
+            <div onClick={() => setPrevTab("riepilogo")} style={tabPw("riepilogo")}><I d={ICO.barChart} /> Riepilogo</div>
             <div onClick={() => setPrevTab("importa")} style={tabPw("importa")}><I d={ICO.download} /> Importa</div>
           </div>
 
@@ -1379,7 +1379,7 @@ export default function CMDetailPanel() {
                       })()}
 
                       {/* BOTTONE PRINCIPALE */}
-                      <button onClick={() => { setPrevWorkspace(true); setPrevTab("riepilogo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
+                      <button onClick={() => { setPrevWorkspace(true); setPrevTab("sopralluogo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
 
                       {/* BOTTONE INVIA DOCUMENTI AL CLIENTE */}
                       {(() => {
