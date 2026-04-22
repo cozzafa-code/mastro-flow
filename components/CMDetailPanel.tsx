@@ -125,6 +125,7 @@ export default function CMDetailPanel() {
     const [firmaLinkCopiato, setFirmaLinkCopiato] = React.useState(false);
     const [firmaToken, setFirmaToken] = React.useState<string | null>(null);
     const [rispostaCliente, setRispostaCliente] = React.useState<any>(null);
+    const [showSendModal, setShowSendModal] = React.useState<null | { link: string; nome: string; tel: string; email: string; code: string }>(null);
     React.useEffect(() => {
       if (!selectedCM?.preventivoInviato || !selectedCM?.id) { setRispostaCliente(null); return; }
       let alive = true;
@@ -674,9 +675,9 @@ export default function CMDetailPanel() {
                   } catch {}
                   const nome = c.cliente || "";
                   const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                  const wa = `https://wa.me/${tel.startsWith("+") ? tel.slice(1) : "39" + tel}?text=` + encodeURIComponent(linkPubblico ? `Ciao ${nome}, ecco il preventivo ${c.code}. Clicca qui per vedere i dettagli e rispondere: ${linkPubblico}` : `Ciao ${nome}, ecco il tuo preventivo. Rispondi OK se va bene o dimmi cosa modificare. Grazie!`);
-                  window.open(wa, "_blank");
-                  setCcDone("✓ Preventivo inviato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
+                  setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
+                  setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }));
+                  setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
                 } catch(err: any) { alert("Errore: " + (err?.message || err)); }
               }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)" }}><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE -></button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Invia PDF via WhatsApp. La firma verrà richiesta solo dopo la conferma del cliente.</div>
@@ -2935,6 +2936,71 @@ export default function CMDetailPanel() {
             </div>
           </div>
         )}
+      {showSendModal && (
+        <div onClick={() => setShowSendModal(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>Invia preventivo al cliente</div>
+            <div style={{ fontSize: 12, color: "#6A8484", marginBottom: 16 }}>{showSendModal.nome} {showSendModal.tel ? "- " + showSendModal.tel : ""}</div>
+            {!showSendModal.link && (
+              <div style={{ padding: 10, borderRadius: 8, background: "#FEF3C7", color: "#92400E", fontSize: 11, marginBottom: 12 }}>
+                Il link cliente non e stato generato. Verra inviato solo il testo base.
+              </div>
+            )}
+            <div style={{ display: "grid", gap: 8 }}>
+              {showSendModal.tel && (
+                <button onClick={() => {
+                  const msg = showSendModal.link ? `Ciao ${showSendModal.nome}, ecco il preventivo ${showSendModal.code}. Clicca qui per vedere i dettagli e rispondere: ${showSendModal.link}` : `Ciao ${showSendModal.nome}, ecco il tuo preventivo. Rispondi OK se va bene o dimmi cosa modificare. Grazie!`;
+                  const t = showSendModal.tel;
+                  const wa = `https://wa.me/${t.startsWith("+") ? t.slice(1) : "39" + t}?text=` + encodeURIComponent(msg);
+                  window.open(wa, "_blank");
+                  setShowSendModal(null); setCcDone("Inviato via WhatsApp"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
+                }} style={{ padding: 14, borderRadius: 12, border: "none", background: "#25D366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
+                  WhatsApp - {showSendModal.tel}
+                </button>
+              )}
+              {showSendModal.email && (
+                <button onClick={() => {
+                  const subj = `Preventivo ${showSendModal.code}`;
+                  const body = showSendModal.link ? `Gentile ${showSendModal.nome},\n\ntrovi qui il preventivo ${showSendModal.code}:\n${showSendModal.link}\n\nDal link puoi accettare, chiedere modifiche o richiedere di essere chiamato.\n\nCordiali saluti.` : `Gentile ${showSendModal.nome},\n\nin allegato trovi il preventivo ${showSendModal.code}.\n\nFammi sapere come procedere.\n\nCordiali saluti.`;
+                  const mailto = `mailto:${showSendModal.email}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+                  window.open(mailto, "_blank");
+                  setShowSendModal(null); setCcDone("Email aperta"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
+                }} style={{ padding: 14, borderRadius: 12, border: "none", background: "#3B7FE0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
+                  Email - {showSendModal.email}
+                </button>
+              )}
+              {showSendModal.tel && (
+                <button onClick={() => {
+                  const msg = showSendModal.link ? `Preventivo ${showSendModal.code}: ${showSendModal.link}` : `Preventivo ${showSendModal.code} disponibile`;
+                  const t = showSendModal.tel;
+                  const sms = `sms:${t}?body=` + encodeURIComponent(msg);
+                  window.open(sms, "_blank");
+                  setShowSendModal(null); setCcDone("SMS aperto"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
+                }} style={{ padding: 14, borderRadius: 12, border: "1.5px solid #C8E4E4", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
+                  SMS - {showSendModal.tel}
+                </button>
+              )}
+              {showSendModal.link && (
+                <button onClick={() => {
+                  navigator.clipboard.writeText(showSendModal.link).then(() => {
+                    setShowSendModal(null); setCcDone("Link copiato negli appunti"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
+                  });
+                }} style={{ padding: 14, borderRadius: 12, border: "1.5px solid #C8E4E4", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
+                  Copia link
+                </button>
+              )}
+              {!showSendModal.tel && !showSendModal.email && (
+                <div style={{ padding: 14, borderRadius: 10, background: "#FEE2E2", color: "#991B1B", fontSize: 12 }}>
+                  Nessun contatto disponibile. Aggiungi telefono o email al cliente per inviare.
+                </div>
+              )}
+            </div>
+            <button onClick={() => setShowSendModal(null)} style={{ marginTop: 14, width: "100%", padding: 10, borderRadius: 10, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
       {quickEditCliente && (
         <div onClick={() => setQuickEditCliente(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
