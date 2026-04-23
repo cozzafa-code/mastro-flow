@@ -1235,7 +1235,7 @@ export default function CMDetailPanel() {
           const progCC = Math.round((doneCC / stepsCC.length) * 100);
 
           return (
-            <div style={{ margin: "-48px 16px 4px" }}>
+            <div style={{ margin: "-20px 16px 4px", position: "relative", zIndex: 3 }}>
               {/* Stato lavoro header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
