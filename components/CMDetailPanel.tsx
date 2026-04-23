@@ -1411,6 +1411,19 @@ export default function CMDetailPanel() {
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                     PDF R{ril.n || ri + 1}
                                   </button>
+                                  <button onClick={(e) => {
+                                    e.stopPropagation();
+                                    setProblemaForm({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
+                                    setShowProblemaModal(true);
+                                  }} style={{
+                                    flex: "1 1 100px", padding: "10px 12px", borderRadius: 8,
+                                    background: "#FF3B3008", color: "#FF3B30", border: "1.5px solid #FF3B30",
+                                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                  }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    Segnala
+                                  </button>
                                 </div>
                               )}
                               </React.Fragment>
@@ -2435,19 +2448,7 @@ export default function CMDetailPanel() {
                 {isStorico ? (
                   <div style={{ fontSize: 12, color: T.sub }}>Nessun vano era presente in questa visita</div>
                 ) : (
-                  <>
-                    <div style={{ fontSize: 12, color: T.sub, marginBottom: 18, lineHeight: 1.5 }}>Aggiungi il primo vano: finestra, porta, fisso...<br/>Poi inserirai le misure e le foto</div>
-                    <button onClick={() => {
-                  if (!selectedCM || !selectedRilievo) return;
-                  const v = { id: Date.now(), nome: `Vano 1`, tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
-                  const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
-                  setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
-                  setSelectedRilievo(updR);
-                  setSelectedCM(prev => ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2) }));
-                  setSelectedVano(v);
-                  setVanoStep(0);
-                }} style={{ ...S.btn, margin: "0 auto", padding: "14px 32px", fontSize: 15 }}>+ Aggiungi primo vano</button>
-                  </>
+                  <></>
                 )}
               </div>
             ) : vaniList.map(v => {
@@ -2602,18 +2603,6 @@ export default function CMDetailPanel() {
         <input ref={fotoInputRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const a={id:Date.now(),tipo:"foto",nome:f.name,data:new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}),dataUrl:ev.target.result};setCantieri(cs=>cs.map(x=>x.id===selectedCM.id?{...x,allegati:[...(x.allegati||[]),a]}:x));setSelectedCM(p=>({...p,allegati:[...(p.allegati||[]),a]}));};r.readAsDataURL(f);e.target.value="";}}/> 
 
 
-        {/* SEGNALA PROBLEMA */}
-        <div style={{ padding: "0 16px", marginBottom: 8, display: "flex", gap: 8 }}>
-          <button onClick={() => { setProblemaForm({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" }); setShowProblemaModal(true); }} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "1.5px solid #FF3B30", background: "#FF3B3008", color: "#FF3B30", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, position: "relative" }}>
-            <I d={ICO.alertTriangle} /> Segnala problema
-            {problemi.filter(p => p.commessaId === c.id && p.stato !== "risolto").length > 0 && <span style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: "50%", background: "#FF3B30", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{problemi.filter(p => p.commessaId === c.id && p.stato !== "risolto").length}</span>}
-          </button>
-          {problemi.filter(p => p.commessaId === c.id).length > 0 && (
-            <button onClick={() => { setShowProblemiView(true); }} style={{ padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.text, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", gap: 6 }}>
-              <I d={ICO.clipboard} /> {problemi.filter(p => p.commessaId === c.id).length}
-            </button>
-          )}
-        </div>
 
         {/* Allegati / Note / Vocali / Video */}
         <div style={{ padding: "0 16px", marginBottom: 8 }}>
