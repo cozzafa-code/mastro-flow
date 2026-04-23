@@ -44,16 +44,16 @@ const AV_GRADS = [
 
 // Colori fase fliwoX
 const PIPELINE_FLIWOX: Record<string, { bg: string; fg: string; solid: string }> = {
-  sopralluogo: { bg: "rgba(40,160,160,0.12)", fg: "#1A7A7A", solid: "#28A0A0" },
-  rilievo:     { bg: "rgba(40,160,160,0.12)", fg: "#1A7A7A", solid: "#28A0A0" },
-  preventivo:  { bg: "rgba(139,196,67,0.18)", fg: "#5F8D20", solid: "#8BC443" },
-  conferma:    { bg: "rgba(59,127,224,0.15)", fg: "#2563EB", solid: "#3B7FE0" },
-  ordini:      { bg: "rgba(245,160,48,0.18)", fg: "#C97716", solid: "#F5A030" },
-  produzione:  { bg: "rgba(245,160,48,0.18)", fg: "#C97716", solid: "#F5A030" },
-  posa:        { bg: "rgba(123,107,165,0.18)", fg: "#5A4D85", solid: "#7B6BA5" },
-  collaudo:    { bg: "rgba(123,107,165,0.18)", fg: "#5A4D85", solid: "#7B6BA5" },
-  fattura:     { bg: "rgba(26,158,115,0.15)", fg: "#147A55", solid: "#1A9E73" },
-  chiusura:    { bg: "rgba(90,120,120,0.15)", fg: "#5A7878", solid: "#8FA8A8" },
+  sopralluogo: { bg: "#EEEDFE", fg: "#26215C", solid: "#3C3489" },
+  rilievo:     { bg: "#EEEDFE", fg: "#26215C", solid: "#3C3489" },
+  preventivo:  { bg: "#E1F5EE", fg: "#04342C", solid: "#0F6E56" },
+  conferma:    { bg: "#FAEEDA", fg: "#412402", solid: "#854F0B" },
+  ordini:      { bg: "#FAEEDA", fg: "#412402", solid: "#854F0B" },
+  produzione:  { bg: "#B5D4F4", fg: "#042C53", solid: "#185FA5" },
+  posa:        { bg: "#F4C0D1", fg: "#4B1528", solid: "#993556" },
+  collaudo:    { bg: "#F4C0D1", fg: "#4B1528", solid: "#993556" },
+  fattura:     { bg: "#EAF3DE", fg: "#173404", solid: "#3B6D11" },
+  chiusura:    { bg: "#F1EFE8", fg: "#2C2C2A", solid: "#5F5E5A" },
 };
 
 
