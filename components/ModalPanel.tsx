@@ -366,15 +366,23 @@ Fabio Cozza - Walter Cozza Serramenti` },
 
           {showModal === "commessa" && (
             <>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ ...S.modalTitle, marginBottom: 0 }}>Nuova commessa</div>
+              <div style={{
+                background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)",
+                borderRadius: 18, padding: "12px 14px", marginBottom: 14,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                boxShadow: "0 4px 14px rgba(40,160,160,0.18)",
+              }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.75)", letterSpacing: 0.5, textTransform: "uppercase" as const }}>NUOVO</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#FFFFFF", letterSpacing: -0.2, marginTop: 1 }}>Nuova commessa</div>
+                </div>
                 <button onClick={() => setShowModal(null)} style={{
-                  width: 34, height: 34, borderRadius: 10,
-                  background: "#EEF8F8", border: "none", cursor: "pointer",
+                  width: 32, height: 32, borderRadius: 10,
+                  background: "#FFFFFF", border: "none", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   flexShrink: 0, padding: 0,
                 }} aria-label="Chiudi">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5A7878" strokeWidth="2.5" strokeLinecap="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
@@ -716,18 +724,6 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       <div style={{ display:"flex", gap:8 }}>
                         <input style={{...S.input,flex:1}} placeholder="Telefono" inputMode="tel" value={newCM.telefono} onChange={e=>setNewCM(c=>({...c,telefono:e.target.value}))}/>
                         <input style={{...S.input,flex:1}} placeholder="Email" inputMode="email" value={newCM.email||""} onChange={e=>setNewCM(c=>({...c,email:e.target.value}))}/>
-                      </div>
-                      <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                        <input style={{...S.input,flex:1}} placeholder="Codice fiscale" value={newCM.codiceFiscale||""} onChange={e=>setNewCM(c=>({...c,codiceFiscale:e.target.value.toUpperCase()}))}/>
-                        <input style={{...S.input,flex:1}} placeholder="P.IVA (se azienda)" inputMode="numeric" value={newCM.piva||""} onChange={e=>setNewCM(c=>({...c,piva:e.target.value}))}/>
-                      </div>
-                      <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                        <input style={{...S.input,flex:2}} placeholder="Citta residenza" value={newCM.citta||""} onChange={e=>setNewCM(c=>({...c,citta:e.target.value}))}/>
-                        <input style={{...S.input,flex:1}} placeholder="CAP" inputMode="numeric" value={newCM.cap||""} onChange={e=>setNewCM(c=>({...c,cap:e.target.value}))}/>
-                      </div>
-                      <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                        <input style={{...S.input,flex:1}} placeholder="PEC (per fattura elettronica)" inputMode="email" value={newCM.pec||""} onChange={e=>setNewCM(c=>({...c,pec:e.target.value}))}/>
-                        <input style={{...S.input,flex:1}} placeholder="Codice SDI" value={newCM.sdi||""} onChange={e=>setNewCM(c=>({...c,sdi:e.target.value.toUpperCase()}))}/>
                       </div>
                       <div style={{ display:"flex", gap:8, marginTop:8 }}>
                         <input style={{...S.input,flex:1}} placeholder="Codice fiscale" value={newCM.codiceFiscale||""} onChange={e=>setNewCM(c=>({...c,codiceFiscale:e.target.value.toUpperCase()}))}/>
