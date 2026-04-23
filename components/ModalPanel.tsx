@@ -368,25 +368,29 @@ Fabio Cozza - Walter Cozza Serramenti` },
             <>
               <div style={{
                 background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)",
-                borderRadius: 18, padding: "12px 14px", marginBottom: 14,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                boxShadow: "0 4px 14px rgba(40,160,160,0.18)",
+                borderRadius: 22, padding: "18px 18px", marginBottom: 16, marginLeft: -4, marginRight: -4,
+                boxShadow: "0 4px 16px rgba(40,160,160,0.18)",
               }}>
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.75)", letterSpacing: 0.5, textTransform: "uppercase" as const }}>NUOVO</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: "#FFFFFF", letterSpacing: -0.2, marginTop: 1 }}>Nuova commessa</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 500, letterSpacing: 0.5 }}>CREA NUOVA</div>
+                  <button onClick={() => setShowModal(null)} style={{
+                    width: 30, height: 30, borderRadius: 10,
+                    background: "#FFFFFF", border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0, padding: 0,
+                  }} aria-label="Chiudi">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
                 </div>
-                <button onClick={() => setShowModal(null)} style={{
-                  width: 32, height: 32, borderRadius: 10,
-                  background: "#FFFFFF", border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0, padding: 0,
-                }} aria-label="Chiudi">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
+                <div style={{ color: "#FFFFFF", fontSize: 24, fontWeight: 600, letterSpacing: -0.3 }}>Nuova commessa</div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+                  <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500, opacity: 0.9 }}>Codice: {previewCode}</div>
+                  <div style={{ color: "rgba(255,255,255,0.6)" }}>·</div>
+                  <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500, opacity: 0.9 }}>{newCM.tipo === "riparazione" ? "Riparazione" : "Nuova installazione"}</div>
+                </div>
               </div>
               <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
                 {[{ id: "nuova", l: "Nuova installazione", c: T.acc }, { id: "riparazione", l: "Riparazione", c: T.orange }].map(t => (
