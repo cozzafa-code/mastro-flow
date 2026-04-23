@@ -1135,6 +1135,20 @@ export default function CMDetailPanel() {
           </div>
         </div>
 
+        {/* Contact actions */}
+        <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
+          {[
+            { ico: ICO.phone, label: "Chiama",   col: T.grn,  act: () => window.location.href=`tel:${c.telefono || ""}` },
+            { ico: ICO.map,   label: "Naviga",   col: T.blue, act: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(c.indirizzo || "")}`) },
+            { ico: ICO.send,  label: "WhatsApp", col: "#25d366", act: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Commessa ${c.code} - ${c.cliente}`)}`) },
+          ].map((a, i) => (
+            <div key={i} onClick={a.act} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
+              <Ico d={a.ico} s={18} c={a.col} />
+              <span style={{ fontSize: 10, fontWeight: 600, color: T.sub }}>{a.label}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Banner rilievo info - modifica riparazione */}
         {r?.motivoModifica && (
           <div style={{ margin: "4px 12px 8px", padding: "8px 12px", background: T.orangeLt, borderRadius: 10, border: `1px solid ${T.orange}30`, fontSize: 12, color: T.orange, fontWeight: 600 }}>
@@ -2283,19 +2297,6 @@ export default function CMDetailPanel() {
           );
         })()}
 
-        {/* Contact actions */}
-        <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
-          {[
-            { ico: ICO.phone, label: "Chiama",   col: T.grn,  act: () => window.location.href=`tel:${c.telefono || ""}` },
-            { ico: ICO.map,   label: "Naviga",   col: T.blue, act: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(c.indirizzo || "")}`) },
-            { ico: ICO.send,  label: "WhatsApp", col: "#25d366", act: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Commessa ${c.code} - ${c.cliente}`)}`) },
-          ].map((a, i) => (
-            <div key={i} onClick={a.act} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
-              <Ico d={a.ico} s={18} c={a.col} />
-              <span style={{ fontSize: 10, fontWeight: 600, color: T.sub }}>{a.label}</span>
-            </div>
-          ))}
-        </div>
 
         {/* == TAB: vani / visite / info == */}
         <div id="cm-tab-vani" style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
