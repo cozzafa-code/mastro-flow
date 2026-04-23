@@ -1095,7 +1095,7 @@ export default function CMDetailPanel() {
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
           <div style={{
             background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-            borderRadius: 22, padding: "34px 22px 36px",
+            borderRadius: 22, padding: "34px 22px 70px",
             position: "relative", overflow: "hidden",
             boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
             marginBottom: 10,
@@ -1235,16 +1235,16 @@ export default function CMDetailPanel() {
           const progCC = Math.round((doneCC / stepsCC.length) * 100);
 
           return (
-            <div style={{ margin: "8px 16px 4px" }}>
+            <div style={{ margin: "-48px 16px 4px" }}>
               {/* Stato lavoro header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: "#0D1F1F", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
                   </div>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.02em" }}>Stato lavoro</span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>Stato lavoro</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0", background: "rgba(40,160,160,0.1)", padding: "3px 10px", borderRadius: 8 }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#1A7A7A", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
               {/* Progress dots con label */}
               <div style={{ display: "flex", gap: 2, marginBottom: 14, marginTop: 4, justifyContent: "space-between", alignItems: "flex-start", padding: "0 2px" }}>
