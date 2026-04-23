@@ -1239,10 +1239,10 @@ export default function CMDetailPanel() {
               {/* Stato lavoro header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "#0D1F1F", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(40,160,160,0.3)" }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   </div>
-                  <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>Stato lavoro</span>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.3px" }}>Stato lavoro</span>
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 800, color: "#1A7A7A", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
