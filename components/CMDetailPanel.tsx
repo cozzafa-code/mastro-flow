@@ -155,6 +155,7 @@ export default function CMDetailPanel() {
     const [fascicoliStorico, setFascicoliStorico] = useState<any[]>([]);
     // Modal "Crea nuovo rilievo" dentro Centro Comando
     const [showNuovoRilievoModal, setShowNuovoRilievoModal] = useState(false);
+    const [nuovoRilievoComplesso, setNuovoRilievoComplesso] = useState(false);
     const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere"|"personalizzato">("provvisorio");
     const [nuovoRilievoRilevatore, setNuovoRilievoRilevatore] = useState("");
     const [nuovoRilievoNote, setNuovoRilievoNote] = useState("");
@@ -2809,6 +2810,30 @@ export default function CMDetailPanel() {
                 <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>
               </div>
 
+              {/* TOGGLE RILIEVO SEMPLICE / COMPLESSO */}
+              {c.tipoEdificio && c.tipoEdificio !== "" && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo rilievo</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                    <div onClick={() => setNuovoRilievoComplesso(false)} style={{
+                      padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                      background: !nuovoRilievoComplesso ? "#28A0A015" : T.card,
+                      border: `1.5px solid ${!nuovoRilievoComplesso ? "#28A0A0" : T.bdr}`,
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#28A0A0" : T.text }}>Semplice</div>
+                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Vani senza gerarchia</div>
+                    </div>
+                    <div onClick={() => setNuovoRilievoComplesso(true)} style={{
+                      padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                      background: nuovoRilievoComplesso ? "#3C348915" : T.card,
+                      border: `1.5px solid ${nuovoRilievoComplesso ? "#3C3489" : T.bdr}`,
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: nuovoRilievoComplesso ? "#3C3489" : T.text }}>Complesso</div>
+                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Organizza per zone/piani</div>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* TIPO RILIEVO */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo misure</div>
