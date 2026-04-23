@@ -509,6 +509,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                               <input style={{...S.input,flex:2}} placeholder="Indirizzo" value={newCM.indirizzo||""} onChange={e=>setNewCM(c=>({...c,indirizzo:e.target.value}))} />
                               <input style={{...S.input,flex:1}} placeholder="Tel" value={newCM.telefono||""} onChange={e=>setNewCM(c=>({...c,telefono:e.target.value}))} inputMode="tel" />
                             </div>
+                            <input style={S.input} placeholder="Email" inputMode="email" value={newCM.email||""} onChange={e=>setNewCM(c=>({...c,email:e.target.value}))} />
                           </div>
                         )}
                         <div style={{ display:"flex", gap:8, marginTop:4 }}>
