@@ -1522,6 +1522,7 @@ export default function CMDetailPanel() {
                       <button onClick={() => {
                         setNuovoRilievoTipo("provvisorio");
                         setNuovoRilievoRilevatore("");
+                        setNuovoRilievoComplesso(false);
                         setNuovoRilievoNote("");
                         setShowNuovoRilievoModal(true);
                       }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
@@ -2888,6 +2889,7 @@ export default function CMDetailPanel() {
                     rilevatore: nuovoRilievoRilevatore || "",
                     note: nuovoRilievoNote || "",
                     vani: [],
+                    complesso: nuovoRilievoComplesso,
                   };
                   setCantieri((cs: any[]) => cs.map(cm => cm.id === c.id ? { ...cm, rilievi: [...(cm.rilievi || []), newR] } : cm));
                   setSelectedCM((prev: any) => prev ? ({ ...prev, rilievi: [...(prev.rilievi || []), newR] }) : prev);
