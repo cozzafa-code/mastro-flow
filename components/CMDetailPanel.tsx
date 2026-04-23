@@ -161,6 +161,7 @@ export default function CMDetailPanel() {
     const [nvL2, setNvL2] = useState("");
     const [nvL3, setNvL3] = useState("");
     const [nvStanza, setNvStanza] = useState("");
+    const [nvCustom, setNvCustom] = useState<Array<{label:string,value:string}>>([]);
     const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere"|"personalizzato">("provvisorio");
     const [nuovoRilievoRilevatore, setNuovoRilievoRilevatore] = useState("");
     const [nuovoRilievoNote, setNuovoRilievoNote] = useState("");
@@ -1390,7 +1391,7 @@ export default function CMDetailPanel() {
                                       setSelectedRilievo(ril);
                                       // Se rilievo complesso e zero vani, apri modal per chiedere livelli
                                       if (ril.complesso && (ril.vani || []).length === 0) {
-                                        setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza("");
+                                        setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza(""); setNvCustom([]);
                                         setShowAggiungiVanoModal(true);
                                         return;
                                       }
@@ -2587,7 +2588,7 @@ export default function CMDetailPanel() {
                 if (!selectedCM || !selectedRilievo) return;
                 // Se rilievo complesso, apri modal invece di creare direttamente
                 if (selectedRilievo.complesso) {
-                  setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza("");
+                  setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza(""); setNvCustom([]);
                   setShowAggiungiVanoModal(true);
                   return;
                 }
@@ -2862,17 +2863,44 @@ export default function CMDetailPanel() {
                   </div>
                 )}
 
-                <div style={{ marginBottom: 14 }}>
+                <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>Stanza / ambiente</div>
                   <input style={S.input} placeholder="Es. Cucina, Bagno, Camera, Aula magna…" value={nvStanza} onChange={e => setNvStanza(e.target.value)} />
+                </div>
+
+                {/* Campi personalizzati ripetibili */}
+                {nvCustom.length > 0 && (
+                  <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                    {nvCustom.map((f, i) => (
+                      <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <input style={{ ...S.input, flex: 1 }} placeholder="Etichetta" value={f.label} onChange={e => {
+                          const n = [...nvCustom]; n[i] = { ...n[i], label: e.target.value }; setNvCustom(n);
+                        }} />
+                        <input style={{ ...S.input, flex: 2 }} placeholder="Valore" value={f.value} onChange={e => {
+                          const n = [...nvCustom]; n[i] = { ...n[i], value: e.target.value }; setNvCustom(n);
+                        }} />
+                        <div onClick={() => setNvCustom(nvCustom.filter((_, ii) => ii !== i))} style={{ width: 30, height: 30, borderRadius: 8, background: "#FFE8E8", color: "#DC4444", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 800 }}>×</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div onClick={() => setNvCustom([...nvCustom, { label: "", value: "" }])} style={{
+                  marginBottom: 14, padding: "10px 12px", borderRadius: 10, border: `1.5px dashed ${T.bdr}`,
+                  background: "transparent", cursor: "pointer", textAlign: "center" as any,
+                  fontSize: 12, fontWeight: 700, color: T.acc,
+                }}>
+                  + Aggiungi campo personalizzato
                 </div>
 
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => setShowAggiungiVanoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                   <button disabled={!canCreate} onClick={() => {
                     if (!selectedCM || !selectedRilievo) return;
+                    const customValidi = nvCustom.filter(f => f.label.trim() && f.value.trim());
+                    const customStr = customValidi.map(f => f.value).join(" · ");
                     const posStr = [nvL1, nvL2, nvL3].filter(Boolean).join(" · ");
-                    const baseNome = posStr + (nvStanza ? " · " + nvStanza : "");
+                    const baseNome = [posStr, nvStanza, customStr].filter(Boolean).join(" · ");
                     const v = {
                       id: Date.now(),
                       nome: baseNome || `Vano ${(selectedRilievo.vani?.length||0)+1}`,
@@ -2882,6 +2910,7 @@ export default function CMDetailPanel() {
                       livello_1: nvL1,
                       livello_2: nvL2,
                       livello_3: nvL3,
+                      campi_custom: nvCustom.filter(f => f.label.trim() && f.value.trim()),
                       sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "",
                       misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1,
                       accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
