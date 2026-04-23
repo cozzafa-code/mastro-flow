@@ -1132,29 +1132,6 @@ export default function CMDetailPanel() {
               )}
             </div>
 
-            {/* Azioni secondarie: riepilogo + PDF */}
-            <div style={{ display: "flex", gap: 6, marginTop: 10, position: "relative", zIndex: 2 }}>
-              <div onClick={() => setShowRiepilogo(true)} style={{
-                flex: 1, padding: "8px 10px", borderRadius: 10,
-                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                cursor: "pointer",
-                color: "#fff", fontSize: 11, fontWeight: 700,
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
-                Riepilogo
-              </div>
-              <div onClick={exportPDF} style={{
-                flex: 1, padding: "8px 10px", borderRadius: 10,
-                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                cursor: "pointer",
-                color: "#fff", fontSize: 11, fontWeight: 700,
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Esporta PDF
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1350,7 +1327,8 @@ export default function CMDetailPanel() {
                             };
                             const tt = tipoMap[tipoR] || tipoMap.provvisorio;
                             return (
-                              <div key={ril.id} onClick={(e) => {
+                              <React.Fragment key={ril.id}>
+                              <div onClick={(e) => {
                                 e.stopPropagation();
                                 console.log("[CLICK RILIEVO]", ril.id, "vani:", (ril.vani||[]).length);
                                 setSelectedRilievo(ril);
@@ -1382,6 +1360,60 @@ export default function CMDetailPanel() {
                                 </div>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                               </div>
+
+                              {/* Azioni PER-RILIEVO (visibili solo quando il rilievo e selezionato/espanso) */}
+                              {selectedRilievo?.id === ril.id && (
+                                <div style={{
+                                  marginTop: -4, marginBottom: 8,
+                                  background: "#F8F7F2", border: `1.5px solid ${T.bdr}`, borderRadius: 10,
+                                  padding: 10, display: "flex", gap: 6, flexWrap: "wrap"
+                                }}>
+                                  <button onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedRilievo(ril);
+                                    setCmSubTab("sopralluoghi");
+                                    setTimeout(() => {
+                                      const el = document.getElementById("cm-tab-vani") || document.querySelector('[data-tab="sopralluoghi"]');
+                                      if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+                                    }, 100);
+                                  }} style={{
+                                    flex: "1 1 120px", padding: "10px 12px", borderRadius: 8,
+                                    background: "#28A0A0", color: "#fff", border: "none",
+                                    fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                  }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Aggiungi vano
+                                  </button>
+                                  <button onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedRilievo(ril);
+                                    setShowRiepilogo(true);
+                                  }} style={{
+                                    flex: "1 1 100px", padding: "10px 12px", borderRadius: 8,
+                                    background: T.card, color: T.text, border: `1.5px solid ${T.bdr}`,
+                                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                  }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
+                                    Riepilogo R{ril.n || ri + 1}
+                                  </button>
+                                  <button onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedRilievo(ril);
+                                    exportPDF();
+                                  }} style={{
+                                    flex: "1 1 100px", padding: "10px 12px", borderRadius: 8,
+                                    background: T.card, color: T.text, border: `1.5px solid ${T.bdr}`,
+                                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                  }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    PDF R{ril.n || ri + 1}
+                                  </button>
+                                </div>
+                              )}
+                              </React.Fragment>
                             );
                           })}
                         </div>
