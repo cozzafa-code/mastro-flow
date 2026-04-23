@@ -1349,7 +1349,7 @@ export default function CMDetailPanel() {
                                 display: "flex", alignItems: "center", gap: 10,
                               }}>
                                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.28)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tt.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 3L3 21M3 3l4 4m2 2l4 4m2 2l4 4M3 7l2-2m2 6l2-2m2 6l2-2m2 6l2-2"/></svg>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12l4-4"/><path d="M16 8l2 2"/><path d="M8 12a4 4 0 1 1 4 4"/><circle cx="12" cy="12" r="1.5" fill="#fff"/></svg>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
