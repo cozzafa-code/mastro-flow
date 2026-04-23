@@ -255,7 +255,8 @@ export default function HomePanelMobile(props: any) {
 
   return (
     <div style={{ background: "#F4F1EA", minHeight: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", paddingBottom: 100 }}>
-      <div style={{ background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)", padding: "18px 16px 22px", borderRadius: "0 0 20px 20px" }}>
+      <div style={{ padding: "12px 10px 0" }}>
+      <div style={{ background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)", padding: "18px 18px 20px", borderRadius: 22, boxShadow: "0 4px 16px rgba(40,160,160,0.18)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
           <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "6px 12px", display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 16, height: 16, borderRadius: 4, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -272,6 +273,7 @@ export default function HomePanelMobile(props: any) {
         <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: 400, letterSpacing: 0.5 }}>{greeting}</div>
         <div style={{ color: "#FFFFFF", fontSize: 28, fontWeight: 600, marginTop: 2, letterSpacing: -0.5 }}>{nome}</div>
         <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 2, textTransform: "capitalize" }}>{dataLunga}</div>
+      </div>
       </div>
 
       <div style={{ padding: 14 }}>
