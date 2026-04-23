@@ -792,6 +792,30 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       </select>
                     </AccordionSection>
 
+                    <AccordionSection id="tipoedificio" icon="🏢" label="Tipo edificio"
+                      badge={newCM.tipoEdificio ? "✓" : null}>
+                      <div style={{ fontSize:10, color:T.sub, fontWeight:600, marginBottom:4 }}>Per palazzi, scuole, ospedali — scegli la struttura gerarchica</div>
+                      <select style={S.select} value={newCM.tipoEdificio||""} onChange={e=>setNewCM(c=>({...c,tipoEdificio:e.target.value}))}>
+                        <option value="">— Casa singola (nessuna gerarchia) —</option>
+                        <option value="palazzo">Palazzo residenziale (Scala · Piano · Interno)</option>
+                        <option value="condominio">Condominio piccolo (Piano · Interno)</option>
+                        <option value="scuola">Scuola (Edificio · Piano · Aula)</option>
+                        <option value="ospedale">Ospedale / Clinica (Padiglione · Piano · Reparto)</option>
+                        <option value="ufficio">Ufficio / Direzionale (Edificio · Piano · Ufficio)</option>
+                        <option value="hotel">Hotel / RSA (Edificio · Piano · Camera)</option>
+                        <option value="centro_comm">Centro commerciale (Livello · Negozio)</option>
+                        <option value="industriale">Capannone / Industriale (Corpo · Settore)</option>
+                        <option value="personalizzato">Personalizzato (definisci tu i livelli)</option>
+                      </select>
+                      {newCM.tipoEdificio === "personalizzato" && (
+                        <div style={{ marginTop:10, display:"flex", flexDirection:"column", gap:6 }}>
+                          <div style={{ fontSize:10, color:T.sub, fontWeight:600 }}>Nomi dei 3 livelli gerarchici</div>
+                          <input style={S.input} placeholder="Livello 1 (es. Zona)" value={newCM.livello1Label||""} onChange={e=>setNewCM(c=>({...c,livello1Label:e.target.value}))}/>
+                          <input style={S.input} placeholder="Livello 2 (es. Piano)" value={newCM.livello2Label||""} onChange={e=>setNewCM(c=>({...c,livello2Label:e.target.value}))}/>
+                          <input style={S.input} placeholder="Livello 3 (es. Ambiente)" value={newCM.livello3Label||""} onChange={e=>setNewCM(c=>({...c,livello3Label:e.target.value}))}/>
+                        </div>
+                      )}
+                    </AccordionSection>
                     <AccordionSection id="note" icon="≡" label="Note aggiuntive"
                       badge={newCM.note ? "✓" : null}>
                       <textarea style={{...S.input,minHeight:70,resize:"vertical"}}
