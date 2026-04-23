@@ -116,7 +116,7 @@ export default function CommessePanel() {
     return (
       <div key={c.id}
         style={{
-          background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
+          background: (PIPELINE_FLIWOX[c.fase] || PIPELINE_FLIWOX.sopralluogo).bg,
           borderRadius: 18,
           padding: "14px 16px",
           marginBottom: 12,
@@ -233,7 +233,7 @@ export default function CommessePanel() {
             marginTop: 10,
             padding: "8px 12px",
             borderRadius: 10,
-            background: isExpanded ? "linear-gradient(145deg, #0D1F1F, #1A3535)" : "linear-gradient(155deg, #FFFFFF, #F5FBFB)",
+            background: isExpanded ? "linear-gradient(145deg, #0D1F1F, #1A3535)" : (PIPELINE_FLIWOX[c.fase] || PIPELINE_FLIWOX.sopralluogo).bg,
             border: isExpanded ? "none" : "1px solid #C8E4E4",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             cursor: "pointer",
