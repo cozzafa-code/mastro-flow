@@ -1095,7 +1095,7 @@ export default function CMDetailPanel() {
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
           <div style={{
             background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-            borderRadius: 22, padding: "20px 18px 22px",
+            borderRadius: 22, padding: "26px 20px 28px",
             position: "relative", overflow: "hidden",
             boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
             marginBottom: 10,
@@ -1249,18 +1249,20 @@ export default function CMDetailPanel() {
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0", background: "rgba(40,160,160,0.1)", padding: "3px 10px", borderRadius: 8 }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
               {/* Progress dots con label */}
-              <div style={{ display: "flex", gap: 2, marginBottom: 6, justifyContent: "center", alignItems: "flex-end" }}>
+              <div style={{ display: "flex", gap: 2, marginBottom: 14, marginTop: 4, justifyContent: "space-between", alignItems: "flex-start", padding: "0 2px" }}>
                 {stepsCC.map((s, i) => (
                   <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                       <div style={{
-                        width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
-                        background: s.skipped ? "#ff9500" : s.done ? "#28A0A0" : i === curIdxCC ? T.acc : T.bg,
+                        width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                        background: s.skipped ? "#ff9500" : s.done ? "#28A0A0" : i === curIdxCC ? T.acc : "#F0EDE5",
                         color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
-                      }}>{s.skipped ? <I d={ICO.check} s={10} c="#fff" /> : s.done ? <I d={ICO.check} s={10} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={10} c="#fff" />}</div>
-                      <div style={{ fontSize: 7, color: i === curIdxCC ? T.acc : s.done ? "#28A0A0" : T.sub, fontWeight: i === curIdxCC ? 800 : 500, whiteSpace: "nowrap", maxWidth: 32, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>{s.l}</div>
+                        boxShadow: i === curIdxCC ? "0 2px 8px rgba(40,160,160,0.35)" : "none",
+                        border: i === curIdxCC ? "2px solid #fff" : s.done ? "2px solid #28A0A0" : "2px solid transparent",
+                      }}>{s.skipped ? <I d={ICO.check} s={18} c="#fff" /> : s.done ? <I d={ICO.check} s={18} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={18} c={i === curIdxCC ? "#fff" : T.sub} />}</div>
+                      <div style={{ fontSize: 10, color: i === curIdxCC ? "#0D1F1F" : s.done ? "#0F6E56" : T.sub, fontWeight: i === curIdxCC ? 800 : 600, whiteSpace: "nowrap", maxWidth: 50, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center", marginTop: 4 }}>{s.l}</div>
                     </div>
-                    {i < stepsCC.length - 1 && <div style={{ width: 6, height: 2, background: s.done ? "#28A0A0" : T.bdr, marginBottom: 12 }} />}
+                    {i < stepsCC.length - 1 && <div style={{ width: 8, height: 3, background: s.done ? "#28A0A0" : T.bdr, borderRadius: 2, marginBottom: 20, flexShrink: 0 }} />}
                   </div>
                 ))}
               </div>
