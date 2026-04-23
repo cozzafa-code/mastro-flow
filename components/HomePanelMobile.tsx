@@ -228,7 +228,7 @@ export default function HomePanelMobile(props: any) {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
     const todayEvents: any[] = [];
-    (m?.events || []).forEach((e: any) => {
+    ((events as any) || []).forEach((e: any) => {
       const d = e.data || e.date || "";
       if (d === todayStr) todayEvents.push({ ora: e.ora || e.time || "", titolo: e.titolo || e.text || "Evento", tipo: (e.tipo || "evento").toLowerCase(), codice: e.commessaCode || e.cm || "" });
     });
