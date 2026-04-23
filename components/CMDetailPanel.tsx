@@ -1322,12 +1322,12 @@ export default function CMDetailPanel() {
                             const vaniDelRil = (ril.vani || []).length;
                             const tipoR = ril.tipo || "provvisorio";
                             const tipoMap: any = {
-                              provvisorio: { l: "Provvisorio", c: "#D08008", bg: "#FFF4E5" },
-                              verificato:  { l: "Verificato",  c: "#185FA5", bg: "#E8F1FB" },
-                              definitivo:  { l: "Definitivo",  c: "#0F6E56", bg: "#E1F5EE" },
-                              da_rivedere: { l: "Da rivedere", c: "#DC4444", bg: "#FCEBEB" },
-                              indicativa:  { l: "Provvisorio", c: "#D08008", bg: "#FFF4E5" },
-                              personalizzato: { l: "Personalizzato", c: "#3C3489", bg: "#EEEDFE" },
+                              provvisorio: { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
+                              verificato:  { l: "Verificato",  c: "#0A2842", bg: "#9FC6F0" },
+                              definitivo:  { l: "Definitivo",  c: "#04342C", bg: "#A5DCC6" },
+                              da_rivedere: { l: "Da rivedere", c: "#4B1515", bg: "#F7B5B5" },
+                              indicativa:  { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
+                              personalizzato: { l: "Personalizzato", c: "#26215C", bg: "#B5B0E8" },
                             };
                             const tt = tipoMap[tipoR] || tipoMap.provvisorio;
                             return (
@@ -1344,8 +1344,8 @@ export default function CMDetailPanel() {
                                   else window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
                                 }, 150);
                               }} style={{
-                                background: tt.bg, border: `1.5px solid ${tt.c}40`, borderRadius: 10,
-                                padding: "10px 12px", marginBottom: 6, cursor: "pointer",
+                                background: tt.bg, border: "none", borderRadius: 12,
+                                padding: "12px 14px", marginBottom: 8, cursor: "pointer", boxShadow: `0 2px 8px ${tt.c}20`,
                                 display: "flex", alignItems: "center", gap: 10,
                               }}>
                                 <div style={{ width: 34, height: 34, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -1353,10 +1353,10 @@ export default function CMDetailPanel() {
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>R{ril.n || ri + 1}</span>
-                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5, background: "#fff", color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.3px", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>{tt.l}</span>
+                                    <span style={{ fontSize: 14, fontWeight: 800, color: tt.c }}>R{ril.n || ri + 1}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: tt.c, color: "#fff", textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{tt.l}</span>
                                   </div>
-                                  <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>
+                                  <div style={{ fontSize: 11, color: tt.c, opacity: 0.75, marginTop: 2, fontWeight: 600 }}>
                                     {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "·"}
                                     {ril.rilevatore ? ` · ${ril.rilevatore}` : ""}
                                     {` · ${vaniDelRil} ${vaniDelRil === 1 ? "vano" : "vani"}`}
