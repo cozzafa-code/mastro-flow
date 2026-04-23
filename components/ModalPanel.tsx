@@ -651,11 +651,11 @@ Fabio Cozza - Walter Cozza Serramenti` },
                 const AccordionSection = ({ id, icon, label, badge, children }) => {
                   const open = newCM._open === id;
                   return (
-                    <div style={{ marginBottom:8, borderRadius:10, border:`1px solid ${T.bdr}`, overflow:"hidden" }}>
+                    <div style={{ marginBottom:8, borderRadius:14, border:"1px solid #F0EDE5", overflow:"hidden", background: id==="accesso" ? "#EEEDFE" : id==="note" ? "#FAEEDA" : "#FFFFFF" }}>
                       <div onClick={() => setNewCM(c=>({...c,_open:open?null:id}))}
                         style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 14px", background:T.card, cursor:"pointer" }}>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                          <span style={{ width:24, height:24, borderRadius:8, background:T.accLt||"#EEF8F8", display:"flex", alignItems:"center", justifyContent:"center", color:T.acc, fontSize:12, fontWeight:800 }}>{icon}</span>
+                          <span style={{ width:26, height:26, borderRadius:8, background: id==="accesso" ? "#B5B0E8" : id==="note" ? "#FAC775" : "#EEF8F8", display:"flex", alignItems:"center", justifyContent:"center", color: id==="accesso" ? "#26215C" : id==="note" ? "#412402" : T.acc, fontSize:13, fontWeight:800 }}>{icon}</span>
                           <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{label}</span>
                           {badge && <span style={{ ...S.badge(T.accLt,T.acc), fontSize:10 }}>{badge}</span>}
                         </div>
@@ -670,13 +670,13 @@ Fabio Cozza - Walter Cozza Serramenti` },
 
                 return (
                   <>
-                    <div style={{ marginBottom:14, padding:"8px 12px", background:T.bg, borderRadius:8, display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ marginBottom:14, padding:"10px 14px", background:"#E1F5EE", borderRadius:12, display:"flex", alignItems:"center", gap:8 }}>
                       <span style={{ fontSize:11, color:T.sub }}>Numero commessa:</span>
                       <span style={{ fontSize:13, fontWeight:800, color:T.acc, fontFamily:FM }}>{previewCode}</span>
                       <span style={{ fontSize:10, color:T.sub }}>(assegnato automaticamente)</span>
                     </div>
 
-                    <div style={{ marginBottom:14, padding:"14px", background:T.card, borderRadius:12, border:`1.5px solid ${T.bdr}` }}>
+                    <div style={{ marginBottom:14, padding:"16px", background:"#FFFFFF", borderRadius:18, border:"1px solid #F0EDE5", boxShadow:"0 2px 10px rgba(0,0,0,0.04)" }}>
                       <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10, display:"flex", alignItems:"center", gap:6 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Dati cliente *</div>
                       <div style={{ display:"flex", gap:8, marginBottom:0 }}>
                         <input style={{...S.input,flex:1}} placeholder="Nome" value={newCM.cliente} onChange={e=>setNewCM(c=>({...c,cliente:e.target.value}))}/>
