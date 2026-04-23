@@ -685,7 +685,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       {/* Bottone rubrica SEMPRE visibile */}
                       {!newCM.cliente && (
                         <div onClick={() => setNewCM(c => ({...c, cliente: " "}))} style={{ margin:"6px 0 8px", padding:"10px 14px", borderRadius:10, border:"1.5px dashed "+T.acc+"60", background:T.acc+"06", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-                          <span style={{ fontSize:16 }}>📊</span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                           <span style={{ fontSize:12, fontWeight:700, color:T.acc }}>Scegli dalla rubrica ({contatti.filter(c=>c.tipo==="cliente").length} clienti)</span>
                         </div>
                       )}
