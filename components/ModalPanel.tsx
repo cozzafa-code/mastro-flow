@@ -792,7 +792,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       </select>
                     </AccordionSection>
 
-                    <AccordionSection id="tipoedificio" icon="🏢" label="Tipo edificio"
+                    <AccordionSection id="tipoedificio" icon="⌂" label="Tipo edificio"
                       badge={newCM.tipoEdificio ? "✓" : null}>
                       <div style={{ fontSize:10, color:T.sub, fontWeight:600, marginBottom:4 }}>Per palazzi, scuole, ospedali — scegli la struttura gerarchica</div>
                       <select style={S.select} value={newCM.tipoEdificio||""} onChange={e=>setNewCM(c=>({...c,tipoEdificio:e.target.value}))}>
