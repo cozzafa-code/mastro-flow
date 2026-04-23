@@ -1344,17 +1344,17 @@ export default function CMDetailPanel() {
                                   else window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
                                 }, 150);
                               }} style={{
-                                background: T.card, border: `1.5px solid ${T.bdr}`, borderRadius: 10,
+                                background: tt.bg, border: `1.5px solid ${tt.c}40`, borderRadius: 10,
                                 padding: "10px 12px", marginBottom: 6, cursor: "pointer",
                                 display: "flex", alignItems: "center", gap: 10,
                               }}>
-                                <div style={{ width: 34, height: 34, borderRadius: 8, background: tt.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <div style={{ width: 34, height: 34, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tt.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 3L3 21M3 3l4 4m2 2l4 4m2 2l4 4M3 7l2-2m2 6l2-2m2 6l2-2m2 6l2-2"/></svg>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                     <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>R{ril.n || ri + 1}</span>
-                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5, background: tt.bg, color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{tt.l}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5, background: "#fff", color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.3px", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}>{tt.l}</span>
                                   </div>
                                   <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>
                                     {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "·"}
