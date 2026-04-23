@@ -1382,11 +1382,20 @@ export default function CMDetailPanel() {
                                     <button onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedRilievo(ril);
-                                      setCmSubTab("sopralluoghi");
-                                      setTimeout(() => {
-                                        const el = document.getElementById("cm-tab-vani") || document.querySelector('[data-tab="sopralluoghi"]');
-                                        if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
-                                      }, 100);
+                                      // Apri workspace misure: se ci sono vani apri il primo, se no creane uno
+                                      const vaniR = ril.vani || [];
+                                      if (vaniR.length > 0) {
+                                        setSelectedVano(vaniR[0]);
+                                        setVanoStep(0);
+                                      } else {
+                                        const nuovoVano = { id: Date.now(), nome: "Vano 1", tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
+                                        const updR = { ...ril, vani: [...(ril.vani||[]), nuovoVano] };
+                                        setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === ril.id ? updR : r2), aggiornato: "Oggi" } : cm));
+                                        setSelectedCM(prev => ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === ril.id ? updR : r2) }));
+                                        setSelectedRilievo(updR);
+                                        setSelectedVano(nuovoVano);
+                                        setVanoStep(0);
+                                      }
                                     }} style={{
                                       width: "100%", padding: "11px 12px", borderRadius: 8,
                                       background: tt.c, color: "#fff", border: "none",
