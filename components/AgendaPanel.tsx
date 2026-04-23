@@ -336,6 +336,39 @@ export default function AgendaPanel(props: any) {
       {/* === VIEW MESE === */}
       {view === "mese" && (
         <>
+
+          {/* TIMELINE OGGI (sopra calendario) */}
+          <div style={{ padding: "4px 12px 0" }}>
+            <div style={{ background: "#FFFFFF", borderRadius: 14, padding: 14, border: "1px solid #F0EDE5" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 10, background: "#D4EDEC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth={2.5}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+                </div>
+                <div style={{ flex: 1, fontSize: 14, color: "#1A1A1A", fontWeight: 700 }}>Timeline di oggi</div>
+                <div style={{ background: "#0D1F1F", color: "#FFF", fontSize: 10, fontWeight: 700, minWidth: 20, height: 20, borderRadius: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px" }}>{(byDay[todayStr] || []).length}</div>
+              </div>
+              {(byDay[todayStr] || []).length === 0 && (
+                <div style={{ textAlign: "center", padding: "14px 0" }}>
+                  <div style={{ fontSize: 11, color: "#888" }}>Nessun impegno oggi</div>
+                  <div onClick={() => setView("giorno")} style={{ fontSize: 11, color: "#28A0A0", fontWeight: 600, marginTop: 4, cursor: "pointer" }}>Apri agenda ›</div>
+                </div>
+              )}
+              {(byDay[todayStr] || []).slice(0, 4).map((it: any) => {
+                const f = FASE[it.tipo] || FASE.evento;
+                return (
+                  <div key={it.id} style={{ background: f.bg, borderRadius: 12, padding: "10px 12px", marginBottom: 5, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ fontSize: 11, color: f.pill, fontWeight: 700, minWidth: 40 }}>{(it.ora || "").slice(0, 5)}</div>
+                    <div style={{ flex: 1, fontSize: 12, color: f.fg, fontWeight: 600 }}>{it.titolo}</div>
+                    {it.codice && <div style={{ fontSize: 10, color: f.pill, fontWeight: 600 }}>{it.codice}</div>}
+                  </div>
+                );
+              })}
+              {(byDay[todayStr] || []).length > 4 && (
+                <div onClick={() => setView("giorno")} style={{ fontSize: 11, color: "#28A0A0", fontWeight: 600, textAlign: "center", padding: "6px 0 0", cursor: "pointer" }}>Vedi altri {(byDay[todayStr] || []).length - 4} ›</div>
+              )}
+            </div>
+          </div>
+
           <div style={{ padding: "12px 14px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div onClick={() => navMese(-1)} style={{ cursor: "pointer" }}>

@@ -7,6 +7,7 @@ import { useMastro } from "./MastroContext";
 const ALL_WIDGETS: any[] = [
   // KPI & TODO
   { id: "oggi",        label: "Oggi devi fare",       bg: "#B5B0E8", fg: "#26215C", cat: "KPI" },
+  { id: "timeline",    label: "Timeline di oggi",     bg: "#FFFFFF", fg: "#1A1A1A", cat: "KPI" },
   { id: "scaduti",     label: "Task scaduti",         bg: "#F7C1C1", fg: "#501313", cat: "KPI" },
   { id: "prossimi",    label: "Prossime scadenze",    bg: "#FAC775", fg: "#412402", cat: "KPI" },
   // COMMESSE
@@ -37,7 +38,7 @@ const ALL_WIDGETS: any[] = [
   // AZIONI
   { id: "azioni",      label: "Azioni rapide",        bg: "#FAC775", fg: "#412402", cat: "Azioni" },
 ];
-const DEFAULT_LAYOUT = ["oggi", "corso", "fatt", "pipeline", "recenti", "agenda", "azioni"];
+const DEFAULT_LAYOUT = ["oggi", "timeline", "corso", "fatt", "pipeline", "recenti", "agenda", "azioni"];
 
 export default function HomePanelMobile(props: any) {
   const mastro: any = (() => { try { return useMastro(); } catch { return {}; } })();
@@ -223,6 +224,60 @@ export default function HomePanelMobile(props: any) {
 
   
   // === NUOVI WIDGET ===
+    W.timeline = () => {
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
+    const todayEvents: any[] = [];
+    (m?.events || []).forEach((e: any) => {
+      const d = e.data || e.date || "";
+      if (d === todayStr) todayEvents.push({ ora: e.ora || e.time || "", titolo: e.titolo || e.text || "Evento", tipo: (e.tipo || "evento").toLowerCase(), codice: e.commessaCode || e.cm || "" });
+    });
+    todayEvents.sort((a,b) => (a.ora || "99").localeCompare(b.ora || "99"));
+    const FASE_MINI: any = {
+      sopralluogo: { bg: "#EEEDFE", fg: "#26215C", pill: "#3C3489" },
+      rilievo:     { bg: "#EEEDFE", fg: "#26215C", pill: "#3C3489" },
+      preventivo:  { bg: "#E1F5EE", fg: "#04342C", pill: "#0F6E56" },
+      firma:       { bg: "#FAEEDA", fg: "#412402", pill: "#854F0B" },
+      conferma:    { bg: "#FAEEDA", fg: "#412402", pill: "#854F0B" },
+      produzione:  { bg: "#B5D4F4", fg: "#042C53", pill: "#185FA5" },
+      consegna:    { bg: "#EAF3DE", fg: "#173404", pill: "#3B6D11" },
+      posa:        { bg: "#F4C0D1", fg: "#4B1528", pill: "#993556" },
+      montaggio:   { bg: "#F4C0D1", fg: "#4B1528", pill: "#993556" },
+      evento:      { bg: "#EEEDFE", fg: "#26215C", pill: "#3C3489" },
+    };
+    return (
+      <div style={{ background: "#FFFFFF", borderRadius: 20, padding: 14, position: "relative", border: "1px solid #F0EDE5" }}>
+        {editMode && <RemoveBtn id="timeline" fg="#888" onRemove={removeWidget} />}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <div style={{ width: 26, height: 26, borderRadius: 8, background: "#D4EDEC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth={2.5}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+          </div>
+          <div style={{ flex: 1, fontSize: 13, color: "#1A1A1A", fontWeight: 700 }}>Timeline di oggi</div>
+          <div style={{ background: "#0D1F1F", color: "#FFF", fontSize: 9, fontWeight: 700, minWidth: 18, height: 18, borderRadius: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>{todayEvents.length}</div>
+        </div>
+        {todayEvents.length === 0 && (
+          <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
+            <div style={{ fontSize: 11, color: "#888" }}>Nessun impegno oggi</div>
+            <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 11, color: "#28A0A0", fontWeight: 600, marginTop: 4, cursor: "pointer" }}>Apri agenda ›</div>
+          </div>
+        )}
+        {todayEvents.slice(0, 3).map((it: any, idx: number) => {
+          const f = FASE_MINI[it.tipo] || FASE_MINI.evento;
+          return (
+            <div key={idx} onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: f.bg, borderRadius: 10, padding: "8px 10px", marginBottom: idx < Math.min(todayEvents.length, 3) - 1 ? 4 : 0, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <div style={{ fontSize: 10, color: f.pill, fontWeight: 700, minWidth: 36 }}>{(it.ora || "").slice(0, 5)}</div>
+              <div style={{ flex: 1, fontSize: 11, color: f.fg, fontWeight: 600 }}>{it.titolo}</div>
+              {it.codice && <div style={{ fontSize: 9, color: f.pill, fontWeight: 600 }}>{it.codice}</div>}
+            </div>
+          );
+        })}
+        {todayEvents.length > 3 && (
+          <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "#28A0A0", fontWeight: 600, textAlign: "center", padding: "6px 0 0", cursor: "pointer" }}>Vedi altri {todayEvents.length - 3} ›</div>
+        )}
+      </div>
+    );
+  };
+
   W.scaduti = () => (
     <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#F7C1C1", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
       {editMode && <RemoveBtn id="scaduti" fg="#501313" onRemove={removeWidget} />}
