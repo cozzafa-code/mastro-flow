@@ -655,7 +655,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                       <div onClick={() => setNewCM(c=>({...c,_open:open?null:id}))}
                         style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 14px", background:T.card, cursor:"pointer" }}>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                          <span style={{ fontSize:16 }}>{icon}</span>
+                          <span style={{ width:24, height:24, borderRadius:8, background:T.accLt||"#EEF8F8", display:"flex", alignItems:"center", justifyContent:"center", color:T.acc, fontSize:12, fontWeight:800 }}>{icon}</span>
                           <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{label}</span>
                           {badge && <span style={{ ...S.badge(T.accLt,T.acc), fontSize:10 }}>{badge}</span>}
                         </div>
@@ -677,7 +677,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                     </div>
 
                     <div style={{ marginBottom:14, padding:"14px", background:T.card, borderRadius:12, border:`1.5px solid ${T.bdr}` }}>
-                      <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>👤 Dati cliente *</div>
+                      <div style={{ fontSize:10, fontWeight:800, color:T.sub, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10, display:"flex", alignItems:"center", gap:6 }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.acc} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Dati cliente *</div>
                       <div style={{ display:"flex", gap:8, marginBottom:0 }}>
                         <input style={{...S.input,flex:1}} placeholder="Nome" value={newCM.cliente} onChange={e=>setNewCM(c=>({...c,cliente:e.target.value}))}/>
                         <input style={{...S.input,flex:1}} placeholder="Cognome" value={newCM.cognome||""} onChange={e=>setNewCM(c=>({...c,cognome:e.target.value}))}/>
@@ -734,7 +734,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                         <input style={{...S.input,flex:1}} placeholder="P.IVA (se azienda)" inputMode="numeric" value={newCM.piva||""} onChange={e=>setNewCM(c=>({...c,piva:e.target.value}))}/>
                       </div>
                       <div style={{ display:"flex", gap:8, marginTop:8 }}>
-                        <input style={{...S.input,flex:2}} placeholder="Citta residenza" value={newCM.citta||""} onChange={e=>setNewCM(c=>({...c,citta:e.target.value}))}/>
+                        <input style={{...S.input,flex:2}} placeholder="Città residenza" value={newCM.citta||""} onChange={e=>setNewCM(c=>({...c,citta:e.target.value}))}/>
                         <input style={{...S.input,flex:1}} placeholder="CAP" inputMode="numeric" value={newCM.cap||""} onChange={e=>setNewCM(c=>({...c,cap:e.target.value}))}/>
                       </div>
                       <div style={{ display:"flex", gap:8, marginTop:8 }}>
