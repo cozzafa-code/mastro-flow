@@ -1104,7 +1104,7 @@ export default function CMDetailPanel() {
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
-              <div onClick={() => { if (selectedRilievo) { setSelectedRilievo(null); setCmSubTab("rilievi"); } else { setSelectedCM(null); } }} style={{
+              <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); setSelectedCM(null); }} style={{
                 width: 36, height: 36, borderRadius: 10,
                 background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.25)",
                 display: "flex", alignItems: "center", justifyContent: "center",
