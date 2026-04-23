@@ -1,539 +1,475 @@
 "use client";
 // @ts-nocheck
-// MASTRO ERP — AgendaPanel v4 — Restyled "Sistema Operativo"
+// MASTRO ERP - AgendaPanel v5 - Mastro Mente + calendario mese pieno + task
 import React from "react";
-import CentroControlloOggi from "./CentroControlloOggi";
 import { useMastro } from "./MastroContext";
-import { ICO, I } from "./mastro-constants";
 
-// ─── THEME ─────────────────────────────────────────────────────────
-const TH = {
-  bg: "#0D1F1F", bgPage: "#E4F2F2", card: "#FFFFFF", cardAlt: "#F5FBFB",
-  tealBright: "#5FD0D0", teal: "#28A0A0", tealDark: "#1A7A7A",
-  tealMuted: "#8FA8A8",
-  ink: "#0D1F1F", sub: "#5A7878", subLight: "#8FA8A8",
-  border: "rgba(40,160,160,0.08)", borderSolid: "#C8E4E4",
-  red: "#E24B4A", redBright: "#FF7B4D",
-  amber: "#F5A030", amberDeep: "#C97716",
-  green: "#8BC443", greenDeep: "#6A9A26", greenDark: "#1A9E73",
-  blu: "#3B7FE0", purple: "#7B6BA5",
+// === COLORI PER TIPO EVENTO (coerenti col resto dell'app) ===
+const FASE: any = {
+  sopralluogo: { bg: "#EEEDFE", fg: "#26215C", pill: "#3C3489", short: "Sopr." },
+  rilievo:     { bg: "#EEEDFE", fg: "#26215C", pill: "#3C3489", short: "Riliev." },
+  preventivo:  { bg: "#E1F5EE", fg: "#04342C", pill: "#0F6E56", short: "Prev." },
+  firma:       { bg: "#FAEEDA", fg: "#412402", pill: "#854F0B", short: "Firma" },
+  conferma:    { bg: "#FAEEDA", fg: "#412402", pill: "#854F0B", short: "Conf." },
+  ordini:      { bg: "#FAEEDA", fg: "#412402", pill: "#854F0B", short: "Ord." },
+  produzione:  { bg: "#B5D4F4", fg: "#042C53", pill: "#185FA5", short: "Prod." },
+  consegna:    { bg: "#EAF3DE", fg: "#173404", pill: "#3B6D11", short: "Cons." },
+  posa:        { bg: "#F4C0D1", fg: "#4B1528", pill: "#993556", short: "Mont." },
+  montaggio:   { bg: "#F4C0D1", fg: "#4B1528", pill: "#993556", short: "Mont." },
+  collaudo:    { bg: "#F4C0D1", fg: "#4B1528", pill: "#993556", short: "Coll." },
+  task:        { bg: "#FAEEDA", fg: "#412402", pill: "#854F0B", short: "Task" },
+  evento:      { bg: "#EEEDFE", fg: "#26215C", pill: "#3C3489", short: "Eve." },
+};
+const faseOf = (ev: any) => {
+  const t = (ev?.tipo || ev?.categoria || "evento").toString().toLowerCase();
+  return FASE[t] || FASE.evento;
 };
 
-// ─── TIPI EVENTO → colore/label ───────────────────────────────────
-const TIPO_CFG: Record<string, { label: string; bg: string; color: string }> = {
-  montaggio:   { label: "MONTAGGIO",   bg: "rgba(40,160,160,0.15)",  color: TH.tealDark },
-  sopralluogo: { label: "SOPRALLUOGO", bg: "rgba(59,127,224,0.15)",  color: TH.blu },
-  rilievo:     { label: "RILIEVO",     bg: "rgba(245,160,48,0.18)",  color: TH.amberDeep },
-  default:     { label: "EVENTO",      bg: "rgba(40,160,160,0.12)",  color: TH.teal },
-};
-const getTipoCfg = (ev: any) => {
-  if (ev._isMontaggio) return TIPO_CFG.montaggio;
-  const tipo = (ev.tipo || ev.type || "").toLowerCase();
-  return TIPO_CFG[tipo] || TIPO_CFG.default;
-};
-const getTipoColor = (ev: any) => {
-  if (ev._isMontaggio) return TH.teal;
-  if (ev._isScadenza) return ev._tipo === "incasso" ? TH.green : TH.amber;
-  const tipo = (ev.tipo || ev.type || "").toLowerCase();
-  if (tipo === "sopralluogo") return TH.blu;
-  if (tipo === "rilievo") return TH.amberDeep;
-  return ev.color || TH.teal;
+const PRIO: any = {
+  alta:  { bg: "#FCEBEB", fg: "#501313", pill: "#A32D2D", label: "ALTA" },
+  media: { bg: "#FFFFFF", fg: "#1A1A1A", pill: "#854F0B", pillBg: "#FAEEDA", pillFg: "#854F0B", label: "MEDIA" },
+  bassa: { bg: "#FFFFFF", fg: "#1A1A1A", pill: "#0F6E56", pillBg: "#E1F5EE", pillFg: "#0F6E56", label: "BASSA" },
 };
 
-// ─── HELPERS ──────────────────────────────────────────────────────
-const dateStr = (d: Date) => d.toISOString().split("T")[0];
-const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const GG = ["L","M","M","G","V","S","D"];
-const fixText = (s: string) => (s || "").replace(/â€"/g, "–").replace(/â€™/g, "'").replace(/â€œ/g, '"').replace(/â€/g, '"').replace(/Ã /g, "à").replace(/Ã©/g, "é").replace(/Ã¨/g, "è").replace(/Ã¬/g, "ì").replace(/Ã²/g, "ò").replace(/Ã¹/g, "ù");
+export default function AgendaPanel(props: any) {
+  const m: any = (() => { try { return useMastro(); } catch { return {}; } })();
+  const events: any[]   = props?.events   || m?.events   || [];
+  const tasks: any[]    = props?.tasks    || m?.tasks    || [];
+  const cantieri: any[] = props?.cantieri || m?.cantieri || m?.commesse || [];
+  const onNavigate = props?.onNavigate || m?.onNavigate || (() => {});
+  const setTab = m?.setTab || (() => {});
+  const setSelectedCM = m?.setSelectedCM || (() => {});
 
-// ─── SUB-COMPONENTS ──────────────────────────────────────────────
-const NavBtn = ({ onClick, children }: any) => (
-  <div onClick={onClick} style={{
-    width: 34, height: 34,
-    background: "linear-gradient(145deg, #FFF, #D8EEEE)",
-    borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer", flexShrink: 0,
-    boxShadow: "0 4px 10px rgba(0,0,0,0.15), 0 0 0 2px rgba(255,255,255,0.25)",
-  }}>{children}</div>
-);
-const NavBtnLight = ({ onClick, children }: any) => (
-  <div onClick={onClick} style={{
-    width: 34, height: 34,
-    background: "linear-gradient(145deg, #FFFFFF 0%, #F5FBFB 100%)",
-    borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-    cursor: "pointer", flexShrink: 0,
-    boxShadow: "0 4px 10px rgba(31,120,120,0.12), inset 0 1px 1px rgba(255,255,255,0.8)",
-    border: "1px solid rgba(200,228,228,0.5)",
-  }}>{children}</div>
-);
-const IcoChevL = ({ color = TH.teal }: any) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-);
-const IcoChevR = ({ color = TH.teal }: any) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-);
+  // === STATE ===
+  const [view, setView]   = React.useState<"giorno" | "settimana" | "mese" | "task">("mese");
+  const [calDate, setCalDate] = React.useState(() => new Date());
+  const [menteOpen, setMenteOpen] = React.useState(false);
+  const [filterTipo, setFilterTipo] = React.useState<string>("tutti");
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().split("T")[0];
 
-// ─── MAIN ────────────────────────────────────────────────────────
-export default function AgendaPanel() {
-  const {
-    agendaView, cantieri, deleteEvent, events, montaggiDB, fattureDB, fatturePassive,
-    ordiniFornDB, squadreDB, selDate, selectedEvent, tasks, setTasks,
-    setAgendaView, setSelDate, setSelectedCM, setSelectedEvent, setShowNewEvent, setTab,
-    setNewEvent, agendaFilters,
-  } = useMastro();
+  // === DATA BUCKETS ===
+  const allItems: any[] = React.useMemo(() => {
+    const out: any[] = [];
+    (events || []).forEach((e: any) => {
+      out.push({
+        id: "e-" + (e.id || Math.random()),
+        tipo: (e.tipo || "evento").toLowerCase(),
+        titolo: e.titolo || e.text || e.nome || "Evento",
+        codice: e.commessaCode || e.cm || e.codice || "",
+        data: e.data || e.date || "",
+        ora: e.ora || e.time || "",
+        durata: e.durata || "",
+        source: "event",
+        raw: e,
+      });
+    });
+    (tasks || []).forEach((t: any) => {
+      out.push({
+        id: "t-" + (t.id || Math.random()),
+        tipo: "task",
+        titolo: t.text || t.titolo || t.descrizione || "Task",
+        codice: t.cm || t.commessaCode || "",
+        data: t.data || t.date || "",
+        ora: t.ora || t.time || "",
+        priorita: (t.priority || t.priorita || "media").toLowerCase(),
+        done: !!t.done,
+        source: "task",
+        raw: t,
+      });
+    });
+    return out;
+  }, [events, tasks]);
 
-  const todayStr = dateStr(new Date());
-  const [agendaFilter, setAgendaFilter] = React.useState<"tutti"|"eventi"|"task">("tutti");
+  // Eventi per giorno (ISO date)
+  const byDay = React.useMemo(() => {
+    const map: Record<string, any[]> = {};
+    allItems.forEach(it => {
+      if (!it.data) return;
+      (map[it.data] = map[it.data] || []).push(it);
+    });
+    Object.keys(map).forEach(k => {
+      map[k].sort((a,b) => (a.ora || "99").localeCompare(b.ora || "99"));
+    });
+    return map;
+  }, [allItems]);
 
-  const montaggiItems = (montaggiDB || []).filter(m => m.data).map(m => {
-    const sq = (squadreDB || []).find(s => s.id === m.squadraId);
-    return { id: "mag_" + m.id, date: m.data, time: m.orario || "08:00", text: (m.cliente || "Montaggio"), persona: m.cliente || "", cm: m.cmCode || "", color: TH.teal, durata: (m.giorni || 1) * 480, _isMontaggio: true, _stato: m.stato, _squadra: sq, _vani: m.vani || 0 };
-  });
-  const scadenzeItems = [
-    ...(fattureDB || []).filter(f => !f.pagata && f.scadenza).map(f => ({ id: "scad_e_" + f.id, date: f.scadenza, time: "", text: "Incasso " + f.cliente, persona: f.cliente, cm: f.cmCode || "", color: TH.green, _isScadenza: true, _importo: f.importo, _tipo: "incasso" })),
-    ...(fatturePassive || []).filter(f => !f.pagata && f.scadenza).map(f => ({ id: "scad_p_" + f.id, date: f.scadenza, time: "", text: "Pagamento " + (typeof f.fornitore === "object" ? f.fornitore?.nome : f.fornitore || ""), color: TH.amber, _isScadenza: true, _importo: f.importo || 0, _tipo: "pagamento" })),
-  ];
-  const taskItems = (tasks || []).filter((t: any) => t.date).map((t: any) => ({
-    id: "task_" + t.id,
-    date: t.date,
-    time: t.time || "",
-    text: t.text || "Task",
-    persona: t.persona || "",
-    cm: t.cm || "",
-    color: TH.amber,
-    _isTask: true,
-    _done: t.done,
-    _priority: t.priority,
-    _meta: t.meta,
-    _rawTask: t,
-  }));
+  // Task oggi
+  const tasksOggi = React.useMemo(() => {
+    return allItems.filter(i => i.source === "task" && (i.data === todayStr || !i.data));
+  }, [allItems, todayStr]);
 
-  // Toggle filtro: tutti / eventi / task
-  const allItemsFull = [...events, ...montaggiItems, ...scadenzeItems, ...taskItems];
-  const allItems = agendaFilter === "task"
-    ? taskItems
-    : agendaFilter === "eventi"
-    ? [...events, ...montaggiItems, ...scadenzeItems]
-    : allItemsFull;
-  const eventsOn = (d: Date) => allItems.filter(e => e.date === dateStr(d));
-  const dayEvents = allItems.filter(e => e.date === dateStr(selDate)).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
+  const nEvents = allItems.filter(i => i.source === "event").length;
+  const nTasks  = allItems.filter(i => i.source === "task").length;
+  const scaduti = allItems.filter(i => i.source === "task" && i.data && i.data < todayStr && !i.done).length;
 
-  const navDate = (dir: number) => {
-    const d = new Date(selDate);
-    if (agendaView === "giorno") d.setDate(d.getDate() + dir);
-    else if (agendaView === "settimana") d.setDate(d.getDate() + dir * 7);
-    else d.setMonth(d.getMonth() + dir);
-    setSelDate(d);
+  // MASTRO MENTE (alert mock - in attesa di logica reale)
+  const menteAlerts: any[] = React.useMemo(() => {
+    // Reale: qui andranno algoritmi meteo/conflitti/materiali.
+    const out: any[] = [];
+    // Esempio 1: evento montaggio prossimo giorno con tipo produzione non ancora completa
+    out.push({ tipo: "danger", icon: "warning", title: "Ven 24 pioggia forte", sub: "Sposta montaggi esterni" });
+    out.push({ tipo: "warning", icon: "clock", title: "Marco impegnato giovedì 30", sub: "Scegli Luigi?" });
+    out.push({ tipo: "success", icon: "spark", title: "Slot ottimale prossimo montaggio", sub: "Martedì 28 · sole · squadra libera" });
+    return out;
+  }, []);
+  const menteColor: any = {
+    danger:  { bg: "#FCEBEB", fg: "#501313", sub: "#A32D2D", iconBg: "rgba(255,255,255,0.6)" },
+    warning: { bg: "#FAEEDA", fg: "#412402", sub: "#854F0B", iconBg: "rgba(255,255,255,0.6)" },
+    success: { bg: "#E1F5EE", fg: "#04342C", sub: "#0F6E56", iconBg: "rgba(255,255,255,0.7)" },
+  };
+  const MenteIcon = ({ name, color }: any) => {
+    if (name === "warning")
+      return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+    if (name === "clock")
+      return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>;
+    return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.5}><path d="M12 2 2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>;
   };
 
-  const weekStart = new Date(selDate);
-  const dow = weekStart.getDay();
-  weekStart.setDate(weekStart.getDate() - (dow === 0 ? 6 : dow - 1));
-  const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(d.getDate() + i); return d; });
-  const weekGrouped = weekDays.map(d => ({ d, evts: eventsOn(d) })).filter(g => g.evts.length > 0);
+  // === CALENDARIO MESE ===
+  const calMonth = calDate.getMonth();
+  const calYear = calDate.getFullYear();
+  const monthLabel = calDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+  const monthDays: Date[] = React.useMemo(() => {
+    const first = new Date(calYear, calMonth, 1);
+    const startDay = first.getDay() === 0 ? 6 : first.getDay() - 1; // lunedì = 0
+    const days: Date[] = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(calYear, calMonth, 1 - startDay + i);
+      days.push(d);
+    }
+    return days;
+  }, [calYear, calMonth]);
 
-  const monthStart = new Date(selDate.getFullYear(), selDate.getMonth(), 1);
-  const firstDow = monthStart.getDay() === 0 ? 6 : monthStart.getDay() - 1;
-  const daysInMonth = new Date(selDate.getFullYear(), selDate.getMonth() + 1, 0).getDate();
-  const calCells = Array.from({ length: firstDow + daysInMonth }, (_, i) => {
-    if (i < firstDow) return null;
-    return new Date(selDate.getFullYear(), selDate.getMonth(), i - firstDow + 1);
-  });
-  const prossimi = allItems.filter(e => e.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date) || (a.time || "99").localeCompare(b.time || "99")).slice(0, 3);
+  const navMese = (delta: number) => setCalDate(prev => { const d = new Date(prev); d.setMonth(d.getMonth() + delta); return d; });
 
-  // ── RENDER EVENT CARD ──
-  const renderEventCard = (ev: any) => {
-    const cfg = getTipoCfg(ev);
-    const clr = getTipoColor(ev);
-    const montSq = ev._isMontaggio && ev._squadra;
+  const openDay = (dIso: string) => {
+    setView("giorno");
+    setCalDate(new Date(dIso));
+  };
+
+  // === STRIP GIORNI (settimana corrente) ===
+  const weekStrip: Date[] = React.useMemo(() => {
+    const d = new Date(today);
+    const day = d.getDay() === 0 ? 6 : d.getDay() - 1;
+    d.setDate(d.getDate() - day);
+    return Array.from({ length: 7 }, (_, i) => { const x = new Date(d); x.setDate(x.getDate() + i); return x; });
+  }, [today]);
+
+  // === RENDER ===
+
+  const iso = (d: Date) => d.toISOString().split("T")[0];
+
+  const renderCell = (d: Date) => {
+    const sameMonth = d.getMonth() === calMonth;
+    const isToday = iso(d) === todayStr;
+    const isSun = d.getDay() === 0;
+    const items = byDay[iso(d)] || [];
+    const visibile = items.slice(0, 3);
+    const nascosti = items.length - visibile.length;
+
+    if (items.length === 0) {
+      return (
+        <div key={iso(d)} onClick={() => openDay(iso(d))} style={{ minHeight: 82, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: !sameMonth ? "#DDD" : (isSun ? "#E24B4A" : "#1A1A1A"), fontWeight: isToday ? 800 : 400, opacity: !sameMonth ? 0.5 : 1, cursor: "pointer" }}>
+          {d.getDate()}
+        </div>
+      );
+    }
+
+    const bgCell = isToday ? "#28A0A0" : FASE[items[0].tipo]?.bg || "#EEEDFE";
+    const txtDay = isToday ? "#FFFFFF" : FASE[items[0].tipo]?.fg || "#1A1A1A";
+
     return (
-      <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}
-        style={{
-          background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
-          borderRadius: 16, padding: "13px 15px",
-          boxShadow: "0 6px 18px rgba(31,120,120,0.1)",
-          border: "1px solid rgba(200,228,228,0.5)",
-          cursor: "pointer", marginBottom: 10,
-        }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: montSq ? 8 : 0 }}>
-          <div style={{ flex: 1 }}>
-            <span style={{ display: "inline-block", background: cfg.bg, borderRadius: 6, padding: "2px 8px", marginBottom: 6 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
-            </span>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: TH.ink }}>{fixText(ev.text)}</p>
-            <p style={{ margin: "2px 0 0", fontSize: 11, color: TH.sub }}>{fixText(ev.persona)}{ev.cm ? " · " + ev.cm : ""}{ev.time ? " · " + ev.time : ""}</p>
-          </div>
-          {ev._isMontaggio && ev.durata && (
-            <div style={{ background: TH.teal, borderRadius: 8, padding: "4px 8px", flexShrink: 0, marginLeft: 8 }}>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#fff" }}>{Math.round(ev.durata / 60)}h</p>
+      <div key={iso(d)} onClick={() => openDay(iso(d))} style={{ background: bgCell, borderRadius: 8, padding: 4, minHeight: 82, display: "flex", flexDirection: "column", gap: 2, color: txtDay, boxShadow: isToday ? "0 2px 8px rgba(40,160,160,0.3)" : "none", cursor: "pointer", opacity: !sameMonth ? 0.5 : 1 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: isToday ? 13 : 12, fontWeight: isToday ? 800 : 700, lineHeight: 1 }}>{d.getDate()}</div>
+          {isToday && <div style={{ background: "rgba(255,255,255,0.25)", borderRadius: 3, padding: "1px 4px", fontSize: 6, fontWeight: 700 }}>OGGI</div>}
+        </div>
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+          {visibile.map((it: any, idx: number) => {
+            const f = FASE[it.tipo] || FASE.evento;
+            const box = isToday ? f.bg : "#FFFFFF";
+            const txt = isToday ? f.fg : "#1A1A1A";
+            const sub = isToday ? f.pill : "#666";
+            return (
+              <div key={it.id || idx} style={{ background: box, borderRadius: 4, padding: "2px 3px" }}>
+                <div style={{ fontSize: 7, fontWeight: 700, lineHeight: 1.1, color: txt }}>{(it.ora || "").slice(0, 5)} {f.short}</div>
+                {it.codice && <div style={{ fontSize: 6, fontWeight: 600, lineHeight: 1.1, opacity: 0.85, color: sub }}>{it.codice}</div>}
+              </div>
+            );
+          })}
+          {nascosti > 0 && (
+            <div style={{ background: isToday ? "rgba(255,255,255,0.25)" : "#3C3489", borderRadius: 4, padding: "2px 3px", textAlign: "center" }}>
+              <div style={{ fontSize: 7, fontWeight: 700, color: "#FFF" }}>+{nascosti} altri</div>
             </div>
           )}
         </div>
-        {montSq && (
-          <div style={{ background: "#F7F7F5", borderRadius: 10, padding: "8px 10px", marginTop: 4 }}>
-            <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 700, color: TH.sub, letterSpacing: "0.5px" }}>SQUADRA</p>
-            <div style={{ display: "flex", flexDirection: "column" as any, gap: 5 }}>
-              {(montSq.membri || []).slice(0, 3).map((m: any, mi: number) => (
-                <div key={mi} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 7, background: mi === 0 ? TH.teal : TH.blu, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                    {(m.nome || "?").slice(0, 2).toUpperCase()}
-                  </div>
-                  <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: TH.ink }}>{m.nome}</p>
-                  <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, color: mi === 0 ? TH.green : TH.sub, background: mi === 0 ? TH.greenLight : "#F0EFEC", padding: "2px 6px", borderRadius: 4 }}>
-                    {mi === 0 ? "Capo" : "Aiuto"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {ev._isScadenza && (
-          <p style={{ margin: "4px 0 0", fontSize: 11, color: TH.sub }}>{ev._tipo === "incasso" ? "Da incassare" : "Da pagare"}: <b style={{ color: clr }}>€{(ev._importo || 0).toLocaleString("it-IT")}</b></p>
-        )}
       </div>
     );
   };
 
-  // ── VISTA MESE ──
-  const renderMese = () => (
-    <div style={{ display: "flex", flexDirection: "column" as any, gap: 12 }}>
-      <div style={{ background: TH.card, borderRadius: 16, padding: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <NavBtnLight onClick={() => navDate(-1)}><IcoChevL /></NavBtnLight>
-          <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TH.ink }}>{MESI[selDate.getMonth()]} {selDate.getFullYear()}</p>
-          <NavBtnLight onClick={() => navDate(1)}><IcoChevR /></NavBtnLight>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", marginBottom: 4 }}>
-          {GG.map((g, i) => <p key={i} style={{ margin: 0, textAlign: "center", fontSize: 10, fontWeight: 600, color: i === 6 ? "rgba(226,75,74,.6)" : TH.sub }}>{g}</p>)}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
-          {calCells.map((d, i) => {
-            if (!d) return <div key={i} />;
-            const iso = dateStr(d);
-            const isToday = iso === todayStr;
-            const isSel = iso === dateStr(selDate);
-            const evts = eventsOn(d);
-            const isSun = d.getDay() === 0;
-            return (
-              <div key={i} onClick={() => { setSelDate(new Date(d)); setAgendaView("giorno"); }}
-                style={{ padding: 3, textAlign: "center", borderRadius: 8, cursor: "pointer",
-                  background: isToday ? TH.teal : isSel ? "rgba(40,160,160,.08)" : "transparent",
-                  border: isSel && !isToday ? "0.5px solid rgba(40,160,160,.2)" : "none" }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: isToday || evts.length > 0 ? 600 : 400, lineHeight: "1.5", color: isToday ? "#fff" : isSun ? "rgba(226,75,74,.5)" : TH.ink }}>{d.getDate()}</p>
-                {evts.length > 0 && (
-                  <div style={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                    {evts.slice(0, 3).map((ev, ei) => {
-                      const c = ev._isMontaggio ? TH.teal : ((ev.tipo || "").toLowerCase() === "sopralluogo" ? TH.blu : TH.amber);
-                      return <span key={ei} style={{ width: 4, height: 4, borderRadius: "50%", background: isToday ? "#fff" : c, display: "inline-block" }} />;
-                    })}
-                  </div>
-                )}
+  return (
+    <div style={{ background: "#F4F1EA", minHeight: "100vh", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", paddingBottom: 100 }}>
+
+      {/* HEADER TEAL CAPSULA */}
+      <div style={{ padding: "12px 10px 0" }}>
+        <div style={{ background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)", padding: "14px 16px", borderRadius: 22, boxShadow: "0 4px 16px rgba(40,160,160,0.18)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+            <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 500, letterSpacing: 0.5 }}>PIANIFICAZIONE</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 10, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
               </div>
-            );
-          })}
-        </div>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 10 }}>
-          {[{ c: TH.teal, l: "Montaggio" }, { c: TH.blu, l: "Sopralluogo" }, { c: TH.amber, l: "Rilievo" }].map((item, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: item.c, display: "inline-block" }} />
-              <span style={{ fontSize: 10, color: TH.sub, fontWeight: 500 }}>{item.l}</span>
             </div>
-          ))}
+          </div>
+          <div style={{ color: "#FFFFFF", fontSize: 24, fontWeight: 600, letterSpacing: -0.3 }}>Agenda</div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+            <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500 }}>{nEvents} eventi</div>
+            <div style={{ color: "rgba(255,255,255,0.6)" }}>·</div>
+            <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500 }}>{nTasks} task</div>
+            {scaduti > 0 && (<>
+              <div style={{ color: "rgba(255,255,255,0.6)" }}>·</div>
+              <div style={{ background: "#FF7B4D", color: "#FFF", fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 8 }}>{scaduti} SCADUTI</div>
+            </>)}
+          </div>
+          {/* VIEW SWITCHER */}
+          <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: 3 }}>
+            {(["giorno","settimana","mese","task"] as const).map(v => (
+              <div key={v} onClick={() => setView(v)} style={{ flex: 1, textAlign: "center", padding: 7, borderRadius: 10, fontSize: 11, fontWeight: view === v ? 700 : 500, background: view === v ? "#FFFFFF" : "transparent", color: view === v ? "#28A0A0" : "rgba(255,255,255,0.85)", cursor: "pointer", textTransform: "capitalize" }}>{v}</div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <p style={{ margin: "18px 4px 10px", fontSize: 11, fontWeight: 900, color: TH.ink, letterSpacing: "1px", textTransform: "uppercase" as any }}>Prossimi eventi</p>
-      {prossimi.length === 0 ? (
-        <p style={{ margin: 0, fontSize: 12, color: TH.sub, textAlign: "center", padding: 16 }}>Nessun evento in programma</p>
-      ) : prossimi.map(ev => {
-        const cfg = getTipoCfg(ev);
-        const clr = getTipoColor(ev);
-        return (
-          <div key={ev.id} onClick={() => setSelectedEvent(ev)}
-            style={{
-              background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
-              borderRadius: 16, padding: "14px 16px",
-              boxShadow: "0 6px 18px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
-              border: "1px solid rgba(200,228,228,0.5)",
-              cursor: "pointer", marginBottom: 10,
-            }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={clr} strokeWidth="2" strokeLinecap="round">
-                  {ev._isMontaggio ? <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/> : <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}
-                </svg>
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: TH.ink }}>{ev.text}</p>
-                <p style={{ margin: "2px 0 0", fontSize: 11, color: TH.sub }}>{ev.persona}{ev.cm ? " · " + ev.cm : ""}{ev.date ? " · " + new Date(ev.date + "T00:00:00").toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" }) : ""}{ev.time ? " · " + ev.time : ""}</p>
-              </div>
-              <span style={{ fontSize: 14, color: TH.sub }}>›</span>
-            </div>
+      {/* CTA NUOVO EVENTO / TASK */}
+      <div style={{ padding: "10px 12px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        <div onClick={() => onNavigate?.("nuovo-evento")} style={{ background: "#B5B0E8", borderRadius: 14, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+          <div style={{ width: 28, height: 28, borderRadius: 10, background: "rgba(255,255,255,0.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#26215C" strokeWidth={2.5}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
           </div>
-        );
-      })}
-    </div>
-  );
-
-  // ── VISTA SETTIMANA ──
-  const renderSettimana = () => {
-    const wLabel = `${weekDays[0].getDate()} ${MESI[weekDays[0].getMonth()].slice(0,3)} – ${weekDays[6].getDate()} ${MESI[weekDays[6].getMonth()].slice(0,3)} ${weekDays[6].getFullYear()}`;
-    return (
-      <div style={{ display: "flex", flexDirection: "column" as any, gap: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <NavBtnLight onClick={() => navDate(-1)}><IcoChevL /></NavBtnLight>
-          <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: TH.ink }}>{wLabel}</p>
-          <NavBtnLight onClick={() => navDate(1)}><IcoChevR /></NavBtnLight>
+          <div>
+            <div style={{ fontSize: 11, color: "#26215C", fontWeight: 700 }}>Nuovo evento</div>
+            <div style={{ fontSize: 9, color: "#3C3489", opacity: 0.8 }}>Appuntamento</div>
+          </div>
         </div>
-        <div style={{ background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)", borderRadius: 18, padding: "16px 14px", boxShadow: "0 6px 20px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)", border: "1px solid rgba(200,228,228,0.5)" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
-            {weekDays.map((d, i) => {
-              const iso = dateStr(d);
-              const isToday = iso === todayStr;
-              const isSel = iso === dateStr(selDate);
-              const evts = eventsOn(d);
-              const isSun = d.getDay() === 0;
+        <div onClick={() => onNavigate?.("nuovo-task")} style={{ background: "#FAC775", borderRadius: 14, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+          <div style={{ width: 28, height: 28, borderRadius: 10, background: "rgba(255,255,255,0.55)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#412402" strokeWidth={2.5}><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: "#412402", fontWeight: 700 }}>Nuovo task</div>
+            <div style={{ fontSize: 9, color: "#854F0B", opacity: 0.85 }}>Cose da fare</div>
+          </div>
+        </div>
+      </div>
+
+      {/* MASTRO MENTE (accordion) */}
+      <div style={{ padding: "10px 12px 0" }}>
+        <div onClick={() => setMenteOpen(!menteOpen)} style={{ background: "linear-gradient(135deg, #0D1F1F 0%, #1A3838 100%)", padding: "11px 13px", borderRadius: menteOpen ? "14px 14px 0 0" : 14, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #42D0DC, #28A0A0)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5}><path d="M12 2 2 7l10 5 10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, color: "#28A0A0", fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase" }}>MASTRO MENTE</div>
+            <div style={{ fontSize: 12, color: "#FFF", fontWeight: 600, marginTop: 1 }}>{menteAlerts.filter(a => a.tipo !== "success").length} alert · {menteAlerts.filter(a => a.tipo === "success").length} suggerimenti</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={2.5} style={{ transform: menteOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}><path d="m6 9 6 6 6-6" /></svg>
+        </div>
+        {menteOpen && (
+          <div style={{ background: "rgba(13,31,31,0.04)", borderLeft: "3px solid #28A0A0", borderRight: "3px solid #28A0A0", borderBottom: "3px solid #28A0A0", borderRadius: "0 0 14px 14px", padding: 8 }}>
+            {menteAlerts.map((a: any, i: number) => {
+              const c = menteColor[a.tipo];
               return (
-                <div key={i} onClick={() => setSelDate(new Date(d))} style={{ display: "flex", flexDirection: "column" as any, alignItems: "center", gap: 4, cursor: "pointer" }}>
-                  <p style={{ margin: 0, fontSize: 10, fontWeight: 500, color: isToday ? TH.teal : isSun ? "rgba(226,75,74,.5)" : TH.sub }}>{GG[i]}</p>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: isToday ? TH.teal : "transparent", border: isSel && !isToday ? `0.5px solid ${TH.teal}` : "none", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: 0, fontSize: 13, fontWeight: isToday ? 700 : 500, color: isToday ? "#fff" : isSun ? "rgba(226,75,74,.5)" : TH.ink }}>{d.getDate()}</p>
+                <div key={i} style={{ background: c.bg, borderRadius: 10, padding: "10px 12px", marginBottom: i < menteAlerts.length - 1 ? 5 : 0, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 8, background: c.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <MenteIcon name={a.icon} color={c.sub} />
                   </div>
-                  {evts.length > 0 ? (
-                    <div style={{ display: "flex", gap: 2 }}>
-                      {evts.slice(0, 2).map((ev, ei) => {
-                        const c = ev._isTask ? TH.amber : ev._isMontaggio ? TH.teal : ((ev.tipo || "").toLowerCase() === "sopralluogo" ? TH.blu : TH.tealBright);
-                        return <span key={ei} style={{ width: 4, height: 4, borderRadius: "50%", background: c, display: "inline-block" }} />;
-                      })}
-                    </div>
-                  ) : <div style={{ height: 4 }} />}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, color: c.fg, fontWeight: 700 }}>{a.title}</div>
+                    <div style={{ fontSize: 10, color: c.sub, marginTop: 1 }}>{a.sub}</div>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={c.sub} strokeWidth={2.5}><path d="m9 18 6-6-6-6" /></svg>
                 </div>
               );
             })}
           </div>
-        </div>
-        {weekGrouped.length === 0 ? (
-          <p style={{ margin: 0, fontSize: 12, color: TH.sub, textAlign: "center", padding: 16 }}>Nessun evento questa settimana</p>
-        ) : weekGrouped.map(({ d, evts }) => {
-          const iso = dateStr(d);
-          const isToday = iso === todayStr;
-          const label = d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
-          return (
-            <div key={iso}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: isToday ? TH.teal : TH.sub }} />
-                <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: isToday ? TH.teal : TH.ink }}>
-                  {label.charAt(0).toUpperCase() + label.slice(1)}{isToday ? " · oggi" : ""}
-                </p>
+        )}
+      </div>
+
+      {/* STRIP GIORNI */}
+      <div style={{ padding: "10px 12px 0" }}>
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+          {weekStrip.map((d, i) => {
+            const isTod = iso(d) === todayStr;
+            const isSun = d.getDay() === 0;
+            const items = byDay[iso(d)] || [];
+            return (
+              <div key={i} onClick={() => openDay(iso(d))} style={{ background: isTod ? "#28A0A0" : "#FFFFFF", border: isTod ? "none" : "1px solid #F0EDE5", borderRadius: 14, padding: "8px 10px", textAlign: "center", minWidth: 48, flexShrink: 0, boxShadow: isTod ? "0 4px 12px rgba(40,160,160,0.3)" : "none", cursor: "pointer" }}>
+                <div style={{ fontSize: 9, color: isTod ? "rgba(255,255,255,0.85)" : (isSun ? "#E24B4A" : "#888"), fontWeight: isTod ? 700 : 600, textTransform: "uppercase" }}>{isTod ? "OGGI" : d.toLocaleDateString("it-IT", { weekday: "short" }).slice(0, 3)}</div>
+                <div style={{ fontSize: 16, color: isTod ? "#FFF" : (isSun ? "#E24B4A" : "#1A1A1A"), fontWeight: isTod ? 700 : 600, marginTop: 1 }}>{d.getDate()}</div>
+                {items.length > 0 && !isTod && (
+                  <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 3 }}>
+                    {items.slice(0, 3).map((it: any, k: number) => (
+                      <div key={k} style={{ width: 3, height: 3, background: (FASE[it.tipo] || FASE.evento).pill, borderRadius: 50 }} />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div style={{ display: "flex", flexDirection: "column" as any, gap: 8 }}>
-                {evts.map(ev => renderEventCard(ev))}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* FILTRI CHIPS */}
+      <div style={{ padding: "10px 12px 0", display: "flex", gap: 6, overflowX: "auto" }}>
+        {([
+          { id: "tutti", label: `Tutti · ${allItems.length}`, bg: "#0D1F1F", fg: "#FFF" },
+          { id: "sopralluogo", label: "Sopralluogo", bg: "#EEEDFE", fg: "#3C3489" },
+          { id: "montaggio", label: "Montaggio", bg: "#F4C0D1", fg: "#4B1528" },
+          { id: "task", label: "Task", bg: "#FAEEDA", fg: "#412402" },
+          { id: "consegna", label: "Consegna", bg: "#EAF3DE", fg: "#173404" },
+        ]).map(c => (
+          <div key={c.id} onClick={() => setFilterTipo(c.id)} style={{ background: filterTipo === c.id ? c.bg : "#FFFFFF", color: filterTipo === c.id ? c.fg : "#666", border: filterTipo === c.id ? "none" : "1px solid #F0EDE5", padding: "6px 11px", borderRadius: 14, fontSize: 10, fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer" }}>{c.label}</div>
+        ))}
+      </div>
+
+      {/* === VIEW MESE === */}
+      {view === "mese" && (
+        <>
+          <div style={{ padding: "12px 14px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div onClick={() => navMese(-1)} style={{ cursor: "pointer" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth={2.5}><path d="m15 18-6-6 6-6" /></svg>
+              </div>
+              <div style={{ fontSize: 16, color: "#1A1A1A", fontWeight: 600, textTransform: "capitalize" }}>{monthLabel}</div>
+              <div onClick={() => navMese(1)} style={{ cursor: "pointer" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" strokeWidth={2.5}><path d="m9 18 6-6-6-6" /></svg>
               </div>
             </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // ── VISTA GIORNO ──
-  const renderGiorno = () => {
-    const dayLabel = selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" });
-    return (
-      <div style={{ display: "flex", flexDirection: "column" as any, gap: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <NavBtnLight onClick={() => navDate(-1)}><IcoChevL /></NavBtnLight>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: TH.ink }}>{dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}</p>
+            <div onClick={() => setCalDate(new Date())} style={{ fontSize: 10, color: "#28A0A0", fontWeight: 600, cursor: "pointer" }}>Oggi</div>
           </div>
-          <NavBtnLight onClick={() => navDate(1)}><IcoChevR /></NavBtnLight>
-        </div>
-        <div style={{ background: TH.card, borderRadius: 16, padding: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-          {dayEvents.length === 0 ? (
-            <p style={{ margin: 0, fontSize: 12, color: TH.sub, textAlign: "center", padding: "12px 0" }}>Nessun evento oggi</p>
-          ) : dayEvents.map((ev, idx) => {
-            const clr = getTipoColor(ev);
-            const isLast = idx === dayEvents.length - 1;
+
+          <div style={{ padding: "0 12px" }}>
+            <div style={{ background: "#FFFFFF", borderRadius: 14, padding: 12, border: "1px solid #F0EDE5" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3, marginBottom: 6, background: "#F4F1EA", borderRadius: 8, padding: "6px 3px" }}>
+                {["L","M","M","G","V","S","D"].map((d, i) => (
+                  <div key={i} style={{ textAlign: "center", fontSize: 10, color: i === 6 ? "#E24B4A" : "#1A1A1A", fontWeight: 700 }}>{d}</div>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4 }}>
+                {monthDays.map(d => renderCell(d))}
+              </div>
+            </div>
+          </div>
+
+          {/* TASK OGGI sotto al calendario */}
+          <div style={{ padding: "14px 14px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 16, color: "#1A1A1A", fontWeight: 600 }}>Task oggi</div>
+              <div style={{ fontSize: 11, color: "#888", marginTop: 1 }}>{tasksOggi.filter(t => !t.done).length} da fare · {tasksOggi.filter(t => t.done).length} completate</div>
+            </div>
+            <div style={{ background: "#FAEEDA", color: "#854F0B", padding: "5px 10px", borderRadius: 10, fontSize: 10, fontWeight: 700 }}>{tasksOggi.filter(t => t.done).length}/{tasksOggi.length}</div>
+          </div>
+          <div style={{ padding: "0 12px" }}>
+            {tasksOggi.length === 0 && <div style={{ background: "#FFFFFF", border: "1px dashed #E0DCD0", borderRadius: 14, padding: 14, textAlign: "center", fontSize: 11, color: "#888" }}>Nessun task oggi</div>}
+            {tasksOggi.map((t: any) => {
+              const p = PRIO[t.priorita] || PRIO.media;
+              return (
+                <div key={t.id} style={{ background: t.done ? "#EAF3DE" : (p.bg || "#FFFFFF"), borderRadius: 14, padding: "10px 12px", marginBottom: 5, display: "flex", alignItems: "center", gap: 10, border: t.done ? "none" : (t.priorita === "alta" ? "none" : "1px solid #F0EDE5"), opacity: t.done ? 0.75 : 1 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 5, border: t.done ? "none" : `2px solid ${t.priorita === "alta" ? "#A32D2D" : "#CCC"}`, background: t.done ? "#3B6D11" : "#FFFFFF", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {t.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={3}><path d="M20 6L9 17l-5-5" /></svg>}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: t.done ? "#173404" : (p.fg || "#1A1A1A"), fontWeight: 600, textDecoration: t.done ? "line-through" : "none" }}>{t.titolo}</div>
+                    {t.codice && <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{t.codice}</div>}
+                  </div>
+                  {!t.done && (
+                    <div style={{ background: p.priorita === "media" ? "#FAEEDA" : (p.priorita === "bassa" ? "#E1F5EE" : "#A32D2D"), color: t.priorita === "alta" ? "#FFF" : (p.pillFg || p.pill), fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 6 }}>{p.label}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* === VIEW GIORNO === */}
+      {view === "giorno" && (
+        <div style={{ padding: "14px 12px" }}>
+          <div style={{ fontSize: 18, color: "#1A1A1A", fontWeight: 600, textTransform: "capitalize", padding: "0 2px 10px" }}>{calDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}</div>
+          {(byDay[iso(calDate)] || []).length === 0 && <div style={{ background: "#FFFFFF", border: "1px dashed #E0DCD0", borderRadius: 14, padding: 20, textAlign: "center", fontSize: 12, color: "#888" }}>Nessun evento questo giorno</div>}
+          {(byDay[iso(calDate)] || []).map((it: any) => {
+            const f = FASE[it.tipo] || FASE.evento;
             return (
-              <div key={ev.id} style={{ display: "flex", gap: 10, marginBottom: isLast ? 0 : 14, paddingBottom: isLast ? 0 : 14, borderBottom: isLast ? "none" : `0.5px solid ${TH.border}` }}>
-                <div style={{ display: "flex", flexDirection: "column" as any, alignItems: "center", flexShrink: 0 }}>
-                  <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: TH.sub, width: 38, textAlign: "center" }}>{ev.time || "—"}</p>
-                  <div style={{ width: 2, flex: 1, background: clr, borderRadius: 2, margin: "4px 0", minHeight: ev._isMontaggio ? 70 : 44, opacity: 0.4 }} />
+              <div key={it.id} style={{ background: f.bg, borderRadius: 14, padding: "12px 14px", marginBottom: 6, display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ minWidth: 40, textAlign: "center" }}>
+                  <div style={{ fontSize: 9, color: f.pill, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>{calDate.toLocaleDateString("it-IT", { weekday: "short" }).slice(0, 3)}</div>
+                  <div style={{ fontSize: 26, color: f.fg, fontWeight: 700, lineHeight: 1, marginTop: 1 }}>{calDate.getDate()}</div>
+                </div>
+                <div style={{ flex: 1, borderLeft: `1px solid ${f.pill}33`, paddingLeft: 14 }}>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: 13, color: f.fg, fontWeight: 600 }}>{it.titolo}</div>
+                    <div style={{ fontSize: 11, color: f.pill, fontWeight: 600 }}>{it.ora || ""}</div>
+                  </div>
+                  <div style={{ fontSize: 11, color: f.pill, marginTop: 3, opacity: 0.85 }}>{it.codice}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* === VIEW SETTIMANA === */}
+      {view === "settimana" && (
+        <div style={{ padding: "14px 12px" }}>
+          {weekStrip.map(d => {
+            const items = byDay[iso(d)] || [];
+            const isTod = iso(d) === todayStr;
+            return (
+              <div key={iso(d)} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 13, color: isTod ? "#28A0A0" : "#1A1A1A", fontWeight: 700, marginBottom: 6, padding: "0 2px", textTransform: "capitalize" }}>{d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "short" })}{isTod && " · OGGI"}</div>
+                {items.length === 0 && <div style={{ fontSize: 11, color: "#BBB", padding: "6px 2px" }}>—</div>}
+                {items.map((it: any) => {
+                  const f = FASE[it.tipo] || FASE.evento;
+                  return (
+                    <div key={it.id} style={{ background: f.bg, borderRadius: 12, padding: "10px 12px", marginBottom: 5, display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ fontSize: 11, color: f.pill, fontWeight: 700, minWidth: 42 }}>{(it.ora || "").slice(0, 5)}</div>
+                      <div style={{ flex: 1, fontSize: 12, color: f.fg, fontWeight: 600 }}>{it.titolo}</div>
+                      {it.codice && <div style={{ fontSize: 10, color: f.pill, fontWeight: 600 }}>{it.codice}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* === VIEW TASK === */}
+      {view === "task" && (
+        <div style={{ padding: "14px 12px" }}>
+          {allItems.filter(i => i.source === "task").length === 0 && <div style={{ background: "#FFFFFF", border: "1px dashed #E0DCD0", borderRadius: 14, padding: 20, textAlign: "center", fontSize: 12, color: "#888" }}>Nessun task</div>}
+          {allItems.filter(i => i.source === "task").map((t: any) => {
+            const p = PRIO[t.priorita] || PRIO.media;
+            const scaduto = t.data && t.data < todayStr && !t.done;
+            return (
+              <div key={t.id} style={{ background: t.done ? "#EAF3DE" : (scaduto ? "#FCEBEB" : "#FFFFFF"), borderRadius: 14, padding: "10px 12px", marginBottom: 5, display: "flex", alignItems: "center", gap: 10, border: t.done || scaduto ? "none" : "1px solid #F0EDE5", opacity: t.done ? 0.75 : 1 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: t.done ? "none" : `2px solid ${scaduto ? "#A32D2D" : "#CCC"}`, background: t.done ? "#3B6D11" : "#FFFFFF", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {t.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth={3}><path d="M20 6L9 17l-5-5" /></svg>}
                 </div>
                 <div style={{ flex: 1 }}>
-                  {renderEventCard(ev)}
+                  <div style={{ fontSize: 12, color: t.done ? "#173404" : (scaduto ? "#501313" : "#1A1A1A"), fontWeight: 600, textDecoration: t.done ? "line-through" : "none" }}>{t.titolo}</div>
+                  <div style={{ fontSize: 10, color: scaduto ? "#A32D2D" : "#666", marginTop: 2, fontWeight: scaduto ? 600 : 400 }}>
+                    {scaduto ? "Scaduto · " : ""}{t.data || "senza data"}{t.codice ? " · " + t.codice : ""}
+                  </div>
                 </div>
+                {!t.done && <div style={{ background: t.priorita === "alta" ? "#A32D2D" : (t.priorita === "bassa" ? "#E1F5EE" : "#FAEEDA"), color: t.priorita === "alta" ? "#FFF" : (t.priorita === "bassa" ? "#0F6E56" : "#854F0B"), fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 6 }}>{p.label}</div>}
               </div>
             );
           })}
         </div>
-      </div>
-    );
-  };
+      )}
 
-  // ── RENDER ──
-  const views = ["oggi", "mese", "settimana", "giorno"] as const;
-
-  if (agendaView === "oggi") return <CentroControlloOggi />;
-
-  return (
-    <div style={{
-      fontFamily: "'Manrope', -apple-system, 'SF Pro Display', system-ui, sans-serif",
-      background: TH.bgPage, minHeight: "100%",
-      padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 110px",
-      overflowX: "hidden" as any,
-    }}>
-
-      {/* ═══ HERO TEAL fliwoX ═══ */}
-      <div style={{
-        background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-        borderRadius: 22,
-        padding: "14px 16px 16px",
-        position: "relative" as any,
-        overflow: "hidden" as any,
-        boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
-        marginBottom: 14,
-      }}>
-        <div style={{ position: "absolute", top: -40, right: -30, width: 130, height: 130, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
-
-        {/* Header titolo */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" as any, zIndex: 2, marginBottom: 14 }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "1px", textTransform: "uppercase" as any }}>Pianificazione</div>
-            <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px", marginTop: 2, textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>Agenda</div>
-            {dayEvents.length > 0 && agendaView === "giorno" && (
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginTop: 4 }}>
-                {dayEvents.length} event{dayEvents.length === 1 ? "o" : "i"} oggi
-              </div>
-            )}
-          </div>
-
-          <div onClick={() => setShowNewEvent(true)} style={{
-            width: 40, height: 40, borderRadius: 11,
-            background: "linear-gradient(145deg, #FFF, #D8EEEE)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.2), 0 0 0 2px rgba(255,255,255,0.25)",
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TH.tealDark} strokeWidth="3" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* Tab switch dentro hero */}
-        <div style={{
-          position: "relative" as any, zIndex: 2,
-          display: "flex", gap: 2, padding: 3,
-          background: "rgba(255,255,255,0.15)",
-          borderRadius: 12,
-          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
-        }}>
-          {views.map(v => {
-            const active = agendaView === v;
-            const label = v.charAt(0).toUpperCase() + v.slice(1);
-            return (
-              <div key={v} onClick={() => setAgendaView(v)} style={{
-                flex: 1, padding: "9px 4px", textAlign: "center" as any,
-                fontSize: 12, fontWeight: 800, cursor: "pointer",
-                background: active ? "#fff" : "transparent",
-                color: active ? TH.tealDark : "rgba(255,255,255,0.85)",
-                borderRadius: 9,
-                boxShadow: active ? "0 2px 6px rgba(0,0,0,0.15)" : "none",
-                letterSpacing: "0.3px",
-                transition: "all 0.15s",
-              }}>{label}</div>
-            );
-          })}
-        </div>
-
-        {/* Toggle Tutti / Eventi / Task */}
-        <div style={{
-          position: "relative" as any, zIndex: 2, marginTop: 8,
-          display: "flex", gap: 6,
-        }}>
-          {[
-            { id: "tutti", l: "Tutti", c: "#fff" },
-            { id: "eventi", l: "Eventi", c: TH.tealBright },
-            { id: "task", l: "Task", c: TH.amber },
-          ].map(f => {
-            const sel = agendaFilter === f.id;
-            return (
-              <div key={f.id} onClick={() => setAgendaFilter(f.id as any)} style={{
-                flex: 1, padding: "7px 4px", textAlign: "center" as any,
-                fontSize: 10, fontWeight: 800, cursor: "pointer",
-                borderRadius: 9, letterSpacing: "0.4px",
-                background: sel ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.08)",
-                color: sel ? "#fff" : "rgba(255,255,255,0.75)",
-                border: sel ? "1px solid rgba(255,255,255,0.35)" : "1px solid rgba(255,255,255,0.1)",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                textTransform: "uppercase" as any,
-              }}>
-                {f.id !== "tutti" && (
-                  <span style={{
-                    width: 6, height: 6, borderRadius: "50%",
-                    background: f.c, display: "inline-block",
-                    boxShadow: `0 0 6px ${f.c}80`,
-                  }} />
-                )}
-                {f.l}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ═══ BODY ═══ */}
-      <div>
-        {agendaView === "mese" && renderMese()}
-        {agendaView === "settimana" && renderSettimana()}
-        {agendaView === "giorno" && renderGiorno()}
-
-        {/* Nuovo evento + Nuovo task */}
-        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-          <button onClick={() => {
-            setNewEvent((ev: any) => ({ ...ev, tipo: "sopralluogo" }));
-            setShowNewEvent(true);
-          }} style={{
-            flex: 1,
-            background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-            border: "none", borderRadius: 16, padding: 16,
-            fontSize: 13, fontWeight: 800, color: "#fff",
-            cursor: "pointer", fontFamily: "inherit",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            boxShadow: "0 8px 20px rgba(31,120,120,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
-            letterSpacing: "0.3px",
-            textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Nuovo evento
-          </button>
-
-          <button onClick={() => {
-            setNewEvent((ev: any) => ({ ...ev, tipo: "task" }));
-            setShowNewEvent(true);
-          }} style={{
-            flex: 1,
-            background: "linear-gradient(145deg, #FFA94D, #F5A030 50%, #C97716 100%)",
-            border: "none", borderRadius: 16, padding: 16,
-            fontSize: 13, fontWeight: 800, color: "#fff",
-            cursor: "pointer", fontFamily: "inherit",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            boxShadow: "0 8px 20px rgba(201,119,22,0.4), inset 0 1px 2px rgba(255,255,255,0.3)",
-            letterSpacing: "0.3px",
-            textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-            </svg>
-            Nuovo task
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
