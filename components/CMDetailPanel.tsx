@@ -2811,7 +2811,7 @@ export default function CMDetailPanel() {
               </div>
 
               {/* TOGGLE RILIEVO SEMPLICE / COMPLESSO */}
-              {c.tipoEdificio && c.tipoEdificio !== "" && (
+              {(c.tipoEdificio || c.tipo_edificio) && (c.tipoEdificio || c.tipo_edificio) !== "" && (
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo rilievo</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
