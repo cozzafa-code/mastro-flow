@@ -156,6 +156,11 @@ export default function CMDetailPanel() {
     // Modal "Crea nuovo rilievo" dentro Centro Comando
     const [showNuovoRilievoModal, setShowNuovoRilievoModal] = useState(false);
     const [nuovoRilievoComplesso, setNuovoRilievoComplesso] = useState(false);
+    const [showAggiungiVanoModal, setShowAggiungiVanoModal] = useState(false);
+    const [nvL1, setNvL1] = useState("");
+    const [nvL2, setNvL2] = useState("");
+    const [nvL3, setNvL3] = useState("");
+    const [nvStanza, setNvStanza] = useState("");
     const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere"|"personalizzato">("provvisorio");
     const [nuovoRilievoRilevatore, setNuovoRilievoRilevatore] = useState("");
     const [nuovoRilievoNote, setNuovoRilievoNote] = useState("");
@@ -2575,6 +2580,12 @@ export default function CMDetailPanel() {
             {vaniList.length > 0 && !isStorico && (
               <div onClick={() => {
                 if (!selectedCM || !selectedRilievo) return;
+                // Se rilievo complesso, apri modal invece di creare direttamente
+                if (selectedRilievo.complesso) {
+                  setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza("");
+                  setShowAggiungiVanoModal(true);
+                  return;
+                }
                 const v = { id: Date.now(), nome: `Vano ${(selectedRilievo.vani?.length||0)+1}`, tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
                 const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
                 setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
@@ -2797,6 +2808,94 @@ export default function CMDetailPanel() {
           {c.fase === "chiusura" && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>✓ Commessa chiusa</div>}
           <span onClick={() => deleteCommessa(c.id)} style={{ fontSize: 11, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>Elimina commessa</span>
         </div>
+
+        {/*  MODAL AGGIUNGI VANO COMPLESSO  */}
+        {showAggiungiVanoModal && (() => {
+          const tEdif = (c as any).tipoEdificio || (c as any).tipo_edificio || "";
+          const labels = (() => {
+            switch (tEdif) {
+              case "palazzo": return { l1: "Scala", l2: "Piano", l3: "Interno" };
+              case "condominio": return { l1: "", l2: "Piano", l3: "Interno" };
+              case "scuola": return { l1: "Edificio/Plesso", l2: "Piano", l3: "Aula" };
+              case "ospedale": return { l1: "Padiglione", l2: "Piano", l3: "Reparto" };
+              case "ufficio": return { l1: "Edificio", l2: "Piano", l3: "Ufficio" };
+              case "hotel": return { l1: "Edificio", l2: "Piano", l3: "Camera" };
+              case "centro_comm": return { l1: "", l2: "Livello", l3: "Negozio" };
+              case "industriale": return { l1: "Corpo", l2: "", l3: "Settore" };
+              case "personalizzato": return { l1: (c as any).livello1Label || "Livello 1", l2: (c as any).livello2Label || "Livello 2", l3: (c as any).livello3Label || "Livello 3" };
+              default: return { l1: "Zona", l2: "Piano", l3: "Locale" };
+            }
+          })();
+          const canCreate = (!labels.l1 || nvL1.trim()) && (!labels.l2 || nvL2.trim()) && (!labels.l3 || nvL3.trim());
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9500, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAggiungiVanoModal(false)}>
+              <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nuovo vano · posizione</div>
+                    <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Indica dove si trova dentro lo stabile</div>
+                  </div>
+                  <div onClick={() => setShowAggiungiVanoModal(false)} style={{ width: 30, height: 30, borderRadius: 15, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>✕</div>
+                </div>
+
+                {labels.l1 && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labels.l1} *</div>
+                    <input style={S.input} placeholder={`Es. ${labels.l1} A`} value={nvL1} onChange={e => setNvL1(e.target.value)} />
+                  </div>
+                )}
+                {labels.l2 && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labels.l2} *</div>
+                    <input style={S.input} placeholder={`Es. 1, Terra, 3`} value={nvL2} onChange={e => setNvL2(e.target.value)} />
+                  </div>
+                )}
+                {labels.l3 && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labels.l3} *</div>
+                    <input style={S.input} placeholder={`Es. ${labels.l3} 5`} value={nvL3} onChange={e => setNvL3(e.target.value)} />
+                  </div>
+                )}
+
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>Stanza / ambiente</div>
+                  <input style={S.input} placeholder="Es. Cucina, Bagno, Camera, Aula magna…" value={nvStanza} onChange={e => setNvStanza(e.target.value)} />
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => setShowAggiungiVanoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                  <button disabled={!canCreate} onClick={() => {
+                    if (!selectedCM || !selectedRilievo) return;
+                    const posStr = [nvL1, nvL2, nvL3].filter(Boolean).join(" · ");
+                    const baseNome = posStr + (nvStanza ? " · " + nvStanza : "");
+                    const v = {
+                      id: Date.now(),
+                      nome: baseNome || `Vano ${(selectedRilievo.vani?.length||0)+1}`,
+                      tipo: "",
+                      stanza: nvStanza,
+                      piano: nvL2,
+                      livello_1: nvL1,
+                      livello_2: nvL2,
+                      livello_3: nvL3,
+                      sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "",
+                      misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1,
+                      accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
+                    };
+                    const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
+                    setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
+                    setSelectedRilievo(updR);
+                    setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2) }) : prev);
+                    setSelectedVano(v);
+                    setVanoStep(0);
+                    setShowAggiungiVanoModal(false);
+                  }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: canCreate ? T.acc : "#ccc", color: "#fff", fontSize: 14, fontWeight: 800, cursor: canCreate ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                    + Crea vano
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/*  MODAL NUOVO RILIEVO  */}
         {showNuovoRilievoModal && (
