@@ -172,6 +172,7 @@ export default function VanoDetailPanel() {
   const sectionRefs = useRef<Record<string,HTMLDivElement|null>>({});
   const SECTION_ORDER = ["accesso","tipologia","posizione","sistema","colori","telaio","coprifilo","lamiera","controtelaio"];
   const flashAndAdvance = (secId: string) => {
+  const [showFineRilievoModal, setShowFineRilievoModal] = React.useState(false);
     console.log("FLASH:", secId);
     setCompletedSecs(prev => new Set([...prev, secId]));
     setFlashSec(secId);
@@ -3473,9 +3474,9 @@ export default function VanoDetailPanel() {
               <button onClick={() => setVanoStep(2)} style={{ padding: "15px 18px", borderRadius: 14, border: "2px solid rgba(26,158,115,0.4)", background: "rgba(26,158,115,0.1)", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: FF, color: "#1A9E73", boxShadow: "0 6px 0 0 rgba(26,158,115,0.3)" }}>Fine</button>
             )}
             {vanoStep === 2 && (
-              <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 2, padding: "15px", borderRadius: 14, border: "none", background: "#1A9E73", color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 8px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <button onClick={() => { setShowFineRilievoModal(true); }} style={{ flex: 2, padding: "15px", borderRadius: 14, border: "none", background: "#1A9E73", color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 8px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                SALVA TUTTO
+                FINE
               </button>
             )}
           </div>
