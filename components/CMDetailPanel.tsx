@@ -1095,7 +1095,7 @@ export default function CMDetailPanel() {
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
           <div style={{
             background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-            borderRadius: 22, padding: "14px 16px 14px",
+            borderRadius: 22, padding: "20px 18px 22px",
             position: "relative", overflow: "hidden",
             boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
             marginBottom: 10,
@@ -1192,20 +1192,9 @@ export default function CMDetailPanel() {
           </div>
         )}
 
-        {/* Info badges */}
-        <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.wrench} /> Riparazione</span>}
-          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>Nuova</span>}
-          {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
-          {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
-          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>{c.mezzoSalita}</span>}
-          {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
-          {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
-          {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}><I d={ICO.phone} /> {c.telefono}</span>}
-        </div>
         {c.note && <div style={{ padding: "0 16px", marginBottom: 6 }}><div style={{ padding: "8px 12px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 12, color: T.sub, lineHeight: 1.4 }}><I d={ICO.fileText} /> {c.note}</div></div>}
 
-        {/* Centro Comando inline · replaces old phase panels */}
+        {/* Stato lavoro inline · replaces old phase panels */}
         {(() => {
           const vaniCC = getVaniAttivi(c);
           const rilieviCC = c.rilievi || [];
@@ -1249,13 +1238,13 @@ export default function CMDetailPanel() {
 
           return (
             <div style={{ margin: "8px 16px 4px" }}>
-              {/* Centro Comando header */}
+              {/* Stato lavoro header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 8, background: "#0D1F1F", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.02em" }}>Centro Comando</span>
+                  <span style={{ fontSize: 15, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.02em" }}>Stato lavoro</span>
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0", background: "rgba(40,160,160,0.1)", padding: "3px 10px", borderRadius: 8 }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
