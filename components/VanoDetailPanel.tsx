@@ -3504,10 +3504,8 @@ export default function VanoDetailPanel() {
                     ...v,
                     id: Date.now(),
                     nome: `Vano ${nextN}`,
-                    duplicato_da_nome: v.nome || `Vano ${v.id}`,
-                    duplicato_da_id: v.id,
-                    misure: { ...(v.misure || {}) },
-                    foto: { ...(v.foto || {}) },
+                    misure: {},
+                    foto: {},
                     accessori: v.accessori ? {
                       tapparella: { ...(v.accessori.tapparella || { attivo: false }) },
                       persiana: { ...(v.accessori.persiana || { attivo: false }) },
