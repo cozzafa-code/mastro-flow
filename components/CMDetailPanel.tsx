@@ -155,7 +155,7 @@ export default function CMDetailPanel() {
     const [fascicoliStorico, setFascicoliStorico] = useState<any[]>([]);
     // Modal "Crea nuovo rilievo" dentro Centro Comando
     const [showNuovoRilievoModal, setShowNuovoRilievoModal] = useState(false);
-    const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere">("provvisorio");
+    const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere"|"personalizzato">("provvisorio");
     const [nuovoRilievoRilevatore, setNuovoRilievoRilevatore] = useState("");
     const [nuovoRilievoNote, setNuovoRilievoNote] = useState("");
 
@@ -1327,6 +1327,7 @@ export default function CMDetailPanel() {
                               definitivo:  { l: "Definitivo",  c: "#0F6E56", bg: "#E1F5EE" },
                               da_rivedere: { l: "Da rivedere", c: "#DC4444", bg: "#FCEBEB" },
                               indicativa:  { l: "Provvisorio", c: "#D08008", bg: "#FFF4E5" },
+                              personalizzato: { l: "Personalizzato", c: "#3C3489", bg: "#EEEDFE" },
                             };
                             const tt = tipoMap[tipoR] || tipoMap.provvisorio;
                             return (
@@ -2739,10 +2740,11 @@ export default function CMDetailPanel() {
                 <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo misure</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                   {[
-                    { id: "provvisorio", l: "Provvisorie", d: "Prima visita, misure indicative", c: "#D08008" },
-                    { id: "verificato",  l: "Verificate",  d: "Controllate sul posto", c: "#D08008" },
-                    { id: "definitivo",  l: "Definitive",  d: "Misure finali, preventivo sbloccato", c: "#28A0A0" },
-                    { id: "da_rivedere", l: "Da rivedere", d: "Discrepanze, ricontrollare", c: "#DC4444" },
+                    { id: "provvisorio",    l: "Provvisorie",   d: "Prima visita, misure indicative",    c: "#D08008" },
+                    { id: "verificato",     l: "Verificate",    d: "Controllate sul posto",              c: "#185FA5" },
+                    { id: "definitivo",     l: "Definitive",    d: "Misure finali, preventivo sbloccato", c: "#0F6E56" },
+                    { id: "da_rivedere",    l: "Da rivedere",   d: "Discrepanze, ricontrollare",         c: "#DC4444" },
+                    { id: "personalizzato", l: "Personalizzato", d: "Tipo a scelta, descrivi nelle note", c: "#3C3489" },
                   ].map(t => {
                     const on = nuovoRilievoTipo === t.id;
                     return (
