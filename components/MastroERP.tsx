@@ -1650,7 +1650,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // === <I d={ICO.target} /> CARICA DEMO COMPLETO - forza TUTTI i dati per vedere il ciclo ===
   const caricaDemoCompleto = () => _caricaDemoCompleto({ setCantieri, setEvents, setTasks, setFattureDB, setOrdiniFornDB, setMontaggiDB, setSelectedCM, setSelectedVano, setTab });
 
-  const renderHome = () => <HomePanel />;
+  const renderHome = () => <HomePanel onNavigate={setTab} />;
 // =======================================================
 // MASTRO ERP v2 - PARTE 2/5
 // Righe 1281-2638: renderCMCard (con AFASE+euro+scadenza+borderLeft),
