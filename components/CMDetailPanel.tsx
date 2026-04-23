@@ -1348,15 +1348,15 @@ export default function CMDetailPanel() {
                                 padding: "12px 14px", marginBottom: 8, cursor: "pointer", boxShadow: `0 2px 8px ${tt.c}20`,
                                 display: "flex", alignItems: "center", gap: 10,
                               }}>
-                                <div style={{ width: 34, height: 34, borderRadius: 8, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.28)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tt.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 3L3 21M3 3l4 4m2 2l4 4m2 2l4 4M3 7l2-2m2 6l2-2m2 6l2-2m2 6l2-2"/></svg>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ fontSize: 14, fontWeight: 800, color: tt.c }}>R{ril.n || ri + 1}</span>
-                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: tt.c, color: "#fff", textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{tt.l}</span>
+                                    <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>R{ril.n || ri + 1}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 9px", borderRadius: 6, background: "#fff", color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.4px" }}>{tt.l}</span>
                                   </div>
-                                  <div style={{ fontSize: 11, color: tt.c, opacity: 0.75, marginTop: 2, fontWeight: 600 }}>
+                                  <div style={{ fontSize: 11, color: "#fff", opacity: 0.9, marginTop: 2, fontWeight: 600 }}>
                                     {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "·"}
                                     {ril.rilevatore ? ` · ${ril.rilevatore}` : ""}
                                     {` · ${vaniDelRil} ${vaniDelRil === 1 ? "vano" : "vani"}`}
