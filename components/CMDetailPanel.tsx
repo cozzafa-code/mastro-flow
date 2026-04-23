@@ -1235,9 +1235,9 @@ export default function CMDetailPanel() {
           const progCC = Math.round((doneCC / stepsCC.length) * 100);
 
           return (
-            <div style={{ margin: "-20px 16px 4px", position: "relative", zIndex: 3 }}>
+            <div style={{ margin: "14px 16px 8px", padding: "18px 16px", background: "#fff", borderRadius: 16, border: "1px solid #E4F2F2", boxShadow: "0 2px 8px rgba(40,160,160,0.08)" }}>
               {/* Stato lavoro header */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(40,160,160,0.3)" }}>
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
