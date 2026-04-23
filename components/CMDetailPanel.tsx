@@ -1365,68 +1365,97 @@ export default function CMDetailPanel() {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                               </div>
 
-                              {/* Azioni PER-RILIEVO (visibili solo quando il rilievo e selezionato/espanso) */}
+                              {/* Dettaglio rilievo espanso stile card commessa */}
                               {selectedRilievo?.id === ril.id && (
                                 <div style={{
-                                  marginTop: -4, marginBottom: 8,
-                                  background: "#F8F7F2", border: `1.5px solid ${T.bdr}`, borderRadius: 10,
-                                  padding: 10, display: "flex", gap: 6, flexWrap: "wrap"
+                                  marginTop: 0, marginBottom: 10,
+                                  background: "#fff", border: `2px solid ${tt.c}`, borderRadius: 14,
+                                  padding: 14, display: "flex", flexDirection: "column", gap: 12,
+                                  boxShadow: `0 4px 12px ${tt.c}22`,
                                 }}>
-                                  <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedRilievo(ril);
-                                    setCmSubTab("sopralluoghi");
-                                    setTimeout(() => {
-                                      const el = document.getElementById("cm-tab-vani") || document.querySelector('[data-tab="sopralluoghi"]');
-                                      if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
-                                    }, 100);
-                                  }} style={{
-                                    flex: "1 1 120px", padding: "10px 12px", borderRadius: 8,
-                                    background: "#28A0A0", color: "#fff", border: "none",
-                                    fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                  {/* PROSSIMA AZIONE */}
+                                  <div style={{ background: `${tt.c}10`, border: `1px solid ${tt.c}30`, borderRadius: 10, padding: "10px 12px" }}>
+                                    <div style={{ fontSize: 9, fontWeight: 800, color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.8px", marginBottom: 4 }}>Prossima azione</div>
+                                    <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F", marginBottom: 8 }}>
+                                      {(ril.vani||[]).length === 0 ? "Aggiungi il primo vano" : "Completa le misure dei vani"}
+                                    </div>
+                                    <button onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedRilievo(ril);
+                                      setCmSubTab("sopralluoghi");
+                                      setTimeout(() => {
+                                        const el = document.getElementById("cm-tab-vani") || document.querySelector('[data-tab="sopralluoghi"]');
+                                        if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+                                      }, 100);
+                                    }} style={{
+                                      width: "100%", padding: "11px 12px", borderRadius: 8,
+                                      background: tt.c, color: "#fff", border: "none",
+                                      fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                    }}>
+                                      APRI RILIEVO <span style={{ fontSize: 15 }}>→</span>
+                                    </button>
+                                  </div>
+
+                                  {/* 3 KPI */}
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                                    <div style={{ background: T.bg, borderRadius: 8, padding: "8px 4px", textAlign: "center" }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>Vani</div>
+                                      <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F", marginTop: 2 }}>{(ril.vani||[]).length || "—"}</div>
+                                    </div>
+                                    <div style={{ background: T.bg, borderRadius: 8, padding: "8px 4px", textAlign: "center" }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>Misure</div>
+                                      <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F", marginTop: 2 }}>{(ril.vani||[]).filter(v => Object.values(v.misure||{}).filter(x=>(x as number)>0).length >= 6).length}/{(ril.vani||[]).length || 0}</div>
+                                    </div>
+                                    <div style={{ background: T.bg, borderRadius: 8, padding: "8px 4px", textAlign: "center" }}>
+                                      <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>Foto</div>
+                                      <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F", marginTop: 2 }}>{(ril.vani||[]).reduce((a,v) => a + Object.keys(v.foto||{}).length, 0)}</div>
+                                    </div>
+                                  </div>
+
+                                  {/* 4 bottoni secondari */}
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
+                                    <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(ril); setShowRiepilogo(true); }} style={{
+                                      padding: "10px 4px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", fontFamily: "inherit",
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                    }}>
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
+                                      <span style={{ fontSize: 9, fontWeight: 700, color: T.text }}>Riepilogo</span>
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(ril); exportPDF(); }} style={{
+                                      padding: "10px 4px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", fontFamily: "inherit",
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                    }}>
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                      <span style={{ fontSize: 9, fontWeight: 700, color: T.text }}>PDF</span>
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); fotoInputRef.current?.click(); }} style={{
+                                      padding: "10px 4px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", fontFamily: "inherit",
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                    }}>
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                      <span style={{ fontSize: 9, fontWeight: 700, color: T.text }}>Foto</span>
+                                    </button>
+                                    <button onClick={(e) => {
+                                      e.stopPropagation();
+                                      setProblemaForm({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
+                                      setShowProblemaModal(true);
+                                    }} style={{
+                                      padding: "10px 4px", borderRadius: 8, background: "#FF3B3008", border: "1px solid #FF3B3040", cursor: "pointer", fontFamily: "inherit",
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                    }}>
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                      <span style={{ fontSize: 9, fontWeight: 700, color: "#FF3B30" }}>Segnala</span>
+                                    </button>
+                                  </div>
+
+                                  {/* CHIUDI DETTAGLIO */}
+                                  <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(null); }} style={{
+                                    padding: "10px", borderRadius: 8, background: "#0D1F1F", color: "#fff", border: "none", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6, letterSpacing: "0.4px",
                                   }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    Aggiungi vano
-                                  </button>
-                                  <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedRilievo(ril);
-                                    setShowRiepilogo(true);
-                                  }} style={{
-                                    flex: "1 1 100px", padding: "10px 12px", borderRadius: 8,
-                                    background: T.card, color: T.text, border: `1.5px solid ${T.bdr}`,
-                                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                                  }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
-                                    Riepilogo R{ril.n || ri + 1}
-                                  </button>
-                                  <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedRilievo(ril);
-                                    exportPDF();
-                                  }} style={{
-                                    flex: "1 1 100px", padding: "10px 12px", borderRadius: 8,
-                                    background: T.card, color: T.text, border: `1.5px solid ${T.bdr}`,
-                                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                                  }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                    PDF R{ril.n || ri + 1}
-                                  </button>
-                                  <button onClick={(e) => {
-                                    e.stopPropagation();
-                                    setProblemaForm({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
-                                    setShowProblemaModal(true);
-                                  }} style={{
-                                    flex: "1 1 100px", padding: "10px 12px", borderRadius: 8,
-                                    background: "#FF3B3008", color: "#FF3B30", border: "1.5px solid #FF3B30",
-                                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                                  }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF3B30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                    Segnala
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                    CHIUDI DETTAGLIO
                                   </button>
                                 </div>
                               )}
