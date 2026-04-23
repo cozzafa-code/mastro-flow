@@ -5,15 +5,39 @@ import React from "react";
 import { useMastro } from "./MastroContext";
 
 const ALL_WIDGETS: any[] = [
-  { id: "oggi",     label: "Oggi devi fare",  bg: "#B5B0E8", fg: "#26215C" },
-  { id: "corso",    label: "In corso",        bg: "#F5C4B3", fg: "#4A1B0C" },
-  { id: "fatt",     label: "Fatturato",       bg: "#9FE1CB", fg: "#04342C" },
-  { id: "pipeline", label: "Pipeline",        bg: "#B5D4F4", fg: "#042C53" },
-  { id: "recenti",  label: "Lavori recenti",  bg: "#FFFFFF", fg: "#1A1A1A" },
-  { id: "agenda",   label: "Agenda oggi",     bg: "#F4C0D1", fg: "#4B1528" },
-  { id: "azioni",   label: "Azioni rapide",   bg: "#FAC775", fg: "#412402" },
+  // KPI & TODO
+  { id: "oggi",        label: "Oggi devi fare",       bg: "#B5B0E8", fg: "#26215C", cat: "KPI" },
+  { id: "scaduti",     label: "Task scaduti",         bg: "#F7C1C1", fg: "#501313", cat: "KPI" },
+  { id: "prossimi",    label: "Prossime scadenze",    bg: "#FAC775", fg: "#412402", cat: "KPI" },
+  // COMMESSE
+  { id: "corso",       label: "In corso",             bg: "#F5C4B3", fg: "#4A1B0C", cat: "Commesse" },
+  { id: "nuove",       label: "Nuove questa sett.",   bg: "#CECBF6", fg: "#26215C", cat: "Commesse" },
+  { id: "ferme",       label: "Commesse ferme",       bg: "#F7C1C1", fg: "#501313", cat: "Commesse" },
+  { id: "pipeline",    label: "Pipeline per fase",    bg: "#B5D4F4", fg: "#042C53", cat: "Commesse" },
+  { id: "recenti",     label: "Lavori recenti",       bg: "#FFFFFF", fg: "#1A1A1A", cat: "Commesse" },
+  // SOLDI
+  { id: "fatt",        label: "Fatturato mese",       bg: "#9FE1CB", fg: "#04342C", cat: "Soldi" },
+  { id: "fattanno",    label: "Fatturato anno",       bg: "#C0DD97", fg: "#173404", cat: "Soldi" },
+  { id: "incassi",     label: "Incassi da riscuot.",  bg: "#FAC775", fg: "#412402", cat: "Soldi" },
+  { id: "preventivi",  label: "Preventivi aperti",    bg: "#CECBF6", fg: "#26215C", cat: "Soldi" },
+  { id: "ordini",      label: "Ordini fornitori",     bg: "#B5D4F4", fg: "#042C53", cat: "Soldi" },
+  { id: "margine",     label: "Margine medio %",      bg: "#9FE1CB", fg: "#04342C", cat: "Soldi" },
+  // AGENDA
+  { id: "agenda",      label: "Agenda oggi",          bg: "#F4C0D1", fg: "#4B1528", cat: "Agenda" },
+  { id: "settimana",   label: "Settimana",            bg: "#F4C0D1", fg: "#4B1528", cat: "Agenda" },
+  { id: "sopralluoghi",label: "Sopralluoghi prog.",   bg: "#EEEDFE", fg: "#26215C", cat: "Agenda" },
+  { id: "montaggi",    label: "Montaggi programm.",   bg: "#E1F5EE", fg: "#04342C", cat: "Agenda" },
+  // TEAM & MAGAZZINO
+  { id: "squadra",     label: "Squadra sul campo",    bg: "#CECBF6", fg: "#26215C", cat: "Team" },
+  { id: "stock",       label: "Magazzino sotto-sc.",  bg: "#F7C1C1", fg: "#501313", cat: "Magazzino" },
+  { id: "consegne",    label: "Consegne in arrivo",   bg: "#FAC775", fg: "#412402", cat: "Magazzino" },
+  // COMUNICAZIONE
+  { id: "msg",         label: "Messaggi non letti",   bg: "#F4C0D1", fg: "#4B1528", cat: "Talk" },
+  { id: "firme",       label: "Firme in attesa",      bg: "#CECBF6", fg: "#26215C", cat: "Talk" },
+  // AZIONI
+  { id: "azioni",      label: "Azioni rapide",        bg: "#FAC775", fg: "#412402", cat: "Azioni" },
 ];
-const DEFAULT_LAYOUT = ["oggi", "corso", "fatt", "pipeline", "recenti", "azioni"];
+const DEFAULT_LAYOUT = ["oggi", "corso", "fatt", "pipeline", "recenti", "agenda", "azioni"];
 
 export default function HomePanelMobile(props: any) {
   const mastro: any = (() => { try { return useMastro(); } catch { return {}; } })();
@@ -197,6 +221,161 @@ export default function HomePanelMobile(props: any) {
     </div>
   );
 
+  
+  // === NUOVI WIDGET ===
+  W.scaduti = () => (
+    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#F7C1C1", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="scaduti" fg="#501313" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#501313", fontWeight: 500, letterSpacing: 0.3 }}>TASK SCADUTI</div>
+      <div style={{ fontSize: 28, color: "#501313", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>0</div>
+      <div style={{ fontSize: 10, color: "#501313", marginTop: 4 }}>da gestire subito</div>
+    </div>
+  );
+  W.prossimi = () => (
+    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#FAC775", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="prossimi" fg="#412402" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#412402", fontWeight: 500, letterSpacing: 0.3 }}>PROSSIME SCADENZE</div>
+      <div style={{ fontSize: 28, color: "#412402", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>{commesseAttive.length}</div>
+      <div style={{ fontSize: 10, color: "#412402", marginTop: 4 }}>entro 7 giorni</div>
+    </div>
+  );
+  W.nuove = () => (
+    <div onClick={() => !editMode && onNavigate?.("commesse")} style={{ background: "#CECBF6", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="nuove" fg="#26215C" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#26215C", fontWeight: 500, letterSpacing: 0.3 }}>NUOVE SETTIMANA</div>
+      <div style={{ fontSize: 28, color: "#26215C", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>3</div>
+      <div style={{ fontSize: 10, color: "#26215C", marginTop: 4 }}>commesse aggiunte</div>
+    </div>
+  );
+  W.ferme = () => (
+    <div onClick={() => !editMode && onNavigate?.("commesse")} style={{ background: "#F7C1C1", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="ferme" fg="#501313" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#501313", fontWeight: 500, letterSpacing: 0.3 }}>COMMESSE FERME</div>
+      <div style={{ fontSize: 28, color: "#501313", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>0</div>
+      <div style={{ fontSize: 10, color: "#501313", marginTop: 4 }}>da sbloccare</div>
+    </div>
+  );
+  W.fattanno = () => (
+    <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#C0DD97", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="fattanno" fg="#173404" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#173404", fontWeight: 500, letterSpacing: 0.3 }}>FATTURATO ANNO</div>
+      <div style={{ fontSize: 24, color: "#173404", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>€{(totMese*10/1000).toFixed(0)}k</div>
+      <div style={{ fontSize: 10, color: "#173404", marginTop: 4 }}>obiettivo 80%</div>
+      <div style={{ height: 4, background: "rgba(255,255,255,0.5)", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
+        <div style={{ width: "80%", height: "100%", background: "#3B6D11" }} />
+      </div>
+    </div>
+  );
+  W.incassi = () => (
+    <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#FAC775", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="incassi" fg="#412402" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#412402", fontWeight: 500, letterSpacing: 0.3 }}>DA RISCUOTERE</div>
+      <div style={{ fontSize: 24, color: "#412402", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>€{(totMese*0.3/1000).toFixed(1)}k</div>
+      <div style={{ fontSize: 10, color: "#412402", marginTop: 4 }}>fatture aperte</div>
+    </div>
+  );
+  W.preventivi = () => (
+    <div onClick={() => !editMode && onNavigate?.("commesse")} style={{ background: "#CECBF6", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="preventivi" fg="#26215C" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#26215C", fontWeight: 500, letterSpacing: 0.3 }}>PREVENTIVI APERTI</div>
+      <div style={{ fontSize: 28, color: "#26215C", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>{Math.max(commesseAttive.length - 2, 0)}</div>
+      <div style={{ fontSize: 10, color: "#26215C", marginTop: 4 }}>in attesa risposta</div>
+    </div>
+  );
+  W.ordini = () => (
+    <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#B5D4F4", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="ordini" fg="#042C53" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#042C53", fontWeight: 500, letterSpacing: 0.3 }}>ORDINI FORNITORI</div>
+      <div style={{ fontSize: 28, color: "#042C53", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>0</div>
+      <div style={{ fontSize: 10, color: "#042C53", marginTop: 4 }}>in corso</div>
+    </div>
+  );
+  W.margine = () => (
+    <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#9FE1CB", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="margine" fg="#04342C" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#04342C", fontWeight: 500, letterSpacing: 0.3 }}>MARGINE MEDIO</div>
+      <div style={{ fontSize: 28, color: "#04342C", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>32%</div>
+      <div style={{ fontSize: 10, color: "#04342C", marginTop: 4 }}>ultime 10 commesse</div>
+    </div>
+  );
+  W.settimana = () => (
+    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#F4C0D1", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="settimana" fg="#72243E" onRemove={removeWidget} />}
+      <div style={{ fontSize: 11, color: "#993556", fontWeight: 500, letterSpacing: 0.3 }}>SETTIMANA</div>
+      <div style={{ fontSize: 14, color: "#4B1528", fontWeight: 600, marginTop: 2, marginBottom: 10 }}>Appuntamenti 7 gg</div>
+      <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36 }}>
+        {[2,3,1,4,2,0,1].map((n,i) => (
+          <div key={i} style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ background: n > 0 ? "#993556" : "#E0B8C5", height: `${Math.max(n*25, 5)}%`, borderRadius: 3, marginBottom: 3, minHeight: 3 }} />
+            <div style={{ fontSize: 9, color: "#4B1528", fontWeight: 500 }}>{["L","M","M","G","V","S","D"][i]}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  W.sopralluoghi = () => (
+    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#EEEDFE", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="sopralluoghi" fg="#26215C" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#26215C", fontWeight: 500, letterSpacing: 0.3 }}>SOPRALLUOGHI</div>
+      <div style={{ fontSize: 28, color: "#26215C", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>2</div>
+      <div style={{ fontSize: 10, color: "#26215C", marginTop: 4 }}>programmati</div>
+    </div>
+  );
+  W.montaggi = () => (
+    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#E1F5EE", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="montaggi" fg="#04342C" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#04342C", fontWeight: 500, letterSpacing: 0.3 }}>MONTAGGI</div>
+      <div style={{ fontSize: 28, color: "#04342C", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>1</div>
+      <div style={{ fontSize: 10, color: "#04342C", marginTop: 4 }}>questa settimana</div>
+    </div>
+  );
+  W.squadra = () => (
+    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#CECBF6", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="squadra" fg="#26215C" onRemove={removeWidget} />}
+      <div style={{ fontSize: 11, color: "#26215C", fontWeight: 500, letterSpacing: 0.3 }}>SQUADRA</div>
+      <div style={{ fontSize: 14, color: "#26215C", fontWeight: 600, marginTop: 2, marginBottom: 10 }}>Sul campo ora</div>
+      {["Marco R.","Luigi P.","Anna T."].map((nome,i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}>
+          <div style={{ width: 6, height: 6, borderRadius: 50, background: "#3B6D11" }} />
+          <div style={{ fontSize: 11, color: "#26215C", flex: 1 }}>{nome}</div>
+          <div style={{ fontSize: 9, color: "#26215C", opacity: 0.7 }}>S-006{4+i}</div>
+        </div>
+      ))}
+    </div>
+  );
+  W.stock = () => (
+    <div onClick={() => !editMode && onNavigate?.("commesse")} style={{ background: "#F7C1C1", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="stock" fg="#501313" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#501313", fontWeight: 500, letterSpacing: 0.3 }}>SOTTO SCORTA</div>
+      <div style={{ fontSize: 28, color: "#501313", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>4</div>
+      <div style={{ fontSize: 10, color: "#501313", marginTop: 4 }}>articoli da riordinare</div>
+    </div>
+  );
+  W.consegne = () => (
+    <div onClick={() => !editMode && onNavigate?.("commesse")} style={{ background: "#FAC775", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="consegne" fg="#412402" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#412402", fontWeight: 500, letterSpacing: 0.3 }}>CONSEGNE</div>
+      <div style={{ fontSize: 28, color: "#412402", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>2</div>
+      <div style={{ fontSize: 10, color: "#412402", marginTop: 4 }}>in arrivo questa sett.</div>
+    </div>
+  );
+  W.msg = () => (
+    <div onClick={() => !editMode && onNavigate?.("messaggi")} style={{ background: "#F4C0D1", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="msg" fg="#4B1528" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#4B1528", fontWeight: 500, letterSpacing: 0.3 }}>MESSAGGI</div>
+      <div style={{ fontSize: 28, color: "#4B1528", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>0</div>
+      <div style={{ fontSize: 10, color: "#4B1528", marginTop: 4 }}>non letti</div>
+    </div>
+  );
+  W.firme = () => (
+    <div onClick={() => !editMode && onNavigate?.("commesse")} style={{ background: "#CECBF6", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+      {editMode && <RemoveBtn id="firme" fg="#26215C" onRemove={removeWidget} />}
+      <div style={{ fontSize: 10, color: "#26215C", fontWeight: 500, letterSpacing: 0.3 }}>FIRME</div>
+      <div style={{ fontSize: 28, color: "#26215C", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>1</div>
+      <div style={{ fontSize: 10, color: "#26215C", marginTop: 4 }}>in attesa cliente</div>
+    </div>
+  );
+
   W.azioni = () => (
     <div style={{ background: "#FAC775", borderRadius: 20, padding: 14, position: "relative" }}>
       {editMode && <RemoveBtn id="azioni" fg="#633806" onRemove={removeWidget} />}
@@ -305,10 +484,15 @@ export default function HomePanelMobile(props: any) {
           <div onClick={e => e.stopPropagation()} style={{ background: "#FFF", width: "100%", borderRadius: "20px 20px 0 0", padding: 16, maxHeight: "70vh", overflowY: "auto" }}>
             <div style={{ fontSize: 16, fontWeight: 600, color: "#1A1A1A", marginBottom: 12 }}>Aggiungi widget</div>
             {availableToAdd.length === 0 && <div style={{ fontSize: 12, color: "#888", padding: 16, textAlign: "center" }}>Tutti i widget sono già aggiunti.</div>}
-            {availableToAdd.map(w => (
-              <div key={w.id} onClick={() => addWidget(w.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 12, marginBottom: 6, background: w.bg, cursor: "pointer" }}>
-                <div style={{ flex: 1, fontSize: 13, color: w.fg, fontWeight: 600 }}>{w.label}</div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={w.fg} strokeWidth={2}><path d="M12 5v14M5 12h14" /></svg>
+            {Object.entries(availableToAdd.reduce((acc: any, w: any) => { (acc[w.cat] = acc[w.cat] || []).push(w); return acc; }, {})).map(([cat, items]: any) => (
+              <div key={cat} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: 0.4, marginBottom: 6, paddingLeft: 4 }}>{cat.toUpperCase()}</div>
+                {items.map((w: any) => (
+                  <div key={w.id} onClick={() => addWidget(w.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, borderRadius: 12, marginBottom: 6, background: w.bg, cursor: "pointer" }}>
+                    <div style={{ flex: 1, fontSize: 13, color: w.fg, fontWeight: 600 }}>{w.label}</div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={w.fg} strokeWidth={2}><path d="M12 5v14M5 12h14" /></svg>
+                  </div>
+                ))}
               </div>
             ))}
             <button onClick={() => setShowAdd(false)} style={{ width: "100%", background: "#F0EDE5", border: "none", borderRadius: 12, padding: 12, fontSize: 13, fontWeight: 600, color: "#1A1A1A", marginTop: 8, cursor: "pointer" }}>Chiudi</button>
