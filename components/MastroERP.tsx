@@ -39,6 +39,7 @@ import RilieviListPanel from "./RilieviListPanel";
 import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobile";
+import BottomToolbar from "./BottomToolbar";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
 import ModalPanel from "./ModalPanel";
@@ -5308,6 +5309,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
+      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : "altro"} onNavigate={setTab} />
     </>
     </MastroContext.Provider>
   );
