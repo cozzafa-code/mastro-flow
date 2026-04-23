@@ -1388,7 +1388,12 @@ export default function CMDetailPanel() {
                                     <button onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedRilievo(ril);
-                                      // Apri workspace misure: se ci sono vani apri il primo, se no creane uno
+                                      // Se rilievo complesso e zero vani, apri modal per chiedere livelli
+                                      if (ril.complesso && (ril.vani || []).length === 0) {
+                                        setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza("");
+                                        setShowAggiungiVanoModal(true);
+                                        return;
+                                      }
                                       const vaniR = ril.vani || [];
                                       if (vaniR.length > 0) {
                                         setSelectedVano(vaniR[0]);
