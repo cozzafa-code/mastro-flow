@@ -481,7 +481,6 @@ export default function VanoDetailPanel() {
 
   // ── RENDER BODY ──────────────────────────────────────
   function renderBody() {
-    const [showReportOverlay, setShowReportOverlay] = React.useState(false);
     if (!selectedVano || !selectedCM) return null;
     const v = selectedVano;
     const m = v.misure || {};
@@ -3493,7 +3492,7 @@ export default function VanoDetailPanel() {
             )}
             {vanoStep === 2 && (
               <>
-                <button onClick={() => { setShowReportOverlay(true); }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "2px solid #185FA5", background: "#E8F1FB", color: "#0A2842", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "2px solid #185FA5", background: "#E8F1FB", color: "#0A2842", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A2842" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
                   RIEPILOGO
                 </button>
@@ -4622,59 +4621,6 @@ export default function VanoDetailPanel() {
 
 </div>
 
-      {/* OVERLAY REPORT RILIEVO */}
-      {showReportOverlay && selectedRilievo && (
-        <div style={{ position: "fixed", inset: 0, background: "#F4F1EA", zIndex: 9900, overflow: "auto", fontFamily: FF }}>
-          <div style={{ position: "sticky", top: 0, background: "#0D1F1F", color: "#fff", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, zIndex: 1 }}>
-            <div onClick={() => setShowReportOverlay(false)} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 900 }}>Report rilievo R{selectedRilievo.n || ""}</div>
-              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{(selectedRilievo.vani||[]).length} vani totali</div>
-            </div>
-          </div>
-          <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-            {(selectedRilievo.vani||[]).map((vr: any, idx: number) => {
-              const m = vr.misure || {};
-              const ac = vr.accessori || {};
-              const hasMis = Object.values(m).filter((x: any) => x > 0).length;
-              const livelli = [vr.livello_1, vr.livello_2, vr.livello_3].filter(Boolean).join(" · ");
-              const rowOf = (label: string, value: any, k: string) => (
-                <div key={k} style={{ display: "flex", padding: "6px 0", borderBottom: "1px solid #F0EDE5" }}>
-                  <div style={{ flex: 1, fontSize: 11, color: "#888", fontWeight: 600 }}>{label}</div>
-                  <div style={{ flex: 1.5, fontSize: 12, color: value ? "#0D1F1F" : "#CCC", fontWeight: value ? 700 : 400, textAlign: "right" as any }}>{value || "—"}</div>
-                </div>
-              );
-              const sezOf = (title: string, rows: any[], sk: string) => (
-                <div key={sk} style={{ marginTop: 10, padding: "10px 12px", background: "#FAFAF5", borderRadius: 10, border: "1px solid #F0EDE5" }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#0D1F1F", textTransform: "uppercase" as any, letterSpacing: "0.8px", marginBottom: 6 }}>{title}</div>
-                  {rows.map((r: any, i: number) => rowOf(r[0], r[1], sk + "_" + i))}
-                </div>
-              );
-              return (
-                <div key={vr.id} style={{ background: "#fff", borderRadius: 14, padding: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 18, background: "#28A0A0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900 }}>{idx+1}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 15, fontWeight: 900, color: "#0D1F1F" }}>{vr.nome || ("Vano " + (idx+1))}</div>
-                      {livelli && <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>{livelli}</div>}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 10, color: "#888", marginBottom: 6 }}>{hasMis} misure · {Object.keys(vr.foto||{}).length} foto</div>
-                  {sezOf("TIPOLOGIA", [["Tipo", vr.tipo], ["Stanza", vr.stanza], ["Piano", vr.piano], ["Pezzi", vr.pezzi]], "tip" + idx)}
-                  {sezOf("SISTEMA", [["Profilo", vr.sistema], ["Vetro", vr.vetro], ["Telaio", vr.telaio], ["Ala Z", vr.telaioAlaZ], ["Rifilato", vr.rifilato ? "Sì" : "No"], ["Coprifilo", vr.coprifilo]], "sis" + idx)}
-                  {sezOf("COLORI", [["Interno", vr.coloreInt], ["Esterno", vr.coloreEst], ["Bicolore", vr.bicolore ? "Sì" : "No"], ["Accessori", vr.coloreAcc]], "col" + idx)}
-                  {sezOf("MISURE", [["Larghezze", [m.lAlto, m.lCentro, m.lBasso].filter(Boolean).join(" / ") || null], ["Altezze", [m.hSx, m.hCentro, m.hDx].filter(Boolean).join(" / ") || null], ["Diagonali", [m.d1, m.d2].filter(Boolean).join(" / ") || null]], "mis" + idx)}
-                  {sezOf("ACCESSORI", [["Tapparella", ac.tapparella?.attivo ? "Sì" : null], ["Persiana", ac.persiana?.attivo ? "Sì" : null], ["Zanzariera", ac.zanzariera?.attivo ? "Sì" : null]], "acc" + idx)}
-                  {sezOf("ALTRO", [["Difficoltà", vr.difficoltaSalita], ["Mezzo", vr.mezzoSalita], ["Note", vr.note]], "alt" + idx)}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      
     );
   }; // end renderBody
 
