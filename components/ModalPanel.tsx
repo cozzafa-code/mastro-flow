@@ -387,7 +387,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                 </div>
                 <div style={{ color: "#FFFFFF", fontSize: 24, fontWeight: 600, letterSpacing: -0.3 }}>Nuova commessa</div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
-                  <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500, opacity: 0.9 }}>Codice: {previewCode}</div>
+                  <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500, opacity: 0.9 }}>Codice auto</div>
                   <div style={{ color: "rgba(255,255,255,0.6)" }}>·</div>
                   <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500, opacity: 0.9 }}>{newCM.tipo === "riparazione" ? "Riparazione" : "Nuova installazione"}</div>
                 </div>
