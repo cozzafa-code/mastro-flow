@@ -3469,14 +3469,20 @@ export default function VanoDetailPanel() {
                 {vanoStep === 0 ? "MISURE →" : "RIEPILOGO →"}
               </button>
             )}
-            {vanoStep === 0 && (
-              <button onClick={() => setVanoStep(2)} style={{ padding: "15px 18px", borderRadius: 14, border: "2px solid rgba(26,158,115,0.4)", background: "rgba(26,158,115,0.1)", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: FF, color: "#1A9E73", boxShadow: "0 6px 0 0 rgba(26,158,115,0.3)" }}>Fine</button>
-            )}
             {vanoStep === 2 && (
-              <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 2, padding: "15px", borderRadius: 14, border: "none", background: "#1A9E73", color: "white", fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 8px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                SALVA TUTTO
-              </button>
+              <>
+                <button onClick={() => {
+                  // RIEPILOGO VANI: chiude il misuratore e va al CMDetail dove si vede la lista rilievi+vani
+                  setVanoStep(0); goBack();
+                }} style={{ flex: 1, padding: "15px", borderRadius: 14, border: "2px solid #185FA5", background: "#E8F1FB", color: "#0A2842", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A2842" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+                  RIEPILOGO VANI
+                </button>
+                <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "15px", borderRadius: 14, border: "none", background: "#1A9E73", color: "white", fontSize: 14, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 6px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  FINE
+                </button>
+              </>
             )}
           </div>
 
