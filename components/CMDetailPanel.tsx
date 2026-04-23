@@ -1308,11 +1308,11 @@ export default function CMDetailPanel() {
                             const vaniDelRil = (ril.vani || []).length;
                             const tipoR = ril.tipo || "provvisorio";
                             const tipoMap: any = {
-                              provvisorio: { l: "Provvisorio", c: "#D08008", bg: "#D0800815" },
-                              verificato:  { l: "Verificato",  c: "#D08008", bg: "#D0800815" },
-                              definitivo:  { l: "Definitivo",  c: "#28A0A0", bg: "#28A0A015" },
-                              da_rivedere: { l: "Da rivedere", c: "#DC4444", bg: "#DC444415" },
-                              indicativa:  { l: "Provvisorio", c: "#D08008", bg: "#D0800815" },
+                              provvisorio: { l: "Provvisorio", c: "#D08008", bg: "#FFF4E5" },
+                              verificato:  { l: "Verificato",  c: "#185FA5", bg: "#E8F1FB" },
+                              definitivo:  { l: "Definitivo",  c: "#0F6E56", bg: "#E1F5EE" },
+                              da_rivedere: { l: "Da rivedere", c: "#DC4444", bg: "#FCEBEB" },
+                              indicativa:  { l: "Provvisorio", c: "#D08008", bg: "#FFF4E5" },
                             };
                             const tt = tipoMap[tipoR] || tipoMap.provvisorio;
                             return (
@@ -1334,7 +1334,7 @@ export default function CMDetailPanel() {
                                 display: "flex", alignItems: "center", gap: 10,
                               }}>
                                 <div style={{ width: 34, height: 34, borderRadius: 8, background: tt.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                  <I d={ICO.ruler} s={16} c={tt.c} />
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tt.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 3L3 21M3 3l4 4m2 2l4 4m2 2l4 4M3 7l2-2m2 6l2-2m2 6l2-2m2 6l2-2"/></svg>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1435,7 +1435,7 @@ export default function CMDetailPanel() {
                         setNuovoRilievoNote("");
                         setShowNuovoRilievoModal(true);
                       }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                        <I d={ICO.ruler} /> + CREA {rilieviCC.length > 0 ? "NUOVO " : ""}RILIEVO
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> CREA {rilieviCC.length > 0 ? "NUOVO " : ""}RILIEVO
                       </button>
 
                       {vaniCC.length > 0 && (
@@ -2793,7 +2793,7 @@ export default function CMDetailPanel() {
                   setShowNuovoRilievoModal(false);
                   setCmSubTab("sopralluoghi");
                 }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                  ✓ Crea rilievo · Aggiungi vani
+                  Crea rilievo · Aggiungi vani
                 </button>
               </div>
             </div>
