@@ -3471,15 +3471,39 @@ export default function VanoDetailPanel() {
             )}
             {vanoStep === 2 && (
               <>
-                <button onClick={() => {
-                  // RIEPILOGO VANI: chiude il misuratore e va al CMDetail dove si vede la lista rilievi+vani
-                  setVanoStep(0); goBack();
-                }} style={{ flex: 1, padding: "15px", borderRadius: 14, border: "2px solid #185FA5", background: "#E8F1FB", color: "#0A2842", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A2842" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
-                  RIEPILOGO VANI
+                <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "2px solid #185FA5", background: "#E8F1FB", color: "#0A2842", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A2842" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+                  RIEPILOGO
                 </button>
-                <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "15px", borderRadius: 14, border: "none", background: "#1A9E73", color: "white", fontSize: 14, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 6px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <button onClick={() => {
+                  if (!selectedRilievo || !selectedVano) return;
+                  const nextN = (selectedRilievo.vani?.length || 0) + 1;
+                  const v = selectedVano;
+                  const dup = {
+                    ...v,
+                    id: Date.now(),
+                    nome: `Vano ${nextN}`,
+                    misure: { ...(v.misure || {}) },
+                    foto: { ...(v.foto || {}) },
+                    accessori: v.accessori ? {
+                      tapparella: { ...(v.accessori.tapparella || { attivo: false }) },
+                      persiana: { ...(v.accessori.persiana || { attivo: false }) },
+                      zanzariera: { ...(v.accessori.zanzariera || { attivo: false }) },
+                    } : { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
+                  };
+                  const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), dup] };
+                  setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
+                  setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2) }) : prev);
+                  setSelectedRilievo(updR);
+                  setSelectedVano(dup);
+                  setVanoStep(0);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "2px solid #3C3489", background: "#EEEDFE", color: "#26215C", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#26215C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 -2 -2V4a2 2 0 0 1 2 -2h9a2 2 0 0 1 2 2v1"/></svg>
+                  DUPLICA
+                </button>
+                <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "none", background: "#1A9E73", color: "white", fontSize: 12, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 5px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                   FINE
                 </button>
               </>
