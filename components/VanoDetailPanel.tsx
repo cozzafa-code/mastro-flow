@@ -1716,6 +1716,27 @@ export default function VanoDetailPanel() {
                     {/* VELA: 3 lati */}
                     {isVela && (<>
                       <div style={{ fontSize:11, fontWeight:800, color:"#E8A020", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, marginTop:12 }}><I d={ICO.ruler} /> Lati vela</div>
+                      {v._duplicatoDa && (
+                        <div style={{ margin: "4px 0 12px", padding: "10px 12px", borderRadius: 10, background: "#DBEAFE", border: "1.5px solid #185FA5", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 26, height: 26, borderRadius: 13, background: "#185FA5", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 -2 -2V4a2 2 0 0 1 2 -2h9a2 2 0 0 1 2 2v1"/></svg>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: "#0A2842", letterSpacing: "0.3px" }}>DUPLICATO DA {v._duplicatoDa}</div>
+                              <div style={{ fontSize: 9, color: "#185FA5", marginTop: 1 }}>Misure copiate · modifica solo cio che cambia</div>
+                            </div>
+                          </div>
+                          <button onClick={() => {
+                            if (!confirm("Resettare tutte le misure di questo vano?")) return;
+                            const campi = ["lAlto","lCentro","lBasso","hSx","hCentro","hDx","d1","d2","spessoreMuro","profondita","soglia","sopraluce"];
+                            campi.forEach(f => updateMisura(v.id, f, 0));
+                          }} style={{ padding: "6px 10px", borderRadius: 8, border: "none", background: "#fff", color: "#185FA5", fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", gap: 4 }}>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#185FA5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10"/><path d="M3.51 15a9 9 0 0 0 14.85 3.36L23 14"/></svg>
+                            RESETTA
+                          </button>
+                        </div>
+                      )}
                       {<VanoBInput key="lAlto" label={"Lato 2 mm"} field="lAlto"
                           value={m["lAlto"] as number} stepColor={step.color}
                           textColor={T.text} subColor={T.sub} bdrColor={T.bdr} cardBg={T.card}
@@ -3483,6 +3504,8 @@ export default function VanoDetailPanel() {
                     ...v,
                     id: Date.now(),
                     nome: `Vano ${nextN}`,
+                    _duplicatoDa: v.nome || `Vano ${v.id}`,
+                    _duplicatoDaId: v.id,
                     misure: { ...(v.misure || {}) },
                     foto: { ...(v.foto || {}) },
                     accessori: v.accessori ? {
