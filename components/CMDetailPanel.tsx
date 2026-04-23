@@ -1422,8 +1422,8 @@ export default function CMDetailPanel() {
                                     </div>
                                   </div>
 
-                                  {/* 4 bottoni secondari */}
-                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
+                                  {/* 5 bottoni secondari */}
+                                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
                                     <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(ril); setShowRiepilogo(true); }} style={{
                                       padding: "10px 4px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", fontFamily: "inherit",
                                       display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
@@ -1437,6 +1437,42 @@ export default function CMDetailPanel() {
                                     }}>
                                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={T.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                       <span style={{ fontSize: 9, fontWeight: 700, color: T.text }}>PDF</span>
+                                    </button>
+                                    <button onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Duplica il rilievo con tutti i vani (deep copy base)
+                                      const rilieviCor = selectedCM?.rilievi || [];
+                                      const nextN = rilieviCor.length + 1;
+                                      const vaniCopia = (ril.vani || []).map(v => ({
+                                        ...v,
+                                        id: Date.now() + Math.floor(Math.random()*1000) + (v.id || 0),
+                                        misure: { ...(v.misure || {}) },
+                                        foto: { ...(v.foto || {}) },
+                                        accessori: v.accessori ? {
+                                          tapparella: { ...(v.accessori.tapparella || { attivo: false }) },
+                                          persiana: { ...(v.accessori.persiana || { attivo: false }) },
+                                          zanzariera: { ...(v.accessori.zanzariera || { attivo: false }) },
+                                        } : { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
+                                      }));
+                                      const nuovoR = {
+                                        id: Date.now(),
+                                        n: nextN,
+                                        data: new Date().toISOString().split("T")[0],
+                                        tipo: "da_rivedere",
+                                        rilevatore: ril.rilevatore || "",
+                                        note: `Duplicato da R${ril.n || ""}`,
+                                        vani: vaniCopia,
+                                        duplicatoDa: ril.id,
+                                      };
+                                      setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: [...(cm.rilievi||[]), nuovoR], aggiornato: "Oggi" } : cm));
+                                      setSelectedCM(prev => prev ? ({ ...prev, rilievi: [...(prev.rilievi||[]), nuovoR] }) : prev);
+                                      setSelectedRilievo(nuovoR);
+                                    }} style={{
+                                      padding: "10px 4px", borderRadius: 8, background: "#EEEDFE", border: "1px solid #B5B0E8", cursor: "pointer", fontFamily: "inherit",
+                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                    }}>
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 -2 -2V4a2 2 0 0 1 2 -2h9a2 2 0 0 1 2 2v1"/></svg>
+                                      <span style={{ fontSize: 9, fontWeight: 700, color: "#3C3489" }}>Duplica</span>
                                     </button>
                                     <button onClick={(e) => { e.stopPropagation(); fotoInputRef.current?.click(); }} style={{
                                       padding: "10px 4px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, cursor: "pointer", fontFamily: "inherit",
