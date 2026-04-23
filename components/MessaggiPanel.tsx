@@ -95,45 +95,35 @@ export default function MessaggiPanel() {
     }).sort((a, b) => (b.preferito ? 1 : 0) - (a.preferito ? 1 : 0) || a.nome.localeCompare(b.nome));
 
     return (
-      <div style={{ paddingBottom:110, backgroundColor:"#E4F2F2", minHeight:"100vh", fontFamily:"'Manrope', -apple-system, system-ui, sans-serif" }}>
-        {/* ═══ HERO TEAL fliwoX ═══ */}
-        <div style={{ padding:"calc(env(safe-area-inset-top, 0px) + 8px) 12px 0" }}>
+      <div style={{ paddingBottom:110, backgroundColor:"#F4F1EA", minHeight:"100vh", fontFamily:"'Manrope', -apple-system, system-ui, sans-serif" }}>
+        {/* HEADER TEAL CAPSULA v5 */}
+        <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 12px) 10px 0" }}>
           <div style={{
-            background:"linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-            borderRadius:22, padding:"14px 16px 14px",
-            position:"relative" as const, overflow:"hidden" as const,
-            boxShadow:"0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
+            background: "linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)",
+            padding: "14px 16px",
+            borderRadius: 22,
+            boxShadow: "0 4px 16px rgba(40,160,160,0.18)",
           }}>
-            <div style={{ position:"absolute", top:-40, right:-30, width:130, height:130, borderRadius:"50%", background:"radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%)", pointerEvents:"none" as const }} />
-            <div style={{ position:"absolute", top:0, left:0, right:0, height:"50%", background:"linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius:"22px 22px 0 0", pointerEvents:"none" as const }} />
-
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", position:"relative" as const, zIndex:2, marginBottom:12 }}>
-              <div>
-                <div style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.75)", letterSpacing:"1px", textTransform:"uppercase" as const }}>Comunicazione</div>
-                <div style={{ fontSize:26, fontWeight:800, color:"#fff", letterSpacing:"-0.5px", marginTop:2, textShadow:"0 2px 4px rgba(0,0,0,0.2)" }}>Messaggi</div>
-                <div style={{ fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.85)", marginTop:4, display:"flex", gap:8, alignItems:"center" }}>
-                  <span>{unread > 0 ? `${unread} non letti` : "Tutti letti"} · {msgs.length} conversazioni</span>
-                </div>
-              </div>
-
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 10, fontWeight: 500, letterSpacing: 0.5 }}>COMUNICAZIONE</div>
               <div onClick={() => setShowCompose(true)} style={{
-                width:40, height:40, borderRadius:11,
-                background:"linear-gradient(145deg, #FFF, #D8EEEE)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                cursor:"pointer",
-                boxShadow:"0 4px 12px rgba(0,0,0,0.2), 0 0 0 2px rgba(255,255,255,0.25)",
+                width: 28, height: 28, borderRadius: 10,
+                background: "#FFFFFF",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
               }}>
-                <Ico d={ICO.pen} s={17} c="#1A7A7A" />
+                <Ico d={ICO.pen} s={14} c="#28A0A0" />
               </div>
             </div>
+            <div style={{ color: "#FFFFFF", fontSize: 24, fontWeight: 600, letterSpacing: -0.3 }}>Messaggi</div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 6 }}>
+              <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500 }}>{unread > 0 ? `${unread} non letti` : "Tutti letti"}</div>
+              <div style={{ color: "rgba(255,255,255,0.6)" }}>·</div>
+              <div style={{ color: "#FFFFFF", fontSize: 11, fontWeight: 500 }}>{msgs.length} conversazioni</div>
+            </div>
 
-            {/* Tab switch dentro hero */}
-            <div style={{
-              position:"relative" as const, zIndex:2,
-              display:"flex", gap:2, padding:3,
-              background:"rgba(255,255,255,0.15)", borderRadius:12,
-              boxShadow:"inset 0 1px 2px rgba(0,0,0,0.15)",
-            }}>
+            {/* Tab switch coerente con agenda */}
+            <div style={{ display: "flex", gap: 4, marginTop: 12, background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: 3 }}>
               {[
                 { id:"chat", l:"Chat", ico:ICO.messageCircle, count:unread },
                 { id:"email", l:"Email", ico:ICO.mail, count:gmailMessages.filter(m => m.unread).length },
@@ -144,25 +134,20 @@ export default function MessaggiPanel() {
                 const active = msgSubTab === st.id;
                 return (
                   <div key={st.id} onClick={() => setMsgSubTab(st.id)} style={{
-                    flex:1, padding:"8px 3px", textAlign:"center" as const,
-                    fontSize:11, fontWeight:800, cursor:"pointer",
-                    background: active ? "#fff" : "transparent",
-                    color: active ? "#1A7A7A" : "rgba(255,255,255,0.85)",
-                    borderRadius:9,
-                    boxShadow: active ? "0 2px 6px rgba(0,0,0,0.15)" : "none",
-                    letterSpacing:"0.2px",
-                    transition:"all 0.15s",
-                    display:"flex", alignItems:"center", justifyContent:"center", gap:4,
-                    position:"relative" as const,
+                    flex: 1, textAlign: "center" as const, padding: 7, borderRadius: 10,
+                    fontSize: 11, fontWeight: active ? 700 : 500, cursor: "pointer",
+                    background: active ? "#FFFFFF" : "transparent",
+                    color: active ? "#28A0A0" : "rgba(255,255,255,0.85)",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                    position: "relative" as const,
                   }}>
-                    <Ico d={st.ico} s={12} c={active ? "#1A7A7A" : "rgba(255,255,255,0.85)"} />
+                    <Ico d={st.ico} s={11} c={active ? "#28A0A0" : "rgba(255,255,255,0.85)"} />
                     {st.l}
                     {st.count > 0 && (
                       <span style={{
-                        fontSize:9, fontWeight:900, padding:"1px 5px",
-                        borderRadius:8,
-                        background: active ? "#DC4444" : "rgba(255,255,255,0.3)",
-                        color:"#fff",
+                        fontSize: 8, fontWeight: 800, padding: "1px 4px", borderRadius: 8,
+                        background: active ? "#FF7B4D" : "rgba(255,255,255,0.3)",
+                        color: "#fff",
                       }}>{st.count}</span>
                     )}
                   </div>
@@ -171,7 +156,6 @@ export default function MessaggiPanel() {
             </div>
           </div>
         </div>
-
         {/* == CHAT TAB == */}
         {msgSubTab === "chat" && (<>
           <div style={{ padding:"10px 14px 8px" }}>
