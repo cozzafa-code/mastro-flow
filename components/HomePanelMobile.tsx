@@ -3,6 +3,7 @@
 // MASTRO ERP - HomePanel MOBILE - fliwoX Widget Home v4 (mockup approvato)
 import React from "react";
 import { useMastro } from "./MastroContext";
+import BottomToolbar from "./BottomToolbar";
 
 export default function HomePanelMobile(props: any) {
   const mastro: any = (() => { try { return useMastro(); } catch { return {}; } })();
@@ -188,6 +189,7 @@ export default function HomePanelMobile(props: any) {
         </div>
 
       </div>
+      <BottomToolbar active="home" onNavigate={onNavigate} />
     </div>
   );
 }
