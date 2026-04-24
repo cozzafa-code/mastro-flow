@@ -360,6 +360,15 @@ export default function CMDetailPanel() {
     const noteGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "nota").length;
     const fileGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "file").length;
     const allegatiTotV70 = fotoGlobalV70 + audioGlobalV70 + noteGlobalV70 + fileGlobalV70;
+    // v73 · rilievo completo ==> mostro pagina preventivo verde
+    const rilievoCompletoV73 = vaniV70.length > 0 && vaniCompletiV70 === vaniV70.length;
+    const stimaLavoroV73 = (() => {
+      try {
+        if (typeof calcolaVanoPrezzo !== "function") return 0;
+        return vaniV70.reduce((s: number, v: any) => s + (calcolaVanoPrezzo(v, cV70) || 0), 0);
+      } catch (e) { return 0; }
+    })();
+    const fmtEurV73 = (n: number) => n >= 1000 ? `~€${(n/1000).toFixed(1).replace(".", ",")}k` : `~€${Math.round(n)}`;
 
     // Tipo edificio
     const tEdifV70 = cV70.tipoEdificio || cV70.tipo_edificio || "";
@@ -506,17 +515,28 @@ export default function CMDetailPanel() {
         {/* ============ BODY ============ */}
         <div style={{ padding: "16px 16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
 
-          {/* MINI STEPPER 8 puntini */}
+          {/* MINI STEPPER 8 puntini (dinamico v73) */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Passo 2/8" : "Passo 1/8"}</div>
             <div style={{ display: "flex", gap: 3, flex: 1 }}>
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
-              {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+              {rilievoCompletoV73 ? (
+                <>
+                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #3ABDBD, #28A0A0)", boxShadow: "0 0 4px rgba(40,160,160,0.4)" }} />
+                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", boxShadow: "0 0 6px rgba(29,158,117,0.5)" }} />
+                  {[1,2,3,4,5,6].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+                </>
+              ) : (
+                <>
+                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
+                  {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+                </>
+              )}
             </div>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: rilievoCompletoV73 ? "#1D9E75" : "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Preventivo" : "Rilievo"}</div>
           </div>
 
-          {/* BIG ACTION VIOLA */}
+          {/* v73 · BIG ACTION condizionale: VIOLA se rilievo in corso, VERDE se completo */}
+          {!rilievoCompletoV73 && (
           <div style={{
             borderRadius: 26, padding: "22px 20px 20px",
             background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
@@ -603,6 +623,133 @@ export default function CMDetailPanel() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
           </div>
+          )}
+
+          {/* v73 · BIG ACTION VERDE - 2 STRADE quando rilievo completo */}
+          {rilievoCompletoV73 && (
+          <div style={{
+            borderRadius: 26, padding: "22px 20px 20px",
+            background: "linear-gradient(155deg, #6BD9B0 0%, #1D9E75 55%, #0F8060 100%)",
+            color: "#fff",
+            boxShadow: "0 18px 40px rgba(29,158,117,0.35), 0 6px 12px rgba(29,158,117,0.2)",
+            position: "relative", overflow: "hidden",
+            display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
+
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
+              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
+              textTransform: "uppercase" as any, position: "relative",
+            }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Rilievo completo
+            </div>
+
+            <div style={{
+              fontSize: 24, fontWeight: 900, marginTop: 14,
+              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
+              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
+            }}>Scegli come{"\n"}vuoi procedere</div>
+
+            <div style={{
+              fontSize: 12.5, opacity: 0.94, marginTop: 8,
+              lineHeight: 1.4, fontWeight: 500, position: "relative",
+            }}>Hai {vaniV70.length} {vaniV70.length === 1 ? "vano" : "vani"} con tutte le misure. Due strade per il preventivo:</div>
+
+            {/* STRADE */}
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
+              {/* STRADA 1 - Preventivo al volo (CONSIGLIATO) */}
+              <div onClick={() => {
+                try {
+                  (setPrevWorkspace as any)(true);
+                  (setPrevTab as any)("preventivo");
+                } catch (e) { console.warn("v73 preventivo al volo", e); }
+              }} style={{
+                background: "#fff",
+                borderRadius: 16,
+                padding: 14,
+                cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 12,
+                boxShadow: "0 8px 22px rgba(0,0,0,0.22), inset 0 -3px 0 rgba(4,52,44,0.06)",
+              }}>
+                <div style={{
+                  width: 46, height: 46, borderRadius: 13,
+                  background: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+                  boxShadow: "0 4px 10px rgba(29,158,117,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
+                  color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#04342C", letterSpacing: "-0.1px" }}>Preventivo al volo</div>
+                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Hai gi\u00e0 i prezzi, invia subito al cliente in 2 tap</div>
+                  <div style={{
+                    fontSize: 8.5, fontWeight: 900, color: "#04342C",
+                    background: "linear-gradient(145deg, rgba(93,202,165,0.3), rgba(29,158,117,0.18))",
+                    padding: "3px 8px", borderRadius: 50,
+                    letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
+                    border: "1px solid rgba(29,158,117,0.25)",
+                  }}>\u26a1 CONSIGLIATO</div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              {/* STRADA 2 - Chiudi rilievo e basta */}
+              <div onClick={() => {
+                // chiude il rilievo, lascia la commessa in fase sopralluogo, torna alla lista
+                try {
+                  setSelectedRilievo(null);
+                  setSelectedCM(null);
+                } catch (e) { console.warn("v73 chiudi rilievo", e); }
+              }} style={{
+                background: "rgba(255,255,255,0.95)",
+                borderRadius: 16,
+                padding: 14,
+                cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 12,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                border: "2px solid transparent",
+              }}>
+                <div style={{
+                  width: 46, height: 46, borderRadius: 13,
+                  background: "linear-gradient(145deg, rgba(93,202,165,0.2), rgba(29,158,117,0.1))",
+                  boxShadow: "inset 0 1px 2px rgba(255,255,255,0.5)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#04342C", letterSpacing: "-0.1px" }}>Chiudi rilievo e basta</div>
+                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Salva il rilievo, il preventivo lo fai dopo in azienda con calma</div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            {/* Meta tiles */}
+            <div style={{
+              marginTop: 14, display: "grid",
+              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
+            }}>
+              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani pronti</div>
+                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length}</div>
+                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>tutte misure OK</div>
+              </div>
+              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Stima lavoro</div>
+                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "\u2014"}</div>
+                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{stimaLavoroV73 > 0 ? "da verificare" : "non calcolata"}</div>
+              </div>
+            </div>
+          </div>
+          )}
 
           {/* MENU 4 CENTRI */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
