@@ -305,8 +305,7 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
           return (
             <div key={key} onClick={() => !editMode && setExpanded(isOpen ? null : key)} style={{
               background: "#fff", borderRadius: 10,
-              border: "1px solid rgba(200,228,228,0.5)",
-              borderLeft: `3px solid ${f.solid}`,
+              border: "1px solid rgba(200,228,228,0.4)",
               cursor: "pointer", overflow: "hidden" as any,
               boxShadow: isOpen ? `0 6px 16px ${f.tint}` : "0 2px 6px rgba(13,31,31,0.04)",
               transition: "all 0.2s",
