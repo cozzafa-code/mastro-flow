@@ -670,16 +670,25 @@ export default function CMDetailPanel() {
             {/* STRADE */}
             <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
               {/* STRADA 1 - Preventivo al volo (CONSIGLIATO) */}
-              <div onClick={() => {
+              <div onClick={(ev) => {
+                ev.stopPropagation();
+                console.log("[v79 click] Preventivo al volo triggered", { setPrevWorkspace: typeof setPrevWorkspace, setPrevTab: typeof setPrevTab });
                 try {
-                  (setPrevWorkspace as any)(true);
-                  (setPrevTab as any)("preventivo");
-                } catch (e) { console.warn("v73 preventivo al volo", e); }
+                  setPrevWorkspace(true);
+                  setPrevTab("sopralluogo");
+                  setEditingVanoId(null);
+                  console.log("[v79 click] setState OK");
+                } catch (e) {
+                  console.error("[v79 click] ERROR", e);
+                  alert("Errore apertura preventivo: " + (e as any)?.message);
+                }
               }} style={{
                 background: "#fff",
                 borderRadius: 16,
                 padding: 14,
                 cursor: "pointer",
+                position: "relative",
+                zIndex: 10,
                 display: "flex", alignItems: "center", gap: 12,
                 boxShadow: "0 8px 22px rgba(0,0,0,0.22), inset 0 -3px 0 rgba(4,52,44,0.06)",
               }}>
