@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════
-// MASTRO ERP — mastro-boot.ts (v1.1)
-// Accende il sync engine all'avvio dell'app.
+// MASTRO ERP — mastro-boot.ts (v1.2)
+// Accende il sync engine e carica il migratore orfane on-demand.
 // ═══════════════════════════════════════════════════════════
 
 "use client";
@@ -9,6 +9,7 @@ import "./mastro-idb";
 import "./mastro-sync-worker";
 import "./mastro-store";
 import "./mastro-bridge";
+import "./mastro-migrate-orfane";
 
 if (typeof window !== "undefined") {
   if (!(window as any).__mastro_boot_done) {
@@ -23,6 +24,7 @@ if (typeof window !== "undefined") {
           sync: !!(window as any).__mastro_sync,
           store: !!(window as any).__mastro_store,
           bridge: !!(window as any).__mastro_bridge,
+          migrate: !!(window as any).__mastro_migrate,
         }
       );
     }, 0);
