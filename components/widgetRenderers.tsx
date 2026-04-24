@@ -1,92 +1,136 @@
 "use client";
 import React from "react";
 
-const TEAL = "#28A0A0";
-const TEAL_DARK = "#1F7A7A";
+// ═══════════════════════════════════════════════════════════
+// DESIGN TOKENS v2 - Palette mockup v3 scelta da Fabio
+// ═══════════════════════════════════════════════════════════
 const DARK = "#0D1F1F";
+const INK = "#0F2525";
 const SUB = "#5A7878";
-const AMBER = "#F5A030";
-const RED = "#DC4444";
-const GREEN = "#28A0A0";
+const MUTED = "#8FA8A8";
+const BORDER = "rgba(200,228,228,0.5)";
+const BORDER_SOFT = "rgba(200,228,228,0.3)";
 
-const Empty = ({ msg }: { msg: string }) => (
-  <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>{msg}</p>
-);
+const TEAL = "#28A0A0";
+const TEAL_DARK = "#1A7A7A";
+const TEAL_BRIGHT = "#5FD0D0";
 
-const Row = ({ children, onClick, last }: any) => (
-  <div onClick={onClick} style={{
-    display: "flex", alignItems: "center", gap: 10,
-    padding: "9px 2px",
-    borderBottom: last ? "none" : "1px solid rgba(40,160,160,0.08)",
-    cursor: onClick ? "pointer" : "default",
-  }}>{children}</div>
-);
-
-const Badge = ({ text, bg, fg }: any) => (
-  <span style={{
-    fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 8,
-    background: bg, color: fg, whiteSpace: "nowrap" as any,
-  }}>{text}</span>
-);
-
-const today = () => new Date().toISOString().slice(0, 10);
-
-// Accetta sia ISO timestamp sia date string - ritorna giorni interi da allora
-const daysSince = (date: any): number => {
-  if (!date) return 0;
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return 0;
-  const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
-  return Math.floor(diff);
+// Colori fase (mockup v3)
+const FASE: any = {
+  sopralluogo:  { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", bg: "rgba(127,119,221,0.08)" },
+  rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", bg: "rgba(127,119,221,0.08)" },
+  preventivo:   { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", bg: "rgba(29,158,117,0.08)" },
+  conferma:     { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", bg: "rgba(239,159,39,0.1)" },
+  ordini:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", bg: "rgba(239,159,39,0.1)" },
+  ordine:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", bg: "rgba(239,159,39,0.1)" },
+  produzione:   { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", solid: "#378ADD", dark: "#042C53", tint: "rgba(55,138,221,0.12)", bg: "rgba(55,138,221,0.08)" },
+  posa:         { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", bg: "rgba(212,83,126,0.1)" },
+  montaggio:    { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", bg: "rgba(212,83,126,0.1)" },
+  collaudo:     { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", bg: "rgba(212,83,126,0.1)" },
+  consegna:     { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", solid: "#639922", dark: "#173404", tint: "rgba(99,153,34,0.14)", bg: "rgba(99,153,34,0.1)" },
+  fattura:      { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", solid: "#639922", dark: "#173404", tint: "rgba(99,153,34,0.14)", bg: "rgba(99,153,34,0.1)" },
+  chiusura:     { grad: "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)", solid: "#5F5E5A", dark: "#2C2C2A", tint: "rgba(95,94,90,0.14)", bg: "rgba(95,94,90,0.1)" },
+  ferma:        { grad: "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)", solid: "#E24B4A", dark: "#8B1A1A", tint: "rgba(226,75,74,0.14)", bg: "rgba(226,75,74,0.1)" },
 };
 
-// Formatta euro compatto (€4.2k, €850)
+const getFase = (f: string): any => {
+  if (!f) return FASE.sopralluogo;
+  const k = f.toLowerCase();
+  if (k.includes("ferma")) return FASE.ferma;
+  if (k.includes("rilievo") || k.includes("sopral")) return FASE.sopralluogo;
+  if (k.includes("preventivo")) return FASE.preventivo;
+  if (k.includes("conferma") || k.includes("ordin")) return FASE.ordini;
+  if (k.includes("produzione")) return FASE.produzione;
+  if (k.includes("posa") || k.includes("montag") || k.includes("collaudo")) return FASE.posa;
+  if (k.includes("fattur") || k.includes("saldo") || k.includes("consegn")) return FASE.fattura;
+  if (k.includes("chius") || k.includes("archivi")) return FASE.chiusura;
+  return FASE.sopralluogo;
+};
+
+// ═══════════════════════════════════════════════════════════
+// Elementi base
+// ═══════════════════════════════════════════════════════════
+const Empty = ({ msg, icon }: { msg: string; icon?: string }) => (
+  <div style={{
+    display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center",
+    padding: "24px 16px", gap: 8,
+  }}>
+    {icon && <div style={{ fontSize: 32, opacity: 0.4 }}>{icon}</div>}
+    <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", fontWeight: 600, letterSpacing: "0.2px" }}>{msg}</p>
+  </div>
+);
+
+const AvatarColored = ({ text, fase, size = 36, urgent }: { text: string; fase?: string; size?: number; urgent?: boolean }) => {
+  const f = urgent ? FASE.ferma : getFase(fase || "");
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.28, flexShrink: 0,
+      background: f.grad,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.33, fontWeight: 900, color: "#fff",
+      boxShadow: "0 3px 8px rgba(13,31,31,0.18), inset 0 1px 1px rgba(255,255,255,0.25)",
+      letterSpacing: "-0.2px",
+      textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+    }}>{text}</div>
+  );
+};
+
+const PillFase = ({ fase, small }: { fase: string; small?: boolean }) => {
+  const f = getFase(fase);
+  const testo = fase ? fase.charAt(0).toUpperCase() + fase.slice(1) : "—";
+  return (
+    <span style={{
+      fontSize: small ? 9 : 10, fontWeight: 900,
+      padding: small ? "2px 7px" : "3px 9px",
+      borderRadius: 7,
+      background: f.tint, color: f.dark,
+      letterSpacing: "0.3px", textTransform: "uppercase" as const,
+      whiteSpace: "nowrap" as const, flexShrink: 0,
+    }}>{testo}</span>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════
+// Utility data
+// ═══════════════════════════════════════════════════════════
+const today = () => new Date().toISOString().slice(0, 10);
+const daysSince = (date: any): number => {
+  if (!date || date === 0 || date === "0") return 0;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return 0;
+  if (d.getTime() < 1577836800000) return 0;
+  const diff = Date.now() - d.getTime();
+  const gg = Math.floor(diff / 86400000);
+  return gg < 0 ? 0 : gg;
+};
 const eur = (n: number): string => {
   if (!n || n <= 0) return "—";
   if (n >= 1000) return `€${(n / 1000).toFixed(1)}k`;
   return `€${Math.round(n)}`;
 };
-
-// Leggi campi di fallback - supporta sia i nomi DB (Supabase) che quelli legacy in-memory
+const eurFull = (n: number): string => {
+  if (!n || n <= 0) return "€0";
+  return "€" + Math.round(n).toLocaleString("it-IT");
+};
 const pick = (obj: any, ...keys: string[]) => {
   for (const k of keys) {
     if (obj?.[k] !== undefined && obj?.[k] !== null && obj?.[k] !== "") return obj[k];
   }
   return null;
 };
-
-// Valore commessa (DB: totale_finale > totale_preventivo; legacy: euro/totale/valore_totale)
-const valoreCM = (c: any): number => {
-  return Number(pick(c, "totale_finale", "totale_preventivo", "euro", "totale", "valore_totale")) || 0;
-};
-
-// Nome cliente commessa
+const valoreCM = (c: any): number => Number(pick(c, "totale_finale", "totale_preventivo", "euro", "totale", "valore_totale")) || 0;
 const clienteCM = (c: any): string => {
   const nome = pick(c, "cliente", "cliente_nome");
   const cognome = pick(c, "cognome");
   if (nome && cognome) return `${nome} ${cognome}`;
   return nome || cognome || "—";
 };
-
-// Data ultimo avanzamento commessa (per calcolare gg fermo)
-const lastCMActivity = (c: any): any => {
-  return pick(c, "ops_ultimo_avanzamento", "fase_start", "updated_at", "aggiornato", "created_at", "creato");
+const initials = (s: string): string => {
+  if (!s) return "—";
+  const parts = s.trim().split(/\s+/).slice(0, 2);
+  return parts.map(p => p[0]?.toUpperCase() || "").join("") || s[0]?.toUpperCase() || "—";
 };
-
-// Colore per fase commessa
-const faseColor = (f: string): string => {
-  const k = (f || "").toLowerCase();
-  if (k.includes("rilievo") || k.includes("sopral")) return "#5856D6";
-  if (k.includes("preventivo")) return AMBER;
-  if (k.includes("conferma") || k.includes("ordine")) return TEAL;
-  if (k.includes("produzione")) return "#EA580C";
-  if (k.includes("posa") || k.includes("montag")) return "#2563EB";
-  if (k.includes("collaudo") || k.includes("consegna")) return "#22C55E";
-  if (k.includes("fattur") || k.includes("saldo")) return "#D08008";
-  return TEAL_DARK;
-};
-
-// Legge se fattura è pagata - supporta sia fin_fatture_emesse (stato/residuo) che legacy (pagata)
+const lastCMActivity = (c: any): any => pick(c, "ops_ultimo_avanzamento", "fase_start", "updated_at", "aggiornato", "created_at", "creato");
 const fattPagata = (f: any): boolean => {
   if (f?.pagata === true) return true;
   if (f?.stato === "pagata" || f?.stato === "paid") return true;
@@ -94,19 +138,13 @@ const fattPagata = (f: any): boolean => {
   if (!isNaN(residuo) && residuo === 0 && Number(f?.totale) > 0) return true;
   return false;
 };
+const fattImporto = (f: any): number => Number(pick(f, "totale", "importo")) || 0;
+const fattScadenza = (f: any): string | null => pick(f, "data_scadenza", "scadenza");
+const fattCliente = (f: any): string => pick(f, "cliente", "ragione_sociale") || "—";
 
-const fattImporto = (f: any): number => {
-  return Number(pick(f, "totale", "importo")) || 0;
-};
-
-const fattScadenza = (f: any): string | null => {
-  return pick(f, "data_scadenza", "scadenza");
-};
-
-const fattCliente = (f: any): string => {
-  return pick(f, "cliente", "ragione_sociale") || "—";
-};
-
+// ═══════════════════════════════════════════════════════════
+// RENDER ENTRY
+// ═══════════════════════════════════════════════════════════
 function safeRender(id: string, data: any, nav: any): React.ReactNode {
   const tasks = data?.tasks || [];
   const cantieri = data?.cantieri || [];
@@ -120,418 +158,171 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
   switch (id) {
     case "oggi_devi_fare": {
       const actions: any[] = [];
-
-      // 1. TASK non completati con priorità
-      tasks.filter((t: any) => !t?.done).forEach((t: any) => {
-        const prio = (t?.priorita || t?.priority || t?.prio || "").toLowerCase();
-        const isAlta = prio === "alta" || prio === "urgente" || prio === "urgent" || t?.urgent;
-        const dataT = pick(t, "data", "date", "scadenza");
-        const scadOggi = dataT === td;
-        const testo = pick(t, "testo", "title", "text") || "Task";
-        const meta = pick(t, "meta", "cm", "persona");
-        actions.push({
-          icon: isAlta ? "🔴" : scadOggi ? "🟠" : "🟡",
-          title: testo,
-          meta: meta || "",
-          priority: isAlta ? 3 : scadOggi ? 2 : 1,
-          onClick: () => nav?.openTask?.(t),
-          badge: isAlta ? "ORA" : scadOggi ? "OGGI" : null,
-          badgeBg: isAlta ? RED : AMBER,
+      cantieri.filter((c: any) => c?.ferma === true && c?.ferma_dal).forEach((c: any) => {
+        const gg = daysSince(c.ferma_dal);
+        if (gg > 0) actions.push({
+          titolo: `Sblocca ${c.code}`,
+          sub: `${clienteCM(c)} · ferma da ${gg}gg`,
+          fase: "ferma", urgent: true,
+          onClick: () => nav?.openCM?.(c),
         });
       });
-
-      // 2. COMMESSE FERME (campo DB ferma=true) o preventivi inviati senza risposta da 7+gg
-      cantieri.forEach((c: any) => {
-        // Commesse esplicitamente marcate ferma
-        if (c?.ferma === true && c?.ferma_dal) {
-          const gg = daysSince(c.ferma_dal);
-          actions.push({
-            icon: "⏸",
-            title: `Sbloccare ${clienteCM(c)}`,
-            meta: `${c.code || ""} · ${c?.motivo_ferma || "ferma"} da ${gg}gg`,
-            priority: gg >= 7 ? 3 : 2,
-            onClick: () => nav?.openCM?.(c),
-            badge: gg >= 14 ? "CRITICO" : "FERMA",
-            badgeBg: gg >= 14 ? RED : AMBER,
-          });
-          return;
-        }
-        // Preventivi inviati senza risposta
+      cantieri.filter((c: any) => {
         const f = (c?.fase || "").toLowerCase();
-        if (f === "preventivo" && c?.preventivo_inviato_at) {
-          const gg = daysSince(c.preventivo_inviato_at);
-          if (gg >= 5) {
-            actions.push({
-              icon: "📞",
-              title: `Richiama ${clienteCM(c)}`,
-              meta: `${c.code || ""} · ${eur(valoreCM(c))} · inviato ${gg}gg fa`,
-              priority: gg >= 15 ? 3 : 2,
-              onClick: () => nav?.openCM?.(c),
-              badge: gg >= 15 ? "URGENTE" : `${gg}gg`,
-              badgeBg: gg >= 15 ? RED : AMBER,
-            });
-          }
-        }
-      });
-
-      // 3. EVENTI DI OGGI (campo DB: data + ora)
-      events.filter((e: any) => {
-        const d = pick(e, "data", "date");
-        const st = e?.start_time;
-        return d === td || (st || "").startsWith(td);
-      }).forEach((e: any) => {
-        const ora = pick(e, "ora", "time") || (e?.start_time || "").slice(11, 16);
-        const titolo = pick(e, "titolo", "title", "text");
-        const persona = pick(e, "persona", "client_name", "cliente");
+        return f === "preventivo" && c?.updated_at && daysSince(c.updated_at) > 5;
+      }).forEach((c: any) => {
         actions.push({
-          icon: "📅",
-          title: titolo || "Evento",
-          meta: `${ora || ""}${persona ? " · " + persona : ""}`,
-          priority: 2,
-          onClick: () => nav?.openEvent?.(e),
-          badge: null,
+          titolo: `Sollecita preventivo`,
+          sub: `${c.code} · ${clienteCM(c)}`,
+          fase: "preventivo",
+          onClick: () => nav?.openCM?.(c),
+        });
+      });
+      fattureDB.filter((f: any) => !fattPagata(f) && fattScadenza(f) && new Date(fattScadenza(f)!) < new Date(td)).forEach((f: any) => {
+        actions.push({
+          titolo: `Incassa ${eur(fattImporto(f))}`,
+          sub: `${fattCliente(f)} · scaduta`,
+          fase: "ferma", urgent: true,
+          onClick: () => nav?.openFatt?.(f),
         });
       });
 
-      // 4. FATTURE SCADUTE da sollecitare
-      fattureDB.filter((f: any) => {
-        const scad = fattScadenza(f);
-        return !fattPagata(f) && scad && scad < td;
-      }).slice(0, 2).forEach((f: any) => {
-        const gg = daysSince(fattScadenza(f));
-        actions.push({
-          icon: "💰",
-          title: `Sollecito ${fattCliente(f)}`,
-          meta: `${eur(fattImporto(f))} · scaduta ${gg}gg fa`,
-          priority: 3,
-          onClick: () => nav?.goto?.("contabilita"),
-          badge: "SCADUTA",
-          badgeBg: RED,
-        });
-      });
+      if (actions.length === 0) return <Empty msg="Tutto sotto controllo" icon="✓" />;
 
-      actions.sort((a, b) => b.priority - a.priority);
-      if (actions.length === 0) return <Empty msg="Tutto in ordine oggi" />;
-
-      return actions.slice(0, 5).map((a, i) => (
-        <Row key={i} last={i === Math.min(actions.length, 5) - 1} onClick={a.onClick}>
-          <div style={{ fontSize: 14, width: 20, flexShrink: 0, textAlign: "center" }}>{a.icon}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</div>
-            {a.meta && <div style={{ fontSize: 11, color: SUB, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.meta}</div>}
-          </div>
-          {a.badge && <Badge text={a.badge} bg={a.badgeBg || AMBER} fg="#fff" />}
-        </Row>
-      ));
-    }
-
-    case "squadra": {
-      if (team.length === 0) return <Empty msg="Nessun operatore configurato" />;
-      // DB team: stato_attuale / commessa_attuale_id / ultimo_accesso
-      const attivi = team.filter((m: any) => {
-        const st = (m?.stato_attuale || m?.stato_oggi || "").toLowerCase();
-        return m?.attivo === true || m?.inCantiere || m?.commessa_attuale_id ||
-          ["in cantiere", "in rilievo", "online", "attivo", "al lavoro"].includes(st);
-      });
-      const lista = attivi.length > 0 ? attivi : team;
-      return lista.slice(0, 5).map((m: any, i: number) => {
-        const st = (m?.stato_attuale || m?.stato_oggi || (m?.attivo ? "attivo" : "offline")).toLowerCase();
-        const inServizio = ["in cantiere", "in rilievo", "online", "attivo", "al lavoro"].includes(st) || !!m?.commessa_attuale_id;
-        const iniziali = ((m.nome || "?")[0] + (m.cognome || "?")[0]).toUpperCase();
-        return (
-          <Row key={m.id || i} last={i === Math.min(lista.length, 5) - 1} onClick={() => nav?.goto?.("team")}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore || TEAL, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{iniziali}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{m.nome} {m.cognome || ""}</div>
-              <div style={{ fontSize: 11, color: SUB }}>{m.ruolo || m.qualifica || "Operatore"}</div>
-            </div>
-            <Badge text={inServizio ? "ATTIVO" : "OFFLINE"} bg={inServizio ? GREEN + "20" : "#BDBDBD30"} fg={inServizio ? GREEN : SUB} />
-          </Row>
-        );
-      });
-    }
-
-    case "produzione": {
-      const aperti = problemi.filter((p: any) => p?.stato !== "risolto" && p?.stato !== "chiuso");
-      if (aperti.length === 0) return <Empty msg="Nessun problema attivo" />;
-      return aperti.slice(0, 4).map((p: any, i: number) => {
-        const u = p?.priorita === "alta" || p?.priorita === "urgente";
-        return (
-          <Row key={p.id || i} last={i === Math.min(aperti.length, 4) - 1} onClick={() => nav?.openProblema?.(p)}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: u ? RED : AMBER, flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.titolo || p.descrizione}</div>
-              <div style={{ fontSize: 11, color: SUB }}>{p.cm_code || ""}</div>
-            </div>
-            {u && <Badge text="URGENTE" bg={RED} fg="#fff" />}
-          </Row>
-        );
-      });
-    }
-
-    case "fatture_incassare": {
-      const aperte = fattureDB.filter((f: any) => !fattPagata(f));
-      const tot = aperte.reduce((s: number, f: any) => s + fattImporto(f), 0);
-      if (tot === 0) return <Empty msg="Nessuna fattura aperta" />;
       return (
-        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
-          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{aperte.length} fatture aperte</div>
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {actions.slice(0, 5).map((a, i) => {
+            const f = getFase(a.fase);
+            return (
+              <div key={i} onClick={a.onClick} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: "#fff",
+                borderRadius: 10,
+                borderLeft: `3px solid ${f.solid}`,
+                boxShadow: "0 2px 6px rgba(13,31,31,0.05)",
+                cursor: "pointer",
+              }}>
+                <div style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: f.solid,
+                  boxShadow: `0 0 0 3px ${f.tint}`,
+                  flexShrink: 0,
+                }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.titolo}</div>
+                  <div style={{ fontSize: 10, color: SUB, fontWeight: 600, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.sub}</div>
+                </div>
+                <span style={{ color: f.solid, fontSize: 18, fontWeight: 900 }}>›</span>
+              </div>
+            );
+          })}
         </div>
       );
     }
 
-    case "fatture_scadute": {
-      const scad = fattureDB.filter((f: any) => {
-        const s = fattScadenza(f);
-        return !fattPagata(f) && s && s < td;
-      });
-      if (scad.length === 0) return <Empty msg="Tutto regolare" />;
-      return scad.slice(0, 4).map((f: any, i: number) => (
-        <Row key={f.id || i} last={i === Math.min(scad.length, 4) - 1} onClick={() => nav?.goto?.("contabilita")}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>€ {Math.round(fattImporto(f)).toLocaleString("it-IT")}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{fattCliente(f)}</div>
-          </div>
-          <Badge text="SCADUTA" bg={RED} fg="#fff" />
-        </Row>
-      ));
-    }
-
-    case "eventi_oggi": {
-      // DB: data (date), ora (text HH:MM), tipo, persona, titolo, indirizzo
-      const oggi = events.filter((e: any) => {
-        const d = pick(e, "data", "date");
-        const st = e?.start_time;
-        const done = e?.completato || e?.annullato;
-        return !done && (d === td || (st || "").startsWith(td));
-      });
-      if (oggi.length === 0) return <Empty msg="Nessun evento oggi" />;
-
-      oggi.sort((a: any, b: any) => {
-        const ta = pick(a, "ora", "time") || (a?.start_time || "").slice(11, 16) || "99:99";
-        const tb = pick(b, "ora", "time") || (b?.start_time || "").slice(11, 16) || "99:99";
-        return ta.localeCompare(tb);
-      });
-
-      return oggi.slice(0, 5).map((e: any, i: number) => {
-        const ora = pick(e, "ora", "time") || (e?.start_time || "").slice(11, 16) || "—";
-        const tipo = (pick(e, "tipo", "event_type", "type") || "").toUpperCase();
-        const titolo = pick(e, "titolo", "title", "text");
-        const persona = pick(e, "persona", "client_name", "cliente");
-        const addr = pick(e, "indirizzo", "address", "addr");
-        const col = e?.colore || faseColor(tipo);
-        return (
-          <Row key={e.id || i} last={i === Math.min(oggi.length, 5) - 1} onClick={() => nav?.openEvent?.(e)}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 46, flexShrink: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 900, color: TEAL_DARK, lineHeight: 1 }}>{ora}</div>
-              {tipo && <div style={{ fontSize: 8, fontWeight: 700, color: col, marginTop: 3, letterSpacing: "0.3px" }}>{tipo.slice(0, 7)}</div>}
-            </div>
-            <div style={{ width: 3, height: 32, borderRadius: 2, background: col, flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {titolo || persona || "Evento"}
-              </div>
-              <div style={{ fontSize: 11, color: SUB, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {addr ? addr : persona || ""}
-              </div>
-            </div>
-          </Row>
-        );
-      });
-    }
-
-    case "messaggi_non_letti": {
-      const nuovi = msgs.filter((m: any) => !m?.letto && !m?.read);
-      if (nuovi.length === 0) return <Empty msg="Nessun messaggio nuovo" />;
-      return nuovi.slice(0, 4).map((m: any, i: number) => (
-        <Row key={m.id || i} last={i === Math.min(nuovi.length, 4) - 1} onClick={() => nav?.openMsg?.(m)}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: TEAL, flexShrink: 0 }} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{pick(m, "da", "mittente", "sender") || "—"}</div>
-            <div style={{ fontSize: 11, color: SUB, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pick(m, "text", "anteprima", "contenuto") || ""}</div>
-          </div>
-        </Row>
-      ));
-    }
-
-    case "commesse_ritardo": {
-      // Usa campo DB: ferma = true con ferma_dal
-      const r = cantieri.filter((c: any) => c?.ferma === true && c?.ferma_dal);
-      if (r.length === 0) return <Empty msg="Tutto in orario" />;
-      return r.slice(0, 4).map((c: any, i: number) => {
-        const gg = daysSince(c.ferma_dal);
-        return (
-          <Row key={c.id || i} last={i === Math.min(r.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
-              <div style={{ fontSize: 11, color: SUB }}>{c?.motivo_ferma || "ferma"} da {gg}gg</div>
-            </div>
-            <Badge text="FERMA" bg={RED} fg="#fff" />
-          </Row>
-        );
-      });
-    }
-
-    case "lavori_in_corso": {
-      // Esclude fasi di chiusura
-      const a = cantieri.filter((c: any) => {
-        const f = (c?.fase || "").toLowerCase();
-        return c?.fase && !f.includes("chius") && !f.includes("consegn") && !f.includes("archivi");
-      });
-      if (a.length === 0) return <Empty msg="Nessun lavoro attivo" />;
-
-      // Ordina per "più fermi in cima" usando fase_start o ultimo avanzamento
-      a.sort((x: any, y: any) => daysSince(lastCMActivity(y)) - daysSince(lastCMActivity(x)));
-
-      return a.slice(0, 5).map((c: any, i: number) => {
-        const fase = c.fase || "—";
-        const col = faseColor(fase);
-        const cliente = clienteCM(c);
-        const valore = valoreCM(c);
-        const gg = daysSince(lastCMActivity(c));
-        const fermo = c?.ferma === true || gg >= 7;
-        return (
-          <Row key={c.id || i} last={i === Math.min(a.length, 5) - 1} onClick={() => nav?.openCM?.(c)}>
-            <div style={{ width: 4, height: 36, borderRadius: 2, background: col, flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                  {c.code || ""} · {cliente}
-                </div>
-                {valore > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: TEAL_DARK, flexShrink: 0 }}>{eur(valore)}</div>}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.3px" }}>{fase}</span>
-                <span style={{ fontSize: 10, color: SUB }}>·</span>
-                <span style={{ fontSize: 10, color: fermo ? RED : SUB, fontWeight: fermo ? 700 : 500 }}>
-                  {gg === 0 ? "oggi" : `${gg}gg`}
-                </span>
-              </div>
-            </div>
-            {c?.ferma === true
-              ? <Badge text="FERMA" bg={RED} fg="#fff" />
-              : (gg >= 7 ? <Badge text="FERMO" bg={AMBER} fg="#fff" /> : null)}
-          </Row>
-        );
-      });
-    }
-
-    case "preventivi_scadenza": {
-      const prev = cantieri.filter((c: any) => (c?.fase || "").toLowerCase() === "preventivo");
-      // Scadenza basata su preventivo_inviato_at + 30gg (tipica validità)
-      const inScad = prev.filter((c: any) => {
-        if (!c?.preventivo_inviato_at) return false;
-        const gg = daysSince(c.preventivo_inviato_at);
-        return gg >= 20 && gg < 30;
-      });
-      const list = inScad.length > 0 ? inScad : prev.slice(0, 5);
-      if (list.length === 0) return <Empty msg="Nessun preventivo in scadenza" />;
-      return list.slice(0, 4).map((c: any, i: number) => {
-        const gg = c?.preventivo_inviato_at ? daysSince(c.preventivo_inviato_at) : null;
-        return (
-          <Row key={c.id || i} last={i === Math.min(list.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
-              <div style={{ fontSize: 11, color: SUB }}>{gg !== null ? `inviato ${gg}gg fa` : "da inviare"}</div>
-            </div>
-            {gg !== null && gg >= 20 && <Badge text="SCAD" bg={AMBER} fg="#fff" />}
-          </Row>
-        );
-      });
-    }
-
-    case "preventivi_da_inviare": {
-      const bozze = cantieri.filter((c: any) =>
-        (c?.fase || "").toLowerCase() === "preventivo" && !c?.preventivo_inviato_at
-      );
-      if (bozze.length === 0) return <Empty msg="Nessuna bozza in attesa" />;
-      return bozze.slice(0, 4).map((c: any, i: number) => (
-        <Row key={c.id || i} last={i === Math.min(bozze.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{eur(valoreCM(c))} · da inviare</div>
-          </div>
-        </Row>
-      ));
-    }
-
-    case "rilievi_da_confermare": {
-      const r = cantieri.filter((c: any) => {
-        const f = (c?.fase || "").toLowerCase();
-        return (f === "rilievo" || f === "sopralluogo") && !c?.rilievoConfermato;
-      });
-      if (r.length === 0) return <Empty msg="Nessun rilievo in attesa" />;
-      return r.slice(0, 4).map((c: any, i: number) => (
-        <Row key={c.id || i} last={i === Math.min(r.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
-            <div style={{ fontSize: 11, color: SUB }}>Rilievo da confermare</div>
-          </div>
-        </Row>
-      ));
-    }
-
-    case "prossime_consegne": {
-      const d7 = data?._d7 || td;
-      const c7 = cantieri.filter((c: any) => c?.consegnaPrevista && c.consegnaPrevista >= td && c.consegnaPrevista <= d7);
-      if (c7.length === 0) return <Empty msg="Nessuna consegna nei 7gg" />;
-      return c7.slice(0, 4).map((c: any, i: number) => (
-        <Row key={c.id || i} last={i === Math.min(c7.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{c.consegnaPrevista}</div>
-          </div>
-        </Row>
-      ));
-    }
-
-    case "pipeline_commesse": {
-      const fasi: Record<string, { count: number; val: number }> = {};
-      cantieri.forEach((c: any) => {
-        const f = c?.fase || "—";
-        if (!fasi[f]) fasi[f] = { count: 0, val: 0 };
-        fasi[f].count += 1;
-        fasi[f].val += valoreCM(c);
-      });
-      const keys = Object.keys(fasi);
-      if (keys.length === 0) return <Empty msg="Nessuna commessa in pipeline" />;
-
-      const order = ["rilievo", "sopralluogo", "preventivo", "conferma", "ordine", "produzione", "posa", "montaggio", "collaudo", "consegna", "fattura", "saldo", "chiusura"];
-      keys.sort((a, b) => {
-        const ia = order.findIndex(o => a.toLowerCase().includes(o));
-        const ib = order.findIndex(o => b.toLowerCase().includes(o));
-        if (ia === -1 && ib === -1) return fasi[b].count - fasi[a].count;
-        if (ia === -1) return 1;
-        if (ib === -1) return -1;
-        return ia - ib;
-      });
-
-      const maxCount = Math.max(...keys.map(k => fasi[k].count));
-      const totVal = keys.reduce((s, k) => s + fasi[k].val, 0);
-
+    case "squadra": {
+      if (team.length === 0) return <Empty msg="Nessun membro in squadra" icon="👷" />;
       return (
-        <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "2px 0 6px", borderBottom: "1px solid rgba(40,160,160,0.1)", marginBottom: 4 }}>
-            <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>Totale pipeline</span>
-            <span style={{ fontSize: 16, fontWeight: 900, color: TEAL_DARK }}>{eur(totVal)}</span>
-          </div>
-          {keys.slice(0, 6).map((f, i) => {
-            const d = fasi[f];
-            const pct = maxCount > 0 ? (d.count / maxCount) * 100 : 0;
-            const col = faseColor(f);
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+          {team.slice(0, 6).map((t: any, i: number) => {
+            const nome = pick(t, "nome", "name") || "—";
+            const ruolo = pick(t, "ruolo", "role") || "";
+            const cantiere = pick(t, "cantiere_attuale", "cantiere");
+            const stato = cantiere ? "in cantiere" : "libero";
+            const col = cantiere ? FASE.produzione : FASE.preventivo;
             return (
-              <div key={f} onClick={() => nav?.goto?.("commesse")} style={{ padding: "7px 2px", cursor: "pointer", borderBottom: i === Math.min(keys.length, 6) - 1 ? "none" : "1px solid rgba(40,160,160,0.05)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: DARK, textTransform: "capitalize" }}>{f}</span>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    {d.val > 0 && <span style={{ fontSize: 10, color: SUB, fontWeight: 600 }}>{eur(d.val)}</span>}
-                    <span style={{ fontSize: 14, fontWeight: 900, color: col }}>{d.count}</span>
+              <div key={t.id || i} onClick={() => nav?.openTeam?.(t)} style={{
+                background: "#fff", borderRadius: 12, padding: "10px 11px",
+                border: "1px solid " + BORDER_SOFT,
+                borderLeft: `3px solid ${col.solid}`,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <AvatarColored text={initials(nome)} fase={cantiere ? "produzione" : "preventivo"} size={30} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nome}</div>
+                    <div style={{ fontSize: 9, color: SUB, fontWeight: 700, textTransform: "uppercase" as const, letterSpacing: "0.3px" }}>{ruolo}</div>
                   </div>
                 </div>
-                <div style={{ height: 4, background: "rgba(40,160,160,0.08)", borderRadius: 2, overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: col, borderRadius: 2, transition: "width 0.3s" }} />
+                <div style={{
+                  marginTop: 7, fontSize: 9, fontWeight: 800,
+                  padding: "2px 7px", borderRadius: 6,
+                  background: col.tint, color: col.dark,
+                  display: "inline-block",
+                  letterSpacing: "0.3px", textTransform: "uppercase" as const,
+                }}>● {stato}</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "produzione": {
+      const inprod = cantieri.filter((c: any) => (c?.fase || "").toLowerCase().includes("produzione"));
+      if (inprod.length === 0) return <Empty msg="Nessuna commessa in produzione" icon="🏭" />;
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {inprod.slice(0, 5).map((c: any, i: number) => {
+            const vani = c?.vani?.length || 0;
+            const valore = valoreCM(c);
+            return (
+              <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: "#fff", borderRadius: 10,
+                borderLeft: `3px solid ${FASE.produzione.solid}`,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.05)",
+              }}>
+                <AvatarColored text={initials(clienteCM(c))} fase="produzione" size={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{c.code} · {clienteCM(c)}</div>
+                  <div style={{ fontSize: 10, color: SUB, fontWeight: 600, marginTop: 2 }}>{vani} van{vani === 1 ? "o" : "i"} · {eur(valore)}</div>
                 </div>
+                <span style={{ color: FASE.produzione.solid, fontSize: 16, fontWeight: 900 }}>›</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "fatture_incassare": {
+      const da = fattureDB.filter((f: any) => !fattPagata(f));
+      if (da.length === 0) return <Empty msg="Tutto incassato" icon="✓" />;
+      const totale = da.reduce((s: number, f: any) => s + fattImporto(f), 0);
+      return (
+        <>
+          <div style={{
+            background: FASE.fattura.grad,
+            borderRadius: 12, padding: "10px 12px", marginBottom: 8,
+            color: "#fff",
+            boxShadow: `0 4px 12px ${FASE.fattura.tint}`,
+          }}>
+            <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>Da incassare</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{eurFull(totale)}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, marginTop: 1 }}>{da.length} fattur{da.length === 1 ? "a" : "e"} aperte</div>
+          </div>
+          {da.slice(0, 3).map((f: any, i: number) => {
+            const scad = fattScadenza(f);
+            const scaduta = scad && new Date(scad) < new Date(td);
+            const ff = scaduta ? FASE.ferma : FASE.fattura;
+            return (
+              <div key={f.id || i} onClick={() => nav?.openFatt?.(f)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "8px 12px",
+                borderBottom: i < Math.min(da.length, 3) - 1 ? "1px solid " + BORDER_SOFT : "none",
+                cursor: "pointer",
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: ff.solid, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: INK }}>{fattCliente(f)}</div>
+                  <div style={{ fontSize: 10, color: SUB, fontWeight: 600 }}>{scad ? (scaduta ? "scaduta" : "scade " + scad) : ""}</div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: ff.dark }}>{eur(fattImporto(f))}</div>
               </div>
             );
           })}
@@ -539,166 +330,723 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
       );
     }
 
-    case "ordini_attesa": {
-      const ord = data?.ordiniFornDB || [];
-      const attesa = ord.filter((o: any) => o?.stato === "attesa" || o?.stato === "bozza" || !o?.confermato);
-      if (attesa.length === 0) return <Empty msg="Nessun ordine in attesa" />;
-      return attesa.slice(0, 4).map((o: any, i: number) => (
-        <Row key={o.id || i} last={i === Math.min(attesa.length, 4) - 1} onClick={() => nav?.goto?.("ordini")}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{o.fornitore || o.ragione_sociale}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{o.numero || o.id}</div>
+    case "fatture_scadute": {
+      const sc = fattureDB.filter((f: any) => !fattPagata(f) && fattScadenza(f) && new Date(fattScadenza(f)!) < new Date(td));
+      if (sc.length === 0) return <Empty msg="Nessuna fattura scaduta" icon="✓" />;
+      const totale = sc.reduce((s: number, f: any) => s + fattImporto(f), 0);
+      return (
+        <>
+          <div style={{
+            background: FASE.ferma.grad,
+            borderRadius: 12, padding: "10px 12px", marginBottom: 8,
+            color: "#fff",
+            boxShadow: `0 4px 12px ${FASE.ferma.tint}`,
+          }}>
+            <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>⚠ Scadute</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{eurFull(totale)}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, marginTop: 1 }}>{sc.length} da recuperare</div>
           </div>
-        </Row>
-      ));
+          {sc.slice(0, 3).map((f: any, i: number) => {
+            const scad = fattScadenza(f);
+            const gg = scad ? daysSince(scad) : 0;
+            return (
+              <div key={f.id || i} onClick={() => nav?.openFatt?.(f)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "8px 12px",
+                borderBottom: i < Math.min(sc.length, 3) - 1 ? "1px solid " + BORDER_SOFT : "none",
+                cursor: "pointer",
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: INK }}>{fattCliente(f)}</div>
+                  <div style={{ fontSize: 10, color: FASE.ferma.dark, fontWeight: 700 }}>{gg} gg in ritardo</div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: FASE.ferma.dark }}>{eur(fattImporto(f))}</div>
+              </div>
+            );
+          })}
+        </>
+      );
+    }
+
+    case "eventi_oggi": {
+      const oggi = events.filter((e: any) => {
+        const d = pick(e, "data", "date");
+        const st = e?.start_time;
+        const done = e?.completato || e?.annullato;
+        return !done && (d === td || (st || "").startsWith(td));
+      });
+      if (oggi.length === 0) return <Empty msg="Nessun evento oggi" icon="📅" />;
+      oggi.sort((a: any, b: any) => {
+        const ta = pick(a, "ora", "time") || (a?.start_time || "").slice(11, 16) || "99:99";
+        const tb = pick(b, "ora", "time") || (b?.start_time || "").slice(11, 16) || "99:99";
+        return ta.localeCompare(tb);
+      });
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {oggi.slice(0, 5).map((e: any, i: number) => {
+            const ora = pick(e, "ora", "time") || (e?.start_time || "").slice(11, 16) || "—";
+            const tipo = (pick(e, "tipo", "event_type", "type") || "").toLowerCase();
+            const titolo = pick(e, "titolo", "title", "text");
+            const persona = pick(e, "persona", "client_name", "cliente");
+            const addr = pick(e, "indirizzo", "address", "addr");
+            const f = getFase(tipo);
+            return (
+              <div key={e.id || i} onClick={() => nav?.openEvent?.(e)} style={{
+                display: "flex", alignItems: "stretch", gap: 10,
+                padding: "10px 12px",
+                background: "#fff", borderRadius: 12,
+                border: "1px solid " + BORDER_SOFT,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.05)",
+              }}>
+                <div style={{
+                  display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center",
+                  width: 52, flexShrink: 0,
+                  background: f.tint,
+                  borderRadius: 10,
+                  padding: "4px 0",
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: f.dark, letterSpacing: "-0.3px" }}>{ora}</div>
+                  {tipo && <div style={{ fontSize: 8, fontWeight: 800, color: f.dark, marginTop: 2, letterSpacing: "0.3px", textTransform: "uppercase" as const, opacity: 0.85 }}>{tipo.slice(0, 7)}</div>}
+                </div>
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" as const, justifyContent: "center" }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {titolo || persona || "Evento"}
+                  </div>
+                  {(addr || persona) && (
+                    <div style={{ fontSize: 10, color: SUB, fontWeight: 600, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {addr || persona || ""}
+                    </div>
+                  )}
+                </div>
+                <span style={{ color: MUTED, fontSize: 16, fontWeight: 900, alignSelf: "center" }}>›</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "messaggi_non_letti": {
+      const nuovi = msgs.filter((m: any) => !m?.letto && !m?.read);
+      if (nuovi.length === 0) return <Empty msg="Nessun messaggio nuovo" icon="💬" />;
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {nuovi.slice(0, 4).map((m: any, i: number) => {
+            const mittente = pick(m, "da", "mittente", "sender") || "—";
+            return (
+              <div key={m.id || i} onClick={() => nav?.openMsg?.(m)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: "#fff", borderRadius: 10,
+                border: "1px solid " + BORDER_SOFT,
+                borderLeft: `3px solid ${TEAL}`,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.05)",
+              }}>
+                <AvatarColored text={initials(mittente)} fase="preventivo" size={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{mittente}</div>
+                  <div style={{ fontSize: 10, color: SUB, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>
+                    {pick(m, "text", "anteprima", "contenuto") || ""}
+                  </div>
+                </div>
+                <div style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: TEAL_BRIGHT,
+                  boxShadow: `0 0 0 3px rgba(40,160,160,0.2)`,
+                  flexShrink: 0,
+                }} />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "commesse_ritardo": {
+      const r = cantieri.filter((c: any) => c?.ferma === true && c?.ferma_dal);
+      if (r.length === 0) return <Empty msg="Tutto in orario" icon="✓" />;
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {r.slice(0, 4).map((c: any, i: number) => {
+            const gg = daysSince(c.ferma_dal);
+            return (
+              <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: FASE.ferma.grad,
+                borderRadius: 12,
+                cursor: "pointer",
+                color: "#fff",
+                boxShadow: `0 4px 10px rgba(226,75,74,0.25)`,
+              }}>
+                <AvatarColored text={initials(clienteCM(c))} urgent size={34} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{c.code} · {clienteCM(c)}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.9)", fontWeight: 700, marginTop: 1 }}>
+                    {c?.motivo_ferma || "ferma"} · {gg} gg
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: 9, fontWeight: 900, padding: "3px 8px", borderRadius: 6,
+                  background: "rgba(255,255,255,0.95)", color: FASE.ferma.dark,
+                  letterSpacing: "0.4px", textTransform: "uppercase" as const, flexShrink: 0,
+                }}>FERMA</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "lavori_in_corso": {
+      const a = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        return c?.fase && !f.includes("chius") && !f.includes("consegn") && !f.includes("archivi");
+      });
+      if (a.length === 0) return <Empty msg="Nessun lavoro attivo" icon="🔨" />;
+      a.sort((x: any, y: any) => daysSince(lastCMActivity(y)) - daysSince(lastCMActivity(x)));
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {a.slice(0, 5).map((c: any, i: number) => {
+            const fase = c.fase || "—";
+            const f = getFase(fase);
+            const cliente = clienteCM(c);
+            const valore = valoreCM(c);
+            const gg = daysSince(lastCMActivity(c));
+            const fermo = c?.ferma === true || gg >= 7;
+            return (
+              <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: "#fff", borderRadius: 10,
+                border: "1px solid " + BORDER_SOFT,
+                borderLeft: `3px solid ${f.solid}`,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+              }}>
+                <AvatarColored text={initials(cliente)} fase={fase} size={32} urgent={fermo} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {c.code} · {cliente}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                    <PillFase fase={fase} small />
+                    {valore > 0 && <span style={{ fontSize: 10, color: SUB, fontWeight: 700 }}>· {eur(valore)}</span>}
+                    {fermo && <span style={{ fontSize: 9, color: FASE.ferma.dark, fontWeight: 900, letterSpacing: "0.3px" }}>· FERMA</span>}
+                  </div>
+                </div>
+                <span style={{ color: f.solid, fontSize: 16, fontWeight: 900 }}>›</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "preventivi_scadenza": {
+      const prev = cantieri.filter((c: any) => (c?.fase || "").toLowerCase() === "preventivo");
+      if (prev.length === 0) return <Empty msg="Nessun preventivo aperto" icon="📄" />;
+      prev.sort((a: any, b: any) => daysSince(a.updated_at) - daysSince(b.updated_at));
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {prev.slice(0, 5).map((c: any, i: number) => {
+            const gg = daysSince(c.updated_at || c.created_at);
+            const urg = gg > 5;
+            const f = urg ? FASE.ferma : FASE.preventivo;
+            return (
+              <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: "#fff", borderRadius: 10,
+                border: "1px solid " + BORDER_SOFT,
+                borderLeft: `3px solid ${f.solid}`,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+              }}>
+                <AvatarColored text={initials(clienteCM(c))} fase="preventivo" size={32} urgent={urg} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{c.code} · {clienteCM(c)}</div>
+                  <div style={{ fontSize: 10, color: urg ? FASE.ferma.dark : SUB, fontWeight: 700, marginTop: 1 }}>
+                    {gg} gg senza firma {urg && "· SOLLECITA"}
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: f.dark }}>{eur(valoreCM(c))}</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "preventivi_da_inviare": {
+      const da = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        return (f === "rilievo" || f === "sopralluogo") && (c?.rilievo_completato || c?.rilievo_confermato);
+      });
+      if (da.length === 0) return <Empty msg="Nessun preventivo pronto" icon="📋" />;
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {da.slice(0, 5).map((c: any, i: number) => (
+            <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px",
+              background: "#fff", borderRadius: 10,
+              border: "1px solid " + BORDER_SOFT,
+              borderLeft: `3px solid ${FASE.sopralluogo.solid}`,
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+            }}>
+              <AvatarColored text={initials(clienteCM(c))} fase="sopralluogo" size={32} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{c.code} · {clienteCM(c)}</div>
+                <div style={{ fontSize: 10, color: SUB, fontWeight: 700, marginTop: 1 }}>{c?.vani?.length || 0} vani misurati</div>
+              </div>
+              <span style={{
+                fontSize: 9, fontWeight: 900, padding: "4px 9px", borderRadius: 7,
+                background: FASE.sopralluogo.grad, color: "#fff",
+                letterSpacing: "0.3px", textTransform: "uppercase" as const,
+                boxShadow: "0 2px 4px rgba(127,119,221,0.3)",
+              }}>Genera</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    case "rilievi_da_confermare": {
+      const r = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        return f === "rilievo" || f === "sopralluogo";
+      });
+      if (r.length === 0) return <Empty msg="Nessun rilievo aperto" icon="📐" />;
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {r.slice(0, 5).map((c: any, i: number) => {
+            const vani = c?.vani?.length || 0;
+            return (
+              <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: "#fff", borderRadius: 10,
+                border: "1px solid " + BORDER_SOFT,
+                borderLeft: `3px solid ${FASE.sopralluogo.solid}`,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+              }}>
+                <AvatarColored text={initials(clienteCM(c))} fase="sopralluogo" size={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{c.code} · {clienteCM(c)}</div>
+                  <div style={{ fontSize: 10, color: SUB, fontWeight: 700, marginTop: 1 }}>{vani} van{vani === 1 ? "o" : "i"} · {c?.indirizzo || "—"}</div>
+                </div>
+                <span style={{ color: FASE.sopralluogo.solid, fontSize: 16, fontWeight: 900 }}>›</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "prossime_consegne": {
+      const c5 = [...cantieri]
+        .filter((c: any) => c?.data_consegna)
+        .sort((a: any, b: any) => (a.data_consegna || "").localeCompare(b.data_consegna || ""))
+        .filter((c: any) => c.data_consegna >= td);
+      if (c5.length === 0) return <Empty msg="Nessuna consegna programmata" icon="🚚" />;
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {c5.slice(0, 5).map((c: any, i: number) => {
+            const gg = Math.max(0, Math.floor((new Date(c.data_consegna).getTime() - Date.now()) / 86400000));
+            const urg = gg <= 2;
+            const f = urg ? FASE.ferma : FASE.consegna;
+            return (
+              <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px",
+                background: "#fff", borderRadius: 10,
+                border: "1px solid " + BORDER_SOFT,
+                borderLeft: `3px solid ${f.solid}`,
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                  background: f.tint, display: "flex", flexDirection: "column" as const,
+                  alignItems: "center", justifyContent: "center",
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: f.dark, letterSpacing: "-0.3px" }}>{gg}</div>
+                  <div style={{ fontSize: 7, fontWeight: 800, color: f.dark, letterSpacing: "0.3px", textTransform: "uppercase" as const }}>GG</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{c.code} · {clienteCM(c)}</div>
+                  <div style={{ fontSize: 10, color: urg ? FASE.ferma.dark : SUB, fontWeight: 700, marginTop: 1 }}>{c.data_consegna}{urg && " · URGENTE"}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    case "pipeline_commesse": {
+      const fasi = [
+        { k: "sopralluogo", l: "Sopral." },
+        { k: "preventivo", l: "Prev." },
+        { k: "ordini", l: "Ordine" },
+        { k: "produzione", l: "Prod." },
+        { k: "posa", l: "Posa" },
+        { k: "fattura", l: "Fatt." },
+      ];
+      const counts = fasi.map(f => {
+        const n = cantieri.filter((c: any) => {
+          const cf = (c?.fase || "").toLowerCase();
+          if (f.k === "sopralluogo") return cf.includes("sopral") || cf.includes("rilievo");
+          if (f.k === "ordini") return cf.includes("ordin") || cf.includes("conferma");
+          if (f.k === "posa") return cf.includes("posa") || cf.includes("montag") || cf.includes("collaudo");
+          if (f.k === "fattura") return cf.includes("fattur") || cf.includes("saldo") || cf.includes("consegn");
+          return cf.includes(f.k);
+        }).length;
+        return { ...f, n, fase: getFase(f.k) };
+      });
+      const maxN = Math.max(...counts.map(x => x.n), 1);
+      return (
+        <div>
+          <div style={{
+            display: "flex", alignItems: "flex-end", gap: 4,
+            height: 90, padding: "4px 2px 0",
+          }}>
+            {counts.map((c) => {
+              const h = Math.max(8, (c.n / maxN) * 80);
+              return (
+                <div key={c.k} onClick={() => nav?.openCommesseFase?.(c.k)} style={{
+                  flex: 1, display: "flex", flexDirection: "column" as const, alignItems: "center",
+                  cursor: "pointer",
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 900, color: c.fase.dark, marginBottom: 3 }}>{c.n}</div>
+                  <div style={{
+                    width: "100%",
+                    height: h,
+                    background: c.fase.grad,
+                    borderRadius: "6px 6px 2px 2px",
+                    boxShadow: `0 2px 6px ${c.fase.tint}, inset 0 1px 1px rgba(255,255,255,0.25)`,
+                  }} />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+            {counts.map(c => (
+              <div key={c.k} style={{
+                flex: 1, textAlign: "center" as const,
+                fontSize: 9, fontWeight: 800, color: c.fase.dark,
+                letterSpacing: "0.2px",
+              }}>{c.l}</div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    case "ordini_attesa": {
+      const ord = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        return f === "conferma ordine" || f === "ordini" || f === "ordine";
+      });
+      if (ord.length === 0) return <Empty msg="Nessun ordine in attesa" icon="📦" />;
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {ord.slice(0, 5).map((c: any, i: number) => (
+            <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px",
+              background: "#fff", borderRadius: 10,
+              border: "1px solid " + BORDER_SOFT,
+              borderLeft: `3px solid ${FASE.ordini.solid}`,
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+            }}>
+              <AvatarColored text={initials(clienteCM(c))} fase="ordini" size={32} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: INK }}>{c.code} · {clienteCM(c)}</div>
+                <div style={{ fontSize: 10, color: SUB, fontWeight: 700, marginTop: 1 }}>{c?.vani?.length || 0} vani · {eur(valoreCM(c))}</div>
+              </div>
+              <PillFase fase="ordini" small />
+            </div>
+          ))}
+        </div>
+      );
     }
 
     case "ordini_settimana": {
-      const d7 = data?._d7 || td;
-      const ord = data?.ordiniFornDB || [];
-      const sett = ord.filter((o: any) => o?.consegnaPrevista && o.consegnaPrevista >= td && o.consegnaPrevista <= d7);
-      if (sett.length === 0) return <Empty msg="Nessuna consegna nei 7gg" />;
-      return sett.slice(0, 4).map((o: any, i: number) => (
-        <Row key={o.id || i} last={i === Math.min(sett.length, 4) - 1} onClick={() => nav?.goto?.("ordini")}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{o.fornitore}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{o.consegnaPrevista}</div>
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+      const ord = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        const d = pick(c, "ordine_conferma_data", "data_ordine", "updated_at");
+        return (f.includes("ordin") || f.includes("produzione")) && d && d >= weekAgo;
+      });
+      if (ord.length === 0) return <Empty msg="Nessun ordine questa settimana" icon="📆" />;
+      const tot = ord.reduce((s: number, c: any) => s + valoreCM(c), 0);
+      return (
+        <>
+          <div style={{
+            background: FASE.ordini.grad,
+            borderRadius: 12, padding: "10px 12px", marginBottom: 8,
+            color: "#fff",
+            boxShadow: `0 4px 12px ${FASE.ordini.tint}`,
+          }}>
+            <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>Settimana</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{eurFull(tot)}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, marginTop: 1 }}>{ord.length} ordini</div>
           </div>
-        </Row>
-      ));
+          {ord.slice(0, 3).map((c: any, i: number) => (
+            <div key={c.id || i} onClick={() => nav?.openCM?.(c)} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "8px 12px",
+              borderBottom: i < Math.min(ord.length, 3) - 1 ? "1px solid " + BORDER_SOFT : "none",
+              cursor: "pointer",
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: INK }}>{c.code} · {clienteCM(c)}</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: FASE.ordini.dark }}>{eur(valoreCM(c))}</div>
+            </div>
+          ))}
+        </>
+      );
     }
 
     case "spese_mese": {
       const spese = data?.spese || [];
       const mese = td.slice(0, 7);
-      const m = spese.filter((s: any) => (s?.data || s?.date || s?.data_emissione || "").startsWith(mese));
-      const tot = m.reduce((acc: number, s: any) => acc + (Number(s?.importo || s?.totale) || 0), 0);
-      if (tot === 0) return <Empty msg="Nessuna spesa registrata" />;
+      const del_mese = spese.filter((s: any) => {
+        const d = pick(s, "data", "date");
+        return d && d.startsWith(mese);
+      });
+      const tot = del_mese.reduce((s: number, sp: any) => s + Number(pick(sp, "importo", "totale") || 0), 0);
       return (
-        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
-          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{m.length} spese nel mese</div>
-        </div>
+        <>
+          <div style={{
+            background: FASE.chiusura.grad,
+            borderRadius: 12, padding: "10px 12px", marginBottom: 8,
+            color: "#fff",
+            boxShadow: `0 4px 12px ${FASE.chiusura.tint}`,
+          }}>
+            <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>Spese mese</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{eurFull(tot)}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, marginTop: 1 }}>{del_mese.length} spese</div>
+          </div>
+          {del_mese.length === 0 && <Empty msg="Nessuna spesa questo mese" icon="💸" />}
+        </>
       );
     }
 
     case "fatturato_mese": {
       const mese = td.slice(0, 7);
-      const pag = fattureDB.filter((f: any) => {
-        const dataE = pick(f, "data_emissione", "data");
-        return fattPagata(f) && (dataE || "").startsWith(mese);
-      });
-      const tot = pag.reduce((s: number, f: any) => s + fattImporto(f), 0);
-      if (tot === 0) return <Empty msg="Nessun incasso nel mese" />;
+      const tot = fattureDB
+        .filter((f: any) => fattPagata(f) && (pick(f, "data_emissione", "data") || "").startsWith(mese))
+        .reduce((s: number, f: any) => s + fattImporto(f), 0);
+      const daInc = fattureDB
+        .filter((f: any) => !fattPagata(f) && (pick(f, "data_emissione", "data") || "").startsWith(mese))
+        .reduce((s: number, f: any) => s + fattImporto(f), 0);
       return (
-        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
-          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{pag.length} fatture incassate</div>
+        <div style={{
+          background: FASE.fattura.grad,
+          borderRadius: 12, padding: "12px 14px",
+          color: "#fff",
+          boxShadow: `0 4px 12px ${FASE.fattura.tint}`,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>Fatturato mese</div>
+          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.6px", marginTop: 3, textShadow: "0 2px 3px rgba(0,0,0,0.15)" }}>{eurFull(tot)}</div>
+          <div style={{
+            marginTop: 10, padding: "7px 10px",
+            background: "rgba(255,255,255,0.2)",
+            borderRadius: 8,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <span style={{ fontSize: 10, fontWeight: 700, opacity: 0.9 }}>Da incassare</span>
+            <span style={{ fontSize: 12, fontWeight: 900 }}>{eurFull(daInc)}</span>
+          </div>
         </div>
       );
     }
 
     case "pagamenti_arrivo": {
-      const d7 = data?._d7 || td;
-      const att = fattureDB.filter((f: any) => {
-        const s = fattScadenza(f);
-        return !fattPagata(f) && s && s >= td && s <= d7;
-      });
-      if (att.length === 0) return <Empty msg="Nessun pagamento atteso" />;
-      const tot = att.reduce((s: number, f: any) => s + fattImporto(f), 0);
+      const prossimi = fattureDB
+        .filter((f: any) => !fattPagata(f) && fattScadenza(f))
+        .sort((a: any, b: any) => (fattScadenza(a) || "").localeCompare(fattScadenza(b) || ""))
+        .filter((f: any) => fattScadenza(f)! >= td);
+      if (prossimi.length === 0) return <Empty msg="Nessun incasso in arrivo" icon="💰" />;
+      const tot = prossimi.reduce((s: number, f: any) => s + fattImporto(f), 0);
       return (
-        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: GREEN, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
-          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{att.length} fatture in arrivo entro 7gg</div>
-        </div>
+        <>
+          <div style={{
+            background: FASE.preventivo.grad,
+            borderRadius: 12, padding: "10px 12px", marginBottom: 8,
+            color: "#fff",
+            boxShadow: `0 4px 12px ${FASE.preventivo.tint}`,
+          }}>
+            <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>In arrivo</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.5px", marginTop: 2, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{eurFull(tot)}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, marginTop: 1 }}>{prossimi.length} pagamenti attesi</div>
+          </div>
+          {prossimi.slice(0, 3).map((f: any, i: number) => {
+            const gg = Math.floor((new Date(fattScadenza(f)!).getTime() - Date.now()) / 86400000);
+            return (
+              <div key={f.id || i} onClick={() => nav?.openFatt?.(f)} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "8px 12px",
+                borderBottom: i < Math.min(prossimi.length, 3) - 1 ? "1px solid " + BORDER_SOFT : "none",
+                cursor: "pointer",
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: INK }}>{fattCliente(f)}</div>
+                  <div style={{ fontSize: 10, color: SUB, fontWeight: 600 }}>tra {gg} gg</div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 900, color: FASE.preventivo.dark }}>{eur(fattImporto(f))}</div>
+              </div>
+            );
+          })}
+        </>
       );
     }
 
     case "margine_medio": {
-      const chiuse = cantieri.filter((c: any) => {
-        const tot = valoreCM(c);
-        const costo = Number(pick(c, "costoTotale", "costo_totale")) || 0;
-        return tot > 0 && costo > 0;
-      });
-      if (chiuse.length === 0) return <Empty msg="Dati margine non disponibili" />;
-      const margini = chiuse.map((c: any) => {
-        const tot = valoreCM(c);
-        const costo = Number(pick(c, "costoTotale", "costo_totale")) || 0;
-        return ((tot - costo) / tot) * 100;
-      });
-      const avg = margini.reduce((s: number, m: number) => s + m, 0) / margini.length;
+      const ff = fattureDB.filter((f: any) => fattPagata(f));
+      const totFatt = ff.reduce((s: number, f: any) => s + fattImporto(f), 0);
+      const spese = data?.spese || [];
+      const totSpese = spese.reduce((s: number, sp: any) => s + Number(pick(sp, "importo", "totale") || 0), 0);
+      const margine = totFatt - totSpese;
+      const pct = totFatt > 0 ? Math.round((margine / totFatt) * 100) : 0;
+      const good = pct >= 30;
+      const f = good ? FASE.preventivo : pct >= 15 ? FASE.ordini : FASE.ferma;
       return (
-        <div style={{ padding: "4px 0" }}>
-          <div style={{ fontSize: 28, fontWeight: 900, color: DARK }}>{avg.toFixed(1)}%</div>
-          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>Su {chiuse.length} commesse</div>
+        <div style={{
+          background: f.grad,
+          borderRadius: 14, padding: "14px 16px",
+          color: "#fff",
+          boxShadow: `0 6px 18px ${f.tint}`,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>Margine medio</div>
+          <div style={{ fontSize: 34, fontWeight: 900, letterSpacing: "-0.8px", marginTop: 4, textShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>{pct}%</div>
+          <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, opacity: 0.8, letterSpacing: "0.4px", textTransform: "uppercase" as const }}>Fatt.</div>
+              <div style={{ fontSize: 13, fontWeight: 900 }}>{eurFull(totFatt)}</div>
+            </div>
+            <div style={{ width: 1, background: "rgba(255,255,255,0.3)" }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, opacity: 0.8, letterSpacing: "0.4px", textTransform: "uppercase" as const }}>Margine</div>
+              <div style={{ fontSize: 13, fontWeight: 900 }}>{eurFull(margine)}</div>
+            </div>
+          </div>
         </div>
       );
     }
 
     case "clienti_insolventi": {
-      const scad = fattureDB.filter((f: any) => {
-        const s = fattScadenza(f);
-        return !fattPagata(f) && s && s < td;
-      });
-      const perCli: Record<string, { cli: string; count: number; tot: number }> = {};
+      const scad = fattureDB.filter((f: any) => !fattPagata(f) && fattScadenza(f) && new Date(fattScadenza(f)!) < new Date(td));
+      const byCliente = new Map<string, { nome: string; tot: number; gg: number; count: number }>();
       scad.forEach((f: any) => {
         const k = fattCliente(f);
-        if (!perCli[k]) perCli[k] = { cli: k, count: 0, tot: 0 };
-        perCli[k].count += 1;
-        perCli[k].tot += fattImporto(f);
+        const gg = daysSince(fattScadenza(f));
+        const cur = byCliente.get(k) || { nome: k, tot: 0, gg: 0, count: 0 };
+        cur.tot += fattImporto(f);
+        cur.gg = Math.max(cur.gg, gg);
+        cur.count += 1;
+        byCliente.set(k, cur);
       });
-      const list = Object.values(perCli).sort((a: any, b: any) => b.tot - a.tot);
-      if (list.length === 0) return <Empty msg="Nessun cliente insolvente" />;
-      return list.slice(0, 4).map((c: any, i: number) => (
-        <Row key={i} last={i === Math.min(list.length, 4) - 1} onClick={() => nav?.goto?.("contabilita")}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.cli}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{c.count} fatture scadute</div>
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 900, color: RED }}>€ {Math.round(c.tot).toLocaleString("it-IT")}</div>
-        </Row>
-      ));
-    }
-
-    case "top_clienti": {
-      const perCli: Record<string, { cli: string; tot: number }> = {};
-      fattureDB.filter((f: any) => fattPagata(f)).forEach((f: any) => {
-        const k = fattCliente(f);
-        if (!perCli[k]) perCli[k] = { cli: k, tot: 0 };
-        perCli[k].tot += fattImporto(f);
-      });
-      const list = Object.values(perCli).sort((a: any, b: any) => b.tot - a.tot).slice(0, 5);
-      if (list.length === 0) return <Empty msg="Nessun dato clienti" />;
-      return list.map((c: any, i: number) => (
-        <Row key={i} last={i === list.length - 1}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: TEAL_DARK, width: 20, flexShrink: 0 }}>{i + 1}°</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cli}</div>
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 900, color: GREEN }}>€ {Math.round(c.tot).toLocaleString("it-IT")}</div>
-        </Row>
-      ));
-    }
-
-    case "iva_versare": {
-      const mese = parseInt(td.slice(5, 7), 10);
-      const trimStart = mese <= 3 ? "01" : mese <= 6 ? "04" : mese <= 9 ? "07" : "10";
-      const yr = td.slice(0, 4);
-      const trimPrefix = yr + "-" + trimStart.padStart(2, "0");
-      const ric = fattureDB
-        .filter((f: any) => fattPagata(f) && (pick(f, "data_emissione", "data") || "") >= trimPrefix)
-        .reduce((s: number, f: any) => s + fattImporto(f), 0);
-      const ivaStimata = ric * 0.22 / 1.22;
-      if (ric === 0) return <Empty msg="Nessun dato per calcolo IVA" />;
+      const arr = [...byCliente.values()].sort((a, b) => b.tot - a.tot);
+      if (arr.length === 0) return <Empty msg="Nessun cliente insolvente" icon="✓" />;
       return (
-        <div style={{ padding: "4px 0" }}>
-          <div style={{ fontSize: 24, fontWeight: 900, color: DARK }}>€ {Math.round(ivaStimata).toLocaleString("it-IT")}</div>
-          <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>Stima trimestre corrente</div>
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {arr.slice(0, 4).map((c, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px",
+              background: "#fff", borderRadius: 10,
+              border: "1px solid " + BORDER_SOFT,
+              borderLeft: `3px solid ${FASE.ferma.solid}`,
+              boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+            }}>
+              <AvatarColored text={initials(c.nome)} urgent size={32} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.nome}</div>
+                <div style={{ fontSize: 10, color: FASE.ferma.dark, fontWeight: 700, marginTop: 1 }}>{c.count} fatt · {c.gg} gg</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: FASE.ferma.dark }}>{eur(c.tot)}</div>
+            </div>
+          ))}
         </div>
       );
     }
+
+    case "top_clienti": {
+      const byCliente = new Map<string, { nome: string; tot: number; count: number }>();
+      fattureDB.filter((f: any) => fattPagata(f)).forEach((f: any) => {
+        const k = fattCliente(f);
+        const cur = byCliente.get(k) || { nome: k, tot: 0, count: 0 };
+        cur.tot += fattImporto(f);
+        cur.count += 1;
+        byCliente.set(k, cur);
+      });
+      const arr = [...byCliente.values()].sort((a, b) => b.tot - a.tot);
+      if (arr.length === 0) return <Empty msg="Nessun cliente pagante" icon="🏆" />;
+      const medals = ["#FFD700", "#C0C0C0", "#CD7F32"];
+      return (
+        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+          {arr.slice(0, 5).map((c, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "10px 12px",
+              background: "#fff", borderRadius: 10,
+              border: "1px solid " + BORDER_SOFT,
+              borderLeft: `3px solid ${i < 3 ? medals[i] : FASE.fattura.solid}`,
+              boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+            }}>
+              <div style={{
+                width: 26, height: 26, borderRadius: 13,
+                background: i < 3 ? medals[i] : FASE.chiusura.tint,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 900, color: i < 3 ? "#fff" : SUB,
+                flexShrink: 0,
+                boxShadow: i < 3 ? `0 2px 6px ${medals[i]}60` : "none",
+              }}>{i + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.nome}</div>
+                <div style={{ fontSize: 10, color: SUB, fontWeight: 700, marginTop: 1 }}>{c.count} fatt</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: FASE.fattura.dark }}>{eur(c.tot)}</div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    case "iva_versare": {
+      const trim = Math.floor((new Date().getMonth()) / 3) + 1;
+      const meseNum = parseInt(td.split("-")[1]);
+      const trimStart = Math.floor((meseNum - 1) / 3) * 3 + 1;
+      const trimPrefix = td.slice(0, 4) + "-" + String(trimStart).padStart(2, "0");
+      const ivaFatture = fattureDB
+        .filter((f: any) => (pick(f, "data_emissione", "data") || "") >= trimPrefix)
+        .reduce((s: number, f: any) => s + (fattImporto(f) * 0.22 / 1.22), 0);
+      return (
+        <div style={{
+          background: FASE.conferma.grad,
+          borderRadius: 14, padding: "14px 16px",
+          color: "#fff",
+          boxShadow: `0 6px 18px ${FASE.conferma.tint}`,
+        }}>
+          <div style={{ fontSize: 9, fontWeight: 800, opacity: 0.9, letterSpacing: "0.8px", textTransform: "uppercase" as const }}>IVA Trim. {trim}</div>
+          <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.7px", marginTop: 3, textShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>{eurFull(ivaFatture)}</div>
+          <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, marginTop: 2 }}>da versare</div>
+        </div>
+      );
+    }
+
     default:
-      return <Empty msg="In arrivo nei prossimi aggiornamenti" />;
+      return <Empty msg={`Widget "${id}" in arrivo`} icon="⚡" />;
   }
 }
 
@@ -710,3 +1058,9 @@ export function renderWidgetBody(id: string, data: any, nav: any): React.ReactNo
     return <Empty msg="Errore caricamento widget" />;
   }
 }
+
+// Alias per retrocompatibilita' con HomeWidgetsDynamic.tsx che importa renderWidgetBody
+const renderWidgetBody = safeRender;
+
+export default safeRender;
+export { safeRender, renderWidgetBody };
