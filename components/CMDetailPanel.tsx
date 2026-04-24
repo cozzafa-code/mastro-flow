@@ -695,14 +695,14 @@ export default function CMDetailPanel() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: "#04342C", letterSpacing: "-0.1px" }}>Preventivo al volo</div>
-                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Hai gi\u00e0 i prezzi, invia subito al cliente in 2 tap</div>
+                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Hai già i prezzi, invia subito al cliente in 2 tap</div>
                   <div style={{
                     fontSize: 8.5, fontWeight: 900, color: "#04342C",
                     background: "linear-gradient(145deg, rgba(93,202,165,0.3), rgba(29,158,117,0.18))",
                     padding: "3px 8px", borderRadius: 50,
                     letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
                     border: "1px solid rgba(29,158,117,0.25)",
-                  }}>\u26a1 CONSIGLIATO</div>
+                  }}>⚡ CONSIGLIATO</div>
                 </div>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
               </div>
