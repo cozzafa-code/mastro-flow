@@ -590,8 +590,12 @@ export default function CommessePanel() {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                marginTop: 12, padding: "12px 0 0",
-                borderTop: "1px dashed rgba(40,160,160,0.25)",
+                margin: heroMode ? 0 : "12px -16px -14px",
+                padding: heroMode ? "14px" : "14px 16px",
+                background: "#FFFFFF",
+                borderTop: heroMode ? "none" : "1px solid rgba(200,228,228,0.5)",
+                borderBottomLeftRadius: heroMode ? 0 : 18,
+                borderBottomRightRadius: heroMode ? 0 : 18,
                 animation: "slideDown 0.25s ease-out",
               }}
             >
