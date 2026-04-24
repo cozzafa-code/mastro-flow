@@ -1,7 +1,7 @@
 "use client";
 // @ts-nocheck
 // MASTRO ERP - HomePanel MOBILE - fliwoX Widget Home v5 (drag+add+apri)
-import React from "react";
+import React, { useState as RS } from "react";
 import { useMastro } from "./MastroContext";
 
 const ALL_WIDGETS: any[] = [
@@ -39,6 +39,387 @@ const ALL_WIDGETS: any[] = [
   { id: "azioni",      label: "Azioni rapide",        bg: "#FAC775", fg: "#412402", cat: "Azioni" },
 ];
 const DEFAULT_LAYOUT = ["oggi", "timeline", "corso", "fatt", "pipeline", "recenti", "agenda", "azioni"];
+
+
+// === HELPER V3 MOCKUP ===
+const FASE_V3: any = {
+  sopralluogo: { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", bg: "rgba(127,119,221,0.08)", light: "#EEEDFE" },
+  rilievo:     { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", bg: "rgba(127,119,221,0.08)", light: "#EEEDFE" },
+  preventivo:  { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", bg: "rgba(29,158,117,0.08)", light: "#E1F5EE" },
+  conferma:    { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", bg: "rgba(239,159,39,0.1)",  light: "#FAEEDA" },
+  ordini:      { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", bg: "rgba(239,159,39,0.1)",  light: "#FAEEDA" },
+  produzione:  { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", solid: "#378ADD", dark: "#042C53", tint: "rgba(55,138,221,0.12)",  bg: "rgba(55,138,221,0.08)", light: "#B5D4F4" },
+  posa:        { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)",  bg: "rgba(212,83,126,0.1)",  light: "#F4C0D1" },
+  montaggio:   { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)",  bg: "rgba(212,83,126,0.1)",  light: "#F4C0D1" },
+  fattura:     { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", solid: "#639922", dark: "#173404", tint: "rgba(99,153,34,0.14)",   bg: "rgba(99,153,34,0.1)",   light: "#C0DD97" },
+  ferma:       { grad: "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)", solid: "#E24B4A", dark: "#8B1A1A", tint: "rgba(226,75,74,0.14)",   bg: "rgba(226,75,74,0.1)",   light: "#F7C1C1" },
+};
+const getFaseV3 = (f: string): any => {
+  if (!f) return FASE_V3.sopralluogo;
+  const k = f.toLowerCase();
+  if (k.includes("ferma")) return FASE_V3.ferma;
+  if (k.includes("rilievo") || k.includes("sopral")) return FASE_V3.sopralluogo;
+  if (k.includes("preventivo")) return FASE_V3.preventivo;
+  if (k.includes("conferma") || k.includes("ordin")) return FASE_V3.ordini;
+  if (k.includes("produzione")) return FASE_V3.produzione;
+  if (k.includes("posa") || k.includes("montag") || k.includes("collaudo")) return FASE_V3.posa;
+  if (k.includes("fattur") || k.includes("saldo") || k.includes("consegn")) return FASE_V3.fattura;
+  return FASE_V3.sopralluogo;
+};
+const initialsV3 = (s: string): string => {
+  if (!s) return "—";
+  const parts = s.trim().split(/\s+/).slice(0, 2);
+  return parts.map(p => p[0]?.toUpperCase() || "").join("") || s[0]?.toUpperCase() || "—";
+};
+const telLnk = (t: any) => t ? `tel:${t}` : "#";
+const waLnk = (t: any, msg: string = "") => t ? `https://wa.me/${String(t).replace(/\D/g, "")}${msg ? "?text=" + encodeURIComponent(msg) : ""}` : "#";
+const mapsLnk = (addr: any) => addr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(String(addr))}` : "#";
+
+function QuickActionsV3({ tel, addr, onOpen, msg, color }: any) {
+  const c = color || FASE_V3.preventivo;
+  return (
+    <div style={{ display: "flex", gap: 6, marginTop: 10, paddingTop: 10, borderTop: "1px dashed rgba(200,228,228,0.5)" }}>
+      {tel && (
+        <a href={telLnk(tel)} onClick={(e: any) => e.stopPropagation()} style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+          padding: "7px", borderRadius: 8, textDecoration: "none",
+          background: FASE_V3.preventivo.tint, color: FASE_V3.preventivo.dark,
+          fontSize: 10, fontWeight: 900, letterSpacing: "0.3px",
+          border: `1px solid ${FASE_V3.preventivo.solid}30`,
+        }}>CHIAMA</a>
+      )}
+      {tel && (
+        <a href={waLnk(tel, msg)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+          padding: "7px", borderRadius: 8, textDecoration: "none",
+          background: "rgba(37,211,102,0.12)", color: "#075E54",
+          fontSize: 10, fontWeight: 900, letterSpacing: "0.3px",
+          border: "1px solid rgba(37,211,102,0.3)",
+        }}>CHAT</a>
+      )}
+      {addr && (
+        <a href={mapsLnk(addr)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} style={{
+          flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+          padding: "7px", borderRadius: 8, textDecoration: "none",
+          background: FASE_V3.produzione.tint, color: FASE_V3.produzione.dark,
+          fontSize: 10, fontWeight: 900, letterSpacing: "0.3px",
+          border: `1px solid ${FASE_V3.produzione.solid}30`,
+        }}>NAVIGA</a>
+      )}
+      {onOpen && (
+        <button onClick={(e: any) => { e.stopPropagation(); onOpen(); }} style={{
+          flex: 1, padding: "7px", borderRadius: 8, border: "none",
+          background: c.grad, color: "#fff",
+          fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", cursor: "pointer",
+          boxShadow: `0 2px 6px ${c.tint}`,
+        }}>APRI →</button>
+      )}
+    </div>
+  );
+}
+
+function AgendaWidgetV3({ events, onNavigate, editMode }: any) {
+  const [expanded, setExpanded] = React.useState<string | null>(null);
+  const td = new Date().toISOString().slice(0, 10);
+  const todayEvents = (events || []).filter((e: any) => {
+    const d = e?.data || e?.date || "";
+    return d === td || (e?.start_time || "").startsWith(td);
+  });
+  todayEvents.sort((a: any, b: any) => ((a.ora || a.time || "99") + "").localeCompare((b.ora || b.time || "99") + ""));
+
+  return (
+    <div style={{ background: FASE_V3.posa.grad, borderRadius: 20, padding: 14, position: "relative" as any, boxShadow: `0 6px 18px ${FASE_V3.posa.tint}` }}>
+      <div style={{ fontSize: 11, color: "#fff", fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.92 }}>Agenda oggi</div>
+      <div style={{ fontSize: 18, color: "#fff", fontWeight: 900, marginTop: 2, marginBottom: 10, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>
+        {todayEvents.length} appuntament{todayEvents.length === 1 ? "o" : "i"}
+      </div>
+      {todayEvents.length === 0 && (
+        <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: 12, padding: "14px 12px", textAlign: "center" as any }}>
+          <div style={{ fontSize: 12, color: "#5A7878", fontWeight: 600 }}>Nessun impegno oggi</div>
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column" as any, gap: 5 }}>
+        {todayEvents.slice(0, 5).map((ev: any, i: number) => {
+          const key = ev.id || `ev${i}`;
+          const isOpen = expanded === key;
+          const ora = ev.ora || ev.time || (ev.start_time || "").slice(11, 16) || "—";
+          const tipo = (ev.tipo || "evento").toLowerCase();
+          const titolo = ev.titolo || ev.text || ev.title || "Evento";
+          const persona = ev.persona || ev.cliente || ev.client_name || "";
+          const addr = ev.indirizzo || ev.address || "";
+          const telefono = ev.telefono || ev.phone || "";
+          const f = getFaseV3(tipo);
+          return (
+            <div key={key} onClick={() => !editMode && setExpanded(isOpen ? null : key)} style={{
+              background: "rgba(255,255,255,0.95)", borderRadius: 12,
+              overflow: "hidden" as any, cursor: editMode ? "grab" : "pointer",
+              boxShadow: isOpen ? `0 6px 16px rgba(0,0,0,0.2)` : "0 2px 6px rgba(0,0,0,0.08)",
+              transition: "all 0.2s",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px" }}>
+                <div style={{
+                  width: 44, height: 36, borderRadius: 8, flexShrink: 0,
+                  background: f.grad, color: "#fff",
+                  display: "flex", flexDirection: "column" as any, alignItems: "center", justifyContent: "center",
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: "-0.3px" }}>{ora}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: "#0F2525", overflow: "hidden" as any, textOverflow: "ellipsis" as any, whiteSpace: "nowrap" as any }}>{titolo}</div>
+                  {(persona || addr) && <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1, overflow: "hidden" as any, textOverflow: "ellipsis" as any, whiteSpace: "nowrap" as any }}>{persona || addr}</div>}
+                </div>
+                <span style={{ color: f.solid, fontSize: 14, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+              </div>
+              {isOpen && (
+                <div style={{ padding: "0 10px 10px" }}>
+                  {addr && (
+                    <div style={{ fontSize: 11, color: f.dark, fontWeight: 700, padding: "5px 9px", background: f.bg, borderRadius: 6, marginBottom: 4 }}>
+                      📍 {addr}
+                    </div>
+                  )}
+                  <QuickActionsV3 tel={telefono} addr={addr} onOpen={() => onNavigate?.("agenda")} msg={`Ciao, ti confermo l'appuntamento di oggi ${ora} per "${titolo}"`} color={f} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {todayEvents.length > 0 && (
+        <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "rgba(255,255,255,0.9)", fontWeight: 800, textAlign: "center" as any, marginTop: 8, cursor: "pointer", letterSpacing: "0.4px" }}>
+          APRI AGENDA COMPLETA →
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PipelineWidgetV3({ cantieri, onNavigate, editMode }: any) {
+  const [selected, setSelected] = React.useState<string | null>(null);
+  const fasi = [
+    { k: "sopralluogo", l: "Sopral." },
+    { k: "preventivo",  l: "Prev." },
+    { k: "ordini",      l: "Ordine" },
+    { k: "produzione",  l: "Prod." },
+    { k: "posa",        l: "Posa" },
+    { k: "fattura",     l: "Fatt." },
+  ];
+  const counts = fasi.map(f => {
+    const comms = (cantieri || []).filter((c: any) => {
+      const cf = (c?.fase || c?.fase_corrente || c?.stato || "").toLowerCase();
+      if (f.k === "sopralluogo") return cf.includes("sopral") || cf.includes("rilievo");
+      if (f.k === "ordini") return cf.includes("ordin") || cf.includes("conferma");
+      if (f.k === "posa") return cf.includes("posa") || cf.includes("montag") || cf.includes("collaudo");
+      if (f.k === "fattura") return cf.includes("fattur") || cf.includes("saldo") || cf.includes("consegn");
+      return cf.includes(f.k);
+    });
+    const euro = comms.reduce((s: number, c: any) => s + (Number(c?.totale || c?.importo || 0)), 0);
+    return { ...f, n: comms.length, euro, fase: getFaseV3(f.k) };
+  });
+  const maxN = Math.max(...counts.map(c => c.n), 1);
+  const sel = selected ? counts.find(c => c.k === selected) : null;
+  return (
+    <div style={{ background: "#FFFFFF", borderRadius: 20, padding: 14, position: "relative" as any, border: "1px solid #F0EDE5", boxShadow: "0 4px 12px rgba(13,31,31,0.05)" }}>
+      <div style={{ fontSize: 11, color: "#185FA5", fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any }}>Pipeline</div>
+      <div style={{ fontSize: 14, color: "#0F2525", fontWeight: 800, marginTop: 2, marginBottom: 12 }}>Distribuzione per fase</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 80, padding: "4px 2px 0" }}>
+        {counts.map(c => {
+          const h = Math.max(8, (c.n / maxN) * 72);
+          const isSel = selected === c.k;
+          return (
+            <div key={c.k} onClick={(e: any) => { e.stopPropagation(); if (!editMode) setSelected(isSel ? null : c.k); }} style={{
+              flex: 1, display: "flex", flexDirection: "column" as any, alignItems: "center", cursor: "pointer",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 900, color: c.fase.dark, marginBottom: 3 }}>{c.n}</div>
+              <div style={{
+                width: "100%", height: h,
+                background: c.fase.grad,
+                borderRadius: "6px 6px 2px 2px",
+                boxShadow: isSel ? `0 0 0 2px ${c.fase.solid}, 0 4px 10px ${c.fase.tint}` : `0 2px 6px ${c.fase.tint}`,
+                transform: isSel ? "translateY(-2px)" : "none",
+                transition: "all 0.15s",
+              }} />
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
+        {counts.map(c => (
+          <div key={c.k} style={{
+            flex: 1, textAlign: "center" as any,
+            fontSize: 9, fontWeight: 800, color: selected === c.k ? c.fase.dark : "#5A7878",
+            letterSpacing: "0.2px",
+          }}>{c.l}</div>
+        ))}
+      </div>
+      {sel && sel.n > 0 && (
+        <div style={{
+          marginTop: 10, padding: "10px 12px",
+          background: sel.fase.bg,
+          border: `1px solid ${sel.fase.solid}30`,
+          borderRadius: 10,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div>
+              <div style={{ fontSize: 9, fontWeight: 900, color: sel.fase.dark, letterSpacing: "0.8px", textTransform: "uppercase" as any }}>{sel.l}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: "#0F2525" }}>{sel.n} commess{sel.n === 1 ? "a" : "e"}</div>
+            </div>
+            <div style={{ textAlign: "right" as any }}>
+              <div style={{ fontSize: 8, fontWeight: 800, color: "#5A7878", letterSpacing: "0.3px", textTransform: "uppercase" as any }}>Valore</div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: sel.fase.dark }}>{sel.euro >= 1000 ? `€${(sel.euro/1000).toFixed(1)}k` : `€${Math.round(sel.euro)}`}</div>
+            </div>
+          </div>
+          <button onClick={(e: any) => { e.stopPropagation(); onNavigate?.("commesse"); }} style={{
+            width: "100%", padding: "7px",
+            background: sel.fase.grad, color: "#fff",
+            border: "none", borderRadius: 8,
+            fontSize: 10, fontWeight: 900, cursor: "pointer", letterSpacing: "0.3px",
+            boxShadow: `0 2px 6px ${sel.fase.tint}`,
+          }}>VEDI LE {sel.n} COMMESSE →</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }: any) {
+  const [expanded, setExpanded] = React.useState<string | null>(null);
+  return (
+    <div style={{ background: "#FFFFFF", borderRadius: 20, padding: 14, position: "relative" as any, border: "1px solid #F0EDE5", boxShadow: "0 4px 12px rgba(13,31,31,0.05)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: "#0F2525", fontWeight: 900 }}>Lavori recenti</div>
+        <div style={{ fontSize: 10, color: "#1A7A7A", fontWeight: 800, cursor: "pointer", letterSpacing: "0.3px" }} onClick={() => !editMode && onNavigate?.("commesse")}>VEDI TUTTI ›</div>
+      </div>
+      {(!recenti || recenti.length === 0) && (
+        <div style={{ fontSize: 11, color: "#5A7878", textAlign: "center" as any, padding: "16px 0", fontWeight: 600 }}>Nessuna commessa attiva</div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column" as any, gap: 5 }}>
+        {(recenti || []).map((c: any, idx: number) => {
+          const key = c?.id || `r${idx}`;
+          const isOpen = expanded === key;
+          const fase = c?.fase_corrente || c?.fase || c?.stato || "Sopralluogo";
+          const f = getFaseV3(fase);
+          const imp = Number(c?.totale || c?.importo || 0);
+          const impLabel = imp >= 1000 ? `€${(imp / 1000).toFixed(1)}k` : `€${Math.round(imp)}`;
+          const cliente = c?.cliente_nome || c?.cliente || "Cliente";
+          const cod = c?.codice || c?.code || `S-00${64 + idx}`;
+          return (
+            <div key={key} onClick={() => !editMode && setExpanded(isOpen ? null : key)} style={{
+              background: "#fff", borderRadius: 10,
+              border: "1px solid rgba(200,228,228,0.5)",
+              borderLeft: `3px solid ${f.solid}`,
+              cursor: "pointer", overflow: "hidden" as any,
+              boxShadow: isOpen ? `0 6px 16px ${f.tint}` : "0 2px 6px rgba(13,31,31,0.04)",
+              transition: "all 0.2s",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px" }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                  background: f.grad, color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 900, letterSpacing: "-0.2px",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                  boxShadow: `0 2px 6px ${f.tint}`,
+                }}>{initialsV3(cliente)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: "#0F2525", fontWeight: 900 }}>{cod} · {cliente}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1 }}>
+                    <span style={{ fontSize: 9, fontWeight: 900, padding: "1px 6px", borderRadius: 4, background: f.tint, color: f.dark, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{fase}</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: f.dark, fontWeight: 900 }}>{impLabel}</div>
+                <span style={{ color: f.solid, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+              </div>
+              {isOpen && (
+                <div style={{ padding: "0 10px 10px" }}>
+                  <QuickActionsV3
+                    tel={c?.telefono || c?.phone}
+                    addr={c?.indirizzo || c?.address}
+                    onOpen={() => onApriCommessa?.(c?.id)}
+                    msg={`Aggiornamento commessa ${cod}: `}
+                    color={f}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SquadraWidgetV3({ team, onNavigate, editMode }: any) {
+  const [expanded, setExpanded] = React.useState<string | null>(null);
+  const list = (team && team.length > 0 ? team : [
+    { id: "t1", nome: "Marco", cognome: "R.", cantiere: "S-0064" },
+    { id: "t2", nome: "Luigi", cognome: "P.", cantiere: "S-0065" },
+    { id: "t3", nome: "Anna", cognome: "T.", cantiere: "S-0066" },
+  ]);
+  return (
+    <div style={{ background: FASE_V3.sopralluogo.grad, borderRadius: 20, padding: 14, position: "relative" as any, boxShadow: `0 6px 18px ${FASE_V3.sopralluogo.tint}` }}>
+      <div style={{ fontSize: 11, color: "#fff", fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.92 }}>Squadra</div>
+      <div style={{ fontSize: 14, color: "#fff", fontWeight: 900, marginTop: 2, marginBottom: 10, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>Sul campo ora</div>
+      <div style={{ display: "flex", flexDirection: "column" as any, gap: 5 }}>
+        {list.slice(0, 5).map((t: any, i: number) => {
+          const key = t.id || `t${i}`;
+          const isOpen = expanded === key;
+          const nome = `${t.nome || ""} ${t.cognome || ""}`.trim() || "—";
+          const cantiere = t.cantiere_attuale || t.cantiere || "";
+          const attivo = !!cantiere;
+          return (
+            <div key={key} onClick={() => !editMode && setExpanded(isOpen ? null : key)} style={{
+              background: "rgba(255,255,255,0.95)", borderRadius: 10,
+              cursor: editMode ? "grab" : "pointer",
+              overflow: "hidden" as any,
+              boxShadow: isOpen ? "0 6px 16px rgba(0,0,0,0.18)" : "0 2px 6px rgba(0,0,0,0.08)",
+              transition: "all 0.2s",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px" }}>
+                <div style={{ position: "relative" as any, flexShrink: 0 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 9,
+                    background: attivo ? FASE_V3.produzione.grad : FASE_V3.chiusura?.grad || FASE_V3.preventivo.grad, color: "#fff",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 900,
+                    textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                  }}>{initialsV3(nome)}</div>
+                  {attivo && (
+                    <div style={{
+                      position: "absolute" as any, bottom: -2, right: -2,
+                      width: 10, height: 10, borderRadius: "50%",
+                      background: "#1D9E75", border: "2px solid #fff",
+                      boxShadow: "0 0 0 2px rgba(29,158,117,0.3)",
+                    }} />
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: "#0F2525" }}>{nome}</div>
+                  <div style={{ fontSize: 10, color: attivo ? "#1D9E75" : "#5A7878", fontWeight: 700, marginTop: 1 }}>
+                    ● {attivo ? cantiere : "libero"}
+                  </div>
+                </div>
+                <span style={{ color: FASE_V3.sopralluogo.dark, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+              </div>
+              {isOpen && (
+                <div style={{ padding: "0 10px 10px" }}>
+                  <QuickActionsV3
+                    tel={t.telefono || t.phone}
+                    addr={cantiere}
+                    onOpen={() => onNavigate?.("agenda")}
+                    msg={`Ciao ${t.nome || ""}, come va con ${cantiere}?`}
+                    color={attivo ? FASE_V3.produzione : FASE_V3.preventivo}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// === FINE HELPER V3 ===
 
 export default function HomePanelMobile(props: any) {
   const mastro: any = (() => { try { return useMastro(); } catch { return {}; } })();
@@ -160,65 +541,23 @@ export default function HomePanelMobile(props: any) {
   );
 
   W.pipeline = () => (
-    <div onClick={() => !editMode && onNavigate?.("commesse")} style={{ background: "#B5D4F4", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+    <div style={{ position: "relative" as any }}>
       {editMode && <RemoveBtn id="pipeline" fg="#0C447C" onRemove={removeWidget} />}
-      <div style={{ fontSize: 11, color: "#185FA5", fontWeight: 500, letterSpacing: 0.3 }}>PIPELINE</div>
-      <div style={{ fontSize: 14, color: "#042C53", fontWeight: 600, marginTop: 2, marginBottom: 10 }}>Distribuzione per fase</div>
-      <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 40, marginBottom: 8 }}>
-        {[40, 70, 100, 55, 30].map((h, i) => (
-          <div key={i} style={{ flex: 1, background: "#378ADD", height: `${h}%`, borderRadius: 4 }} />
-        ))}
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#0C447C", fontWeight: 500 }}>
-        <span>Sopr.</span><span>Prev.</span><span>Prod.</span><span>Mont.</span><span>Fatt.</span>
-      </div>
+      <PipelineWidgetV3 cantieri={mastro?.cantieri || []} onNavigate={onNavigate} editMode={editMode} />
     </div>
   );
 
   W.recenti = () => (
-    <div style={{ background: "#FFFFFF", borderRadius: 20, padding: 14, position: "relative" }}>
+    <div style={{ position: "relative" as any }}>
       {editMode && <RemoveBtn id="recenti" fg="#888" onRemove={removeWidget} />}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ fontSize: 13, color: "#1A1A1A", fontWeight: 600 }}>Lavori recenti</div>
-        <div style={{ fontSize: 10, color: "#28A0A0", fontWeight: 500, cursor: "pointer" }} onClick={() => !editMode && onNavigate?.("commesse")}>Vedi tutti</div>
-      </div>
-      {recenti.length === 0 && (
-        <div style={{ fontSize: 11, color: "#888", textAlign: "center", padding: "14px 0" }}>Nessuna commessa attiva</div>
-      )}
-      {recenti.map((c: any, idx: number) => {
-        const fase = c?.fase_corrente || c?.stato || "Sopralluogo";
-        const col = faseCol(fase);
-        const imp = Number(c?.totale || c?.importo || 0);
-        const impLabel = imp >= 1000 ? `€${(imp / 1000).toFixed(1)}k` : `€${Math.round(imp)}`;
-        return (
-          <div key={c?.id || idx} onClick={() => !editMode && onApriCommessa?.(c?.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: idx < recenti.length - 1 ? "1px solid #F0EDE5" : "none", cursor: "pointer" }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: col.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={col.fg} strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 3v18" /></svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: "#1A1A1A", fontWeight: 600 }}>{c?.codice || c?.code || `S-00${64 + idx}`} · {c?.cliente_nome || c?.cliente || "Cliente"}</div>
-              <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>{fase}</div>
-            </div>
-            <div style={{ fontSize: 11, color: "#1A1A1A", fontWeight: 600 }}>{impLabel}</div>
-          </div>
-        );
-      })}
+      <LavoriRecentiWidgetV3 recenti={recenti} onApriCommessa={onApriCommessa} onNavigate={onNavigate} editMode={editMode} />
     </div>
   );
 
   W.agenda = () => (
-    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#F4C0D1", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+    <div style={{ position: "relative" as any }}>
       {editMode && <RemoveBtn id="agenda" fg="#72243E" onRemove={removeWidget} />}
-      <div style={{ fontSize: 11, color: "#993556", fontWeight: 500, letterSpacing: 0.3 }}>AGENDA OGGI</div>
-      <div style={{ fontSize: 14, color: "#4B1528", fontWeight: 600, marginTop: 2, marginBottom: 10 }}>2 appuntamenti</div>
-      <div style={{ background: "rgba(255,255,255,0.5)", borderRadius: 12, padding: "8px 10px", marginBottom: 5, display: "flex", gap: 10, alignItems: "center" }}>
-        <div style={{ fontSize: 11, color: "#4B1528", fontWeight: 600, minWidth: 38 }}>15:30</div>
-        <div style={{ fontSize: 11, color: "#4B1528" }}>Sopralluogo S-0064</div>
-      </div>
-      <div style={{ background: "rgba(255,255,255,0.5)", borderRadius: 12, padding: "8px 10px", display: "flex", gap: 10, alignItems: "center" }}>
-        <div style={{ fontSize: 11, color: "#4B1528", fontWeight: 600, minWidth: 38 }}>17:00</div>
-        <div style={{ fontSize: 11, color: "#4B1528" }}>Montaggio S-0061</div>
-      </div>
+      <AgendaWidgetV3 events={mastro?.events || []} onNavigate={onNavigate} editMode={editMode} />
     </div>
   );
 
@@ -385,17 +724,9 @@ export default function HomePanelMobile(props: any) {
     </div>
   );
   W.squadra = () => (
-    <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ background: "#CECBF6", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
+    <div style={{ position: "relative" as any }}>
       {editMode && <RemoveBtn id="squadra" fg="#26215C" onRemove={removeWidget} />}
-      <div style={{ fontSize: 11, color: "#26215C", fontWeight: 500, letterSpacing: 0.3 }}>SQUADRA</div>
-      <div style={{ fontSize: 14, color: "#26215C", fontWeight: 600, marginTop: 2, marginBottom: 10 }}>Sul campo ora</div>
-      {["Marco R.","Luigi P.","Anna T."].map((nome,i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}>
-          <div style={{ width: 6, height: 6, borderRadius: 50, background: "#3B6D11" }} />
-          <div style={{ fontSize: 11, color: "#26215C", flex: 1 }}>{nome}</div>
-          <div style={{ fontSize: 9, color: "#26215C", opacity: 0.7 }}>S-006{4+i}</div>
-        </div>
-      ))}
+      <SquadraWidgetV3 team={mastro?.team || []} onNavigate={onNavigate} editMode={editMode} />
     </div>
   );
   W.stock = () => (
