@@ -774,28 +774,16 @@ export default function VanoDetailPanel() {
                     Bicolore {v.bicolore?"":""}
                   </div>
                 </div>
-                <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                  {coloriDB.map(c=>{
-                    const sel=v.coloreInt===c.code;
-                    return <div key={c.id} onClick={()=>{updateV("coloreInt",c.code); if(!v.bicolore) flashAndAdvance("colori");}}
-                      style={{padding:"7px 10px",borderRadius:8,border:"2px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,cursor:"pointer",display:"flex",alignItems:"center",gap:6,transition:"all 0.15s"}}>
-                      <div style={{width:18,height:18,borderRadius:"50%",background:c.hex||"#ccc",border:"1.5px solid "+(c.hex==="#FFFFFF"||c.hex==="#F5F5F0"?T.bdr:c.hex||T.bdr),flexShrink:0}} />
-                      <span style={{fontSize:11,fontWeight:sel?700:500,color:sel?T.acc:T.text}}>{c.code}</span>
-                    </div>;
-                  })}
-                </div>
+                <select style={S.select} value={v.coloreInt||""} onChange={e=>{updateV("coloreInt",e.target.value); if(e.target.value && !v.bicolore) flashAndAdvance("colori");}}>
+                  <option value="">— Scegli colore —</option>
+                  {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                </select>
                 {v.bicolore && <>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginTop:4}}>COLORE ESTERNO</div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                    {coloriDB.map(c=>{
-                      const sel=v.coloreEst===c.code;
-                      return <div key={c.id} onClick={()=>{updateV("coloreEst",c.code); flashAndAdvance("colori");}}
-                        style={{padding:"7px 10px",borderRadius:8,border:"2px solid "+(sel?T.acc:T.bdr),background:sel?T.accLt:T.card,cursor:"pointer",display:"flex",alignItems:"center",gap:6,transition:"all 0.15s"}}>
-                        <div style={{width:18,height:18,borderRadius:"50%",background:c.hex||"#ccc",border:"1.5px solid "+(c.hex==="#FFFFFF"||c.hex==="#F5F5F0"?T.bdr:c.hex||T.bdr),flexShrink:0}} />
-                        <span style={{fontSize:11,fontWeight:sel?700:500,color:sel?T.acc:T.text}}>{c.code}</span>
-                      </div>;
-                    })}
-                  </div>
+                  <select style={S.select} value={v.coloreEst||""} onChange={e=>{updateV("coloreEst",e.target.value); if(e.target.value) flashAndAdvance("colori");}}>
+                    <option value="">— Scegli colore —</option>
+                    {coloriDB.map(c=><option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                  </select>
                 </>}
                 <div>
                   <div style={{fontSize:10,fontWeight:700,color:T.sub,marginBottom:3}}>ACCESSORI</div>
