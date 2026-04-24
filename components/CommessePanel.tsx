@@ -715,6 +715,35 @@ export default function CommessePanel() {
     const fs = faseStyle(c.fase, alert, ferma, giorniFermaCM(c), fase.nome);
     const isLast = idx === filteredSorted.length - 1;
 
+    // ── v58: Lista colorata piena fase (mockup v3) ──
+    const FASE_GRAD_ROW: any = {
+      sopralluogo:  "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)",
+      rilievo:      "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)",
+      preventivo:   "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)",
+      conferma:     "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)",
+      ordini:       "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)",
+      produzione:   "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)",
+      posa:         "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)",
+      collaudo:     "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)",
+      fattura:      "linear-gradient(155deg, #97C459 0%, #639922 100%)",
+      chiusura:     "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)",
+    };
+    const rowGrad = alert
+      ? "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)"
+      : (FASE_GRAD_ROW[c.fase] || FASE_GRAD_ROW.sopralluogo);
+
+    // Info compatta sotto nome
+    const fatt = (fattureDB || []).filter((f: any) => f.cmId === c.id);
+    const fattTutte = fatt.length > 0 && fatt.every((f: any) => f.pagata);
+    const infoParts: string[] = [];
+    if (vaniA.length > 0) infoParts.push(`${vaniA.length} van${vaniA.length === 1 ? "o" : "i"}`);
+    if (euroVal > 0) infoParts.push(fmtEuro(euroVal));
+    if (fattTutte) infoParts.push("pagata ✓");
+    else if (fatt.length > 0) infoParts.push("fatturata");
+    const infoText = ferma
+      ? `${giorniFermaCM(c)} gg ferma •`
+      : (scad ? "scadenza superata" : (infoParts.length > 0 ? infoParts.join(" · ") : c.indirizzo || ""));
+
     return (
       <div key={c.id}
         onClick={() => handleCardClick(c, () => { setSelectedCM(c); setTab("commesse"); })}
@@ -723,59 +752,83 @@ export default function CommessePanel() {
         onTouchMove={handleTouchEnd}
         onContextMenu={(e) => { e.preventDefault(); enterSelection(c.id); }}
         style={{
-          display: "flex", alignItems: "center", gap: 12,
-          padding: "13px 14px", cursor: "pointer",
-          borderBottom: isLast ? "none" : `1px solid ${TH.border}`,
-          background: selectionMode && selectedIds.has(c.id) ? "rgba(40,160,160,0.08)" : "transparent",
+          display: "flex", alignItems: "center", gap: 10,
+          padding: "10px 12px",
+          borderRadius: 12,
+          marginBottom: 6,
+          cursor: "pointer",
+          background: rowGrad,
+          color: "#fff",
+          boxShadow: "0 3px 8px rgba(13,31,31,0.12)",
+          border: "1px solid rgba(255,255,255,0.25)",
           opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
         }}>
 
         {selectionMode && (
           <div style={{
             width: 22, height: 22, borderRadius: 11, flexShrink: 0,
-            background: selectedIds.has(c.id) ? TH.teal : "#fff",
-            border: `2px solid ${selectedIds.has(c.id) ? TH.tealDark : TH.borderSolid}`,
+            background: selectedIds.has(c.id) ? "#fff" : "rgba(255,255,255,0.25)",
+            border: `2px solid rgba(255,255,255,0.6)`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.15s",
           }}>
             {selectedIds.has(c.id) && (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TH.tealDark} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             )}
           </div>
         )}
+
+        {/* Avatar bianco traslucido */}
         <div style={{
-          width: 40, height: 40, borderRadius: 11, flexShrink: 0,
-          background: AV_GRADS[idx % AV_GRADS.length],
+          width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+          background: "rgba(255,255,255,0.25)",
+          border: "1px solid rgba(255,255,255,0.3)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 800, color: "#fff",
-          boxShadow: "0 3px 8px rgba(13,31,31,0.2)",
+          fontSize: 11, fontWeight: 900, color: "#fff",
+          letterSpacing: "-0.2px",
+          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)",
         }}>{initials(c)}</div>
 
+        {/* Nome + info */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: TH.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {c.cliente}{c.cognome ? " " + c.cognome : ""}
-            </span>
-            {alert && <div style={{ width: 6, height: 6, borderRadius: "50%", background: TH.red, flexShrink: 0 }} />}
+          <div style={{
+            fontSize: 12, fontWeight: 900, color: "#fff",
+            letterSpacing: "-0.1px",
+            whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
+            textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+            textTransform: "uppercase" as any,
+          }}>
+            {c.cliente}{c.cognome ? " " + c.cognome : ""}
           </div>
-          <div style={{ fontSize: 11, color: TH.sub, fontWeight: 500 }}>
-            {c.code}{c.indirizzo ? " · " + c.indirizzo : ""}
+          <div style={{
+            fontSize: 10, fontWeight: 700,
+            color: "rgba(255,255,255,0.85)",
+            marginTop: 1,
+            letterSpacing: "0.2px",
+            whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
+          }}>
+            {c.code}{infoText ? " · " + infoText : ""}
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column" as any, alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-          <span style={{
-            background: fs.bg, color: fs.fg,
-            fontSize: 9, padding: "3px 8px", borderRadius: 6, fontWeight: 800,
-            letterSpacing: "0.3px", textTransform: "uppercase" as any,
-            whiteSpace: "nowrap" as any,
-          }}>{fs.text}</span>
-          {euroVal > 0 && (
-            <span style={{ fontSize: 13, fontWeight: 900, color: TH.ink, fontFamily: FM }}>{fmtEuro(euroVal)}</span>
-          )}
-        </div>
+        {/* Pill stato bianca 95% */}
+        <span style={{
+          fontSize: 9, fontWeight: 900,
+          padding: "3px 8px", borderRadius: 6,
+          background: "rgba(255,255,255,0.95)",
+          color: "#0D1F1F",
+          letterSpacing: "0.4px", textTransform: "uppercase" as any,
+          whiteSpace: "nowrap" as any, flexShrink: 0,
+        }}>{fs.text}</span>
+
+        {/* Chevron > */}
+        <span style={{
+          color: "rgba(255,255,255,0.85)",
+          fontSize: 16, fontWeight: 900,
+          flexShrink: 0,
+          textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+        }}>{"›"}</span>
       </div>
     );
   };
@@ -1016,12 +1069,7 @@ export default function CommessePanel() {
           </div>
         </div>
       ) : cmView === "list" ? (
-        <div style={{
-          background: "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)",
-          borderRadius: 18, overflow: "hidden",
-          boxShadow: "0 6px 20px rgba(31,120,120,0.1)",
-          border: "1px solid rgba(200,228,228,0.5)",
-        }}>
+        <div>
           {filteredSorted.map((c, i) => renderRow(c, i))}
         </div>
       ) : cmView === "card" ? (
