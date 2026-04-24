@@ -241,6 +241,8 @@ export default function CMDetailPanel() {
 
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
+  const [cronOpenV70, setCronOpenV70] = React.useState<boolean>(false);
+  const [centroApertoV70, setCentroApertoV70] = React.useState<string | null>(null); // 'cliente' | 'allegati' | 'note' | 'azioni' | null
   const [azioniOpenV66, setAzioniOpenV66] = React.useState<boolean>(false);
   const [cronOpenV67, setCronOpenV67] = React.useState<boolean>(false);
   React.useEffect(() => {
@@ -340,6 +342,525 @@ export default function CMDetailPanel() {
 
   // NULL GUARD: tutti gli hook devono essere dichiarati prima di questo return
   if (!selectedCM) return null;
+
+  // =====================================================
+  // v70 · EARLY RETURN · Pannello mockup v8 completo
+  // Bypassa il render normale e mostra il nuovo pannello guidato.
+  // Per tornare al vecchio layout: rimuovi questo blocco o aggiungi un flag.
+  // =====================================================
+  if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw)) {
+    const cV70 = selectedCM as any;
+    const rListV70: any[] = cV70.rilievi || [];
+    const rCurV70: any = selectedRilievo || (rListV70.length > 0 ? rListV70[rListV70.length - 1] : null);
+    const vaniV70: any[] = rCurV70?.vani || [];
+    const vaniCompletiV70 = vaniV70.filter((v: any) => Object.values(v.misure || {}).filter((x: any) => (x as number) > 0).length >= 6).length;
+    const fotoCountV70 = vaniV70.reduce((a: number, v: any) => a + Object.keys(v.foto || {}).length, 0);
+    const fotoGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "foto").length;
+    const audioGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "vocale").length;
+    const noteGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "nota").length;
+    const fileGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "file").length;
+    const allegatiTotV70 = fotoGlobalV70 + audioGlobalV70 + noteGlobalV70 + fileGlobalV70;
+
+    // Tipo edificio
+    const tEdifV70 = cV70.tipoEdificio || cV70.tipo_edificio || "";
+    const tEdifLabelV70 = (() => {
+      switch (tEdifV70) {
+        case "palazzo": return "Palazzo residenziale";
+        case "condominio": return "Condominio";
+        case "scuola": return "Scuola";
+        case "ospedale": return "Ospedale / Clinica";
+        case "ufficio": return "Ufficio / Direzionale";
+        case "hotel": return "Hotel / RSA";
+        case "centro_comm": return "Centro commerciale";
+        case "industriale": return "Capannone / Industriale";
+        case "personalizzato": return "Personalizzato";
+        default: return "Casa singola";
+      }
+    })();
+    const tEdifStructV70 = (() => {
+      switch (tEdifV70) {
+        case "palazzo": return "Scala \u00b7 Piano \u00b7 Interno";
+        case "condominio": return "Piano \u00b7 Interno";
+        case "scuola": return "Edificio/Plesso \u00b7 Piano \u00b7 Aula";
+        case "ospedale": return "Padiglione \u00b7 Piano \u00b7 Reparto";
+        case "ufficio": return "Edificio \u00b7 Piano \u00b7 Ufficio";
+        case "hotel": return "Edificio \u00b7 Piano \u00b7 Camera";
+        case "centro_comm": return "Livello \u00b7 Negozio";
+        case "industriale": return "Corpo \u00b7 Settore";
+        case "personalizzato": return [cV70.livello1Label || "Livello 1", cV70.livello2Label || "Livello 2", cV70.livello3Label || "Livello 3"].join(" \u00b7 ");
+        default: return "Zona \u00b7 Piano \u00b7 Locale";
+      }
+    })();
+
+    // Titolo dinamico
+    const titoloV70 = rListV70.length === 0
+      ? "Crea il primo\nsopralluogo"
+      : vaniV70.length === 0
+        ? "Aggiungi\nil primo vano"
+        : vaniCompletiV70 < vaniV70.length
+          ? "Completa\nle misure"
+          : "Rilievo\ncompleto";
+    const descV70 = rListV70.length === 0
+      ? "Vai in cantiere e fai il rilievo delle misure."
+      : vaniV70.length === 0
+        ? "Compila 8 misure per ogni vano. Inizia dal primo."
+        : vaniCompletiV70 < vaniV70.length
+          ? `${vaniCompletiV70}/${vaniV70.length} vani completi \u00b7 continua`
+          : "Passa al preventivo!";
+    const btnV70 = rListV70.length === 0
+      ? "CREA RILIEVO"
+      : vaniV70.length === 0
+        ? "AGGIUNGI PRIMO VANO"
+        : vaniCompletiV70 < vaniV70.length
+          ? "APRI RILIEVO"
+          : "VAI AL PREVENTIVO";
+
+    const onClickBtnV70 = () => {
+      if (rListV70.length === 0) {
+        // Apri modal nuovo rilievo
+        if (typeof setNuovoRilievoTipo !== "undefined") {
+          try {
+            (setNuovoRilievoTipo as any)("provvisorio");
+            (setNuovoRilievoRilevatore as any)("");
+            (setNuovoRilievoComplesso as any)(false);
+            (setNuovoRilievoNote as any)("");
+            (setShowNuovoRilievoModal as any)(true);
+          } catch (e) { console.warn("v70 modal nuovo rilievo setters mancanti", e); }
+        }
+        return;
+      }
+      // C'e' un rilievo: selezionalo
+      setSelectedRilievo(rCurV70);
+      if (rCurV70.complesso && vaniV70.length === 0) {
+        try {
+          (setNvL1 as any)(""); (setNvL2 as any)(""); (setNvL3 as any)("");
+          (setNvStanza as any)(""); (setNvCustom as any)([]);
+          (setShowAggiungiVanoModal as any)(true);
+        } catch (e) { console.warn("v70 modal aggiungi vano complesso setters mancanti", e); }
+        return;
+      }
+      if (vaniV70.length > 0) {
+        setSelectedVano(vaniV70[0]);
+        setVanoStep(0);
+        return;
+      }
+      // Rilievo semplice, 0 vani: crea primo vano e apri
+      const nuovoVano = { id: Date.now(), nome: "Vano 1", tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
+      const updR = { ...rCurV70, vani: [...(rCurV70.vani || []), nuovoVano] };
+      setCantieri(cs => cs.map(cm => cm.id === cV70.id ? { ...cm, rilievi: cm.rilievi.map((r2: any) => r2.id === rCurV70.id ? updR : r2), aggiornato: "Oggi" } : cm));
+      setSelectedCM((prev: any) => ({ ...prev, rilievi: (prev.rilievi || []).map((r2: any) => r2.id === rCurV70.id ? updR : r2) }));
+      setSelectedRilievo(updR);
+      setSelectedVano(nuovoVano);
+      setVanoStep(0);
+    };
+
+    // log cronologia
+    const logV70: any[] = cV70.log || [];
+
+    return (
+      <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 20 }}>
+        {/* ============ HEADER TEAL ============ */}
+        <div style={{
+          background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",
+          padding: "22px 18px 26px",
+          color: "#fff",
+          position: "relative",
+          borderRadius: "0 0 26px 26px",
+          boxShadow: "0 4px 20px rgba(40,160,160,0.2)",
+        }}>
+          <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.15), transparent 65%)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
+            <div onClick={() => setSelectedCM(null)} style={{
+              width: 40, height: 40, borderRadius: 13,
+              background: "rgba(255,255,255,0.22)",
+              backdropFilter: "blur(12px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "inset 0 1px 1px rgba(255,255,255,0.35), 0 2px 8px rgba(0,0,0,0.1)",
+              flexShrink: 0, cursor: "pointer",
+            }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.92, letterSpacing: "1px", textTransform: "uppercase" as any }}>
+                {cV70.code || "Commessa"}{rCurV70 ? ` \u00b7 RILIEVO MISURE R${rCurV70.n || 1}` : ""}
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.6px", textShadow: "0 2px 5px rgba(0,0,0,0.18)", marginTop: 2, lineHeight: 1.05 }}>
+                {(cV70.cliente || "CLIENTE").toUpperCase()}
+              </div>
+              <div style={{ fontSize: 11, opacity: 0.88, marginTop: 3, fontWeight: 600, textTransform: "uppercase" as any }}>
+                {cV70.indirizzo || ""}
+              </div>
+            </div>
+            <div style={{ textAlign: "right" as any, flexShrink: 0 }}>
+              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.4px", textShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>
+                {vaniV70.length > 0 ? Math.round((vaniCompletiV70 / vaniV70.length) * 100) : 0}%
+              </div>
+              <div style={{ fontSize: 10, opacity: 0.88, fontWeight: 700, marginTop: 2 }}>
+                {vaniCompletiV70}/{vaniV70.length} vani
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ============ BODY ============ */}
+        <div style={{ padding: "16px 16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* MINI STEPPER 8 puntini */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
+            <div style={{ display: "flex", gap: 3, flex: 1 }}>
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
+              {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+            </div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
+          </div>
+
+          {/* BIG ACTION VIOLA */}
+          <div style={{
+            borderRadius: 26, padding: "22px 20px 20px",
+            background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
+            color: "#fff",
+            boxShadow: "0 18px 40px rgba(0,0,0,0.18), 0 6px 12px rgba(0,0,0,0.1)",
+            position: "relative", overflow: "hidden",
+            display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
+
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
+              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
+              textTransform: "uppercase" as any, position: "relative",
+            }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+              Prossima mossa
+            </div>
+
+            <div style={{
+              fontSize: 24, fontWeight: 900, marginTop: 14,
+              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
+              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
+            }}>{titoloV70}</div>
+
+            <div style={{
+              fontSize: 12.5, opacity: 0.94, marginTop: 8,
+              lineHeight: 1.4, fontWeight: 500, position: "relative",
+            }}>{descV70}</div>
+
+            {/* Pill tipo edificio */}
+            <div style={{
+              marginTop: 14, background: "rgba(255,255,255,0.18)",
+              borderRadius: 14, padding: "12px 14px",
+              display: "flex", alignItems: "center", gap: 12, position: "relative",
+            }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: "rgba(255,255,255,0.22)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
+                <div style={{ fontSize: 14, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV70}</div>
+                <div style={{ fontSize: 10.5, opacity: 0.88, marginTop: 2, fontWeight: 600 }}>{tEdifStructV70}</div>
+              </div>
+            </div>
+
+            {/* Meta tiles */}
+            <div style={{
+              marginTop: 14, display: "grid",
+              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
+            }}>
+              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani</div>
+                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length || "\u2014"}</div>
+                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{vaniV70.length === 0 ? "da creare" : (vaniCompletiV70 === vaniV70.length ? "tutti OK" : "in corso")}</div>
+              </div>
+              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Misure</div>
+                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70 * 8}/{(vaniV70.length * 8) || 8}</div>
+                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>per vano</div>
+              </div>
+            </div>
+
+            {/* BIG BTN */}
+            <button onClick={onClickBtnV70} style={{
+              marginTop: 18, width: "100%", padding: 17,
+              background: "#fff", color: "#3C3489",
+              border: "none", borderRadius: 18,
+              fontSize: 15, fontWeight: 900, letterSpacing: "0.4px",
+              cursor: "pointer", fontFamily: "inherit",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              boxShadow: "0 6px 18px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
+              position: "relative",
+            }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {btnV70}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+
+          {/* MENU 4 CENTRI */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+            {[
+              { id: "cliente", label: "Cliente", color: "#1D9E75", tintFrom: "rgba(93,202,165,0.22)", tintTo: "rgba(29,158,117,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+              { id: "allegati", label: "Allegati", color: "#7F77DD", tintFrom: "rgba(175,169,236,0.22)", tintTo: "rgba(127,119,221,0.12)", badge: allegatiTotV70, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> },
+              { id: "note", label: "Note", color: "#EF9F27", tintFrom: "rgba(250,199,117,0.25)", tintTo: "rgba(239,159,39,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
+              { id: "azioni", label: "Azioni", color: "#378ADD", tintFrom: "rgba(133,183,235,0.22)", tintTo: "rgba(55,138,221,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="M1 12h6m6 0h6"/></svg> },
+            ].map((m) => (
+              <div key={m.id} onClick={() => setCentroApertoV70((v) => v === m.id ? null : m.id)} style={{
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                padding: "14px 6px",
+                background: centroApertoV70 === m.id ? `linear-gradient(145deg, ${m.tintFrom}, ${m.tintTo})` : "#fff",
+                border: centroApertoV70 === m.id ? `1.5px solid ${m.color}66` : "1px solid rgba(200,228,228,0.4)",
+                borderRadius: 16,
+                cursor: "pointer",
+                boxShadow: centroApertoV70 === m.id ? `0 6px 14px ${m.color}22` : "0 3px 8px rgba(13,31,31,0.04)",
+                position: "relative",
+                transition: "all 0.15s",
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 11,
+                  background: `linear-gradient(145deg, ${m.tintFrom}, ${m.tintTo})`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: m.color,
+                  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
+                }}>
+                  {m.icon}
+                </div>
+                <span style={{ fontSize: 10.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>{m.label}</span>
+                {m.badge > 0 && (
+                  <div style={{
+                    position: "absolute", top: 8, right: 10,
+                    fontSize: 9, fontWeight: 900,
+                    background: "linear-gradient(145deg, #E24B4A, #C53030)",
+                    color: "#fff", padding: "1px 6px", borderRadius: 50,
+                    boxShadow: "0 2px 6px rgba(226,75,74,0.35)",
+                    minWidth: 16, textAlign: "center" as any,
+                  }}>{m.badge}</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* PANNELLO CENTRO ATTIVO */}
+          {centroApertoV70 === "cliente" && (
+            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", marginBottom: 10 }}>{cV70.cliente || "Cliente"}</div>
+              {cV70.telefono && <div style={{ fontSize: 12, color: "#5A7878", marginBottom: 6 }}>\u260e {cV70.telefono}</div>}
+              {cV70.email && <div style={{ fontSize: 12, color: "#5A7878", marginBottom: 6 }}>\u2709 {cV70.email}</div>}
+              {cV70.indirizzo && <div style={{ fontSize: 12, color: "#5A7878", marginBottom: 6 }}>\ud83d\udccd {cV70.indirizzo}</div>}
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: 10, background: "rgba(29,158,117,0.12)", color: "#04342C", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 11, fontWeight: 900, letterSpacing: "0.3px" }}>CHIAMA</a>}
+                {cV70.telefono && <a href={`https://wa.me/${(cV70.telefono || "").replace(/\D/g, "")}`} target="_blank" rel="noopener" style={{ flex: 1, padding: 10, background: "rgba(37,211,102,0.12)", color: "#075E54", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 11, fontWeight: 900, letterSpacing: "0.3px" }}>WHATSAPP</a>}
+                {cV70.indirizzo && <a href={`https://maps.google.com/?q=${encodeURIComponent(cV70.indirizzo)}`} target="_blank" rel="noopener" style={{ flex: 1, padding: 10, background: "rgba(55,138,221,0.12)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 11, fontWeight: 900, letterSpacing: "0.3px" }}>NAVIGA</a>}
+              </div>
+            </div>
+          )}
+
+          {centroApertoV70 === "allegati" && (
+            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", marginBottom: 10 }}>Cosa vuoi allegare?</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                  { k: "foto", l: "Foto", c: "#7F77DD", cDark: "#3C3489", tintA: "#AFA9EC", tintB: "#7F77DD", n: fotoGlobalV70, act: () => { try { (fotoInputRef as any).current?.click(); } catch (e) {} } },
+                  { k: "audio", l: "Audio", c: "#EF9F27", cDark: "#854F0B", tintA: "#FAC775", tintB: "#EF9F27", n: audioGlobalV70, act: () => { try { (setShowAllegatiModal as any)("vocale"); } catch (e) {} } },
+                  { k: "nota", l: "Nota", c: "#1D9E75", cDark: "#04342C", tintA: "#5DCAA5", tintB: "#1D9E75", n: noteGlobalV70, act: () => { try { (setShowAllegatiModal as any)("nota"); (setAllegatiText as any)(""); } catch (e) {} } },
+                  { k: "file", l: "File", c: "#378ADD", cDark: "#042C53", tintA: "#85B7EB", tintB: "#378ADD", n: fileGlobalV70, act: () => { try { (fileInputRef as any).current?.click(); } catch (e) {} } },
+                ].map((a: any) => (
+                  <div key={a.k} onClick={a.act} style={{
+                    background: "#fff", border: "1px solid rgba(200,228,228,0.4)",
+                    borderRadius: 16, padding: "14px 12px", cursor: "pointer",
+                    boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
+                  }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 13,
+                      background: `linear-gradient(145deg, ${a.tintA}, ${a.tintB})`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#fff", marginBottom: 10,
+                      boxShadow: `0 4px 10px ${a.tintB}55, inset 0 1px 1px rgba(255,255,255,0.3)`,
+                    }}>
+                      {a.k === "foto" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>}
+                      {a.k === "audio" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
+                      {a.k === "nota" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}
+                      {a.k === "file" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>}
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525" }}>{a.l}</div>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "#5A7878", marginTop: 2 }}>{a.n} salvati</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {centroApertoV70 === "note" && (
+            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", marginBottom: 4 }}>Appunti del lavoro</div>
+              <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 600, marginBottom: 10 }}>Tutte le note tecniche di questa commessa</div>
+              {(cV70.note && cV70.note.trim()) ? (
+                <div style={{ padding: "10px 12px", background: "rgba(250,199,117,0.1)", border: "1px solid rgba(239,159,39,0.22)", borderRadius: 10, fontSize: 12.5, color: "#0F2525", lineHeight: 1.4 }}>
+                  {cV70.note}
+                </div>
+              ) : (
+                <div style={{ padding: "14px 12px", background: "rgba(200,228,228,0.25)", borderRadius: 10, fontSize: 12, color: "#5A7878", fontWeight: 600, textAlign: "center" as any }}>
+                  Nessuna nota ancora. Scrivi dal centro Allegati &gt; Nota.
+                </div>
+              )}
+            </div>
+          )}
+
+          {centroApertoV70 === "azioni" && (
+            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 10, boxShadow: "0 3px 10px rgba(13,31,31,0.05)", display: "flex", flexDirection: "column", gap: 6 }}>
+              {rCurV70 && (
+                <div onClick={() => { setSelectedRilievo(rCurV70); (setShowRiepilogo as any)(true); }} style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                  borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
+                }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(55,138,221,0.15), rgba(55,138,221,0.08))", color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Riepilogo rilievo</div>
+                    <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Vedi scheda completa</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              )}
+              {rCurV70 && (
+                <div onClick={() => { setSelectedRilievo(rCurV70); exportPDF(); }} style={{
+                  display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                  borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
+                }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(29,158,117,0.15), rgba(29,158,117,0.08))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta PDF</div>
+                    <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              )}
+              <div onClick={() => {
+                try {
+                  (setProblemaForm as any)({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
+                  (setShowProblemaModal as any)(true);
+                } catch (e) {}
+              }} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(239,159,39,0.15), rgba(239,159,39,0.08))", color: "#EF9F27", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Segnala problema</div>
+                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Imprevisto, materiale mancante</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+              <div onClick={() => { if (window.confirm("Eliminare definitivamente la commessa?")) deleteCommessa(cV70.id); }} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                cursor: "pointer",
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, #F09595, #E24B4A)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 8px rgba(226,75,74,0.3)" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#8B1A1A" }}>Elimina commessa</div>
+                  <div style={{ fontSize: 10, color: "#E24B4A", fontWeight: 700, marginTop: 1 }}>Azione irreversibile</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          )}
+
+          {/* CRONOLOGIA ACCORDION */}
+          <div>
+            <div onClick={() => setCronOpenV70(v => !v)} style={{
+              background: "#fff",
+              border: "1px solid rgba(200,228,228,0.4)",
+              borderRadius: cronOpenV70 ? "14px 14px 0 0" : 14,
+              borderBottomColor: cronOpenV70 ? "transparent" : "rgba(200,228,228,0.4)",
+              padding: "12px 14px",
+              display: "flex", alignItems: "center", gap: 12,
+              cursor: "pointer",
+              boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
+            }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10,
+                background: "linear-gradient(145deg, rgba(127,119,221,0.18), rgba(29,158,117,0.12))",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#3C3489",
+                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
+              }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Cronologia</div>
+                <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>
+                  {logV70.length > 0 ? `${logV70.length} eventi \u00b7 ultima ${logV70[logV70.length - 1]?.quando || "Adesso"}` : "1 evento \u00b7 ultima Adesso"}
+                </div>
+              </div>
+              <div style={{
+                fontSize: 10, fontWeight: 900, color: "#3C3489",
+                background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(127,119,221,0.15))",
+                padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
+                border: "1px solid rgba(127,119,221,0.22)",
+              }}>{logV70.length || 1}</div>
+              <div style={{
+                width: 24, height: 24, borderRadius: 8,
+                background: "rgba(40,160,160,0.08)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#1A7A7A",
+                transform: cronOpenV70 ? "rotate(180deg)" : "none",
+                transition: "transform 0.2s",
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            {cronOpenV70 && (
+              <div style={{
+                background: "#fff",
+                border: "1px solid rgba(200,228,228,0.4)",
+                borderTop: "1px dashed rgba(200,228,228,0.6)",
+                borderRadius: "0 0 14px 14px",
+                padding: "14px 12px 12px",
+                position: "relative",
+                boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
+              }}>
+                <div style={{ position: "absolute", left: 30, top: 22, bottom: 22, width: 2, background: "linear-gradient(180deg, #AFA9EC 0%, #5DCAA5 50%, #FAC775 100%)", borderRadius: 1, opacity: 0.3 }} />
+                {(logV70.length > 0 ? logV70.slice().reverse() : [{ chi: cV70.creatoDa || "Tu", cosa: "creato la commessa", quando: "Adesso" }]).map((ev: any, k: number) => (
+                  <div key={k} style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 11,
+                      background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+                      color: "#fff", flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                    </div>
+                    <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
+                      <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
+                        <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> \u00b7 {ev.cosa || ev.tipo || "evento"}
+                      </div>
+                      <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
 
   // · CAD DRAW FULLSCREEN ·
   if (showCadDraw) {
