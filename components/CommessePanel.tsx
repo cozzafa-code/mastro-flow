@@ -278,24 +278,24 @@ export default function CommessePanel() {
     return (
       <div key={c.id}
         style={(() => {
-          // Colori FASE v57 (dal mockup v3 scelto da Fabio)
+          // Colori FASE (dal mockup v3 scelto da Fabio)
           const FASE_GRAD: any = {
-            sopralluogo:  { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", dark: "#26215C" },
-            rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", dark: "#26215C" },
-            preventivo:   { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", dark: "#04342C" },
-            conferma:     { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", dark: "#412402" },
-            ordini:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", dark: "#412402" },
-            produzione:   { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", dark: "#042C53" },
-            posa:         { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", dark: "#4B1528" },
-            collaudo:     { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", dark: "#4B1528" },
-            fattura:      { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", dark: "#173404" },
-            chiusura:     { grad: "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)", dark: "#2C2C2A" },
+            sopralluogo:  { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", dark: "#26215C", solid: "#7F77DD" },
+            rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", dark: "#26215C", solid: "#7F77DD" },
+            preventivo:   { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", dark: "#04342C", solid: "#1D9E75" },
+            conferma:     { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", dark: "#412402", solid: "#EF9F27" },
+            ordini:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", dark: "#412402", solid: "#EF9F27" },
+            produzione:   { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", dark: "#042C53", solid: "#378ADD" },
+            posa:         { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", dark: "#4B1528", solid: "#D4537E" },
+            collaudo:     { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", dark: "#4B1528", solid: "#D4537E" },
+            fattura:      { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", dark: "#173404", solid: "#639922" },
+            chiusura:     { grad: "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)", dark: "#2C2C2A", solid: "#5F5E5A" },
           };
           const fg = alert
-            ? { grad: "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)", dark: "#501313" }
+            ? { grad: "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)", dark: "#501313", solid: "#E24B4A" }
             : (FASE_GRAD[c.fase] || FASE_GRAD.sopralluogo);
           return {
-            background: heroMode ? fg.grad : faseStyleFliwox.bg,
+            background: heroMode ? fg.grad : "#FFFFFF",
             borderRadius: 18,
             padding: 0,
             marginBottom: 12,
@@ -304,8 +304,9 @@ export default function CommessePanel() {
             opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
             boxShadow: isExpanded
               ? "0 10px 28px rgba(13,31,31,0.2), 0 0 0 2px #0D1F1F"
-              : "0 8px 22px rgba(13,31,31,0.15)",
-            border: heroMode ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(200,228,228,0.5)",
+              : heroMode ? "0 8px 22px rgba(13,31,31,0.15)" : "0 6px 16px rgba(13,31,31,0.08)",
+            border: heroMode ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(200,228,228,0.6)",
+            borderLeft: heroMode ? undefined : `4px solid ${fg.solid}`,
             transition: "box-shadow 0.2s",
           };
         })()}
@@ -432,14 +433,32 @@ export default function CommessePanel() {
           <>
             {/* Header: avatar + nome + pill fase */}
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-              <div style={{
-                width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-                background: AV_GRADS[idx % AV_GRADS.length],
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 14, fontWeight: 800, color: "#fff",
-                boxShadow: "0 4px 10px rgba(13,31,31,0.25), inset 0 1px 1px rgba(255,255,255,0.3)",
-                letterSpacing: "-0.2px",
-              }}>{initials(c)}</div>
+              <div style={(() => {
+                const FG: any = {
+                  sopralluogo:  "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+                  rilievo:      "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+                  preventivo:   "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+                  conferma:     "linear-gradient(145deg, #FAC775, #EF9F27)",
+                  ordini:       "linear-gradient(145deg, #FAC775, #EF9F27)",
+                  produzione:   "linear-gradient(145deg, #85B7EB, #378ADD)",
+                  posa:         "linear-gradient(145deg, #ED93B1, #D4537E)",
+                  collaudo:     "linear-gradient(145deg, #ED93B1, #D4537E)",
+                  fattura:      "linear-gradient(145deg, #97C459, #639922)",
+                  chiusura:     "linear-gradient(145deg, #888780, #5F5E5A)",
+                };
+                const bg = alert
+                  ? "linear-gradient(145deg, #F09595, #E24B4A)"
+                  : (FG[c.fase] || FG.sopralluogo);
+                return {
+                  width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+                  background: bg,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 14, fontWeight: 800, color: "#fff",
+                  boxShadow: "0 4px 10px rgba(13,31,31,0.2), inset 0 1px 1px rgba(255,255,255,0.3)",
+                  letterSpacing: "-0.2px",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                };
+              })()}>{initials(c)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: TH.ink, letterSpacing: "-0.2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {c.cliente}{c.cognome ? " " + c.cognome : ""}
@@ -448,28 +467,55 @@ export default function CommessePanel() {
                   {c.code}{c.indirizzo ? " · " + c.indirizzo : ""}
                 </div>
               </div>
-              <span style={{
-                background: fs.bg, color: fs.fg,
-                fontSize: 10, padding: "4px 9px", borderRadius: 8, fontWeight: 800,
-                letterSpacing: "0.3px", textTransform: "uppercase" as any,
-                whiteSpace: "nowrap" as any,
-              }}>{fs.text}</span>
+              <span style={(() => {
+                const FPILL: any = {
+                  sopralluogo:  { bg: "rgba(127,119,221,0.12)",  fg: "#3C3489" },
+                  rilievo:      { bg: "rgba(127,119,221,0.12)",  fg: "#3C3489" },
+                  preventivo:   { bg: "rgba(29,158,117,0.12)",   fg: "#04342C" },
+                  conferma:     { bg: "rgba(239,159,39,0.15)",   fg: "#854F0B" },
+                  ordini:       { bg: "rgba(239,159,39,0.15)",   fg: "#854F0B" },
+                  produzione:   { bg: "rgba(55,138,221,0.12)",   fg: "#042C53" },
+                  posa:         { bg: "rgba(212,83,126,0.14)",   fg: "#4B1528" },
+                  collaudo:     { bg: "rgba(212,83,126,0.14)",   fg: "#4B1528" },
+                  fattura:      { bg: "rgba(99,153,34,0.14)",    fg: "#173404" },
+                  chiusura:     { bg: "rgba(95,94,90,0.14)",     fg: "#2C2C2A" },
+                };
+                const p = alert
+                  ? { bg: "rgba(226,75,74,0.14)", fg: "#8B1A1A" }
+                  : (FPILL[c.fase] || FPILL.sopralluogo);
+                return {
+                  background: p.bg, color: p.fg,
+                  fontSize: 10, padding: "4px 9px", borderRadius: 8, fontWeight: 900,
+                  letterSpacing: "0.3px", textTransform: "uppercase" as any,
+                  whiteSpace: "nowrap" as any,
+                };
+              })()}>{fs.text}</span>
             </div>
 
-            {/* Pipeline barra */}
+            {/* Pipeline barra (colori mockup v3) */}
             <div style={{ display: "flex", gap: 3, marginBottom: 11 }}>
-              {PIPELINE.filter(p => p.attiva).map(p => {
-                const isActive = p.id === c.fase;
-                const isDone = PIPELINE.findIndex(pp => pp.id === p.id) < PIPELINE.findIndex(pp => pp.id === c.fase);
-                const dc = (PIPELINE_FLIWOX[p.id] || PIPELINE_FLIWOX.sopralluogo).solid;
-                return (
-                  <div key={p.id} style={{
-                    flex: 1, height: 4, borderRadius: 2,
-                    background: isActive ? dc : isDone ? dc + "80" : "rgba(200,228,228,0.6)",
-                    boxShadow: isActive ? `0 0 8px ${dc}80` : "none",
-                  }} />
-                );
-              })}
+              {(() => {
+                const PBAR: any = {
+                  sopralluogo: "#7F77DD", rilievo: "#7F77DD",
+                  preventivo: "#1D9E75", conferma: "#EF9F27", ordini: "#EF9F27",
+                  produzione: "#378ADD", posa: "#D4537E", collaudo: "#D4537E",
+                  fattura: "#639922", chiusura: "#5F5E5A",
+                };
+                const currentIdx = PIPELINE.findIndex(pp => pp.id === c.fase);
+                return PIPELINE.filter(p => p.attiva).map((p, i) => {
+                  const pIdx = PIPELINE.findIndex(pp => pp.id === p.id);
+                  const isActive = pIdx === currentIdx;
+                  const isDone = pIdx < currentIdx;
+                  const dc = alert && isActive ? "#E24B4A" : (PBAR[p.id] || "#7F77DD");
+                  return (
+                    <div key={p.id} style={{
+                      flex: 1, height: 4, borderRadius: 2,
+                      background: isActive ? dc : isDone ? dc + "55" : "rgba(200,228,228,0.7)",
+                      boxShadow: isActive ? `0 0 8px ${dc}70` : "none",
+                    }} />
+                  );
+                });
+              })()}
             </div>
 
             {/* Footer: vani, data, euro, fattura */}
@@ -526,32 +572,52 @@ export default function CommessePanel() {
               </div>
             )}
 
-            {/* Bottone espandi */}
-            <div
-              onClick={(e) => { e.stopPropagation(); setExpandedCmId(isExpanded ? null : c.id); }}
-              style={{
-                marginTop: 10,
-                padding: "8px 12px",
-                borderRadius: 10,
-                background: isExpanded
-                  ? (alert ? "linear-gradient(145deg, #D85A30, #993C1D)" : `linear-gradient(145deg, ${faseStyleFliwox.solid}, ${faseStyleFliwox.fg})`)
-                  : faseStyleFliwox.bg,
-                border: isExpanded ? "none" : `1px solid ${faseStyleFliwox.solid}30`,
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                cursor: "pointer",
-                color: isExpanded ? "#fff" : faseStyleFliwox.fg,
-                fontSize: 11, fontWeight: 800, letterSpacing: "0.3px",
-                boxShadow: isExpanded
-                  ? (alert ? "0 4px 10px rgba(216,90,48,0.35)" : `0 4px 10px ${faseStyleFliwox.solid}50`)
-                  : "0 2px 6px rgba(31,120,120,0.08)",
-                transition: "all 0.15s",
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isExpanded ? "#fff" : faseStyleFliwox.fg} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              {isExpanded ? "CHIUDI DETTAGLIO" : "APRI CENTRO OPERATIVO"}
-            </div>
+            {/* Bottone espandi (v62 colori mockup v3) */}
+            {(() => {
+              const FG2: any = {
+                sopralluogo:  { solid: "#7F77DD", dark: "#3C3489", bg: "rgba(127,119,221,0.08)" },
+                rilievo:      { solid: "#7F77DD", dark: "#3C3489", bg: "rgba(127,119,221,0.08)" },
+                preventivo:   { solid: "#1D9E75", dark: "#04342C", bg: "rgba(29,158,117,0.08)" },
+                conferma:     { solid: "#EF9F27", dark: "#854F0B", bg: "rgba(239,159,39,0.1)" },
+                ordini:       { solid: "#EF9F27", dark: "#854F0B", bg: "rgba(239,159,39,0.1)" },
+                produzione:   { solid: "#378ADD", dark: "#042C53", bg: "rgba(55,138,221,0.08)" },
+                posa:         { solid: "#D4537E", dark: "#4B1528", bg: "rgba(212,83,126,0.1)" },
+                collaudo:     { solid: "#D4537E", dark: "#4B1528", bg: "rgba(212,83,126,0.1)" },
+                fattura:      { solid: "#639922", dark: "#173404", bg: "rgba(99,153,34,0.1)" },
+                chiusura:     { solid: "#5F5E5A", dark: "#2C2C2A", bg: "rgba(95,94,90,0.1)" },
+              };
+              const fb = alert
+                ? { solid: "#E24B4A", dark: "#8B1A1A", bg: "rgba(226,75,74,0.1)" }
+                : (FG2[c.fase] || FG2.sopralluogo);
+              return (
+                <div
+                  onClick={(e) => { e.stopPropagation(); setExpandedCmId(isExpanded ? null : c.id); }}
+                  style={{
+                    marginTop: 10,
+                    padding: "9px 12px",
+                    borderRadius: 10,
+                    background: isExpanded
+                      ? `linear-gradient(145deg, ${fb.solid}, ${fb.dark})`
+                      : fb.bg,
+                    border: isExpanded ? "none" : `1px solid ${fb.solid}40`,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    cursor: "pointer",
+                    color: isExpanded ? "#fff" : fb.dark,
+                    fontSize: 11, fontWeight: 900, letterSpacing: "0.3px",
+                    boxShadow: isExpanded
+                      ? `0 4px 10px ${fb.solid}50, inset 0 1px 2px rgba(255,255,255,0.2)`
+                      : "0 2px 6px rgba(13,31,31,0.05)",
+                    textShadow: isExpanded ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isExpanded ? "#fff" : fb.dark} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                  {isExpanded ? "CHIUDI DETTAGLIO" : "APRI CENTRO OPERATIVO"}
+                </div>
+              );
+            })()}
           </>
         )}
 
