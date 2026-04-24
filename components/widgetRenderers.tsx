@@ -33,15 +33,12 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 // Accetta sia ISO timestamp sia date string - ritorna giorni interi da allora
 const daysSince = (date: any): number => {
-    if (!date || date === 0 || date === "0") return 0;
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return 0;
-    // Ignora date assurde (prima del 2020) = bug su created_at/fase_start null in localStorage
-    if (d.getTime() < 1577836800000) return 0;
-    const diff = Date.now() - d.getTime();
-    const gg = Math.floor(diff / 86400000);
-    return gg < 0 ? 0 : gg;
-  }
+  if (!date) return 0;
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return 0;
+  const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+  return Math.floor(diff);
+};
 
 // Formatta euro compatto (€4.2k, €850)
 const eur = (n: number): string => {
@@ -396,9 +393,10 @@ function safeRender(id: string, data: any, nav: any): React.ReactNode {
         const fermo = c?.ferma === true || gg >= 7;
         return (
           <Row key={c.id || i} last={i === Math.min(a.length, 5) - 1} onClick={() => nav?.openCM?.(c)}>
+            <div style={{ width: 4, height: 36, borderRadius: 2, background: col, flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: col, flexShrink: 0, display: "inline-block", marginRight: 6 }} /><div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
                   {c.code || ""} · {cliente}
                 </div>
                 {valore > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: TEAL_DARK, flexShrink: 0 }}>{eur(valore)}</div>}
