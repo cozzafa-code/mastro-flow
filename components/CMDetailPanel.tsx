@@ -356,7 +356,7 @@ export default function CMDetailPanel() {
   // Bypassa il render normale e mostra il nuovo pannello guidato.
   // Per tornare al vecchio layout: rimuovi questo blocco o aggiungi un flag.
   // =====================================================
-  if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw)) {
+  if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw) && !prevWorkspace) {
     const cV70 = selectedCM as any;
     const rListV70: any[] = cV70.rilievi || [];
     const rCurV70: any = selectedRilievo || (rListV70.length > 0 ? rListV70[rListV70.length - 1] : null);
