@@ -130,12 +130,32 @@ export default function CommessePanel() {
 
   const bulkSoftDelete = async () => {
     if (selectedIds.size === 0 || bulkBusy) return;
-    const n = selectedIds.size;
-    const ok = window.confirm(
-      `Spostare ${n} commess${n === 1 ? "a" : "e"} nel cestino?\n\n` +
-      `Saranno eliminate definitivamente dopo 30 giorni.`
-    );
-    if (!ok) return;
+
+    // Filtra solo UUID validi (escludi ID locali/offline tipo Date.now())
+    const UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const ids = Array.from(selectedIds);
+    const validIds = ids.filter(id => UUID_RX.test(id));
+    const invalidCount = ids.length - validIds.length;
+
+    if (validIds.length === 0) {
+      alert(
+        `Impossibile eliminare: le ${ids.length} commess${ids.length === 1 ? "a" : "e"} selezionate ` +
+        `non sono sincronizzate con il server (ID locali offline).\n\n` +
+        `Apri una commessa e salvala per forzare la sync, poi riprova.`
+      );
+      exitSelection();
+      return;
+    }
+
+    const confirmMsg = invalidCount > 0
+      ? `Spostare ${validIds.length} commess${validIds.length === 1 ? "a" : "e"} nel cestino?\n\n` +
+        `⚠ ${invalidCount} element${invalidCount === 1 ? "o" : "i"} non sincronizzat${invalidCount === 1 ? "o" : "i"} sarà ignorato.\n\n` +
+        `Eliminazione definitiva dopo 30 giorni.`
+      : `Spostare ${validIds.length} commess${validIds.length === 1 ? "a" : "e"} nel cestino?\n\n` +
+        `Eliminazione definitiva dopo 30 giorni.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     setBulkBusy(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -145,10 +165,9 @@ export default function CommessePanel() {
           deleted_at: new Date().toISOString(),
           deleted_by: user?.id || null,
         })
-        .in("id", Array.from(selectedIds));
+        .in("id", validIds);
       if (error) throw error;
       exitSelection();
-      // Reload per aggiornare lista
       window.location.reload();
     } catch (e: any) {
       alert("Errore eliminazione: " + (e?.message || e));
