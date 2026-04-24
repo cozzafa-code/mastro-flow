@@ -257,6 +257,7 @@ export default function VanoDetailPanel() {
   const [vrTranscripts, setVrTranscripts] = useState<{text:string,time:string,parsed?:Record<string,any>}[]>([]);
   const [vrInterim, setVrInterim] = useState("");
   const [vrError, setVrError] = useState("");
+  const [showReportOverlay, setShowReportOverlay] = useState(false);
   const recognitionRef = useRef<any>(null);
 
   const parseVoiceText = useCallback((text: string) => {
@@ -481,7 +482,6 @@ export default function VanoDetailPanel() {
 
   // ── RENDER BODY ──────────────────────────────────────
   function renderBody() {
-    const [showReportOverlay, setShowReportOverlay] = React.useState(false);
     if (!selectedVano || !selectedCM) return null;
     const v = selectedVano;
     const m = v.misure || {};
