@@ -278,7 +278,11 @@ export default function CommessePanel() {
     return (
       <div key={c.id}
         style={{
-          background: heroMode ? "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)" : faseStyleFliwox.bg,
+          background: heroMode
+            ? (alert
+                ? "linear-gradient(145deg, #F0997B 0%, #D85A30 100%)"
+                : `linear-gradient(145deg, ${faseStyleFliwox.solid} 0%, ${faseStyleFliwox.fg} 100%)`)
+            : faseStyleFliwox.bg,
           borderRadius: 18,
           padding: 0,
           marginBottom: 12,
@@ -286,11 +290,13 @@ export default function CommessePanel() {
           position: "relative" as any,
           opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
           boxShadow: alert
-            ? `0 6px 20px rgba(226,75,74,0.15), inset 3px 0 0 ${TH.red}`
+            ? `0 6px 20px rgba(226,75,74,0.25), inset 3px 0 0 ${TH.red}`
             : isExpanded
-              ? `0 10px 28px rgba(40,160,160,0.18), 0 0 0 2px ${TH.teal}`
-              : "0 6px 20px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
-          border: "1px solid rgba(200,228,228,0.5)",
+              ? `0 10px 28px ${heroMode ? (faseStyleFliwox.solid + "60") : "rgba(40,160,160,0.18)"}, 0 0 0 2px ${heroMode ? faseStyleFliwox.solid : TH.teal}`
+              : heroMode
+                ? `0 6px 20px ${faseStyleFliwox.solid}35`
+                : "0 6px 20px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
+          border: heroMode ? "none" : "1px solid rgba(200,228,228,0.5)",
           transition: "box-shadow 0.2s",
         }}
         onClick={() => handleCardClick(c, () => { if (!isExpanded) { setSelectedCM(c); setTab("commesse"); } })}
@@ -299,33 +305,6 @@ export default function CommessePanel() {
         onTouchMove={handleTouchEnd}
         onContextMenu={(e) => { e.preventDefault(); enterSelection(c.id); }}>
 
-        {/* ── BANNER HERO (solo in heroMode) ────────── */}
-        {heroMode && (() => {
-          const fsolid = alert ? "#D85A30" : (faseStyleFliwox.solid || "#1A7A7A");
-          const fbg = alert
-            ? "linear-gradient(145deg, #F0997B 0%, #D85A30 100%)"
-            : `linear-gradient(145deg, ${faseStyleFliwox.bg} 0%, ${faseStyleFliwox.fg}30 100%)`;
-          const ftextColor = alert ? "#fff" : faseStyleFliwox.fg;
-          const labelFase = alert && ferma ? `FERMA · ${giorniFermaCM(c)} GG` : (alert && scad ? "SCADENZA SUPERATA" : (fase.nome || c.fase || "").toUpperCase());
-          return (
-            <div style={{
-              background: fbg,
-              padding: "7px 14px",
-              display: "flex", alignItems: "center", gap: 7,
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: alert ? "#fff" : fsolid, boxShadow: alert ? "0 0 0 3px rgba(255,255,255,0.3)" : `0 0 0 3px ${fsolid}25`, flexShrink: 0 }} />
-              <span style={{ fontSize: 10, fontWeight: 900, color: ftextColor, letterSpacing: "0.8px", textTransform: "uppercase" as any }}>
-                {alert ? labelFase : `Fase · ${labelFase}`}
-              </span>
-              <span style={{ flex: 1 }} />
-              {alert ? (
-                <span style={{ fontSize: 10, fontWeight: 900, color: "#fff" }}>!</span>
-              ) : c.aggiornato ? (
-                <span style={{ fontSize: 9, fontWeight: 800, color: ftextColor, opacity: 0.85 }}>{c.aggiornato}</span>
-              ) : null}
-            </div>
-          );
-        })()}
         <div style={{ padding: "14px 16px" }}>
 
         {/* Checkbox selezione */}
@@ -351,25 +330,42 @@ export default function CommessePanel() {
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <div style={{
             width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-            background: AV_GRADS[idx % AV_GRADS.length],
+            background: heroMode ? "rgba(255,255,255,0.22)" : AV_GRADS[idx % AV_GRADS.length],
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 14, fontWeight: 800, color: "#fff",
-            boxShadow: "0 4px 10px rgba(13,31,31,0.25), inset 0 1px 1px rgba(255,255,255,0.3)",
+            boxShadow: heroMode
+              ? "inset 0 1px 2px rgba(0,0,0,0.12), inset 0 -1px 1px rgba(255,255,255,0.15)"
+              : "0 4px 10px rgba(13,31,31,0.25), inset 0 1px 1px rgba(255,255,255,0.3)",
+            border: heroMode ? "1px solid rgba(255,255,255,0.3)" : "none",
             letterSpacing: "-0.2px",
+            textShadow: heroMode ? "0 1px 2px rgba(0,0,0,0.2)" : "none",
           }}>{initials(c)}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: TH.ink, letterSpacing: "-0.2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div style={{
+              fontSize: 15, fontWeight: 800,
+              color: heroMode ? "#fff" : TH.ink,
+              letterSpacing: "-0.2px",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              textShadow: heroMode ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+            }}>
               {c.cliente}{c.cognome ? " " + c.cognome : ""}
             </div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: TH.sub, marginTop: 2 }}>
+            <div style={{
+              fontSize: 11, fontWeight: 500,
+              color: heroMode ? "rgba(255,255,255,0.85)" : TH.sub,
+              marginTop: 2,
+            }}>
               {c.code}{c.indirizzo ? " · " + c.indirizzo : ""}
             </div>
           </div>
           <span style={{
-            background: fs.bg, color: fs.fg,
+            background: heroMode ? "rgba(255,255,255,0.22)" : fs.bg,
+            color: heroMode ? "#fff" : fs.fg,
             fontSize: 10, padding: "4px 9px", borderRadius: 8, fontWeight: 800,
             letterSpacing: "0.3px", textTransform: "uppercase" as any,
             whiteSpace: "nowrap" as any,
+            border: heroMode ? "1px solid rgba(255,255,255,0.3)" : "none",
+            textShadow: heroMode ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
           }}>{fs.text}</span>
         </div>
 
@@ -382,8 +378,10 @@ export default function CommessePanel() {
             return (
               <div key={p.id} style={{
                 flex: 1, height: 4, borderRadius: 2,
-                background: isActive ? dc : isDone ? dc + "80" : "rgba(200,228,228,0.6)",
-                boxShadow: isActive ? `0 0 8px ${dc}80` : "none",
+                background: heroMode
+                  ? (isActive ? "#fff" : isDone ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)")
+                  : (isActive ? dc : isDone ? dc + "80" : "rgba(200,228,228,0.6)"),
+                boxShadow: isActive && !heroMode ? `0 0 8px ${dc}80` : "none",
               }} />
             );
           })}
@@ -393,12 +391,12 @@ export default function CommessePanel() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" as any }}>
             {vaniA.length > 0 && (
-              <span style={{ fontSize: 11, color: TH.sub, fontWeight: 700 }}>
+              <span style={{ fontSize: 11, color: heroMode ? "rgba(255,255,255,0.92)" : TH.sub, fontWeight: 700 }}>
                 {vaniA.length} van{vaniA.length === 1 ? "o" : "i"}
               </span>
             )}
             {c.scadenza && !scad && (
-              <span style={{ fontSize: 11, color: TH.sub, fontWeight: 600 }}>
+              <span style={{ fontSize: 11, color: heroMode ? "rgba(255,255,255,0.85)" : TH.sub, fontWeight: 600 }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={TH.tealMuted} strokeWidth="2" style={{ display: "inline", verticalAlign: "-1px", marginRight: 3 }}>
                   <rect x="3" y="4" width="18" height="17" rx="2"/>
                 </svg>
@@ -408,7 +406,12 @@ export default function CommessePanel() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {euroVal > 0 && (
-              <span style={{ fontSize: 14, fontWeight: 900, color: TH.ink, fontFamily: FM, letterSpacing: "-0.3px" }}>
+              <span style={{
+                fontSize: 14, fontWeight: 900,
+                color: heroMode ? "#fff" : TH.ink,
+                fontFamily: FM, letterSpacing: "-0.3px",
+                textShadow: heroMode ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+              }}>
                 {fmtEuro(euroVal)}
               </span>
             )}
@@ -450,21 +453,28 @@ export default function CommessePanel() {
             marginTop: 10,
             padding: "8px 12px",
             borderRadius: 10,
-            background: isExpanded
-              ? (alert ? "linear-gradient(145deg, #D85A30, #993C1D)" : `linear-gradient(145deg, ${faseStyleFliwox.solid}, ${faseStyleFliwox.fg})`)
-              : faseStyleFliwox.bg,
-            border: isExpanded ? "none" : `1px solid ${faseStyleFliwox.solid}30`,
+            background: heroMode
+              ? "rgba(255,255,255,0.22)"
+              : (isExpanded
+                  ? (alert ? "linear-gradient(145deg, #D85A30, #993C1D)" : `linear-gradient(145deg, ${faseStyleFliwox.solid}, ${faseStyleFliwox.fg})`)
+                  : faseStyleFliwox.bg),
+            border: heroMode
+              ? "1px solid rgba(255,255,255,0.3)"
+              : (isExpanded ? "none" : `1px solid ${faseStyleFliwox.solid}30`),
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             cursor: "pointer",
-            color: isExpanded ? "#fff" : faseStyleFliwox.fg,
+            color: heroMode ? "#fff" : (isExpanded ? "#fff" : faseStyleFliwox.fg),
             fontSize: 11, fontWeight: 800, letterSpacing: "0.3px",
-            boxShadow: isExpanded
-              ? (alert ? "0 4px 10px rgba(216,90,48,0.35)" : `0 4px 10px ${faseStyleFliwox.solid}50`)
-              : "0 2px 6px rgba(31,120,120,0.08)",
+            boxShadow: heroMode
+              ? "inset 0 1px 2px rgba(0,0,0,0.12)"
+              : (isExpanded
+                  ? (alert ? "0 4px 10px rgba(216,90,48,0.35)" : `0 4px 10px ${faseStyleFliwox.solid}50`)
+                  : "0 2px 6px rgba(31,120,120,0.08)"),
+            textShadow: heroMode ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
             transition: "all 0.15s",
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isExpanded ? "#fff" : faseStyleFliwox.fg} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={heroMode ? "#fff" : (isExpanded ? "#fff" : faseStyleFliwox.fg)} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
             <polyline points="6 9 12 15 18 9"/>
           </svg>
           {isExpanded ? "CHIUDI DETTAGLIO" : "APRI CENTRO OPERATIVO"}
