@@ -151,16 +151,8 @@ export default function HomeWidgetsDynamic() {
     goto: (id: string) => { ctx?.setTab?.(id); trackEvent?.("widget_click", id); },
     openCM: (c: any) => { ctx?.setSelectedCM?.(c); ctx?.setTab?.("commesse"); },
     openProblema: () => ctx?.setShowProblemiView?.(true),
-    openTask: () => {
-      try { ctx?.setSelDate?.(new Date()); } catch(e) {}
-      try { ctx?.setAgendaView?.("giorno"); } catch(e) {}
-      ctx?.setTab?.("agenda");
-    },
-    openEvent: () => {
-      try { ctx?.setSelDate?.(new Date()); } catch(e) {}
-      try { ctx?.setAgendaView?.("giorno"); } catch(e) {}
-      ctx?.setTab?.("agenda");
-    },
+    openTask: () => ctx?.setTab?.("agenda"),
+    openEvent: () => ctx?.setTab?.("agenda"),
     openMsg: () => ctx?.setTab?.("messaggi"),
   };
 
