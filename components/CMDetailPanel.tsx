@@ -1556,6 +1556,7 @@ export default function CMDetailPanel() {
                         setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso" } : cm));
                         setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso" }));
                         setPrevWorkspace(false);
+                        setSelectedCM(null);
                         setCcDone("✓ Rilievo chiuso · preventivo in azienda"); setTimeout(() => setCcDone(null), 2500);
                       }} style={{
                         padding: "18px 16px", borderRadius: 14, cursor: "pointer",
