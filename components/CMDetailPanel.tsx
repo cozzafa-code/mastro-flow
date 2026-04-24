@@ -1092,6 +1092,149 @@ export default function CMDetailPanel() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               )}
+              {/* v75 · EXPORT CSV */}
+              <div onClick={() => {
+                try {
+                  const rows: string[] = [];
+                  rows.push(["Commessa","Cliente","Rilievo","Vano","Stanza","Sistema","Colore int","Colore est","Telaio","Vetro","L centro","H centro","L alto","H sx","Pezzi","Note"].join(";"));
+                  const rilievi = cV70.rilievi || [];
+                  rilievi.forEach((ril: any) => {
+                    (ril.vani || []).forEach((v: any) => {
+                      const m = v.misure || {};
+                      rows.push([
+                        cV70.code || "",
+                        cV70.cliente || "",
+                        `R${ril.n || ""}`,
+                        v.nome || "",
+                        v.stanza || "",
+                        v.sistema || "",
+                        v.coloreInt || "",
+                        v.coloreEst || "",
+                        v.telaio || "",
+                        v.vetro || "",
+                        m.lCentro || "",
+                        m.hCentro || "",
+                        m.lAlto || "",
+                        m.hSx || "",
+                        v.pezzi || 1,
+                        (v.note || "").replace(/[;\n\r]/g, " "),
+                      ].map(x => `"${String(x).replace(/"/g, '""')}"`).join(";"));
+                    });
+                  });
+                  const csv = "\uFEFF" + rows.join("\n");
+                  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `commessa_${cV70.code || cV70.id}_${new Date().toISOString().slice(0,10)}.csv`;
+                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (e) { console.error("Export CSV", e); alert("Errore export CSV"); }
+              }} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(99,153,34,0.15), rgba(99,153,34,0.08))", color: "#639922", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta CSV</div>
+                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Tabella vani per Excel / Google Sheets</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#639922" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              {/* v75 · EXPORT JSON */}
+              <div onClick={() => {
+                try {
+                  const payload = {
+                    exportedAt: new Date().toISOString(),
+                    app: "MASTRO ERP",
+                    commessa: cV70,
+                  };
+                  const json = JSON.stringify(payload, null, 2);
+                  const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `commessa_${cV70.code || cV70.id}_${new Date().toISOString().slice(0,10)}.json`;
+                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (e) { console.error("Export JSON", e); alert("Errore export JSON"); }
+              }} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(127,119,221,0.15), rgba(127,119,221,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta JSON</div>
+                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Backup completo commessa (sviluppatori)</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              {/* v75 · EXPORT HTML */}
+              <div onClick={() => {
+                try {
+                  const esc = (s: any) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                  const rilievi = cV70.rilievi || [];
+                  let vaniRows = "";
+                  rilievi.forEach((ril: any) => {
+                    (ril.vani || []).forEach((v: any) => {
+                      const m = v.misure || {};
+                      vaniRows += `<tr><td>R${esc(ril.n)}</td><td>${esc(v.nome)}</td><td>${esc(v.stanza)}</td><td>${esc(v.sistema)}</td><td>${esc(v.coloreInt)} / ${esc(v.coloreEst)}</td><td>${esc(v.telaio)}</td><td>${esc(v.vetro)}</td><td>${esc(m.lCentro || m.lAlto || "")} \u00d7 ${esc(m.hCentro || m.hSx || "")}</td><td>${esc(v.pezzi || 1)}</td></tr>`;
+                    });
+                  });
+                  const html = `<!DOCTYPE html>
+<html lang="it"><head><meta charset="UTF-8"><title>Commessa ${esc(cV70.code || cV70.id)}</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0D1F1F;max-width:900px;margin:40px auto;padding:20px;}
+h1{color:#28A0A0;border-bottom:3px solid #28A0A0;padding-bottom:8px;}
+h2{color:#1E8080;margin-top:30px;}
+table{width:100%;border-collapse:collapse;margin-top:12px;}
+th{background:#28A0A0;color:#fff;padding:10px;text-align:left;font-size:12px;}
+td{padding:8px 10px;border-bottom:1px solid #E4F2F2;font-size:13px;}
+tr:nth-child(even){background:#F4F6F5;}
+.meta{background:#F4F6F5;padding:14px;border-radius:10px;margin-top:10px;}
+.meta div{margin:4px 0;font-size:13px;}
+.meta strong{color:#1A7A7A;margin-right:8px;}</style></head><body>
+<h1>Commessa ${esc(cV70.code || cV70.id)}</h1>
+<div class="meta">
+<div><strong>Cliente:</strong> ${esc(cV70.cliente || "")}</div>
+<div><strong>Indirizzo:</strong> ${esc(cV70.indirizzo || "")}</div>
+<div><strong>Telefono:</strong> ${esc(cV70.telefono || "")}</div>
+<div><strong>Email:</strong> ${esc(cV70.email || "")}</div>
+<div><strong>Tipo edificio:</strong> ${esc(tEdifLabelV70)}</div>
+<div><strong>Data export:</strong> ${new Date().toLocaleString("it-IT")}</div>
+</div>
+<h2>Vani e misure</h2>
+${vaniRows ? `<table><thead><tr><th>Rilievo</th><th>Vano</th><th>Stanza</th><th>Sistema</th><th>Colori</th><th>Telaio</th><th>Vetro</th><th>Misure</th><th>Pz</th></tr></thead><tbody>${vaniRows}</tbody></table>` : "<p><em>Nessun vano rilevato.</em></p>"}
+${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
+<p style="margin-top:40px;color:#8FA8A8;font-size:11px;">Generato da MASTRO Suite \u00b7 ${new Date().toISOString()}</p>
+</body></html>`;
+                  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `commessa_${cV70.code || cV70.id}_${new Date().toISOString().slice(0,10)}.html`;
+                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (e) { console.error("Export HTML", e); alert("Errore export HTML"); }
+              }} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
+              }}>
+                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(212,83,126,0.15), rgba(212,83,126,0.08))", color: "#D4537E", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta HTML</div>
+                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Report leggibile da browser</div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
               <div onClick={() => {
                 try {
                   (setProblemaForm as any)({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
