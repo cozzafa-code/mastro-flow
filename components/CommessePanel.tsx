@@ -1203,142 +1203,165 @@ export default function CommessePanel() {
         );
       })()}
 
-      {/* ═══ BULK TOOLBAR FLOTTANTE ═══ */}
-      {selectionMode && (
-        <div style={{
-          position: "fixed" as any,
-          left: 12, right: 12,
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)",
-          zIndex: 100,
-          background: "linear-gradient(145deg, #0D1F1F, #1A3535)",
-          borderRadius: 18,
-          padding: "12px 14px",
-          display: "flex", alignItems: "center", gap: 10,
-          boxShadow: "0 10px 28px rgba(13,31,31,0.45), inset 0 1px 2px rgba(255,255,255,0.08)",
-          border: "1px solid rgba(95,208,208,0.2)",
-        }}>
-          {/* Conteggio */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column" as any, gap: 2 }}>
-            <div style={{ fontSize: 9, fontWeight: 900, color: "rgba(95,208,208,0.7)", letterSpacing: "1px" }}>SELEZIONATE</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#5FD0D0", fontFamily: FM, letterSpacing: "-0.3px" }}>
-              {selectedIds.size} · di {filteredSorted.length}
+      {/* v76 · BULK TOOLBAR FLOTTANTE - RIDESIGN palette fliwoX */}
+      {selectionMode && (() => {
+        const allSel = selectedIds.size === filteredSorted.length && filteredSorted.length > 0;
+        const nSel = selectedIds.size;
+        const canAction = nSel > 0 && !bulkBusy;
+        const canMerge = nSel >= 2 && !bulkBusy;
+        return (
+          <div style={{
+            position: "fixed" as any,
+            left: 10, right: 10,
+            bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)",
+            zIndex: 100,
+            background: "linear-gradient(145deg, #1E8080 0%, #155A5A 55%, #0F4444 100%)",
+            borderRadius: 22,
+            padding: "12px 12px 12px",
+            boxShadow: "0 18px 40px rgba(15,68,68,0.45), 0 6px 14px rgba(15,68,68,0.25), inset 0 1px 1px rgba(255,255,255,0.12)",
+            border: "1px solid rgba(95,208,208,0.25)",
+            overflow: "hidden" as any,
+          }}>
+            {/* Glow decorativo */}
+            <div style={{
+              position: "absolute" as any, top: -30, right: -30,
+              width: 120, height: 120, borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(95,208,208,0.2), transparent 70%)",
+              pointerEvents: "none" as any,
+            }} />
+
+            {/* ROW 1: DESELEZIONA | CONTEGGIO | TUTTE */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, position: "relative" as any }}>
+              {/* DESELEZIONA */}
+              <button
+                onClick={exitSelection}
+                style={{
+                  padding: "8px 11px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.2)",
+                  background: "rgba(255,255,255,0.1)",
+                  color: "#E8F8F8", fontSize: 10, fontWeight: 900, cursor: "pointer",
+                  letterSpacing: "0.5px", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", gap: 5,
+                  flexShrink: 0,
+                }}
+                title="Esci dalla modalità selezione"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8F8F8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                ESCI
+              </button>
+
+              {/* Conteggio */}
+              <div style={{ flex: 1, textAlign: "center" as any, display: "flex", flexDirection: "column" as any, gap: 1 }}>
+                <div style={{ fontSize: 8.5, fontWeight: 900, color: "rgba(200,228,228,0.75)", letterSpacing: "1.4px" }}>SELEZIONATE</div>
+                <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", letterSpacing: "-0.2px", fontFamily: FM }}>
+                  <span style={{ color: "#AEE9E9" }}>{nSel}</span>
+                  <span style={{ opacity: 0.5, margin: "0 6px", fontSize: 13, fontWeight: 600 }}>di</span>
+                  <span style={{ opacity: 0.9 }}>{filteredSorted.length}</span>
+                </div>
+              </div>
+
+              {/* TUTTE / NESSUNA */}
+              <button
+                onClick={() => {
+                  if (allSel) setSelectedIds(new Set());
+                  else setSelectedIds(new Set(filteredSorted.map((c: any) => c.id)));
+                }}
+                style={{
+                  padding: "8px 11px", borderRadius: 11,
+                  border: `1px solid ${allSel ? "rgba(174,233,233,0.5)" : "rgba(255,255,255,0.2)"}`,
+                  background: allSel ? "rgba(174,233,233,0.25)" : "rgba(255,255,255,0.1)",
+                  color: "#E8F8F8", fontSize: 10, fontWeight: 900, cursor: "pointer",
+                  letterSpacing: "0.5px", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", gap: 5,
+                  flexShrink: 0,
+                }}
+                title={allSel ? "Deseleziona tutto" : "Seleziona tutto"}
+              >
+                {allSel ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8F8F8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8F8F8" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                )}
+                {allSel ? "NESSUNA" : "TUTTE"}
+              </button>
+            </div>
+
+            {/* ROW 2: UNISCI | ARCHIVIA | CESTINO */}
+            <div style={{ display: "flex", gap: 7, position: "relative" as any }}>
+              {/* UNISCI - viola */}
+              <button
+                onClick={openMergeModal}
+                disabled={!canMerge}
+                style={{
+                  flex: 1, height: 44, borderRadius: 14, border: "none",
+                  background: canMerge
+                    ? "linear-gradient(145deg, #AFA9EC 0%, #7F77DD 50%, #6961CB 100%)"
+                    : "rgba(127,119,221,0.22)",
+                  color: "#fff", fontSize: 11, fontWeight: 900,
+                  cursor: canMerge ? "pointer" : "not-allowed",
+                  letterSpacing: "0.4px", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  boxShadow: canMerge
+                    ? "0 5px 12px rgba(127,119,221,0.45), inset 0 -2px 0 rgba(60,52,137,0.25)"
+                    : "none",
+                  opacity: canMerge ? 1 : 0.55,
+                }}
+                title={canMerge ? "Unisci commesse selezionate" : "Seleziona almeno 2 commesse"}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+                UNISCI
+              </button>
+
+              {/* ARCHIVIA - ambra */}
+              <button
+                onClick={bulkArchivia}
+                disabled={!canAction}
+                style={{
+                  flex: 1, height: 44, borderRadius: 14, border: "none",
+                  background: canAction
+                    ? "linear-gradient(145deg, #FAC775 0%, #EF9F27 50%, #D48613 100%)"
+                    : "rgba(239,159,39,0.22)",
+                  color: "#fff", fontSize: 11, fontWeight: 900,
+                  cursor: canAction ? "pointer" : "not-allowed",
+                  letterSpacing: "0.4px", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  boxShadow: canAction
+                    ? "0 5px 12px rgba(239,159,39,0.45), inset 0 -2px 0 rgba(133,79,11,0.25)"
+                    : "none",
+                  opacity: canAction ? 1 : 0.55,
+                }}
+                title="Archivia commesse selezionate"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                ARCHIVIA
+              </button>
+
+              {/* CESTINO - rosso */}
+              <button
+                onClick={bulkSoftDelete}
+                disabled={!canAction}
+                style={{
+                  flex: 1, height: 44, borderRadius: 14, border: "none",
+                  background: canAction
+                    ? "linear-gradient(145deg, #F09595 0%, #E24B4A 50%, #C13030 100%)"
+                    : "rgba(226,75,74,0.22)",
+                  color: "#fff", fontSize: 11, fontWeight: 900,
+                  cursor: canAction ? "pointer" : "not-allowed",
+                  letterSpacing: "0.4px", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  boxShadow: canAction
+                    ? "0 5px 12px rgba(226,75,74,0.45), inset 0 -2px 0 rgba(139,26,26,0.25)"
+                    : "none",
+                  opacity: canAction ? 1 : 0.55,
+                }}
+                title="Sposta nel cestino"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                {bulkBusy ? "..." : "CESTINO"}
+              </button>
             </div>
           </div>
-
-          {/* Seleziona tutto */}
-          <button
-            onClick={() => {
-              if (selectedIds.size === filteredSorted.length) {
-                setSelectedIds(new Set());
-              } else {
-                setSelectedIds(new Set(filteredSorted.map((c: any) => c.id)));
-              }
-            }}
-            style={{
-              padding: "10px 12px", borderRadius: 11, border: "none",
-              background: "rgba(95,208,208,0.15)",
-              color: "#5FD0D0", fontSize: 10, fontWeight: 800, cursor: "pointer",
-              letterSpacing: "0.3px",
-            }}
-          >
-            {selectedIds.size === filteredSorted.length ? "NESSUNA" : "TUTTE"}
-          </button>
-
-          {/* Unisci (solo se ≥2 selezionate) */}
-          {selectedIds.size >= 2 && (
-            <button
-              onClick={openMergeModal}
-              disabled={bulkBusy}
-              style={{
-                padding: "10px 12px", borderRadius: 11, border: "none",
-                background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 100%)",
-                color: "#fff", fontSize: 10, fontWeight: 900,
-                cursor: "pointer",
-                letterSpacing: "0.3px",
-                display: "flex", alignItems: "center", gap: 5,
-                boxShadow: "0 3px 8px rgba(40,160,160,0.4)",
-                opacity: bulkBusy ? 0.5 : 1,
-              }}
-              title="Unisci commesse selezionate"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="8 17 12 21 16 17"/>
-                <line x1="12" y1="12" x2="12" y2="21"/>
-                <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
-              </svg>
-              UNISCI
-            </button>
-          )}
-
-          {/* Archivia */}
-          <button
-            onClick={bulkArchivia}
-            disabled={selectedIds.size === 0 || bulkBusy}
-            style={{
-              padding: "10px 12px", borderRadius: 11, border: "none",
-              background: selectedIds.size === 0
-                ? "rgba(245,160,48,0.3)"
-                : "linear-gradient(145deg, #F5A030, #C97716)",
-              color: "#fff", fontSize: 10, fontWeight: 900,
-              cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
-              letterSpacing: "0.3px",
-              display: "flex", alignItems: "center", gap: 5,
-              boxShadow: selectedIds.size > 0 ? "0 3px 8px rgba(245,160,48,0.4)" : "none",
-              opacity: bulkBusy ? 0.5 : 1,
-            }}
-            title="Archivia commesse selezionate"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="21 8 21 21 3 21 3 8"/>
-              <rect x="1" y="3" width="22" height="5"/>
-              <line x1="10" y1="12" x2="14" y2="12"/>
-            </svg>
-            ARCHIVIA
-          </button>
-
-          {/* Cestino */}
-          <button
-            onClick={bulkSoftDelete}
-            disabled={selectedIds.size === 0 || bulkBusy}
-            style={{
-              padding: "10px 14px", borderRadius: 11, border: "none",
-              background: selectedIds.size === 0
-                ? "rgba(226,75,74,0.3)"
-                : "linear-gradient(145deg, #FF7B4D, #E24B4A)",
-              color: "#fff", fontSize: 11, fontWeight: 900,
-              cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
-              letterSpacing: "0.3px",
-              display: "flex", alignItems: "center", gap: 6,
-              boxShadow: selectedIds.size > 0 ? "0 4px 10px rgba(226,75,74,0.4)" : "none",
-              opacity: bulkBusy ? 0.6 : 1,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-              <path d="M10 11v6M14 11v6"/>
-              <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-            </svg>
-            {bulkBusy ? "..." : "CESTINO"}
-          </button>
-
-          {/* Annulla */}
-          <button
-            onClick={exitSelection}
-            style={{
-              width: 38, height: 38, borderRadius: 11, border: "none",
-              background: "rgba(255,255,255,0.1)",
-              color: "#fff", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
