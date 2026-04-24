@@ -1547,8 +1547,62 @@ export default function CMDetailPanel() {
                   )}
 
                   {/*  PREVENTIVO (CUORE · LINK A WORKSPACE)  */}
-                  {curCC.id === "preventivo" && (
+                  {curCC.id === "preventivo" && !c.preventivoModoScelto && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 4, textAlign: "center" }}>Rilievo completato · Scegli cosa fare</div>
+
+                      {/* CARD 1 — CHIUDI RILIEVO */}
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso" } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso" }));
+                        setPrevWorkspace(false);
+                        setCcDone("✓ Rilievo chiuso · preventivo in azienda"); setTimeout(() => setCcDone(null), 2500);
+                      }} style={{
+                        padding: "18px 16px", borderRadius: 14, cursor: "pointer",
+                        background: "#fff", border: "2px solid " + T.bdr,
+                        display: "flex", alignItems: "center", gap: 12,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#7B6BA515", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <I d={ICO.folder} s={20} c="#7B6BA5" />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", marginBottom: 2 }}>Chiudi rilievo</div>
+                          <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.3 }}>Salva e vai al prossimo cliente · preventivo lo fai dopo in azienda</div>
+                        </div>
+                        <I d={ICO.chevronRight} s={16} c={T.sub} />
+                      </div>
+
+                      {/* CARD 2 — FAI PREVENTIVO */}
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "preventivo" } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "preventivo" }));
+                      }} style={{
+                        padding: "18px 16px", borderRadius: 14, cursor: "pointer",
+                        background: T.acc, border: "2px solid " + T.acc,
+                        display: "flex", alignItems: "center", gap: 12,
+                        boxShadow: "0 4px 14px rgba(40,160,160,0.3)",
+                      }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <I d={ICO.euro} s={20} c="#fff" />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", marginBottom: 2 }}>Preventivo al volo</div>
+                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.9)", lineHeight: 1.3 }}>Hai già i prezzi · invia subito al cliente</div>
+                        </div>
+                        <I d={ICO.chevronRight} s={16} c="#fff" />
+                      </div>
+                    </div>
+                  )}
+
+                  {curCC.id === "preventivo" && c.preventivoModoScelto === "preventivo" && (
                     <div>
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: null } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: null }));
+                      }} style={{ fontSize: 11, color: T.sub, cursor: "pointer", marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        ← Torna alla scelta
+                      </div>
                       <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>{vaniCC.length} vani · {vaniConPrezzoCC.length} con prezzo</div>
                       
                       {/* Totale rapido */}
