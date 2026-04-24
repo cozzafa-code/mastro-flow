@@ -1268,20 +1268,20 @@ export default function CMDetailPanel() {
                 <span style={{ fontSize: 11, fontWeight: 800, color: "#1A7A7A", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
               {/* Progress dots con label */}
-              <div style={{ display: "flex", gap: 2, marginBottom: 14, marginTop: 4, justifyContent: "space-between", alignItems: "flex-start", padding: "0 2px" }}>
+              <div style={{ display: "flex", gap: 0, marginBottom: 14, marginTop: 4, justifyContent: "space-between", alignItems: "flex-start", padding: 0, width: "100%" }}>
                 {stepsCC.map((s, i) => (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 0, flex: "1 1 0", minWidth: 0 }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                       <div style={{
-                        width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+                        width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
                         background: s.skipped ? "#ff9500" : s.done ? "#28A0A0" : i === curIdxCC ? T.acc : "#F0EDE5",
                         color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
                         boxShadow: i === curIdxCC ? "0 2px 8px rgba(40,160,160,0.35)" : "none",
                         border: i === curIdxCC ? "2px solid #fff" : s.done ? "2px solid #28A0A0" : "2px solid transparent",
-                      }}>{s.skipped ? <I d={ICO.check} s={18} c="#fff" /> : s.done ? <I d={ICO.check} s={18} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={18} c={i === curIdxCC ? "#fff" : T.sub} />}</div>
-                      <div style={{ fontSize: 10, color: i === curIdxCC ? "#0D1F1F" : s.done ? "#0F6E56" : T.sub, fontWeight: i === curIdxCC ? 800 : 600, whiteSpace: "nowrap", maxWidth: 50, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center", marginTop: 4 }}>{s.l}</div>
+                      }}>{s.skipped ? <I d={ICO.check} s={14} c="#fff" /> : s.done ? <I d={ICO.check} s={14} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={14} c={i === curIdxCC ? "#fff" : T.sub} />}</div>
+                      <div style={{ fontSize: 9, color: i === curIdxCC ? "#0D1F1F" : s.done ? "#0F6E56" : T.sub, fontWeight: i === curIdxCC ? 800 : 600, whiteSpace: "nowrap", maxWidth: 42, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center", marginTop: 4 }}>{s.l}</div>
                     </div>
-                    {i < stepsCC.length - 1 && <div style={{ width: 8, height: 3, background: s.done ? "#28A0A0" : T.bdr, borderRadius: 2, marginBottom: 20, flexShrink: 0 }} />}
+                    {i < stepsCC.length - 1 && <div style={{ flex: 1, minWidth: 4, height: 2, background: s.done ? "#28A0A0" : T.bdr, borderRadius: 2, marginBottom: 18, marginTop: 0 }} />}
                   </div>
                 ))}
               </div>
