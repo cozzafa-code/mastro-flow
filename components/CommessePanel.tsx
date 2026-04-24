@@ -277,37 +277,45 @@ export default function CommessePanel() {
     const isExpanded = expandedCmId === c.id;
     return (
       <div key={c.id}
-        style={{
-          background: heroMode
-            ? (alert
-                ? "linear-gradient(145deg, #F0997B 0%, #D85A30 100%)"
-                : `linear-gradient(145deg, ${faseStyleFliwox.solid} 0%, ${faseStyleFliwox.fg} 100%)`)
-            : faseStyleFliwox.bg,
-          borderRadius: 18,
-          padding: 0,
-          marginBottom: 12,
-          overflow: "hidden" as const,
-          position: "relative" as any,
-          opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
-          boxShadow: alert
-            ? `0 6px 20px rgba(226,75,74,0.25), inset 3px 0 0 ${TH.red}`
-            : isExpanded
-              ? `0 10px 28px ${heroMode ? (faseStyleFliwox.solid + "60") : "rgba(40,160,160,0.18)"}, 0 0 0 2px ${heroMode ? faseStyleFliwox.solid : TH.teal}`
-              : heroMode
-                ? `0 6px 20px ${faseStyleFliwox.solid}35`
-                : "0 6px 20px rgba(31,120,120,0.1), inset 0 1px 1px rgba(255,255,255,0.8)",
-          border: heroMode ? "none" : "1px solid rgba(200,228,228,0.5)",
-          transition: "box-shadow 0.2s",
-        }}
+        style={(() => {
+          // Colori FASE v57 (dal mockup v3 scelto da Fabio)
+          const FASE_GRAD: any = {
+            sopralluogo:  { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", dark: "#26215C" },
+            rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", dark: "#26215C" },
+            preventivo:   { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", dark: "#04342C" },
+            conferma:     { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", dark: "#412402" },
+            ordini:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", dark: "#412402" },
+            produzione:   { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", dark: "#042C53" },
+            posa:         { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", dark: "#4B1528" },
+            collaudo:     { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", dark: "#4B1528" },
+            fattura:      { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", dark: "#173404" },
+            chiusura:     { grad: "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)", dark: "#2C2C2A" },
+          };
+          const fg = alert
+            ? { grad: "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)", dark: "#501313" }
+            : (FASE_GRAD[c.fase] || FASE_GRAD.sopralluogo);
+          return {
+            background: heroMode ? fg.grad : faseStyleFliwox.bg,
+            borderRadius: 18,
+            padding: 0,
+            marginBottom: 12,
+            overflow: "hidden" as const,
+            position: "relative" as any,
+            opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
+            boxShadow: isExpanded
+              ? "0 10px 28px rgba(13,31,31,0.2), 0 0 0 2px #0D1F1F"
+              : "0 8px 22px rgba(13,31,31,0.15)",
+            border: heroMode ? "1px solid rgba(255,255,255,0.3)" : "1px solid rgba(200,228,228,0.5)",
+            transition: "box-shadow 0.2s",
+          };
+        })()}
         onClick={() => handleCardClick(c, () => { if (!isExpanded) { setSelectedCM(c); setTab("commesse"); } })}
         onTouchStart={() => handleTouchStart(c.id)}
         onTouchEnd={handleTouchEnd}
         onTouchMove={handleTouchEnd}
         onContextMenu={(e) => { e.preventDefault(); enterSelection(c.id); }}>
 
-        <div style={{ padding: "14px 16px" }}>
-
-        {/* Checkbox selezione */}
+        {/* Checkbox selezione (posizione absoluta) */}
         {selectionMode && (
           <div style={{
             position: "absolute", top: 10, right: 10, zIndex: 5,
@@ -326,115 +334,99 @@ export default function CommessePanel() {
           </div>
         )}
 
-        {/* ═══ LAYOUT COMPATTO HERO (v56) ═══ */}
+        <div style={{ padding: heroMode ? 0 : "14px 16px" }}>
+
+        {/* ═══ HERO v57 · MOCKUP v3 ═══ */}
         {heroMode ? (
-          <div
-            onClick={(e) => { e.stopPropagation(); setExpandedCmId(isExpanded ? null : c.id); }}
-            style={{ cursor: "pointer" }}
-          >
-            {/* Riga 1: avatar + nome + pill + chevron */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                background: "rgba(255,255,255,0.22)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 800, color: "#fff",
-                letterSpacing: "-0.2px",
-                textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.12)",
-              }}>{initials(c)}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+          <>
+            {/* ZONA ALTA COLORATA */}
+            <div
+              onClick={(e) => { e.stopPropagation(); setExpandedCmId(isExpanded ? null : c.id); }}
+              style={{ padding: "14px 16px 12px", cursor: "pointer", color: "#fff" }}
+            >
+              {/* Riga top: avatar + nome + pill */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{
-                  fontSize: 14, fontWeight: 900, color: "#fff",
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: "rgba(255,255,255,0.25)",
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  color: "#fff", fontSize: 14, fontWeight: 900,
+                  display: "flex", alignItems: "center", justifyContent: "center",
                   letterSpacing: "-0.2px",
-                  whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                  textTransform: "uppercase" as any,
-                }}>{c.cliente}{c.cognome ? " " + c.cognome : ""}</div>
-                <div style={{
-                  fontSize: 10, fontWeight: 600,
-                  color: "rgba(255,255,255,0.85)",
-                  marginTop: 1,
-                  whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {c.code}{c.indirizzo ? " · " + c.indirizzo : ""}
+                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.1)",
+                }}>{initials(c)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 15, fontWeight: 900, color: "#fff",
+                    letterSpacing: "-0.2px",
+                    whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                  }}>{c.cliente}{c.cognome ? " " + c.cognome : ""}</div>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700,
+                    color: "rgba(255,255,255,0.85)",
+                    letterSpacing: "0.2px", marginTop: 2,
+                    whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis",
+                  }}>{c.code}{c.indirizzo ? " · " + c.indirizzo : ""}</div>
                 </div>
+                <span style={{
+                  fontSize: 9, fontWeight: 900,
+                  padding: "4px 9px", borderRadius: 7,
+                  background: "rgba(255,255,255,0.95)",
+                  color: "#0D1F1F",
+                  letterSpacing: "0.4px", textTransform: "uppercase" as any,
+                  whiteSpace: "nowrap" as any, flexShrink: 0,
+                }}>{fs.text}</span>
               </div>
+
+              {/* Barra 8 fasi */}
+              <div style={{ display: "flex", gap: 2, marginTop: 10 }}>
+                {PIPELINE.filter(p => p.attiva).map(p => {
+                  const isActive = p.id === c.fase;
+                  const isDone = PIPELINE.findIndex(pp => pp.id === p.id) < PIPELINE.findIndex(pp => pp.id === c.fase);
+                  return (
+                    <div key={p.id} style={{
+                      flex: 1, height: 3, borderRadius: 1.5,
+                      background: isActive ? "#fff" : isDone ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.25)",
+                      boxShadow: isActive ? "0 0 6px rgba(255,255,255,0.6)" : "none",
+                    }} />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ZONA BASSA BIANCA */}
+            <div
+              onClick={(e) => { e.stopPropagation(); setExpandedCmId(isExpanded ? null : c.id); }}
+              style={{
+                background: "rgba(255,255,255,0.95)",
+                padding: "10px 14px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                cursor: "pointer",
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700, color: alert ? TH.red : TH.sub }}>
+                {alert
+                  ? (ferma ? `• ferma da ${giorniFermaCM(c)} giorni` : "• scadenza superata")
+                  : (() => {
+                      const parts: string[] = [];
+                      if (vaniA.length > 0) parts.push(`${vaniA.length} van${vaniA.length === 1 ? "o" : "i"}`);
+                      if (euroVal > 0) parts.push(fmtEuro(euroVal));
+                      const fatt = (fattureDB || []).filter((f: any) => f.cmId === c.id);
+                      if (fatt.length > 0) {
+                        const tutte = fatt.every((f: any) => f.pagata);
+                        parts.push(tutte ? "pagata ✓" : "fatturata");
+                      }
+                      return parts.length > 0 ? parts.join(" · ") : "nessun vano";
+                    })()}
+              </span>
               <span style={{
-                background: "rgba(255,255,255,0.22)",
-                color: "#fff",
-                fontSize: 9, padding: "3px 8px", borderRadius: 6, fontWeight: 900,
-                letterSpacing: "0.3px", textTransform: "uppercase" as any,
-                whiteSpace: "nowrap" as any,
-                border: "1px solid rgba(255,255,255,0.3)",
-                textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-                flexShrink: 0,
-              }}>{fs.text}</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
+                color: "#8FA8A8", fontSize: 16, fontWeight: 900,
+                transform: isExpanded ? "rotate(180deg)" : "none",
+                transition: "transform 0.2s",
+              }}>▼</span>
             </div>
-
-            {/* Riga 2: pipeline barra sottile */}
-            <div style={{ display: "flex", gap: 2, marginTop: 9 }}>
-              {PIPELINE.filter(p => p.attiva).map(p => {
-                const isActive = p.id === c.fase;
-                const isDone = PIPELINE.findIndex(pp => pp.id === p.id) < PIPELINE.findIndex(pp => pp.id === c.fase);
-                return (
-                  <div key={p.id} style={{
-                    flex: 1, height: 3, borderRadius: 2,
-                    background: isActive ? "#fff" : isDone ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.2)",
-                  }} />
-                );
-              })}
-            </div>
-
-            {/* Riga 3: info compatta */}
-            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>
-              {vaniA.length > 0 && (
-                <span>{vaniA.length} van{vaniA.length === 1 ? "o" : "i"}</span>
-              )}
-              {euroVal > 0 && (
-                <>
-                  <span style={{ opacity: 0.5 }}>·</span>
-                  <span style={{ fontSize: 12, fontWeight: 900, color: "#fff", fontFamily: FM, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>{fmtEuro(euroVal)}</span>
-                </>
-              )}
-              {alert && (
-                <>
-                  <span style={{ flex: 1 }} />
-                  <span style={{
-                    fontSize: 9, fontWeight: 900,
-                    background: "rgba(0,0,0,0.15)",
-                    color: "#fff",
-                    padding: "2px 7px", borderRadius: 5,
-                    letterSpacing: "0.3px",
-                  }}>
-                    {ferma ? `• ferma da ${giorniFermaCM(c)} gg` : "• scaduta"}
-                  </span>
-                </>
-              )}
-              {(() => {
-                const fatture = (fattureDB || []).filter((f: any) => f.cmId === c.id);
-                if (fatture.length === 0) return null;
-                const tutte = fatture.every((f: any) => f.pagata);
-                return (
-                  <>
-                    {!alert && <span style={{ flex: 1 }} />}
-                    <span style={{
-                      fontSize: 9, fontWeight: 900,
-                      background: "rgba(255,255,255,0.18)",
-                      color: "#fff",
-                      padding: "2px 7px", borderRadius: 5,
-                      letterSpacing: "0.3px",
-                      border: "1px solid rgba(255,255,255,0.25)",
-                    }}>{tutte ? "pagata ✓" : "fattura"}</span>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
+          </>
         ) : (
           // ───────────────── LAYOUT ORIGINALE (list/griglia) ─────────────────
           <>
