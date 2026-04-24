@@ -710,6 +710,7 @@ export default function CommessePanel() {
     const fase = getFaseInfo(c);
     const ferma = isFerma(c);
     const scad = isScaduta(c);
+    const vaniA = getVaniAttivi(c);
     const alert = ferma || scad;
     const euroVal = c.euro ? parseFloat(c.euro) : 0;
     const fs = faseStyle(c.fase, alert, ferma, giorniFermaCM(c), fase.nome);
