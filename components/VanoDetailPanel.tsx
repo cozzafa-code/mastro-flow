@@ -3480,7 +3480,7 @@ export default function VanoDetailPanel() {
           )}
 
           {/* fliwoX Bottoni navigazione step */}
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
             {vanoStep > 0 && (
               <button onClick={() => setVanoStep(s => s - 1)} style={{ flex: 1, padding: "15px", borderRadius: 14, border: "2px solid #F0EFEC", background: "white", fontSize: 14, fontWeight: 900, cursor: "pointer", fontFamily: FF, color: "#0D1F1F", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
                 ← Indietro
@@ -3493,7 +3493,7 @@ export default function VanoDetailPanel() {
             )}
             {vanoStep === 2 && (
               <>
-                <button onClick={() => { setShowReportOverlay(true); }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "2px solid #185FA5", background: "#E8F1FB", color: "#0A2842", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <button onClick={() => { setShowReportOverlay(true); }} style={{ flex: "1 1 calc(50% - 4px)", minWidth: "calc(50% - 4px)", padding: "12px 6px", borderRadius: 12, border: "2px solid #185FA5", background: "#E8F1FB", color: "#0A2842", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0A2842" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
                   RIEPILOGO
                 </button>
@@ -3520,7 +3520,7 @@ export default function VanoDetailPanel() {
                   setSelectedVano(dup);
                   setVanoStep(0);
                   window.scrollTo({ top: 0, behavior: "smooth" });
-                }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "2px solid #3C3489", background: "#EEEDFE", color: "#26215C", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                }} style={{ flex: "1 1 calc(50% - 4px)", minWidth: "calc(50% - 4px)", padding: "12px 6px", borderRadius: 12, border: "2px solid #3C3489", background: "#EEEDFE", color: "#26215C", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#26215C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 -2 -2V4a2 2 0 0 1 2 -2h9a2 2 0 0 1 2 2v1"/></svg>
                   DUPLICA
                 </button>
@@ -3535,11 +3535,11 @@ export default function VanoDetailPanel() {
                   setSelectedVano(nuovo);
                   setVanoStep(0);
                   window.scrollTo({ top: 0, behavior: "smooth" });
-                }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "2px solid #D08008", background: "#FFF4E5", color: "#412402", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                }} style={{ flex: "1 1 calc(50% - 4px)", minWidth: "calc(50% - 4px)", padding: "12px 6px", borderRadius: 12, border: "2px solid #D08008", background: "#FFF4E5", color: "#412402", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#412402" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   NUOVO
                 </button>
-                <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "12px 6px", borderRadius: 12, border: "none", background: "#1A9E73", color: "white", fontSize: 12, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 5px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: "1 1 calc(50% - 4px)", minWidth: "calc(50% - 4px)", padding: "12px 6px", borderRadius: 12, border: "none", background: "#1A9E73", color: "white", fontSize: 12, fontWeight: 900, cursor: "pointer", fontFamily: FF, boxShadow: "0 5px 0 0 #0A5A3A", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                   FINE
                 </button>
