@@ -968,56 +968,83 @@ export default function CommessePanel() {
         </div>
       </div>
 
-      {/* ═══ CHIP FASE ═══ */}
-      <div style={{ display: "flex", gap: 7, overflowX: "auto", marginBottom: 10, paddingBottom: 4 }}>
-        {[
-          { id: "tutte", nome: "Tutte", count: cantieri.length },
-          ...PIPELINE.filter(p => p.attiva)
-            .map(p => ({ ...p, count: cantieri.filter(c => c.fase === p.id).length }))
-            .filter(p => p.count > 0),
-        ].map(p => {
-          const sel = filterFase === p.id;
-          const fx = PIPELINE_FLIWOX[p.id] || PIPELINE_FLIWOX.sopralluogo;
-          return (
-            <div key={p.id}
-              onClick={() => setFilterFase(sel && p.id !== "tutte" ? "tutte" : p.id)}
-              style={{
-                padding: "7px 13px", borderRadius: 18,
-                fontSize: 11, fontWeight: 800, cursor: "pointer",
-                whiteSpace: "nowrap" as any, flexShrink: 0,
-                letterSpacing: "0.3px",
-                background: sel
-                  ? (p.id === "tutte" ? "linear-gradient(145deg, #1A3535, #0D1F1F)" : `linear-gradient(145deg, ${fx.solid}, ${fx.fg})`)
-                  : TH.bgCard,
-                color: sel ? "#fff" : TH.sub,
-                boxShadow: sel
-                  ? "0 4px 10px rgba(13,31,31,0.25), inset 0 1px 1px rgba(255,255,255,0.2)"
-                  : "0 2px 6px rgba(31,120,120,0.08)",
-                border: sel ? "none" : `1px solid ${TH.borderSolid}`,
-              }}>
-              {p.nome} · {p.count}
-            </div>
-          );
-        })}
+      {/* ═══ CHIP FASE v61 (mockup v3 stile) ═══ */}
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 10, paddingBottom: 4, WebkitOverflowScrolling: "touch" as any }}>
+        {(() => {
+          const FASE_CHIP: any = {
+            sopralluogo:  { grad: "linear-gradient(145deg, #AFA9EC 0%, #7F77DD 100%)", shadow: "rgba(127,119,221,0.35)" },
+            rilievo:      { grad: "linear-gradient(145deg, #AFA9EC 0%, #7F77DD 100%)", shadow: "rgba(127,119,221,0.35)" },
+            preventivo:   { grad: "linear-gradient(145deg, #5DCAA5 0%, #1D9E75 100%)", shadow: "rgba(29,158,117,0.35)" },
+            conferma:     { grad: "linear-gradient(145deg, #FAC775 0%, #EF9F27 100%)", shadow: "rgba(239,159,39,0.35)" },
+            ordini:       { grad: "linear-gradient(145deg, #FAC775 0%, #EF9F27 100%)", shadow: "rgba(239,159,39,0.35)" },
+            produzione:   { grad: "linear-gradient(145deg, #85B7EB 0%, #378ADD 100%)", shadow: "rgba(55,138,221,0.35)" },
+            posa:         { grad: "linear-gradient(145deg, #ED93B1 0%, #D4537E 100%)", shadow: "rgba(212,83,126,0.35)" },
+            collaudo:     { grad: "linear-gradient(145deg, #ED93B1 0%, #D4537E 100%)", shadow: "rgba(212,83,126,0.35)" },
+            fattura:      { grad: "linear-gradient(145deg, #97C459 0%, #639922 100%)", shadow: "rgba(99,153,34,0.35)" },
+            chiusura:     { grad: "linear-gradient(145deg, #888780 0%, #5F5E5A 100%)", shadow: "rgba(95,94,90,0.35)" },
+          };
+          return [
+            { id: "tutte", nome: "Tutte", count: cantieri.length },
+            ...PIPELINE.filter(p => p.attiva)
+              .map(p => ({ ...p, count: cantieri.filter(c => c.fase === p.id).length }))
+              .filter(p => p.count > 0),
+          ].map(p => {
+            const sel = filterFase === p.id;
+            const style = p.id === "tutte"
+              ? { grad: "linear-gradient(145deg, #1A3535 0%, #0D1F1F 100%)", shadow: "rgba(13,31,31,0.35)" }
+              : (FASE_CHIP[p.id] || FASE_CHIP.sopralluogo);
+            return (
+              <div key={p.id}
+                onClick={() => setFilterFase(sel && p.id !== "tutte" ? "tutte" : p.id)}
+                style={{
+                  padding: "8px 14px", borderRadius: 20,
+                  fontSize: 11, fontWeight: 900, cursor: "pointer",
+                  whiteSpace: "nowrap" as any, flexShrink: 0,
+                  letterSpacing: "0.3px",
+                  background: sel ? style.grad : "#fff",
+                  color: sel ? "#fff" : "#0D1F1F",
+                  boxShadow: sel
+                    ? `0 4px 12px ${style.shadow}, inset 0 1px 1px rgba(255,255,255,0.25)`
+                    : "0 2px 6px rgba(13,31,31,0.08)",
+                  border: sel ? "none" : "1px solid rgba(200,228,228,0.6)",
+                  textShadow: sel ? "0 1px 2px rgba(0,0,0,0.15)" : "none",
+                  transition: "all 0.15s",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                }}>
+                <span>{p.nome}</span>
+                <span style={{
+                  fontSize: 10, fontWeight: 900,
+                  padding: "1px 6px", borderRadius: 8,
+                  background: sel ? "rgba(255,255,255,0.25)" : "rgba(40,160,160,0.12)",
+                  color: sel ? "#fff" : "#1A7A7A",
+                  border: sel ? "1px solid rgba(255,255,255,0.25)" : "none",
+                  minWidth: 18, textAlign: "center" as any,
+                }}>{p.count}</span>
+              </div>
+            );
+          });
+        })()}
       </div>
 
-      {/* ═══ SORT + TOTALE (rifatto v53: container teal chiaro) ═══ */}
+      {/* ═══ SORT + TOTALE v61 ═══ */}
       <div style={{
-        display: "flex", gap: 5, alignItems: "center",
-        marginBottom: 12, padding: "3px 4px",
-        background: "rgba(40,160,160,0.05)",
-        borderRadius: 12,
+        display: "flex", gap: 4, alignItems: "center",
+        marginBottom: 12, padding: 4,
+        background: "linear-gradient(145deg, rgba(40,160,160,0.08), rgba(40,160,160,0.04))",
+        borderRadius: 14,
+        border: "1px solid rgba(200,228,228,0.5)",
+        boxShadow: "inset 0 1px 2px rgba(13,31,31,0.04)",
       }}>
         {[["default", "Recenti"], ["nome", "A-Z"], ["euro", "€"], ["data", "Data"]].map(([v, l]) => {
           const sel = sortBy === v;
           return (
             <div key={v} onClick={() => setSortBy(v as any)} style={{
-              padding: "6px 12px", borderRadius: 10,
-              fontSize: 10, fontWeight: 800, cursor: "pointer",
+              padding: "7px 13px", borderRadius: 10,
+              fontSize: 11, fontWeight: 900, cursor: "pointer",
               whiteSpace: "nowrap" as any,
               background: sel ? "#fff" : "transparent",
-              color: sel ? TH.tealDark : TH.sub,
-              boxShadow: sel ? "0 2px 4px rgba(31,120,120,0.1)" : "none",
+              color: sel ? "#0D1F1F" : "#5A7878",
+              boxShadow: sel ? "0 2px 6px rgba(13,31,31,0.1), 0 0 0 1px rgba(200,228,228,0.4)" : "none",
               letterSpacing: "0.2px",
               transition: "all 0.15s",
             }}>{l}</div>
@@ -1026,10 +1053,12 @@ export default function CommessePanel() {
         {totaleEuro > 0 && (
           <div style={{
             marginLeft: "auto",
-            padding: "5px 11px", borderRadius: 10,
-            background: "rgba(40,160,160,0.1)",
-            fontSize: 10, fontWeight: 800, color: TH.tealDark,
-            fontFamily: FM, letterSpacing: "-0.2px",
+            padding: "6px 11px", borderRadius: 10,
+            background: "linear-gradient(145deg, #1A7A7A 0%, #0F5454 100%)",
+            fontSize: 10, fontWeight: 900, color: "#fff",
+            fontFamily: FM, letterSpacing: "-0.1px",
+            boxShadow: "0 2px 6px rgba(26,122,122,0.3)",
+            textShadow: "0 1px 2px rgba(0,0,0,0.15)",
           }}>
             {filtered.length} · {fmtEuro(totaleEuro)}
           </div>
