@@ -1285,6 +1285,28 @@ export default function CMDetailPanel() {
                   </div>
                 ))}
               </div>
+              {/* Mini-card Rilievo collassata — visibile quando fase > sopralluogo */}
+              {curIdxCC > 0 && rilieviCC.length > 0 && (
+                <div onClick={() => { setPrevWorkspace(true); setPrevTab("sopralluogo"); }} style={{
+                  background: "#fff", borderRadius: 14, border: "1px solid " + T.bdr,
+                  padding: "12px 14px", marginBottom: 10, cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 12,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "#28A0A015", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <I d={ICO.mapPin} s={14} c="#28A0A0" />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Rilievo</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "#28A0A0", color: "#fff" }}>✓ FATTO</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: T.sub }}>{rilieviCC.length} rilievi · {vaniCC.length} vani · tap per consultare</div>
+                  </div>
+                  <I d={ICO.chevronRight} s={14} c={T.sub} />
+                </div>
+              )}
+
               {/* Current action */}
               {curCC && (
                 <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: "14px 16px", boxShadow: "0 2px 12px rgba(40,160,160,0.08)" }}>
