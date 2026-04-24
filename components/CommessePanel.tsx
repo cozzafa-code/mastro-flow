@@ -4,6 +4,7 @@
 import React, { useState, useRef } from "react";
 import { useMastro } from "./MastroContext";
 import { supabase } from "../lib/supabase";
+import { mastroStore } from "../lib/mastro-store";
 import { FF, FM } from "./mastro-constants";
 import RilieviListPanel from "./RilieviListPanel";
 import CMDetailPanel from "./CMDetailPanel";
@@ -158,18 +159,18 @@ export default function CommessePanel() {
 
     setBulkBusy(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from("commesse")
-        .update({
-          deleted_at: new Date().toISOString(),
-          deleted_by: user?.id || null,
-        })
-        .in("id", validIds);
-      if (error) throw error;
+      // v49 — Delega al Sync Engine: scrittura locale istantanea + outbox
+      const result = await mastroStore.bulkSoftDelete("commesse", validIds);
+      console.log(`[CommessePanel] bulkSoftDelete → ok=${result.ok} skipped=${result.skipped}`);
+      if (result.ok === 0) throw new Error("Nessuna commessa eliminata");
       exitSelection();
+      // NOTA: niente piu' window.location.reload()
+      // Il sync-engine aggiorna la cache IDB: al prossimo render
+      // le commesse soft-deleted saranno filtrate out.
+      // Per ora forziamo reload perche' MastroContext legge da altra fonte.
       window.location.reload();
     } catch (e: any) {
+      console.error("[CommessePanel] bulkSoftDelete error:", e);
       alert("Errore eliminazione: " + (e?.message || e));
       setBulkBusy(false);
     }
