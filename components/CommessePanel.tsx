@@ -1,8 +1,9 @@
 "use client";
 // @ts-nocheck
 // MASTRO ERP — CommessePanel v6 — fliwoX Sistema Operativo
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useMastro } from "./MastroContext";
+import { supabase } from "../lib/supabase";
 import { FF, FM } from "./mastro-constants";
 import RilieviListPanel from "./RilieviListPanel";
 import CMDetailPanel from "./CMDetailPanel";
@@ -73,6 +74,87 @@ export default function CommessePanel() {
   const TODAY = new Date().toISOString().split("T")[0];
   const [sortBy, setSortBy] = useState("default");
   const [expandedCmId, setExpandedCmId] = useState<any>(null);
+
+  // ─── Selezione multipla ────────────────────────────────────
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const longPressTimer = useRef<any>(null);
+  const longPressTriggered = useRef(false);
+
+  const enterSelection = (id: string) => {
+    longPressTriggered.current = true;
+    if (navigator.vibrate) navigator.vibrate(40);
+    setSelectionMode(true);
+    setSelectedIds(new Set([id]));
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const exitSelection = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleTouchStart = (id: string) => {
+    longPressTriggered.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => enterSelection(id), 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleCardClick = (c: any, originalAction: () => void) => {
+    // Se long-press appena scattato, ignora il click
+    if (longPressTriggered.current) {
+      longPressTriggered.current = false;
+      return;
+    }
+    if (selectionMode) {
+      toggleSelected(c.id);
+      return;
+    }
+    originalAction();
+  };
+
+  const bulkSoftDelete = async () => {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    const n = selectedIds.size;
+    const ok = window.confirm(
+      `Spostare ${n} commess${n === 1 ? "a" : "e"} nel cestino?\n\n` +
+      `Saranno eliminate definitivamente dopo 30 giorni.`
+    );
+    if (!ok) return;
+    setBulkBusy(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("commesse")
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by: user?.id || null,
+        })
+        .in("id", Array.from(selectedIds));
+      if (error) throw error;
+      exitSelection();
+      // Reload per aggiornare lista
+      window.location.reload();
+    } catch (e: any) {
+      alert("Errore eliminazione: " + (e?.message || e));
+      setBulkBusy(false);
+    }
+  };
   const fmtEuro = (n: number) => n > 0 ? "€" + n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) : "";
   const fmtData = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "";
   const initials = (c: any) => ((c.cliente || "?").charAt(0) + (c.cognome || "").charAt(0)).toUpperCase();
@@ -120,6 +202,8 @@ export default function CommessePanel() {
           borderRadius: 18,
           padding: "14px 16px",
           marginBottom: 12,
+          position: "relative" as any,
+          opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
           boxShadow: alert
             ? `0 6px 20px rgba(226,75,74,0.15), inset 3px 0 0 ${TH.red}`
             : isExpanded
@@ -128,7 +212,30 @@ export default function CommessePanel() {
           border: "1px solid rgba(200,228,228,0.5)",
           transition: "box-shadow 0.2s",
         }}
-        onClick={() => { if (!isExpanded) { setSelectedCM(c); setTab("commesse"); } }}>
+        onClick={() => handleCardClick(c, () => { if (!isExpanded) { setSelectedCM(c); setTab("commesse"); } })}
+        onTouchStart={() => handleTouchStart(c.id)}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchEnd}
+        onContextMenu={(e) => { e.preventDefault(); enterSelection(c.id); }}>
+
+        {/* Checkbox selezione */}
+        {selectionMode && (
+          <div style={{
+            position: "absolute", top: 10, right: 10, zIndex: 5,
+            width: 26, height: 26, borderRadius: 13,
+            background: selectedIds.has(c.id) ? TH.teal : "rgba(255,255,255,0.9)",
+            border: `2px solid ${selectedIds.has(c.id) ? TH.tealDark : TH.borderSolid}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 3px 8px rgba(13,31,31,0.2)",
+            transition: "all 0.15s",
+          }}>
+            {selectedIds.has(c.id) && (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
+          </div>
+        )}
 
         {/* Header: avatar + nome + pill fase */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -401,13 +508,35 @@ export default function CommessePanel() {
     const isLast = idx === filteredSorted.length - 1;
 
     return (
-      <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); }}
+      <div key={c.id}
+        onClick={() => handleCardClick(c, () => { setSelectedCM(c); setTab("commesse"); })}
+        onTouchStart={() => handleTouchStart(c.id)}
+        onTouchEnd={handleTouchEnd}
+        onTouchMove={handleTouchEnd}
+        onContextMenu={(e) => { e.preventDefault(); enterSelection(c.id); }}
         style={{
           display: "flex", alignItems: "center", gap: 12,
           padding: "13px 14px", cursor: "pointer",
           borderBottom: isLast ? "none" : `1px solid ${TH.border}`,
+          background: selectionMode && selectedIds.has(c.id) ? "rgba(40,160,160,0.08)" : "transparent",
+          opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
         }}>
 
+        {selectionMode && (
+          <div style={{
+            width: 22, height: 22, borderRadius: 11, flexShrink: 0,
+            background: selectedIds.has(c.id) ? TH.teal : "#fff",
+            border: `2px solid ${selectedIds.has(c.id) ? TH.tealDark : TH.borderSolid}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "all 0.15s",
+          }}>
+            {selectedIds.has(c.id) && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
+          </div>
+        )}
         <div style={{
           width: 40, height: 40, borderRadius: 11, flexShrink: 0,
           background: AV_GRADS[idx % AV_GRADS.length],
@@ -679,6 +808,91 @@ export default function CommessePanel() {
           gap: 10,
         }}>
           {filteredSorted.map((c, i) => renderCard(c, i))}
+        </div>
+      )}
+
+      {/* ═══ BULK TOOLBAR FLOTTANTE ═══ */}
+      {selectionMode && (
+        <div style={{
+          position: "fixed" as any,
+          left: 12, right: 12,
+          bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)",
+          zIndex: 100,
+          background: "linear-gradient(145deg, #0D1F1F, #1A3535)",
+          borderRadius: 18,
+          padding: "12px 14px",
+          display: "flex", alignItems: "center", gap: 10,
+          boxShadow: "0 10px 28px rgba(13,31,31,0.45), inset 0 1px 2px rgba(255,255,255,0.08)",
+          border: "1px solid rgba(95,208,208,0.2)",
+        }}>
+          {/* Conteggio */}
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" as any, gap: 2 }}>
+            <div style={{ fontSize: 9, fontWeight: 900, color: "rgba(95,208,208,0.7)", letterSpacing: "1px" }}>SELEZIONATE</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#5FD0D0", fontFamily: FM, letterSpacing: "-0.3px" }}>
+              {selectedIds.size} · di {filteredSorted.length}
+            </div>
+          </div>
+
+          {/* Seleziona tutto */}
+          <button
+            onClick={() => {
+              if (selectedIds.size === filteredSorted.length) {
+                setSelectedIds(new Set());
+              } else {
+                setSelectedIds(new Set(filteredSorted.map((c: any) => c.id)));
+              }
+            }}
+            style={{
+              padding: "10px 12px", borderRadius: 11, border: "none",
+              background: "rgba(95,208,208,0.15)",
+              color: "#5FD0D0", fontSize: 10, fontWeight: 800, cursor: "pointer",
+              letterSpacing: "0.3px",
+            }}
+          >
+            {selectedIds.size === filteredSorted.length ? "NESSUNA" : "TUTTE"}
+          </button>
+
+          {/* Cestino */}
+          <button
+            onClick={bulkSoftDelete}
+            disabled={selectedIds.size === 0 || bulkBusy}
+            style={{
+              padding: "10px 14px", borderRadius: 11, border: "none",
+              background: selectedIds.size === 0
+                ? "rgba(226,75,74,0.3)"
+                : "linear-gradient(145deg, #FF7B4D, #E24B4A)",
+              color: "#fff", fontSize: 11, fontWeight: 900,
+              cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
+              letterSpacing: "0.3px",
+              display: "flex", alignItems: "center", gap: 6,
+              boxShadow: selectedIds.size > 0 ? "0 4px 10px rgba(226,75,74,0.4)" : "none",
+              opacity: bulkBusy ? 0.6 : 1,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+            </svg>
+            {bulkBusy ? "..." : "CESTINO"}
+          </button>
+
+          {/* Annulla */}
+          <button
+            onClick={exitSelection}
+            style={{
+              width: 38, height: 38, borderRadius: 11, border: "none",
+              background: "rgba(255,255,255,0.1)",
+              color: "#fff", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
       )}
     </div>
