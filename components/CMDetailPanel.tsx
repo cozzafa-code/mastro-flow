@@ -2669,41 +2669,118 @@ export default function CMDetailPanel() {
         {/* == TAB VANI (lista vani del rilievo) == */}
         {cmSubTab === "sopralluoghi" && (
           <div style={{ padding: "0 16px 14px" }}>
+            {/* ═══ SUB-HERO RILIEVO (v52 · coerente con pagina 1) ═══ */}
+            {r && (() => {
+              const nVani = (r.vani || []).length;
+              const nMisurati = (r.vani || []).filter((v: any) => Object.values(v.misure || {}).filter((x: any) => (x as number) > 0).length >= 6).length;
+              const prog = nVani > 0 ? Math.round((nMisurati / nVani) * 100) : 0;
+              const tipoMap: any = {
+                provvisorio: { l: "Provvisorio", bg: "#FAC775", c: "#412402" },
+                verificato:  { l: "Verificato",  bg: "#9FC6F0", c: "#0A2842" },
+                definitivo:  { l: "Definitivo",  bg: "#A5DCC6", c: "#04342C" },
+                da_rivedere: { l: "Da rivedere", bg: "#F7B5B5", c: "#4B1515" },
+                indicativa:  { l: "Provvisorio", bg: "#FAC775", c: "#412402" },
+                personalizzato: { l: "Personalizzato", bg: "#B5B0E8", c: "#26215C" },
+              };
+              const tt = tipoMap[r.tipo || "provvisorio"] || tipoMap.provvisorio;
+              const dataFmt = r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" }) : null;
+              return (
+                <div style={{
+                  background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+                  borderRadius: 16, padding: "14px 16px", marginBottom: 12,
+                  boxShadow: "0 6px 18px rgba(31,120,120,0.25), inset 0 1px 2px rgba(255,255,255,0.25)",
+                  position: "relative" as any, overflow: "hidden",
+                }}>
+                  <div style={{ position: "absolute", top: -20, right: -15, width: 80, height: 80, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)", pointerEvents: "none" as any }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      background: "rgba(255,255,255,0.22)",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                      boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
+                    }}>
+                      <span style={{ fontSize: 16, fontWeight: 900, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>R{r.n || 1}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", letterSpacing: "-0.2px", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>Rilievo R{r.n || 1}</span>
+                        <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: tt.bg, color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{tt.l}</span>
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>
+                        {dataFmt || "senza data"}
+                        {r.rilevatore ? ` · ${r.rilevatore}` : ""}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" as any, flexShrink: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: "#fff", lineHeight: 1, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>{prog}%</div>
+                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.8)", fontWeight: 600, marginTop: 2 }}>{nMisurati}/{nVani} vani</div>
+                    </div>
+                  </div>
+                  {nVani > 0 && (
+                    <div style={{ marginTop: 10, height: 4, background: "rgba(255,255,255,0.2)", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${prog}%`, background: "rgba(255,255,255,0.9)", borderRadius: 2, transition: "width 0.3s" }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Rilievo selector - mostra quale stai guardando */}
             {(c.rilievi||[]).length > 1 && r && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 0 10px", borderBottom: `1px solid ${T.bdr}`, marginBottom: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginRight: 4 }}>Visita:</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0 12px", marginBottom: 6 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: T.sub, letterSpacing: "0.5px", textTransform: "uppercase" as any, marginRight: 2 }}>Altri rilievi:</div>
                 {(c.rilievi||[]).map((ril, ridx) => {
                   const isSel = ril.id === r.id;
                   const isLast = ridx === (c.rilievi||[]).length - 1;
-                  const col = isSel ? (isLast ? T.acc : "#5856d6") : T.sub;
                   return (
                     <div key={ril.id} onClick={() => setSelectedRilievo(ril)}
-                      style={{ padding: "4px 10px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700,
-                        background: isSel ? col : T.bg,
+                      style={{
+                        padding: "5px 11px", borderRadius: 9, cursor: "pointer",
+                        fontSize: 11, fontWeight: 800,
+                        background: isSel ? "linear-gradient(145deg, #5FD0D0, #1A7A7A)" : "#fff",
                         color: isSel ? "#fff" : T.sub,
-                        border: `1.5px solid ${isSel ? col : "transparent"}`,
+                        border: `1.5px solid ${isSel ? "transparent" : T.bdr}`,
+                        boxShadow: isSel ? "0 3px 8px rgba(40,160,160,0.35)" : "none",
+                        display: "flex", alignItems: "center", gap: 4,
                       }}>
                       R{ril.n} {!isLast && isSel ? "🔒" : ""}
                     </div>
                   );
                 })}
-                <div style={{ flex: 1 }} />
-                <div style={{ fontSize: 10, color: isStorico ? "#5856d6" : T.sub, fontWeight: isStorico ? 700 : 400 }}>
-                  {isStorico ? "🔒 sola lettura" : `${(r.vani||[]).length} vani`}
-                </div>
               </div>
             )}
             {/*  BANNER STORICO  */}
             {isStorico && (
-              <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 10, background: "#5856d610", border: "1.5px solid #5856d630", display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 18 }}><I d={ICO.lock} /></span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: "#5856d6" }}>Rilievo storico R{r?.n} · sola lettura</div>
-                  <div style={{ fontSize: 10, color: T.sub }}>Questo rilievo  archiviato. Solo l'ultimo rilievo (R{lastRilievo?.n})  modificabile.</div>
+              <div style={{
+                padding: "12px 14px", borderRadius: 12, marginBottom: 12,
+                background: "linear-gradient(145deg, #F3F1FE, #EEEDFE)",
+                border: "1.5px solid #B5B0E8",
+                display: "flex", alignItems: "center", gap: 12,
+                boxShadow: "0 2px 8px rgba(88,86,214,0.1)",
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: "rgba(88,86,214,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <I d={ICO.lock} s={18} c="#5856d6" />
                 </div>
-                <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{ padding: "6px 12px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  Vai a R{lastRilievo?.n} →
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: "#3C3489", letterSpacing: "0.2px" }}>Rilievo storico R{r?.n} · sola lettura</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "#5856d6aa", marginTop: 2 }}>Solo R{lastRilievo?.n} (più recente) è modificabile</div>
+                </div>
+                <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{
+                  padding: "7px 12px", borderRadius: 9,
+                  background: "linear-gradient(145deg, #5FD0D0, #1A7A7A)",
+                  color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer",
+                  whiteSpace: "nowrap" as any,
+                  boxShadow: "0 3px 8px rgba(40,160,160,0.35)",
+                  flexShrink: 0,
+                }}>
+                  R{lastRilievo?.n} →
                 </div>
               </div>
             )}
@@ -2722,52 +2799,80 @@ export default function CMDetailPanel() {
               const completo = nMisure >= 6;
               const bloccato = v.note?.startsWith("+ BLOCCATO");
               const colore = bloccato ? T.red : completo ? T.grn : T.orange;
+              const coloreBg = bloccato ? T.redLt : completo ? T.grnLt : T.orangeLt;
+              const nFoto = Object.keys(v.foto || {}).length;
               return (
                 <div key={v.id} onClick={() => { console.log("CLICK VANO", v?.id, v?.nome); setSelectedVano(v); setVanoStep(0); }}
-                  style={{ ...S.card, marginBottom: 8, padding: "12px 14px", cursor: "pointer",
+                  style={{
+                    background: "#fff",
+                    borderRadius: 14,
+                    marginBottom: 10,
+                    padding: "14px 14px",
+                    cursor: "pointer",
+                    boxShadow: "0 3px 10px rgba(31,120,120,0.08)",
+                    border: `1px solid ${T.bdr}`,
+                    borderLeft: `4px solid ${colore}`,
                     display: "flex", alignItems: "center", gap: 12,
-                    borderLeft: `3px solid ${colore}` }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>{v.nome}</span>
-                      {/* Badge rilievo di appartenenza */}
+                    transition: "transform 0.15s",
+                  }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 11,
+                    background: coloreBg,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0, border: `1.5px solid ${colore}35`,
+                  }}>
+                    <I d={bloccato ? ICO.alertTriangle : completo ? ICO.checkCircle : ICO.grid} s={20} c={colore} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: "#0D1F1F", whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis" }}>{v.nome}</span>
                       {(() => {
-                        const rIdx = c.rilievi?.findIndex(r => r.vani?.some(vv => vv.id === v.id));
+                        const rIdx = c.rilievi?.findIndex(r2 => r2.vani?.some(vv => vv.id === v.id));
                         if (rIdx == null || rIdx < 0) return null;
-                        const ril = c.rilievi[rIdx];
-                        const questoBloccato = v.note?.startsWith("+ BLOCCATO");
-                        const questoIncompleto = !questoBloccato && Object.values(v.misure||{}).filter(x=>(x as number)>0).length > 0 && Object.values(v.misure||{}).filter(x=>(x as number)>0).length < 6;
-                        const haProblema = questoBloccato || questoIncompleto;
                         return (
                           <span style={{
-                            fontSize: 9, fontWeight: 800, borderRadius: 6, padding: "1px 6px",
-                            background: haProblema ? T.redLt : T.bg,
-                            color: haProblema ? T.red : T.sub,
-                            border: `1px solid ${haProblema ? T.red+"40" : T.bdr}`
-                          }}>
-                            R{rIdx + 1} · {ril.data || ril.dataRilievo || "·"}
-                            {haProblema && " <I d={ICO.alertTriangle} />"}
-                          </span>
+                            fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5,
+                            background: T.bg, color: T.sub, letterSpacing: "0.3px",
+                          }}>R{rIdx + 1}</span>
                         );
                       })()}
                     </div>
-                    <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} · {v.stanza} · {v.piano}</div>
-                    {bloccato && <div style={{ fontSize: 11, color: T.red, marginTop: 2 }}>{v.note?.replace("+ BLOCCATO: ","")}</div>}
+                    <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" as any }}>
+                      {v.tipo && <span>{v.tipo}</span>}
+                      {v.tipo && v.stanza && <span>·</span>}
+                      {v.stanza && <span>{v.stanza}</span>}
+                      {(v.stanza || v.tipo) && v.piano && <span>·</span>}
+                      {v.piano && <span>piano {v.piano}</span>}
+                      {!v.tipo && !v.stanza && !v.piano && <span style={{ fontStyle: "italic" as any }}>da configurare</span>}
+                    </div>
+                    {bloccato && (
+                      <div style={{ fontSize: 10, color: T.red, marginTop: 4, fontWeight: 700 }}>
+                        <I d={ICO.alertTriangle} s={10} /> {v.note?.replace("+ BLOCCATO: ", "")}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ textAlign: "right", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
-                    {/* Badge pezzi */}
-                    <span style={{ fontSize:12, fontWeight:800, color:"#fff",
-                      background: bloccato ? T.red : completo ? T.grn : T.orange,
-                      borderRadius:8, padding:"2px 8px", minWidth:28, textAlign:"center" }}>
-                      {v.pezzi||1} pz
+                  <div style={{ display: "flex", flexDirection: "column" as any, alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 900, color: "#fff",
+                      background: `linear-gradient(145deg, ${colore}, ${colore}dd)`,
+                      borderRadius: 6, padding: "3px 9px",
+                      boxShadow: `0 2px 5px ${colore}40`,
+                      letterSpacing: "0.3px", textTransform: "uppercase" as any,
+                    }}>
+                      {v.pezzi || 1} {(v.pezzi || 1) === 1 ? "pz" : "pz"}
                     </span>
-                    {bloccato
-                      ? <span style={S.badge(T.redLt, T.red)}><I d={ICO.alertTriangle} /> Bloccato</span>
-                      : completo
-                      ? <span style={S.badge(T.grnLt, T.grn)}>✓ {nMisure} mis.</span>
-                      : <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.alertTriangle} /> {nMisure} mis.</span>}
+                    <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                      {nFoto > 0 && (
+                        <span style={{ fontSize: 10, color: T.sub, fontWeight: 700, display: "flex", alignItems: "center", gap: 2 }}>
+                          <I d={ICO.camera} s={10} /> {nFoto}
+                        </span>
+                      )}
+                      <span style={{ fontSize: 10, fontWeight: 700, color: colore }}>
+                        {bloccato ? "bloccato" : completo ? `${nMisure} mis.` : nMisure === 0 ? "da misurare" : `${nMisure}/6 mis.`}
+                      </span>
+                    </div>
                   </div>
-                  <span style={{ color: T.sub, fontSize: 14 }}>📷</span>
+                  <I d={ICO.chevronRight} s={16} c={T.sub} />
                 </div>
               );
             })}
@@ -2788,11 +2893,23 @@ export default function CMDetailPanel() {
                 setSelectedVano(v);
                 setVanoStep(0);
               }}
-                style={{ ...S.card, padding: "11px 14px", marginTop: 6, cursor: "pointer",
-                  border: `1px dashed ${T.bdr}`, background: "transparent",
-                  display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
-                <span style={{ fontSize: 18, color: T.acc }}>+</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: T.acc }}>Aggiungi vano</span>
+                style={{
+                  padding: "13px 14px", marginTop: 8, cursor: "pointer",
+                  borderRadius: 12,
+                  border: `1.5px dashed ${T.acc}40`,
+                  background: `${T.acc}06`,
+                  display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
+                  boxShadow: "0 2px 6px rgba(31,120,120,0.04)",
+                }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: 8,
+                  background: `linear-gradient(145deg, #5FD0D0, #28A0A0)`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: "0 2px 5px rgba(40,160,160,0.35)",
+                }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: T.acc, letterSpacing: "0.2px" }}>Aggiungi vano</span>
               </div>
             )}
           </div>
