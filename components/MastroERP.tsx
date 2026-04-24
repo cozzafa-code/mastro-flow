@@ -13,6 +13,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import MastroDesktop from "./MastroDesktop";
 // import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEvent as deleteEventDB, saveContatto, saveTeamMember, saveTask, saveAzienda, saveVano, deleteVano, saveMateriali, savePipeline } from "@/lib/supabase-sync";
 import { supabase } from "@/lib/supabase";
+import "@/lib/mastro-boot"; // Sync Engine v1 — auto-boot
 import { useSyncEngine, SyncStatusBar } from "./mastro-sync";
 import { useCloudLoader, persistAndSync } from "../hooks/useCloudLoader";
 import { useVaniSync } from "../hooks/useVaniSync";
