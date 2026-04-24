@@ -1034,6 +1034,30 @@ export default function CMDetailPanel() {
           </div>
         );
       })()}
+
+      {/* v72 · INPUT hidden per File e Foto - servono per i bottoni Allegati */}
+      <input ref={fileInputRef} type="file" style={{display:"none"}} onChange={e=>{
+        const f = (e.target as any).files?.[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = (ev: any) => {
+          const a = { id: Date.now(), tipo: "file", nome: f.name, data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), dataUrl: ev.target.result };
+          setCantieri((cs: any[]) => cs.map(x => x.id === selectedCM!.id ? { ...x, allegati: [...(x.allegati || []), a] } : x));
+          setSelectedCM((p: any) => ({ ...p, allegati: [...(p.allegati || []), a] }));
+        };
+        r.readAsDataURL(f);
+        (e.target as any).value = "";
+      }} />
+      <input ref={fotoInputRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{
+        const f = (e.target as any).files?.[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = (ev: any) => {
+          const a = { id: Date.now(), tipo: "foto", nome: f.name, data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), dataUrl: ev.target.result };
+          setCantieri((cs: any[]) => cs.map(x => x.id === selectedCM!.id ? { ...x, allegati: [...(x.allegati || []), a] } : x));
+          setSelectedCM((p: any) => ({ ...p, allegati: [...(p.allegati || []), a] }));
+        };
+        r.readAsDataURL(f);
+        (e.target as any).value = "";
+      }} />
       </>
     );
   }
