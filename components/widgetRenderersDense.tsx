@@ -1,1407 +1,712 @@
 "use client";
-// ═══════════════════════════════════════════════════════════
-// MASTRO ERP — widgetRenderersDense.tsx
-// Widget "app dentro app" — esaustivi, azionabili, connessi.
-// 4 widget killer: Agenda, Oggi da fare, Fatture, Squadra.
-//
-// Differenza da widgetRenderers.tsx (originale):
-//  - Non un mini-sommario di 3 righe, ma pannello operativo denso
-//  - Toggle viste, filtri, azioni inline (chiama, sollecita, crea)
-//  - Auto-contenuti: l'utente non deve andare al pannello grande
-// ═══════════════════════════════════════════════════════════
+import React from "react";
 
-import React, { useState, useMemo } from "react";
+const TEAL = "#28A0A0";
+const TEAL_DARK = "#1F7A7A";
+const DARK = "#0D1F1F";
+const SUB = "#5A7878";
+const AMBER = "#F5A030";
+const RED = "#DC4444";
+const GREEN = "#28A0A0";
 
-// ─── Tema fliwoX ────────────────────────────────────────────
-const TH = {
-  ink: "#0D1F1F",
-  sub: "#5A7878",
-  subLight: "#8FA8A8",
-  teal: "#28A0A0",
-  tealDark: "#1A7A7A",
-  tealBright: "#5FD0D0",
-  tealPale: "#EEF8F8",
-  border: "rgba(40,160,160,0.08)",
-  borderSolid: "#C8E4E4",
-  red: "#E24B4A",
-  redPale: "rgba(226,75,74,0.1)",
-  amber: "#F5A030",
-  amberDeep: "#C97716",
-  amberPale: "rgba(245,160,48,0.1)",
-  green: "#8BC443",
-  greenDeep: "#1A9E73",
-  greenPale: "rgba(26,158,115,0.1)",
-  purple: "#7B6BA5",
+const Empty = ({ msg }: { msg: string }) => (
+  <p style={{ margin: 0, fontSize: 12, color: SUB, textAlign: "center", padding: "8px 0" }}>{msg}</p>
+);
+
+const Row = ({ children, onClick, last }: any) => (
+  <div onClick={onClick} style={{
+    display: "flex", alignItems: "center", gap: 10,
+    padding: "9px 2px",
+    borderBottom: last ? "none" : "1px solid rgba(40,160,160,0.08)",
+    cursor: onClick ? "pointer" : "default",
+  }}>{children}</div>
+);
+
+const Badge = ({ text, bg, fg }: any) => (
+  <span style={{
+    fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 8,
+    background: bg, color: fg, whiteSpace: "nowrap" as any,
+  }}>{text}</span>
+);
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+// Accetta sia ISO timestamp sia date string - ritorna giorni interi da allora
+const daysSince = (date: any): number => {
+  if (!date) return 0;
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return 0;
+  const diff = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
+  return Math.floor(diff);
 };
 
-// ─── Helpers ────────────────────────────────────────────────
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const isoDateOnly = (d: Date) => d.toISOString().slice(0, 10);
-const pick = (o: any, ...k: string[]) => {
-  for (const key of k) if (o?.[key] != null && o?.[key] !== "") return o[key];
+// Formatta euro compatto (€4.2k, €850)
+const eur = (n: number): string => {
+  if (!n || n <= 0) return "—";
+  if (n >= 1000) return `€${(n / 1000).toFixed(1)}k`;
+  return `€${Math.round(n)}`;
+};
+
+// Leggi campi di fallback - supporta sia i nomi DB (Supabase) che quelli legacy in-memory
+const pick = (obj: any, ...keys: string[]) => {
+  for (const k of keys) {
+    if (obj?.[k] !== undefined && obj?.[k] !== null && obj?.[k] !== "") return obj[k];
+  }
   return null;
 };
-const clienteOf = (c: any) =>
-  [pick(c, "cliente", "cliente_nome"), pick(c, "cognome")].filter(Boolean).join(" ") || "—";
-const valoreOf = (c: any): number =>
-  Number(pick(c, "totale_finale", "totale_preventivo", "euro", "totale")) || 0;
-const eur = (n: number): string => {
-  if (!n || n <= 0) return "€0";
-  if (n >= 10000) return `€${(n / 1000).toFixed(1)}k`;
-  return `€${Math.round(n).toLocaleString("it-IT")}`;
-};
-const telClean = (t: string): string => (t || "").replace(/[^\d+]/g, "");
-const waLink = (tel: string, msg: string) => {
-  const n = telClean(tel).replace(/^\+/, "");
-  if (!n) return "#";
-  return `https://wa.me/${n.startsWith("39") ? n : "39" + n}?text=${encodeURIComponent(msg)}`;
+
+// Valore commessa (DB: totale_finale > totale_preventivo; legacy: euro/totale/valore_totale)
+const valoreCM = (c: any): number => {
+  return Number(pick(c, "totale_finale", "totale_preventivo", "euro", "totale", "valore_totale")) || 0;
 };
 
-// Formatta data "Oggi", "Domani", "Ven 25 Apr"
-const fmtRelDate = (iso: string): string => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
-  if (diff === 0) return "Oggi";
-  if (diff === 1) return "Domani";
-  if (diff === -1) return "Ieri";
-  if (diff > 1 && diff < 7) {
-    return d.toLocaleDateString("it-IT", { weekday: "long" });
-  }
-  return d.toLocaleDateString("it-IT", { day: "numeric", month: "short", weekday: "short" });
+// Nome cliente commessa
+const clienteCM = (c: any): string => {
+  const nome = pick(c, "cliente", "cliente_nome");
+  const cognome = pick(c, "cognome");
+  if (nome && cognome) return `${nome} ${cognome}`;
+  return nome || cognome || "—";
 };
 
-// ═══════════════════════════════════════════════════════════
-// WIDGET: AGENDA (app dentro app)
-// Viste: Oggi / Settimana / Mese
-// Azioni: Crea evento inline, Naviga, Chiama, Dettaglio
-// ═══════════════════════════════════════════════════════════
-interface AgendaProps {
-  data: {
-    events?: any[];
-    tasks?: any[];
-    cantieri?: any[];
-  };
-  nav: any;
-}
-
-export function WidgetAgendaDense({ data, nav }: AgendaProps) {
-  const [view, setView] = useState<"oggi" | "settimana" | "mese">("oggi");
-  const events = data.events || [];
-  const tasks = data.tasks || [];
-
-  // Range date in base a view
-  const { startDate, endDate, label } = useMemo(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    if (view === "oggi") {
-      return { startDate: now, endDate: now, label: "OGGI" };
-    }
-    if (view === "settimana") {
-      const end = new Date(now);
-      end.setDate(end.getDate() + 6);
-      return { startDate: now, endDate: end, label: "PROSSIMI 7 GG" };
-    }
-    const end = new Date(now);
-    end.setDate(end.getDate() + 29);
-    return { startDate: now, endDate: end, label: "PROSSIMI 30 GG" };
-  }, [view]);
-
-  const inRange = (iso: string): boolean => {
-    if (!iso) return false;
-    const d = new Date(iso);
-    d.setHours(0, 0, 0, 0);
-    return d >= startDate && d <= endDate;
-  };
-
-  // Unisci events + tasks + rilievi del periodo, ordina per data+ora
-  const items = useMemo(() => {
-    const list: any[] = [];
-
-    events.forEach((e: any) => {
-      const d = pick(e, "date", "data", "data_inizio");
-      if (!inRange(d)) return;
-      list.push({
-        kind: "event",
-        id: e.id,
-        date: d,
-        time: pick(e, "time", "ora") || "",
-        title: pick(e, "text", "titolo", "descrizione") || "Evento",
-        subtitle: pick(e, "cm", "commessa_code", "persona", "addr") || "",
-        tipo: pick(e, "tipo") || "evento",
-        color: pick(e, "color") || TH.teal,
-        raw: e,
-      });
-    });
-
-    tasks.forEach((t: any) => {
-      if (t.done) return;
-      const d = pick(t, "date", "data_scadenza", "scadenza");
-      if (!inRange(d)) return;
-      list.push({
-        kind: "task",
-        id: t.id,
-        date: d,
-        time: pick(t, "time", "ora") || "",
-        title: pick(t, "text", "descrizione", "titolo") || "Task",
-        subtitle: pick(t, "persona", "assegnato", "cm") || "",
-        priority: pick(t, "priority", "priorita") || "media",
-        raw: t,
-      });
-    });
-
-    list.sort((a, b) => {
-      const ad = `${a.date} ${a.time || "00:00"}`;
-      const bd = `${b.date} ${b.time || "00:00"}`;
-      return ad.localeCompare(bd);
-    });
-
-    return list;
-  }, [events, tasks, view, startDate, endDate]);
-
-  // Conflitti: 2+ eventi stessa ora stesso giorno
-  const conflicts = useMemo(() => {
-    const byTime = new Map<string, number>();
-    items.forEach((i) => {
-      if (i.time) {
-        const k = `${i.date}_${i.time}`;
-        byTime.set(k, (byTime.get(k) || 0) + 1);
-      }
-    });
-    return Array.from(byTime.values()).filter((n) => n > 1).length;
-  }, [items]);
-
-  // Conta per giorno
-  const byDay = useMemo(() => {
-    const map = new Map<string, number>();
-    items.forEach((i) => map.set(i.date, (map.get(i.date) || 0) + 1));
-    return map;
-  }, [items]);
-
-  const goToCommessa = (ev: any) => {
-    const cmId = pick(ev.raw, "cm_id", "commessa_id", "cm");
-    if (!cmId) {
-      nav?.openEvent?.();
-      return;
-    }
-    const cm = data.cantieri?.find((c: any) => c.id === cmId || c.code === cmId);
-    if (cm) nav?.openCM?.(cm);
-    else nav?.openEvent?.();
-  };
-
-  return (
-    <div>
-      {/* Toggle viste */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          padding: 4,
-          background: TH.tealPale,
-          borderRadius: 10,
-          marginBottom: 10,
-        }}
-      >
-        {(["oggi", "settimana", "mese"] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              flex: 1,
-              padding: "7px 4px",
-              borderRadius: 7,
-              border: "none",
-              background: view === v ? "#fff" : "transparent",
-              color: view === v ? TH.tealDark : TH.sub,
-              fontSize: 11,
-              fontWeight: 800,
-              cursor: "pointer",
-              boxShadow: view === v ? "0 2px 4px rgba(0,0,0,0.08)" : "none",
-              letterSpacing: "0.3px",
-              textTransform: "uppercase",
-              fontFamily: "inherit",
-            }}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
-
-      {/* KPI header */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 6,
-          marginBottom: 10,
-        }}
-      >
-        <KpiBox label={label.slice(0, 12)} value={items.length.toString()} color={TH.teal} />
-        <KpiBox
-          label="IMPEGNI"
-          value={byDay.size.toString() + (byDay.size === 1 ? " GG" : " GG")}
-          color={TH.greenDeep}
-        />
-        <KpiBox
-          label="CONFLITTI"
-          value={conflicts.toString()}
-          color={conflicts > 0 ? TH.red : TH.subLight}
-        />
-      </div>
-
-      {/* Lista eventi */}
-      {items.length === 0 ? (
-        <EmptyState msg={`Niente in programma ${view === "oggi" ? "oggi" : "nel periodo"}`} />
-      ) : (
-        <div style={{ maxHeight: view === "oggi" ? 280 : 320, overflowY: "auto" as any }}>
-          {items.slice(0, 15).map((it, idx) => (
-            <AgendaRow
-              key={`${it.kind}-${it.id}-${idx}`}
-              item={it}
-              showDate={view !== "oggi"}
-              onTap={() => goToCommessa(it)}
-            />
-          ))}
-          {items.length > 15 && (
-            <div
-              onClick={() => nav?.goto?.("agenda")}
-              style={{
-                padding: "10px 2px",
-                fontSize: 11,
-                fontWeight: 700,
-                color: TH.tealDark,
-                textAlign: "center" as any,
-                cursor: "pointer",
-                borderTop: `1px dashed ${TH.border}`,
-              }}
-            >
-              + altri {items.length - 15} in agenda →
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Footer actions */}
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <PrimaryButton onClick={() => { nav?.openEvent?.(); }}>+ Nuovo evento</PrimaryButton>
-        <GhostButton onClick={() => nav?.goto?.("agenda")}>Apri agenda →</GhostButton>
-      </div>
-    </div>
-  );
-}
-
-// Sotto-componente riga agenda
-const AgendaRow = ({ item, showDate, onTap }: any) => {
-  const isTask = item.kind === "task";
-  const barColor = isTask
-    ? item.priority === "alta"
-      ? TH.red
-      : item.priority === "bassa"
-      ? TH.subLight
-      : TH.amber
-    : item.color || TH.teal;
-
-  return (
-    <div
-      onClick={onTap}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "10px 2px",
-        borderBottom: `1px solid ${TH.border}`,
-        cursor: "pointer",
-      }}
-    >
-      {/* Barra colore tipo */}
-      <div
-        style={{
-          width: 3,
-          alignSelf: "stretch",
-          borderRadius: 2,
-          background: barColor,
-          flexShrink: 0,
-          minHeight: 28,
-        }}
-      />
-      {/* Ora */}
-      <div
-        style={{
-          width: 44,
-          flexShrink: 0,
-          fontSize: 11,
-          fontWeight: 800,
-          color: TH.ink,
-          fontVariantNumeric: "tabular-nums" as any,
-        }}
-      >
-        {item.time || "—"}
-      </div>
-      {/* Titolo + sottotitolo */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: TH.ink,
-            whiteSpace: "nowrap" as any,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {item.title}
-        </div>
-        <div
-          style={{
-            fontSize: 10,
-            color: TH.sub,
-            marginTop: 1,
-            whiteSpace: "nowrap" as any,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {showDate && <span style={{ fontWeight: 700 }}>{fmtRelDate(item.date)}</span>}
-          {showDate && item.subtitle && " · "}
-          {item.subtitle}
-        </div>
-      </div>
-      {/* Badge tipo */}
-      {isTask && (
-        <span
-          style={{
-            fontSize: 8,
-            fontWeight: 900,
-            padding: "2px 6px",
-            borderRadius: 4,
-            background: barColor,
-            color: "#fff",
-            letterSpacing: "0.3px",
-          }}
-        >
-          TASK
-        </span>
-      )}
-    </div>
-  );
+// Data ultimo avanzamento commessa (per calcolare gg fermo)
+const lastCMActivity = (c: any): any => {
+  return pick(c, "ops_ultimo_avanzamento", "fase_start", "updated_at", "aggiornato", "created_at", "creato");
 };
 
-// ═══════════════════════════════════════════════════════════
-// WIDGET: OGGI DA FARE (app dentro app)
-// Task + eventi + rilievi + scadenze del giorno, ordinati
-// Azioni: Completa, Sposta a domani, Apri
-// ═══════════════════════════════════════════════════════════
-interface OggiProps {
-  data: {
-    tasks?: any[];
-    events?: any[];
-    cantieri?: any[];
-  };
-  nav: any;
-  onToggleTask?: (id: string) => void;
-  onPostponeTask?: (id: string) => void;
-}
+// Colore per fase commessa
+const faseColor = (f: string): string => {
+  const k = (f || "").toLowerCase();
+  if (k.includes("rilievo") || k.includes("sopral")) return "#5856D6";
+  if (k.includes("preventivo")) return AMBER;
+  if (k.includes("conferma") || k.includes("ordine")) return TEAL;
+  if (k.includes("produzione")) return "#EA580C";
+  if (k.includes("posa") || k.includes("montag")) return "#2563EB";
+  if (k.includes("collaudo") || k.includes("consegna")) return "#22C55E";
+  if (k.includes("fattur") || k.includes("saldo")) return "#D08008";
+  return TEAL_DARK;
+};
 
-export function WidgetOggiDense({ data, nav, onToggleTask, onPostponeTask }: OggiProps) {
-  const [filter, setFilter] = useState<"tutto" | "task" | "eventi" | "lavoro">("tutto");
-  const tasks = data.tasks || [];
-  const events = data.events || [];
-  const cantieri = data.cantieri || [];
-  const today = todayISO();
+// Legge se fattura è pagata - supporta sia fin_fatture_emesse (stato/residuo) che legacy (pagata)
+const fattPagata = (f: any): boolean => {
+  if (f?.pagata === true) return true;
+  if (f?.stato === "pagata" || f?.stato === "paid") return true;
+  const residuo = Number(f?.residuo);
+  if (!isNaN(residuo) && residuo === 0 && Number(f?.totale) > 0) return true;
+  return false;
+};
 
-  const items = useMemo(() => {
-    const list: any[] = [];
+const fattImporto = (f: any): number => {
+  return Number(pick(f, "totale", "importo")) || 0;
+};
 
-    // Task oggi
-    if (filter === "tutto" || filter === "task") {
-      tasks.forEach((t: any) => {
-        if (t.done) return;
-        const d = pick(t, "date", "data_scadenza", "scadenza");
-        if (d !== today) return;
-        list.push({
-          kind: "task",
-          id: t.id,
-          time: pick(t, "time", "ora") || "",
-          title: pick(t, "text", "descrizione", "titolo") || "Task",
-          subtitle: pick(t, "persona", "cm") || "",
-          priority: pick(t, "priority", "priorita") || "media",
-          raw: t,
+const fattScadenza = (f: any): string | null => {
+  return pick(f, "data_scadenza", "scadenza");
+};
+
+const fattCliente = (f: any): string => {
+  return pick(f, "cliente", "ragione_sociale") || "—";
+};
+
+function safeRender(id: string, data: any, nav: any): React.ReactNode {
+  const tasks = data?.tasks || [];
+  const cantieri = data?.cantieri || [];
+  const fattureDB = data?.fattureDB || [];
+  const team = data?.team || [];
+  const msgs = data?.msgs || [];
+  const problemi = data?.problemi || [];
+  const events = data?.events || [];
+  const td = today();
+
+  switch (id) {
+    case "oggi_devi_fare": {
+      const actions: any[] = [];
+
+      // 1. TASK non completati con priorità
+      tasks.filter((t: any) => !t?.done).forEach((t: any) => {
+        const prio = (t?.priorita || t?.priority || t?.prio || "").toLowerCase();
+        const isAlta = prio === "alta" || prio === "urgente" || prio === "urgent" || t?.urgent;
+        const dataT = pick(t, "data", "date", "scadenza");
+        const scadOggi = dataT === td;
+        const testo = pick(t, "testo", "title", "text") || "Task";
+        const meta = pick(t, "meta", "cm", "persona");
+        actions.push({
+          icon: isAlta ? "🔴" : scadOggi ? "🟠" : "🟡",
+          title: testo,
+          meta: meta || "",
+          priority: isAlta ? 3 : scadOggi ? 2 : 1,
+          onClick: () => nav?.openTask?.(t),
+          badge: isAlta ? "ORA" : scadOggi ? "OGGI" : null,
+          badgeBg: isAlta ? RED : AMBER,
         });
       });
-    }
 
-    // Eventi oggi
-    if (filter === "tutto" || filter === "eventi") {
-      events.forEach((e: any) => {
-        const d = pick(e, "date", "data", "data_inizio");
-        if (d !== today) return;
-        list.push({
-          kind: "event",
-          id: e.id,
-          time: pick(e, "time", "ora") || "",
-          title: pick(e, "text", "titolo") || "Evento",
-          subtitle: pick(e, "cm", "persona", "addr") || "",
-          tipo: pick(e, "tipo") || "evento",
-          raw: e,
-        });
-      });
-    }
-
-    // Rilievi/sopralluoghi oggi (da cantieri con rilievo pianificato oggi)
-    if (filter === "tutto" || filter === "lavoro") {
+      // 2. COMMESSE FERME (campo DB ferma=true) o preventivi inviati senza risposta da 7+gg
       cantieri.forEach((c: any) => {
-        const rilievi = c.rilievi || [];
-        rilievi.forEach((r: any) => {
-          const d = pick(r, "data");
-          if (d !== today) return;
-          const stato = pick(r, "stato");
-          if (stato === "completato" || stato === "confermato") return;
-          list.push({
-            kind: "rilievo",
-            id: r.id,
-            time: pick(r, "ora") || "",
-            title: `Rilievo ${clienteOf(c)}`,
-            subtitle: `${pick(c, "indirizzo") || ""} · ${pick(r, "rilevatore") || ""}`,
-            cmId: c.id,
-            raw: { cm: c, rilievo: r },
+        // Commesse esplicitamente marcate ferma
+        if (c?.ferma === true && c?.ferma_dal) {
+          const gg = daysSince(c.ferma_dal);
+          actions.push({
+            icon: "⏸",
+            title: `Sbloccare ${clienteCM(c)}`,
+            meta: `${c.code || ""} · ${c?.motivo_ferma || "ferma"} da ${gg}gg`,
+            priority: gg >= 7 ? 3 : 2,
+            onClick: () => nav?.openCM?.(c),
+            badge: gg >= 14 ? "CRITICO" : "FERMA",
+            badgeBg: gg >= 14 ? RED : AMBER,
           });
+          return;
+        }
+        // Preventivi inviati senza risposta
+        const f = (c?.fase || "").toLowerCase();
+        if (f === "preventivo" && c?.preventivo_inviato_at) {
+          const gg = daysSince(c.preventivo_inviato_at);
+          if (gg >= 5) {
+            actions.push({
+              icon: "📞",
+              title: `Richiama ${clienteCM(c)}`,
+              meta: `${c.code || ""} · ${eur(valoreCM(c))} · inviato ${gg}gg fa`,
+              priority: gg >= 15 ? 3 : 2,
+              onClick: () => nav?.openCM?.(c),
+              badge: gg >= 15 ? "URGENTE" : `${gg}gg`,
+              badgeBg: gg >= 15 ? RED : AMBER,
+            });
+          }
+        }
+      });
+
+      // 3. EVENTI DI OGGI (campo DB: data + ora)
+      events.filter((e: any) => {
+        const d = pick(e, "data", "date");
+        const st = e?.start_time;
+        return d === td || (st || "").startsWith(td);
+      }).forEach((e: any) => {
+        const ora = pick(e, "ora", "time") || (e?.start_time || "").slice(11, 16);
+        const titolo = pick(e, "titolo", "title", "text");
+        const persona = pick(e, "persona", "client_name", "cliente");
+        actions.push({
+          icon: "📅",
+          title: titolo || "Evento",
+          meta: `${ora || ""}${persona ? " · " + persona : ""}`,
+          priority: 2,
+          onClick: () => nav?.openEvent?.(e),
+          badge: null,
         });
+      });
+
+      // 4. FATTURE SCADUTE da sollecitare
+      fattureDB.filter((f: any) => {
+        const scad = fattScadenza(f);
+        return !fattPagata(f) && scad && scad < td;
+      }).slice(0, 2).forEach((f: any) => {
+        const gg = daysSince(fattScadenza(f));
+        actions.push({
+          icon: "💰",
+          title: `Sollecito ${fattCliente(f)}`,
+          meta: `${eur(fattImporto(f))} · scaduta ${gg}gg fa`,
+          priority: 3,
+          onClick: () => nav?.goto?.("contabilita"),
+          badge: "SCADUTA",
+          badgeBg: RED,
+        });
+      });
+
+      actions.sort((a, b) => b.priority - a.priority);
+      if (actions.length === 0) return <Empty msg="Tutto in ordine oggi" />;
+
+      return actions.slice(0, 5).map((a, i) => (
+        <Row key={i} last={i === Math.min(actions.length, 5) - 1} onClick={a.onClick}>
+          <div style={{ fontSize: 14, width: 20, flexShrink: 0, textAlign: "center" }}>{a.icon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.title}</div>
+            {a.meta && <div style={{ fontSize: 11, color: SUB, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.meta}</div>}
+          </div>
+          {a.badge && <Badge text={a.badge} bg={a.badgeBg || AMBER} fg="#fff" />}
+        </Row>
+      ));
+    }
+
+    case "squadra": {
+      if (team.length === 0) return <Empty msg="Nessun operatore configurato" />;
+      // DB team: stato_attuale / commessa_attuale_id / ultimo_accesso
+      const attivi = team.filter((m: any) => {
+        const st = (m?.stato_attuale || m?.stato_oggi || "").toLowerCase();
+        return m?.attivo === true || m?.inCantiere || m?.commessa_attuale_id ||
+          ["in cantiere", "in rilievo", "online", "attivo", "al lavoro"].includes(st);
+      });
+      const lista = attivi.length > 0 ? attivi : team;
+      return lista.slice(0, 5).map((m: any, i: number) => {
+        const st = (m?.stato_attuale || m?.stato_oggi || (m?.attivo ? "attivo" : "offline")).toLowerCase();
+        const inServizio = ["in cantiere", "in rilievo", "online", "attivo", "al lavoro"].includes(st) || !!m?.commessa_attuale_id;
+        const iniziali = ((m.nome || "?")[0] + (m.cognome || "?")[0]).toUpperCase();
+        return (
+          <Row key={m.id || i} last={i === Math.min(lista.length, 5) - 1} onClick={() => nav?.goto?.("team")}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: m.colore || TEAL, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{iniziali}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{m.nome} {m.cognome || ""}</div>
+              <div style={{ fontSize: 11, color: SUB }}>{m.ruolo || m.qualifica || "Operatore"}</div>
+            </div>
+            <Badge text={inServizio ? "ATTIVO" : "OFFLINE"} bg={inServizio ? GREEN + "20" : "#BDBDBD30"} fg={inServizio ? GREEN : SUB} />
+          </Row>
+        );
       });
     }
 
-    list.sort((a, b) => (a.time || "24:00").localeCompare(b.time || "24:00"));
-    return list;
-  }, [tasks, events, cantieri, filter, today]);
-
-  const countsByKind = useMemo(() => {
-    const all = [
-      ...tasks.filter((t: any) => !t.done && pick(t, "date", "data_scadenza", "scadenza") === today),
-      ...events.filter((e: any) => pick(e, "date", "data", "data_inizio") === today),
-    ];
-    const rilieviOggi = cantieri.reduce((acc: number, c: any) => {
-      return acc + ((c.rilievi || []).filter((r: any) => {
-        const s = pick(r, "stato");
-        return pick(r, "data") === today && s !== "completato" && s !== "confermato";
-      }).length);
-    }, 0);
-    return {
-      total: all.length + rilieviOggi,
-      task: tasks.filter((t: any) => !t.done && pick(t, "date", "data_scadenza", "scadenza") === today).length,
-      eventi: events.filter((e: any) => pick(e, "date", "data", "data_inizio") === today).length,
-      lavoro: rilieviOggi,
-    };
-  }, [tasks, events, cantieri, today]);
-
-  return (
-    <div>
-      {/* Filtri */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          padding: 4,
-          background: TH.tealPale,
-          borderRadius: 10,
-          marginBottom: 10,
-          overflowX: "auto" as any,
-        }}
-      >
-        {([
-          ["tutto", `Tutto · ${countsByKind.total}`],
-          ["task", `Task · ${countsByKind.task}`],
-          ["eventi", `Eventi · ${countsByKind.eventi}`],
-          ["lavoro", `Lavoro · ${countsByKind.lavoro}`],
-        ] as Array<[any, string]>).map(([k, lbl]) => (
-          <button
-            key={k}
-            onClick={() => setFilter(k)}
-            style={{
-              flex: "1 0 auto",
-              padding: "7px 10px",
-              borderRadius: 7,
-              border: "none",
-              background: filter === k ? "#fff" : "transparent",
-              color: filter === k ? TH.tealDark : TH.sub,
-              fontSize: 10,
-              fontWeight: 800,
-              cursor: "pointer",
-              boxShadow: filter === k ? "0 2px 4px rgba(0,0,0,0.08)" : "none",
-              letterSpacing: "0.2px",
-              whiteSpace: "nowrap" as any,
-              fontFamily: "inherit",
-            }}
-          >
-            {lbl}
-          </button>
-        ))}
-      </div>
-
-      {/* Lista */}
-      {items.length === 0 ? (
-        <div>
-          <EmptyState msg="Giornata libera ✨" />
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <PrimaryButton onClick={() => nav?.openTask?.()}>+ Task veloce</PrimaryButton>
-            <GhostButton onClick={() => nav?.openEvent?.()}>+ Evento</GhostButton>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div style={{ maxHeight: 320, overflowY: "auto" as any }}>
-            {items.map((it, idx) => (
-              <OggiRow
-                key={`${it.kind}-${it.id}-${idx}`}
-                item={it}
-                onComplete={() => {
-                  if (it.kind === "task") onToggleTask?.(it.id);
-                }}
-                onPostpone={() => {
-                  if (it.kind === "task") onPostponeTask?.(it.id);
-                }}
-                onOpen={() => {
-                  if (it.kind === "rilievo") {
-                    const cm = cantieri.find((c: any) => c.id === it.cmId);
-                    if (cm) nav?.openCM?.(cm);
-                  } else if (it.kind === "task") {
-                    nav?.openTask?.();
-                  } else {
-                    nav?.openEvent?.();
-                  }
-                }}
-              />
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <PrimaryButton onClick={() => nav?.openTask?.()}>+ Task veloce</PrimaryButton>
-            <GhostButton onClick={() => nav?.goto?.("agenda")}>Vai ad agenda →</GhostButton>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-const OggiRow = ({ item, onComplete, onOpen, onPostpone }: any) => {
-  const isTask = item.kind === "task";
-  const priColor =
-    item.priority === "alta" ? TH.red : item.priority === "bassa" ? TH.subLight : TH.amber;
-  const kindLabel = item.kind === "event" ? "EVENTO" : item.kind === "rilievo" ? "RILIEVO" : "TASK";
-  const kindColor = item.kind === "event" ? TH.teal : item.kind === "rilievo" ? TH.purple : priColor;
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-        padding: "10px 2px",
-        borderBottom: `1px solid ${TH.border}`,
-      }}
-    >
-      {/* Checkbox task */}
-      {isTask && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onComplete?.();
-          }}
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: 6,
-            border: `2px solid ${TH.borderSolid}`,
-            cursor: "pointer",
-            flexShrink: 0,
-            marginTop: 2,
-            background: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        />
-      )}
-      {!isTask && (
-        <div
-          style={{
-            width: 3,
-            alignSelf: "stretch",
-            borderRadius: 2,
-            background: kindColor,
-            flexShrink: 0,
-            marginTop: 4,
-            minHeight: 30,
-          }}
-        />
-      )}
-      {/* Contenuto */}
-      <div
-        onClick={onOpen}
-        style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-          {item.time && (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 800,
-                color: TH.sub,
-                fontVariantNumeric: "tabular-nums" as any,
-              }}
-            >
-              {item.time}
-            </span>
-          )}
-          <span
-            style={{
-              fontSize: 8,
-              fontWeight: 900,
-              padding: "2px 6px",
-              borderRadius: 4,
-              background: kindColor,
-              color: "#fff",
-              letterSpacing: "0.3px",
-            }}
-          >
-            {kindLabel}
-          </span>
-        </div>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: TH.ink,
-            whiteSpace: "nowrap" as any,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {item.title}
-        </div>
-        {item.subtitle && (
-          <div
-            style={{
-              fontSize: 10,
-              color: TH.sub,
-              marginTop: 1,
-              whiteSpace: "nowrap" as any,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {item.subtitle}
-          </div>
-        )}
-      </div>
-      {/* Postpone (solo task) */}
-      {isTask && onPostpone && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onPostpone?.();
-          }}
-          title="Sposta a domani"
-          style={{
-            border: "none",
-            background: TH.tealPale,
-            color: TH.tealDark,
-            width: 28,
-            height: 28,
-            borderRadius: 7,
-            cursor: "pointer",
-            fontSize: 11,
-            fontWeight: 900,
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          →
-        </button>
-      )}
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════
-// WIDGET: FATTURE (app dentro app)
-// Tab: Scadute / In scadenza / Regolari
-// Azioni: Sollecita WhatsApp, Marca incassata, Crea veloce
-// ═══════════════════════════════════════════════════════════
-interface FattureProps {
-  data: {
-    fattureDB?: any[];
-    cantieri?: any[];
-  };
-  nav: any;
-  onMarkPagata?: (id: string) => void;
-}
-
-export function WidgetFattureDense({ data, nav, onMarkPagata }: FattureProps) {
-  const [tab, setTab] = useState<"scadute" | "scadenza" | "tutte">("scadute");
-  const fatture = data.fattureDB || [];
-  const cantieri = data.cantieri || [];
-  const today = todayISO();
-
-  const { scadute, inScadenza, regolari, totScadute, totScadenza, totRegolari } = useMemo(() => {
-    const d7 = new Date();
-    d7.setDate(d7.getDate() + 7);
-    const d7ISO = isoDateOnly(d7);
-
-    const scadute: any[] = [];
-    const inScadenza: any[] = [];
-    const regolari: any[] = [];
-
-    fatture.forEach((f: any) => {
-      if (f.pagata) return;
-      const dataScad = pick(f, "scadenza", "dataScadenza", "data_scadenza");
-      const importo = Number(pick(f, "importo", "totale")) || 0;
-      if (!dataScad) {
-        regolari.push({ ...f, importo });
-        return;
-      }
-      if (dataScad < today) scadute.push({ ...f, importo, dataScad });
-      else if (dataScad <= d7ISO) inScadenza.push({ ...f, importo, dataScad });
-      else regolari.push({ ...f, importo, dataScad });
-    });
-
-    // Ordina scadute per giorni di ritardo decrescente
-    scadute.sort((a, b) => (a.dataScad || "").localeCompare(b.dataScad || ""));
-    inScadenza.sort((a, b) => (a.dataScad || "").localeCompare(b.dataScad || ""));
-
-    return {
-      scadute,
-      inScadenza,
-      regolari,
-      totScadute: scadute.reduce((s, f) => s + f.importo, 0),
-      totScadenza: inScadenza.reduce((s, f) => s + f.importo, 0),
-      totRegolari: regolari.reduce((s, f) => s + f.importo, 0),
-    };
-  }, [fatture, today]);
-
-  const totGenerale = totScadute + totScadenza + totRegolari;
-
-  const currentList =
-    tab === "scadute" ? scadute : tab === "scadenza" ? inScadenza : [...scadute, ...inScadenza, ...regolari];
-
-  const findCantiere = (f: any) => {
-    const cmId = pick(f, "cmId", "commessa_id", "cm");
-    return cantieri.find((c: any) => c.id === cmId);
-  };
-
-  return (
-    <div>
-      {/* Totale grande */}
-      <div
-        style={{
-          background: "linear-gradient(145deg, #FFFFFF, #F5FBFB)",
-          borderRadius: 12,
-          padding: "12px 14px",
-          marginBottom: 10,
-          border: `1px solid ${TH.borderSolid}`,
-          boxShadow: "0 2px 8px rgba(31,120,120,0.08)",
-        }}
-      >
-        <div style={{ fontSize: 9, fontWeight: 900, color: TH.sub, letterSpacing: "1px" }}>
-          DA INCASSARE
-        </div>
-        <div
-          style={{
-            fontSize: 24,
-            fontWeight: 900,
-            color: TH.ink,
-            letterSpacing: "-0.5px",
-            marginTop: 2,
-            fontVariantNumeric: "tabular-nums" as any,
-          }}
-        >
-          {eur(totGenerale)}
-        </div>
-        <div style={{ fontSize: 11, color: TH.sub, marginTop: 3, fontWeight: 600 }}>
-          {fatture.filter((f: any) => !f.pagata).length} fatture attive ·{" "}
-          {scadute.length > 0 && (
-            <span style={{ color: TH.red, fontWeight: 800 }}>
-              {scadute.length} scadute
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          padding: 4,
-          background: TH.tealPale,
-          borderRadius: 10,
-          marginBottom: 10,
-        }}
-      >
-        {([
-          ["scadute", `Scadute ${scadute.length}`, TH.red],
-          ["scadenza", `7gg ${inScadenza.length}`, TH.amber],
-          ["tutte", `Tutte ${scadute.length + inScadenza.length + regolari.length}`, TH.teal],
-        ] as Array<[any, string, string]>).map(([k, lbl, col]) => (
-          <button
-            key={k}
-            onClick={() => setTab(k)}
-            style={{
-              flex: 1,
-              padding: "7px 4px",
-              borderRadius: 7,
-              border: "none",
-              background: tab === k ? "#fff" : "transparent",
-              color: tab === k ? col : TH.sub,
-              fontSize: 10,
-              fontWeight: 800,
-              cursor: "pointer",
-              boxShadow: tab === k ? "0 2px 4px rgba(0,0,0,0.08)" : "none",
-              letterSpacing: "0.2px",
-              fontFamily: "inherit",
-            }}
-          >
-            {lbl}
-          </button>
-        ))}
-      </div>
-
-      {/* Lista */}
-      {currentList.length === 0 ? (
-        <EmptyState
-          msg={
-            tab === "scadute"
-              ? "Nessuna fattura scaduta 🎉"
-              : tab === "scadenza"
-              ? "Nessuna fattura in scadenza"
-              : "Nessuna fattura"
-          }
-        />
-      ) : (
-        <div style={{ maxHeight: 280, overflowY: "auto" as any }}>
-          {currentList.slice(0, 8).map((f: any, i: number) => {
-            const cm = findCantiere(f);
-            const gg =
-              f.dataScad
-                ? Math.floor((new Date(f.dataScad).getTime() - new Date(today).getTime()) / 86400000)
-                : null;
-            const isScaduta = gg !== null && gg < 0;
-            const cliente = cm ? clienteOf(cm) : pick(f, "cliente", "descrizione") || "—";
-            const tel = cm ? pick(cm, "telefono") : null;
-
-            return (
-              <div
-                key={f.id || i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 2px",
-                  borderBottom: `1px solid ${TH.border}`,
-                }}
-              >
-                <div
-                  style={{
-                    width: 3,
-                    alignSelf: "stretch",
-                    background: isScaduta ? TH.red : gg !== null && gg <= 7 ? TH.amber : TH.green,
-                    borderRadius: 2,
-                    minHeight: 34,
-                    flexShrink: 0,
-                  }}
-                />
-                <div
-                  onClick={() => (cm ? nav?.openCM?.(cm) : nav?.goto?.("contabilita"))}
-                  style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
-                >
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: TH.ink,
-                      whiteSpace: "nowrap" as any,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {cliente}
-                  </div>
-                  <div style={{ fontSize: 10, color: TH.sub, marginTop: 1 }}>
-                    {f.numero && `N. ${f.numero} · `}
-                    {isScaduta && (
-                      <span style={{ color: TH.red, fontWeight: 800 }}>
-                        {Math.abs(gg!)}gg ritardo
-                      </span>
-                    )}
-                    {!isScaduta && gg !== null && gg <= 7 && (
-                      <span style={{ color: TH.amberDeep, fontWeight: 800 }}>
-                        scade in {gg}gg
-                      </span>
-                    )}
-                    {!isScaduta && (gg === null || gg > 7) && f.dataScad && (
-                      <span>scadenza {fmtRelDate(f.dataScad)}</span>
-                    )}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 900,
-                    color: TH.ink,
-                    fontVariantNumeric: "tabular-nums" as any,
-                    flexShrink: 0,
-                  }}
-                >
-                  {eur(f.importo)}
-                </div>
-                {tel && (
-                  <a
-                    href={waLink(
-                      tel,
-                      `Ciao ${cliente}, le scrivo per ricordarti della fattura ${f.numero ? "n. " + f.numero : ""} di ${eur(f.importo)} in scadenza. Grazie!`
-                    )}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    title="Sollecita via WhatsApp"
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: 8,
-                      background: "linear-gradient(145deg, #8BC443, #1A9E73)",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textDecoration: "none",
-                      flexShrink: 0,
-                      boxShadow: "0 2px 6px rgba(26,158,115,0.3)",
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff">
-                      <path d="M20.5 3.5a11.84 11.84 0 00-16.74.06 11.66 11.66 0 00-1.84 14.4L1 23l5.27-1.37a11.95 11.95 0 005.68 1.44 11.83 11.83 0 008.55-3.47 11.75 11.75 0 000-16.1zm-8.55 18.14a9.76 9.76 0 01-4.94-1.34l-.35-.2-3.6.94.97-3.49-.23-.36a9.76 9.76 0 1117.93-5.36 9.66 9.66 0 01-9.78 9.81zm5.37-7.3l-2-.59a.83.83 0 00-.83.2l-.5.6c-.2.25-.4.28-.72.12a8.16 8.16 0 01-2.42-1.5 8.77 8.77 0 01-1.7-2.1c-.17-.32-.02-.48.15-.64l.5-.6a.71.71 0 00.13-.87l-.84-1.96c-.22-.53-.49-.45-.68-.45h-.58a1.1 1.1 0 00-.8.38 3.37 3.37 0 00-1.06 2.5 5.83 5.83 0 001.23 3.1 13.43 13.43 0 005.23 4.6c3.05 1.25 3.05.82 3.6.77a3 3 0 002-1.41 2.48 2.48 0 00.17-1.41c-.08-.14-.3-.2-.58-.38z" />
-                    </svg>
-                  </a>
-                )}
-              </div>
-            );
-          })}
-          {currentList.length > 8 && (
-            <div
-              onClick={() => nav?.goto?.("contabilita")}
-              style={{
-                padding: "10px 2px",
-                fontSize: 11,
-                fontWeight: 700,
-                color: TH.tealDark,
-                textAlign: "center" as any,
-                cursor: "pointer",
-                borderTop: `1px dashed ${TH.border}`,
-              }}
-            >
-              + altre {currentList.length - 8} in contabilità →
+    case "produzione": {
+      const aperti = problemi.filter((p: any) => p?.stato !== "risolto" && p?.stato !== "chiuso");
+      if (aperti.length === 0) return <Empty msg="Nessun problema attivo" />;
+      return aperti.slice(0, 4).map((p: any, i: number) => {
+        const u = p?.priorita === "alta" || p?.priorita === "urgente";
+        return (
+          <Row key={p.id || i} last={i === Math.min(aperti.length, 4) - 1} onClick={() => nav?.openProblema?.(p)}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: u ? RED : AMBER, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.titolo || p.descrizione}</div>
+              <div style={{ fontSize: 11, color: SUB }}>{p.cm_code || ""}</div>
             </div>
-          )}
+            {u && <Badge text="URGENTE" bg={RED} fg="#fff" />}
+          </Row>
+        );
+      });
+    }
+
+    case "fatture_incassare": {
+      const aperte = fattureDB.filter((f: any) => !fattPagata(f));
+      const tot = aperte.reduce((s: number, f: any) => s + fattImporto(f), 0);
+      if (tot === 0) return <Empty msg="Nessuna fattura aperta" />;
+      return (
+        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{aperte.length} fatture aperte</div>
         </div>
-      )}
+      );
+    }
 
-      {/* Footer */}
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <PrimaryButton onClick={() => nav?.goto?.("contabilita")}>Apri contabilità →</PrimaryButton>
-      </div>
-    </div>
-  );
-}
+    case "fatture_scadute": {
+      const scad = fattureDB.filter((f: any) => {
+        const s = fattScadenza(f);
+        return !fattPagata(f) && s && s < td;
+      });
+      if (scad.length === 0) return <Empty msg="Tutto regolare" />;
+      return scad.slice(0, 4).map((f: any, i: number) => (
+        <Row key={f.id || i} last={i === Math.min(scad.length, 4) - 1} onClick={() => nav?.goto?.("contabilita")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>€ {Math.round(fattImporto(f)).toLocaleString("it-IT")}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{fattCliente(f)}</div>
+          </div>
+          <Badge text="SCADUTA" bg={RED} fg="#fff" />
+        </Row>
+      ));
+    }
 
-// ═══════════════════════════════════════════════════════════
-// WIDGET: SQUADRA (app dentro app)
-// Operatori + stato live + azioni (chiama, WhatsApp, scheda)
-// ═══════════════════════════════════════════════════════════
-interface SquadraProps {
-  data: {
-    team?: any[];
-    cantieri?: any[];
-    tasks?: any[];
-  };
-  nav: any;
-}
+    case "eventi_oggi": {
+      // DB: data (date), ora (text HH:MM), tipo, persona, titolo, indirizzo
+      const oggi = events.filter((e: any) => {
+        const d = pick(e, "data", "date");
+        const st = e?.start_time;
+        const done = e?.completato || e?.annullato;
+        return !done && (d === td || (st || "").startsWith(td));
+      });
+      if (oggi.length === 0) return <Empty msg="Nessun evento oggi" />;
 
-export function WidgetSquadraDense({ data, nav }: SquadraProps) {
-  const [filter, setFilter] = useState<"tutti" | "cantiere" | "libero">("tutti");
-  const team = data.team || [];
-  const cantieri = data.cantieri || [];
-  const tasks = data.tasks || [];
-  const today = todayISO();
-
-  const operatori = useMemo(() => {
-    return team.map((op: any) => {
-      // Trova cantiere assegnato oggi
-      const assegnato = cantieri.find((c: any) => {
-        const ev = (c.eventi || []).find((e: any) => e.operatoreId === op.id && pick(e, "date", "data") === today);
-        return !!ev;
+      oggi.sort((a: any, b: any) => {
+        const ta = pick(a, "ora", "time") || (a?.start_time || "").slice(11, 16) || "99:99";
+        const tb = pick(b, "ora", "time") || (b?.start_time || "").slice(11, 16) || "99:99";
+        return ta.localeCompare(tb);
       });
 
-      // Task aperti oggi
-      const taskAperti = tasks.filter(
-        (t: any) => !t.done && (pick(t, "persona", "assegnato") === op.nome || t.personaId === op.id)
+      return oggi.slice(0, 5).map((e: any, i: number) => {
+        const ora = pick(e, "ora", "time") || (e?.start_time || "").slice(11, 16) || "—";
+        const tipo = (pick(e, "tipo", "event_type", "type") || "").toUpperCase();
+        const titolo = pick(e, "titolo", "title", "text");
+        const persona = pick(e, "persona", "client_name", "cliente");
+        const addr = pick(e, "indirizzo", "address", "addr");
+        const col = e?.colore || faseColor(tipo);
+        return (
+          <Row key={e.id || i} last={i === Math.min(oggi.length, 5) - 1} onClick={() => nav?.openEvent?.(e)}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 46, flexShrink: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: TEAL_DARK, lineHeight: 1 }}>{ora}</div>
+              {tipo && <div style={{ fontSize: 8, fontWeight: 700, color: col, marginTop: 3, letterSpacing: "0.3px" }}>{tipo.slice(0, 7)}</div>}
+            </div>
+            <div style={{ width: 3, height: 32, borderRadius: 2, background: col, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {titolo || persona || "Evento"}
+              </div>
+              <div style={{ fontSize: 11, color: SUB, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {addr ? addr : persona || ""}
+              </div>
+            </div>
+          </Row>
+        );
+      });
+    }
+
+    case "messaggi_non_letti": {
+      const nuovi = msgs.filter((m: any) => !m?.letto && !m?.read);
+      if (nuovi.length === 0) return <Empty msg="Nessun messaggio nuovo" />;
+      return nuovi.slice(0, 4).map((m: any, i: number) => (
+        <Row key={m.id || i} last={i === Math.min(nuovi.length, 4) - 1} onClick={() => nav?.openMsg?.(m)}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: TEAL, flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{pick(m, "da", "mittente", "sender") || "—"}</div>
+            <div style={{ fontSize: 11, color: SUB, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pick(m, "text", "anteprima", "contenuto") || ""}</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "commesse_ritardo": {
+      // Usa campo DB: ferma = true con ferma_dal
+      const r = cantieri.filter((c: any) => c?.ferma === true && c?.ferma_dal);
+      if (r.length === 0) return <Empty msg="Tutto in orario" />;
+      return r.slice(0, 4).map((c: any, i: number) => {
+        const gg = daysSince(c.ferma_dal);
+        return (
+          <Row key={c.id || i} last={i === Math.min(r.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
+              <div style={{ fontSize: 11, color: SUB }}>{c?.motivo_ferma || "ferma"} da {gg}gg</div>
+            </div>
+            <Badge text="FERMA" bg={RED} fg="#fff" />
+          </Row>
+        );
+      });
+    }
+
+    case "lavori_in_corso": {
+      // Esclude fasi di chiusura
+      const a = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        return c?.fase && !f.includes("chius") && !f.includes("consegn") && !f.includes("archivi");
+      });
+      if (a.length === 0) return <Empty msg="Nessun lavoro attivo" />;
+
+      // Ordina per "più fermi in cima" usando fase_start o ultimo avanzamento
+      a.sort((x: any, y: any) => daysSince(lastCMActivity(y)) - daysSince(lastCMActivity(x)));
+
+      return a.slice(0, 5).map((c: any, i: number) => {
+        const fase = c.fase || "—";
+        const col = faseColor(fase);
+        const cliente = clienteCM(c);
+        const valore = valoreCM(c);
+        const gg = daysSince(lastCMActivity(c));
+        const fermo = c?.ferma === true || gg >= 7;
+        return (
+          <Row key={c.id || i} last={i === Math.min(a.length, 5) - 1} onClick={() => nav?.openCM?.(c)}>
+            <div style={{ width: 4, height: 36, borderRadius: 2, background: col, flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                  {c.code || ""} · {cliente}
+                </div>
+                {valore > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: TEAL_DARK, flexShrink: 0 }}>{eur(valore)}</div>}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.3px" }}>{fase}</span>
+                <span style={{ fontSize: 10, color: SUB }}>·</span>
+                <span style={{ fontSize: 10, color: fermo ? RED : SUB, fontWeight: fermo ? 700 : 500 }}>
+                  {gg === 0 ? "oggi" : `${gg}gg`}
+                </span>
+              </div>
+            </div>
+            {c?.ferma === true
+              ? <Badge text="FERMA" bg={RED} fg="#fff" />
+              : (gg >= 7 ? <Badge text="FERMO" bg={AMBER} fg="#fff" /> : null)}
+          </Row>
+        );
+      });
+    }
+
+    case "preventivi_scadenza": {
+      const prev = cantieri.filter((c: any) => (c?.fase || "").toLowerCase() === "preventivo");
+      // Scadenza basata su preventivo_inviato_at + 30gg (tipica validità)
+      const inScad = prev.filter((c: any) => {
+        if (!c?.preventivo_inviato_at) return false;
+        const gg = daysSince(c.preventivo_inviato_at);
+        return gg >= 20 && gg < 30;
+      });
+      const list = inScad.length > 0 ? inScad : prev.slice(0, 5);
+      if (list.length === 0) return <Empty msg="Nessun preventivo in scadenza" />;
+      return list.slice(0, 4).map((c: any, i: number) => {
+        const gg = c?.preventivo_inviato_at ? daysSince(c.preventivo_inviato_at) : null;
+        return (
+          <Row key={c.id || i} last={i === Math.min(list.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
+              <div style={{ fontSize: 11, color: SUB }}>{gg !== null ? `inviato ${gg}gg fa` : "da inviare"}</div>
+            </div>
+            {gg !== null && gg >= 20 && <Badge text="SCAD" bg={AMBER} fg="#fff" />}
+          </Row>
+        );
+      });
+    }
+
+    case "preventivi_da_inviare": {
+      const bozze = cantieri.filter((c: any) =>
+        (c?.fase || "").toLowerCase() === "preventivo" && !c?.preventivo_inviato_at
       );
-      const taskOggi = taskAperti.filter(
-        (t: any) => pick(t, "date", "data_scadenza", "scadenza") === today
-      );
+      if (bozze.length === 0) return <Empty msg="Nessuna bozza in attesa" />;
+      return bozze.slice(0, 4).map((c: any, i: number) => (
+        <Row key={c.id || i} last={i === Math.min(bozze.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{eur(valoreCM(c))} · da inviare</div>
+          </div>
+        </Row>
+      ));
+    }
 
-      const stato = assegnato ? "cantiere" : op.stato === "ferie" ? "ferie" : op.stato === "malato" ? "malato" : "libero";
+    case "rilievi_da_confermare": {
+      const r = cantieri.filter((c: any) => {
+        const f = (c?.fase || "").toLowerCase();
+        return (f === "rilievo" || f === "sopralluogo") && !c?.rilievoConfermato;
+      });
+      if (r.length === 0) return <Empty msg="Nessun rilievo in attesa" />;
+      return r.slice(0, 4).map((c: any, i: number) => (
+        <Row key={c.id || i} last={i === Math.min(r.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
+            <div style={{ fontSize: 11, color: SUB }}>Rilievo da confermare</div>
+          </div>
+        </Row>
+      ));
+    }
 
-      return {
-        ...op,
-        stato,
-        assegnato,
-        taskAperti: taskAperti.length,
-        taskOggi: taskOggi.length,
-      };
-    });
-  }, [team, cantieri, tasks, today]);
+    case "prossime_consegne": {
+      const d7 = data?._d7 || td;
+      const c7 = cantieri.filter((c: any) => c?.consegnaPrevista && c.consegnaPrevista >= td && c.consegnaPrevista <= d7);
+      if (c7.length === 0) return <Empty msg="Nessuna consegna nei 7gg" />;
+      return c7.slice(0, 4).map((c: any, i: number) => (
+        <Row key={c.id || i} last={i === Math.min(c7.length, 4) - 1} onClick={() => nav?.openCM?.(c)}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.code} · {clienteCM(c)}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{c.consegnaPrevista}</div>
+          </div>
+        </Row>
+      ));
+    }
 
-  const counts = useMemo(
-    () => ({
-      tutti: operatori.length,
-      cantiere: operatori.filter((o: any) => o.stato === "cantiere").length,
-      libero: operatori.filter((o: any) => o.stato === "libero").length,
-      assente: operatori.filter((o: any) => o.stato === "ferie" || o.stato === "malato").length,
-    }),
-    [operatori]
-  );
+    case "pipeline_commesse": {
+      const fasi: Record<string, { count: number; val: number }> = {};
+      cantieri.forEach((c: any) => {
+        const f = c?.fase || "—";
+        if (!fasi[f]) fasi[f] = { count: 0, val: 0 };
+        fasi[f].count += 1;
+        fasi[f].val += valoreCM(c);
+      });
+      const keys = Object.keys(fasi);
+      if (keys.length === 0) return <Empty msg="Nessuna commessa in pipeline" />;
 
-  const currentList =
-    filter === "cantiere"
-      ? operatori.filter((o: any) => o.stato === "cantiere")
-      : filter === "libero"
-      ? operatori.filter((o: any) => o.stato === "libero")
-      : operatori;
+      const order = ["rilievo", "sopralluogo", "preventivo", "conferma", "ordine", "produzione", "posa", "montaggio", "collaudo", "consegna", "fattura", "saldo", "chiusura"];
+      keys.sort((a, b) => {
+        const ia = order.findIndex(o => a.toLowerCase().includes(o));
+        const ib = order.findIndex(o => b.toLowerCase().includes(o));
+        if (ia === -1 && ib === -1) return fasi[b].count - fasi[a].count;
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
 
-  const statoPill = (stato: string) => {
-    if (stato === "cantiere") return { bg: TH.greenPale, fg: TH.greenDeep, label: "In cantiere" };
-    if (stato === "libero") return { bg: TH.tealPale, fg: TH.tealDark, label: "Libero" };
-    if (stato === "ferie") return { bg: "rgba(123,107,165,0.15)", fg: TH.purple, label: "Ferie" };
-    if (stato === "malato") return { bg: TH.amberPale, fg: TH.amberDeep, label: "Malato" };
-    return { bg: TH.tealPale, fg: TH.sub, label: stato };
-  };
+      const maxCount = Math.max(...keys.map(k => fasi[k].count));
+      const totVal = keys.reduce((s, k) => s + fasi[k].val, 0);
 
-  const initials = (nome: string) =>
-    nome.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
-
-  return (
-    <div>
-      {/* KPI header */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 6,
-          marginBottom: 10,
-        }}
-      >
-        <KpiBox label="IN CANTIERE" value={counts.cantiere.toString()} color={TH.greenDeep} />
-        <KpiBox label="LIBERI" value={counts.libero.toString()} color={TH.teal} />
-        <KpiBox label="ASSENTI" value={counts.assente.toString()} color={TH.subLight} />
-      </div>
-
-      {/* Filtri */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          padding: 4,
-          background: TH.tealPale,
-          borderRadius: 10,
-          marginBottom: 10,
-        }}
-      >
-        {([
-          ["tutti", `Tutti ${counts.tutti}`],
-          ["cantiere", `In cantiere ${counts.cantiere}`],
-          ["libero", `Liberi ${counts.libero}`],
-        ] as Array<[any, string]>).map(([k, lbl]) => (
-          <button
-            key={k}
-            onClick={() => setFilter(k)}
-            style={{
-              flex: 1,
-              padding: "7px 4px",
-              borderRadius: 7,
-              border: "none",
-              background: filter === k ? "#fff" : "transparent",
-              color: filter === k ? TH.tealDark : TH.sub,
-              fontSize: 10,
-              fontWeight: 800,
-              cursor: "pointer",
-              boxShadow: filter === k ? "0 2px 4px rgba(0,0,0,0.08)" : "none",
-              letterSpacing: "0.2px",
-              fontFamily: "inherit",
-            }}
-          >
-            {lbl}
-          </button>
-        ))}
-      </div>
-
-      {/* Lista operatori */}
-      {currentList.length === 0 ? (
-        <EmptyState msg="Nessun operatore in questa categoria" />
-      ) : (
-        <div style={{ maxHeight: 280, overflowY: "auto" as any }}>
-          {currentList.map((op: any) => {
-            const pill = statoPill(op.stato);
+      return (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "2px 0 6px", borderBottom: "1px solid rgba(40,160,160,0.1)", marginBottom: 4 }}>
+            <span style={{ fontSize: 11, color: SUB, fontWeight: 600 }}>Totale pipeline</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: TEAL_DARK }}>{eur(totVal)}</span>
+          </div>
+          {keys.slice(0, 6).map((f, i) => {
+            const d = fasi[f];
+            const pct = maxCount > 0 ? (d.count / maxCount) * 100 : 0;
+            const col = faseColor(f);
             return (
-              <div
-                key={op.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 2px",
-                  borderBottom: `1px solid ${TH.border}`,
-                }}
-              >
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 10,
-                    background:
-                      op.colore ||
-                      "linear-gradient(145deg, #5FD0D0, #1A7A7A)",
-                    color: "#fff",
-                    fontSize: 12,
-                    fontWeight: 800,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 2px 6px rgba(13,31,31,0.15)",
-                  }}
-                >
-                  {initials(op.nome || "?")}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: TH.ink,
-                      whiteSpace: "nowrap" as any,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {op.nome}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
-                    <span
-                      style={{
-                        fontSize: 8,
-                        fontWeight: 900,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        background: pill.bg,
-                        color: pill.fg,
-                        letterSpacing: "0.3px",
-                        textTransform: "uppercase" as any,
-                      }}
-                    >
-                      {pill.label}
-                    </span>
-                    {op.stato === "cantiere" && op.assegnato && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          color: TH.sub,
-                          fontWeight: 600,
-                          whiteSpace: "nowrap" as any,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        → {clienteOf(op.assegnato)}
-                      </span>
-                    )}
-                    {op.taskOggi > 0 && (
-                      <span style={{ fontSize: 9, color: TH.amberDeep, fontWeight: 700 }}>
-                        · {op.taskOggi} task
-                      </span>
-                    )}
+              <div key={f} onClick={() => nav?.goto?.("commesse")} style={{ padding: "7px 2px", cursor: "pointer", borderBottom: i === Math.min(keys.length, 6) - 1 ? "none" : "1px solid rgba(40,160,160,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: DARK, textTransform: "capitalize" }}>{f}</span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    {d.val > 0 && <span style={{ fontSize: 10, color: SUB, fontWeight: 600 }}>{eur(d.val)}</span>}
+                    <span style={{ fontSize: 14, fontWeight: 900, color: col }}>{d.count}</span>
                   </div>
                 </div>
-                {/* Azioni rapide */}
-                {op.telefono && (
-                  <>
-                    <a
-                      href={`tel:${telClean(op.telefono)}`}
-                      onClick={(e) => e.stopPropagation()}
-                      title="Chiama"
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 8,
-                        background: TH.tealPale,
-                        color: TH.tealDark,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        textDecoration: "none",
-                      }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TH.tealDark} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.8 19.8 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
-                      </svg>
-                    </a>
-                    <a
-                      href={waLink(op.telefono, `Ciao ${op.nome}, `)}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      title="WhatsApp"
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 8,
-                        background: "linear-gradient(145deg, #8BC443, #1A9E73)",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        textDecoration: "none",
-                      }}
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff">
-                        <path d="M20.5 3.5a11.84 11.84 0 00-16.74.06 11.66 11.66 0 00-1.84 14.4L1 23l5.27-1.37a11.95 11.95 0 005.68 1.44 11.83 11.83 0 008.55-3.47 11.75 11.75 0 000-16.1z" />
-                      </svg>
-                    </a>
-                  </>
-                )}
+                <div style={{ height: 4, background: "rgba(40,160,160,0.08)", borderRadius: 2, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: col, borderRadius: 2, transition: "width 0.3s" }} />
+                </div>
               </div>
             );
           })}
-        </div>
-      )}
+        </>
+      );
+    }
 
-      {/* Footer */}
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <PrimaryButton onClick={() => nav?.goto?.("team")}>Apri team →</PrimaryButton>
-      </div>
-    </div>
-  );
+    case "ordini_attesa": {
+      const ord = data?.ordiniFornDB || [];
+      const attesa = ord.filter((o: any) => o?.stato === "attesa" || o?.stato === "bozza" || !o?.confermato);
+      if (attesa.length === 0) return <Empty msg="Nessun ordine in attesa" />;
+      return attesa.slice(0, 4).map((o: any, i: number) => (
+        <Row key={o.id || i} last={i === Math.min(attesa.length, 4) - 1} onClick={() => nav?.goto?.("ordini")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{o.fornitore || o.ragione_sociale}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{o.numero || o.id}</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "ordini_settimana": {
+      const d7 = data?._d7 || td;
+      const ord = data?.ordiniFornDB || [];
+      const sett = ord.filter((o: any) => o?.consegnaPrevista && o.consegnaPrevista >= td && o.consegnaPrevista <= d7);
+      if (sett.length === 0) return <Empty msg="Nessuna consegna nei 7gg" />;
+      return sett.slice(0, 4).map((o: any, i: number) => (
+        <Row key={o.id || i} last={i === Math.min(sett.length, 4) - 1} onClick={() => nav?.goto?.("ordini")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{o.fornitore}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{o.consegnaPrevista}</div>
+          </div>
+        </Row>
+      ));
+    }
+
+    case "spese_mese": {
+      const spese = data?.spese || [];
+      const mese = td.slice(0, 7);
+      const m = spese.filter((s: any) => (s?.data || s?.date || s?.data_emissione || "").startsWith(mese));
+      const tot = m.reduce((acc: number, s: any) => acc + (Number(s?.importo || s?.totale) || 0), 0);
+      if (tot === 0) return <Empty msg="Nessuna spesa registrata" />;
+      return (
+        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{m.length} spese nel mese</div>
+        </div>
+      );
+    }
+
+    case "fatturato_mese": {
+      const mese = td.slice(0, 7);
+      const pag = fattureDB.filter((f: any) => {
+        const dataE = pick(f, "data_emissione", "data");
+        return fattPagata(f) && (dataE || "").startsWith(mese);
+      });
+      const tot = pag.reduce((s: number, f: any) => s + fattImporto(f), 0);
+      if (tot === 0) return <Empty msg="Nessun incasso nel mese" />;
+      return (
+        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: DARK, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{pag.length} fatture incassate</div>
+        </div>
+      );
+    }
+
+    case "pagamenti_arrivo": {
+      const d7 = data?._d7 || td;
+      const att = fattureDB.filter((f: any) => {
+        const s = fattScadenza(f);
+        return !fattPagata(f) && s && s >= td && s <= d7;
+      });
+      if (att.length === 0) return <Empty msg="Nessun pagamento atteso" />;
+      const tot = att.reduce((s: number, f: any) => s + fattImporto(f), 0);
+      return (
+        <div onClick={() => nav?.goto?.("contabilita")} style={{ cursor: "pointer", padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: GREEN, letterSpacing: "-0.5px" }}>€ {Math.round(tot).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{att.length} fatture in arrivo entro 7gg</div>
+        </div>
+      );
+    }
+
+    case "margine_medio": {
+      const chiuse = cantieri.filter((c: any) => {
+        const tot = valoreCM(c);
+        const costo = Number(pick(c, "costoTotale", "costo_totale")) || 0;
+        return tot > 0 && costo > 0;
+      });
+      if (chiuse.length === 0) return <Empty msg="Dati margine non disponibili" />;
+      const margini = chiuse.map((c: any) => {
+        const tot = valoreCM(c);
+        const costo = Number(pick(c, "costoTotale", "costo_totale")) || 0;
+        return ((tot - costo) / tot) * 100;
+      });
+      const avg = margini.reduce((s: number, m: number) => s + m, 0) / margini.length;
+      return (
+        <div style={{ padding: "4px 0" }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: DARK }}>{avg.toFixed(1)}%</div>
+          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>Su {chiuse.length} commesse</div>
+        </div>
+      );
+    }
+
+    case "clienti_insolventi": {
+      const scad = fattureDB.filter((f: any) => {
+        const s = fattScadenza(f);
+        return !fattPagata(f) && s && s < td;
+      });
+      const perCli: Record<string, { cli: string; count: number; tot: number }> = {};
+      scad.forEach((f: any) => {
+        const k = fattCliente(f);
+        if (!perCli[k]) perCli[k] = { cli: k, count: 0, tot: 0 };
+        perCli[k].count += 1;
+        perCli[k].tot += fattImporto(f);
+      });
+      const list = Object.values(perCli).sort((a: any, b: any) => b.tot - a.tot);
+      if (list.length === 0) return <Empty msg="Nessun cliente insolvente" />;
+      return list.slice(0, 4).map((c: any, i: number) => (
+        <Row key={i} last={i === Math.min(list.length, 4) - 1} onClick={() => nav?.goto?.("contabilita")}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK }}>{c.cli}</div>
+            <div style={{ fontSize: 11, color: SUB }}>{c.count} fatture scadute</div>
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 900, color: RED }}>€ {Math.round(c.tot).toLocaleString("it-IT")}</div>
+        </Row>
+      ));
+    }
+
+    case "top_clienti": {
+      const perCli: Record<string, { cli: string; tot: number }> = {};
+      fattureDB.filter((f: any) => fattPagata(f)).forEach((f: any) => {
+        const k = fattCliente(f);
+        if (!perCli[k]) perCli[k] = { cli: k, tot: 0 };
+        perCli[k].tot += fattImporto(f);
+      });
+      const list = Object.values(perCli).sort((a: any, b: any) => b.tot - a.tot).slice(0, 5);
+      if (list.length === 0) return <Empty msg="Nessun dato clienti" />;
+      return list.map((c: any, i: number) => (
+        <Row key={i} last={i === list.length - 1}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: TEAL_DARK, width: 20, flexShrink: 0 }}>{i + 1}°</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: DARK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.cli}</div>
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 900, color: GREEN }}>€ {Math.round(c.tot).toLocaleString("it-IT")}</div>
+        </Row>
+      ));
+    }
+
+    case "iva_versare": {
+      const mese = parseInt(td.slice(5, 7), 10);
+      const trimStart = mese <= 3 ? "01" : mese <= 6 ? "04" : mese <= 9 ? "07" : "10";
+      const yr = td.slice(0, 4);
+      const trimPrefix = yr + "-" + trimStart.padStart(2, "0");
+      const ric = fattureDB
+        .filter((f: any) => fattPagata(f) && (pick(f, "data_emissione", "data") || "") >= trimPrefix)
+        .reduce((s: number, f: any) => s + fattImporto(f), 0);
+      const ivaStimata = ric * 0.22 / 1.22;
+      if (ric === 0) return <Empty msg="Nessun dato per calcolo IVA" />;
+      return (
+        <div style={{ padding: "4px 0" }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: DARK }}>€ {Math.round(ivaStimata).toLocaleString("it-IT")}</div>
+          <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>Stima trimestre corrente</div>
+        </div>
+      );
+    }
+    default:
+      return <Empty msg="In arrivo nei prossimi aggiornamenti" />;
+  }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Sotto-componenti condivisi
-// ═══════════════════════════════════════════════════════════
-const KpiBox = ({ label, value, color }: any) => (
-  <div
-    style={{
-      padding: "8px 6px",
-      borderRadius: 10,
-      background: "linear-gradient(155deg, #FFFFFF, #F5FBFB)",
-      border: `1px solid ${TH.borderSolid}`,
-      textAlign: "center" as any,
-    }}
-  >
-    <div style={{ fontSize: 8, fontWeight: 900, color: TH.sub, letterSpacing: "0.5px" }}>
-      {label}
-    </div>
-    <div
-      style={{
-        fontSize: 16,
-        fontWeight: 900,
-        color,
-        marginTop: 2,
-        letterSpacing: "-0.3px",
-        fontVariantNumeric: "tabular-nums" as any,
-      }}
-    >
-      {value}
-    </div>
-  </div>
-);
-
-const EmptyState = ({ msg }: { msg: string }) => (
-  <div
-    style={{
-      padding: "24px 12px",
-      textAlign: "center" as any,
-      fontSize: 12,
-      color: TH.sub,
-      fontWeight: 600,
-      background: TH.tealPale,
-      borderRadius: 10,
-    }}
-  >
-    {msg}
-  </div>
-);
-
-const PrimaryButton = ({ children, onClick }: any) => (
-  <button
-    onClick={onClick}
-    style={{
-      flex: 1,
-      padding: "9px 12px",
-      borderRadius: 10,
-      border: "none",
-      background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-      color: "#fff",
-      fontSize: 11,
-      fontWeight: 900,
-      cursor: "pointer",
-      letterSpacing: "0.3px",
-      boxShadow: "0 4px 10px rgba(31,120,120,0.3)",
-      fontFamily: "inherit",
-    }}
-  >
-    {children}
-  </button>
-);
-
-const GhostButton = ({ children, onClick }: any) => (
-  <button
-    onClick={onClick}
-    style={{
-      flex: 1,
-      padding: "9px 12px",
-      borderRadius: 10,
-      border: `1px solid ${TH.borderSolid}`,
-      background: "#fff",
-      color: TH.tealDark,
-      fontSize: 11,
-      fontWeight: 800,
-      cursor: "pointer",
-      letterSpacing: "0.3px",
-      fontFamily: "inherit",
-    }}
-  >
-    {children}
-  </button>
-);
-
-// ═══════════════════════════════════════════════════════════
-// ROUTER: mappa id widget → renderer denso (se disponibile)
-// ═══════════════════════════════════════════════════════════
-export const DENSE_WIDGETS: Record<string, React.ComponentType<any>> = {
-  eventi_oggi: WidgetAgendaDense,
-  prossimi_7gg: WidgetAgendaDense,
-  scadenze_importanti: WidgetAgendaDense,
-  oggi_devi_fare: WidgetOggiDense,
-  fatture_incassare: WidgetFattureDense,
-  fatture_scadute: WidgetFattureDense,
-  squadra: WidgetSquadraDense,
-  chi_libero: WidgetSquadraDense,
-};
-
-export function renderDenseWidget(id: string, data: any, nav: any, actions?: any): React.ReactNode | null {
-  const Cmp = DENSE_WIDGETS[id];
-  if (!Cmp) return null;
-  return <Cmp data={data} nav={nav} {...(actions || {})} />;
+export function renderWidgetBody(id: string, data: any, nav: any): React.ReactNode {
+  try {
+    return safeRender(id, data, nav);
+  } catch (e) {
+    console.warn("[widget]", id, "render failed", e);
+    return <Empty msg="Errore caricamento widget" />;
+  }
 }
