@@ -242,6 +242,7 @@ export default function CMDetailPanel() {
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
   const [azioniOpenV66, setAzioniOpenV66] = React.useState<boolean>(false);
+  const [cronOpenV67, setCronOpenV67] = React.useState<boolean>(false);
   React.useEffect(() => {
     if (!selectedCM) { setAutoPickDoneForCm(null); return; }
     if (selectedRilievo) return;
@@ -1313,7 +1314,8 @@ export default function CMDetailPanel() {
           </div>
         </div>
 
-        {/* Contact actions */}
+        {/* Contact actions - hide when selectedRilievo active (v67) */}
+        {!selectedRilievo && (
         <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
           {[
             { ico: ICO.phone, label: "Chiama",   col: T.grn,  act: () => window.location.href=`tel:${c.telefono || ""}` },
@@ -1326,6 +1328,7 @@ export default function CMDetailPanel() {
             </div>
           ))}
         </div>
+        )}
 
         {/* Banner rilievo info - modifica riparazione */}
         {r?.motivoModifica && (
@@ -1428,7 +1431,8 @@ export default function CMDetailPanel() {
 
           return (
             <div style={{ margin: "14px 16px 8px", padding: "18px 16px", background: "#fff", borderRadius: 16, border: "1px solid #E4F2F2", boxShadow: "0 2px 8px rgba(40,160,160,0.08)" }}>
-              {/* Stato lavoro header */}
+              {/* Stato lavoro header - hide when selectedRilievo (v67) */}
+              {!selectedRilievo && (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(40,160,160,0.3)" }}>
@@ -1438,7 +1442,9 @@ export default function CMDetailPanel() {
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 800, color: "#1A7A7A", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
-              {/* Progress dots con label */}
+              )}
+              {/* Progress dots con label - hide when selectedRilievo (v67) */}
+              {!selectedRilievo && (
               <div style={{ display: "flex", gap: 0, marginBottom: 14, marginTop: 4, justifyContent: "space-between", alignItems: "flex-start", padding: 0, width: "100%" }}>
                 {stepsCC.map((s, i) => (
                   <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 0, flex: "1 1 0", minWidth: 0 }}>
@@ -1456,6 +1462,7 @@ export default function CMDetailPanel() {
                   </div>
                 ))}
               </div>
+              )}
               {/* Mini-card Rilievo collassata — visibile quando fase > sopralluogo */}
               {curIdxCC > 0 && rilieviCC.length > 0 && (
                 <div onClick={() => { setPrevWorkspace(true); setPrevTab("sopralluogo"); }} style={{
@@ -1478,8 +1485,8 @@ export default function CMDetailPanel() {
                 </div>
               )}
 
-              {/* Current action */}
-              {curCC && (
+              {/* Current action - hide when selectedRilievo (v67) */}
+              {!selectedRilievo && curCC && (
                 <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: "14px 16px", boxShadow: "0 2px 12px rgba(40,160,160,0.08)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1935,6 +1942,109 @@ export default function CMDetailPanel() {
                                       </button>
                                     </div>
                                   )}
+
+                                  {/* CRONOLOGIA accordion v67 - come mockup v8 */}
+                                  {(() => {
+                                    const storicoCron = (c.storico || []) as any[];
+                                    const lastEvt = storicoCron[storicoCron.length - 1];
+                                    const lastTxt = lastEvt ? (lastEvt.quando || "poco fa") : "Adesso";
+                                    return (
+                                      <div>
+                                        <div onClick={(e) => { e.stopPropagation(); setCronOpenV67(v => !v); }} style={{
+                                          background: "#fff",
+                                          border: "1px solid rgba(200,228,228,0.4)",
+                                          borderRadius: cronOpenV67 ? "14px 14px 0 0" : 14,
+                                          borderBottomColor: cronOpenV67 ? "transparent" : "rgba(200,228,228,0.4)",
+                                          padding: "12px 14px",
+                                          display: "flex", alignItems: "center", gap: 12,
+                                          cursor: "pointer",
+                                          boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
+                                        }}>
+                                          <div style={{
+                                            width: 34, height: 34, borderRadius: 10,
+                                            background: "linear-gradient(145deg, rgba(127,119,221,0.18), rgba(29,158,117,0.12))",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            color: "#3C3489",
+                                            boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
+                                          }}>
+                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                          </div>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Cronologia</div>
+                                            <div style={{ fontSize: 10.5, color: T.sub, fontWeight: 600, marginTop: 2 }}>
+                                              {storicoCron.length > 0 ? `${storicoCron.length} eventi · ultima ${lastTxt}` : "1 evento · ultima Adesso"}
+                                            </div>
+                                          </div>
+                                          <div style={{
+                                            fontSize: 10, fontWeight: 900, color: "#3C3489",
+                                            background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(127,119,221,0.15))",
+                                            padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
+                                            border: "1px solid rgba(127,119,221,0.22)",
+                                          }}>{storicoCron.length || 1}</div>
+                                          <div style={{
+                                            width: 24, height: 24, borderRadius: 8,
+                                            background: "rgba(40,160,160,0.08)",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            color: "#1A7A7A",
+                                            transform: cronOpenV67 ? "rotate(180deg)" : "none",
+                                            transition: "transform 0.2s",
+                                          }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                          </div>
+                                        </div>
+                                        {cronOpenV67 && (
+                                          <div style={{
+                                            background: "#fff",
+                                            border: "1px solid rgba(200,228,228,0.4)",
+                                            borderTop: "1px dashed rgba(200,228,228,0.6)",
+                                            borderRadius: "0 0 14px 14px",
+                                            padding: "14px 12px 12px",
+                                            position: "relative",
+                                            boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
+                                          }}>
+                                            <div style={{ position: "absolute", left: 30, top: 22, bottom: 22, width: 2, background: "linear-gradient(180deg, #AFA9EC 0%, #5DCAA5 50%, #FAC775 100%)", borderRadius: 1, opacity: 0.3 }} />
+                                            {storicoCron.length > 0 ? storicoCron.slice().reverse().map((ev, k) => (
+                                              <div key={k} style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
+                                                <div style={{
+                                                  width: 36, height: 36, borderRadius: 11,
+                                                  background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+                                                  color: "#fff", flexShrink: 0,
+                                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                                  boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
+                                                }}>
+                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                                                </div>
+                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
+                                                  <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
+                                                    <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
+                                                  </div>
+                                                  <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
+                                                </div>
+                                              </div>
+                                            )) : (
+                                              <div style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
+                                                <div style={{
+                                                  width: 36, height: 36, borderRadius: 11,
+                                                  background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
+                                                  color: "#fff", flexShrink: 0,
+                                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                                  boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
+                                                }}>
+                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                                                </div>
+                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
+                                                  <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
+                                                    <strong style={{ color: "#3C3489", fontWeight: 900 }}>Tu</strong> · creato la commessa
+                                                  </div>
+                                                  <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>Adesso</div>
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
 
                                   {/* CHIUDI DETTAGLIO - invariato */}
                                   <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(null); setAzioniOpenV66(false); }} style={{
@@ -2976,8 +3086,8 @@ export default function CMDetailPanel() {
                   )}
                 </div>
               )}
-              {/* Totale */}
-              {totPrevCC > 0 && (
+              {/* Totale - hide when selectedRilievo (v67) */}
+              {!selectedRilievo && totPrevCC > 0 && (
                 <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", padding: "8px 12px", background: T.card, borderRadius: 8, border: `1px solid ${T.bdr}` }}>
                   <span style={{ fontSize: 12, fontWeight: 700 }}>Totale IVA incl.</span>
                   <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{fmtCC(totIvaCC)}</span>
@@ -2988,7 +3098,8 @@ export default function CMDetailPanel() {
         })()}
 
 
-        {/* == TAB: vani / visite / info == */}
+        {/* == TAB: vani / visite / info - hide when selectedRilievo active (v67) == */}
+        {!selectedRilievo && (
         <div id="cm-tab-vani" style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
           {[
             {k:"visite",l:`Rilievi (${(c.rilievi||[]).length})`},
@@ -3002,6 +3113,7 @@ export default function CMDetailPanel() {
             }}>{t.l}</div>
           ))}
         </div>
+        )}
 
         {/* == TAB VISITE (timeline sopralluoghi) == */}
         {cmSubTab === "visite" && (
