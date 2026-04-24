@@ -458,6 +458,7 @@ export default function CMDetailPanel() {
     const logV70: any[] = cV70.log || [];
 
     return (
+      <>
       <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 20 }}>
         {/* ============ HEADER TEAL ============ */}
         <div style={{
@@ -858,6 +859,182 @@ export default function CMDetailPanel() {
 
         </div>
       </div>
+
+      {/* v71 · MODAL NUOVO RILIEVO */}
+      {showNuovoRilievoModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9500, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowNuovoRilievoModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#0D1F1F" }}>Nuovo rilievo</div>
+                <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Commessa {selectedCM.code} \u00b7 {selectedCM.cliente}</div>
+              </div>
+              <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>\u2715</div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo rilievo</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                <div onClick={() => setNuovoRilievoComplesso(false)} style={{
+                  padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                  background: !nuovoRilievoComplesso ? "#28A0A015" : T.card,
+                  border: `1.5px solid ${!nuovoRilievoComplesso ? "#28A0A0" : T.bdr}`,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#28A0A0" : T.text }}>Semplice</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Vani senza gerarchia</div>
+                </div>
+                <div onClick={() => setNuovoRilievoComplesso(true)} style={{
+                  padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                  background: nuovoRilievoComplesso ? "#3C348915" : T.card,
+                  border: `1.5px solid ${nuovoRilievoComplesso ? "#3C3489" : T.bdr}`,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: nuovoRilievoComplesso ? "#3C3489" : T.text }}>Complesso</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Organizza per zone/piani</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo misure</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                {[
+                  { id: "provvisorio",    l: "Provvisorie",   d: "Prima visita, misure indicative",    c: "#D08008" },
+                  { id: "verificato",     l: "Verificate",    d: "Controllate sul posto",              c: "#185FA5" },
+                  { id: "definitivo",     l: "Definitive",    d: "Misure finali, preventivo sbloccato", c: "#0F6E56" },
+                  { id: "da_rivedere",    l: "Da rivedere",   d: "Discrepanze, ricontrollare",         c: "#DC4444" },
+                  { id: "personalizzato", l: "Personalizzato", d: "Tipo a scelta, descrivi nelle note", c: "#3C3489" },
+                ].map(t => {
+                  const on = nuovoRilievoTipo === t.id;
+                  return (
+                    <div key={t.id} onClick={() => setNuovoRilievoTipo(t.id as any)} style={{
+                      padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                      background: on ? `${t.c}15` : T.card,
+                      border: `1.5px solid ${on ? t.c : T.bdr}`,
+                    }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: on ? t.c : T.text }}>{t.l}</div>
+                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2, lineHeight: 1.4 }}>{t.d}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>Chi ha fatto il rilievo</div>
+              <input type="text" value={nuovoRilievoRilevatore} onChange={e => setNuovoRilievoRilevatore(e.target.value)} placeholder="Nome rilevatore" style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, background: T.card }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>Note (opzionale)</div>
+              <textarea value={nuovoRilievoNote} onChange={e => setNuovoRilievoNote(e.target.value)} placeholder="Es. Seconda visita dopo modifiche" style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any, background: T.card }} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowNuovoRilievoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+              <button onClick={() => {
+                const oggiISO = new Date().toISOString().split("T")[0];
+                const rilieviAtt = selectedCM.rilievi || [];
+                const nextN = rilieviAtt.length + 1;
+                const newR = {
+                  id: Date.now(),
+                  n: nextN,
+                  tipo: nuovoRilievoTipo,
+                  data: oggiISO,
+                  ora: new Date().toTimeString().slice(0,5),
+                  rilevatore: nuovoRilievoRilevatore || "",
+                  note: nuovoRilievoNote || "",
+                  vani: [],
+                  complesso: nuovoRilievoComplesso,
+                };
+                setCantieri((cs: any[]) => cs.map(cm => cm.id === selectedCM.id ? { ...cm, rilievi: [...(cm.rilievi || []), newR] } : cm));
+                setSelectedCM((prev: any) => prev ? ({ ...prev, rilievi: [...(prev.rilievi || []), newR] }) : prev);
+                setSelectedRilievo(newR);
+                setShowNuovoRilievoModal(false);
+                setCmSubTab("sopralluoghi");
+              }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                Crea rilievo \u00b7 Aggiungi vani
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* v71 · MODAL AGGIUNGI VANO COMPLESSO */}
+      {showAggiungiVanoModal && (() => {
+        const tEdifMV = (selectedCM as any).tipoEdificio || (selectedCM as any).tipo_edificio || "";
+        const labelsMV = (() => {
+          switch (tEdifMV) {
+            case "palazzo": return { l1: "Scala", l2: "Piano", l3: "Interno" };
+            case "condominio": return { l1: "", l2: "Piano", l3: "Interno" };
+            case "scuola": return { l1: "Edificio/Plesso", l2: "Piano", l3: "Aula" };
+            case "ospedale": return { l1: "Padiglione", l2: "Piano", l3: "Reparto" };
+            case "ufficio": return { l1: "Edificio", l2: "Piano", l3: "Ufficio" };
+            case "hotel": return { l1: "Edificio", l2: "Piano", l3: "Camera" };
+            case "centro_comm": return { l1: "", l2: "Livello", l3: "Negozio" };
+            case "industriale": return { l1: "Corpo", l2: "", l3: "Settore" };
+            case "personalizzato": return { l1: (selectedCM as any).livello1Label || "Livello 1", l2: (selectedCM as any).livello2Label || "Livello 2", l3: (selectedCM as any).livello3Label || "Livello 3" };
+            default: return { l1: "Zona", l2: "Piano", l3: "Locale" };
+          }
+        })();
+        const canCreateMV = (!labelsMV.l1 || nvL1.trim()) && (!labelsMV.l2 || nvL2.trim()) && (!labelsMV.l3 || nvL3.trim());
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9500, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAggiungiVanoModal(false)}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nuovo vano \u00b7 posizione</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Indica dove si trova dentro lo stabile</div>
+                </div>
+                <div onClick={() => setShowAggiungiVanoModal(false)} style={{ width: 30, height: 30, borderRadius: 15, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>\u2715</div>
+              </div>
+              {labelsMV.l1 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labelsMV.l1} *</div>
+                  <input style={S.input} placeholder={`Es. ${labelsMV.l1} A`} value={nvL1} onChange={e => setNvL1(e.target.value)} />
+                </div>
+              )}
+              {labelsMV.l2 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labelsMV.l2} *</div>
+                  <input style={S.input} placeholder={`Es. 1, Terra, 3`} value={nvL2} onChange={e => setNvL2(e.target.value)} />
+                </div>
+              )}
+              {labelsMV.l3 && (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labelsMV.l3} *</div>
+                  <input style={S.input} placeholder={`Es. ${labelsMV.l3} 5`} value={nvL3} onChange={e => setNvL3(e.target.value)} />
+                </div>
+              )}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>Stanza / ambiente</div>
+                <input style={S.input} placeholder="Es. Cucina, Bagno, Camera, Aula magna\u2026" value={nvStanza} onChange={e => setNvStanza(e.target.value)} />
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setShowAggiungiVanoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                <button disabled={!canCreateMV} onClick={() => {
+                  if (!selectedCM || !selectedRilievo) return;
+                  const posStr = [nvL1, nvL2, nvL3].filter(Boolean).join(" \u00b7 ");
+                  const baseNome = [posStr, nvStanza].filter(Boolean).join(" \u00b7 ");
+                  const v = {
+                    id: Date.now(),
+                    nome: baseNome || `Vano ${(selectedRilievo.vani?.length||0)+1}`,
+                    tipo: "", stanza: nvStanza, piano: nvL2,
+                    livello_1: nvL1, livello_2: nvL2, livello_3: nvL3,
+                    sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "",
+                    misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1,
+                    accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
+                  };
+                  const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
+                  setCantieri(cs => cs.map(cm => cm.id === selectedCM.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
+                  setSelectedRilievo(updR);
+                  setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2) }) : prev);
+                  setSelectedVano(v);
+                  setVanoStep(0);
+                  setShowAggiungiVanoModal(false);
+                }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: canCreateMV ? T.acc : "#ccc", color: "#fff", fontSize: 14, fontWeight: 800, cursor: canCreateMV ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                  + Crea vano
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+      </>
     );
   }
 
