@@ -242,7 +242,11 @@ export default function CMDetailPanel() {
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
   const [cronOpenV70, setCronOpenV70] = React.useState<boolean>(false);
-  const [centroApertoV70, setCentroApertoV70] = React.useState<string | null>(null); // 'cliente' | 'allegati' | 'note' | 'azioni' | null
+  const [centroApertoV70, setCentroApertoV70] = React.useState<string | null>(null);
+  const [diarioFormOpenV74, setDiarioFormOpenV74] = React.useState<boolean>(false);
+  const [diarioChiV74, setDiarioChiV74] = React.useState<"IO" | "CLIENTE">("IO");
+  const [diarioTagV74, setDiarioTagV74] = React.useState<string>("NOTA");
+  const [diarioTestoV74, setDiarioTestoV74] = React.useState<string>(""); // 'cliente' | 'allegati' | 'note' | 'azioni' | null
   const [azioniOpenV66, setAzioniOpenV66] = React.useState<boolean>(false);
   const [cronOpenV67, setCronOpenV67] = React.useState<boolean>(false);
   React.useEffect(() => {
@@ -795,19 +799,215 @@ export default function CMDetailPanel() {
           </div>
 
           {/* PANNELLO CENTRO ATTIVO */}
-          {centroApertoV70 === "cliente" && (
-            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", marginBottom: 10 }}>{cV70.cliente || "Cliente"}</div>
-              {cV70.telefono && <div style={{ fontSize: 12, color: "#5A7878", marginBottom: 6 }}>\u260e {cV70.telefono}</div>}
-              {cV70.email && <div style={{ fontSize: 12, color: "#5A7878", marginBottom: 6 }}>\u2709 {cV70.email}</div>}
-              {cV70.indirizzo && <div style={{ fontSize: 12, color: "#5A7878", marginBottom: 6 }}>\ud83d\udccd {cV70.indirizzo}</div>}
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: 10, background: "rgba(29,158,117,0.12)", color: "#04342C", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 11, fontWeight: 900, letterSpacing: "0.3px" }}>CHIAMA</a>}
-                {cV70.telefono && <a href={`https://wa.me/${(cV70.telefono || "").replace(/\D/g, "")}`} target="_blank" rel="noopener" style={{ flex: 1, padding: 10, background: "rgba(37,211,102,0.12)", color: "#075E54", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 11, fontWeight: 900, letterSpacing: "0.3px" }}>WHATSAPP</a>}
-                {cV70.indirizzo && <a href={`https://maps.google.com/?q=${encodeURIComponent(cV70.indirizzo)}`} target="_blank" rel="noopener" style={{ flex: 1, padding: 10, background: "rgba(55,138,221,0.12)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 11, fontWeight: 900, letterSpacing: "0.3px" }}>NAVIGA</a>}
+          {centroApertoV70 === "cliente" && (() => {
+            const diarioList: any[] = (cV70.diarioCliente || []).slice().sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0));
+            const TAG_COLORS: any = {
+              ACCORDO:      { bg: "rgba(239,159,39,0.14)",  fg: "#854F0B" },
+              TELEFONATA:   { bg: "rgba(127,119,221,0.14)", fg: "#3C3489" },
+              SOPRALLUOGO:  { bg: "rgba(55,138,221,0.14)",  fg: "#042C53" },
+              WHATSAPP:     { bg: "rgba(37,211,102,0.14)",  fg: "#075E54" },
+              EMAIL:        { bg: "rgba(55,138,221,0.14)",  fg: "#042C53" },
+              NOTA:         { bg: "rgba(95,94,90,0.14)",    fg: "#2C2C2A" },
+              RECLAMO:      { bg: "rgba(226,75,74,0.14)",   fg: "#8B1A1A" },
+            };
+            const fmtQuandoV74 = (ts: number) => {
+              try {
+                const d = new Date(ts); const now = new Date();
+                const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+                const nOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                const diffD = Math.round((nOnly - dOnly) / 86400000);
+                const hhmm = d.toTimeString().slice(0,5);
+                if (diffD === 0) return `Oggi ${hhmm}`;
+                if (diffD === 1) return `Ieri ${hhmm}`;
+                if (diffD < 7) return `${diffD} gg fa ${hhmm}`;
+                return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" }) + " " + hhmm;
+              } catch (e) { return ""; }
+            };
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {/* Scheda cliente */}
+                <div style={{ background: "linear-gradient(155deg, #E8F8F3 0%, #C4EAD9 100%)", border: "1px solid rgba(29,158,117,0.18)", borderRadius: 18, padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 16,
+                    background: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 17, fontWeight: 900,
+                    boxShadow: "0 4px 12px rgba(29,158,117,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.15)", flexShrink: 0,
+                  }}>
+                    {((cV70.cliente || "?").split(/\s+/).slice(0, 2).map((w: string) => w[0] || "").join("") || "?").toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.2px" }}>{cV70.cliente || "Cliente"}</div>
+                    <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>
+                      {[cV70.telefono, cV70.email].filter(Boolean).join(" \u00b7 ") || "Nessun contatto"}
+                    </div>
+                    {cV70.indirizzo && <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>{cV70.indirizzo}</div>}
+                  </div>
+                </div>
+
+                {/* Azioni rapide */}
+                <div style={{ display: "flex", gap: 6 }}>
+                  {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(29,158,117,0.12)", color: "#04342C", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(29,158,117,0.25)" }}>\u260e CHIAMA</a>}
+                  {cV70.telefono && <a href={`https://wa.me/${(cV70.telefono || "").replace(/\D/g, "")}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(37,211,102,0.12)", color: "#075E54", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(37,211,102,0.25)" }}>\ud83d\udcac WA</a>}
+                  {cV70.email && <a href={`mailto:${cV70.email}?subject=Commessa ${cV70.code || ""}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>\u2709 EMAIL</a>}
+                  {cV70.indirizzo && <a href={`https://maps.google.com/?q=${encodeURIComponent(cV70.indirizzo)}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>\ud83d\uddfa NAVIGA</a>}
+                </div>
+
+                {/* DIARIO DEL CANTIERE */}
+                <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.04)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Diario del cantiere</div>
+                      <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>{diarioList.length} {diarioList.length === 1 ? "voce" : "voci"}</div>
+                    </div>
+                    <div onClick={() => { setDiarioFormOpenV74(v => !v); setDiarioTestoV74(""); setDiarioChiV74("IO"); setDiarioTagV74("NOTA"); }} style={{
+                      display: "flex", alignItems: "center", gap: 5,
+                      padding: "7px 12px",
+                      background: diarioFormOpenV74 ? "rgba(226,75,74,0.12)" : "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+                      color: diarioFormOpenV74 ? "#8B1A1A" : "#fff",
+                      borderRadius: 50, fontSize: 10, fontWeight: 900, letterSpacing: "0.3px",
+                      cursor: "pointer",
+                      boxShadow: diarioFormOpenV74 ? "none" : "0 3px 8px rgba(29,158,117,0.3)",
+                      border: diarioFormOpenV74 ? "1px solid rgba(226,75,74,0.3)" : "none",
+                    }}>
+                      {diarioFormOpenV74 ? "\u2715 CHIUDI" : "+ SCRIVI"}
+                    </div>
+                  </div>
+
+                  {/* Form scrittura */}
+                  {diarioFormOpenV74 && (
+                    <div style={{ marginBottom: 10, padding: 12, background: "rgba(200,228,228,0.15)", borderRadius: 12, border: "1px dashed rgba(200,228,228,0.6)" }}>
+                      {/* Chi */}
+                      <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                        <div onClick={() => setDiarioChiV74("IO")} style={{
+                          flex: 1, padding: "8px 10px", borderRadius: 10, cursor: "pointer",
+                          background: diarioChiV74 === "IO" ? "rgba(127,119,221,0.18)" : "#fff",
+                          border: `1.5px solid ${diarioChiV74 === "IO" ? "#7F77DD" : "rgba(200,228,228,0.5)"}`,
+                          textAlign: "center" as any, fontSize: 11, fontWeight: 900,
+                          color: diarioChiV74 === "IO" ? "#3C3489" : "#5A7878",
+                          letterSpacing: "0.3px",
+                        }}>IO</div>
+                        <div onClick={() => setDiarioChiV74("CLIENTE")} style={{
+                          flex: 1, padding: "8px 10px", borderRadius: 10, cursor: "pointer",
+                          background: diarioChiV74 === "CLIENTE" ? "rgba(29,158,117,0.14)" : "#fff",
+                          border: `1.5px solid ${diarioChiV74 === "CLIENTE" ? "#1D9E75" : "rgba(200,228,228,0.5)"}`,
+                          textAlign: "center" as any, fontSize: 11, fontWeight: 900,
+                          color: diarioChiV74 === "CLIENTE" ? "#04342C" : "#5A7878",
+                          letterSpacing: "0.3px",
+                        }}>CLIENTE</div>
+                      </div>
+
+                      {/* Tag */}
+                      <div style={{ display: "flex", flexWrap: "wrap" as any, gap: 5, marginBottom: 8 }}>
+                        {Object.keys(TAG_COLORS).map((t: string) => {
+                          const c = TAG_COLORS[t];
+                          const on = diarioTagV74 === t;
+                          return (
+                            <div key={t} onClick={() => setDiarioTagV74(t)} style={{
+                              padding: "4px 9px", borderRadius: 6,
+                              background: on ? c.bg : "#fff",
+                              border: `1px solid ${on ? c.fg + "55" : "rgba(200,228,228,0.5)"}`,
+                              color: on ? c.fg : "#8FA8A8",
+                              fontSize: 9.5, fontWeight: 900, letterSpacing: "0.4px",
+                              cursor: "pointer",
+                            }}>{t}</div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Testo */}
+                      <textarea
+                        value={diarioTestoV74}
+                        onChange={(e) => setDiarioTestoV74(e.target.value)}
+                        placeholder="Cosa \u00e8 successo? Es. Ho chiamato per spiegare il preventivo, resta in attesa della firma..."
+                        style={{
+                          width: "100%", minHeight: 70, padding: 10,
+                          borderRadius: 10, border: "1px solid rgba(200,228,228,0.6)",
+                          fontSize: 12, fontFamily: "inherit", resize: "vertical" as any,
+                          boxSizing: "border-box" as any, background: "#fff",
+                          lineHeight: 1.4, color: "#0F2525",
+                        }}
+                      />
+
+                      {/* Salva */}
+                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                        <div onClick={() => { setDiarioFormOpenV74(false); setDiarioTestoV74(""); }} style={{
+                          flex: 1, padding: "9px 10px", borderRadius: 10, cursor: "pointer",
+                          background: "#fff", border: "1px solid rgba(200,228,228,0.5)",
+                          textAlign: "center" as any, fontSize: 11, fontWeight: 800,
+                          color: "#5A7878", letterSpacing: "0.3px",
+                        }}>Annulla</div>
+                        <div onClick={() => {
+                          const testo = diarioTestoV74.trim();
+                          if (!testo) return;
+                          const newEntry = {
+                            id: Date.now(),
+                            ts: Date.now(),
+                            chi: diarioChiV74,
+                            tag: diarioTagV74,
+                            testo: testo,
+                          };
+                          setCantieri((cs: any[]) => cs.map((x: any) => x.id === selectedCM!.id ? { ...x, diarioCliente: [...(x.diarioCliente || []), newEntry] } : x));
+                          setSelectedCM((p: any) => p ? ({ ...p, diarioCliente: [...(p.diarioCliente || []), newEntry] }) : p);
+                          setDiarioFormOpenV74(false); setDiarioTestoV74("");
+                        }} style={{
+                          flex: 2, padding: "9px 10px", borderRadius: 10, cursor: "pointer",
+                          background: diarioTestoV74.trim() ? "linear-gradient(145deg, #5DCAA5, #1D9E75)" : "#ccc",
+                          textAlign: "center" as any, fontSize: 11, fontWeight: 900,
+                          color: "#fff", letterSpacing: "0.3px",
+                          boxShadow: diarioTestoV74.trim() ? "0 3px 8px rgba(29,158,117,0.3)" : "none",
+                        }}>SALVA VOCE</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lista voci */}
+                  {diarioList.length === 0 ? (
+                    <div style={{ padding: "22px 12px", background: "rgba(200,228,228,0.15)", borderRadius: 12, fontSize: 11.5, color: "#5A7878", fontWeight: 600, textAlign: "center" as any, lineHeight: 1.5 }}>
+                      Nessuna voce ancora.<br/>Tocca <strong>+ SCRIVI</strong> per aggiungere la prima conversazione col cliente.
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {diarioList.map((ev: any) => {
+                        const tagC = TAG_COLORS[ev.tag] || TAG_COLORS.NOTA;
+                        const isIo = ev.chi === "IO";
+                        return (
+                          <div key={ev.id} style={{
+                            background: "#fff",
+                            border: "1px solid rgba(200,228,228,0.4)",
+                            borderRadius: 12, padding: "10px 12px",
+                            boxShadow: "0 2px 5px rgba(13,31,31,0.03)",
+                          }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" as any }}>
+                              <span style={{
+                                fontSize: 10, fontWeight: 900,
+                                color: isIo ? "#3C3489" : "#04342C",
+                                background: isIo ? "rgba(127,119,221,0.14)" : "rgba(29,158,117,0.14)",
+                                padding: "2px 8px", borderRadius: 6, letterSpacing: "0.2px",
+                              }}>{ev.chi}</span>
+                              <span style={{
+                                fontSize: 9, fontWeight: 900,
+                                color: tagC.fg, background: tagC.bg,
+                                padding: "2px 7px", borderRadius: 5, letterSpacing: "0.4px",
+                              }}>{ev.tag}</span>
+                              <span style={{ flex: 1, fontSize: 10, color: "#8FA8A8", fontWeight: 700, letterSpacing: "0.2px", textAlign: "right" as any }}>{fmtQuandoV74(ev.ts)}</span>
+                              <span onClick={() => {
+                                if (!window.confirm("Elimina questa voce?")) return;
+                                setCantieri((cs: any[]) => cs.map((x: any) => x.id === selectedCM!.id ? { ...x, diarioCliente: (x.diarioCliente || []).filter((e: any) => e.id !== ev.id) } : x));
+                                setSelectedCM((p: any) => p ? ({ ...p, diarioCliente: (p.diarioCliente || []).filter((e: any) => e.id !== ev.id) }) : p);
+                              }} style={{ fontSize: 11, color: "#C53030", cursor: "pointer", fontWeight: 700, padding: "2px 6px" }}>\u2715</span>
+                            </div>
+                            <div style={{ fontSize: 12.5, color: "#0F2525", fontWeight: 500, lineHeight: 1.45 }}>{ev.testo}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {centroApertoV70 === "allegati" && (
             <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
