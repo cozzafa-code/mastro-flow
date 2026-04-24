@@ -1551,8 +1551,8 @@ export default function CMDetailPanel() {
                         </div>
                       )}
 
-                      {/* Bottone CREA NUOVO RILIEVO */}
-                      <button onClick={() => {
+                      {/* Bottone CREA NUOVO RILIEVO - solo in HUB (no selectedRilievo) */}
+                      {!selectedRilievo && <button onClick={() => {
                         setNuovoRilievoTipo("provvisorio");
                         setNuovoRilievoRilevatore("");
                         setNuovoRilievoComplesso(false);
@@ -1560,11 +1560,125 @@ export default function CMDetailPanel() {
                         setShowNuovoRilievoModal(true);
                       }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> CREA {rilieviCC.length > 0 ? "NUOVO " : ""}RILIEVO
-                      </button>
+                      </button>}
 
                       {vaniCC.length > 0 && (
                         <div style={{ fontSize: 12, color: "#28A0A0", fontWeight: 700, textAlign: "center", marginTop: 8 }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
                       )}
+                    </div>
+                  )}
+
+                  {/*  BIVIO SECONDARIO · CHIUDI RILIEVO (chiudi e vai / azioni extra)  */}
+                  {curCC.id === "preventivo" && c.preventivoModoScelto === "chiuso_bivio" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: null } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: null }));
+                      }} style={{ fontSize: 11, color: T.sub, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        ← Torna alla scelta
+                      </div>
+
+                      <div style={{ fontSize: 11, color: T.sub, textAlign: "center" as any, marginBottom: 4 }}>Come vuoi chiudere il rilievo?</div>
+
+                      {/* OPZIONE A · CHIUDI E VAI */}
+                      <div onClick={() => {
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso" } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso" }));
+                        setPrevWorkspace(false);
+                        setSelectedRilievo(null);
+                        setCmSubTab && setCmSubTab("rilievi");
+                        setSelectedCM(null);
+                        setCcDone("✓ Rilievo chiuso · vai al prossimo"); setTimeout(() => setCcDone(null), 2500);
+                      }} style={{
+                        padding: "16px 14px", borderRadius: 14, cursor: "pointer",
+                        background: "#fff", border: "2px solid " + T.bdr,
+                        display: "flex", alignItems: "center", gap: 12,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: T.grnLt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <I d={ICO.checkCircle} s={18} c={T.grn} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F", marginBottom: 2 }}>Chiudi e vai al prossimo</div>
+                          <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.3 }}>Salva · il preventivo lo faccio dopo in azienda</div>
+                        </div>
+                        <I d={ICO.chevronRight} s={14} c={T.sub} />
+                      </div>
+
+                      {/* OPZIONE B · AZIONI EXTRA */}
+                      <div style={{
+                        padding: "14px 14px", borderRadius: 14,
+                        background: "#fff", border: "2px solid " + T.bdr,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, background: T.blueLt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <I d={ICO.send} s={18} c={T.blue} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F" }}>Azioni extra prima di chiudere</div>
+                            <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>Stampa · invia · esporta per altro gestionale</div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                          {/* Stampa PDF */}
+                          <button onClick={() => {
+                            try { exportPDF && exportPDF(); } catch(e) { console.warn(e); }
+                            setCcDone("✓ PDF pronto"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid " + T.bdr, background: T.card, cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.fileText} s={18} c={T.text} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: T.text }}>Stampa PDF</span>
+                          </button>
+
+                          {/* WhatsApp */}
+                          <button onClick={() => {
+                            const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                            const msg = `Ciao ${c.cliente || ""}, ti mando il riepilogo del rilievo fatto oggi.`;
+                            const wa = `https://wa.me/${tel.startsWith("+") ? tel.slice(1) : "39" + tel}?text=${encodeURIComponent(msg)}`;
+                            window.open(wa, "_blank");
+                            setCcDone("✓ WhatsApp aperto"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #25d36630", background: "#25d36608", cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.send} s={18} c="#25d366" />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: "#25d366" }}>WhatsApp</span>
+                          </button>
+
+                          {/* Export Excel gestionale */}
+                          <button onClick={() => {
+                            try { generaExcelFascicolo && generaExcelFascicolo(c, r); } catch(e) { console.warn(e); }
+                            setCcDone("✓ Excel pronto per gestionale"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #28A0A030", background: "#28A0A008", cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.clipboard} s={18} c={T.acc} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: T.acc }}>Export gestionale</span>
+                          </button>
+
+                          {/* Invia a MASTRO Desktop */}
+                          <button onClick={() => {
+                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, inviatoDesktop: true, dataInvioDesktop: new Date().toISOString().split("T")[0] } : cm));
+                            setSelectedCM((prev: any) => ({ ...prev, inviatoDesktop: true }));
+                            setCcDone("✓ Rilievo in coda MASTRO Desktop"); setTimeout(() => setCcDone(null), 2500);
+                          }} style={{
+                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #3B7FE030", background: "#3B7FE008", cursor: "pointer", fontFamily: "inherit",
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                          }}>
+                            <I d={ICO.monitor} s={18} c={T.blue} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: T.blue }}>A MASTRO Desktop</span>
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: 10, color: T.sub, marginTop: 10, textAlign: "center" as any, fontStyle: "italic" as any }}>
+                          Quando hai fatto, torna indietro e premi "Chiudi e vai"
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -1573,15 +1687,10 @@ export default function CMDetailPanel() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <div style={{ fontSize: 11, color: T.sub, marginBottom: 4, textAlign: "center" }}>Rilievo completato · Scegli cosa fare</div>
 
-                      {/* CARD 1 — CHIUDI RILIEVO */}
+                      {/* CARD 1 — CHIUDI RILIEVO (ora apre bivio secondario) */}
                       <div onClick={() => {
-                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso" } : cm));
-                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso" }));
-                        setPrevWorkspace(false);
-                        setSelectedRilievo(null);
-                        setCmSubTab && setCmSubTab("rilievi");
-                        setSelectedCM(null);
-                        setCcDone("✓ Rilievo chiuso · preventivo in azienda"); setTimeout(() => setCcDone(null), 2500);
+                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso_bivio" } : cm));
+                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso_bivio" }));
                       }} style={{
                         padding: "18px 16px", borderRadius: 14, cursor: "pointer",
                         background: "#fff", border: "2px solid " + T.bdr,
