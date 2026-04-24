@@ -450,17 +450,21 @@ export default function CommessePanel() {
             marginTop: 10,
             padding: "8px 12px",
             borderRadius: 10,
-            background: isExpanded ? "linear-gradient(145deg, #0D1F1F, #1A3535)" : (PIPELINE_FLIWOX[c.fase] || PIPELINE_FLIWOX.sopralluogo).bg,
-            border: isExpanded ? "none" : "1px solid #C8E4E4",
+            background: isExpanded
+              ? (alert ? "linear-gradient(145deg, #D85A30, #993C1D)" : `linear-gradient(145deg, ${faseStyleFliwox.solid}, ${faseStyleFliwox.fg})`)
+              : faseStyleFliwox.bg,
+            border: isExpanded ? "none" : `1px solid ${faseStyleFliwox.solid}30`,
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
             cursor: "pointer",
-            color: isExpanded ? "#5FD0D0" : TH.tealDark,
+            color: isExpanded ? "#fff" : faseStyleFliwox.fg,
             fontSize: 11, fontWeight: 800, letterSpacing: "0.3px",
-            boxShadow: isExpanded ? "0 4px 10px rgba(13,31,31,0.25)" : "0 2px 6px rgba(31,120,120,0.08)",
+            boxShadow: isExpanded
+              ? (alert ? "0 4px 10px rgba(216,90,48,0.35)" : `0 4px 10px ${faseStyleFliwox.solid}50`)
+              : "0 2px 6px rgba(31,120,120,0.08)",
             transition: "all 0.15s",
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isExpanded ? "#5FD0D0" : TH.tealDark} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isExpanded ? "#fff" : faseStyleFliwox.fg} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
             <polyline points="6 9 12 15 18 9"/>
           </svg>
           {isExpanded ? "CHIUDI DETTAGLIO" : "APRI CENTRO OPERATIVO"}
@@ -518,9 +522,13 @@ export default function CommessePanel() {
                   onClick={(e) => { e.stopPropagation(); setSelectedCM(c); setTab("commesse"); }}
                   style={{
                     width: "100%", padding: "10px", borderRadius: 10, border: "none",
-                    background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
+                    background: alert
+                      ? "linear-gradient(145deg, #F0997B 0%, #D85A30 50%, #993C1D 100%)"
+                      : `linear-gradient(145deg, ${faseStyleFliwox.solid} 0%, ${faseStyleFliwox.fg} 100%)`,
                     color: "#fff", fontSize: 11, fontWeight: 900, cursor: "pointer",
-                    boxShadow: "0 5px 12px rgba(31,120,120,0.35), inset 0 1px 2px rgba(255,255,255,0.3)",
+                    boxShadow: alert
+                      ? "0 5px 12px rgba(216,90,48,0.35), inset 0 1px 2px rgba(255,255,255,0.3)"
+                      : `0 5px 12px ${faseStyleFliwox.solid}50, inset 0 1px 2px rgba(255,255,255,0.3)`,
                     letterSpacing: "0.4px",
                   }}
                 >{nextBtn} →</button>
@@ -585,20 +593,24 @@ export default function CommessePanel() {
                 ))}
               </div>
 
-              {/* Apri centro completo */}
+              {/* Apri centro completo - colorato per fase */}
               <button
                 onClick={(e) => { e.stopPropagation(); setSelectedCM(c); setTab("commesse"); }}
                 style={{
                   width: "100%", padding: "11px", borderRadius: 11, border: "none",
-                  background: "linear-gradient(145deg, #0D1F1F, #1A3535)",
-                  color: "#5FD0D0", fontSize: 11, fontWeight: 900, cursor: "pointer",
+                  background: alert
+                    ? "linear-gradient(145deg, #993C1D, #4A1B0C)"
+                    : `linear-gradient(145deg, ${faseStyleFliwox.fg}, ${faseStyleFliwox.solid})`,
+                  color: "#fff", fontSize: 11, fontWeight: 900, cursor: "pointer",
                   letterSpacing: "0.4px",
-                  boxShadow: "0 5px 14px rgba(13,31,31,0.3), inset 0 1px 2px rgba(255,255,255,0.08)",
+                  boxShadow: alert
+                    ? "0 5px 14px rgba(153,60,29,0.4), inset 0 1px 2px rgba(255,255,255,0.15)"
+                    : `0 5px 14px ${faseStyleFliwox.solid}60, inset 0 1px 2px rgba(255,255,255,0.15)`,
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 }}
               >
                 APRI CENTRO COMPLETO
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5FD0D0" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
             </div>
           );
@@ -927,21 +939,22 @@ export default function CommessePanel() {
         }}>
           {filteredSorted.map((c, i) => renderRow(c, i))}
         </div>
-      ) : cmView === "hero" ? (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr",
-          gap: 10,
-        }}>
-          {filteredSorted.map((c, i) => renderCard(c, i, true))}
-        </div>
-      ) : (
+      ) : cmView === "card" ? (
         <div style={{
           display: "grid",
           gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr",
           gap: 10,
         }}>
           {filteredSorted.map((c, i) => renderCard(c, i))}
+        </div>
+      ) : (
+        // default: hero
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr",
+          gap: 10,
+        }}>
+          {filteredSorted.map((c, i) => renderCard(c, i, true))}
         </div>
       )}
 
