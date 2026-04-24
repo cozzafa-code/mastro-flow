@@ -2068,22 +2068,137 @@ export default function CMDetailPanel() {
                         </div>
                       )}
 
-                      {/* Info se zero rilievi */}
-                      {rilieviCC.length === 0 && (
-                        <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, textAlign: "center" as any, padding: "4px 0" }}>
-                          Nessun rilievo ancora · Crea il primo sopralluogo
-                        </div>
-                      )}
+                      {/* v68 · BIG ACTION VIOLA quando zero rilievi */}
+                      {!selectedRilievo && rilieviCC.length === 0 && (() => {
+                        const tEdifV68 = (c as any).tipoEdificio || (c as any).tipo_edificio || "";
+                        const tEdifLabelV68 = (() => {
+                          switch (tEdifV68) {
+                            case "palazzo": return "Palazzo residenziale";
+                            case "condominio": return "Condominio";
+                            case "scuola": return "Scuola";
+                            case "ospedale": return "Ospedale / Clinica";
+                            case "ufficio": return "Ufficio / Direzionale";
+                            case "hotel": return "Hotel / RSA";
+                            case "centro_comm": return "Centro commerciale";
+                            case "industriale": return "Capannone / Industriale";
+                            case "personalizzato": return "Personalizzato";
+                            default: return "Casa singola";
+                          }
+                        })();
+                        const tEdifStructV68 = (() => {
+                          switch (tEdifV68) {
+                            case "palazzo": return "Scala · Piano · Interno";
+                            case "condominio": return "Piano · Interno";
+                            case "scuola": return "Edificio/Plesso · Piano · Aula";
+                            case "ospedale": return "Padiglione · Piano · Reparto";
+                            case "ufficio": return "Edificio · Piano · Ufficio";
+                            case "hotel": return "Edificio · Piano · Camera";
+                            case "centro_comm": return "Livello · Negozio";
+                            case "industriale": return "Corpo · Settore";
+                            case "personalizzato": return [(c as any).livello1Label || "Livello 1", (c as any).livello2Label || "Livello 2", (c as any).livello3Label || "Livello 3"].join(" · ");
+                            default: return "Zona · Piano · Locale";
+                          }
+                        })();
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 6 }}>
+                            {/* mini stepper 8 puntini */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px" }}>
+                              <div style={{ fontSize: 9.5, fontWeight: 900, color: T.sub, letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
+                              <div style={{ display: "flex", gap: 3, flex: 1 }}>
+                                <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
+                                {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
+                              </div>
+                              <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
+                            </div>
 
-                      {/* Bottone CREA NUOVO RILIEVO - solo in HUB (no selectedRilievo) */}
-                      {!selectedRilievo && <button onClick={() => {
+                            {/* big action viola */}
+                            <div style={{
+                              borderRadius: 22, padding: "20px 18px 18px",
+                              background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
+                              color: "#fff",
+                              boxShadow: "0 14px 32px rgba(127,119,221,0.35), 0 6px 12px rgba(127,119,221,0.2)",
+                              position: "relative", overflow: "hidden",
+                              display: "flex", flexDirection: "column",
+                            }}>
+                              <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" }} />
+                              <div style={{ position: "absolute", bottom: -60, left: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)", pointerEvents: "none" }} />
+
+                              <div style={{
+                                display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+                                padding: "5px 11px", background: "rgba(255,255,255,0.22)",
+                                borderRadius: 50, fontSize: 8.5, fontWeight: 900, letterSpacing: "1.1px",
+                                textTransform: "uppercase" as any, position: "relative",
+                              }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
+                                Prima mossa
+                              </div>
+
+                              <div style={{
+                                fontSize: 22, fontWeight: 900, marginTop: 12,
+                                letterSpacing: "-0.5px", lineHeight: 1.15,
+                                textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
+                              }}>Crea il primo<br/>sopralluogo</div>
+
+                              <div style={{
+                                fontSize: 11.5, opacity: 0.94, marginTop: 6,
+                                lineHeight: 1.4, fontWeight: 500, position: "relative",
+                              }}>Vai in cantiere e fai il rilievo delle misure.</div>
+
+                              {/* Pill tipo edificio */}
+                              <div style={{
+                                marginTop: 12, background: "rgba(255,255,255,0.18)",
+                                borderRadius: 12, padding: "10px 12px",
+                                display: "flex", alignItems: "center", gap: 10, position: "relative",
+                              }}>
+                                <div style={{
+                                  width: 36, height: 36, borderRadius: 11,
+                                  background: "rgba(255,255,255,0.22)",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
+                                }}>
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 8.5, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
+                                  <div style={{ fontSize: 13, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV68}</div>
+                                  <div style={{ fontSize: 10, opacity: 0.88, marginTop: 1, fontWeight: 600 }}>{tEdifStructV68}</div>
+                                </div>
+                              </div>
+
+                              <button onClick={() => {
+                                setNuovoRilievoTipo("provvisorio");
+                                setNuovoRilievoRilevatore("");
+                                setNuovoRilievoComplesso(false);
+                                setNuovoRilievoNote("");
+                                setShowNuovoRilievoModal(true);
+                              }} style={{
+                                marginTop: 14, width: "100%", padding: 15,
+                                background: "#fff", color: "#3C3489",
+                                border: "none", borderRadius: 14,
+                                fontSize: 13.5, fontWeight: 900, letterSpacing: "0.4px",
+                                cursor: "pointer", fontFamily: "inherit",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                boxShadow: "0 6px 16px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
+                                position: "relative",
+                              }}>
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                CREA RILIEVO
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Bottone CREA NUOVO RILIEVO compatto - solo quando ci sono gia' rilievi ma nessuno selezionato */}
+                      {!selectedRilievo && rilieviCC.length > 0 && <button onClick={() => {
                         setNuovoRilievoTipo("provvisorio");
                         setNuovoRilievoRilevatore("");
                         setNuovoRilievoComplesso(false);
                         setNuovoRilievoNote("");
                         setShowNuovoRilievoModal(true);
                       }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> CREA {rilieviCC.length > 0 ? "NUOVO " : ""}RILIEVO
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> CREA NUOVO RILIEVO
                       </button>}
 
                       {vaniCC.length > 0 && (
@@ -3519,7 +3634,8 @@ export default function CMDetailPanel() {
 
 
 
-        {/* Allegati / Note / Vocali / Video */}
+        {/* Allegati / Note / Vocali / Video - hide when selectedRilievo (v68) */}
+        {!selectedRilievo && (
         <div style={{ padding: "0 16px", marginBottom: 8 }}>
           <div style={{ display: "flex", gap: 6 }}>
             {[
@@ -3598,6 +3714,7 @@ export default function CMDetailPanel() {
             </div>
           )}
         </div>
+        )}
 
         {/*  SEZIONE INTERVENTI  */}
         {montaggiDB.filter(m => String(m.cmId) === String(c.id)).length > 0 && (
@@ -3617,8 +3734,8 @@ export default function CMDetailPanel() {
           </>
         )}
 
-        {/* Timeline/Log v58 - app-nell-app */}
-        {c.log && c.log.length > 0 && (() => {
+        {/* Timeline/Log v58 - app-nell-app - hide when selectedRilievo (v68) */}
+        {!selectedRilievo && c.log && c.log.length > 0 && (() => {
           // Colori per tipo evento (palette mockup v3)
           const EV_COLORS: any = {
             creazione:    { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", icon: "✦" },
@@ -3670,11 +3787,13 @@ export default function CMDetailPanel() {
           );
         })()}
 
-        {/* Elimina */}
+        {/* Elimina - hide when selectedRilievo (v68) */}
+        {!selectedRilievo && (
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           {c.fase === "chiusura" && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>✓ Commessa chiusa</div>}
           <span onClick={() => deleteCommessa(c.id)} style={{ fontSize: 11, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>Elimina commessa</span>
         </div>
+        )}
 
         {/*  MODAL AGGIUNGI VANO COMPLESSO  */}
         {showAggiungiVanoModal && (() => {
