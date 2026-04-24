@@ -264,7 +264,7 @@ export default function CommessePanel() {
   });
 
   // ─── CARD VIEW ───────────────────────────────────────────────
-  const renderCard = (c: any, idx: number) => {
+  const renderCard = (c: any, idx: number, heroMode = false) => {
     const fase = getFaseInfo(c);
     const ferma = isFerma(c);
     const scad = isScaduta(c);
@@ -272,15 +272,17 @@ export default function CommessePanel() {
     const alert = ferma || scad;
     const euroVal = c.euro ? parseFloat(c.euro) : 0;
     const fs = faseStyle(c.fase, alert, ferma, giorniFermaCM(c), fase.nome);
+    const faseStyleFliwox = PIPELINE_FLIWOX[c.fase] || PIPELINE_FLIWOX.sopralluogo;
 
     const isExpanded = expandedCmId === c.id;
     return (
       <div key={c.id}
         style={{
-          background: (PIPELINE_FLIWOX[c.fase] || PIPELINE_FLIWOX.sopralluogo).bg,
+          background: heroMode ? "linear-gradient(155deg, #FFFFFF 0%, #F5FBFB 100%)" : faseStyleFliwox.bg,
           borderRadius: 18,
-          padding: "14px 16px",
+          padding: 0,
           marginBottom: 12,
+          overflow: "hidden" as const,
           position: "relative" as any,
           opacity: selectionMode && !selectedIds.has(c.id) ? 0.6 : 1,
           boxShadow: alert
@@ -296,6 +298,35 @@ export default function CommessePanel() {
         onTouchEnd={handleTouchEnd}
         onTouchMove={handleTouchEnd}
         onContextMenu={(e) => { e.preventDefault(); enterSelection(c.id); }}>
+
+        {/* ── BANNER HERO (solo in heroMode) ────────── */}
+        {heroMode && (() => {
+          const fsolid = alert ? "#D85A30" : (faseStyleFliwox.solid || "#1A7A7A");
+          const fbg = alert
+            ? "linear-gradient(145deg, #F0997B 0%, #D85A30 100%)"
+            : `linear-gradient(145deg, ${faseStyleFliwox.bg} 0%, ${faseStyleFliwox.fg}30 100%)`;
+          const ftextColor = alert ? "#fff" : faseStyleFliwox.fg;
+          const labelFase = alert && ferma ? `FERMA · ${giorniFermaCM(c)} GG` : (alert && scad ? "SCADENZA SUPERATA" : (fase.nome || c.fase || "").toUpperCase());
+          return (
+            <div style={{
+              background: fbg,
+              padding: "7px 14px",
+              display: "flex", alignItems: "center", gap: 7,
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: alert ? "#fff" : fsolid, boxShadow: alert ? "0 0 0 3px rgba(255,255,255,0.3)" : `0 0 0 3px ${fsolid}25`, flexShrink: 0 }} />
+              <span style={{ fontSize: 10, fontWeight: 900, color: ftextColor, letterSpacing: "0.8px", textTransform: "uppercase" as any }}>
+                {alert ? labelFase : `Fase · ${labelFase}`}
+              </span>
+              <span style={{ flex: 1 }} />
+              {alert ? (
+                <span style={{ fontSize: 10, fontWeight: 900, color: "#fff" }}>!</span>
+              ) : c.aggiornato ? (
+                <span style={{ fontSize: 9, fontWeight: 800, color: ftextColor, opacity: 0.85 }}>{c.aggiornato}</span>
+              ) : null}
+            </div>
+          );
+        })()}
+        <div style={{ padding: "14px 16px" }}>
 
         {/* Checkbox selezione */}
         {selectionMode && (
@@ -572,6 +603,7 @@ export default function CommessePanel() {
             </div>
           );
         })()}
+        </div>
       </div>
     );
   };
@@ -724,6 +756,17 @@ export default function CommessePanel() {
                   <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
                 </svg>
               </div>
+              <div onClick={() => setCmView("hero")} style={{
+                width: 30, height: 30, borderRadius: 7,
+                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                background: cmView === "hero" ? "#fff" : "transparent",
+                boxShadow: cmView === "hero" ? "0 2px 4px rgba(0,0,0,0.15)" : "none",
+                transition: "all 0.15s",
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={cmView === "hero" ? TH.tealDark : "rgba(255,255,255,0.85)"} strokeWidth="2.2" strokeLinecap="round">
+                  <rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/>
+                </svg>
+              </div>
             </div>
 
             {/* Nuova commessa */}
@@ -803,21 +846,25 @@ export default function CommessePanel() {
         })}
       </div>
 
-      {/* ═══ SORT + TOTALE ═══ */}
+      {/* ═══ SORT + TOTALE (rifatto v53: container teal chiaro) ═══ */}
       <div style={{
-        display: "flex", gap: 6, alignItems: "center",
-        marginBottom: 12, padding: "4px 2px",
+        display: "flex", gap: 5, alignItems: "center",
+        marginBottom: 12, padding: "3px 4px",
+        background: "rgba(40,160,160,0.05)",
+        borderRadius: 12,
       }}>
         {[["default", "Recenti"], ["nome", "A-Z"], ["euro", "€"], ["data", "Data"]].map(([v, l]) => {
           const sel = sortBy === v;
           return (
             <div key={v} onClick={() => setSortBy(v as any)} style={{
-              padding: "5px 11px", borderRadius: 14,
-              fontSize: 11, fontWeight: 700, cursor: "pointer",
+              padding: "6px 12px", borderRadius: 10,
+              fontSize: 10, fontWeight: 800, cursor: "pointer",
               whiteSpace: "nowrap" as any,
-              background: sel ? TH.ink : "transparent",
-              color: sel ? TH.tealBright : TH.sub,
+              background: sel ? "#fff" : "transparent",
+              color: sel ? TH.tealDark : TH.sub,
+              boxShadow: sel ? "0 2px 4px rgba(31,120,120,0.1)" : "none",
               letterSpacing: "0.2px",
+              transition: "all 0.15s",
             }}>{l}</div>
           );
         })}
@@ -826,7 +873,7 @@ export default function CommessePanel() {
             marginLeft: "auto",
             padding: "5px 11px", borderRadius: 10,
             background: "rgba(40,160,160,0.1)",
-            fontSize: 11, fontWeight: 800, color: TH.tealDark,
+            fontSize: 10, fontWeight: 800, color: TH.tealDark,
             fontFamily: FM, letterSpacing: "-0.2px",
           }}>
             {filtered.length} · {fmtEuro(totaleEuro)}
@@ -879,6 +926,14 @@ export default function CommessePanel() {
           border: "1px solid rgba(200,228,228,0.5)",
         }}>
           {filteredSorted.map((c, i) => renderRow(c, i))}
+        </div>
+      ) : cmView === "hero" ? (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : isTablet ? "1fr 1fr" : "1fr",
+          gap: 10,
+        }}>
+          {filteredSorted.map((c, i) => renderCard(c, i, true))}
         </div>
       ) : (
         <div style={{
