@@ -23,6 +23,176 @@ import TabFiscale from "./TabFiscale";
 import DisegnoTecnico from "./DisegnoTecnico";
 // @cadDraw state added below
 
+// ═══ v58 · Cronologia app-nell-app ═══
+function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S, operatoriDB }: any) {
+  const [expanded, setExpanded] = React.useState<number | null>(null);
+
+  // Helper per trovare contatti operatore se log contiene ref
+  const findOp = (nome: string): any => {
+    if (!operatoriDB || !Array.isArray(operatoriDB)) return null;
+    const n = (nome || "").toLowerCase().trim();
+    return operatoriDB.find((o: any) => {
+      const full = ((o?.nome || "") + " " + (o?.cognome || "")).toLowerCase().trim();
+      return full === n || (o?.nome || "").toLowerCase() === n;
+    });
+  };
+
+  const telLink = (t: string | null | undefined) => t ? `tel:${t}` : "#";
+  const waLink = (t: string | null | undefined, msg: string = "") => t ? `https://wa.me/${t.replace(/\D/g, "")}${msg ? "?text=" + encodeURIComponent(msg) : ""}` : "#";
+
+  return (
+    <>
+      <div style={{ ...S.section, marginTop: 8 }}>
+        <div style={S.sectionTitle}>Cronologia · {log.length}</div>
+      </div>
+      <div style={{ padding: "0 16px 8px", display: "flex", flexDirection: "column" as const, gap: 6, position: "relative" as any }}>
+        {/* Linea timeline verticale */}
+        <div style={{
+          position: "absolute" as any,
+          left: 36, top: 20, bottom: 20,
+          width: 2,
+          background: "linear-gradient(180deg, rgba(127,119,221,0.25), rgba(29,158,117,0.25), rgba(239,159,39,0.25), rgba(55,138,221,0.25), rgba(212,83,126,0.25))",
+          borderRadius: 1,
+          pointerEvents: "none" as any,
+          zIndex: 0,
+        }} />
+
+        {log.map((l: any, i: number) => {
+          const tipo = detectType(l.cosa);
+          const ev = EV_COLORS[tipo] || EV_COLORS.creazione;
+          const isOpen = expanded === i;
+          const op = findOp(l.chi);
+          const tel = op?.telefono || op?.phone;
+          const mail = op?.email;
+
+          return (
+            <div key={i} style={{
+              display: "flex", gap: 10,
+              position: "relative" as any,
+              zIndex: 1,
+            }}>
+              {/* Bubble icona tipo */}
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: ev.grad,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#fff", fontSize: 16, fontWeight: 900,
+                flexShrink: 0,
+                boxShadow: `0 3px 8px ${ev.tint}, inset 0 1px 1px rgba(255,255,255,0.25)`,
+                textShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                marginTop: 2,
+              }}>{ev.icon}</div>
+
+              {/* Card contenuto */}
+              <div
+                onClick={() => setExpanded(isOpen ? null : i)}
+                style={{
+                  flex: 1, minWidth: 0,
+                  background: "#fff",
+                  borderRadius: 10,
+                  border: "1px solid rgba(200,228,228,0.5)",
+                  borderLeft: `3px solid ${ev.solid}`,
+                  padding: "9px 11px",
+                  cursor: "pointer",
+                  boxShadow: isOpen ? `0 6px 16px ${ev.tint}` : "0 2px 6px rgba(13,31,31,0.04)",
+                  transition: "all 0.2s",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {/* Avatar iniziali chi */}
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 8,
+                    background: ev.tint, color: ev.dark,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 9, fontWeight: 900, flexShrink: 0,
+                    letterSpacing: "-0.1px",
+                  }}>{initials(l.chi)}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: "#0F2525", lineHeight: 1.3, fontWeight: 700 }}>
+                      <strong style={{ color: ev.dark, fontWeight: 900 }}>{l.chi}</strong>{" "}
+                      <span style={{ fontWeight: 600, color: "#5A7878" }}>{l.cosa}</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#8FA8A8", fontWeight: 600, marginTop: 2, letterSpacing: "0.2px" }}>{l.quando}</div>
+                  </div>
+                  <span style={{
+                    color: ev.solid, fontSize: 13, fontWeight: 900,
+                    transform: isOpen ? "rotate(180deg)" : "none",
+                    transition: "transform 0.2s",
+                    flexShrink: 0,
+                  }}>▾</span>
+                </div>
+
+                {isOpen && (
+                  <div style={{
+                    marginTop: 9, paddingTop: 9,
+                    borderTop: "1px dashed rgba(200,228,228,0.6)",
+                  }}>
+                    <div style={{
+                      padding: "6px 10px", marginBottom: 8,
+                      background: ev.tint, color: ev.dark,
+                      borderRadius: 7,
+                      fontSize: 10, fontWeight: 800,
+                      letterSpacing: "0.4px",
+                      textTransform: "uppercase" as any,
+                      display: "inline-block",
+                    }}>{ev.icon} {tipo}</div>
+
+                    {op && (
+                      <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 600, marginBottom: 8 }}>
+                        Operatore: <strong style={{ color: "#0F2525" }}>{op.nome} {op.cognome || ""}</strong>
+                        {op.ruolo && <span style={{ opacity: 0.7 }}> · {op.ruolo}</span>}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {tel && (
+                        <a href={telLink(tel)} onClick={(e: any) => e.stopPropagation()} style={{
+                          flex: 1, padding: "7px", borderRadius: 8, textDecoration: "none",
+                          background: "rgba(29,158,117,0.1)", color: "#04342C",
+                          fontSize: 10, fontWeight: 900, textAlign: "center" as any,
+                          letterSpacing: "0.3px",
+                          border: "1px solid rgba(29,158,117,0.3)",
+                        }}>☎ CHIAMA</a>
+                      )}
+                      {tel && (
+                        <a href={waLink(tel, `Ciao ${l.chi}, ti scrivo per la commessa ${commessa?.code || ""}`)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} style={{
+                          flex: 1, padding: "7px", borderRadius: 8, textDecoration: "none",
+                          background: "rgba(37,211,102,0.12)", color: "#075E54",
+                          fontSize: 10, fontWeight: 900, textAlign: "center" as any,
+                          letterSpacing: "0.3px",
+                          border: "1px solid rgba(37,211,102,0.3)",
+                        }}>💬 CHAT</a>
+                      )}
+                      {mail && (
+                        <a href={`mailto:${mail}?subject=Commessa ${commessa?.code || ""}`} onClick={(e: any) => e.stopPropagation()} style={{
+                          flex: 1, padding: "7px", borderRadius: 8, textDecoration: "none",
+                          background: "rgba(55,138,221,0.1)", color: "#042C53",
+                          fontSize: 10, fontWeight: 900, textAlign: "center" as any,
+                          letterSpacing: "0.3px",
+                          border: "1px solid rgba(55,138,221,0.3)",
+                        }}>✉ EMAIL</a>
+                      )}
+                      {!tel && !mail && (
+                        <div style={{
+                          flex: 1, padding: "7px", borderRadius: 8,
+                          background: "rgba(200,228,228,0.25)", color: "#8FA8A8",
+                          fontSize: 10, fontWeight: 700, textAlign: "center" as any,
+                          letterSpacing: "0.3px",
+                          fontStyle: "italic" as any,
+                        }}>Nessun contatto disponibile</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
 export default function CMDetailPanel() {
   const {
     T, S, isDesktop, isTablet, fs, PIPELINE,
@@ -3091,28 +3261,58 @@ export default function CMDetailPanel() {
           </>
         )}
 
-        {/* Timeline/Log */}
-        {c.log && c.log.length > 0 && (
-          <>
-            <div style={{ ...S.section, marginTop: 8 }}>
-              <div style={S.sectionTitle}>Cronologia</div>
-            </div>
-            <div style={{ padding: "0 16px" }}>
-              {c.log.map((l, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
-                    {i < c.log.length - 1 && <div style={{ width: 1, flex: 1, background: T.bdr, marginTop: 4 }} />}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, color: T.text, lineHeight: 1.3 }}><strong>{l.chi}</strong> {l.cosa}</div>
-                    <div style={{ fontSize: 10, color: T.sub2, marginTop: 1 }}>{l.quando}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+        {/* Timeline/Log v58 - app-nell-app */}
+        {c.log && c.log.length > 0 && (() => {
+          // Colori per tipo evento (palette mockup v3)
+          const EV_COLORS: any = {
+            creazione:    { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", icon: "✦" },
+            rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", icon: "◆" },
+            preventivo:   { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", icon: "€" },
+            firma:        { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", icon: "✓" },
+            ordine:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", icon: "▶" },
+            produzione:   { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", solid: "#378ADD", dark: "#042C53", tint: "rgba(55,138,221,0.12)", icon: "⚙" },
+            posa:         { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", icon: "⬒" },
+            collaudo:     { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", icon: "✓" },
+            fattura:      { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", solid: "#639922", dark: "#173404", tint: "rgba(99,153,34,0.14)", icon: "€" },
+            pagamento:    { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", solid: "#639922", dark: "#173404", tint: "rgba(99,153,34,0.14)", icon: "✓" },
+            ferma:        { grad: "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)", solid: "#E24B4A", dark: "#8B1A1A", tint: "rgba(226,75,74,0.14)", icon: "⚠" },
+            nota:         { grad: "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)", solid: "#5F5E5A", dark: "#2C2C2A", tint: "rgba(95,94,90,0.14)", icon: "✎" },
+          };
+          const detectType = (cosa: string): string => {
+            const s = (cosa || "").toLowerCase();
+            if (s.includes("creat") || s.includes("aperto") || s.includes("apertura")) return "creazione";
+            if (s.includes("rilievo") || s.includes("sopralluogo") || s.includes("misur")) return "rilievo";
+            if (s.includes("preventivo")) return "preventivo";
+            if (s.includes("firm") || s.includes("confermat")) return "firma";
+            if (s.includes("ordine") || s.includes("ordin")) return "ordine";
+            if (s.includes("produzione") || s.includes("produ")) return "produzione";
+            if (s.includes("posa") || s.includes("install") || s.includes("montag")) return "posa";
+            if (s.includes("collaudo")) return "collaudo";
+            if (s.includes("pagat") || s.includes("pagament") || s.includes("saldo")) return "pagamento";
+            if (s.includes("fattur")) return "fattura";
+            if (s.includes("ferma") || s.includes("bloccat") || s.includes("sospes")) return "ferma";
+            if (s.includes("nota") || s.includes("comment")) return "nota";
+            return "creazione";
+          };
+          const initials = (s: string): string => {
+            if (!s) return "—";
+            const parts = s.trim().split(/\s+/).slice(0, 2);
+            return parts.map(p => p[0]?.toUpperCase() || "").join("") || s[0]?.toUpperCase() || "—";
+          };
+
+          return (
+            <CronologiaBlock
+              log={c.log}
+              EV_COLORS={EV_COLORS}
+              detectType={detectType}
+              initials={initials}
+              commessa={c}
+              T={T}
+              S={S}
+              operatoriDB={typeof operatoriDB !== "undefined" ? operatoriDB : []}
+            />
+          );
+        })()}
 
         {/* Elimina */}
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
