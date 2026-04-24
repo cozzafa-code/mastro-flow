@@ -1601,10 +1601,14 @@ export default function CMDetailPanel() {
                                         setVanoStep(0);
                                       }
                                     }} style={{
-                                      width: "100%", padding: "11px 12px", borderRadius: 8,
-                                      background: tt.c, color: "#fff", border: "none",
-                                      fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                                      width: "100%", padding: "11px 12px", borderRadius: 10,
+                                      background: "linear-gradient(145deg, #AFA9EC 0%, #7F77DD 100%)",
+                                      color: "#fff", border: "none",
+                                      fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
                                       display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                                      letterSpacing: "0.3px",
+                                      boxShadow: "0 4px 12px rgba(127,119,221,0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
+                                      textShadow: "0 1px 2px rgba(0,0,0,0.15)",
                                     }}>
                                       APRI RILIEVO <span style={{ fontSize: 15 }}>→</span>
                                     </button>
@@ -1698,10 +1702,15 @@ export default function CMDetailPanel() {
                                     </button>
                                   </div>
 
-                                  {/* CHIUDI DETTAGLIO */}
+                                  {/* CHIUDI DETTAGLIO v65 - viola scuro mockup v3 */}
                                   <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(null); }} style={{
-                                    padding: "10px", borderRadius: 8, background: "#0D1F1F", color: "#fff", border: "none", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                                    padding: "11px", borderRadius: 10,
+                                    background: "linear-gradient(145deg, #3C3489 0%, #26215C 100%)",
+                                    color: "#fff", border: "none",
+                                    fontSize: 11, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
                                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6, letterSpacing: "0.4px",
+                                    boxShadow: "0 4px 12px rgba(60,52,137,0.4), inset 0 1px 1px rgba(255,255,255,0.2)",
+                                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
                                   }}>
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
                                     CHIUDI DETTAGLIO
