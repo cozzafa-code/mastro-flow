@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import DraggableFAB from "@/components/DraggableFAB";
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
@@ -39,7 +39,6 @@ import RilieviListPanel from "./RilieviListPanel";
 import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobile";
-import BottomToolbar from "./BottomToolbar";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
 import ModalPanel from "./ModalPanel";
@@ -660,12 +659,10 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return null;
   };
   const giorniFermaCM = (c) => {
-    const start = c?.ferma_dal || c?.fase_start || c?.updated_at || c?.aggiornato || c?.created_at || c?.creato;
-    if (!start) return 0;
-    const d = new Date(start);
-    if (isNaN(d.getTime())) return 0;
-    const gg = Math.floor((Date.now() - d.getTime()) / 86400000);
-    return gg < 0 ? 0 : gg;
+    const oggi0 = new Date(); oggi0.setHours(0,0,0,0);
+    const d = parseDataCM(c.aggiornato);
+    if(!d) return 0;
+    return Math.floor((oggi0 - d) / 86400000);
   };
 
   // === GMAIL INTEGRATION ===
@@ -925,9 +922,9 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     if (!canDo("commessa")) return;
     const code = "S-" + String(cantieri.length + 1).padStart(4, "0");
     const _ctMatch = contatti?.find((ct:any) => ct.id === newCM.clienteId || ((ct.nome||"").toLowerCase()+(ct.cognome?" "+ct.cognome:"").toLowerCase()).trim() === ([newCM.cliente,newCM.cognome].filter(Boolean).join(" ").toLowerCase()));
-    const nc = { id: Date.now(), code, clienteId: _ctMatch?.id || newCM.clienteId || null, cliente: newCM.cliente, cognome: newCM.cognome||"", indirizzo: newCM.indirizzo, telefono: newCM.telefono, email: newCM.email||"", fase: "sopralluogo", rilievi: [], sistema: newCM.sistema, tipo: newCM.tipo, difficoltaSalita: newCM.difficoltaSalita, mezzoSalita: newCM.mezzoSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, tipoEdificio: newCM.tipoEdificio||"", livello1Label: newCM.livello1Label||"", livello2Label: newCM.livello2Label||"", livello3Label: newCM.livello3Label||"", note: newCM.note, allegati: [], creato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), aggiornato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
+    const nc = { id: Date.now(), code, clienteId: _ctMatch?.id || newCM.clienteId || null, cliente: newCM.cliente, cognome: newCM.cognome||"", indirizzo: newCM.indirizzo, telefono: newCM.telefono, email: newCM.email||"", fase: "sopralluogo", rilievi: [], sistema: newCM.sistema, tipo: newCM.tipo, difficoltaSalita: newCM.difficoltaSalita, mezzoSalita: newCM.mezzoSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, note: newCM.note, allegati: [], creato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), aggiornato: new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short"}), log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
     setCantieri(cs => [nc, ...cs]);
-    setNewCM({ cliente: "", cognome: "", indirizzo: "", telefono: "", email: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", tipoEdificio: "", livello1Label: "", livello2Label: "", livello3Label: "", note: "" });
+    setNewCM({ cliente: "", cognome: "", indirizzo: "", telefono: "", email: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", note: "" });
     setShowModal(null);
     setSelectedCM(nc);
     setTab("commesse");
@@ -1406,7 +1403,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       return;
     }
     if ((newEvent as any)._newCliente && (newEvent as any)._nomeCliente) {
-      const nc = { id: "CT-" + Date.now(), nome: (newEvent as any)._nomeCliente, cognome: (newEvent as any)._cognomeCliente || "", tipo: "cliente", telefono: (newEvent as any)._telCliente || "", indirizzo: (newEvent as any)._addrCliente || "", email: (newEvent as any)._emailCliente || "", codiceFiscale: (newEvent as any)._cfCliente || "", citta: (newEvent as any)._cittaCliente || "", cap: (newEvent as any)._capCliente || "" };
+      const nc = { id: "CT-" + Date.now(), nome: (newEvent as any)._nomeCliente, cognome: (newEvent as any)._cognomeCliente || "", tipo: "cliente", telefono: (newEvent as any)._telCliente || "", indirizzo: (newEvent as any)._addrCliente || "" };
       setContatti(prev => [...prev, nc]);
       newEvent.persona = nc.nome + (nc.cognome ? " " + nc.cognome : "");
     }
@@ -1651,7 +1648,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   // === <I d={ICO.target} /> CARICA DEMO COMPLETO - forza TUTTI i dati per vedere il ciclo ===
   const caricaDemoCompleto = () => _caricaDemoCompleto({ setCantieri, setEvents, setTasks, setFattureDB, setOrdiniFornDB, setMontaggiDB, setSelectedCM, setSelectedVano, setTab });
 
-  const renderHome = () => <HomePanel onNavigate={setTab} />;
+  const renderHome = () => <HomePanel />;
 // =======================================================
 // MASTRO ERP v2 - PARTE 2/5
 // Righe 1281-2638: renderCMCard (con AFASE+euro+scadenza+borderLeft),
@@ -2496,13 +2493,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return annoPrev.length + 1;
   };
 
-  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica", importoOverride?: number) => {
+  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica") => {
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
     const importoBase = calcolaTotaleCommessa(c);
     const giaPagato = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s, f) => s + (f.importo || 0), 0);
-    const importo = importoOverride && importoOverride > 0 ? Math.round(importoOverride) : (tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase);
+    const importo = tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase;
     const iva = 10; // serramenti = 10% se ristrutturazione, 22% se nuova costruzione
     const imponibile = Math.round(importo / (1 + iva / 100) * 100) / 100;
     const ivaAmt = importo - imponibile;
@@ -2615,7 +2612,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
 
   // Crea nuovo ordine fornitore da commessa
-  const creaOrdineFornitore = (c, fornitoreNome = "", noteGenerali = "") => {
+  const creaOrdineFornitore = (c, fornitoreNome = "") => {
     const vani = getVaniAttivi(c);
     // Auto-genera righe da vani commessa con prezzi
     const righe = vani.map(v => {
@@ -2649,7 +2646,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         piva: "",
         referente: "",
       },
-      note: noteGenerali,
       righe,
       totale: righe.reduce((s, r) => s + r.totale, 0),
       iva: 22, // IVA fornitore standard
@@ -3384,7 +3380,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     clientiSearch, setClientiSearch, clientiFilter, setClientiFilter,
     selectedCliente, setSelectedCliente,
     showNewCliente, setShowNewCliente, newCliente, setNewCliente,
-    aziendaInfo, sistemiDB, vetriDB, coloriDB, coprifiliDB, lamiereDB,
   };
 
 
@@ -5309,7 +5304,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
-      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : "altro"} onNavigate={setTab} />
     </>
     </MastroContext.Provider>
   );
