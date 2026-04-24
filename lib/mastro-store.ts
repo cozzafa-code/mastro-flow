@@ -1,13 +1,9 @@
 // ═══════════════════════════════════════════════════════════
-// MASTRO ERP — mastro-store.ts
+// MASTRO ERP — mastro-store.ts (v2)
 // API unificata per il data layer. Sostituisce chiamate dirette a supabase.
 // Parte del Sync Engine v1
 //
-// Uso:
-//   import { mastroStore } from "@/lib/mastro-store";
-//   const id = await mastroStore.commesse.create({ cliente: "...", ... });
-//   await mastroStore.commesse.update(id, { nota: "..." });
-//   await mastroStore.commesse.softDelete(id);
+// v2: aggiunte funzioni bulk UNISCI / ARCHIVIA / detect_duplicates
 // ═══════════════════════════════════════════════════════════
 
 import { supabase } from "./supabase";
@@ -50,21 +46,14 @@ const createRecord = async <T extends Record<string, any>>(
     created_at: data.created_at || now,
     updated_at: now,
   };
-
-  // 1. Scrivi subito in cache locale → la UI vede il record immediatamente
   await idbPut(storeFor(table), record);
-
-  // 2. Metti in coda per sync
   await outboxEnqueue({
     table,
     operation: "insert",
     payload: record,
     temp_id: tempId,
   });
-
-  // 3. Tenta sync subito (se online)
   syncWorker.trigger();
-
   return tempId;
 };
 
@@ -75,20 +64,15 @@ const updateRecord = async <T extends Record<string, any>>(
 ): Promise<void> => {
   const resolved = await idbResolveId(id);
   const now = new Date().toISOString();
-
-  // Merge su cache
   const existing = await idbGet(storeFor(table), resolved);
   const updated = { ...(existing || {}), ...patch, id: resolved, updated_at: now };
   await idbPut(storeFor(table), updated);
-
-  // Outbox
   await outboxEnqueue({
     table,
     operation: "update",
     payload: patch,
     target_id: resolved,
   });
-
   syncWorker.trigger();
 };
 
@@ -105,7 +89,6 @@ const deleteRecord = async (table: TableName, id: string): Promise<void> => {
 };
 
 const softDeleteRecord = async (table: TableName, id: string): Promise<void> => {
-  // Soft delete = UPDATE deleted_at
   const now = new Date().toISOString();
   const { data: { user } } = await supabase.auth.getUser();
   await updateRecord(table, id, {
@@ -120,7 +103,6 @@ const fetchAllFromServer = async (
   aziendaId: string
 ): Promise<any[]> => {
   let query = supabase.from(table).select("*").eq("azienda_id", aziendaId);
-  // Per commesse: escludi soft-deleted
   if (table === "commesse") {
     query = query.is("deleted_at", null);
   }
@@ -144,14 +126,9 @@ const hydrate = async (
   return server;
 };
 
-/**
- * Restituisce l'unione: record server (da cache IDB aggiornata) + record pending locali (tempId).
- * Filtra eventuali soft-deleted.
- */
 const listMerged = async (table: TableName): Promise<any[]> => {
   const all = await idbGetAll(storeFor(table));
-  // Filtra soft-deleted
-  return all.filter((r: any) => !r.deleted_at);
+  return all.filter((r: any) => !r.deleted_at && !r.merged_into);
 };
 
 // ─── API per tabella ────────────────────────────────────────
@@ -165,7 +142,7 @@ const makeTableApi = (table: TableName) => ({
   hydrate: (aziendaId: string) => hydrate(table, aziendaId),
 });
 
-// ─── Bulk operations (per selezione multipla) ───────────────
+// ─── Bulk: soft delete ──────────────────────────────────────
 const bulkSoftDelete = async (
   table: TableName,
   ids: string[]
@@ -182,21 +159,194 @@ const bulkSoftDelete = async (
   return { ok, skipped: ids.length - ok };
 };
 
+// ─── Bulk: ARCHIVIA ─────────────────────────────────────────
+/**
+ * Archivia N commesse (archiviazione reversibile, non cestino).
+ * Usa la funzione SQL atomica archivia_commesse.
+ */
+const bulkArchivia = async (
+  ids: string[]
+): Promise<{ ok: number; skipped: number; invalidIds: string[] }> => {
+  // Solo UUID validi (no tempId, no locali pre-migration)
+  const validIds = ids.filter((id) => isUuid(id));
+  const invalidIds = ids.filter((id) => !isUuid(id));
+
+  if (validIds.length === 0) {
+    return { ok: 0, skipped: ids.length, invalidIds };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc("archivia_commesse", {
+      commessa_ids: validIds,
+      unarchive: false,
+    });
+    if (error) throw error;
+    const ok = typeof data === "number" ? data : validIds.length;
+
+    // Aggiorna cache locale: segna archived_at
+    const now = new Date().toISOString();
+    const { data: { user } } = await supabase.auth.getUser();
+    for (const id of validIds) {
+      const existing = await idbGet(STORES.CANTIERI, id);
+      if (existing) {
+        await idbPut(STORES.CANTIERI, {
+          ...existing,
+          archived_at: now,
+          archived_by: user?.id || null,
+          updated_at: now,
+        });
+      }
+    }
+
+    return { ok, skipped: invalidIds.length, invalidIds };
+  } catch (e: any) {
+    console.error("[mastro:store] bulkArchivia error:", e);
+    throw e;
+  }
+};
+
+const bulkUnarchivia = async (
+  ids: string[]
+): Promise<{ ok: number }> => {
+  const validIds = ids.filter((id) => isUuid(id));
+  if (validIds.length === 0) return { ok: 0 };
+
+  const { data, error } = await supabase.rpc("archivia_commesse", {
+    commessa_ids: validIds,
+    unarchive: true,
+  });
+  if (error) throw error;
+
+  // Aggiorna cache
+  for (const id of validIds) {
+    const existing = await idbGet(STORES.CANTIERI, id);
+    if (existing) {
+      await idbPut(STORES.CANTIERI, {
+        ...existing,
+        archived_at: null,
+        archived_by: null,
+        updated_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  return { ok: typeof data === "number" ? data : validIds.length };
+};
+
+// ─── UNISCI (merge) ─────────────────────────────────────────
+export interface MergeResult {
+  target_id: string;
+  sources_merged: number;
+  rilievi_spostati: number;
+  vani_spostati: number;
+  merged_at: string;
+}
+
+/**
+ * Accorpa source_ids dentro target_id via funzione SQL atomica.
+ * scalarOverrides: se l'utente ha risolto conflitti, passa i valori finali
+ *                   (es. { telefono: "340...", indirizzo: "Via X" })
+ */
+const mergeCommesse = async (
+  targetId: string,
+  sourceIds: string[],
+  scalarOverrides?: Record<string, any>
+): Promise<MergeResult> => {
+  if (!isUuid(targetId)) {
+    throw new Error("La commessa target deve essere sincronizzata sul server (UUID)");
+  }
+  const validSources = sourceIds.filter((id) => isUuid(id));
+  if (validSources.length === 0) {
+    throw new Error("Nessuna commessa sorgente valida");
+  }
+  if (validSources.length !== sourceIds.length) {
+    console.warn(
+      `[mergeCommesse] ${sourceIds.length - validSources.length} source ID non UUID ignorate`
+    );
+  }
+
+  const { data, error } = await supabase.rpc("merge_commesse", {
+    target_id: targetId,
+    source_ids: validSources,
+    scalar_overrides: scalarOverrides || {},
+  });
+
+  if (error) {
+    console.error("[mergeCommesse] DB error:", error);
+    throw new Error(error.message || "Merge fallito lato server");
+  }
+
+  // Aggiorna cache locale:
+  // 1. Refresh del target (prende i rilievi/vani spostati)
+  const { data: freshTarget } = await supabase
+    .from("commesse")
+    .select("*")
+    .eq("id", targetId)
+    .single();
+  if (freshTarget) {
+    await idbPut(STORES.CANTIERI, freshTarget);
+  }
+
+  // 2. Rimuovi source dalla cache (ora hanno merged_into e deleted_at)
+  for (const id of validSources) {
+    await idbDelete(STORES.CANTIERI, id);
+  }
+
+  return data as MergeResult;
+};
+
+// ─── DUPLICATE DETECTION ────────────────────────────────────
+export interface DuplicateCandidate {
+  id: string;
+  code: string;
+  cliente: string;
+  cognome: string | null;
+  telefono: string | null;
+  indirizzo: string | null;
+  fase: string;
+  created_at: string;
+  match_score: number;
+}
+
+/**
+ * Trova possibili duplicati di una commessa nuova prima di crearla.
+ * Matcha su cliente + cognome + telefono + indirizzo (score-based).
+ */
+const detectDuplicates = async (params: {
+  cliente: string;
+  cognome?: string;
+  telefono?: string;
+  indirizzo?: string;
+  daysWindow?: number;
+}): Promise<DuplicateCandidate[]> => {
+  const { cliente, cognome, telefono, indirizzo, daysWindow = 30 } = params;
+  if (!cliente || cliente.trim() === "") return [];
+
+  const { data, error } = await supabase.rpc("detect_duplicate_commessa", {
+    p_cliente: cliente,
+    p_cognome: cognome || null,
+    p_telefono: telefono || null,
+    p_indirizzo: indirizzo || null,
+    p_days_window: daysWindow,
+  });
+
+  if (error) {
+    console.warn("[detectDuplicates] error:", error.message);
+    return [];
+  }
+  return (data || []) as DuplicateCandidate[];
+};
+
 // ─── Init ───────────────────────────────────────────────────
 let _initialized = false;
 const init = async (aziendaId?: string): Promise<void> => {
   if (_initialized) return;
   _initialized = true;
-
-  // Start sync worker
   syncWorker.start();
-
-  // Hydrate da server se aziendaId fornito
   if (aziendaId) {
     await hydrate("commesse", aziendaId);
   }
-
-  console.log("[mastro:store] initialized");
+  console.log("[mastro:store] initialized v2");
 };
 
 // ─── Export API ─────────────────────────────────────────────
@@ -207,6 +357,12 @@ export const mastroStore = {
 
   // Bulk
   bulkSoftDelete,
+  bulkArchivia,
+  bulkUnarchivia,
+
+  // Merge & duplicates
+  mergeCommesse,
+  detectDuplicates,
 
   // Lifecycle
   init,
@@ -216,7 +372,6 @@ export const mastroStore = {
   rawIdb: { idbGet, idbGetAll, idbPut },
 };
 
-// Debug su window
 if (typeof window !== "undefined") {
   (window as any).__mastro_store = mastroStore;
 }

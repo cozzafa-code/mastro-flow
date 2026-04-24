@@ -5,6 +5,10 @@ import React, { useState, useRef } from "react";
 import { useMastro } from "./MastroContext";
 import { supabase } from "../lib/supabase";
 import { mastroStore } from "../lib/mastro-store";
+import MergeCommesseModal from "./MergeCommesseModal";
+
+// UUID check (per escludere ID locali da azioni bulk server-side)
+const _UUID_RX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 import { FF, FM } from "./mastro-constants";
 import RilieviListPanel from "./RilieviListPanel";
 import CMDetailPanel from "./CMDetailPanel";
@@ -80,6 +84,7 @@ export default function CommessePanel() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [showMergeModal, setShowMergeModal] = useState(false);
   const longPressTimer = useRef<any>(null);
   const longPressTriggered = useRef(false);
 
@@ -174,6 +179,60 @@ export default function CommessePanel() {
       alert("Errore eliminazione: " + (e?.message || e));
       setBulkBusy(false);
     }
+  };
+
+  // ─── ARCHIVIA bulk ────────────────────────────────────────
+  const bulkArchivia = async () => {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    const ids = Array.from(selectedIds);
+    const validIds = ids.filter(id => _UUID_RX.test(id));
+    if (validIds.length === 0) {
+      alert(`Impossibile archiviare: nessuna delle ${ids.length} commesse selezionate è sincronizzata sul server.`);
+      return;
+    }
+    const n = validIds.length;
+    const ok = window.confirm(
+      `Archiviare ${n} commess${n === 1 ? "a" : "e"}?\n\n` +
+      `Verranno nascoste dalla lista ma restano recuperabili in qualsiasi momento.`
+    );
+    if (!ok) return;
+    setBulkBusy(true);
+    try {
+      const result = await mastroStore.bulkArchivia(validIds);
+      console.log(`[CommessePanel] bulkArchivia → ok=${result.ok} skipped=${result.skipped}`);
+      if (result.ok === 0) throw new Error("Nessuna commessa archiviata");
+      exitSelection();
+      window.location.reload();
+    } catch (e: any) {
+      console.error("[CommessePanel] bulkArchivia error:", e);
+      alert("Errore archiviazione: " + (e?.message || e));
+      setBulkBusy(false);
+    }
+  };
+
+  // ─── UNISCI bulk (apre modal) ─────────────────────────────
+  const openMergeModal = () => {
+    if (selectedIds.size < 2) {
+      alert("Seleziona almeno 2 commesse per unirle.");
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    const uuidIds = ids.filter(id => _UUID_RX.test(id));
+    if (uuidIds.length < 2) {
+      alert(
+        `Impossibile unire: servono almeno 2 commesse sincronizzate sul server.\n` +
+        `Selezionate: ${ids.length}, valide: ${uuidIds.length}`
+      );
+      return;
+    }
+    setShowMergeModal(true);
+  };
+
+  const handleMergeDone = (result: any) => {
+    console.log(`[CommessePanel] merge OK:`, result);
+    setShowMergeModal(false);
+    exitSelection();
+    window.location.reload();
   };
   const fmtEuro = (n: number) => n > 0 ? "€" + n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) : "";
   const fmtData = (d: string) => d ? new Date(d + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "";
@@ -831,6 +890,18 @@ export default function CommessePanel() {
         </div>
       )}
 
+      {/* ═══ MERGE MODAL ═══ */}
+      {showMergeModal && (() => {
+        const selected = filteredSorted.filter((c: any) => selectedIds.has(c.id));
+        return (
+          <MergeCommesseModal
+            commesse={selected}
+            onClose={() => setShowMergeModal(false)}
+            onDone={handleMergeDone}
+          />
+        );
+      })()}
+
       {/* ═══ BULK TOOLBAR FLOTTANTE ═══ */}
       {selectionMode && (
         <div style={{
@@ -870,6 +941,58 @@ export default function CommessePanel() {
             }}
           >
             {selectedIds.size === filteredSorted.length ? "NESSUNA" : "TUTTE"}
+          </button>
+
+          {/* Unisci (solo se ≥2 selezionate) */}
+          {selectedIds.size >= 2 && (
+            <button
+              onClick={openMergeModal}
+              disabled={bulkBusy}
+              style={{
+                padding: "10px 12px", borderRadius: 11, border: "none",
+                background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 100%)",
+                color: "#fff", fontSize: 10, fontWeight: 900,
+                cursor: "pointer",
+                letterSpacing: "0.3px",
+                display: "flex", alignItems: "center", gap: 5,
+                boxShadow: "0 3px 8px rgba(40,160,160,0.4)",
+                opacity: bulkBusy ? 0.5 : 1,
+              }}
+              title="Unisci commesse selezionate"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="8 17 12 21 16 17"/>
+                <line x1="12" y1="12" x2="12" y2="21"/>
+                <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
+              </svg>
+              UNISCI
+            </button>
+          )}
+
+          {/* Archivia */}
+          <button
+            onClick={bulkArchivia}
+            disabled={selectedIds.size === 0 || bulkBusy}
+            style={{
+              padding: "10px 12px", borderRadius: 11, border: "none",
+              background: selectedIds.size === 0
+                ? "rgba(245,160,48,0.3)"
+                : "linear-gradient(145deg, #F5A030, #C97716)",
+              color: "#fff", fontSize: 10, fontWeight: 900,
+              cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
+              letterSpacing: "0.3px",
+              display: "flex", alignItems: "center", gap: 5,
+              boxShadow: selectedIds.size > 0 ? "0 3px 8px rgba(245,160,48,0.4)" : "none",
+              opacity: bulkBusy ? 0.5 : 1,
+            }}
+            title="Archivia commesse selezionate"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="21 8 21 21 3 21 3 8"/>
+              <rect x="1" y="3" width="22" height="5"/>
+              <line x1="10" y1="12" x2="14" y2="12"/>
+            </svg>
+            ARCHIVIA
           </button>
 
           {/* Cestino */}
