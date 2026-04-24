@@ -4686,7 +4686,7 @@ export default function VanoDetailPanel() {
                 }
                 // Persisti su Supabase
                 try {
-                  const { supabase } = await import("@/lib/supabaseClient");
+                  const { supabase } = await import("@/lib/supabase");
                   await supabase.from("vani").update({ verificato: next }).eq("id", vr.id);
                 } catch (e) { console.error("toggleFlag save", e); }
               };
