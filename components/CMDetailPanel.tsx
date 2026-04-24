@@ -675,7 +675,7 @@ export default function CMDetailPanel() {
                 console.log("[v79 click] Preventivo al volo triggered", { setPrevWorkspace: typeof setPrevWorkspace, setPrevTab: typeof setPrevTab });
                 try {
                   setPrevWorkspace(true);
-                  setPrevTab("sopralluogo");
+                  setPrevTab("fiscale");
                   setEditingVanoId(null);
                   console.log("[v79 click] setState OK");
                 } catch (e) {
@@ -1683,33 +1683,91 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
 
       return (
         <div style={{ paddingBottom: 80 }}>
-          {/* Header sticky */}
-          <div style={{ background: T.topbar || "#1A1A1C", padding: "calc(env(safe-area-inset-top, 0px) + 12px) 14px 12px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 10 }}>
-            <div onClick={() => { console.log("[freccia] back"); setPrevWorkspace(false); setPrevTab && setPrevTab("riepilogo"); }} style={{ fontSize: 18, cursor: "pointer", color: "#fff", padding: "4px 8px" }}>←</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.code} · {c.cliente} {c.cognome || ""}</div>
-              <div style={{ fontSize: 10, color: "#ffffff60" }}>{c.indirizzo || ""}</div>
-            </div>
-            {fattureDB.filter(f => f.cmId === c.id).length > 0 && (
-              <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#28A0A030" : "#D0800830", color: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#28A0A0" : "#D08008", flexShrink: 0 }}>
-                {fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "✓ Pagata" : "📋 Fattura"}
-              </span>
-            )}
-            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-              <div style={{ background: "rgba(255,255,255,0.08)", padding: "5px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#9FE1CB", border: "1px solid rgba(255,255,255,0.15)" }}>
-                {pwVani.reduce((s, v) => { const l = v.misure?.lCentro || v.larghezza || 0; const h = v.misure?.hCentro || v.altezza || 0; const p = v.pezzi || 1; return s + ((l*h)/1000000)*p; }, 0).toFixed(2)} m²
+          {/* v81 · HEADER ULTRA HD identico pannello v8 */}
+          <div style={{
+            background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",
+            padding: "calc(env(safe-area-inset-top, 0px) + 22px) 18px 22px",
+            color: "#fff", position: "sticky", top: 0, zIndex: 30, overflow: "hidden",
+            boxShadow: "0 10px 32px rgba(30,128,128,0.35), 0 4px 12px rgba(30,128,128,0.15)",
+          }}>
+            <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.1) 40%, transparent 70%)", pointerEvents: "none" as any }} />
+            <div style={{ position: "absolute", bottom: -80, left: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" as any }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
+              <div onClick={() => { setPrevWorkspace(false); setPrevTab && setPrevTab("riepilogo"); }} style={{
+                width: 42, height: 42, borderRadius: 14,
+                background: "rgba(255,255,255,0.22)", backdropFilter: "blur(16px) saturate(180%)", WebkitBackdropFilter: "blur(16px) saturate(180%)" as any,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "inset 0 1px 1.5px rgba(255,255,255,0.45), inset 0 -1px 1px rgba(0,0,0,0.08), 0 3px 8px rgba(0,0,0,0.14)",
+                cursor: "pointer", flexShrink: 0,
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </div>
-              <div style={{ background: T.acc, padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 900, color: "#fff" }}>€{pwFmt(pwTotale)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.92, letterSpacing: "1.3px", textTransform: "uppercase" as any }}>{c.code} &middot; Preventivo</div>
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.8px", marginTop: 3, lineHeight: 1.05, textTransform: "uppercase" as any, textShadow: "0 2px 6px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>
+                  {(c.cliente || "") + (c.cognome ? " " + c.cognome : "")}
+                </div>
+                <div style={{ fontSize: 10.5, opacity: 0.9, marginTop: 4, fontWeight: 600, textTransform: "uppercase" as any, letterSpacing: "0.4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{c.indirizzo || ""}</div>
+              </div>
+              <div style={{ textAlign: "right" as any, flexShrink: 0 }}>
+                <div style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1, textShadow: "0 2px 5px rgba(0,0,0,0.18)" }}>&euro; {pwFmt(pwTotale)}</div>
+                <div style={{ fontSize: 9, opacity: 0.88, fontWeight: 700, marginTop: 4, letterSpacing: "0.4px" }}>IVA {pwIvaDefault}% incl.</div>
+              </div>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div style={{ display: "flex", background: T.card, borderBottom: `1px solid ${T.bdr}`, position: "sticky", top: 52, zIndex: 10 }}>
-            <div onClick={() => setPrevTab("sopralluogo")} style={tabPw("sopralluogo")}><I d={ICO.ruler} /> Vani</div>
-            <div onClick={() => setPrevTab("fiscale")} style={tabPw("fiscale")}><I d={ICO.euro} /> Fiscale</div>
-            <div onClick={() => setPrevTab("condizioni")} style={tabPw("condizioni")}><I d={ICO.fileText} /> Condizioni</div>
-            <div onClick={() => setPrevTab("riepilogo")} style={tabPw("riepilogo")}><I d={ICO.barChart} /> Riepilogo</div>
-            <div onClick={() => setPrevTab("importa")} style={tabPw("importa")}><I d={ICO.download} /> Importa</div>
+          {/* v81 · STEPPER 8 puntini */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 18px 0" }}>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 2/8</div>
+            <div style={{ display: "flex", gap: 3, flex: 1 }}>
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #3ABDBD, #28A0A0)", boxShadow: "0 0 5px rgba(40,160,160,0.5)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", boxShadow: "0 0 7px rgba(29,158,117,0.6)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
+              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
+            </div>
+            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Preventivo</div>
+          </div>
+
+          {/* v81 · 2 TAB SOLTANTO */}
+          <div style={{ display: "flex", gap: 6, padding: "13px 14px 0" }}>
+            <div onClick={() => setPrevTab("fiscale")} style={{
+              flex: 1, padding: "12px 10px", borderRadius: 13, fontSize: 11, fontWeight: 900,
+              textAlign: "center" as any, cursor: "pointer",
+              background: prevTab === "fiscale"
+                ? "linear-gradient(145deg, #2FB2A8 0%, #1E8080 100%)"
+                : "#fff",
+              color: prevTab === "fiscale" ? "#fff" : "#5A7878",
+              letterSpacing: "0.4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              border: prevTab === "fiscale" ? "1px solid transparent" : "1px solid rgba(200,228,228,0.5)",
+              textTransform: "uppercase" as any,
+              boxShadow: prevTab === "fiscale"
+                ? "0 6px 16px rgba(30,128,128,0.35), inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -2px 2px rgba(0,0,0,0.08)"
+                : "0 2px 6px rgba(13,31,31,0.04)",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 11 13 15 9"/></svg>
+              Fiscale &amp; Condizioni
+            </div>
+            <div onClick={() => setPrevTab("riepilogo")} style={{
+              flex: 1, padding: "12px 10px", borderRadius: 13, fontSize: 11, fontWeight: 900,
+              textAlign: "center" as any, cursor: "pointer",
+              background: prevTab === "riepilogo"
+                ? "linear-gradient(145deg, #2FB2A8 0%, #1E8080 100%)"
+                : "#fff",
+              color: prevTab === "riepilogo" ? "#fff" : "#5A7878",
+              letterSpacing: "0.4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              border: prevTab === "riepilogo" ? "1px solid transparent" : "1px solid rgba(200,228,228,0.5)",
+              textTransform: "uppercase" as any,
+              boxShadow: prevTab === "riepilogo"
+                ? "0 6px 16px rgba(30,128,128,0.35), inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -2px 2px rgba(0,0,0,0.08)"
+                : "0 2px 6px rgba(13,31,31,0.04)",
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Riepilogo &amp; Invio
+            </div>
           </div>
 
           <div style={{ paddingTop: 12 }}>
