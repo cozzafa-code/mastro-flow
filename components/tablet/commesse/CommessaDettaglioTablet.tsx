@@ -5,6 +5,7 @@ import CommessaHeaderTablet from "./CommessaHeaderTablet";
 import CommessaStepperTablet, { FaseWorkflow } from "./CommessaStepperTablet";
 import CommessaTabbarTablet, { TabCommessa } from "./CommessaTabbarTablet";
 import TabVaniTablet from "./tabs/TabVaniTablet";
+import TabDocumentiTablet from "./tabs/TabDocumentiTablet";
 
 export interface CommessaDettaglioTabletProps {
   numero: string;
@@ -37,14 +38,19 @@ export default function CommessaDettaglioTablet({ numero, onBack }: CommessaDett
 
       <CommessaTabbarTablet active={tab} onChange={setTab} />
 
-      {/* Tab content */}
       {tab === "vani" && (
         <TabVaniTablet
           onOpenVano={(id) => console.log("apri vano:", id)}
           onAddVano={() => console.log("aggiungi vano")}
         />
       )}
-      {tab !== "vani" && (
+      {tab === "documenti" && (
+        <TabDocumentiTablet
+          onOpenDoc={(id) => console.log("apri doc:", id)}
+          onUpload={() => console.log("upload")}
+        />
+      )}
+      {tab !== "vani" && tab !== "documenti" && (
         <div style={cardStyle({ padding: "40px 28px", textAlign: "center" })}>
           <div style={{ fontSize: 14, fontWeight: 700, color: TT.text2, marginBottom: 4 }}>
             Tab: {tab}
