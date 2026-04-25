@@ -1,13 +1,20 @@
 "use client";
 import * as React from "react";
-import { TT, cardStyle } from "../design-system";
 import CalendarioToolbarTablet, { VistaCal, FiltroTipo } from "./CalendarioToolbarTablet";
 import CalendarioMeseTablet from "./CalendarioMeseTablet";
+import CalendarioSettimanaTablet from "./CalendarioSettimanaTablet";
+import CalendarioGiornoTablet from "./CalendarioGiornoTablet";
 import CalendarioSidebarTablet from "./CalendarioSidebarTablet";
 
 export default function CalendarioTablet() {
   const [vista, setVista] = React.useState<VistaCal>("mese");
   const [filtro, setFiltro] = React.useState<FiltroTipo>("tutti");
+
+  const titolo = vista === "mese"
+    ? "aprile 2026"
+    : vista === "settimana"
+      ? "20-26 aprile 2026"
+      : "Sabato 25 aprile 2026";
 
   return (
     <div>
@@ -16,7 +23,7 @@ export default function CalendarioTablet() {
         onVistaChange={setVista}
         filtro={filtro}
         onFiltroChange={setFiltro}
-        meseAnno="aprile 2026"
+        meseAnno={titolo}
         onPrev={() => console.log("prev")}
         onNext={() => console.log("next")}
         onToday={() => console.log("today")}
@@ -36,15 +43,17 @@ export default function CalendarioTablet() {
         </div>
       )}
 
-      {vista !== "mese" && (
-        <div style={cardStyle({ padding: "40px 28px", textAlign: "center" })}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: TT.text2, marginBottom: 4 }}>
-            Vista {vista}
-          </div>
-          <div style={{ fontSize: 12, color: TT.text3 }}>
-            In arrivo step 9b.
-          </div>
-        </div>
+      {vista === "settimana" && (
+        <CalendarioSettimanaTablet
+          oggiIdx={5}
+          onSelectEvento={(id) => console.log("evento:", id)}
+        />
+      )}
+
+      {vista === "giorno" && (
+        <CalendarioGiornoTablet
+          onSelectEvento={(id) => console.log("evento:", id)}
+        />
       )}
     </div>
   );
