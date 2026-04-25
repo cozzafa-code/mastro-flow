@@ -521,12 +521,12 @@ function TlRow({
 // =================================================================
 const S: Record<string, any> = {
   overlay: {
-    position: "fixed", inset: 0, zIndex: 90,
+    position: "fixed", inset: 0, zIndex: 9999,
     background: "rgba(13,31,31,0.55)", backdropFilter: "blur(4px)",
     display: "flex", alignItems: "stretch", justifyContent: "center",
   },
   sheet: {
-    background: "#F4F6F5", width: "100%", maxWidth: 480,
+    background: "#F4F6F5", width: "100%",
     display: "flex", flexDirection: "column",
     overflow: "hidden",
     animation: "daySheetUp 0.4s cubic-bezier(.2,.8,.2,1)",
