@@ -35,6 +35,7 @@ import PosizionatoreLavorazioni from './PosizionatoreLavorazioni';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
+import AgendaCalendarioPanel from "@/components/agenda/AgendaCalendarioPanel";
 // ═══════════════════════════════════════════════════════════
 // MASTRO DESKTOP — fliwoX Design System
 // Sessione 5: Sidebar riorg + Tipologie SVG + Configuratore
@@ -671,7 +672,8 @@ export default function MastroDesktop() {
   const renderPanel = () => {
     switch (activePanel) {
       case 'dashboard': return <HomePanel onNavigate={navigateTo} />;
-      case 'agenda': return <AgendaPanel />;
+      case "agenda":
+      return <AgendaCalendarioPanel />;
       case 'commesse': return <CommessePanel onNavigate={navigateTo} onOpenVano={handleOpenVano} />;
       case 'messaggi': return <MastroSignal onBack={() => navigateTo('home')} initialEntity={signalEntity} initialContatto={signalContatto} />;
       case 'clienti': return <ClientiPanel />;
