@@ -71,7 +71,16 @@ export interface DayEvento {
 
 export type DayProssimoColore = "verde" | "viola" | "teal" | "ambra" | "blu";
 
+export interface DayWorkflow {
+  step_now: number | null;
+  step_total: number;        // 8
+  pct: number | null;        // 0..100
+  label: string | null;
+  fase: string | null;
+}
+
 export interface DayProssimoStep {
+  workflow?: DayWorkflow | null;
   azione: string;
   titolo: string;
   modulo: string | null;

@@ -269,6 +269,21 @@ export function DaySheet({ open, onClose }: Props) {
                   {ultimoEvento.contesto}
                 </div>
               )}
+              {prossimoStep?.workflow?.step_now != null && (
+                <div style={{
+                  marginTop: 5,
+                  display: "inline-block",
+                  padding: "2px 7px",
+                  background: "rgba(29,158,117,0.15)",
+                  borderRadius: 4,
+                  fontSize: 9,
+                  fontWeight: 900,
+                  color: "#0F8060",
+                  letterSpacing: 0.2,
+                }}>
+                  workflow +1 step ({prossimoStep.workflow.step_now}/{prossimoStep.workflow.step_total})
+                </div>
+              )}
             </div>
             <button type="button" onClick={() => setBannerDismissed(true)} aria-label="Chiudi banner"
               style={{
@@ -358,6 +373,41 @@ export function DaySheet({ open, onClose }: Props) {
                   <div style={{ fontSize: 12, fontWeight: 900, marginTop: 1, letterSpacing: -0.1 }}>
                     {prossimoStep.sub_modulo ?? prossimoStep.modulo}{prossimoStep.step ? ` · ${prossimoStep.step}` : ""}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {prossimoStep?.workflow?.step_now != null && prossimoStep.workflow.pct != null && (
+              <div style={{ position: "relative", marginTop: 12 }}>
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  fontSize: 10, fontWeight: 900, opacity: 0.92,
+                }}>
+                  <span style={{ letterSpacing: 0.2, textTransform: "uppercase", fontSize: 8.5 }}>
+                    Workflow CM
+                    {prossimoStep.workflow.label ? ` · ${prossimoStep.workflow.label}` : ""}
+                  </span>
+                  <b style={{ fontSize: 14, fontWeight: 900 }}>{prossimoStep.workflow.pct}%</b>
+                </div>
+                <div style={{
+                  marginTop: 4, height: 6, borderRadius: 99,
+                  background: "rgba(255,255,255,0.20)", overflow: "hidden",
+                }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${prossimoStep.workflow.pct}%`,
+                    borderRadius: 99,
+                    background: "linear-gradient(90deg, #fff, #E5E0FB)",
+                    boxShadow: "0 0 8px rgba(255,255,255,0.6)",
+                    transition: "width 0.8s cubic-bezier(.2,.8,.2,1)",
+                  }} />
+                </div>
+                <div style={{
+                  marginTop: 4, fontSize: 9, fontWeight: 700,
+                  opacity: 0.85, letterSpacing: 0.2,
+                }}>
+                  {prossimoStep.workflow.step_now}/{prossimoStep.workflow.step_total} step
+                  {ultimoEvento ? " · +1 fatto adesso" : ""}
                 </div>
               </div>
             )}
