@@ -81,11 +81,26 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   
   const [tab, setTab] = useState("home");
 
-  // Listener Day · navigazione bidirezionale
+  // Listener Day · navigazione bidirezionale (con whitelist tab validi)
   React.useEffect(() => {
+    const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro"];
+    const MAPPA_DAY: Record<string,string> = {
+      preventivo: "commesse",
+      mail: "messaggi",
+      foto: "commesse",
+      misure: "commesse",
+      commessa: "commesse",
+      day: "home",
+    };
     const onNav = (e: any) => {
-      const tab = e?.detail?.tab;
-      if (typeof tab === "string") setTab(tab);
+      const raw = e?.detail?.tab;
+      if (typeof raw !== "string") return;
+      const target = MAPPA_DAY[raw] ?? raw;
+      if (TAB_VALIDI.includes(target)) {
+        setTab(target);
+      } else {
+        console.warn("[mastro:nav] tab non valido, ignoro:", raw);
+      }
     };
     window.addEventListener("mastro:nav", onNav);
     return () => window.removeEventListener("mastro:nav", onNav);
