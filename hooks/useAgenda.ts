@@ -194,7 +194,7 @@ export function useAgenda(initialDa?: string, initialA?: string): UseAgendaResul
       if (data && input.luogo && !input.lat) {
         (async () => {
           try {
-            const { geocodeAddress } = await import("@/lib/geocoding");
+            const { geocodeAddressGoogle: geocodeAddress } = await import("@/lib/geocoding-google");
             const geo = await geocodeAddress(input.luogo as string);
             if (geo) {
               await supabase.from("agenda_eventi")

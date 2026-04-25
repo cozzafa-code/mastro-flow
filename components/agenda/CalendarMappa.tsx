@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useAgenda, TIPO_COLORE } from "@/hooks/useAgenda";
-import { MappaLeaflet } from "@/components/agenda/MappaLeaflet";
+import { MappaGoogle } from "@/components/agenda/MappaGoogle";
 
 export function CalendarMappa() {
   const { eventi } = useAgenda();
@@ -15,12 +15,10 @@ export function CalendarMappa() {
   const oggiConCoord = oggiEv.filter((e) => e.lat != null && e.lon != null);
   const senzaCoord = oggiEv.length - oggiConCoord.length;
 
-  // Sort per orario per numerare
   const sortedOggi = [...oggiConCoord].sort((a, b) => a.ora_inizio.localeCompare(b.ora_inizio));
 
   return (
     <div style={{ flex: 1, overflowY: "auto", background: "#F4F6F5", paddingBottom: 80 }}>
-      {/* Stats top */}
       <div style={{ padding: "12px 14px", background: "#fff", borderBottom: "1px solid rgba(200,228,228,0.4)" }}>
         <div style={{ fontSize: 11, fontWeight: 900, color: "#1E8080", letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 6 }}>
           Mappa interventi · oggi
@@ -32,12 +30,10 @@ export function CalendarMappa() {
         </div>
       </div>
 
-      {/* Mappa Leaflet vera */}
       <div style={{ padding: 14 }}>
-        <MappaLeaflet eventi={oggiEv} />
+        <MappaGoogle eventi={oggiEv} />
       </div>
 
-      {/* Lista ordinata */}
       {sortedOggi.length > 0 && (
         <div style={{ padding: "0 14px", display: "flex", flexDirection: "column", gap: 6 }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: "#0F2525", letterSpacing: 0.3, textTransform: "uppercase", marginBottom: 4 }}>
@@ -78,7 +74,6 @@ export function CalendarMappa() {
         </div>
       )}
 
-      {/* Empty / hint */}
       {oggiEv.length === 0 && (
         <div style={{
           margin: "20px 14px", padding: 24, textAlign: "center", borderRadius: 12,
@@ -94,8 +89,7 @@ export function CalendarMappa() {
           border: "1px solid rgba(239,159,39,0.3)",
           fontSize: 10.5, fontWeight: 800, color: "#854F0B", lineHeight: 1.4,
         }}>
-          Gli interventi di oggi non hanno coordinate. Aggiungi un indirizzo nel campo "luogo"
-          per vederli sulla mappa (geocoding automatico via Nominatim).
+          Gli interventi di oggi non hanno coordinate. Aggiungi un indirizzo nel campo "luogo" → geocoding via Google.
         </div>
       )}
     </div>
