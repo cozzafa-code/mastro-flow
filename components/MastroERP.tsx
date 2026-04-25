@@ -94,13 +94,30 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       day: "home",
     };
     const onNav = (e: any) => {
+      // LISTENER ESTESO DAY: gestisce tab + cm_id + apertura PreventivoModal
       const raw = e?.detail?.tab;
+      const cmId = e?.detail?.cm_id;
       if (typeof raw !== "string") return;
       const target = MAPPA_DAY[raw] ?? raw;
-      if (TAB_VALIDI.includes(target)) {
-        setTab(target);
-      } else {
+      if (!TAB_VALIDI.includes(target)) {
         console.warn("[mastro:nav] tab non valido, ignoro:", raw);
+        return;
+      }
+      setTab(target);
+      // Se c'è cm_id, prova a selezionare la commessa
+      if (cmId) {
+        setTimeout(() => {
+          const cm = cantieri.find((c: any) => c.id === cmId);
+          if (cm) {
+            setSelectedCM(cm);
+            setSelectedVano(null);
+            setVanoStep(0);
+            // se modulo è preventivo, apri il modal dopo il render della commessa
+            if (raw === "preventivo") {
+              setTimeout(() => setShowPreventivoModal(true), 250);
+            }
+          }
+        }, 100);
       }
     };
     window.addEventListener("mastro:nav", onNav);

@@ -298,8 +298,8 @@ export function DaySheet({ open, onClose }: Props) {
                       <button
                         onClick={() => {
                           if (typeof window !== "undefined" && day.prossimoStep?.modulo) {
-                            window.dispatchEvent(new CustomEvent("mastro:open_modulo", {
-                              detail: { modulo: day.prossimoStep.modulo, cm_id: day.prossimoStep.cm_id, step: day.prossimoStep.step },
+                            window.dispatchEvent(new CustomEvent("mastro:nav", {
+                              detail: { tab: day.prossimoStep.modulo, cm_id: day.prossimoStep.cm_id, step: day.prossimoStep.step },
                             }));
                           }
                           onClose();
@@ -418,7 +418,7 @@ export function DaySheet({ open, onClose }: Props) {
 // =================================================================
 function openModulo(modulo: string) {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("mastro:open_modulo", { detail: { modulo } }));
+    window.dispatchEvent(new CustomEvent("mastro:nav", { detail: { tab: modulo } }));
   }
 }
 
