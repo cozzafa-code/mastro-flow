@@ -60,3 +60,17 @@ export function useDayUI(): DayCtx {
   if (!ctx) return { open: false, setOpen: () => {}, toggle: () => {} };
   return ctx;
 }
+
+// R3 · per passare mail_id quando apri Mail dal banner specifico:
+//   window.dispatchEvent(new CustomEvent('mastro:nav', {
+//     detail: { tab: 'messaggi', mail_id: 'uuid-mail', cm_id: 'uuid-cm' }
+//   }));
+//
+// R4 · per riaprire modulo+cm+step esatto da pillola "Aperti adesso":
+//   window.dispatchEvent(new CustomEvent('mastro:nav', {
+//     detail: { tab: 'commesse', cm_id: 'uuid', panel: 'PrevDetailPanel', step: 'fiscale' }
+//   }));
+//
+// Il listener in MastroERP.tsx gia' supporta tab+cm_id da R1+R2.
+// Per attivare R3+R4 il listener deve estrarre mail_id e step dal detail
+// e passarli al panel target via context o querystring.

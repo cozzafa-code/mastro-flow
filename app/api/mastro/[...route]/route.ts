@@ -78,3 +78,10 @@ export async function GET(request, { params }) {
     }
   } catch (err) { return NextResponse.json({ error: err.message }, { status: 500 }); }
 }
+
+// P2 · TODO opzionale: dopo aver loggato mail_inviata, se l'oggetto/body contiene 'preventivo'
+//      o se c'e' un allegato di tipo preventivo, loggare anche prev_inviato:
+//      await supabase.from('day_eventi').insert({
+//        azienda_id, user_id, tipo: 'prev_inviato', modulo_origine: 'mail',
+//        direzione: 'uscita', cm_id, titolo_breve: 'Preventivo inviato', contesto: oggetto,
+//      });
