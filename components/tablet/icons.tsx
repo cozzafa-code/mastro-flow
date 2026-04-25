@@ -5,43 +5,20 @@ import * as React from "react";
 // MASTRO TABLET - ICONS
 // =========================================================
 // Set icone SVG inline (Lucide-like) per la versione tablet.
-// Stroke-width 2.2 per resa HD pastello.
-//
-// USO:
-//   import { Icon } from "@/components/tablet/icons";
-//   <Icon name="dashboard" size={14} color="#fff" />
 // =========================================================
 
 export type IconName =
-  // Sidebar (15 voci)
-  | "dashboard"
-  | "calendario"
-  | "commesse"
-  | "sopralluoghi"
-  | "produzione"
-  | "montaggi"
-  | "ordini"
-  | "magazzino"
-  | "clienti"
-  | "contabilita"
-  | "fiscale"
-  | "team"
-  | "ops"
-  | "ai"
-  | "impostazioni"
+  // Sidebar (15)
+  | "dashboard" | "calendario" | "commesse" | "sopralluoghi"
+  | "produzione" | "montaggi" | "ordini" | "magazzino"
+  | "clienti" | "contabilita" | "fiscale" | "team" | "ops" | "ai" | "impostazioni"
   // Topbar
-  | "search"
-  | "bell"
-  | "chat"
-  | "task"
+  | "search" | "bell" | "chat" | "task"
+  // KPI dashboard (varianti pulite per uso in tondo)
+  | "kpiCommesse" | "kpiSopralluogo" | "kpiProduzione" | "kpiFatturato" | "kpiMargine"
   // Common
-  | "chevronRight"
-  | "chevronLeft"
-  | "chevronDown"
-  | "chevronUp"
-  | "plus"
-  | "x"
-  | "check";
+  | "chevronRight" | "chevronLeft" | "chevronDown" | "chevronUp"
+  | "plus" | "x" | "check" | "trendUp" | "trendFlat";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   dashboard: (
@@ -121,11 +98,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
-  ops: (
-    <>
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-    </>
-  ),
+  ops: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />,
   ai: (
     <>
       <circle cx="12" cy="12" r="3" />
@@ -150,15 +123,46 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </>
   ),
-  chat: (
-    <>
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </>
-  ),
+  chat: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
   task: (
     <>
       <polyline points="9 11 12 14 22 4" />
       <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </>
+  ),
+  // KPI - usano stessi path di sopra ma in dimensioni piu' grandi
+  kpiCommesse: (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </>
+  ),
+  kpiSopralluogo: (
+    <>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </>
+  ),
+  kpiProduzione: (
+    <>
+      <path d="M2 20h20" />
+      <path d="M5 20V8l5-4 5 4v12" />
+      <path d="M19 20V13l-2-2" />
+    </>
+  ),
+  kpiFatturato: (
+    <>
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </>
+  ),
+  kpiMargine: (
+    <>
+      <line x1="19" y1="5" x2="5" y2="19" />
+      <circle cx="6.5" cy="6.5" r="2.5" />
+      <circle cx="17.5" cy="17.5" r="2.5" />
     </>
   ),
   chevronRight: <polyline points="9 18 15 12 9 6" />,
@@ -178,6 +182,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   check: <polyline points="20 6 9 17 4 12" />,
+  trendUp: (
+    <>
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </>
+  ),
+  trendFlat: <polyline points="3 12 21 12" />,
 };
 
 export interface IconProps {
