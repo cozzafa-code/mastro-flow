@@ -4,6 +4,7 @@ import { TT, cardStyle } from "../design-system";
 import CommessaHeaderTablet from "./CommessaHeaderTablet";
 import CommessaStepperTablet, { FaseWorkflow } from "./CommessaStepperTablet";
 import CommessaTabbarTablet, { TabCommessa } from "./CommessaTabbarTablet";
+import TabVaniTablet from "./tabs/TabVaniTablet";
 
 export interface CommessaDettaglioTabletProps {
   numero: string;
@@ -36,15 +37,23 @@ export default function CommessaDettaglioTablet({ numero, onBack }: CommessaDett
 
       <CommessaTabbarTablet active={tab} onChange={setTab} />
 
-      {/* Tab content placeholder - step 8b implementera' i 5 tab */}
-      <div style={cardStyle({ padding: "40px 28px", textAlign: "center" })}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: TT.text2, marginBottom: 4 }}>
-          Tab: {tab}
+      {/* Tab content */}
+      {tab === "vani" && (
+        <TabVaniTablet
+          onOpenVano={(id) => console.log("apri vano:", id)}
+          onAddVano={() => console.log("aggiungi vano")}
+        />
+      )}
+      {tab !== "vani" && (
+        <div style={cardStyle({ padding: "40px 28px", textAlign: "center" })}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: TT.text2, marginBottom: 4 }}>
+            Tab: {tab}
+          </div>
+          <div style={{ fontSize: 12, color: TT.text3 }}>
+            Contenuto in arrivo nei prossimi step.
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: TT.text3 }}>
-          Contenuto tab in arrivo nello step 8b.
-        </div>
-      </div>
+      )}
     </div>
   );
 }
