@@ -14,6 +14,7 @@ import MagazzinoTablet from "./magazzino/MagazzinoTablet";
 import ClientiTablet from "./clienti/ClientiTablet";
 import ContabilitaTablet from "./contabilita/ContabilitaTablet";
 import FiscaleTablet from "./fiscale/FiscaleTablet";
+import TeamTablet from "./team/TeamTablet";
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
@@ -56,7 +57,8 @@ export default function MastroTablet() {
           {active === "clienti"       && <ClientiTablet />}
           {active === "contabilita"   && <ContabilitaTablet />}
           {active === "fiscale"       && <FiscaleTablet />}
-          {!["dashboard","commesse","calendario","sopralluoghi","produzione","montaggi","ordini","magazzino","clienti","contabilita","fiscale"].includes(active) && (
+          {active === "team"          && <TeamTablet />}
+          {!["dashboard","commesse","calendario","sopralluoghi","produzione","montaggi","ordini","magazzino","clienti","contabilita","fiscale","team"].includes(active) && (
             <div style={{ padding: "40px 28px", textAlign: "center", color: TT.text3, fontSize: 14 }}>
               Sezione &quot;{active}&quot; in arrivo nei prossimi step.
             </div>
