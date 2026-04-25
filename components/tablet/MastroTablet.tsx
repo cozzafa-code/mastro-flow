@@ -5,6 +5,7 @@ import SidebarTablet from "./SidebarTablet";
 import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
 import CommesseListaTablet from "./commesse/CommesseListaTablet";
+import CalendarioTablet from "./calendario/CalendarioTablet";
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
@@ -52,9 +53,10 @@ export default function MastroTablet() {
             padding: "18px 24px 22px",
           }}
         >
-          {active === "dashboard" && <DashboardTablet />}
-          {active === "commesse" && <CommesseListaTablet />}
-          {active !== "dashboard" && active !== "commesse" && (
+          {active === "dashboard"  && <DashboardTablet />}
+          {active === "commesse"   && <CommesseListaTablet />}
+          {active === "calendario" && <CalendarioTablet />}
+          {active !== "dashboard" && active !== "commesse" && active !== "calendario" && (
             <div
               style={{
                 padding: "40px 28px",
