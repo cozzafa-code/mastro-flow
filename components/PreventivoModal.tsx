@@ -80,8 +80,15 @@ export default function PreventivoModal() {
     return { serramenti: T.acc, fabbro: "#8B5E34", pergole: "#1A9E73", porte: "#D08008", zanzariere: "#3B7FE0", boxdoccia: "#0088cc", tendaggi: "#8B5CF6" }[s] || T.acc;
   };
 
-  const handleGeneraPDF = () => {
-    if (!bloccato) { generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); toast && toast("PDF generato", "success"); }
+  const handleGeneraPDF = async () => {
+    if (bloccato) return;
+    generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
+    toast && toast("PDF generato", "success");
+    try {
+      const { Day } = await import("@/lib/day-logger");
+      const importo = c?.totale || c?.importo_totale || c?.preventivo_importo || null;
+      await Day.prevGenerato({ cm_id: c?.id, importo: importo || undefined });
+    } catch (e) { console.warn("[PreventivoModal] logEvento Day fallito", e); }
   };
 
   const handleInviaLink = async () => {
