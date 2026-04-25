@@ -520,7 +520,7 @@ function VanoTabMisure({ vano, mis, updateMisura, lmm, hmm, mq }: {
         {[
           { l: 'Larghezza', v: lmm ? `${lmm} mm` : '—', c: DS.teal },
           { l: 'Altezza', v: hmm ? `${hmm} mm` : '—', c: DS.blue },
-          { l: 'Superficie', v: mq !== '—' ? `${mq} m\u00B2` : '—', c: DS.green },
+          { l: 'Superficie', v: mq !== '—' ? `${mq} m²` : '—', c: DS.green },
         ].map(s => (
           <div key={s.l} style={{ flex: 1, padding: '12px 14px', background: s.c + '08', borderRadius: 10, border: `1.5px solid ${s.c}20` }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: '#999' }}>{s.l}</div>
@@ -601,7 +601,7 @@ function VanoTabRiepilogo({ vano, commessa, lmm, hmm, mq }: { vano: any; commess
     ['Sistema', vano.sistema || '—'],
     ['Larghezza', lmm ? `${lmm} mm` : '—'],
     ['Altezza', hmm ? `${hmm} mm` : '—'],
-    ['Superficie', mq !== '—' ? `${mq} m\u00B2` : '—'],
+    ['Superficie', mq !== '—' ? `${mq} m²` : '—'],
     ['Commessa', commessa?.nome_cliente || '—'],
   ];
   return (

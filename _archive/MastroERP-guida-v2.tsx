@@ -7403,7 +7403,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
       if (v.bicolore) addS("Finitura:", "Bicolore");
       if (vetroDesc) addS("Rmp:", vetroDesc);
       if (v.maniglia) addS("MARTELLINA:", v.maniglia.toUpperCase());
-      addS("Superficie:", mq.toFixed(2).replace(".",",") + " m\u00b2");
+      addS("Superficie:", mq.toFixed(2).replace(".",",") + " m²");
       if (v.rifilDx) addS("Sagoma telaio dx:", v.rifilDx);
       if (v.rifilSotto || v.sagomaInf) addS("Sagoma telaio inf:", v.rifilSotto || v.sagomaInf || "");
       if (v.rifilSopra || v.sagomaSup) addS("Sagoma telaio sup:", v.rifilSopra || v.sagomaSup || "");
@@ -7412,11 +7412,11 @@ Fabio Cozza - Walter Cozza Serramenti` },
       if (v.telaioAlaZ) addS("Telaio mobile:", v.telaioAlaZ);
       if (copRec) addS("Coprifilo:", copRec.nome || copRec.cod);
       if (lamRec) addS("Lamiera:", lamRec.nome || lamRec.cod);
-      addS("Trasmitt. termica:", (v.trasmittanzaUw || sysRec?.uw || "1,2") + " W/m\u00b2K");
+      addS("Trasmitt. termica:", (v.trasmittanzaUw || sysRec?.uw || "1,2") + " W/m²K");
       if (acc.tapparella?.attivo) addS("Tapparella:", (acc.tapparella.tipo || "PVC") + (acc.tapparella.colore ? " " + acc.tapparella.colore : ""));
       if (acc.persiana?.attivo) addS("Persiana:", (acc.persiana.tipo || "Alluminio"));
       if (acc.zanzariera?.attivo) addS("Zanzariera:", (acc.zanzariera.tipo || "Rullo"));
-      if (v.note && !v.note.startsWith("\ud83d\udd34")) addS("Note:", v.note);
+      if (v.note && !v.note.startsWith("🔴")) addS("Note:", v.note);
 
       return `<tr class="ir">
         <td class="cn" rowspan="2">
@@ -7506,7 +7506,7 @@ body{font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#1a1a1c;font-size:1
 @media print{.pb{display:none!important}.pg{padding:0;margin:0}}
 </style></head><body>
 <div class="pg">
-<button class="pb" onclick="window.print()">\ud83d\udda8\ufe0f Stampa / Salva PDF</button>
+<button class="pb" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
 
 <div class="hd">
   <div>

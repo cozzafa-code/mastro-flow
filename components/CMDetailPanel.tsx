@@ -861,10 +861,10 @@ export default function CMDetailPanel() {
 
                 {/* Azioni rapide */}
                 <div style={{ display: "flex", gap: 6 }}>
-                  {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(29,158,117,0.12)", color: "#04342C", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(29,158,117,0.25)" }}>\u260e CHIAMA</a>}
-                  {cV70.telefono && <a href={`https://wa.me/${(cV70.telefono || "").replace(/\D/g, "")}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(37,211,102,0.12)", color: "#075E54", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(37,211,102,0.25)" }}>\ud83d\udcac WA</a>}
-                  {cV70.email && <a href={`mailto:${cV70.email}?subject=Commessa ${cV70.code || ""}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>\u2709 EMAIL</a>}
-                  {cV70.indirizzo && <a href={`https://maps.google.com/?q=${encodeURIComponent(cV70.indirizzo)}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>\ud83d\uddfa NAVIGA</a>}
+                  {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(29,158,117,0.12)", color: "#04342C", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(29,158,117,0.25)" }}>☎ CHIAMA</a>}
+                  {cV70.telefono && <a href={`https://wa.me/${(cV70.telefono || "").replace(/\D/g, "")}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(37,211,102,0.12)", color: "#075E54", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(37,211,102,0.25)" }}>💬 WA</a>}
+                  {cV70.email && <a href={`mailto:${cV70.email}?subject=Commessa ${cV70.code || ""}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>✉ EMAIL</a>}
+                  {cV70.indirizzo && <a href={`https://maps.google.com/?q=${encodeURIComponent(cV70.indirizzo)}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>🗺 NAVIGA</a>}
                 </div>
 
                 {/* DIARIO DEL CANTIERE */}
@@ -884,7 +884,7 @@ export default function CMDetailPanel() {
                       boxShadow: diarioFormOpenV74 ? "none" : "0 3px 8px rgba(29,158,117,0.3)",
                       border: diarioFormOpenV74 ? "1px solid rgba(226,75,74,0.3)" : "none",
                     }}>
-                      {diarioFormOpenV74 ? "\u2715 CHIUDI" : "+ SCRIVI"}
+                      {diarioFormOpenV74 ? "✕ CHIUDI" : "+ SCRIVI"}
                     </div>
                   </div>
 
@@ -1009,7 +1009,7 @@ export default function CMDetailPanel() {
                                 if (!window.confirm("Elimina questa voce?")) return;
                                 setCantieri((cs: any[]) => cs.map((x: any) => x.id === selectedCM!.id ? { ...x, diarioCliente: (x.diarioCliente || []).filter((e: any) => e.id !== ev.id) } : x));
                                 setSelectedCM((p: any) => p ? ({ ...p, diarioCliente: (p.diarioCliente || []).filter((e: any) => e.id !== ev.id) }) : p);
-                              }} style={{ fontSize: 11, color: "#C53030", cursor: "pointer", fontWeight: 700, padding: "2px 6px" }}>\u2715</span>
+                              }} style={{ fontSize: 11, color: "#C53030", cursor: "pointer", fontWeight: 700, padding: "2px 6px" }}>✕</span>
                             </div>
                             <div style={{ fontSize: 12.5, color: "#0F2525", fontWeight: 500, lineHeight: 1.45 }}>{ev.testo}</div>
                           </div>
@@ -1134,7 +1134,7 @@ export default function CMDetailPanel() {
                       ].map(x => `"${String(x).replace(/"/g, '""')}"`).join(";"));
                     });
                   });
-                  const csv = "\uFEFF" + rows.join("\n");
+                  const csv = "﻿" + rows.join("\n");
                   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
@@ -1197,7 +1197,7 @@ export default function CMDetailPanel() {
                   rilievi.forEach((ril: any) => {
                     (ril.vani || []).forEach((v: any) => {
                       const m = v.misure || {};
-                      vaniRows += `<tr><td>R${esc(ril.n)}</td><td>${esc(v.nome)}</td><td>${esc(v.stanza)}</td><td>${esc(v.sistema)}</td><td>${esc(v.coloreInt)} / ${esc(v.coloreEst)}</td><td>${esc(v.telaio)}</td><td>${esc(v.vetro)}</td><td>${esc(m.lCentro || m.lAlto || "")} \u00d7 ${esc(m.hCentro || m.hSx || "")}</td><td>${esc(v.pezzi || 1)}</td></tr>`;
+                      vaniRows += `<tr><td>R${esc(ril.n)}</td><td>${esc(v.nome)}</td><td>${esc(v.stanza)}</td><td>${esc(v.sistema)}</td><td>${esc(v.coloreInt)} / ${esc(v.coloreEst)}</td><td>${esc(v.telaio)}</td><td>${esc(v.vetro)}</td><td>${esc(m.lCentro || m.lAlto || "")} × ${esc(m.hCentro || m.hSx || "")}</td><td>${esc(v.pezzi || 1)}</td></tr>`;
                     });
                   });
                   const html = `<!DOCTYPE html>
@@ -1372,7 +1372,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <div style={{ fontSize: 18, fontWeight: 900, color: "#0D1F1F" }}>Nuovo rilievo</div>
                 <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Commessa {selectedCM.code} · {selectedCM.cliente}</div>
               </div>
-              <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>\u2715</div>
+              <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>
             </div>
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo rilievo</div>
@@ -1483,7 +1483,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nuovo vano · posizione</div>
                   <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Indica dove si trova dentro lo stabile</div>
                 </div>
-                <div onClick={() => setShowAggiungiVanoModal(false)} style={{ width: 30, height: 30, borderRadius: 15, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>\u2715</div>
+                <div onClick={() => setShowAggiungiVanoModal(false)} style={{ width: 30, height: 30, borderRadius: 15, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>✕</div>
               </div>
               {labelsMV.l1 && (
                 <div style={{ marginBottom: 10 }}>
@@ -1505,7 +1505,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               )}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>Stanza / ambiente</div>
-                <input style={S.input} placeholder="Es. Cucina, Bagno, Camera, Aula magna\u2026" value={nvStanza} onChange={e => setNvStanza(e.target.value)} />
+                <input style={S.input} placeholder="Es. Cucina, Bagno, Camera, Aula magna…" value={nvStanza} onChange={e => setNvStanza(e.target.value)} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => setShowAggiungiVanoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
@@ -1914,9 +1914,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 { id: "fatt", name: "Fattura parlante", sub: "Descrizione chiara + riferimento normativo", obblig: true },
                 { id: "bon", name: "Ricevuta bonifico parlante", sub: "Causale con CF beneficiario + P.IVA fornitore", obblig: true },
                 { id: "sched", name: "Scheda tecnica infissi", sub: "Uw, marcatura CE, vetro · dal produttore", obblig: true },
-                { id: "ce", name: "Dichiarazione conformit\u00e0 CE", sub: "Prodotto serramenti · dal produttore", obblig: false },
+                { id: "ce", name: "Dichiarazione conformità CE", sub: "Prodotto serramenti · dal produttore", obblig: false },
                 { id: "cat", name: "Dati catastali immobile", sub: "Foglio, particella, subalterno", obblig: false },
-                { id: "cf", name: "Codice fiscale cliente", sub: "Copia tessera o documento identit\u00e0", obblig: true },
+                { id: "cf", name: "Codice fiscale cliente", sub: "Copia tessera o documento identità", obblig: true },
                 { id: "foto_pre", name: "Foto PRIMA della sostituzione", sub: "Prova stato vecchi infissi", obblig: false, consigl: true },
                 { id: "foto_post", name: "Foto DOPO la posa", sub: "Prova installazione completata", obblig: false, consigl: true },
               ];
@@ -1927,7 +1927,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 base.push({ id: "ass", name: "Asseverazione tecnico", sub: "Firmata e timbrata · obbligatoria per Ecobonus", obblig: true } as any);
               }
               if (bonusV77 === "75") {
-                base.push({ id: "rel", name: "Relazione tecnica asseverata", sub: "Conformit\u00e0 norme abbattimento barriere", obblig: true } as any);
+                base.push({ id: "rel", name: "Relazione tecnica asseverata", sub: "Conformità norme abbattimento barriere", obblig: true } as any);
               }
               return base;
             })();
@@ -1985,8 +1985,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 icon: "clock",
                 color: "amber",
                 nome: "Promemoria conservazione 10 anni",
-                sub: "Agenzia Entrate pu\u00f2 controllare fino al 2036",
-                msg: `Ciao ${c.cliente || ""}, importante: l'Agenzia delle Entrate pu\u00f2 richiedere i documenti del ${bonusLblV77[bonusV77]} fino a 10 anni dopo. Conserva in un unico luogo:\n\n- Fattura\n- Ricevuta bonifico parlante\n- Scheda tecnica infissi\n- Dichiarazione CE\n\nConsiglio: scansiona tutto e metti una copia in cloud. Gli scontrini termici sbiadiscono.`,
+                sub: "Agenzia Entrate può controllare fino al 2036",
+                msg: `Ciao ${c.cliente || ""}, importante: l'Agenzia delle Entrate può richiedere i documenti del ${bonusLblV77[bonusV77]} fino a 10 anni dopo. Conserva in un unico luogo:\n\n- Fattura\n- Ricevuta bonifico parlante\n- Scheda tecnica infissi\n- Dichiarazione CE\n\nConsiglio: scansiona tutto e metti una copia in cloud. Gli scontrini termici sbiadiscono.`,
               },
               {
                 id: "conferma",
@@ -2074,10 +2074,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Ogni bonus ha documenti diversi. Ti guido io, passo-passo.</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                     {[
-                      { k: "50", icoBg: "linear-gradient(145deg, #5DCAA5, #1D9E75)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(29,158,117,0.14)", percCol: "#04342C", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta pi\u00f9 comune, pi\u00f9 semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
-                      { k: "65", icoBg: "linear-gradient(145deg, #FAC775, #EF9F27)", nome: "Ecobonus", perc: "50%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Risparmio energetico · L. 296/2006 · richiede Uw compatibile + ENEA obbligatoria", stats: "DETRAZIONE MAX € 60.000 · ENEA S\u00cc" },
+                      { k: "50", icoBg: "linear-gradient(145deg, #5DCAA5, #1D9E75)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(29,158,117,0.14)", percCol: "#04342C", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta più comune, più semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
+                      { k: "65", icoBg: "linear-gradient(145deg, #FAC775, #EF9F27)", nome: "Ecobonus", perc: "50%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Risparmio energetico · L. 296/2006 · richiede Uw compatibile + ENEA obbligatoria", stats: "DETRAZIONE MAX € 60.000 · ENEA SÌ" },
                       { k: "75", icoBg: "linear-gradient(145deg, #AFA9EC, #7F77DD)", nome: "Barriere architettoniche", perc: "75%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Art. 119-ter DL 34/2020 · richiede relazione tecnica asseverata", stats: "SOLO CONDOMINI 2026" },
-                      { k: "nessuna", icoBg: "linear-gradient(145deg, #B8C5C5, #7A9090)", nome: "Nessuna detrazione", perc: "0%", percBg: "rgba(122,144,144,0.14)", percCol: "#3C4F4F", desc: "Cliente non vuole o non pu\u00f2 · bonifico ordinario, nessuna pratica", stats: "" },
+                      { k: "nessuna", icoBg: "linear-gradient(145deg, #B8C5C5, #7A9090)", nome: "Nessuna detrazione", perc: "0%", percBg: "rgba(122,144,144,0.14)", percCol: "#3C4F4F", desc: "Cliente non vuole o non può · bonifico ordinario, nessuna pratica", stats: "" },
                     ].map((b: any) => {
                       const on = bonusV77 === b.k;
                       return (
@@ -2174,7 +2174,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                         </div>
                         <div style={{ flex: 1, fontSize: 10.5, color: uwOk ? "#04342C" : "#8B1A1A", fontWeight: 800, lineHeight: 1.4 }}>
                           <strong>{pwVani[0]?.sistema || "Sistema"} · Uw {uwProd.toFixed(1)}</strong><br/>
-                          Richiesto \u2264 {uwLimit[fiscZonaV77].toFixed(2)} per Zona {uwZonaLbl[fiscZonaV77]} · {uwOk ? "ampiamente conforme" : "NON CONFORME"}
+                          Richiesto ≤ {uwLimit[fiscZonaV77].toFixed(2)} per Zona {uwZonaLbl[fiscZonaV77]} · {uwOk ? "ampiamente conforme" : "NON CONFORME"}
                         </div>
                       </div>
                     </div>
@@ -2199,7 +2199,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       <div style={{ fontSize: 10, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate pu\u00f2 chiederli fino al {new Date().getFullYear() + 10}</div>
+                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate può chiederli fino al {new Date().getFullYear() + 10}</div>
 
                   {checklistV77.map((d: any) => {
                     const isDone = !!checkSaved[d.id];
@@ -2291,7 +2291,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
 
                 <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
-                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Testi gi\u00e0 preparati, con dati commessa pre-compilati. Tap per inviare su WhatsApp.</div>
+                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Testi già preparati, con dati commessa pre-compilati. Tap per inviare su WhatsApp.</div>
 
                   {templates.map((tpl: any) => (
                     <div key={tpl.id} onClick={() => {

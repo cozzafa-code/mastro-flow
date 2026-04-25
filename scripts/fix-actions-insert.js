@@ -25,5 +25,5 @@ lines.splice(4137, 0, ...actionRow); // Insert after line 4137
 console.log('+ Inserted 5 lines after line 4137');
 
 fs.writeFileSync(file, lines.join('\n'));
-console.log('\n\u2705 Action buttons added!');
+console.log('\n✅ Action buttons added!');
 console.log('Lines: ' + lines.length);

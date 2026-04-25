@@ -169,7 +169,7 @@ function AgendaWidgetV3({ events, onNavigate, editMode }: any) {
                   <div style={{ fontSize: 12, fontWeight: 900, color: "#0F2525", overflow: "hidden" as any, textOverflow: "ellipsis" as any, whiteSpace: "nowrap" as any }}>{titolo}</div>
                   {(persona || addr) && <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1, overflow: "hidden" as any, textOverflow: "ellipsis" as any, whiteSpace: "nowrap" as any }}>{persona || addr}</div>}
                 </div>
-                <span style={{ color: f.solid, fontSize: 14, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ color: f.solid, fontSize: 14, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
               </div>
               {isOpen && (
                 <div style={{ padding: "0 10px 10px" }}>
@@ -327,7 +327,7 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: f.dark, fontWeight: 900 }}>{impLabel}</div>
-                <span style={{ color: f.solid, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ color: f.solid, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
               </div>
               {isOpen && (
                 <div style={{ padding: "0 10px 10px" }}>
@@ -398,7 +398,7 @@ function SquadraWidgetV3({ team, onNavigate, editMode }: any) {
                     â— {attivo ? cantiere : "libero"}
                   </div>
                 </div>
-                <span style={{ color: FASE_V3.sopralluogo.dark, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>â–¾</span>
+                <span style={{ color: FASE_V3.sopralluogo.dark, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
               </div>
               {isOpen && (
                 <div style={{ padding: "0 10px 10px" }}>

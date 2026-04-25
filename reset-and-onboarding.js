@@ -217,7 +217,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
               </div>
               <div style={{ display:"flex", gap:4, marginTop:12 }}>{[1,2,3,4].map(s => (<div key={s} style={{ flex:1, height:3, borderRadius:2, background: s <= onbStep ? T.acc : "rgba(255,255,255,0.15)", transition:"all 0.3s" }}/>))}</div>
               <div style={{ display:"flex", justifyContent:"space-between", marginTop:6 }}>
-                {["\uD83C\uDFE2 Azienda","\uD83D\uDC64 Cliente","\uD83D\uDCC1 Commessa","\uD83D\uDCC5 Evento"].map((l,i) => (
+                {["🏢 Azienda","👤 Cliente","📁 Commessa","📅 Evento"].map((l,i) => (
                   <div key={i} style={{ fontSize:9, fontWeight:600, color: i+1 <= onbStep ? T.acc : "rgba(255,255,255,0.3)" }}>{l}</div>
                 ))}
               </div>
@@ -228,7 +228,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
 
               {/* STEP 1: AZIENDA */}
               {onbStep === 1 && (<div>
-                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"\uD83C\uDFE2"} La tua azienda</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"🏢"} La tua azienda</div>
                 <div style={{ fontSize:12, color:T.sub, marginBottom:20 }}>Questi dati appariranno nei preventivi e documenti.</div>
                 {[
                   {l:"Ragione sociale *",k:"aziendaNome",p:"Es: Serramenti Rossi SRL", auto:"organization"},
@@ -245,7 +245,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
 
               {/* STEP 2: PRIMO CLIENTE */}
               {onbStep === 2 && (<div>
-                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"\uD83D\uDC64"} Il tuo primo cliente</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"👤"} Il tuo primo cliente</div>
                 <div style={{ fontSize:12, color:T.sub, marginBottom:20 }}>Aggiungi un cliente reale per iniziare subito a lavorare.</div>
                 {[
                   {l:"Nome *",k:"clienteNome",p:"Mario", auto:"given-name"},
@@ -255,21 +255,21 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
                   {l:"Indirizzo",k:"clienteIndirizzo",p:"Via Garibaldi 5, Cosenza", auto:"street-address"},
                 ].map(f => (<div key={f.k} style={{ marginBottom:12 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>{f.l}</div><input autoComplete={f.auto} value={onbData[f.k]} onChange={e => setOnbData({...onbData,[f.k]:e.target.value})} placeholder={f.p} style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg||"#fff", color:T.text, outline:"none", boxSizing:"border-box" }} /></div>))}
                 <div style={{ display:"flex", justifyContent:"space-between", marginTop:12 }}>
-                  <div onClick={() => setOnbStep(1)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>\u2039 Indietro</div>
+                  <div onClick={() => setOnbStep(1)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>‹ Indietro</div>
                   <div onClick={() => { if(onbData.clienteNome.trim()) setOnbStep(3); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.clienteNome.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
 
               {/* STEP 3: PRIMA COMMESSA */}
               {onbStep === 3 && (<div>
-                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"\uD83D\uDCC1"} La prima commessa</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"📁"} La prima commessa</div>
                 <div style={{ fontSize:12, color:T.sub, marginBottom:20 }}>Un lavoro vero su cui stai lavorando o devi iniziare.</div>
                 <div style={{ marginBottom:12 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>Descrizione lavoro *</div><input value={onbData.cmTitolo} onChange={e => setOnbData({...onbData,cmTitolo:e.target.value})} placeholder="Es: Sostituzione 4 finestre + portafinestra" style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg||"#fff", color:T.text, outline:"none", boxSizing:"border-box" }} /></div>
                 <div style={{ marginBottom:12 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>Indirizzo cantiere</div><input value={onbData.cmIndirizzo} onChange={e => setOnbData({...onbData,cmIndirizzo:e.target.value})} placeholder={onbData.clienteIndirizzo || "Via del cantiere, Città"} style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg||"#fff", color:T.text, outline:"none", boxSizing:"border-box" }} /></div>
                 <div style={{ marginBottom:12 }}>
                   <div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:8 }}>Tipo di lavoro</div>
                   <div style={{ display:"flex", gap:6 }}>
-                    {[{id:"sostituzione",l:"\uD83D\uDD04 Sostituzione",d:"Rimuovi e installa"},{id:"nuova",l:"\uD83C\uDD95 Nuova costruzione",d:"Primo impianto"},{id:"riparazione",l:"\uD83D\uDD27 Riparazione",d:"Intervento su esistente"}].map(t => (
+                    {[{id:"sostituzione",l:"🔄 Sostituzione",d:"Rimuovi e installa"},{id:"nuova",l:"🆕 Nuova costruzione",d:"Primo impianto"},{id:"riparazione",l:"🔧 Riparazione",d:"Intervento su esistente"}].map(t => (
                       <div key={t.id} onClick={() => setOnbData({...onbData,cmTipo:t.id})} style={{ flex:1, padding:"10px 6px", borderRadius:10, border:"1.5px solid "+(onbData.cmTipo===t.id ? T.acc : (T.bdr||"#E5E3DE")), background: onbData.cmTipo===t.id ? (T.acc+"12") : "transparent", cursor:"pointer", textAlign:"center" }}>
                         <div style={{ fontSize:11, fontWeight:700, color: onbData.cmTipo===t.id ? T.acc : T.sub }}>{t.l}</div>
                         <div style={{ fontSize:9, color:T.sub, marginTop:2 }}>{t.d}</div>
@@ -278,14 +278,14 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
                   </div>
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between", marginTop:12 }}>
-                  <div onClick={() => setOnbStep(2)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>\u2039 Indietro</div>
+                  <div onClick={() => setOnbStep(2)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>‹ Indietro</div>
                   <div onClick={() => { if(onbData.cmTitolo.trim()) setOnbStep(4); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.cmTitolo.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
 
               {/* STEP 4: PRIMO EVENTO */}
               {onbStep === 4 && (<div>
-                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"\uD83D\uDCC5"} Primo appuntamento</div>
+                <div style={{ fontSize:18, fontWeight:800, color:T.text, marginBottom:4 }}>{"📅"} Primo appuntamento</div>
                 <div style={{ fontSize:12, color:T.sub, marginBottom:20 }}>Quando vai dal cliente? Sopralluogo, consegna, posa...</div>
                 <div style={{ marginBottom:12 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>Cosa devi fare? *</div><input value={onbData.evTesto} onChange={e => setOnbData({...onbData,evTesto:e.target.value})} placeholder={"Es: Sopralluogo " + (onbData.clienteCognome || "cliente")} style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg||"#fff", color:T.text, outline:"none", boxSizing:"border-box" }} /></div>
                 <div style={{ display:"flex", gap:12, marginBottom:14 }}>
@@ -303,8 +303,8 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
                   </div>
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
-                  <div onClick={() => setOnbStep(3)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>\u2039 Indietro</div>
-                  <div onClick={() => { finishOnboarding(); }} style={{ padding:"12px 28px", fontSize:14, fontWeight:800, color:"#fff", background:"linear-gradient(135deg, "+T.acc+", #b06e00)", borderRadius:12, cursor:"pointer", boxShadow:"0 4px 12px rgba(208,128,8,0.3)" }}>\u2713 Crea tutto e inizia!</div>
+                  <div onClick={() => setOnbStep(3)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>‹ Indietro</div>
+                  <div onClick={() => { finishOnboarding(); }} style={{ padding:"12px 28px", fontSize:14, fontWeight:800, color:"#fff", background:"linear-gradient(135deg, "+T.acc+", #b06e00)", borderRadius:12, cursor:"pointer", boxShadow:"0 4px 12px rgba(208,128,8,0.3)" }}>✓ Crea tutto e inizia!</div>
                 </div>
               </div>)}
             </div>
@@ -315,11 +315,11 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
       {onbStep === 5 && tourStep >= 1 && tourStep <= 4 && (
         <div style={{ position:"fixed", inset:0, zIndex:99998, background:"rgba(0,0,0,0.4)" }} onClick={() => { if(tourStep<4) setTourStep(tourStep+1); else tourDone(); }}>
           <div onClick={e => e.stopPropagation()} style={{ position:"fixed", zIndex:99999, ...(tourStep===1?{bottom:80,left:16}:tourStep===2?{bottom:80,left:"50%",transform:"translateX(-50%)"}:tourStep===3?{bottom:80,right:16}:{top:"50%",left:"50%",transform:"translate(-50%,-50%)"}), background:"#fff", borderRadius:16, padding:"16px 20px", boxShadow:"0 8px 32px rgba(0,0,0,0.2)", maxWidth:320, width:"calc(100% - 32px)" }}>
-            <div style={{ fontSize:15, fontWeight:800, color:T.text||"#1A1A1C", marginBottom:6 }}>{tourStep===1?"\uD83C\uDFE0 Home":tourStep===2?"\uD83D\uDCC5 Agenda":tourStep===3?"\uD83D\uDCC1 Commesse":"\u2728 Tutto pronto!"}</div>
-            <div style={{ fontSize:12, color:T.sub||"#6B6B6B", lineHeight:1.6 }}>{tourStep===1?"La tua dashboard: appuntamenti del giorno, allerte commesse ferme, calendario a colpo d\u2019occhio.":tourStep===2?"Tutti i tuoi impegni in vista giorno, settimana o mese. Swipe per navigare.":tourStep===3?"Ogni commessa è un lavoro: dal sopralluogo alla posa. Qui gestisci tutto.":"Hai creato la tua prima commessa! Vai in Commesse per aggiungere i vani da misurare."}</div>
+            <div style={{ fontSize:15, fontWeight:800, color:T.text||"#1A1A1C", marginBottom:6 }}>{tourStep===1?"🏠 Home":tourStep===2?"📅 Agenda":tourStep===3?"📁 Commesse":"✨ Tutto pronto!"}</div>
+            <div style={{ fontSize:12, color:T.sub||"#6B6B6B", lineHeight:1.6 }}>{tourStep===1?"La tua dashboard: appuntamenti del giorno, allerte commesse ferme, calendario a colpo d’occhio.":tourStep===2?"Tutti i tuoi impegni in vista giorno, settimana o mese. Swipe per navigare.":tourStep===3?"Ogni commessa è un lavoro: dal sopralluogo alla posa. Qui gestisci tutto.":"Hai creato la tua prima commessa! Vai in Commesse per aggiungere i vani da misurare."}</div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:12 }}>
               <div style={{ fontSize:10, color:T.sub||"#6B6B6B" }}>{tourStep}/4</div>
-              <div onClick={() => { if(tourStep<4) setTourStep(tourStep+1); else tourDone(); }} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc||"#D08008", borderRadius:10, cursor:"pointer" }}>{tourStep<4?"Avanti →":"Inizia! \uD83D\uDE80"}</div>
+              <div onClick={() => { if(tourStep<4) setTourStep(tourStep+1); else tourDone(); }} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc||"#D08008", borderRadius:10, cursor:"pointer" }}>{tourStep<4?"Avanti →":"Inizia! 🚀"}</div>
             </div>
             {tourStep<=3 && <div style={{ position:"absolute", bottom:-8, ...(tourStep===1?{left:24}:tourStep===2?{left:"50%",transform:"translateX(-50%)"}:{right:24}), width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>}
           </div>
@@ -331,7 +331,7 @@ c = c.substring(0, tabBarIdx) + newWizardUI + c.substring(tabBarIdx);
 console.log('✓ New wizard + tour UI added');
 
 fs.writeFileSync(file, c);
-console.log('\n\u2705 RESET COMPLETO!');
+console.log('\n✅ RESET COMPLETO!');
 console.log('Lines: ' + c.split('\n').length);
 console.log('');
 console.log('Per testare:');

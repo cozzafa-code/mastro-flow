@@ -22,7 +22,7 @@ for (let i = 0; i < lines.length; i++) {
     const displayText = lines[i].substring(lastGt + 1, lastCloseDiv);
     
     // Check if this looks like a broken Elimina button
-    if (displayText.includes('Elimina') || displayText.includes('\u{1F5DD}') || displayText.includes('\uD83D') || displayText.length < 15) {
+    if (displayText.includes('Elimina') || displayText.includes('\u{1F5DD}') || displayText.includes('�') || displayText.length < 15) {
       // Only fix if this is a delete button line (has redLt or red in style)
       if (lines[i].includes('redLt') || lines[i].includes('T.red')) {
         const before = lines[i].substring(0, lastGt + 1);

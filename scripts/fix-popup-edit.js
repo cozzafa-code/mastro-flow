@@ -58,5 +58,5 @@ if (c.includes(oldTitle)) {
 }
 
 fs.writeFileSync(file, c);
-console.log('\n\u2705 Popup now has editable title, date & time!');
+console.log('\n✅ Popup now has editable title, date & time!');
 console.log('Lines: ' + c.split('\n').length);

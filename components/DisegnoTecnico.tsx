@@ -3952,7 +3952,7 @@ export default function DisegnoTecnico({ vanoId, vanoNome, vanoDisegno, realW: p
                                           const bx = gx + 16 + bw > canvasW ? gx - bw - 16 : gx + 16;
                                           const by = gy - bh - 8 < 0 ? gy + 8 : gy - bh - 8;
                                           const isH = gy === p.y1, isV = gx === p.x1;
-                                          const line2 = isV ? "\u2195 VERT" : isH ? "\u2194 ORIZ" : dw._guideDeg != null ? `${dw._guideDeg}\u00b0` : "";
+                                          const line2 = isV ? "↕ VERT" : isH ? "↔ ORIZ" : dw._guideDeg != null ? `${dw._guideDeg}°` : "";
                                           return <>
                                             <rect x={bx} y={by} width={bw} height={bh} fill="#1A1A1C" rx={6} opacity={0.96}/>
                                             <text x={bx+bw/2} y={by+22} textAnchor="middle" fontSize={16} fontWeight={800} fill="#fff" fontFamily="'JetBrains Mono',monospace">

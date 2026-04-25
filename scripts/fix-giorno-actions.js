@@ -115,4 +115,4 @@ if (dupeCount > 2) {
 }
 
 fs.writeFileSync(file, lines.join('\n'));
-console.log('\n\u2705 Done! Lines: ' + lines.length);
+console.log('\n✅ Done! Lines: ' + lines.length);

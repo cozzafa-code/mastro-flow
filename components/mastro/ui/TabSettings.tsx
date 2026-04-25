@@ -886,7 +886,7 @@ export default function TabSettings() {
                   <div style={{display:"flex", alignItems:"center", gap:8, padding:"10px 12px"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:1}}>
                       <div onClick={()=>{ if(i===0) return; const a=[...pipelineDB]; [a[i-1],a[i]]=[a[i],a[i-1]]; setPipelineDB(a); }} style={{fontSize:10,cursor:i===0?"default":"pointer",color:i===0?T.bdr:T.sub,lineHeight:1}}>â–²</div>
-                      <div onClick={()=>{ if(i===pipelineDB.length-1) return; const a=[...pipelineDB]; [a[i],a[i+1]]=[a[i+1],a[i]]; setPipelineDB(a); }} style={{fontSize:10,cursor:i===pipelineDB.length-1?"default":"pointer",color:i===pipelineDB.length-1?T.bdr:T.sub,lineHeight:1}}>â–¼</div>
+                      <div onClick={()=>{ if(i===pipelineDB.length-1) return; const a=[...pipelineDB]; [a[i],a[i+1]]=[a[i+1],a[i]]; setPipelineDB(a); }} style={{fontSize:10,cursor:i===pipelineDB.length-1?"default":"pointer",color:i===pipelineDB.length-1?T.bdr:T.sub,lineHeight:1}}>▼</div>
                     </div>
                     <span style={{fontSize:20,flexShrink:0}}>{p.ico}</span>
                     <input value={p.nome} onChange={e=>setPipelineDB(db=>db.map((x,j)=>j===i?{...x,nome:e.target.value}:x))}
@@ -898,7 +898,7 @@ export default function TabSettings() {
                     </div>
                     {p.custom && <div onClick={()=>setPipelineDB(db=>db.filter((_,j)=>j!==i))} style={{fontSize:12,cursor:"pointer",color:T.red}}>âœ•</div>}
                     {/* EXPAND BUTTON */}
-                    <div onClick={()=>setExpandedPipelinePhase(isExpanded ? null : p.id)} style={{fontSize:14,cursor:"pointer",color:isExpanded?T.acc:T.sub,transition:"transform 0.2s",transform:isExpanded?"rotate(180deg)":"rotate(0deg)"}}>â–¾</div>
+                    <div onClick={()=>setExpandedPipelinePhase(isExpanded ? null : p.id)} style={{fontSize:14,cursor:"pointer",color:isExpanded?T.acc:T.sub,transition:"transform 0.2s",transform:isExpanded?"rotate(180deg)":"rotate(0deg)"}}>▾</div>
                   </div>
                   {/* Mini badges: cosa è configurato */}
                   {!isExpanded && (p.emailTemplate || p.checklistMontaggio?.length || p.automazioni?.length) && (

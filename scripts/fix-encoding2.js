@@ -9,7 +9,7 @@ const accents = [
   ['Ã¹', 'ù'], ['Ã¨', 'è'], ['Ã©', 'é'], ['Ã¬', 'ì'], ['Ã²', 'ò'],
   ['Ã¼', 'ü'],  // Schüco
   ['Ã€', 'À'],  // PROFONDITÀ
-  ['Ã\u00A0', 'à'], // à when not followed by visible char
+  ['Ã ', 'à'], // à when not followed by visible char
 ];
 
 // === SYMBOLS ===
@@ -25,12 +25,12 @@ const symbols = [
 const dashes = [
   ['â€"', '–'],  // en-dash (P2 – 2° Piano) 
   ['â€"', '—'],  // em-dash
-  ['â€™', '\u2019'], // right single quote
-  ['â€˜', '\u2018'], // left single quote
-  ['â€œ', '\u201C'], // left double quote
-  ['â€¦', '\u2026'], // ellipsis
-  ['â€¹', '\u2039'], // ‹
-  ['â€º', '\u203A'], // ›
+  ['â€™', '’'], // right single quote
+  ['â€˜', '‘'], // left single quote
+  ['â€œ', '“'], // left double quote
+  ['â€¦', '…'], // ellipsis
+  ['â€¹', '‹'], // ‹
+  ['â€º', '›'], // ›
 ];
 
 // === EMOJI MOJIBAKE (4-byte UTF-8 double-encoded) ===
@@ -52,8 +52,8 @@ const allFixes = [...accents, ...symbols, ...dashes, ...emojis];
 // First handle "Ã " (à followed by space) carefully - it's Ã + non-breaking space (0xA0)
 // But in the file it might appear as Ã + regular space
 // Check both variants
-if (c.includes('Ã\u00A0')) {
-  c = c.split('Ã\u00A0').join('à');
+if (c.includes('Ã ')) {
+  c = c.split('Ã ').join('à');
   count++;
   console.log('Fixed: Ã+NBSP -> à');
 }

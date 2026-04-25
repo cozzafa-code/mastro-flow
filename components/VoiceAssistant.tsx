@@ -41,7 +41,7 @@ function levenshtein(a, b) {
 }
 
 function findCliente(text, contatti, cantieri) {
-  const tLow = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const tLow = text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   let best = null, bestScore = 0, bestCmId = null, bestCmCode = null;
   // Pass 1: full name in contatti
   for (const c of (contatti || [])) {

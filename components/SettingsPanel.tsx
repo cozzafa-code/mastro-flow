@@ -855,7 +855,7 @@ export default function SettingsPanel() {
         {/* ═══════════════════════════════════════════════════════ */}
         {/* === ARCHIVIO PROFILI === fetch da Supabase profili_catalogo */}
         {settingsTab === "profili_arch" && (() => {
-          const TIPI_PROFILO = ["Rahmen","Fl\u00FCgel","Pfosten","Stulp","Soglia","Traverso","Montante","Altro"];
+          const TIPI_PROFILO = ["Rahmen","Flügel","Pfosten","Stulp","Soglia","Traverso","Montante","Altro"];
           const MATERIALI_P = ["PVC","Alluminio","Legno","Legno-Alluminio"];
 
           const profiliFiltrati = profiliSupa.filter(p => {
@@ -945,7 +945,7 @@ export default function SettingsPanel() {
                           {p.peso_kg_ml && <div style={{ fontSize:9, color:T.sub }}>{p.peso_kg_ml} kg/ml</div>}
                           {p.bautiefe_mm && <div style={{ fontSize:9, color:T.sub }}>{p.bautiefe_mm}mm</div>}
                         </div>
-                        <div style={{ fontSize:10, color:T.sub }}>{isExp ? "\u25B2" : "\u25BC"}</div>
+                        <div style={{ fontSize:10, color:T.sub }}>{isExp ? "▲" : "▼"}</div>
                       </div>
 
                       {isExp && (
@@ -989,7 +989,7 @@ export default function SettingsPanel() {
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                             </div>
                             <div style={{ flex:"1 1 20%", minWidth:70 }}>
-                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Uf W/m\u00B2K</div>
+                              <div style={{ fontSize:9, color:T.sub, marginBottom:3 }}>Uf W/m²K</div>
                               <input type="number" step="0.01" defaultValue={p.uf||""} onBlur={e => salvaProfilo({...p, uf:parseFloat(e.target.value)||null})}
                                 style={{ width:"100%", padding:"7px 9px", borderRadius:7, border:`1px solid ${T.bdr}`, fontSize:12, fontFamily:FM, textAlign:"right", background:T.card, color:T.text }} />
                             </div>
@@ -1905,7 +1905,7 @@ export default function SettingsPanel() {
                       <div style={{ width:28, height:28, borderRadius:7, background:PRI, display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:11, fontWeight:900, flexShrink:0 }}>{fNome.charAt(0)}</div>
                       <div style={{ flex:1 }}><div style={{ fontSize:12, fontWeight:800, color:"#fff" }}>{fNome}</div></div>
                       <div style={{ fontSize:10, fontWeight:700, color:PRI }}>{tot}</div>
-                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>{isOpen?"\u25B2":"\u25BC"}</div>
+                      <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)" }}>{isOpen?"▲":"▼"}</div>
                     </div>
                     {isOpen && <div style={{ border:`1px solid ${T.bdr}`, borderTop:"none", borderRadius:"0 0 10px 10px" }}>
                       {Object.entries(catMap).map(([cId, colori]) => (

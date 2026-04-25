@@ -52,7 +52,7 @@ const NB = `          calendario: (() => {
             const calOff = firstDay === 0 ? 6 : firstDay - 1;
             const dIM = new Date(dashY, dashMo+1, 0).getDate();
             const cells = Array.from({length: calOff + dIM}, (_,i) => i < calOff ? null : i - calOff + 1);
-            const hdrL = agendaView === "giorno" ? selDate.toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" }) : agendaView === "settimana" ? weekDays[0].getDate() + "\\u2013" + weekDays[6].getDate() + " " + selDate.toLocaleDateString("it-IT", { month:"long", year:"numeric" }) : selDate.toLocaleDateString("it-IT", { month:"long", year:"numeric" });
+            const hdrL = agendaView === "giorno" ? selDate.toLocaleDateString("it-IT", { weekday:"long", day:"numeric", month:"long" }) : agendaView === "settimana" ? weekDays[0].getDate() + "\–" + weekDays[6].getDate() + " " + selDate.toLocaleDateString("it-IT", { month:"long", year:"numeric" }) : selDate.toLocaleDateString("it-IT", { month:"long", year:"numeric" });
             const hours = [7,8,9,10,11,12,13,14,15,16,17,18,19];
             const dayEvs = events.filter(e => e.date === dateStr2(selDate)).sort((a,b) => (a.time||"99").localeCompare(b.time||"99"));
             return (<div style={{ marginBottom:12 }}>
@@ -66,9 +66,9 @@ const NB = `          calendario: (() => {
                       {["giorno","settimana","mese"].map(v => (<div key={v} onClick={() => setAgendaView(v)} style={{ flex:1, padding:"8px 4px", textAlign:"center", fontSize:11, fontWeight:700, background: agendaView === v ? T.acc : "transparent", color: agendaView === v ? "#fff" : T.sub, cursor:"pointer", textTransform:"capitalize", transition:"all 0.2s" }}>{v}</div>))}
                     </div>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 12px", borderBottom:` + '`1px solid ${T.bdr}`' + ` }}>
-                      <div onClick={navPrev} style={{ width:28, height:28, borderRadius:8, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:14, color:T.sub }}>\\u2039</div>
+                      <div onClick={navPrev} style={{ width:28, height:28, borderRadius:8, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:14, color:T.sub }}>\‹</div>
                       <div onClick={() => setSelDate(new Date())} style={{ fontSize:12, fontWeight:700, color:T.text, textTransform:"capitalize", cursor:"pointer" }}>{hdrL}</div>
-                      <div onClick={navNext} style={{ width:28, height:28, borderRadius:8, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:14, color:T.sub }}>\\u203a</div>
+                      <div onClick={navNext} style={{ width:28, height:28, borderRadius:8, background:T.bg, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontSize:14, color:T.sub }}>\›</div>
                     </div>
                     {agendaView === "giorno" && (<div style={{ maxHeight:360, overflowY:"auto" }}>
                         {dayEvs.length === 0 ? (<div style={{ padding:"24px 16px", textAlign:"center", color:T.sub, fontSize:13 }}>Nessun evento</div>) : (<div style={{ padding:"8px 0" }}>

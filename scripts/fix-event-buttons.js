@@ -19,13 +19,13 @@ for (let i = 0; i < lines.length; i++) {
   // Fix Mappa icon: replace any broken emoji before "Mappa"
   if (lines[i].includes('Mappa') && (lines[i].includes('maps.google') || lines[i].includes('borderRadius'))) {
     // Replace the display text for Mappa buttons
-    lines[i] = lines[i].replace(/>[^<]*Mappa</, '>\uD83D\uDCCD Mappa<');
+    lines[i] = lines[i].replace(/>[^<]*Mappa</, '>📍 Mappa<');
     fixed++;
   }
   
   // Fix Chiama icon
   if (lines[i].includes('Chiama') && lines[i].includes('borderRadius')) {
-    lines[i] = lines[i].replace(/>[^<]*Chiama</, '>\uD83D\uDCDE Chiama<');
+    lines[i] = lines[i].replace(/>[^<]*Chiama</, '>📞 Chiama<');
     fixed++;
   }
 }
@@ -48,9 +48,9 @@ for (let i = 0; i < lines.length; i++) {
     // Insert action buttons row after the existing button row's closing </div>
     const actionRow = `
                   <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
-                    <div onClick={(e) => { e.stopPropagation(); if (!ev.cm) { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: "" }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); setTab("commesse"); } else { const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } } setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#f0f4ff", border: "1px solid #007aff30", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#007aff" }}>\uD83D\uDCC1 Commessa</div>
-                    <div onClick={(e) => { e.stopPropagation(); const cm = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cm) { setSelectedCM(cm); setTab("commesse"); } else { setShowNewEvent(false); setSelectedEvent(null); setShowModal("commessa"); } }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#fff5eb", border: "1px solid #ff950030", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff9500" }}>\uD83D\uDCCF Misure</div>
-                    <div onClick={(e) => { e.stopPropagation(); const code = ev.cm || "INT-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: "Intervento da evento: " + ev.text }; if (!ev.cm) { setCantieri(prev => [...prev, nc]); } setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#f0fff4", border: "1px solid #34c75930", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#34c759" }}>\uD83D\uDD27 Intervento</div>
+                    <div onClick={(e) => { e.stopPropagation(); if (!ev.cm) { const code = "CM-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "Nuovo", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: "" }; setCantieri(prev => [...prev, nc]); setSelectedCM(nc); setTab("commesse"); } else { const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } } setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#f0f4ff", border: "1px solid #007aff30", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#007aff" }}>📁 Commessa</div>
+                    <div onClick={(e) => { e.stopPropagation(); const cm = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cm) { setSelectedCM(cm); setTab("commesse"); } else { setShowNewEvent(false); setSelectedEvent(null); setShowModal("commessa"); } }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#fff5eb", border: "1px solid #ff950030", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#ff9500" }}>📏 Misure</div>
+                    <div onClick={(e) => { e.stopPropagation(); const code = ev.cm || "INT-" + Date.now().toString().slice(-4); const nc = { id: "c" + Date.now(), code, cliente: ev.persona || "", cognome: "", indirizzo: ev.addr || "", telefono: "", tipo: "nuova", fase: "sopralluogo", vani: [], note: "Intervento da evento: " + ev.text }; if (!ev.cm) { setCantieri(prev => [...prev, nc]); } setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: "#f0fff4", border: "1px solid #34c75930", textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#34c759" }}>🔧 Intervento</div>
                   </div>`;
     
     lines.splice(rowClose + 1, 0, actionRow);
@@ -68,8 +68,8 @@ for (let i = lines.length - 1; i >= 0; i--) {
     
     const actionRow2 = `
                                     <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                                      <div onClick={(e) => { e.stopPropagation(); const cm = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cm) { setSelectedCM(cm); setTab("commesse"); } else { setShowModal("commessa"); } setSelectedEvent(null); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: "#f0f4ff", textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: "#007aff" }}>\uD83D\uDCCF Misure</div>
-                                      <div onClick={(e) => { e.stopPropagation(); setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: "#f0fff4", textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: "#34c759" }}>\uD83D\uDD27 Intervento</div>
+                                      <div onClick={(e) => { e.stopPropagation(); const cm = ev.cm ? cantieri.find(c => c.code === ev.cm) : null; if (cm) { setSelectedCM(cm); setTab("commesse"); } else { setShowModal("commessa"); } setSelectedEvent(null); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: "#f0f4ff", textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: "#007aff" }}>📏 Misure</div>
+                                      <div onClick={(e) => { e.stopPropagation(); setSelectedEvent(null); setTab("commesse"); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: "#f0fff4", textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: "#34c759" }}>🔧 Intervento</div>
                                     </div>`;
     
     lines.splice(rowClose + 1, 0, actionRow2);
@@ -80,5 +80,5 @@ for (let i = lines.length - 1; i >= 0; i--) {
 
 c = lines.join('\n');
 fs.writeFileSync(file, c);
-console.log('\n\u2705 All event buttons fixed! Icons: ' + fixed + ' fixed');
+console.log('\n✅ All event buttons fixed! Icons: ' + fixed + ' fixed');
 console.log('Lines: ' + lines.length);

@@ -54,7 +54,7 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
               <div style={{ fontSize: 11, color: T.sub }}>{c.tipo === "cliente" ? "\\u{1F464} Cliente" : c.tipo === "fornitore" ? "\\u{1F3ED} Fornitore" : "\\u{1F477} Professionista"}</div>
             </div>
             <div onClick={() => { const idx = contatti.findIndex(x => x.id === c.id); if (idx >= 0) { const updated = { ...c, preferito: !c.preferito }; setContatti(prev => prev.map(x => x.id === c.id ? updated : x)); setSelectedCliente(updated); } }} style={{ fontSize: 22, cursor: "pointer" }}>
-              {c.preferito ? "\\u2B50" : "\\u2606"}
+              {c.preferito ? "\⭐" : "\☆"}
             </div>
           </div>
 
@@ -140,9 +140,9 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
           {/* TAB: Storia (timeline) */}
           {clienteDetailTab === "storia" && <>
             <div style={{ margin: "0 16px 12px" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>\\u{1F4C5} Timeline attivit\\u00E0</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>\\u{1F4C5} Timeline attivit\à</div>
               {[...evList].sort((a, b) => (b.date || "").localeCompare(a.date || "")).length === 0 && 
-                <div style={{ padding: 24, background: T.card, borderRadius: 12, textAlign: "center", fontSize: 12, color: T.sub }}>Nessuna attivit\\u00E0 registrata</div>
+                <div style={{ padding: 24, background: T.card, borderRadius: 12, textAlign: "center", fontSize: 12, color: T.sub }}>Nessuna attivit\à registrata</div>
               }
               {[...evList].sort((a, b) => (b.date || "").localeCompare(a.date || "")).map((ev, i) => (
                 <div key={ev.id || i} style={{ display: "flex", gap: 12, marginBottom: 2 }}>

@@ -61,7 +61,7 @@ while (i < c.length) {
           const buf = Buffer.from(bytes);
           const decoded = buf.toString('utf8');
           // Verify it decoded to exactly 1 codepoint (1 or 2 JS chars for surrogate pairs)
-          if (!decoded.includes('\uFFFD') && [...decoded].length === 1) {
+          if (!decoded.includes('�') && [...decoded].length === 1) {
             result += decoded;
             i += seqLen;
             fixes++;

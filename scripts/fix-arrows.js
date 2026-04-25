@@ -3,16 +3,16 @@ const fs = require('fs');
 let c = fs.readFileSync('components/MastroERP.tsx', 'utf8');
 
 // 1. Fix navPrev arrows (empty → ‹)
-c = c.replace(/onClick=\{navPrev\}([^>]+)><\/div>/g, 'onClick={navPrev}$1>\u2039</div>');
+c = c.replace(/onClick=\{navPrev\}([^>]+)><\/div>/g, 'onClick={navPrev}$1>‹</div>');
 
 // 2. Fix navNext arrows (empty → ›)
-c = c.replace(/onClick=\{navNext\}([^>]+)><\/div>/g, 'onClick={navNext}$1>\u203A</div>');
+c = c.replace(/onClick=\{navNext\}([^>]+)><\/div>/g, 'onClick={navNext}$1>›</div>');
 
 // 3. Fix "Apri" links — add →
 c = c.replace(/>Apri\s*<\/div>/g, '>Apri →</div>');
 
 // 4. Fix en-dash in week range (empty → –)
-c = c.replace(/getDate\(\) \+ "" \+/g, 'getDate() + "\u2013" + ');
+c = c.replace(/getDate\(\) \+ "" \+/g, 'getDate() + "–" + ');
 
 // 5. Fix middle dots in join
 c = c.replace(/\.join\(" "\)/g, '.join(" · ")');
@@ -30,5 +30,5 @@ const agendaNavPattern = /agendaView === "giorno" \? selDate\.toLocaleDateString
 c = c.replace(/onClick=\{\(\) => \{ const d=new Date\(selDate\);d\.setDate\(d\.getDate\(\)-1\)/g, function(m) { return m; });
 
 fs.writeFileSync('components/MastroERP.tsx', c);
-console.log('\u2705 Fix completato: frecce + Oggi + simboli');
+console.log('✅ Fix completato: frecce + Oggi + simboli');
 console.log('Fai: npm run dev');

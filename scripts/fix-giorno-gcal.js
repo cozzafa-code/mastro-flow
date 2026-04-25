@@ -53,5 +53,5 @@ for (let i = 0; i < lines.length; i++) {
 }
 
 fs.writeFileSync(file, lines.join('\n'));
-console.log('\n\u2705 Giorno = Google Calendar style!');
+console.log('\n✅ Giorno = Google Calendar style!');
 console.log('Lines: ' + lines.length);

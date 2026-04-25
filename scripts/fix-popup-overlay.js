@@ -99,5 +99,5 @@ if (fabLine > 0) {
 }
 
 fs.writeFileSync(file, lines.join('\n'));
-console.log('\n\u2705 Event popup overlay added!');
+console.log('\n✅ Event popup overlay added!');
 console.log('Lines: ' + lines.length);

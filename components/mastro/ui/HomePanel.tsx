@@ -118,7 +118,7 @@ function CompitiWidget({ onNavigate }) {
           </div>
         </div>
       ))}
-      <ExpandBtn label="Espandi compiti settimana \u2193" onClick={() => onNavigate('team')} />
+      <ExpandBtn label="Espandi compiti settimana ↓" onClick={() => onNavigate('team')} />
     </>
   );
 }
@@ -207,14 +207,14 @@ export default function HomePanel() {
             ))}
           </div>
         </div>
-        <ExpandBtn label="Espandi con lista commesse \u2193" onClick={() => nav('commesse')} />
+        <ExpandBtn label="Espandi con lista commesse ↓" onClick={() => nav('commesse')} />
       </>);
       case 'scadenze': return w(<>
         <WHead title="Scadenze 15gg" dot={DS.amber} />
         <div style={{ padding: '14px 16px', fontSize: 11, color: DS.dark }}>
           {['Consegne', 'Fatture', 'Montaggi'].map(s => (<div key={s} style={{ marginBottom: 8 }}><div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: DS.tealDark, marginBottom: 2 }}>{s} (0)</div><div>Nessuna programmata</div></div>))}
         </div>
-        <ExpandBtn label="Espandi scadenze 30gg \u2193" onClick={() => nav('agenda')} />
+        <ExpandBtn label="Espandi scadenze 30gg ↓" onClick={() => nav('agenda')} />
       </>);
       case 'oggi': return w(<>
         <WHead title="Oggi" dot={DS.blue} />
@@ -235,14 +235,14 @@ export default function HomePanel() {
             <div><div style={{ fontSize: 12, fontWeight: 600, color: DS.dark }}>Titolare</div><div style={{ fontSize: 9, color: DS.green }}>Online — 3 compiti</div></div>
           </div>
         </div>
-        <ExpandBtn label="Espandi team \u2193" onClick={() => nav('team')} />
+        <ExpandBtn label="Espandi team ↓" onClick={() => nav('team')} />
       </>);
       case 'produzione': return w(<>
         <WHead title="Produzione" badge="0 attive" badgeColor={DS.red} dot={DS.red} onAction={() => nav('distinte')} />
         <RowItem label="In produzione" value={0} onClick={() => nav('distinte')} />
         <RowItem label="In attesa ordini" value={0} onClick={() => nav('ordini')} />
         <RowItem label="Pronte per posa" value={0} onClick={() => nav('montaggi')} />
-        <ExpandBtn label="Espandi produzione \u2193" onClick={() => nav('distinte')} />
+        <ExpandBtn label="Espandi produzione ↓" onClick={() => nav('distinte')} />
       </>);
       case 'contabilita': return w(<>
         <WHead title="Contabilita" onAction={() => nav('contabilita')} />
@@ -254,14 +254,14 @@ export default function HomePanel() {
             </div>
           ))}
         </div>
-        <ExpandBtn label="Espandi con grafico 6 mesi \u2193" onClick={() => nav('contabilita')} />
+        <ExpandBtn label="Espandi con grafico 6 mesi ↓" onClick={() => nav('contabilita')} />
       </>);
       case 'pratiche': return w(<>
         <WHead title="Pratiche fiscali" dot={DS.blue} />
         <RowItem label="Ristrutturazione 50%" value={0} onClick={() => nav('enea')} />
         <RowItem label="Ecobonus 65%" value={0} onClick={() => nav('enea')} />
         <RowItem label="Barriere 75%" value={0} onClick={() => nav('enea')} />
-        <ExpandBtn label="Espandi pratiche \u2193" onClick={() => nav('enea')} />
+        <ExpandBtn label="Espandi pratiche ↓" onClick={() => nav('enea')} />
       </>);
       default: return null;
     }

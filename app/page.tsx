@@ -247,7 +247,7 @@ export default function LandingPage() {
           <a href="/termini" style={{ color: "#8BBCBC", fontSize: 11, textDecoration: "none" }}>Termini di Servizio</a>
           <a href="mailto:info@fliwox.com" style={{ color: "#8BBCBC", fontSize: 11, textDecoration: "none" }}>info@fliwox.com</a>
         </div>
-        <p style={{ color: "#4A7070", fontSize: 10 }}>{"\u00A9"} 2026 fliwoX {"·"} Tutti i diritti riservati {"·"} P.IVA registrata in Italia</p>
+        <p style={{ color: "#4A7070", fontSize: 10 }}>{"©"} 2026 fliwoX {"·"} Tutti i diritti riservati {"·"} P.IVA registrata in Italia</p>
       </footer>
 
     </main>

@@ -72,4 +72,4 @@ for (let i = 0; i < lines.length; i++) {
 }
 
 fs.writeFileSync(file, lines.join('\n'));
-console.log('\n\u2705 Done! Lines: ' + lines.length);
+console.log('\n✅ Done! Lines: ' + lines.length);

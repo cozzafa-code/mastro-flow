@@ -10,7 +10,7 @@ function tryDoubleDecode(str) {
   try {
     const buf = Buffer.from(str, 'latin1');
     const decoded = buf.toString('utf8');
-    if (!decoded.includes('\uFFFD') && decoded.includes('useState')) return decoded;
+    if (!decoded.includes('�') && decoded.includes('useState')) return decoded;
   } catch(e) {}
   return null;
 }
@@ -29,11 +29,11 @@ if (fullDecode) {
 const fixes = [
   ['Ã¨', 'è'], ['Ã©', 'é'], ['Ã ', 'à'], ['Ã¬', 'ì'], ['Ã²', 'ò'], ['Ã¹', 'ù'],
   ['Â°', '°'], ['Â·', '·'], ['Â»', '»'], ['Â«', '«'], ['Â©', '©'],
-  ['â€"', '—'], ['â€"', '–'], ['â€™', '\u2019'], ['â€˜', '\u2018'],
-  ['â€œ', '\u201C'], ['â€¦', '\u2026'],
-  ['â€¹', '\u2039'], ['â€º', '\u203A'],
-  ['â€¢', '\u2022'],
-  ['Â ', '\u00A0'],
+  ['â€"', '—'], ['â€"', '–'], ['â€™', '’'], ['â€˜', '‘'],
+  ['â€œ', '“'], ['â€¦', '…'],
+  ['â€¹', '‹'], ['â€º', '›'],
+  ['â€¢', '•'],
+  ['Â ', ' '],
 ];
 
 let n = 0;
@@ -46,4 +46,4 @@ const rem = (c.match(/[ÃÂ][^\s"'<>{}();:,.=+\-*\/\\0-9\n\r\t]/g) || []).length
 if (rem > 0) console.log('Remaining artifacts: ' + rem);
 
 fs.writeFileSync(file, c, 'utf8');
-console.log('\n\u2705 Done! Lines: ' + c.split('\n').length);
+console.log('\n✅ Done! Lines: ' + c.split('\n').length);

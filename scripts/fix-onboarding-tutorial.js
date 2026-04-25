@@ -61,11 +61,11 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
               <div style={{ fontSize:13, color:"#6B6B6B", lineHeight:1.6, marginBottom:24 }}>Il gestionale pensato per chi fa serramenti sul campo. Ti faccio vedere come funziona in 30 secondi.</div>
               <div style={{ display:"flex", flexDirection:"column", gap:10, textAlign:"left", marginBottom:24 }}>
                 {[
-                  {e:"\uD83C\uDFE0",t:"Home",d:"Riepilogo della giornata: appuntamenti, allerte, calendario"},
-                  {e:"\uD83D\uDCC5",t:"Agenda",d:"Tutti i tuoi impegni in vista giorno, settimana o mese"},
-                  {e:"\uD83D\uDCC1",t:"Commesse",d:"Il cuore: ogni lavoro dalla richiesta alla posa"},
-                  {e:"\uD83D\uDCE8",t:"Messaggi",d:"Tutte le comunicazioni in un posto"},
-                  {e:"\u2699\uFE0F",t:"Impostazioni",d:"Listini, colori, team e dati azienda"},
+                  {e:"🏠",t:"Home",d:"Riepilogo della giornata: appuntamenti, allerte, calendario"},
+                  {e:"📅",t:"Agenda",d:"Tutti i tuoi impegni in vista giorno, settimana o mese"},
+                  {e:"📁",t:"Commesse",d:"Il cuore: ogni lavoro dalla richiesta alla posa"},
+                  {e:"📨",t:"Messaggi",d:"Tutte le comunicazioni in un posto"},
+                  {e:"⚙️",t:"Impostazioni",d:"Listini, colori, team e dati azienda"},
                 ].map((s,i) => (
                   <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                     <div style={{ fontSize:18, width:28, textAlign:"center", flexShrink:0 }}>{s.e}</div>
@@ -80,7 +80,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
             {/* STEP 2: HOME TAB */}
             {tutoStep === 2 && (<div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ fontSize:22 }}>\uD83C\uDFE0</div>
+                <div style={{ fontSize:22 }}>🏠</div>
                 <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Home</div>
                 <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>1/6</div>
               </div>
@@ -95,13 +95,13 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
             {/* STEP 3: AGENDA */}
             {tutoStep === 3 && (<div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ fontSize:22 }}>\uD83D\uDCC5</div>
+                <div style={{ fontSize:22 }}>📅</div>
                 <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Agenda</div>
                 <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>2/6</div>
               </div>
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Qui vedi <b>tutti gli impegni</b>: sopralluoghi, pose, consegne. Puoi vedere il <b>giorno singolo</b>, la <b>settimana</b> o il <b>mese</b>. Tocca il + per aggiungere un appuntamento. Ogni evento può essere collegato a una commessa.</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
+                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
                 <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, left:"38%", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
@@ -110,7 +110,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
             {/* STEP 4: COMMESSE */}
             {tutoStep === 4 && (<div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ fontSize:22 }}>\uD83D\uDCC1</div>
+                <div style={{ fontSize:22 }}>📁</div>
                 <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Commesse</div>
                 <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>3/6</div>
               </div>
@@ -122,7 +122,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
               </div>
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Dentro ogni commessa gestisci <b>vani</b> (finestre, porte), <b>misure</b>, <b>rilievi</b> e generi il <b>preventivo PDF</b>. Tocca + per creare la tua prima commessa!</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
+                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
                 <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
@@ -131,13 +131,13 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
             {/* STEP 5: MESSAGGI */}
             {tutoStep === 5 && (<div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ fontSize:22 }}>\uD83D\uDCE8</div>
+                <div style={{ fontSize:22 }}>📨</div>
                 <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Messaggi</div>
                 <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>4/6</div>
               </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Tutte le comunicazioni: <b>WhatsApp, email, SMS, Telegram</b>. L\u2019AI Inbox analizza le email in arrivo e suggerisce azioni automatiche: creare commesse, collegare messaggi, avanzare fasi.</div>
+              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Tutte le comunicazioni: <b>WhatsApp, email, SMS, Telegram</b>. L’AI Inbox analizza le email in arrivo e suggerisce azioni automatiche: creare commesse, collegare messaggi, avanzare fasi.</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
+                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
                 <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, right:"35%", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
@@ -146,13 +146,13 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
             {/* STEP 6: IMPOSTAZIONI */}
             {tutoStep === 6 && (<div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                <div style={{ fontSize:22 }}>\u2699\uFE0F</div>
+                <div style={{ fontSize:22 }}>⚙️</div>
                 <div style={{ fontSize:16, fontWeight:800, color:"#1A1A1C" }}>Impostazioni</div>
                 <div style={{ marginLeft:"auto", fontSize:10, color:"#8E8E93", background:"#f5f5f5", padding:"3px 8px", borderRadius:8 }}>5/6</div>
               </div>
-              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Configura la tua azienda: <b>ragione sociale, logo, listini prezzi, sistemi</b> (Sch\u00FCco, Rehau, Finstral...), <b>colori RAL</b>, vetri, coprifili, lamiere. Tutto quello che ti serve per fare preventivi precisi.</div>
+              <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Configura la tua azienda: <b>ragione sociale, logo, listini prezzi, sistemi</b> (Schüco, Rehau, Finstral...), <b>colori RAL</b>, vetri, coprifili, lamiere. Tutto quello che ti serve per fare preventivi precisi.</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
+                <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>‹ Indietro</div>
                 <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, right:24, width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
@@ -160,7 +160,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
 
             {/* STEP 7: FINAL */}
             {tutoStep === 7 && (<div style={{ textAlign:"center" }}>
-              <div style={{ fontSize:40, marginBottom:12 }}>\uD83D\uDE80</div>
+              <div style={{ fontSize:40, marginBottom:12 }}>🚀</div>
               <div style={{ fontSize:18, fontWeight:900, color:"#1A1A1C", marginBottom:6 }}>Tutto pronto!</div>
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.7, marginBottom:8 }}>Ecco come iniziare:</div>
               <div style={{ textAlign:"left", marginBottom:20 }}>
@@ -176,7 +176,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
                   </div>
                 ))}
               </div>
-              <div onClick={closeTuto} style={{ padding:"14px 32px", fontSize:15, fontWeight:800, color:"#fff", background:T.acc, borderRadius:14, cursor:"pointer", display:"inline-block" }}>Inizia a lavorare! \uD83D\uDCAA</div>
+              <div onClick={closeTuto} style={{ padding:"14px 32px", fontSize:15, fontWeight:800, color:"#fff", background:T.acc, borderRadius:14, cursor:"pointer", display:"inline-block" }}>Inizia a lavorare! 💪</div>
             </div>)}
           </div>
         </div>
@@ -187,5 +187,5 @@ c = c.substring(0, uiAnchor) + tutorialUI + c.substring(uiAnchor);
 console.log('✓ New tutorial UI added');
 
 fs.writeFileSync(file, c);
-console.log('\n\u2705 Tutorial onboarding completo!');
+console.log('\n✅ Tutorial onboarding completo!');
 console.log('Lines: ' + c.split('\n').length);

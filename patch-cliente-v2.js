@@ -34,9 +34,9 @@ const NEW = `    // Dettaglio cliente selezionato
               <div style={{ fontSize: 17, fontWeight: 800 }}>{c.nome} {c.cognome || ""}</div>
               <div style={{ fontSize: 11, color: T.sub }}>{c.tipo === "cliente" ? "\u{1F464} Cliente" : c.tipo === "fornitore" ? "\u{1F3ED} Fornitore" : "\u{1F477} Professionista"}</div>
             </div>
-            <div onClick={() => { setEditingCliente({...c}); }} style={{ padding: "6px 10px", borderRadius: 8, background: T.accLt, color: T.acc, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>\u270F\uFE0F Modifica</div>
+            <div onClick={() => { setEditingCliente({...c}); }} style={{ padding: "6px 10px", borderRadius: 8, background: T.accLt, color: T.acc, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✏️ Modifica</div>
             <div onClick={() => { const idx = contatti.findIndex(x => x.id === c.id); if (idx >= 0) { const updated = { ...c, preferito: !c.preferito }; setContatti(prev => prev.map(x => x.id === c.id ? updated : x)); setSelectedCliente(updated); } }} style={{ fontSize: 22, cursor: "pointer" }}>
-              {c.preferito ? "\u2B50" : "\u2606"}
+              {c.preferito ? "⭐" : "☆"}
             </div>
           </div>
 
@@ -138,21 +138,21 @@ const NEW = `    // Dettaglio cliente selezionato
           {/* === TAB STORIA === */}
           {cTab === "storia" && (<>
             <div style={{ margin: "0 16px" }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>Timeline attivit\u00E0</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>Timeline attività</div>
               {(() => {
                 const tl = [];
                 cmList.forEach(cm => {
                   tl.push({ date: cm.dataCreazione || cm.data || "2025-01-01", ico: "\u{1F4C1}", text: "Commessa " + cm.code + " creata", sub: cm.indirizzo || "", color: T.acc });
-                  if (cm.dataFirma) tl.push({ date: cm.dataFirma, ico: "\u270D\uFE0F", text: "Preventivo " + cm.code + " firmato", sub: "€" + (cm.totale||0).toLocaleString("it-IT"), color: T.grn });
+                  if (cm.dataFirma) tl.push({ date: cm.dataFirma, ico: "✍️", text: "Preventivo " + cm.code + " firmato", sub: "€" + (cm.totale||0).toLocaleString("it-IT"), color: T.grn });
                 });
                 evList.forEach(ev => {
                   tl.push({ date: ev.dateISO || ev.date || "2025-01-01", ico: "\u{1F4C5}", text: ev.text, sub: ev.date + (ev.time ? " " + ev.time : ""), color: "#007aff" });
                 });
                 fatList.forEach(f => {
-                  tl.push({ date: f.dataISO || f.data, ico: "\u{1F9FE}", text: "Fattura N." + f.numero + "/" + f.anno, sub: "€" + f.importo.toLocaleString("it-IT") + " \u2013 " + (f.pagata ? "Pagata" : "Da incassare"), color: f.pagata ? "#34c759" : "#ff3b30" });
+                  tl.push({ date: f.dataISO || f.data, ico: "\u{1F9FE}", text: "Fattura N." + f.numero + "/" + f.anno, sub: "€" + f.importo.toLocaleString("it-IT") + " – " + (f.pagata ? "Pagata" : "Da incassare"), color: f.pagata ? "#34c759" : "#ff3b30" });
                 });
                 tl.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-                if (tl.length === 0) return <div style={{ padding: "20px", background: T.card, borderRadius: 10, textAlign: "center", fontSize: 12, color: T.sub }}>Nessuna attivit\u00E0 registrata</div>;
+                if (tl.length === 0) return <div style={{ padding: "20px", background: T.card, borderRadius: 10, textAlign: "center", fontSize: 12, color: T.sub }}>Nessuna attività registrata</div>;
                 return tl.map((t, i) => (
                   <div key={i} style={{ display: "flex", gap: 10, marginBottom: 2 }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 24 }}>
@@ -188,7 +188,7 @@ const NEW = `    // Dettaglio cliente selezionato
               </div>
               {totFatturato > 0 && totIncassato < totFatturato && (
                 <div style={{ background: "#fff3cd", borderRadius: 10, padding: "10px 14px", marginBottom: 12, border: "1px solid #ffc107", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>\u26A0\uFE0F</span>
+                  <span style={{ fontSize: 16 }}>⚠️</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#856404" }}>Da incassare: €{(totFatturato - totIncassato).toLocaleString("it-IT")}</span>
                 </div>
               )}
@@ -202,7 +202,7 @@ const NEW = `    // Dettaglio cliente selezionato
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>€{f.importo.toLocaleString("it-IT")}</div>
-                    <div style={{ fontSize: 9, color: f.pagata ? "#34c759" : "#ff3b30", fontWeight: 700 }}>{f.pagata ? "\u2705 Pagata" : "\u23F3 Da incassare"}</div>
+                    <div style={{ fontSize: 9, color: f.pagata ? "#34c759" : "#ff3b30", fontWeight: 700 }}>{f.pagata ? "✅ Pagata" : "⏳ Da incassare"}</div>
                   </div>
                 </div>
               ))}
@@ -233,7 +233,7 @@ const NEW = `    // Dettaglio cliente selezionato
                 style={{ ...S.input, width: "100%", minHeight: 120, fontSize: 13, lineHeight: 1.6, boxSizing: "border-box", resize: "vertical", marginBottom: 12 }} />
               <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 6 }}>Tag rapidi</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-                {["\u{1F7E2} Paga puntuale", "\u{1F7E1} Paga in ritardo", "\u{1F534} Insolvente", "\u2B50 VIP", "\u{1F44D} Facile", "\u{1F62C} Difficile", "\u{1F4B0} Vuole sconti", "\u{1F4DE} Chiama spesso", "\u{1F3D7}\uFE0F Cantiere complesso"].map(tag => (
+                {["\u{1F7E2} Paga puntuale", "\u{1F7E1} Paga in ritardo", "\u{1F534} Insolvente", "⭐ VIP", "\u{1F44D} Facile", "\u{1F62C} Difficile", "\u{1F4B0} Vuole sconti", "\u{1F4DE} Chiama spesso", "\u{1F3D7}️ Cantiere complesso"].map(tag => (
                   <div key={tag} onClick={() => {
                     const cur = c.notePrivate || "";
                     const has = cur.includes(tag);
@@ -261,7 +261,7 @@ const NEW = `    // Dettaglio cliente selezionato
 
           {/* Azioni fisse in basso */}
           <div style={{ margin: "16px 16px 0", display: "flex", gap: 8 }}>
-            <div onClick={() => { setEditingCliente({...c}); }} style={{ flex: 1, padding: "12px", borderRadius: 10, background: T.accLt, color: T.acc, textAlign: "center", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>\u270F\uFE0F Modifica</div>
+            <div onClick={() => { setEditingCliente({...c}); }} style={{ flex: 1, padding: "12px", borderRadius: 10, background: T.accLt, color: T.acc, textAlign: "center", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✏️ Modifica</div>
             <div onClick={() => { setContatti(prev => prev.filter(x => x.id !== c.id)); setSelectedCliente(null); }} style={{ flex: 1, padding: "12px", borderRadius: 10, background: T.redLt || "#fee", color: T.red || "#ff3b30", textAlign: "center", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>\u{1F5D1} Elimina</div>
           </div>
         </div>
