@@ -4,21 +4,10 @@ import { TT } from "./design-system";
 import { Icon, IconName } from "./icons";
 import AvatarGradient from "./AvatarGradient";
 
-// =========================================================
-// SidebarTablet - 224px fisso
-// =========================================================
-// Struttura:
-//   - Logo box scuro "fliwoX" (44px) margin 16/16/18
-//   - Nav: 15 voci (icona quadrata 28px colorata + label)
-//     Voce attiva = sfondo teal-400 + ombra soft
-//   - User card in basso: avatar gradient + nome + ruolo + chevron
-// =========================================================
-
 interface MenuItem {
   id: string;
   label: string;
   icon: IconName;
-  /** Colore quadratino icona (pastel-400). */
   color: string;
 }
 
@@ -41,14 +30,11 @@ const MENU: MenuItem[] = [
 ];
 
 export interface SidebarTabletProps {
-  /** Voce attiva (default "dashboard"). */
   active?: string;
-  /** Callback click voce. */
   onSelect?: (id: string) => void;
-  /** Nome utente nella card in basso. */
   userName?: string;
-  /** Ruolo utente. */
   userRole?: string;
+  collapsed?: boolean;
 }
 
 export default function SidebarTablet({
@@ -56,6 +42,7 @@ export default function SidebarTablet({
   onSelect,
   userName = "Fabio Cozza",
   userRole = "Amministratore",
+  collapsed = false,
 }: SidebarTabletProps) {
   return (
     <aside
@@ -65,28 +52,31 @@ export default function SidebarTablet({
         borderRight: `1px solid ${TT.border}`,
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
+        transition: "width 0.18s ease",
       }}
     >
       {/* LOGO */}
       <div
         style={{
-          margin: "16px 16px 18px",
+          margin: collapsed ? "16px 12px 18px" : "16px 16px 18px",
           height: 44,
-          background: TT.logoBg,
+          background: TT.logoBgGradient,
           borderRadius: TT.rMd,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           gap: 6,
-          padding: "0 12px",
+          padding: collapsed ? 0 : "0 12px",
+          boxShadow: "0 4px 12px rgba(15,23,42,0.20), inset 0 1px 0 rgba(255,255,255,0.06)",
         }}
       >
         <div
           style={{
-            width: 24,
-            height: 24,
-            background: TT.teal[400],
-            borderRadius: TT.rXs,
+            width: 26,
+            height: 26,
+            background: `linear-gradient(135deg, ${TT.teal[300]}, ${TT.teal[500]})`,
+            borderRadius: 7,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -94,77 +84,82 @@ export default function SidebarTablet({
             fontWeight: 800,
             fontSize: 13,
             letterSpacing: "-0.3px",
+            boxShadow: "0 2px 6px rgba(20,165,153,0.4)",
           }}
         >
           X
         </div>
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: 800,
-            color: "#fff",
-            letterSpacing: "-0.4px",
-          }}
-        >
-          fliwo<span style={{ color: TT.teal[300] }}>X</span>
-        </div>
+        {!collapsed && (
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 800,
+              color: "#fff",
+              letterSpacing: "-0.4px",
+            }}
+          >
+            fliwo<span style={{ color: TT.teal[300] }}>X</span>
+          </div>
+        )}
       </div>
 
       {/* NAV */}
-      <nav
-        style={{
-          flex: 1,
-          padding: "0 12px",
-          overflowY: "auto",
-        }}
-      >
+      <nav style={{ flex: 1, padding: collapsed ? "0 8px" : "0 12px", overflowY: "auto" }}>
         {MENU.map((m) => {
           const isActive = m.id === active;
           return (
             <div
               key={m.id}
               onClick={() => onSelect?.(m.id)}
+              title={collapsed ? m.label : undefined}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                padding: "8px 12px",
-                borderRadius: TT.rSm + 2, // 10
+                padding: collapsed ? "9px 0" : "9px 12px",
+                justifyContent: collapsed ? "center" : "flex-start",
+                borderRadius: 11,
                 cursor: "pointer",
                 marginBottom: 2,
                 color: isActive ? "#fff" : TT.text2,
-                background: isActive ? TT.teal[400] : "transparent",
+                background: isActive
+                  ? `linear-gradient(135deg, ${m.color}, ${m.color}E0)`
+                  : "transparent",
                 fontSize: 13,
                 fontWeight: isActive ? 600 : 500,
                 letterSpacing: "-0.1px",
-                transition: "background 0.12s",
+                transition: "all 0.15s",
                 boxShadow: isActive
-                  ? "0 2px 6px rgba(45,212,191,0.25)"
+                  ? `0 4px 12px ${m.color}40, inset 0 1px 0 rgba(255,255,255,0.18)`
                   : "none",
               }}
               onMouseEnter={(e) => {
-                if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "#F8FAFC";
+                if (!isActive) (e.currentTarget as HTMLDivElement).style.background = TT.bgSoft;
               }}
               onMouseLeave={(e) => {
                 if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "transparent";
               }}
             >
-              {/* Quadratino icona */}
               <div
                 style={{
                   width: 28,
                   height: 28,
-                  borderRadius: TT.rSm,
+                  borderRadius: 8,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
-                  background: isActive ? "rgba(255,255,255,0.22)" : m.color,
+                  background: isActive
+                    ? "rgba(255,255,255,0.22)"
+                    : `linear-gradient(135deg, ${m.color}, ${m.color}D0)`,
+                  boxShadow: isActive
+                    ? "inset 0 1px 0 rgba(255,255,255,0.25)"
+                    : `0 2px 6px ${m.color}40`,
                 }}
               >
                 <Icon name={m.icon} size={14} color="#fff" />
               </div>
-              <span>{m.label}</span>
+              {!collapsed && <span>{m.label}</span>}
             </div>
           );
         })}
@@ -173,8 +168,8 @@ export default function SidebarTablet({
       {/* USER CARD */}
       <div
         style={{
-          margin: "10px 16px 16px",
-          padding: "10px 12px",
+          margin: collapsed ? "10px 8px 14px" : "10px 16px 16px",
+          padding: collapsed ? "8px" : "10px 12px",
           background: TT.bgSoft,
           borderRadius: TT.rMd,
           display: "flex",
@@ -182,25 +177,23 @@ export default function SidebarTablet({
           gap: 10,
           cursor: "pointer",
           border: `1px solid ${TT.border}`,
+          justifyContent: collapsed ? "center" : "flex-start",
         }}
       >
-        <AvatarGradient size={36} preset="default" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: TT.text1,
-              letterSpacing: "-0.1px",
-            }}
-          >
-            {userName}
-          </div>
-          <div style={{ fontSize: 11, color: TT.text3, marginTop: 1 }}>
-            {userRole}
-          </div>
-        </div>
-        <Icon name="chevronRight" size={14} color={TT.text3} strokeWidth={2} />
+        <AvatarGradient size={collapsed ? 32 : 36} preset="default" />
+        {!collapsed && (
+          <>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: TT.text1, letterSpacing: "-0.1px" }}>
+                {userName}
+              </div>
+              <div style={{ fontSize: 11, color: TT.text3, marginTop: 1 }}>
+                {userRole}
+              </div>
+            </div>
+            <Icon name="chevronRight" size={14} color={TT.text3} strokeWidth={2} />
+          </>
+        )}
       </div>
     </aside>
   );

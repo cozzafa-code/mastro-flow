@@ -4,35 +4,17 @@ import { TT } from "./design-system";
 import { Icon } from "./icons";
 import AvatarGradient from "./AvatarGradient";
 
-// =========================================================
-// TopbarTablet - 64px altezza
-// =========================================================
-// Struttura:
-//   - Greeting (titolo + sottotitolo data)
-//   - Search input 480px max-width (pill)
-//   - 3 icon-button: bell (con badge), chat, task
-//   - Avatar utente
-// =========================================================
-
 export interface TopbarTabletProps {
-  /** "Buongiorno, Fabio Cozza". */
   greeting?: string;
-  /** Sottotitolo (data formattata). Default: oggi in italiano. */
   subtitle?: string;
-  /** Numero notifiche (badge bell). 0 = nascosto. */
   notificationCount?: number;
-  /** Placeholder search. */
   searchPlaceholder?: string;
-  /** Callback search input change. */
   onSearch?: (value: string) => void;
-  /** Click bell. */
   onBellClick?: () => void;
-  /** Click chat. */
   onChatClick?: () => void;
-  /** Click task. */
   onTaskClick?: () => void;
-  /** Click avatar. */
   onAvatarClick?: () => void;
+  compact?: boolean;
 }
 
 const formatDateIT = (d: Date): string => {
@@ -55,8 +37,8 @@ export default function TopbarTablet({
   onChatClick,
   onTaskClick,
   onAvatarClick,
+  compact = false,
 }: TopbarTabletProps) {
-  // Hydration-safe date: render solo dopo mount
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
   const sub = subtitle || (mounted ? formatDateIT(new Date()) : " ");
@@ -65,100 +47,101 @@ export default function TopbarTablet({
     <header
       style={{
         gridArea: "topbar",
-        background: TT.surface,
+        background: TT.surfaceGlass,
         borderBottom: `1px solid ${TT.border}`,
         display: "flex",
         alignItems: "center",
-        padding: "0 24px",
-        gap: 20,
+        padding: compact ? "0 16px" : "0 28px",
+        gap: compact ? 12 : 20,
+        backdropFilter: "blur(20px) saturate(180%)",
+        WebkitBackdropFilter: "blur(20px) saturate(180%)",
       }}
     >
-      {/* GREETING */}
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <div
-          style={{
-            fontSize: 16,
-            fontWeight: 700,
-            color: TT.text1,
-            letterSpacing: "-0.4px",
-          }}
-        >
+        <div style={{
+          fontSize: compact ? 14 : 16,
+          fontWeight: 700,
+          color: TT.text1,
+          letterSpacing: "-0.4px",
+          lineHeight: 1.1,
+        }}>
           {greeting}
         </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: TT.text3,
-            marginTop: 2,
-            letterSpacing: "-0.05px",
-          }}
-        >
+        <div style={{
+          fontSize: 12,
+          color: TT.text3,
+          marginTop: 3,
+          letterSpacing: "-0.05px",
+        }}>
           {sub}
         </div>
       </div>
 
-      {/* SEARCH */}
-      <div
-        style={{
-          flex: 1,
-          maxWidth: 480,
-          position: "relative",
-          marginLeft: 28,
-        }}
-      >
-        <div
-          style={{
+      {!compact && (
+        <div style={{ flex: 1, maxWidth: 480, position: "relative", marginLeft: 28 }}>
+          <div style={{
             position: "absolute",
             left: 14,
             top: "50%",
             transform: "translateY(-50%)",
             color: TT.text3,
             display: "flex",
-          }}
-        >
-          <Icon name="search" size={14} color={TT.text3} strokeWidth={2} />
+          }}>
+            <Icon name="search" size={14} color={TT.text3} strokeWidth={2} />
+          </div>
+          <input
+            type="text"
+            placeholder={searchPlaceholder}
+            onChange={(e) => onSearch?.(e.target.value)}
+            style={{
+              width: "100%",
+              height: 42,
+              padding: "0 14px 0 42px",
+              background: TT.bgSoft,
+              border: `1px solid ${TT.border}`,
+              borderRadius: TT.rMd,
+              fontSize: 13,
+              fontFamily: TT.fontFamily,
+              color: TT.text1,
+              outline: "none",
+              letterSpacing: "-0.1px",
+              boxSizing: "border-box",
+              transition: "all 0.15s",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = TT.teal[300];
+              e.currentTarget.style.background = TT.surface;
+              e.currentTarget.style.boxShadow = `0 0 0 3px ${TT.teal[100]}`;
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = TT.border;
+              e.currentTarget.style.background = TT.bgSoft;
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          />
         </div>
-        <input
-          type="text"
-          placeholder={searchPlaceholder}
-          onChange={(e) => onSearch?.(e.target.value)}
-          style={{
-            width: "100%",
-            height: 40,
-            padding: "0 14px 0 42px",
-            background: "#F1F5F9",
-            border: "1px solid transparent",
-            borderRadius: TT.rMd,
-            fontSize: 13,
-            fontFamily: TT.fontFamily,
-            color: TT.text1,
-            outline: "none",
-            letterSpacing: "-0.1px",
-            boxSizing: "border-box",
-          }}
-        />
-      </div>
+      )}
 
-      {/* ACTIONS */}
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          alignItems: "center",
-          marginLeft: "auto",
-        }}
-      >
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginLeft: "auto" }}>
+        {compact && (
+          <IcButton onClick={() => {}}>
+            <Icon name="search" size={17} color={TT.text2} strokeWidth={2} />
+          </IcButton>
+        )}
         <IcButton onClick={onBellClick} badge={notificationCount}>
-          <Icon name="bell" size={18} color={TT.text2} strokeWidth={2} />
+          <Icon name="bell" size={17} color={TT.text2} strokeWidth={2} />
         </IcButton>
-        <IcButton onClick={onChatClick}>
-          <Icon name="chat" size={18} color={TT.text2} strokeWidth={2} />
-        </IcButton>
-        <IcButton onClick={onTaskClick}>
-          <Icon name="task" size={18} color={TT.text2} strokeWidth={2} />
-        </IcButton>
-
-        <div onClick={onAvatarClick} style={{ cursor: "pointer" }}>
+        {!compact && (
+          <>
+            <IcButton onClick={onChatClick}>
+              <Icon name="chat" size={17} color={TT.text2} strokeWidth={2} />
+            </IcButton>
+            <IcButton onClick={onTaskClick}>
+              <Icon name="task" size={17} color={TT.text2} strokeWidth={2} />
+            </IcButton>
+          </>
+        )}
+        <div onClick={onAvatarClick} style={{ cursor: "pointer", marginLeft: 4 }}>
           <AvatarGradient size={36} preset="b" />
         </div>
       </div>
@@ -166,7 +149,6 @@ export default function TopbarTablet({
   );
 }
 
-// ---------- IcButton ----------
 interface IcButtonProps {
   children: React.ReactNode;
   badge?: number;
@@ -181,9 +163,9 @@ function IcButton({ children, badge, onClick }: IcButtonProps) {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        width: 36,
-        height: 36,
-        borderRadius: TT.rSm + 2, // 10
+        width: 38,
+        height: 38,
+        borderRadius: 11,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -198,21 +180,22 @@ function IcButton({ children, badge, onClick }: IcButtonProps) {
         <span
           style={{
             position: "absolute",
-            top: 5,
-            right: 5,
-            background: TT.red[400],
+            top: 4,
+            right: 4,
+            background: `linear-gradient(135deg, ${TT.red[400]}, ${TT.red[500]})`,
             color: "#fff",
             fontSize: 9,
-            fontWeight: 700,
+            fontWeight: 800,
             borderRadius: 10,
-            padding: "1px 4px",
-            minWidth: 14,
-            height: 14,
+            padding: "1px 5px",
+            minWidth: 16,
+            height: 16,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            border: "1.5px solid #fff",
+            border: "2px solid #fff",
             lineHeight: 1,
+            boxShadow: `0 2px 4px ${TT.red[300]}`,
           }}
         >
           {badge > 9 ? "9+" : badge}

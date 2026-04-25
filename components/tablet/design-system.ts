@@ -1,71 +1,105 @@
 // =========================================================
-// MASTRO TABLET - DESIGN SYSTEM
+// MASTRO TABLET - DESIGN SYSTEM HD v2
 // =========================================================
-// Token fliwoX versione HD pastello tenue (Apr 2026).
-// IMMUTABILE - approvato da Fabio su mockup dashboard tablet.
-//
-// USO:
-//   import { TT } from "@/components/tablet/design-system";
-//   <div style={{ background: TT.bg, color: TT.text }} />
-//
-// TT = "Tablet Tokens" - separato dal mobile T per evitare collisioni.
+// Token fliwoX HD lucido pastello - upgrade Apr 2026.
+// Palette piu' raffinata, shadow stratificate, glass effect.
 // =========================================================
 
 export const TT = {
-  // -------- Sfondi & superfici --------
-  bg: "#F8FAFC",
-  bgSoft: "#EEF2F6",      // sfondo app (un tono sotto il bg cards)
+  // -------- Sfondi & superfici (gradient subliminali) --------
+  bg: "#FAFCFE",                      // bg principale piu' chiaro
+  bgSoft: "#F1F5F9",                  // soft per cards interne
+  bgGradient: "radial-gradient(ellipse at top, #F8FAFC 0%, #EEF2F6 100%)",
   surface: "#FFFFFF",
-  surface2: "#F8FAFC",
+  surface2: "#FAFCFE",
+  surfaceGlass: "rgba(255,255,255,0.85)",  // glass per overlay
+  surfaceTint: "rgba(248,250,252,0.65)",   // glass tintata bg
 
-  // -------- Testi --------
-  text1: "#0F172A",        // titoli, valori KPI
-  text2: "#475569",        // body
-  text3: "#94A3B8",        // disabled / hint
+  // -------- Testi (contrasti raffinati) --------
+  text1: "#0B1220",                   // titoli (piu' freddo)
+  text2: "#475569",                   // body
+  text3: "#94A3B8",                   // hint
+  text4: "#CBD5E1",                   // disabled
 
-  // -------- Bordi --------
-  border: "#EDF1F5",
-  borderStrong: "#E2E8F0",
+  // -------- Bordi (piu' sottili) --------
+  border: "#EBF0F5",                  // bordi principali
+  borderStrong: "#DCE3EB",            // bordi visibili
+  borderGlass: "rgba(15,23,42,0.06)", // bordi glass
 
-  // -------- Pastel ramps - 300/400/500 + tinte 50/100 --------
-  teal:   { 300: "#5EEAD4", 400: "#2DD4BF", 500: "#14B8A6", 50: "#F0FDFA", 100: "#CCFBF1" },
-  orange: { 300: "#FDBA74", 400: "#FB923C", 500: "#F97316", 50: "#FFF7ED", 100: "#FFEDD5" },
-  green:  { 300: "#86EFAC", 400: "#4ADE80", 500: "#22C55E", 50: "#F0FDF4", 100: "#DCFCE7" },
-  blue:   { 300: "#93C5FD", 400: "#60A5FA", 500: "#3B82F6", 50: "#EFF6FF", 100: "#DBEAFE" },
-  amber:  { 300: "#FCD34D", 400: "#FBBF24", 500: "#F59E0B", 50: "#FFFBEB", 100: "#FEF3C7" },
-  red:    { 300: "#FCA5A5", 400: "#F87171", 500: "#EF4444", 50: "#FEF2F2", 100: "#FEE2E2" },
-  violet: { 300: "#C4B5FD", 400: "#A78BFA", 500: "#8B5CF6", 50: "#F5F3FF", 100: "#EDE9FE" },
-  pink:   { 300: "#F9A8D4", 400: "#F472B6", 500: "#EC4899", 50: "#FDF2F8", 100: "#FCE7F3" },
-  slate:  { 300: "#CBD5E1", 400: "#94A3B8", 500: "#64748B" },
+  // -------- Pastel ramps RAFFINATE --------
+  // 50/100 piu' tenui. 300/400/500 saturazione ridotta.
+  // Aggiunto 600/700 per gradient deep.
+  teal: {
+    50: "#F0FDFC", 100: "#CDFAF6", 300: "#5DD3C5",
+    400: "#2DBFAF", 500: "#14A599", 600: "#0F8A82", 700: "#0E6F69",
+  },
+  orange: {
+    50: "#FFF8F1", 100: "#FFE9D5", 300: "#FBB877",
+    400: "#F59849", 500: "#EA7B22", 600: "#D06517", 700: "#A85013",
+  },
+  green: {
+    50: "#F0FDF4", 100: "#D5FBDF", 300: "#7CE092",
+    400: "#48CE6E", 500: "#22B055", 600: "#1A9046", 700: "#176B38",
+  },
+  blue: {
+    50: "#F0F7FF", 100: "#D9EBFF", 300: "#85B6F7",
+    400: "#5C97F2", 500: "#3478E0", 600: "#225EC2", 700: "#1A4D9E",
+  },
+  amber: {
+    50: "#FFFBEB", 100: "#FEF1C7", 300: "#FACA50",
+    400: "#F2B321", 500: "#DA9810", 600: "#B57C0E", 700: "#8E620C",
+  },
+  red: {
+    50: "#FEF3F3", 100: "#FDDFDF", 300: "#F58A8A",
+    400: "#EE6868", 500: "#DC4848", 600: "#BC3838", 700: "#962E2E",
+  },
+  violet: {
+    50: "#F6F4FF", 100: "#ECE7FF", 300: "#B6A6FB",
+    400: "#9982F4", 500: "#7E62E0", 600: "#664CC2", 700: "#4F3D9C",
+  },
+  pink: {
+    50: "#FDF4F9", 100: "#FBE4F2", 300: "#F296CD",
+    400: "#E776B9", 500: "#D45A9E", 600: "#B14782", 700: "#893566",
+  },
+  slate: {
+    50: "#F8FAFC", 100: "#EBF0F5", 300: "#BCC6D2",
+    400: "#8696A8", 500: "#5E6E81", 600: "#475568", 700: "#2F3A4A",
+  },
 
-  // -------- Topbar (sfondo scuro logo) --------
-  logoBg: "#1E293B",
+  // -------- Topbar logo --------
+  logoBg: "#0B1220",
+  logoBgGradient: "linear-gradient(135deg, #1E293B 0%, #0B1220 100%)",
 
-  // -------- Shadows soft pastello --------
-  shadowSm: "0 1px 2px rgba(15,23,42,0.04)",
-  shadowMd: "0 2px 6px rgba(15,23,42,0.05), 0 1px 2px rgba(15,23,42,0.03)",
-  shadowLg: "0 8px 24px rgba(15,23,42,0.06)",
+  // -------- Shadow STRATIFICATE (3 layer per profondita' premium) --------
+  shadowXs: "0 1px 2px rgba(15,23,42,0.04)",
+  shadowSm: "0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.03)",
+  shadowMd: "0 4px 8px rgba(15,23,42,0.04), 0 2px 4px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.03)",
+  shadowLg: "0 12px 24px rgba(15,23,42,0.06), 0 6px 12px rgba(15,23,42,0.04), 0 2px 4px rgba(15,23,42,0.03)",
+  shadowXl: "0 24px 48px rgba(15,23,42,0.08), 0 12px 24px rgba(15,23,42,0.05), 0 4px 8px rgba(15,23,42,0.03)",
+  shadowGlow: (color: string) => `0 0 0 1px ${color}, 0 4px 12px ${color}`,
 
-  // -------- Radius --------
+  // -------- Radius (piu' generosi premium) --------
   rXs: 6,
   rSm: 8,
   rMd: 12,
   rLg: 16,
+  rXl: 20,
+  r2xl: 24,
 
   // -------- Typography --------
-  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-  fontFeatures: "'cv11','ss01'",
+  fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+  fontFeatures: "'cv11','ss01','cv02','cv03'",
   textRendering: "geometricPrecision" as const,
 
-  // -------- Layout fixed --------
-  sidebarW: 224,
-  topbarH: 64,
-  contentMaxW: 1280,
+  // -------- Layout --------
+  sidebarW: 240,                      // leggermente piu' largo
+  sidebarWCollapsed: 72,              // portrait collapsed
+  topbarH: 68,                        // un pelo piu' alto (premium)
+  contentMaxW: 1440,                  // wide-screen support
 } as const;
 
 // =========================================================
-// MAPPATURA COLORI MODULI SIDEBAR (15 voci)
-// Ogni voce ha il suo colore pastel-400 nell'icona quadrata.
+// COLORI MODULI SIDEBAR
 // =========================================================
 
 export const MODULE_COLORS: Record<string, string> = {
@@ -90,7 +124,7 @@ export const MODULE_COLORS: Record<string, string> = {
 // HELPERS
 // =========================================================
 
-/** Stile base per ogni card del tablet. */
+/** Card style HD - shadow stratificata + bordo sottile glass-tint. */
 export const cardStyle = (extra: React.CSSProperties = {}): React.CSSProperties => ({
   background: TT.surface,
   border: `1px solid ${TT.border}`,
@@ -99,7 +133,18 @@ export const cardStyle = (extra: React.CSSProperties = {}): React.CSSProperties 
   ...extra,
 });
 
-/** Stile base body. Aggancia font-feature + rendering precision. */
+/** Card glass: sfondo semi-trasparente + backdrop blur (effetto vetro). */
+export const cardGlass = (extra: React.CSSProperties = {}): React.CSSProperties => ({
+  background: TT.surfaceGlass,
+  border: `1px solid ${TT.borderGlass}`,
+  borderRadius: TT.rLg,
+  boxShadow: TT.shadowMd,
+  backdropFilter: "blur(20px) saturate(180%)" as any,
+  WebkitBackdropFilter: "blur(20px) saturate(180%)" as any,
+  ...extra,
+});
+
+/** Body style con font rendering HD. */
 export const bodyStyle: React.CSSProperties = {
   fontFamily: TT.fontFamily,
   color: TT.text1,
@@ -107,4 +152,35 @@ export const bodyStyle: React.CSSProperties = {
   MozOsxFontSmoothing: "grayscale" as const,
   textRendering: TT.textRendering,
   fontFeatureSettings: TT.fontFeatures,
+  letterSpacing: "-0.01em",
 };
+
+// =========================================================
+// HOOKS
+// =========================================================
+
+/**
+ * Restituisce true se il viewport e' in modalita' portrait (< 1024px width).
+ * Usato per collassare la sidebar e ridurre KPI columns.
+ */
+export function useIsPortrait(): boolean {
+  const [isPortrait, setIsPortrait] = (typeof window !== "undefined")
+    ? require("react").useState(window.innerWidth < 1024)
+    : require("react").useState(false);
+
+  (typeof window !== "undefined" ? require("react").useEffect : () => {})(
+    () => {
+      const handler = () => setIsPortrait(window.innerWidth < 1024);
+      handler();
+      window.addEventListener("resize", handler);
+      window.addEventListener("orientationchange", handler);
+      return () => {
+        window.removeEventListener("resize", handler);
+        window.removeEventListener("orientationchange", handler);
+      };
+    },
+    []
+  );
+
+  return isPortrait;
+}

@@ -3,13 +3,6 @@ import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
 
-// =========================================================
-// KpiRowTablet - 5 KPI in row (layout verticale compatto)
-// =========================================================
-// Card: icona quadrata 38px in alto + label small + valore -500 + delta
-// Layout verticale per stare in 1/5 della larghezza senza overflow.
-// =========================================================
-
 interface KpiCardData {
   id: string;
   label: string;
@@ -37,7 +30,7 @@ export default function KpiRowTablet({ data = DEFAULT_DATA, onCardClick }: KpiRo
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))`,
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
         gap: 12,
         marginBottom: 18,
       }}
@@ -56,40 +49,59 @@ interface KpiCardProps {
 
 function KpiCard({ data, onClick }: KpiCardProps) {
   const ramp = TT[data.tint];
+  const [hover, setHover] = React.useState(false);
   return (
     <div
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={cardStyle({
-        padding: "14px 14px 12px",
+        padding: "16px 16px 14px",
         cursor: onClick ? "pointer" : "default",
         minWidth: 0,
         overflow: "hidden",
+        boxShadow: hover ? TT.shadowMd : TT.shadowSm,
+        borderColor: hover ? ramp[100] : TT.border,
+        transition: "all 0.18s",
+        position: "relative",
       })}
     >
-      {/* Icon square pastel-400 - top */}
+      {/* Decorazione gradient angolo top-right */}
+      <div style={{
+        position: "absolute",
+        top: -30,
+        right: -30,
+        width: 90,
+        height: 90,
+        background: `radial-gradient(circle, ${ramp[50]} 0%, transparent 70%)`,
+        pointerEvents: "none",
+      }} />
+
       <div
         style={{
-          width: 38,
-          height: 38,
-          borderRadius: 10,
+          width: 42,
+          height: 42,
+          borderRadius: 12,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          background: ramp[400],
+          background: `linear-gradient(135deg, ${ramp[300]}, ${ramp[500]})`,
           color: "#fff",
-          marginBottom: 10,
+          marginBottom: 12,
+          boxShadow: `0 4px 12px ${ramp[300]}, inset 0 1px 0 rgba(255,255,255,0.2)`,
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        <Icon name={data.icon} size={18} color="#fff" strokeWidth={2} />
+        <Icon name={data.icon} size={20} color="#fff" strokeWidth={2.2} />
       </div>
 
-      {/* Label */}
       <div
         style={{
           fontSize: 11,
           color: TT.text2,
-          fontWeight: 500,
+          fontWeight: 600,
           marginBottom: 4,
           letterSpacing: "-0.05px",
           whiteSpace: "nowrap",
@@ -100,14 +112,13 @@ function KpiCard({ data, onClick }: KpiCardProps) {
         {data.label}
       </div>
 
-      {/* Value */}
       <div
         style={{
-          fontSize: 22,
+          fontSize: 24,
           fontWeight: 800,
-          letterSpacing: "-0.6px",
+          letterSpacing: "-0.7px",
           lineHeight: 1.1,
-          color: ramp[500],
+          color: ramp[600],
           fontVariantNumeric: "tabular-nums",
           whiteSpace: "nowrap",
           overflow: "hidden",
@@ -117,20 +128,30 @@ function KpiCard({ data, onClick }: KpiCardProps) {
         {data.value}
       </div>
 
-      {/* Delta */}
       {data.delta && (
         <div
           style={{
             fontSize: 10,
-            color: TT.green[500],
-            fontWeight: 600,
-            marginTop: 5,
+            color: TT.green[600],
+            fontWeight: 700,
+            marginTop: 6,
             letterSpacing: "-0.05px",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
           }}
         >
+          <span style={{
+            display: "inline-block",
+            width: 0,
+            height: 0,
+            borderLeft: "3px solid transparent",
+            borderRight: "3px solid transparent",
+            borderBottom: `4px solid ${TT.green[500]}`,
+          }} />
           {data.delta}
         </div>
       )}

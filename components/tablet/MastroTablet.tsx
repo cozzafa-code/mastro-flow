@@ -21,6 +21,20 @@ import ImpostazioniTablet from "./impostazioni/ImpostazioniTablet";
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
+  const [isPortrait, setIsPortrait] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsPortrait(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
+    };
+  }, []);
+
+  const sidebarW = isPortrait ? TT.sidebarWCollapsed : TT.sidebarW;
 
   return (
     <div
@@ -28,9 +42,9 @@ export default function MastroTablet() {
         ...bodyStyle,
         width: "100vw",
         height: "100vh",
-        background: TT.bg,
+        background: TT.bgGradient,
         display: "grid",
-        gridTemplateColumns: `${TT.sidebarW}px 1fr`,
+        gridTemplateColumns: `${sidebarW}px 1fr`,
         gridTemplateRows: `${TT.topbarH}px 1fr`,
         gridTemplateAreas: `
           "sidebar topbar"
@@ -40,14 +54,14 @@ export default function MastroTablet() {
         boxSizing: "border-box",
       }}
     >
-      <SidebarTablet active={active} onSelect={setActive} />
-      <TopbarTablet greeting="Buongiorno, Fabio Cozza" notificationCount={3} />
+      <SidebarTablet active={active} onSelect={setActive} collapsed={isPortrait} />
+      <TopbarTablet greeting="Buongiorno, Fabio Cozza" notificationCount={3} compact={isPortrait} />
 
       <main style={{
         gridArea: "main",
         overflowY: "auto",
-        padding: "18px 24px 22px",
-        background: TT.bgSoft,
+        padding: isPortrait ? "16px 18px 20px" : "20px 28px 24px",
+        background: "transparent",
       }}>
         {active === "dashboard"     && <DashboardTablet />}
         {active === "commesse"      && <CommesseListaTablet />}
