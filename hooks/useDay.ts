@@ -1,0 +1,200 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+import type {
+  DayTask, DayEvento, DayEventoInsert, DayProssimoStep,
+  DayStripItem, DayStats, DayModuloOrigine,
+} from "@/lib/types/day";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { persistSession: true, autoRefreshToken: true },
+});
+
+const STRIP_WINDOW_HOURS = 2;
+const STRIP_MAX_ITEMS = 4;
+const EVENTI_LIMIT = 50;
+
+function todayISO(): string { return new Date().toISOString().slice(0, 10); }
+function nowMinusHours(h: number): string { return new Date(Date.now() - h * 3600 * 1000).toISOString(); }
+
+interface UseDayResult {
+  loading: boolean;
+  error: string | null;
+  tasks: DayTask[];
+  eventi: DayEvento[];
+  strip: DayStripItem[];
+  prossimoStep: DayProssimoStep | null;
+  stats: DayStats;
+  refetch: () => Promise<void>;
+  logEvento: (e: DayEventoInsert) => Promise<DayEvento | null>;
+  completaTask: (taskId: string) => Promise<void>;
+  segnaInCorso: (taskId: string) => Promise<void>;
+  skipProssimo: () => void;
+}
+
+export function useDay(): UseDayResult {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<DayTask[]>([]);
+  const [eventi, setEventi] = useState<DayEvento[]>([]);
+  const [prossimoStep, setProssimoStep] = useState<DayProssimoStep | null>(null);
+  const [skipUntilEventId, setSkipUntilEventId] = useState<string | null>(null);
+
+  const fetchAll = useCallback(async () => {
+    try {
+      setError(null);
+      const userRes = await supabase.auth.getUser();
+      const user = userRes.data.user;
+      if (!user) { setTasks([]); setEventi([]); setProssimoStep(null); setLoading(false); return; }
+
+      const giorno = todayISO();
+      const sinceISO = nowMinusHours(STRIP_WINDOW_HOURS);
+
+      const tasksReq = supabase.from("day_tasks").select("*")
+        .eq("user_id", user.id).eq("giorno", giorno)
+        .order("ora_inizio", { ascending: true, nullsFirst: false })
+        .order("ordine", { ascending: true });
+
+      const eventiReq = supabase.from("day_eventi").select("*")
+        .eq("user_id", user.id).gte("created_at", sinceISO)
+        .order("created_at", { ascending: false }).limit(EVENTI_LIMIT);
+
+      const prossimoReq = supabase.rpc("day_prossimo_step", { p_user_id: user.id });
+
+      const [tRes, eRes, pRes] = await Promise.all([tasksReq, eventiReq, prossimoReq]);
+      if (tRes.error) throw tRes.error;
+      if (eRes.error) throw eRes.error;
+      if (pRes.error) throw pRes.error;
+
+      setTasks((tRes.data ?? []) as DayTask[]);
+      setEventi((eRes.data ?? []) as DayEvento[]);
+      setProssimoStep((pRes.data ?? null) as DayProssimoStep | null);
+    } catch (e: any) {
+      console.error("[useDay] fetch error", e);
+      setError(e?.message ?? "Errore caricamento Day");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let channelRef: any = null;
+    (async () => {
+      const userRes = await supabase.auth.getUser();
+      const user = userRes.data.user;
+      if (!user || cancelled) return;
+      channelRef = supabase.channel("day-realtime")
+        .on("postgres_changes",
+          { event: "*", schema: "public", table: "day_eventi", filter: `user_id=eq.${user.id}` },
+          () => fetchAll())
+        .on("postgres_changes",
+          { event: "*", schema: "public", table: "day_tasks", filter: `user_id=eq.${user.id}` },
+          () => fetchAll())
+        .subscribe();
+    })();
+    return () => {
+      cancelled = true;
+      if (channelRef) supabase.removeChannel(channelRef);
+    };
+  }, [fetchAll]);
+
+  const logEvento = useCallback(async (input: DayEventoInsert): Promise<DayEvento | null> => {
+    try {
+      const userRes = await supabase.auth.getUser();
+      const user = userRes.data.user;
+      if (!user) return null;
+      const opRes = await supabase.from("operatori").select("azienda_id")
+        .eq("user_id", user.id).maybeSingle();
+      const azienda_id = opRes.data?.azienda_id;
+      if (!azienda_id) { console.warn("[logEvento] no operatore"); return null; }
+      const row = {
+        azienda_id, user_id: user.id,
+        tipo: input.tipo, modulo_origine: input.modulo_origine,
+        direzione: input.direzione ?? "uscita",
+        cm_id: input.cm_id ?? null, task_id: input.task_id ?? null,
+        payload: input.payload ?? {}, durata_sec: input.durata_sec ?? null,
+        titolo_breve: input.titolo_breve, contesto: input.contesto ?? null,
+      };
+      const { data, error: insErr } = await supabase.from("day_eventi")
+        .insert(row).select("*").single();
+      if (insErr) { console.error("[logEvento] insert", insErr); return null; }
+      return data as DayEvento;
+    } catch (e) { console.error("[logEvento] catch", e); return null; }
+  }, []);
+
+  const completaTask = useCallback(async (taskId: string) => {
+    const { error: e } = await supabase.from("day_tasks")
+      .update({ stato: "fatto", completato_at: new Date().toISOString() })
+      .eq("id", taskId);
+    if (e) console.error("[completaTask]", e);
+    else await logEvento({ tipo: "task_completato", modulo_origine: "ops", titolo_breve: "Task completato" });
+  }, [logEvento]);
+
+  const segnaInCorso = useCallback(async (taskId: string) => {
+    const { error: e } = await supabase.from("day_tasks")
+      .update({ stato: "in_corso" }).eq("id", taskId);
+    if (e) console.error("[segnaInCorso]", e);
+  }, []);
+
+  const skipProssimo = useCallback(() => {
+    if (eventi[0]) setSkipUntilEventId(eventi[0].id);
+  }, [eventi]);
+
+  const strip: DayStripItem[] = useMemo(() => {
+    const seen = new Set<DayModuloOrigine>();
+    const items: DayStripItem[] = [];
+    for (const ev of eventi) {
+      if (seen.has(ev.modulo_origine)) continue;
+      seen.add(ev.modulo_origine);
+      items.push({
+        modulo_origine: ev.modulo_origine,
+        ultimo_evento_id: ev.id,
+        ultimo_evento_tipo: ev.tipo,
+        titolo_breve: ev.titolo_breve,
+        contesto: ev.contesto,
+        cm_id: ev.cm_id,
+        ultimo_at: ev.created_at,
+        attivo: items.length === 0,
+      });
+      if (items.length >= STRIP_MAX_ITEMS) break;
+    }
+    return items;
+  }, [eventi]);
+
+  const stats: DayStats = useMemo(() => {
+    const totali = tasks.length;
+    const fatti = tasks.filter((t) => t.stato === "fatto").length;
+    const oreDeep = tasks
+      .filter((t) => t.categoria === "deep" || t.categoria === "mastro")
+      .reduce((s, t) => s + (t.durata_min ?? 0), 0) / 60;
+    const cmIds = new Set<string>();
+    eventi.forEach((e) => e.cm_id && cmIds.add(e.cm_id));
+    return {
+      task_totali: totali, task_fatti: fatti,
+      ore_deep: Math.round(oreDeep * 10) / 10,
+      cm_toccate: cmIds.size,
+    };
+  }, [tasks, eventi]);
+
+  const prossimoFiltrato = useMemo(() => {
+    if (!prossimoStep) return null;
+    if (!skipUntilEventId) return prossimoStep;
+    if (prossimoStep.evento_origine && prossimoStep.evento_origine !== skipUntilEventId) {
+      return prossimoStep;
+    }
+    return null;
+  }, [prossimoStep, skipUntilEventId]);
+
+  return {
+    loading, error, tasks, eventi, strip,
+    prossimoStep: prossimoFiltrato, stats,
+    refetch: fetchAll, logEvento, completaTask, segnaInCorso, skipProssimo,
+  };
+}

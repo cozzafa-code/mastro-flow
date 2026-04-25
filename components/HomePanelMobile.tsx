@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 // @ts-nocheck
 // MASTRO ERP - HomePanel MOBILE - fliwoX Widget Home v5 (drag+add+apri)
 import React, { useState as RS } from "react";
+import { DayButton } from "@/components/day/DayButton";
 import { useMastro } from "./MastroContext";
 
 const ALL_WIDGETS: any[] = [
@@ -67,9 +68,9 @@ const getFaseV3 = (f: string): any => {
   return FASE_V3.sopralluogo;
 };
 const initialsV3 = (s: string): string => {
-  if (!s) return "—";
+  if (!s) return "â€”";
   const parts = s.trim().split(/\s+/).slice(0, 2);
-  return parts.map(p => p[0]?.toUpperCase() || "").join("") || s[0]?.toUpperCase() || "—";
+  return parts.map(p => p[0]?.toUpperCase() || "").join("") || s[0]?.toUpperCase() || "â€”";
 };
 const telLnk = (t: any) => t ? `tel:${t}` : "#";
 const waLnk = (t: any, msg: string = "") => t ? `https://wa.me/${String(t).replace(/\D/g, "")}${msg ? "?text=" + encodeURIComponent(msg) : ""}` : "#";
@@ -112,7 +113,7 @@ function QuickActionsV3({ tel, addr, onOpen, msg, color }: any) {
           background: c.grad, color: "#fff",
           fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", cursor: "pointer",
           boxShadow: `0 2px 6px ${c.tint}`,
-        }}>APRI →</button>
+        }}>APRI â†’</button>
       )}
     </div>
   );
@@ -142,7 +143,7 @@ function AgendaWidgetV3({ events, onNavigate, editMode }: any) {
         {todayEvents.slice(0, 5).map((ev: any, i: number) => {
           const key = ev.id || `ev${i}`;
           const isOpen = expanded === key;
-          const ora = ev.ora || ev.time || (ev.start_time || "").slice(11, 16) || "—";
+          const ora = ev.ora || ev.time || (ev.start_time || "").slice(11, 16) || "â€”";
           const tipo = (ev.tipo || "evento").toLowerCase();
           const titolo = ev.titolo || ev.text || ev.title || "Evento";
           const persona = ev.persona || ev.cliente || ev.client_name || "";
@@ -168,13 +169,13 @@ function AgendaWidgetV3({ events, onNavigate, editMode }: any) {
                   <div style={{ fontSize: 12, fontWeight: 900, color: "#0F2525", overflow: "hidden" as any, textOverflow: "ellipsis" as any, whiteSpace: "nowrap" as any }}>{titolo}</div>
                   {(persona || addr) && <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1, overflow: "hidden" as any, textOverflow: "ellipsis" as any, whiteSpace: "nowrap" as any }}>{persona || addr}</div>}
                 </div>
-                <span style={{ color: f.solid, fontSize: 14, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ color: f.solid, fontSize: 14, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>â–¾</span>
               </div>
               {isOpen && (
                 <div style={{ padding: "0 10px 10px" }}>
                   {addr && (
                     <div style={{ fontSize: 11, color: f.dark, fontWeight: 700, padding: "5px 9px", background: f.bg, borderRadius: 6, marginBottom: 4 }}>
-                      📍 {addr}
+                      ðŸ“ {addr}
                     </div>
                   )}
                   <QuickActionsV3 tel={telefono} addr={addr} onOpen={() => onNavigate?.("agenda")} msg={`Ciao, ti confermo l'appuntamento di oggi ${ora} per "${titolo}"`} color={f} />
@@ -186,7 +187,7 @@ function AgendaWidgetV3({ events, onNavigate, editMode }: any) {
       </div>
       {todayEvents.length > 0 && (
         <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "rgba(255,255,255,0.9)", fontWeight: 800, textAlign: "center" as any, marginTop: 8, cursor: "pointer", letterSpacing: "0.4px" }}>
-          APRI AGENDA COMPLETA →
+          APRI AGENDA COMPLETA â†’
         </div>
       )}
     </div>
@@ -265,7 +266,7 @@ function PipelineWidgetV3({ cantieri, onNavigate, editMode }: any) {
             </div>
             <div style={{ textAlign: "right" as any }}>
               <div style={{ fontSize: 8, fontWeight: 800, color: "#5A7878", letterSpacing: "0.3px", textTransform: "uppercase" as any }}>Valore</div>
-              <div style={{ fontSize: 14, fontWeight: 900, color: sel.fase.dark }}>{sel.euro >= 1000 ? `€${(sel.euro/1000).toFixed(1)}k` : `€${Math.round(sel.euro)}`}</div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: sel.fase.dark }}>{sel.euro >= 1000 ? `â‚¬${(sel.euro/1000).toFixed(1)}k` : `â‚¬${Math.round(sel.euro)}`}</div>
             </div>
           </div>
           <button onClick={(e: any) => { e.stopPropagation(); onNavigate?.("commesse"); }} style={{
@@ -274,7 +275,7 @@ function PipelineWidgetV3({ cantieri, onNavigate, editMode }: any) {
             border: "none", borderRadius: 8,
             fontSize: 10, fontWeight: 900, cursor: "pointer", letterSpacing: "0.3px",
             boxShadow: `0 2px 6px ${sel.fase.tint}`,
-          }}>VEDI LE {sel.n} COMMESSE →</button>
+          }}>VEDI LE {sel.n} COMMESSE â†’</button>
         </div>
       )}
     </div>
@@ -287,7 +288,7 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
     <div style={{ background: "#FFFFFF", borderRadius: 20, padding: 14, position: "relative" as any, border: "1px solid #F0EDE5", boxShadow: "0 4px 12px rgba(13,31,31,0.05)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 13, color: "#0F2525", fontWeight: 900 }}>Lavori recenti</div>
-        <div style={{ fontSize: 10, color: "#1A7A7A", fontWeight: 800, cursor: "pointer", letterSpacing: "0.3px" }} onClick={() => !editMode && onNavigate?.("commesse")}>VEDI TUTTI ›</div>
+        <div style={{ fontSize: 10, color: "#1A7A7A", fontWeight: 800, cursor: "pointer", letterSpacing: "0.3px" }} onClick={() => !editMode && onNavigate?.("commesse")}>VEDI TUTTI â€º</div>
       </div>
       {(!recenti || recenti.length === 0) && (
         <div style={{ fontSize: 11, color: "#5A7878", textAlign: "center" as any, padding: "16px 0", fontWeight: 600 }}>Nessuna commessa attiva</div>
@@ -299,7 +300,7 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
           const fase = c?.fase_corrente || c?.fase || c?.stato || "Sopralluogo";
           const f = getFaseV3(fase);
           const imp = Number(c?.totale || c?.importo || 0);
-          const impLabel = imp >= 1000 ? `€${(imp / 1000).toFixed(1)}k` : `€${Math.round(imp)}`;
+          const impLabel = imp >= 1000 ? `â‚¬${(imp / 1000).toFixed(1)}k` : `â‚¬${Math.round(imp)}`;
           const cliente = c?.cliente_nome || c?.cliente || "Cliente";
           const cod = c?.codice || c?.code || `S-00${64 + idx}`;
           return (
@@ -320,13 +321,13 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
                   boxShadow: `0 2px 6px ${f.tint}`,
                 }}>{initialsV3(cliente)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: "#0F2525", fontWeight: 900 }}>{cod} · {cliente}</div>
+                  <div style={{ fontSize: 12, color: "#0F2525", fontWeight: 900 }}>{cod} Â· {cliente}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1 }}>
                     <span style={{ fontSize: 9, fontWeight: 900, padding: "1px 6px", borderRadius: 4, background: f.tint, color: f.dark, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{fase}</span>
                   </div>
                 </div>
                 <div style={{ fontSize: 12, color: f.dark, fontWeight: 900 }}>{impLabel}</div>
-                <span style={{ color: f.solid, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ color: f.solid, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>â–¾</span>
               </div>
               {isOpen && (
                 <div style={{ padding: "0 10px 10px" }}>
@@ -362,7 +363,7 @@ function SquadraWidgetV3({ team, onNavigate, editMode }: any) {
         {list.slice(0, 5).map((t: any, i: number) => {
           const key = t.id || `t${i}`;
           const isOpen = expanded === key;
-          const nome = `${t.nome || ""} ${t.cognome || ""}`.trim() || "—";
+          const nome = `${t.nome || ""} ${t.cognome || ""}`.trim() || "â€”";
           const cantiere = t.cantiere_attuale || t.cantiere || "";
           const attivo = !!cantiere;
           return (
@@ -394,10 +395,10 @@ function SquadraWidgetV3({ team, onNavigate, editMode }: any) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 900, color: "#0F2525" }}>{nome}</div>
                   <div style={{ fontSize: 10, color: attivo ? "#1D9E75" : "#5A7878", fontWeight: 700, marginTop: 1 }}>
-                    ● {attivo ? cantiere : "libero"}
+                    â— {attivo ? cantiere : "libero"}
                   </div>
                 </div>
-                <span style={{ color: FASE_V3.sopralluogo.dark, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+                <span style={{ color: FASE_V3.sopralluogo.dark, fontSize: 13, fontWeight: 900, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>â–¾</span>
               </div>
               {isOpen && (
                 <div style={{ padding: "0 10px 10px" }}>
@@ -490,7 +491,7 @@ export default function HomePanelMobile(props: any) {
   const recenti = (commesseAttive || []).slice(0, 3);
   const taskOggi = recenti.length;
   const totMese = (commesseAttive || []).reduce((s: number, c: any) => s + Number(c?.totale || c?.importo || 0), 0);
-  const totMeseK = totMese >= 1000 ? `€${(totMese / 1000).toFixed(1)}k` : `€${Math.round(totMese)}`;
+  const totMeseK = totMese >= 1000 ? `â‚¬${(totMese / 1000).toFixed(1)}k` : `â‚¬${Math.round(totMese)}`;
 
   const faseColors: any = {
     Sopralluogo: { bg: "#EEEDFE", fg: "#3C3489" },
@@ -512,7 +513,7 @@ export default function HomePanelMobile(props: any) {
         <div>
           <div style={{ fontSize: 11, color: "#3C3489", fontWeight: 500, letterSpacing: 0.3 }}>OGGI DEVI FARE</div>
           <div style={{ fontSize: 16, color: "#26215C", fontWeight: 600, marginTop: 3 }}>{taskOggi} task urgenti</div>
-          <div style={{ fontSize: 10, color: "#3C3489", marginTop: 2 }}>Sopralluogo · Firma · Fattura</div>
+          <div style={{ fontSize: 10, color: "#3C3489", marginTop: 2 }}>Sopralluogo Â· Firma Â· Fattura</div>
         </div>
         <div style={{ background: "#FFFFFF", borderRadius: 50, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#26215C" strokeWidth={2.5}><path d="M7 17L17 7M17 7H9M17 7v8" /></svg>
@@ -596,7 +597,7 @@ export default function HomePanelMobile(props: any) {
         {todayEvents.length === 0 && (
           <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
             <div style={{ fontSize: 11, color: "#888" }}>Nessun impegno oggi</div>
-            <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 11, color: "#28A0A0", fontWeight: 600, marginTop: 4, cursor: "pointer" }}>Apri agenda ›</div>
+            <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 11, color: "#28A0A0", fontWeight: 600, marginTop: 4, cursor: "pointer" }}>Apri agenda â€º</div>
           </div>
         )}
         {todayEvents.slice(0, 3).map((it: any, idx: number) => {
@@ -610,7 +611,7 @@ export default function HomePanelMobile(props: any) {
           );
         })}
         {todayEvents.length > 3 && (
-          <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "#28A0A0", fontWeight: 600, textAlign: "center", padding: "6px 0 0", cursor: "pointer" }}>Vedi altri {todayEvents.length - 3} ›</div>
+          <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "#28A0A0", fontWeight: 600, textAlign: "center", padding: "6px 0 0", cursor: "pointer" }}>Vedi altri {todayEvents.length - 3} â€º</div>
         )}
       </div>
     );
@@ -652,7 +653,7 @@ export default function HomePanelMobile(props: any) {
     <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#C0DD97", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
       {editMode && <RemoveBtn id="fattanno" fg="#173404" onRemove={removeWidget} />}
       <div style={{ fontSize: 10, color: "#173404", fontWeight: 500, letterSpacing: 0.3 }}>FATTURATO ANNO</div>
-      <div style={{ fontSize: 24, color: "#173404", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>€{(totMese*10/1000).toFixed(0)}k</div>
+      <div style={{ fontSize: 24, color: "#173404", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>â‚¬{(totMese*10/1000).toFixed(0)}k</div>
       <div style={{ fontSize: 10, color: "#173404", marginTop: 4 }}>obiettivo 80%</div>
       <div style={{ height: 4, background: "rgba(255,255,255,0.5)", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
         <div style={{ width: "80%", height: "100%", background: "#3B6D11" }} />
@@ -663,7 +664,7 @@ export default function HomePanelMobile(props: any) {
     <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#FAC775", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
       {editMode && <RemoveBtn id="incassi" fg="#412402" onRemove={removeWidget} />}
       <div style={{ fontSize: 10, color: "#412402", fontWeight: 500, letterSpacing: 0.3 }}>DA RISCUOTERE</div>
-      <div style={{ fontSize: 24, color: "#412402", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>€{(totMese*0.3/1000).toFixed(1)}k</div>
+      <div style={{ fontSize: 24, color: "#412402", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>â‚¬{(totMese*0.3/1000).toFixed(1)}k</div>
       <div style={{ fontSize: 10, color: "#412402", marginTop: 4 }}>fatture aperte</div>
     </div>
   );
@@ -829,6 +830,7 @@ export default function HomePanelMobile(props: any) {
             <span style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 500 }}>fliwoX</span>
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <DayButton />
             <div style={{ width: 6, height: 6, borderRadius: 50, background: "#FFB84D" }} />
             <div style={{ width: 6, height: 6, borderRadius: 50, background: "#7FD97F" }} />
             <div style={{ width: 34, height: 34, borderRadius: 50, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", color: "#28A0A0", fontSize: 12, fontWeight: 600, marginLeft: 4 }}>{iniziali}</div>
@@ -857,7 +859,7 @@ export default function HomePanelMobile(props: any) {
 
         {editMode && (
           <div style={{ background: "#FFF7E0", border: "1px dashed #FAC775", borderRadius: 12, padding: "8px 10px", marginBottom: 10, fontSize: 11, color: "#854F0B" }}>
-            Trascina i widget per riordinare · Tocca la X per rimuovere
+            Trascina i widget per riordinare Â· Tocca la X per rimuovere
           </div>
         )}
 
@@ -868,7 +870,7 @@ export default function HomePanelMobile(props: any) {
         <div onClick={() => setShowAdd(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", zIndex: 200 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#FFF", width: "100%", borderRadius: "20px 20px 0 0", padding: 16, maxHeight: "70vh", overflowY: "auto" }}>
             <div style={{ fontSize: 16, fontWeight: 600, color: "#1A1A1A", marginBottom: 12 }}>Aggiungi widget</div>
-            {availableToAdd.length === 0 && <div style={{ fontSize: 12, color: "#888", padding: 16, textAlign: "center" }}>Tutti i widget sono già aggiunti.</div>}
+            {availableToAdd.length === 0 && <div style={{ fontSize: 12, color: "#888", padding: 16, textAlign: "center" }}>Tutti i widget sono giÃ  aggiunti.</div>}
             {Object.entries(availableToAdd.reduce((acc: any, w: any) => { (acc[w.cat] = acc[w.cat] || []).push(w); return acc; }, {})).map(([cat, items]: any) => (
               <div key={cat} style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: 0.4, marginBottom: 6, paddingLeft: 4 }}>{cat.toUpperCase()}</div>

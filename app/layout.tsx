@@ -1,3 +1,4 @@
+import { DayProvider } from "@/components/day/DayProvider";
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata, Viewport } from 'next'
 import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning style={{ margin: 0, padding: 0, fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif', backgroundColor: '#E4F2F2', overflowX: 'hidden', maxWidth: '100vw' }}>
         {/* Safe area iOS: solo top/bottom per notch + home indicator. LEFT/RIGHT rimossi perché su alcuni iPhone con viewportFit:cover creano padding asimmetrico (contenuto spostato a destra). */}
         <div style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', minHeight: '100vh', boxSizing: 'border-box' }}>
-          {children}
+          <DayProvider>{children}</DayProvider>
         </div>
         {/* CookieBanner sta fuori dal wrapper safe-area per posizione fixed */}
         <CookieBanner />
