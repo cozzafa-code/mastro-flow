@@ -2,112 +2,98 @@
 import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
+import { useDashboard } from "../dashboard-context";
+import CardHeader from "../CardHeader";
 
 interface Azione {
   id: string;
   label: string;
   icon: IconName;
-  tint: "teal" | "red" | "orange" | "green" | "blue" | "violet";
+  tint: keyof typeof TINTS;
+  target: string;
 }
 
-const DATA: Azione[] = [
-  { id: "commessa",    label: "Nuova commessa",    icon: "commesse",     tint: "teal"   },
-  { id: "sopralluogo", label: "Nuovo sopralluogo", icon: "sopralluoghi", tint: "red"    },
-  { id: "ordine",      label: "Nuovo ordine",      icon: "ordini",       tint: "orange" },
-  { id: "montaggio",   label: "Nuovo montaggio",   icon: "montaggi",     tint: "green"  },
-  { id: "preventivo",  label: "Nuovo preventivo",  icon: "preventivo",   tint: "blue"   },
-  { id: "documento",   label: "Carica documento",  icon: "documento",    tint: "violet" },
+const TINTS = {
+  teal: TT.teal, green: TT.green, blue: TT.blue,
+  amber: TT.amber, violet: TT.violet, red: TT.red,
+  pink: TT.pink, orange: TT.orange,
+} as const;
+
+const AZIONI: Azione[] = [
+  { id: "nuova-comm",      label: "Nuova commessa",   icon: "commesse",     tint: "orange", target: "commesse"     },
+  { id: "nuovo-sopr",      label: "Nuovo sopralluogo", icon: "sopralluoghi",tint: "red",    target: "sopralluoghi" },
+  { id: "nuovo-ordine",    label: "Nuovo ordine",      icon: "ordini",      tint: "amber",  target: "ordini"       },
+  { id: "nuovo-mont",      label: "Nuovo montaggio",   icon: "montaggi",    tint: "green",  target: "montaggi"     },
+  { id: "nuovo-prev",      label: "Nuovo preventivo",  icon: "preventivo",  tint: "blue",   target: "commesse"     },
+  { id: "carica-doc",      label: "Carica documento",  icon: "documento",   tint: "violet", target: "commesse"     },
 ];
 
-export interface AzioniRapidePanelTabletProps {
-  onAction?: (id: string) => void;
-}
-
-export default function AzioniRapidePanelTablet({ onAction }: AzioniRapidePanelTabletProps) {
+export default function AzioniRapidePanelTablet() {
+  const { navigate } = useDashboard();
   return (
-    <div style={cardStyle({ padding: "16px 18px" })}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <div style={{ width: 28, height: 28, borderRadius: 8, background: TT.amber[400], display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="trendUp" size={14} color="#fff" strokeWidth={2.2} />
-        </div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: TT.text1, letterSpacing: "-0.2px" }}>
-          Azioni rapide
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${DATA.length}, minmax(0, 1fr))`,
-          gap: 10,
-        }}
-      >
-        {DATA.map((a) => (
-          <ActionButton key={a.id} data={a} onClick={() => onAction?.(a.id)} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-interface ActionButtonProps {
-  data: Azione;
-  onClick?: () => void;
-}
-
-function ActionButton({ data, onClick }: ActionButtonProps) {
-  const ramp = TT[data.tint];
-  const [hover, setHover] = React.useState(false);
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        padding: "14px 10px",
-        background: hover ? ramp[100] : ramp[50],
-        border: `1px solid ${hover ? ramp[300] : ramp[100]}`,
-        borderRadius: 12,
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 8,
-        transition: "background 0.12s, border 0.12s",
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 10,
-          background: ramp[400],
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: hover ? `0 4px 10px ${ramp[300]}` : "none",
-          transition: "box-shadow 0.15s",
-        }}
-      >
-        <Icon name={data.icon} size={18} color="#fff" strokeWidth={2.2} />
-      </div>
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: TT.text1,
-          textAlign: "center",
-          letterSpacing: "-0.05px",
-          lineHeight: 1.25,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          width: "100%",
-        }}
-      >
-        {data.label}
+    <div style={cardStyle({ padding: "14px 16px" })}>
+      <CardHeader
+        icon="dashboard"
+        title="Azioni rapide"
+        tint="amber"
+      />
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gap: 10,
+      }}>
+        {AZIONI.map((a) => {
+          const ramp = TINTS[a.tint];
+          return (
+            <div
+              key={a.id}
+              onClick={() => navigate(a.target)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 12px",
+                background: ramp[50],
+                border: `1px solid ${ramp[100]}`,
+                borderRadius: TT.rMd,
+                cursor: "pointer",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.background = ramp[100];
+                el.style.transform = "translateY(-1px)";
+                el.style.boxShadow = `0 4px 8px ${ramp[100]}`;
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.background = ramp[50];
+                el.style.transform = "translateY(0)";
+                el.style.boxShadow = "none";
+              }}
+            >
+              <div style={{
+                width: 32, height: 32,
+                borderRadius: 9,
+                background: `linear-gradient(135deg, ${ramp[300]}, ${ramp[500]})`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: `0 2px 6px ${ramp[200]}, inset 0 1px 0 rgba(255,255,255,0.2)`,
+                flexShrink: 0,
+              }}>
+                <Icon name={a.icon} size={15} color="#fff" strokeWidth={2.4} />
+              </div>
+              <span style={{
+                fontSize: 11, fontWeight: 700,
+                color: TT.text1, letterSpacing: "-0.1px",
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {a.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

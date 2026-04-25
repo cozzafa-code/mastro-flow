@@ -1,101 +1,105 @@
 "use client";
 import * as React from "react";
 import { TT, cardStyle } from "../design-system";
-import { Icon } from "../icons";
-
-interface FaseProduzione {
-  label: string;
-  value: number;
-  tint: "green" | "amber" | "blue";
-}
-
-const DATA: FaseProduzione[] = [
-  { label: "Completate",      value: 12, tint: "green" },
-  { label: "In lavorazione",  value: 6,  tint: "amber" },
-  { label: "Da iniziare",     value: 4,  tint: "blue"  },
-];
-
-const TOT = DATA.reduce((s, d) => s + d.value, 0);
-
-// Donut SVG stroke-dasharray
-function Donut({ size = 96 }: { size?: number }) {
-  const stroke = 14;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  let offset = 0;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={TT.bgSoft} strokeWidth={stroke} />
-      {DATA.map((d, i) => {
-        const ramp = TT[d.tint];
-        const len = (d.value / TOT) * c;
-        const segOffset = offset;
-        offset += len;
-        return (
-          <circle
-            key={i}
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="none"
-            stroke={ramp[400]}
-            strokeWidth={stroke}
-            strokeDasharray={`${len} ${c - len}`}
-            strokeDashoffset={-segOffset}
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          />
-        );
-      })}
-      <text
-        x="50%"
-        y="50%"
-        textAnchor="middle"
-        dy="0.35em"
-        fontSize="22"
-        fontWeight="800"
-        fill={TT.text1}
-        style={{ letterSpacing: "-0.6px", fontVariantNumeric: "tabular-nums" }}
-      >
-        {TOT}
-      </text>
-    </svg>
-  );
-}
+import { useDashboard } from "../dashboard-context";
+import CardHeader from "../CardHeader";
 
 export default function ProduzionePanelTablet() {
-  return (
-    <div style={cardStyle({ padding: "16px 18px", display: "flex", flexDirection: "column" })}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: TT.blue[400], display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon name="produzione" size={14} color="#fff" strokeWidth={2.2} />
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: TT.text1, letterSpacing: "-0.2px" }}>
-            Produzione
-          </div>
-        </div>
-        <div style={{ fontSize: 11, color: TT.blue[500], fontWeight: 600, cursor: "pointer" }}>
-          Apri &rsaquo;
-        </div>
-      </div>
+  const { navigate, expand } = useDashboard();
 
-      <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 4 }}>
-        <Donut size={96} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-          {DATA.map((d, i) => {
-            const ramp = TT[d.tint];
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: ramp[400], flexShrink: 0 }} />
-                <div style={{ fontSize: 12, color: TT.text2, flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {d.label}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: ramp[500], fontVariantNumeric: "tabular-nums" }}>
-                  {d.value}
-                </div>
-              </div>
-            );
-          })}
+  // Donut SVG
+  const stats = [
+    { label: "Completate",   value: 12, color: TT.green[400] },
+    { label: "In lavorazione",value: 6,  color: TT.amber[400] },
+    { label: "Da iniziare",   value: 4,  color: TT.blue[400] },
+  ];
+  const total = stats.reduce((s, x) => s + x.value, 0);
+
+  // Calcolo path donut
+  let acc = 0;
+  const R = 36;
+  const C = 2 * Math.PI * R;
+  const segments = stats.map((s) => {
+    const len = (s.value / total) * C;
+    const seg = { color: s.color, offset: -acc, len };
+    acc += len;
+    return seg;
+  });
+
+  return (
+    <div style={cardStyle({ padding: "14px 16px" })}>
+      <CardHeader
+        icon="produzione"
+        title="Produzione"
+        tint="blue"
+        seeAllLabel="Apri"
+        onSeeAll={() => navigate("produzione")}
+        onExpand={() => expand("produzione")}
+      />
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {/* Donut */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <svg width={92} height={92} viewBox="0 0 92 92">
+            <circle cx={46} cy={46} r={R} fill="none" stroke={TT.bgSoft} strokeWidth={10} />
+            {segments.map((s, i) => (
+              <circle
+                key={i}
+                cx={46} cy={46} r={R}
+                fill="none"
+                stroke={s.color}
+                strokeWidth={10}
+                strokeDasharray={`${s.len} ${C}`}
+                strokeDashoffset={s.offset}
+                transform="rotate(-90 46 46)"
+                strokeLinecap="round"
+              />
+            ))}
+          </svg>
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexDirection: "column",
+          }}>
+            <div style={{
+              fontSize: 22, fontWeight: 800, color: TT.text1,
+              fontVariantNumeric: "tabular-nums", letterSpacing: "-0.6px", lineHeight: 1,
+            }}>
+              {total}
+            </div>
+          </div>
+        </div>
+
+        {/* Lista clickable */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+          {stats.map((s, i) => (
+            <div
+              key={i}
+              onClick={() => navigate("produzione")}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "4px 6px",
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+            >
+              <div style={{
+                width: 9, height: 9, borderRadius: "50%",
+                background: s.color, flexShrink: 0,
+              }} />
+              <span style={{
+                flex: 1, fontSize: 11, fontWeight: 600, color: TT.text2,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {s.label}
+              </span>
+              <span style={{
+                fontSize: 12, fontWeight: 800, color: TT.text1,
+                fontVariantNumeric: "tabular-nums", letterSpacing: "-0.2px",
+              }}>
+                {s.value}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

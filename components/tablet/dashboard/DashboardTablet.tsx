@@ -1,5 +1,7 @@
 "use client";
 import * as React from "react";
+import { TT } from "../design-system";
+import { useDashboard } from "../dashboard-context";
 import KpiRowTablet from "./KpiRowTablet";
 import AgendaPanelTablet from "./AgendaPanelTablet";
 import ScadenzePanelTablet from "./ScadenzePanelTablet";
@@ -9,25 +11,45 @@ import TeamPanelTablet from "./TeamPanelTablet";
 import AzioniRapidePanelTablet from "./AzioniRapidePanelTablet";
 
 export default function DashboardTablet() {
+  const { preset } = useDashboard();
+
+  // Preset determina layout dashboard
+  // - titolare: vista completa (tutti i blocchi)
+  // - posatore: focus su agenda + commesse assegnate (no contabilita)
+  // - segreteria: focus su scadenze + commesse + azioni (no produzione, no team)
+
   return (
     <div>
-      <KpiRowTablet onCardClick={(id) => console.log("KPI click:", id)} />
+      {/* KPI ROW - sempre visibile, ma per posatore mostra solo 3 KPI rilevanti */}
+      <KpiRowTablet />
 
-      {/* ROW 2 - Agenda + Scadenze + Produzione */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+      {/* RIGA 2: Agenda + Scadenze + Produzione */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: preset === "posatore" ? "1.4fr 1fr" : "1fr 1fr 1fr",
+        gap: 12,
+        marginBottom: 12,
+      }}>
         <AgendaPanelTablet />
-        <ScadenzePanelTablet />
-        <ProduzionePanelTablet />
+        {preset !== "posatore" && <ScadenzePanelTablet />}
+        {preset !== "segreteria" && <ProduzionePanelTablet />}
       </div>
 
-      {/* ROW 3 - Commesse 2/3 + Team 1/3 */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 12 }}>
-        <CommesseRecentiPanelTablet />
-        <TeamPanelTablet />
-      </div>
+      {/* RIGA 3: Commesse + Team */}
+      {preset !== "posatore" && (
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: preset === "segreteria" ? "1fr" : "1.6fr 1fr",
+          gap: 12,
+          marginBottom: 12,
+        }}>
+          <CommesseRecentiPanelTablet />
+          {preset !== "segreteria" && <TeamPanelTablet />}
+        </div>
+      )}
 
-      {/* FOOTER - Azioni rapide */}
-      <AzioniRapidePanelTablet onAction={(id) => console.log("Action:", id)} />
+      {/* RIGA 4: Azioni rapide - sempre visibile */}
+      <AzioniRapidePanelTablet />
     </div>
   );
 }
