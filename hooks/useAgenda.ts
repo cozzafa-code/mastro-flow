@@ -29,6 +29,8 @@ export interface AgendaEvento {
   stato: EventoStato;
   note: string | null;
   importo_eur: number | null;
+  lat: number | null;
+  lon: number | null;
 }
 
 export interface KpiAlert {
@@ -187,6 +189,23 @@ export function useAgenda(initialDa?: string, initialA?: string): UseAgendaResul
         note: input.note ?? null,
       }).select("*").single();
       if (error) { console.error("[creaEvento]", error); return null; }
+
+      // Geocoding async se c'e' luogo · non blocca creazione
+      if (data && input.luogo && !input.lat) {
+        (async () => {
+          try {
+            const { geocodeAddress } = await import("@/lib/geocoding");
+            const geo = await geocodeAddress(input.luogo as string);
+            if (geo) {
+              await supabase.from("agenda_eventi")
+                .update({ lat: geo.lat, lon: geo.lon, geocoded_at: new Date().toISOString() })
+                .eq("id", (data as any).id);
+              fetchAll();
+            }
+          } catch (e) { console.error("[geocoding]", e); }
+        })();
+      }
+
       fetchAll();
       return data as AgendaEvento;
     } catch (e) { console.error("[creaEvento] catch", e); return null; }

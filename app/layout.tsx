@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs'
 import type { Metadata, Viewport } from 'next'
 import { CookieBanner } from '@/components/mastro/ui/CookieBanner'
 
+import "leaflet/dist/leaflet.css";
 export const metadata: Metadata = {
   title: 'fliwoX',
   description: 'Fatto per chi lavora con le mani',
