@@ -30,6 +30,10 @@ export interface DayTaskCreateInput {
   descrizione?: string | null;
 }
 
+export type DayCreateResult =
+  | { ok: true; task: DayTask }
+  | { ok: false; error: string };
+
 interface UseDayResult {
   loading: boolean;
   error: string | null;
@@ -40,7 +44,7 @@ interface UseDayResult {
   stats: DayStats;
   refetch: () => Promise<void>;
   logEvento: (e: DayEventoInsert) => Promise<DayEvento | null>;
-  createTask: (input: DayTaskCreateInput) => Promise<DayTask | null>;
+  createTask: (input: DayTaskCreateInput) => Promise<DayCreateResult>;
   completaTask: (taskId: string) => Promise<void>;
   segnaInCorso: (taskId: string) => Promise<void>;
   skipProssimo: () => void;
@@ -115,7 +119,6 @@ export function useDay(): UseDayResult {
     };
   }, [fetchAll]);
 
-  // Helper · recupera azienda_id dell'operatore
   const getAziendaId = useCallback(async (userId: string): Promise<string | null> => {
     const opRes = await supabase.from("operatori").select("azienda_id")
       .eq("user_id", userId).maybeSingle();
@@ -144,14 +147,18 @@ export function useDay(): UseDayResult {
     } catch (e) { console.error("[logEvento] catch", e); return null; }
   }, [getAziendaId]);
 
-  // CREATE TASK · NUOVO
-  const createTask = useCallback(async (input: DayTaskCreateInput): Promise<DayTask | null> => {
+  // === createTask con error handling pulito ===
+  const createTask = useCallback(async (input: DayTaskCreateInput): Promise<DayCreateResult> => {
     try {
       const userRes = await supabase.auth.getUser();
       const user = userRes.data.user;
-      if (!user) return null;
+      if (!user) {
+        return { ok: false, error: "Non sei loggato. Riapri MASTRO." };
+      }
       const azienda_id = await getAziendaId(user.id);
-      if (!azienda_id) { console.warn("[createTask] no operatore"); return null; }
+      if (!azienda_id) {
+        return { ok: false, error: "Operatore non collegato a nessuna azienda." };
+      }
 
       const oraFine = (() => {
         if (!input.ora_inizio || !input.durata_min) return null;
@@ -180,10 +187,18 @@ export function useDay(): UseDayResult {
       };
       const { data, error: insErr } = await supabase.from("day_tasks")
         .insert(row).select("*").single();
-      if (insErr) { console.error("[createTask] insert", insErr); return null; }
-      return data as DayTask;
-    } catch (e) { console.error("[createTask] catch", e); return null; }
-  }, [getAziendaId]);
+      if (insErr) {
+        console.error("[createTask] insert error", insErr);
+        return { ok: false, error: insErr.message ?? "Errore inserimento task" };
+      }
+      // refetch immediato (il realtime potrebbe tardare)
+      fetchAll();
+      return { ok: true, task: data as DayTask };
+    } catch (e: any) {
+      console.error("[createTask] catch", e);
+      return { ok: false, error: e?.message ?? "Errore imprevisto" };
+    }
+  }, [getAziendaId, fetchAll]);
 
   const completaTask = useCallback(async (taskId: string) => {
     const { error: e } = await supabase.from("day_tasks")

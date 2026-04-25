@@ -27,6 +27,11 @@ function fmtMinutesAgo(iso: string): string {
   return `${Math.floor(min / 60)}h fa`;
 }
 
+// dispatch sicuro · MastroERP ha la whitelist
+function navTo(tab: string, cm_id?: string | null) {
+  window.dispatchEvent(new CustomEvent("mastro:nav", { detail: { tab, cm_id } }));
+}
+
 export function DaySheet({ open, onClose }: Props) {
   const {
     loading, tasks, eventi, strip, prossimoStep, stats,
@@ -48,30 +53,22 @@ export function DaySheet({ open, onClose }: Props) {
 
   const ultimoEvento = eventi[0];
   const showBanner = ultimoEvento && !bannerDismissed;
-
-  // colore CONTINUA QUI · viola di default se nessun prossimoStep
   const colore: DayProssimoColore = prossimoStep?.colore ?? "viola";
 
-  // titolo + sottotitolo CONTINUA QUI · placeholder se vuoto
   const continuaTitolo = prossimoStep?.titolo ?? "Niente di pendente · scegli da timeline";
-  const continuaLine1 = prossimoStep
-    ? (ultimoEvento ? `Hai appena fatto: ${ultimoEvento.titolo_breve}` : "In attesa di eventi")
+  const continuaLine1 = prossimoStep && ultimoEvento
+    ? `Hai appena fatto: ${ultimoEvento.titolo_breve}`
     : "Apri un modulo · le azioni torneranno qui";
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="MASTRO Day"
+    <div role="dialog" aria-modal="true" aria-label="MASTRO Day"
       onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
         display: "flex", flexDirection: "column", justifyContent: "flex-end",
         background: "rgba(13,31,31,0.55)", backdropFilter: "blur(4px)",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
+      }}>
+      <div onClick={(e) => e.stopPropagation()}
         style={{
           flex: 1, marginTop: 28,
           display: "flex", flexDirection: "column",
@@ -80,8 +77,7 @@ export function DaySheet({ open, onClose }: Props) {
           overflow: "hidden",
           boxShadow: "0 -10px 40px rgba(0,0,0,0.3)",
           animation: "daySheetUp 0.4s cubic-bezier(.2,.8,.2,1)",
-        }}
-      >
+        }}>
         <style>{`
           @keyframes daySheetUp { from { transform: translateY(60px); opacity: 0.5; } to { transform: translateY(0); opacity: 1; } }
           @keyframes dayBlink { 0%,100%{opacity:.5} 50%{opacity:1} }
@@ -90,7 +86,7 @@ export function DaySheet({ open, onClose }: Props) {
           .day-strip-scroll::-webkit-scrollbar{display:none}
         `}</style>
 
-        {/* ============ HEADER ============ */}
+        {/* HEADER */}
         <div style={{
           flexShrink: 0, position: "relative",
           padding: "12px 18px 18px",
@@ -111,15 +107,13 @@ export function DaySheet({ open, onClose }: Props) {
           }} />
 
           <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12 }}>
-            <button
-              type="button" onClick={onClose} aria-label="Chiudi Day"
+            <button type="button" onClick={onClose} aria-label="Chiudi Day"
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 width: 36, height: 36, borderRadius: 12, border: 0, cursor: "pointer",
                 background: "rgba(255,255,255,0.22)", backdropFilter: "blur(12px)",
                 boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25)",
-              }}
-            >
+              }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
@@ -134,10 +128,7 @@ export function DaySheet({ open, onClose }: Props) {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setQuickOpen(true)}
-              aria-label="Aggiungi task"
+            <button type="button" onClick={() => setQuickOpen(true)} aria-label="Aggiungi task"
               style={{
                 width: 36, height: 36, borderRadius: 12, border: 0, cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -160,7 +151,6 @@ export function DaySheet({ open, onClose }: Props) {
             </div>
           </div>
 
-          {/* 4 stat */}
           <div style={{ position: "relative", marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 7 }}>
             {[
               { n: stats.task_totali, l: "Task" },
@@ -179,7 +169,6 @@ export function DaySheet({ open, onClose }: Props) {
             ))}
           </div>
 
-          {/* STRIP "Aperti adesso" · SEMPRE visibile */}
           <div style={{ position: "relative", marginTop: 14 }}>
             <div style={{
               marginBottom: 7, paddingLeft: 2,
@@ -194,11 +183,9 @@ export function DaySheet({ open, onClose }: Props) {
               Aperti adesso · ultime 2h
             </div>
             <div className="day-strip-scroll" style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}>
-              {strip.length === 0 && (
+              {strip.length === 0 ? (
                 <div style={{
-                  flex: 1,
-                  padding: "10px 12px",
-                  borderRadius: 11,
+                  flex: 1, padding: "10px 12px", borderRadius: 11,
                   background: "rgba(255,255,255,0.10)",
                   border: "1px dashed rgba(255,255,255,0.22)",
                   fontSize: 10.5, fontWeight: 700,
@@ -207,19 +194,20 @@ export function DaySheet({ open, onClose }: Props) {
                 }}>
                   Lavora in MASTRO · le azioni recenti appaiono qui
                 </div>
-              )}
-              {strip.map((s) => (
-                <div key={s.ultimo_evento_id} style={{
-                  flexShrink: 0, display: "flex", alignItems: "center", gap: 7,
-                  padding: "7px 10px",
-                  background: s.attivo ? "#fff" : "rgba(255,255,255,0.18)",
-                  backdropFilter: s.attivo ? undefined : "blur(10px)",
-                  borderRadius: 11,
-                  border: s.attivo ? "1px solid transparent" : "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: s.attivo ? "0 4px 12px rgba(0,0,0,0.18)" : "inset 0 1px 1px rgba(255,255,255,0.2)",
-                  color: s.attivo ? "#0F2525" : "#fff",
-                  cursor: "pointer",
-                }}>
+              ) : strip.map((s) => (
+                <div key={s.ultimo_evento_id}
+                  onClick={() => { navTo("commesse", s.cm_id); onClose(); }}
+                  style={{
+                    flexShrink: 0, display: "flex", alignItems: "center", gap: 7,
+                    padding: "7px 10px",
+                    background: s.attivo ? "#fff" : "rgba(255,255,255,0.18)",
+                    backdropFilter: s.attivo ? undefined : "blur(10px)",
+                    borderRadius: 11,
+                    border: s.attivo ? "1px solid transparent" : "1px solid rgba(255,255,255,0.12)",
+                    boxShadow: s.attivo ? "0 4px 12px rgba(0,0,0,0.18)" : "inset 0 1px 1px rgba(255,255,255,0.2)",
+                    color: s.attivo ? "#0F2525" : "#fff",
+                    cursor: "pointer",
+                  }}>
                   <div style={{
                     width: 22, height: 22, borderRadius: 7,
                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -248,7 +236,6 @@ export function DaySheet({ open, onClose }: Props) {
           </div>
         </div>
 
-        {/* BANNER RIENTRO */}
         {showBanner && ultimoEvento && (
           <div style={{
             margin: "12px 16px 0",
@@ -296,10 +283,8 @@ export function DaySheet({ open, onClose }: Props) {
           </div>
         )}
 
-        {/* BODY */}
         <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, padding: "12px 16px 16px" }}>
 
-          {/* ============ CONTINUA QUI · SEMPRE visibile ============ */}
           <div style={{
             position: "relative", overflow: "hidden",
             padding: "18px 18px 16px", borderRadius: 22, color: "#fff",
@@ -378,11 +363,10 @@ export function DaySheet({ open, onClose }: Props) {
             )}
 
             <div style={{ position: "relative", marginTop: 14, display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 7 }}>
-              <button type="button" onClick={() => {
+              <button type="button"
+                onClick={() => {
                   if (prossimoStep?.modulo) {
-                    window.dispatchEvent(new CustomEvent("mastro:nav", {
-                      detail: { tab: prossimoStep.modulo, cm_id: prossimoStep.cm_id, step: prossimoStep.step }
-                    }));
+                    navTo(prossimoStep.modulo, prossimoStep.cm_id);
                   }
                   onClose();
                 }}
@@ -395,7 +379,8 @@ export function DaySheet({ open, onClose }: Props) {
                 }}>
                 {prossimoStep ? `Apri ${prossimoStep.modulo ?? "ora"}` : "Inizia"}
               </button>
-              <button type="button" onClick={prossimoStep ? skipProssimo : () => setQuickOpen(true)}
+              <button type="button"
+                onClick={prossimoStep ? skipProssimo : () => setQuickOpen(true)}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   padding: "13px 8px", borderRadius: 13, border: 0, cursor: "pointer",
@@ -406,15 +391,15 @@ export function DaySheet({ open, onClose }: Props) {
             </div>
           </div>
 
-          {/* ============ AZIONI RAPIDE · 4 ============ */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 7, padding: "0 2px" }}>
             {[
-              { lbl: "Misure", bg: "linear-gradient(145deg, rgba(175,169,236,0.22), rgba(127,119,221,0.12))", c: "#7F77DD", path: "M3 21h18M5 21V8l7-5 7 5v13" },
-              { lbl: "Mail", bg: "linear-gradient(145deg, rgba(133,183,235,0.22), rgba(55,138,221,0.12))", c: "#378ADD", path: "M2 4h20v16H2zM22 6l-10 7L2 6" },
-              { lbl: "Preventivo", bg: "linear-gradient(145deg, rgba(250,199,117,0.25), rgba(239,159,39,0.12))", c: "#EF9F27", path: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8zM14 3v5h5" },
-              { lbl: "Foto", bg: "linear-gradient(145deg, rgba(93,202,165,0.22), rgba(29,158,117,0.12))", c: "#1D9E75", path: "M3 6h18v14H3zM12 11a3 3 0 100 6 3 3 0 000-6zM9 6l1.5-2h3L15 6" },
+              { lbl: "Misure", tab: "commesse", bg: "linear-gradient(145deg, rgba(175,169,236,0.22), rgba(127,119,221,0.12))", c: "#7F77DD", path: "M3 21h18M5 21V8l7-5 7 5v13" },
+              { lbl: "Mail", tab: "messaggi", bg: "linear-gradient(145deg, rgba(133,183,235,0.22), rgba(55,138,221,0.12))", c: "#378ADD", path: "M2 4h20v16H2zM22 6l-10 7L2 6" },
+              { lbl: "Preventivo", tab: "commesse", bg: "linear-gradient(145deg, rgba(250,199,117,0.25), rgba(239,159,39,0.12))", c: "#EF9F27", path: "M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8zM14 3v5h5" },
+              { lbl: "Foto", tab: "commesse", bg: "linear-gradient(145deg, rgba(93,202,165,0.22), rgba(29,158,117,0.12))", c: "#1D9E75", path: "M3 6h18v14H3zM12 11a3 3 0 100 6 3 3 0 000-6zM9 6l1.5-2h3L15 6" },
             ].map((a, i) => (
               <button key={i} type="button"
+                onClick={() => { navTo(a.tab); onClose(); }}
                 style={{
                   background: "#fff",
                   border: "1px solid rgba(200,228,228,0.5)",
@@ -423,19 +408,7 @@ export function DaySheet({ open, onClose }: Props) {
                   cursor: "pointer",
                   boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                }}
-                onClick={() => {
-                  const map: Record<string,string> = {
-                    "Misure": "misure",
-                    "Mail": "mail",
-                    "Preventivo": "preventivo",
-                    "Foto": "foto",
-                  };
-                  const tab = map[a.lbl] || "home";
-                  window.dispatchEvent(new CustomEvent("mastro:nav", { detail: { tab } }));
-                  onClose();
-                }}
-              >
+                }}>
                 <div style={{
                   width: 30, height: 30, borderRadius: 9,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -451,7 +424,6 @@ export function DaySheet({ open, onClose }: Props) {
             ))}
           </div>
 
-          {/* ============ TIMELINE ============ */}
           <div style={{ marginTop: 4, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2px 0 4px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, fontWeight: 900, letterSpacing: -0.1, color: "#0F2525" }}>
               <span style={{ width: 3, height: 13, borderRadius: 2, background: "linear-gradient(180deg,#28A0A0,#1E8080)" }} />
@@ -461,10 +433,7 @@ export function DaySheet({ open, onClose }: Props) {
               style={{
                 fontSize: 10.5, fontWeight: 900, color: "#1A7A7A", letterSpacing: 0.3,
                 background: "transparent", border: 0, cursor: "pointer",
-                display: "inline-flex", alignItems: "center", gap: 3,
-              }}>
-              + aggiungi
-            </button>
+              }}>+ aggiungi</button>
           </div>
 
           {tasks.length === 0 && !loading && (
@@ -490,9 +459,7 @@ export function DaySheet({ open, onClose }: Props) {
         <DayQuickAdd
           open={quickOpen}
           onClose={() => setQuickOpen(false)}
-          onCreate={async (input) => {
-            await createTask(input);
-          }}
+          onCreate={async (input) => createTask(input)}
         />
       </div>
     </div>
@@ -513,7 +480,6 @@ function TaskRow({ task, onComplete }: { task: DayTask; onComplete: () => void }
   };
   const cc = catColors[task.categoria] ?? catColors.mastro;
 
-  // sotto-task auto-spuntati live (se ce ne sono di recenti)
   const recentlySpunted = (task.sotto_task ?? []).filter(
     (st: any) => st.done && st.spuntato_at && (Date.now() - new Date(st.spuntato_at).getTime()) < 60000
   );

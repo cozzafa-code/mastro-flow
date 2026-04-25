@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { DayCategoria } from "@/lib/types/day";
+import type { DayCreateResult } from "@/hooks/useDay";
 
 interface Props {
   open: boolean;
@@ -11,7 +12,7 @@ interface Props {
     categoria: DayCategoria;
     ora_inizio: string | null;
     durata_min: number | null;
-  }) => Promise<void>;
+  }) => Promise<DayCreateResult>;
 }
 
 const CATEGORIE: { v: DayCategoria; lbl: string; bg: string; fg: string }[] = [
@@ -31,45 +32,44 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
   const [oraInizio, setOraInizio] = useState("");
   const [durata, setDurata] = useState<number>(30);
   const [saving, setSaving] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   if (!open) return null;
 
   const reset = () => {
-    setTitolo("");
-    setCategoria("mastro");
-    setOraInizio("");
-    setDurata(30);
+    setTitolo(""); setCategoria("mastro"); setOraInizio(""); setDurata(30); setErrMsg(null);
   };
 
   const submit = async () => {
     if (!titolo.trim() || saving) return;
     setSaving(true);
+    setErrMsg(null);
     try {
-      await onCreate({
+      const res = await onCreate({
         titolo: titolo.trim(),
         categoria,
         ora_inizio: oraInizio || null,
         durata_min: durata,
       });
-      reset();
-      onClose();
+      if (res.ok) {
+        reset();
+        onClose();
+      } else {
+        setErrMsg(res.error);
+      }
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div
-      onClick={onClose}
+    <div onClick={onClose}
       style={{
         position: "fixed", inset: 0, zIndex: 10001,
-        background: "rgba(13,31,31,0.6)",
-        backdropFilter: "blur(6px)",
+        background: "rgba(13,31,31,0.6)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
+      }}>
+      <div onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 460,
           background: "#F4F6F5",
@@ -78,8 +78,7 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
           boxShadow: "0 -10px 40px rgba(0,0,0,0.3)",
           animation: "qaUp 0.25s cubic-bezier(.2,.8,.2,1)",
           maxHeight: "92vh", overflowY: "auto",
-        }}
-      >
+        }}>
         <style>{`@keyframes qaUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
 
         <div style={{
@@ -88,9 +87,7 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
         }} />
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#0F2525", letterSpacing: -0.3 }}>
-            Nuovo task
-          </div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#0F2525", letterSpacing: -0.3 }}>Nuovo task</div>
           <button type="button" onClick={onClose} aria-label="Chiudi"
             style={{
               width: 32, height: 32, borderRadius: 10, border: 0, cursor: "pointer",
@@ -104,14 +101,28 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
           </button>
         </div>
 
-        {/* Titolo */}
+        {/* Errore visibile */}
+        {errMsg && (
+          <div style={{
+            marginBottom: 12, padding: "10px 12px", borderRadius: 11,
+            background: "linear-gradient(145deg, #FEE2E2, #FCA5A5)",
+            border: "1px solid #DC4444", borderLeft: "4px solid #B91C1C",
+            color: "#7F1D1D", fontSize: 12, fontWeight: 700, letterSpacing: -0.1,
+            display: "flex", alignItems: "flex-start", gap: 8,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" strokeWidth="2.4" style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4M12 16h.01" />
+            </svg>
+            <span>{errMsg}</span>
+          </div>
+        )}
+
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 10, fontWeight: 900, color: "#5A7878", letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>
             Cosa devi fare
           </div>
-          <input
-            type="text"
-            value={titolo}
+          <input type="text" value={titolo}
             onChange={(e) => setTitolo(e.target.value)}
             placeholder="es. Fix bug polyAnta"
             autoFocus
@@ -128,7 +139,6 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
           />
         </div>
 
-        {/* Categoria */}
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 10, fontWeight: 900, color: "#5A7878", letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>
             Categoria
@@ -137,10 +147,7 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
             {CATEGORIE.map((c) => {
               const active = categoria === c.v;
               return (
-                <button
-                  key={c.v}
-                  type="button"
-                  onClick={() => setCategoria(c.v)}
+                <button key={c.v} type="button" onClick={() => setCategoria(c.v)}
                   style={{
                     padding: "9px 6px",
                     fontSize: 11, fontWeight: 900, letterSpacing: 0.4, textTransform: "uppercase",
@@ -150,24 +157,18 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
                     borderRadius: 11, cursor: "pointer",
                     boxShadow: active ? "0 2px 6px rgba(13,31,31,0.06)" : "0 1px 3px rgba(13,31,31,0.04)",
                     fontFamily: "inherit",
-                  }}>
-                  {c.lbl}
-                </button>
+                  }}>{c.lbl}</button>
               );
             })}
           </div>
         </div>
 
-        {/* Ora + Durata */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 900, color: "#5A7878", letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>
               Ora
             </div>
-            <input
-              type="time"
-              value={oraInizio}
-              onChange={(e) => setOraInizio(e.target.value)}
+            <input type="time" value={oraInizio} onChange={(e) => setOraInizio(e.target.value)}
               style={{
                 width: "100%", padding: "11px 12px",
                 fontSize: 14, fontWeight: 700, color: "#0F2525",
@@ -176,16 +177,13 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
                 borderRadius: 11, outline: "none",
                 boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
                 fontFamily: "inherit",
-              }}
-            />
+              }}/>
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 900, color: "#5A7878", letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>
               Durata · min
             </div>
-            <select
-              value={durata}
-              onChange={(e) => setDurata(parseInt(e.target.value, 10))}
+            <select value={durata} onChange={(e) => setDurata(parseInt(e.target.value, 10))}
               style={{
                 width: "100%", padding: "11px 12px",
                 fontSize: 14, fontWeight: 700, color: "#0F2525",
@@ -200,7 +198,6 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
           </div>
         </div>
 
-        {/* Bottoni */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 8 }}>
           <button type="button" onClick={onClose}
             style={{
@@ -209,9 +206,7 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
               background: "#fff",
               boxShadow: "0 2px 6px rgba(13,31,31,0.04), inset 0 0 0 1px rgba(200,228,228,0.5)",
               fontFamily: "inherit",
-            }}>
-            Annulla
-          </button>
+            }}>Annulla</button>
           <button type="button" onClick={submit} disabled={!titolo.trim() || saving}
             style={{
               padding: "13px 8px", borderRadius: 13, border: 0,
