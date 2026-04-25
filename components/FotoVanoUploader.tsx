@@ -32,6 +32,13 @@ export default function FotoVanoUploader({ vanoId, fotoIniziali = [], onChange }
         const aggiornate = [...foto, nuova];
         setFoto(aggiornate);
         onChange?.(aggiornate);
+        try {
+          const { Day } = await import("@/lib/day-logger");
+          const { createClient } = await import("@supabase/supabase-js");
+          const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+          const { data: vanoInfo } = await sb.from("vani").select("commessa_id").eq("id", vanoId).maybeSingle();
+          await Day.fotoCaricate({ vano_id: vanoId, cm_id: vanoInfo?.commessa_id ?? undefined, count: 1 });
+        } catch (e) { console.warn("[FotoVanoUploader] logEvento Day fallito", e); }
       }
     } finally {
       setUploading(false);
