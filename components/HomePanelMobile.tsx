@@ -113,7 +113,7 @@ function QuickActionsV3({ tel, addr, onOpen, msg, color }: any) {
           background: c.grad, color: "#fff",
           fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", cursor: "pointer",
           boxShadow: `0 2px 6px ${c.tint}`,
-        }}>APRI â†’</button>
+        }}>APRI →</button>
       )}
     </div>
   );
@@ -187,7 +187,7 @@ function AgendaWidgetV3({ events, onNavigate, editMode }: any) {
       </div>
       {todayEvents.length > 0 && (
         <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "rgba(255,255,255,0.9)", fontWeight: 800, textAlign: "center" as any, marginTop: 8, cursor: "pointer", letterSpacing: "0.4px" }}>
-          APRI AGENDA COMPLETA â†’
+          APRI AGENDA COMPLETA →
         </div>
       )}
     </div>
@@ -275,7 +275,7 @@ function PipelineWidgetV3({ cantieri, onNavigate, editMode }: any) {
             border: "none", borderRadius: 8,
             fontSize: 10, fontWeight: 900, cursor: "pointer", letterSpacing: "0.3px",
             boxShadow: `0 2px 6px ${sel.fase.tint}`,
-          }}>VEDI LE {sel.n} COMMESSE â†’</button>
+          }}>VEDI LE {sel.n} COMMESSE →</button>
         </div>
       )}
     </div>
@@ -288,7 +288,7 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
     <div style={{ background: "#FFFFFF", borderRadius: 20, padding: 14, position: "relative" as any, border: "1px solid #F0EDE5", boxShadow: "0 4px 12px rgba(13,31,31,0.05)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ fontSize: 13, color: "#0F2525", fontWeight: 900 }}>Lavori recenti</div>
-        <div style={{ fontSize: 10, color: "#1A7A7A", fontWeight: 800, cursor: "pointer", letterSpacing: "0.3px" }} onClick={() => !editMode && onNavigate?.("commesse")}>VEDI TUTTI â€º</div>
+        <div style={{ fontSize: 10, color: "#1A7A7A", fontWeight: 800, cursor: "pointer", letterSpacing: "0.3px" }} onClick={() => !editMode && onNavigate?.("commesse")}>VEDI TUTTI ›</div>
       </div>
       {(!recenti || recenti.length === 0) && (
         <div style={{ fontSize: 11, color: "#5A7878", textAlign: "center" as any, padding: "16px 0", fontWeight: 600 }}>Nessuna commessa attiva</div>
@@ -597,7 +597,7 @@ export default function HomePanelMobile(props: any) {
         {todayEvents.length === 0 && (
           <div style={{ textAlign: "center", padding: "10px 0 6px" }}>
             <div style={{ fontSize: 11, color: "#888" }}>Nessun impegno oggi</div>
-            <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 11, color: "#28A0A0", fontWeight: 600, marginTop: 4, cursor: "pointer" }}>Apri agenda â€º</div>
+            <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 11, color: "#28A0A0", fontWeight: 600, marginTop: 4, cursor: "pointer" }}>Apri agenda ›</div>
           </div>
         )}
         {todayEvents.slice(0, 3).map((it: any, idx: number) => {
@@ -611,7 +611,7 @@ export default function HomePanelMobile(props: any) {
           );
         })}
         {todayEvents.length > 3 && (
-          <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "#28A0A0", fontWeight: 600, textAlign: "center", padding: "6px 0 0", cursor: "pointer" }}>Vedi altri {todayEvents.length - 3} â€º</div>
+          <div onClick={() => !editMode && onNavigate?.("agenda")} style={{ fontSize: 10, color: "#28A0A0", fontWeight: 600, textAlign: "center", padding: "6px 0 0", cursor: "pointer" }}>Vedi altri {todayEvents.length - 3} ›</div>
         )}
       </div>
     );
