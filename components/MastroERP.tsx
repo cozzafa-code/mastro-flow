@@ -61,43 +61,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const [theme, setTheme] = useState("fliwox");
   const T = THEMES[theme];
   useEffect(() => { document.body.style.background = T.bg; }, [T.bg]);
-
-  // ===== Listener Day → apertura modulo =====
-  useEffect(() => {
-    const handler = (e: any) => {
-      const { modulo, cm_id } = e.detail || {};
-      if (!modulo) return;
-
-      // Trova la commessa nei cantieri
-      const cm = cm_id ? cantieri.find((c: any) => c.id === cm_id) : null;
-
-      // Apri la commessa selezionata se trovata
-      if (cm) {
-        setSelectedCM(cm);
-        setSelectedVano(null);
-        setVanoStep(0);
-      }
-
-      // Per ogni modulo aziona la giusta UI
-      if (modulo === "preventivo") {
-        setTimeout(() => setShowPreventivoModal(true), 200);
-      } else if (modulo === "misure") {
-        // apri primo vano del primo rilievo
-        const v = cm?.rilievi?.[0]?.vani?.[0];
-        if (v) setTimeout(() => setSelectedVano(v), 200);
-      } else if (modulo === "mail" || modulo === "messaggi") {
-        setTab("messaggi");
-      } else if (modulo === "foto") {
-        const v = cm?.rilievi?.[0]?.vani?.[0];
-        if (v) setTimeout(() => setSelectedVano(v), 200);
-      }
-
-      try { toast && toast(`Apro ${modulo}${cm ? " · " + (cm.code || cm.cliente || "") : ""}`); } catch(_) {}
-    };
-    window.addEventListener("mastro:open_modulo", handler);
-    return () => window.removeEventListener("mastro:open_modulo", handler);
-  }, [cantieri]);
-
   // Inject font link in <head> client-side to avoid SSR hydration mismatch
   useEffect(() => {
     if (typeof document === "undefined") return;
