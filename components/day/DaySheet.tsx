@@ -145,7 +145,7 @@ export function DaySheet({ open, onClose }: Props) {
 
   if (!open) return null;
 
-  const colorContinua = continuaColor(day.prossimoStep?.modulo_target);
+  const colorContinua = continuaColor(day.prossimoStep?.modulo);
 
   return (
     <div style={S.overlay} onClick={onClose}>
@@ -259,34 +259,34 @@ export function DaySheet({ open, onClose }: Props) {
                   <>
                     <div style={S.contLine1}>
                       {Ico.check(11, "#fff")}
-                      {day.prossimoStep.contesto || "Hai lasciato un'azione a metà"}
+                      {day.prossimoStep.titolo || "Hai lasciato un'azione a metà"}
                     </div>
                     <div style={S.contTitle}>
-                      Adesso → <b>{day.prossimoStep.azione_label || "vai al modulo"}</b>
-                      {day.prossimoStep.cm_label ? <><br />per {day.prossimoStep.cm_label}</> : null}
+                      Adesso → <b>{day.prossimoStep.titolo || "vai al modulo"}</b>
+                      {null}
                     </div>
 
                     <div style={S.contArrow}>
                       <div style={S.contArrowIcon}>{Ico.arrow(11, "#fff")}</div>
                       <div style={S.contNext}>
-                        salta a <b>{day.prossimoStep.target_label || day.prossimoStep.modulo_target || "modulo"}</b>
+                        salta a <b>{day.prossimoStep.modulo || "modulo"}</b>
                       </div>
                     </div>
 
-                    {day.prossimoStep.workflow_step != null && day.prossimoStep.workflow_total != null && (
+                    {day.prossimoStep.workflow?.step_now != null && day.prossimoStep.workflow?.step_total != null && (
                       <div style={S.contProgWrap}>
                         <div style={S.contProgRow}>
                           <div style={S.contProgL}>
-                            {day.prossimoStep.cm_label || "workflow"}
+                            {day.prossimoStep.workflow?.label || "workflow"}
                           </div>
                           <div style={S.contProgR}>
-                            step {day.prossimoStep.workflow_step}/{day.prossimoStep.workflow_total}
+                            step {day.prossimoStep.workflow.step_now}/{day.prossimoStep.workflow.step_total}
                           </div>
                         </div>
                         <div style={S.contProgBar}>
                           <span style={{
                             display: "block", height: "100%",
-                            width: `${(day.prossimoStep.workflow_step / day.prossimoStep.workflow_total) * 100}%`,
+                            width: `${day.prossimoStep.workflow.pct}%`,
                             background: "linear-gradient(90deg,#fff 0%,rgba(255,255,255,0.7) 100%)",
                             borderRadius: 3, boxShadow: "0 0 8px rgba(255,255,255,0.6)",
                           }} />
@@ -297,9 +297,9 @@ export function DaySheet({ open, onClose }: Props) {
                     <div style={S.contBtnRow}>
                       <button
                         onClick={() => {
-                          if (typeof window !== "undefined" && day.prossimoStep?.modulo_target) {
+                          if (typeof window !== "undefined" && day.prossimoStep?.modulo) {
                             window.dispatchEvent(new CustomEvent("mastro:open_modulo", {
-                              detail: { modulo: day.prossimoStep.modulo_target, cm_id: day.prossimoStep.cm_id, step: day.prossimoStep.step_id },
+                              detail: { modulo: day.prossimoStep.modulo, cm_id: day.prossimoStep.cm_id, step: day.prossimoStep.step },
                             }));
                           }
                           onClose();
@@ -307,7 +307,7 @@ export function DaySheet({ open, onClose }: Props) {
                         style={{ ...S.contBtnPrimary, color: CONT_BTN_TXT[colorContinua] }}
                       >
                         {Ico.doc(13, CONT_BTN_TXT[colorContinua])}
-                        Apri {day.prossimoStep.target_label || day.prossimoStep.modulo_target}
+                        Apri {day.prossimoStep.modulo}
                       </button>
                       <button onClick={day.skipProssimo} style={S.contBtnGhost}>
                         {Ico.clock(13, "#fff")}
