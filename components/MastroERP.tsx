@@ -81,6 +81,9 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const { toast, ToastContainer } = useToast();
   
   const [tab, setTab] = useState("home");
+  const cantieriRef = useRef([]);
+  useEffect(() => { cantieriRef.current = cantieri; }, [cantieri]);
+
 
   // Listener Day · navigazione bidirezionale (con whitelist tab validi)
   React.useEffect(() => {
@@ -107,7 +110,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       // Se c'è cm_id, prova a selezionare la commessa
       if (cmId) {
         setTimeout(() => {
-          const cm = cantieri.find((c: any) => c.id === cmId);
+          const cm = (cantieriRef.current || []).find((c) => c && c.id === cmId);
           if (cm) {
             setSelectedCM(cm);
             setSelectedVano(null);
