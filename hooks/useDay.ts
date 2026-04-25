@@ -47,6 +47,7 @@ interface UseDayResult {
   logEvento: (e: DayEventoInsert) => Promise<DayEvento | null>;
   createTask: (input: DayTaskCreateInput) => Promise<DayCreateResult>;
   taskAction: (taskId: string, action: "start" | "pause" | "resume" | "extend15" | "fatto") => Promise<boolean>;
+  backlogNuovi: number;
   completaTask: (taskId: string) => Promise<void>;
   segnaInCorso: (taskId: string) => Promise<void>;
   skipProssimo: () => void;
@@ -60,6 +61,7 @@ export function useDay(): UseDayResult {
   const [prossimoStep, setProssimoStep] = useState<DayProssimoStep | null>(null);
   const [skipUntilEventId, setSkipUntilEventId] = useState<string | null>(null);
   const [deepMinutiOggi, setDeepMinutiOggi] = useState<number>(0);
+  const [backlogNuovi, setBacklogNuovi] = useState<number>(0);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -82,8 +84,9 @@ export function useDay(): UseDayResult {
 
       const prossimoReq = supabase.rpc("day_prossimo_step", { p_user_id: user.id });
       const deepReq = supabase.rpc("day_deep_minuti_oggi", { p_user_id: user.id });
+      const backlogReq = supabase.rpc("day_backlog_count_nuovi", { p_user_id: user.id });
 
-      const [tRes, eRes, pRes, dRes] = await Promise.all([tasksReq, eventiReq, prossimoReq, deepReq]);
+      const [tRes, eRes, pRes, dRes, bRes] = await Promise.all([tasksReq, eventiReq, prossimoReq, deepReq, backlogReq]);
       if (tRes.error) throw tRes.error;
       if (eRes.error) throw eRes.error;
       if (pRes.error) throw pRes.error;
@@ -92,6 +95,7 @@ export function useDay(): UseDayResult {
       setEventi((eRes.data ?? []) as DayEvento[]);
       setProssimoStep((pRes.data ?? null) as DayProssimoStep | null);
       setDeepMinutiOggi(typeof dRes.data === "number" ? dRes.data : 0);
+      setBacklogNuovi(typeof bRes.data === "number" ? bRes.data : 0);
     } catch (e: any) {
       console.error("[useDay] fetch error", e);
       setError(e?.message ?? "Errore caricamento Day");
@@ -318,5 +322,6 @@ export function useDay(): UseDayResult {
     loading, error, tasks, eventi, strip,
     prossimoStep: prossimoFiltrato, stats,
     refetch: fetchAll, logEvento, createTask, taskAction, completaTask, segnaInCorso, skipProssimo,
+    backlogNuovi,
   };
 }

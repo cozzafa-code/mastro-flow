@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { useDay } from "@/hooks/useDay";
 import { DayQuickAdd } from "./DayQuickAdd";
+import { DayTabbar, type DayTab } from "./DayTabbar";
+import { TabBacklog } from "./tabs/TabBacklog";
+import { TabTu } from "./tabs/TabTu";
+import { TabStats } from "./tabs/TabStats";
 import type { DayProssimoColore, DayTask } from "@/lib/types/day";
 
 interface Props { open: boolean; onClose: () => void; }
@@ -35,9 +39,10 @@ function navTo(tab: string, cm_id?: string | null) {
 export function DaySheet({ open, onClose }: Props) {
   const {
     loading, tasks, eventi, strip, prossimoStep, stats,
-    createTask, completaTask, taskAction, skipProssimo,
+    createTask, completaTask, taskAction, skipProssimo, backlogNuovi,
   } = useDay();
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [activeTab, setActiveTab] = useState<DayTab>("day");
   const [quickOpen, setQuickOpen] = useState(false);
 
   useEffect(() => { setBannerDismissed(false); }, [eventi[0]?.id]);
@@ -298,6 +303,8 @@ export function DaySheet({ open, onClose }: Props) {
           </div>
         )}
 
+        {/* TAB CONTENT · D-section attiva o placeholder altri tab */}
+        {activeTab === "day" && (
         <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, padding: "12px 16px 16px" }}>
 
           <div style={{
@@ -505,6 +512,20 @@ export function DaySheet({ open, onClose }: Props) {
             </div>
           )}
         </div>
+
+        )}
+
+        {/* Altri 3 tab · placeholder */}
+        {activeTab === "backlog" && <TabBacklog />}
+        {activeTab === "tu" && <TabTu />}
+        {activeTab === "stats" && <TabStats />}
+
+        {/* TABBAR · 4 voci */}
+        <DayTabbar
+          active={activeTab}
+          onChange={setActiveTab}
+          badgeBacklog={backlogNuovi ?? 0}
+        />
 
         <DayQuickAdd
           open={quickOpen}
