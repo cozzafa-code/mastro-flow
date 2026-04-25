@@ -35,7 +35,7 @@ function navTo(tab: string, cm_id?: string | null) {
 export function DaySheet({ open, onClose }: Props) {
   const {
     loading, tasks, eventi, strip, prossimoStep, stats,
-    createTask, completaTask, skipProssimo,
+    createTask, completaTask, taskAction, skipProssimo,
   } = useDay();
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
@@ -497,7 +497,7 @@ export function DaySheet({ open, onClose }: Props) {
             </div>
           )}
 
-          {tasks.map((t) => <TaskRow key={t.id} task={t} onComplete={() => completaTask(t.id)} />)}
+          {tasks.map((t) => <TaskRow key={t.id} task={t} onAction={(a) => taskAction(t.id, a)} onComplete={() => completaTask(t.id)} />)}
 
           {loading && tasks.length === 0 && (
             <div style={{ padding: 24, textAlign: "center", borderRadius: 14, fontSize: 12, fontWeight: 700, color: "#5A7878", background: "rgba(255,255,255,0.6)" }}>
@@ -516,7 +516,11 @@ export function DaySheet({ open, onClose }: Props) {
   );
 }
 
-function TaskRow({ task, onComplete }: { task: DayTask; onComplete: () => void }) {
+function TaskRow({ task, onComplete, onAction }: {
+  task: DayTask;
+  onComplete: () => void;
+  onAction?: (action: "start" | "pause" | "resume" | "extend15" | "fatto") => Promise<boolean>;
+}) {
   const isDone = task.stato === "fatto" || task.stato === "saltato";
   const isNow = task.stato === "in_corso";
 
@@ -585,6 +589,90 @@ function TaskRow({ task, onComplete }: { task: DayTask; onComplete: () => void }
         {task.descrizione && (
           <div style={{ marginTop: 2, fontSize: 10.5, fontWeight: 600, lineHeight: 1.35, color: "#5A7878" }}>
             {task.descrizione}
+          </div>
+        )}
+
+        {/* D47 · Menu task ORA · Pausa / +15min / Fatto / Focus */}
+        {isNow && onAction && (
+          <div style={{ display: "flex", gap: 5, marginTop: 8, flexWrap: "wrap" }}>
+            {!task.pausato_at ? (
+              <button type="button" onClick={(e) => { e.stopPropagation(); onAction("pause"); }}
+                style={{
+                  padding: "4px 9px", borderRadius: 7, border: "1px solid rgba(200,228,228,0.5)",
+                  background: "#F4F6F5", color: "#5A7878", cursor: "pointer",
+                  fontSize: 9.5, fontWeight: 900, letterSpacing: 0.2,
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  fontFamily: "inherit",
+                }}>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                Pausa
+              </button>
+            ) : (
+              <button type="button" onClick={(e) => { e.stopPropagation(); onAction("resume"); }}
+                style={{
+                  padding: "4px 9px", borderRadius: 7, border: 0,
+                  background: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
+                  color: "#fff", cursor: "pointer",
+                  fontSize: 9.5, fontWeight: 900, letterSpacing: 0.2,
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  boxShadow: "0 2px 6px rgba(29,158,117,0.4)",
+                  fontFamily: "inherit",
+                }}>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                Riprendi
+              </button>
+            )}
+            <button type="button" onClick={(e) => { e.stopPropagation(); onAction("extend15"); }}
+              style={{
+                padding: "4px 9px", borderRadius: 7, border: "1px solid rgba(200,228,228,0.5)",
+                background: "#F4F6F5", color: "#5A7878", cursor: "pointer",
+                fontSize: 9.5, fontWeight: 900, letterSpacing: 0.2,
+                display: "inline-flex", alignItems: "center", gap: 4,
+                fontFamily: "inherit",
+              }}>
+              + 15 min
+            </button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onAction("fatto"); }}
+              style={{
+                padding: "4px 9px", borderRadius: 7, border: "1px solid rgba(40,160,160,0.4)",
+                background: "rgba(40,160,160,0.10)", color: "#04403B", cursor: "pointer",
+                fontSize: 9.5, fontWeight: 900, letterSpacing: 0.2,
+                display: "inline-flex", alignItems: "center", gap: 4,
+                fontFamily: "inherit",
+              }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              Fatto
+            </button>
+            <button type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.dispatchEvent(new CustomEvent("mastro:focus_start", {
+                  detail: { task_id: task.id, titolo: task.titolo, durata_min: 25 },
+                }));
+              }}
+              style={{
+                padding: "4px 9px", borderRadius: 7, border: 0,
+                background: "linear-gradient(145deg, #FAC775, #EF9F27)",
+                color: "#fff", cursor: "pointer",
+                fontSize: 9.5, fontWeight: 900, letterSpacing: 0.2,
+                display: "inline-flex", alignItems: "center", gap: 4,
+                boxShadow: "0 2px 6px rgba(239,159,39,0.4)",
+                fontFamily: "inherit",
+              }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+              Focus
+            </button>
+            {task.pausato_at && (
+              <span style={{
+                padding: "4px 9px", borderRadius: 7,
+                background: "rgba(239,159,39,0.18)", color: "#854F0B",
+                fontSize: 9.5, fontWeight: 900, letterSpacing: 0.2,
+                display: "inline-flex", alignItems: "center", gap: 4,
+              }}>
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                in pausa
+              </span>
+            )}
           </div>
         )}
         {recentlySpunted.length > 0 && (

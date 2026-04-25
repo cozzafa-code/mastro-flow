@@ -30,6 +30,10 @@ export interface DayTask {
   energia: 1 | 2 | 3 | 4;
   stato: DayStato;
   completato_at?: string | null;
+  pausato_at?: string | null;
+  tempo_pausato_sec?: number | null;
+  durata_originale_min?: number | null;
+  started_at?: string | null;
   cm_id?: string | null;
   modulo_target?: string | null;
   link_url?: string | null;

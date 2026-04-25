@@ -45,6 +45,7 @@ interface UseDayResult {
   refetch: () => Promise<void>;
   logEvento: (e: DayEventoInsert) => Promise<DayEvento | null>;
   createTask: (input: DayTaskCreateInput) => Promise<DayCreateResult>;
+  taskAction: (taskId: string, action: "start" | "pause" | "resume" | "extend15" | "fatto") => Promise<boolean>;
   completaTask: (taskId: string) => Promise<void>;
   segnaInCorso: (taskId: string) => Promise<void>;
   skipProssimo: () => void;
@@ -200,6 +201,39 @@ export function useDay(): UseDayResult {
     }
   }, [getAziendaId, fetchAll]);
 
+  const taskAction = useCallback(async (
+    taskId: string,
+    action: "start" | "pause" | "resume" | "extend15" | "fatto"
+  ): Promise<boolean> => {
+    try {
+      const { data, error: rpcErr } = await supabase.rpc("day_task_action", {
+        p_task_id: taskId,
+        p_action: action,
+      });
+      if (rpcErr) {
+        console.error("[taskAction]", rpcErr);
+        return false;
+      }
+      const ok = (data as any)?.ok === true;
+      if (ok) {
+        // refetch immediato
+        await fetchAll();
+        // log evento se completato
+        if (action === "fatto") {
+          await logEvento({
+            tipo: "task_completato",
+            modulo_origine: "ops",
+            titolo_breve: "Task completato",
+          });
+        }
+      }
+      return ok;
+    } catch (e) {
+      console.error("[taskAction] catch", e);
+      return false;
+    }
+  }, [fetchAll, logEvento]);
+
   const completaTask = useCallback(async (taskId: string) => {
     const { error: e } = await supabase.from("day_tasks")
       .update({ stato: "fatto", completato_at: new Date().toISOString() })
@@ -266,6 +300,6 @@ export function useDay(): UseDayResult {
   return {
     loading, error, tasks, eventi, strip,
     prossimoStep: prossimoFiltrato, stats,
-    refetch: fetchAll, logEvento, createTask, completaTask, segnaInCorso, skipProssimo,
+    refetch: fetchAll, logEvento, createTask, taskAction, completaTask, segnaInCorso, skipProssimo,
   };
 }
