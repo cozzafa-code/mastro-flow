@@ -45,7 +45,7 @@ const FILTRI: { id: Filtro; label: string; count: number; tint?: keyof typeof TI
 ];
 
 const DATA: Sopralluogo[] = [
-  { id: "s1",  numero: "SP-2026-068", cliente: "Fortini Anna",         citta: "Cosenza",       indirizzo: "Via Marconi 18",       data: "Oggi",     ora: "09:00", giorno: "Sab 25 apr", posatore: "Marco Esposito", preset: "a", stato: "confermato", vani: 6,  note: "Appartamento 3 piano. Citofonare "Fortini"." },
+  { id: "s1",  numero: "SP-2026-068", cliente: "Fortini Anna",         citta: "Cosenza",       indirizzo: "Via Marconi 18",       data: "Oggi",     ora: "09:00", giorno: "Sab 25 apr", posatore: "Marco Esposito", preset: "a", stato: "confermato", vani: 6,  note: 'Appartamento 3 piano. Citofonare "Fortini".' },
   { id: "s2",  numero: "SP-2026-067", cliente: "De Luca Pasquale",     citta: "Mendicino",    indirizzo: "Via XX Settembre 22",  data: "Oggi",     ora: "15:00", giorno: "Sab 25 apr", posatore: "Luca Bianchi",   preset: "b", stato: "confermato", vani: 4 },
   { id: "s3",  numero: "SP-2026-069", cliente: "Greco Antonella",      citta: "Rende",        indirizzo: "Via Pinelli 8",        data: "Domani",   ora: "09:30", giorno: "Dom 26 apr", posatore: "Marco Esposito", preset: "c", stato: "confermato", vani: 5 },
   { id: "s4",  numero: "SP-2026-070", cliente: "Russo Industriale SRL",citta: "Castrolibero", indirizzo: "Via dell'Industria 4", data: "Lun 27 apr", ora: "10:00", giorno: "Lun 27 apr", posatore: "Walter Cozza",   preset: "d", stato: "confermato", vani: 18, note: "Capannone industriale, 18 vani serramenti grandi." },
