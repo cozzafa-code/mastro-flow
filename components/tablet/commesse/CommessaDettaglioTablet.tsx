@@ -1,12 +1,13 @@
 "use client";
 import * as React from "react";
-import { TT, cardStyle } from "../design-system";
 import CommessaHeaderTablet from "./CommessaHeaderTablet";
 import CommessaStepperTablet, { FaseWorkflow } from "./CommessaStepperTablet";
 import CommessaTabbarTablet, { TabCommessa } from "./CommessaTabbarTablet";
 import TabVaniTablet from "./tabs/TabVaniTablet";
 import TabDocumentiTablet from "./tabs/TabDocumentiTablet";
 import TabPagamentiTablet from "./tabs/TabPagamentiTablet";
+import TabNoteTablet from "./tabs/TabNoteTablet";
+import TabStoricoTablet from "./tabs/TabStoricoTablet";
 
 export interface CommessaDettaglioTabletProps {
   numero: string;
@@ -37,15 +38,11 @@ export default function CommessaDettaglioTablet({ numero, onBack }: CommessaDett
       <CommessaStepperTablet current={fase} onClick={setFase} />
       <CommessaTabbarTablet active={tab} onChange={setTab} />
 
-      {tab === "vani" && <TabVaniTablet onOpenVano={(id) => console.log("vano:", id)} onAddVano={() => console.log("add vano")} />}
-      {tab === "documenti" && <TabDocumentiTablet onOpenDoc={(id) => console.log("doc:", id)} onUpload={() => console.log("upload")} />}
-      {tab === "pagamenti" && <TabPagamentiTablet onRegistraPagamento={(id) => console.log("registra:", id)} onAggiungiRata={() => console.log("add rata")} />}
-      {tab !== "vani" && tab !== "documenti" && tab !== "pagamenti" && (
-        <div style={cardStyle({ padding: "40px 28px", textAlign: "center" })}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: TT.text2, marginBottom: 4 }}>Tab: {tab}</div>
-          <div style={{ fontSize: 12, color: TT.text3 }}>Contenuto in arrivo nei prossimi step.</div>
-        </div>
-      )}
+      {tab === "vani"      && <TabVaniTablet      onOpenVano={(id) => console.log("vano:",id)} onAddVano={() => console.log("add vano")} />}
+      {tab === "documenti" && <TabDocumentiTablet onOpenDoc={(id) => console.log("doc:",id)} onUpload={() => console.log("upload")} />}
+      {tab === "pagamenti" && <TabPagamentiTablet onRegistraPagamento={(id) => console.log("registra:",id)} onAggiungiRata={() => console.log("add rata")} />}
+      {tab === "note"      && <TabNoteTablet      onAddNota={(t,c) => console.log("nota:",t,c)} />}
+      {tab === "storico"   && <TabStoricoTablet />}
     </div>
   );
 }
