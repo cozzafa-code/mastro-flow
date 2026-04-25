@@ -6,6 +6,7 @@ import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
 import CommesseListaTablet from "./commesse/CommesseListaTablet";
 import CalendarioTablet from "./calendario/CalendarioTablet";
+import SopralluoghiTablet from "./sopralluoghi/SopralluoghiTablet";
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
@@ -46,25 +47,13 @@ export default function MastroTablet() {
         <SidebarTablet active={active} onSelect={setActive} />
         <TopbarTablet greeting="Buongiorno, Fabio Cozza" notificationCount={3} />
 
-        <main
-          style={{
-            gridArea: "main",
-            overflowY: "auto",
-            padding: "18px 24px 22px",
-          }}
-        >
-          {active === "dashboard"  && <DashboardTablet />}
-          {active === "commesse"   && <CommesseListaTablet />}
-          {active === "calendario" && <CalendarioTablet />}
-          {active !== "dashboard" && active !== "commesse" && active !== "calendario" && (
-            <div
-              style={{
-                padding: "40px 28px",
-                textAlign: "center",
-                color: TT.text3,
-                fontSize: 14,
-              }}
-            >
+        <main style={{ gridArea: "main", overflowY: "auto", padding: "18px 24px 22px" }}>
+          {active === "dashboard"     && <DashboardTablet />}
+          {active === "commesse"      && <CommesseListaTablet />}
+          {active === "calendario"    && <CalendarioTablet />}
+          {active === "sopralluoghi"  && <SopralluoghiTablet />}
+          {!["dashboard","commesse","calendario","sopralluoghi"].includes(active) && (
+            <div style={{ padding: "40px 28px", textAlign: "center", color: TT.text3, fontSize: 14 }}>
               Sezione &quot;{active}&quot; in arrivo nei prossimi step.
             </div>
           )}
