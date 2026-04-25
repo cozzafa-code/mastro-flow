@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // 
 // MASTRO ERP · CMDetailPanel
@@ -1873,7 +1873,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               />
               <div style={{ marginTop: 24, padding: "16px 0" }}>
                 <button onClick={() => setPrevTab("fiscale")} style={{ width: "100%", padding: 18, borderRadius: 12, background: "#28A0A0", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(40,160,160,0.25)" }}>
-                  Prossimo: Imposta fiscalitÃ 
+                  Prossimo: Imposta fiscalità
                 </button>
               </div>
             </div>

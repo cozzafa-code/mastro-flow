@@ -1,4 +1,4 @@
-﻿import { Resend } from 'resend'
+import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -88,7 +88,7 @@ function baseTemplate(content: string) {
           <tr>
             <td style="background:#F2F1EC;padding:24px 40px;border-top:1px solid #e5e5e5;">
               <p style="margin:0;font-size:12px;color:#888;line-height:1.6;">
-                Hai ricevuto questa email perchÃ© sei registrato su MASTRO Suite.<br>
+                Hai ricevuto questa email perché sei registrato su MASTRO Suite.<br>
                 Per assistenza scrivi a <a href="mailto:support@mastrosuite.com" style="color:#D08008;">support@mastrosuite.com</a>
               </p>
             </td>
@@ -109,7 +109,7 @@ function templateBenvenuto(nome: string) {
   return baseTemplate(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1A1A1C;">Benvenuto, ${nome}! ðŸ‘‹</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#555;line-height:1.7;">
-      Il tuo account MASTRO Suite Ã¨ attivo. Hai <strong>30 giorni di prova gratuita</strong> per esplorare tutti i moduli.
+      Il tuo account MASTRO Suite è attivo. Hai <strong>30 giorni di prova gratuita</strong> per esplorare tutti i moduli.
     </p>
     <p style="margin:0 0 8px;font-size:15px;color:#555;line-height:1.7;">Cosa puoi fare subito:</p>
     <ul style="margin:0 0 16px;padding-left:20px;font-size:15px;color:#555;line-height:2;">
@@ -152,7 +152,7 @@ function templateResetPassword(link: string) {
 
 function templatePreventivo(nomeCliente: string, nomeAzienda: string, linkPreventivo: string) {
   return baseTemplate(`
-    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1A1A1C;">Il tuo preventivo Ã¨ pronto</h1>
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1A1A1C;">Il tuo preventivo è pronto</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#555;line-height:1.7;">
       Gentile ${nomeCliente},<br><br>
       <strong>${nomeAzienda}</strong> ti ha inviato un preventivo tramite MASTRO Suite.
@@ -168,12 +168,12 @@ function templateFascicolo(nomeCommessa: string, linkFascicolo: string) {
   return baseTemplate(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#1A1A1C;">Fascicolo tecnico disponibile</h1>
     <p style="margin:0 0 16px;font-size:15px;color:#555;line-height:1.7;">
-      Il fascicolo tecnico per la commessa <strong>${nomeCommessa}</strong> Ã¨ stato generato ed Ã¨ disponibile per il download.
+      Il fascicolo tecnico per la commessa <strong>${nomeCommessa}</strong> è stato generato ed è disponibile per il download.
     </p>
     <p style="margin:0;font-size:15px;color:#555;line-height:1.7;">
       Il fascicolo include PDF tecnico, foglio Excel misurazioni e tutti i documenti necessari per le pratiche ENEA/AdE.
     </p>
     ${btnPrimary(linkFascicolo, 'Scarica fascicolo â†’')}
-    <p style="margin:16px 0 0;font-size:12px;color:#999;">Il link Ã¨ valido per 30 giorni.</p>
+    <p style="margin:16px 0 0;font-size:12px;color:#999;">Il link è valido per 30 giorni.</p>
   `)
 }

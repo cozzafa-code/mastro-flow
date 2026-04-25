@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
@@ -164,7 +164,7 @@ export default function ImpostazioniPage() {
               {deleteStep === 'idle' && (
                 <div>
                   <p className="text-sm text-gray-600 mb-4">
-                    La cancellazione dell'account Ã¨ <strong>irreversibile</strong>. Tutti i tuoi dati saranno eliminati entro 30 giorni.
+                    La cancellazione dell'account è <strong>irreversibile</strong>. Tutti i tuoi dati saranno eliminati entro 30 giorni.
                     Prima di procedere ti consigliamo di esportare i tuoi dati dalla sezione <strong>I miei dati</strong>.
                   </p>
                   <button
@@ -180,7 +180,7 @@ export default function ImpostazioniPage() {
                 <div className="space-y-4">
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-sm font-semibold text-red-800 mb-1">âš ï¸ Stai per eliminare il tuo account</p>
-                    <p className="text-sm text-red-700">Questa azione eliminerÃ  permanentemente:</p>
+                    <p className="text-sm text-red-700">Questa azione eliminerà permanentemente:</p>
                     <ul className="text-sm text-red-700 mt-2 space-y-1">
                       <li>â€º Tutte le commesse e i cantieri</li>
                       <li>â€º Tutti i contatti e i clienti</li>
@@ -193,7 +193,7 @@ export default function ImpostazioniPage() {
                       onClick={() => setDeleteStep('confirm2')}
                       className="px-4 py-2 bg-[#DC4444] text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
                     >
-                      SÃ¬, voglio eliminare
+                      Sì, voglio eliminare
                     </button>
                     <button
                       onClick={() => setDeleteStep('idle')}
@@ -247,7 +247,7 @@ export default function ImpostazioniPage() {
         {/* â”€â”€ TAB: I MIEI DATI â”€â”€ */}
         {tab === 'dati' && (
           <div className="space-y-6">
-            <Card title="PortabilitÃ  dei dati">
+            <Card title="Portabilità dei dati">
               <p className="text-sm text-gray-600 mb-4">
                 Hai diritto di ricevere tutti i tuoi dati in formato strutturato (art. 20 GDPR).
                 L'export include commesse, contatti, misurazioni e informazioni azienda in formato JSON.
@@ -279,7 +279,7 @@ export default function ImpostazioniPage() {
           <Card title="Informazioni azienda">
             <Row label="Ragione sociale" value={azienda?.ragione_sociale || 'â€”'} />
             <Row label="P.IVA" value={azienda?.piva || 'â€”'} />
-            <Row label="CittÃ " value={azienda?.citta || 'â€”'} />
+            <Row label="Città" value={azienda?.citta || 'â€”'} />
             <Row label="Settori" value={azienda?.settori?.join(', ') || 'â€”'} />
             <Row label="Piano attivo" value={azienda?.piano || 'START'} />
           </Card>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // MASTRO ERP - HomePanel MOBILE - fliwoX Widget Home v5 (drag+add+apri)
 import React, { useState as RS } from "react";
@@ -321,7 +321,7 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
                   boxShadow: `0 2px 6px ${f.tint}`,
                 }}>{initialsV3(cliente)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, color: "#0F2525", fontWeight: 900 }}>{cod} Â· {cliente}</div>
+                  <div style={{ fontSize: 12, color: "#0F2525", fontWeight: 900 }}>{cod} · {cliente}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1 }}>
                     <span style={{ fontSize: 9, fontWeight: 900, padding: "1px 6px", borderRadius: 4, background: f.tint, color: f.dark, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{fase}</span>
                   </div>
@@ -513,7 +513,7 @@ export default function HomePanelMobile(props: any) {
         <div>
           <div style={{ fontSize: 11, color: "#3C3489", fontWeight: 500, letterSpacing: 0.3 }}>OGGI DEVI FARE</div>
           <div style={{ fontSize: 16, color: "#26215C", fontWeight: 600, marginTop: 3 }}>{taskOggi} task urgenti</div>
-          <div style={{ fontSize: 10, color: "#3C3489", marginTop: 2 }}>Sopralluogo Â· Firma Â· Fattura</div>
+          <div style={{ fontSize: 10, color: "#3C3489", marginTop: 2 }}>Sopralluogo · Firma · Fattura</div>
         </div>
         <div style={{ background: "#FFFFFF", borderRadius: 50, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#26215C" strokeWidth={2.5}><path d="M7 17L17 7M17 7H9M17 7v8" /></svg>
@@ -859,7 +859,7 @@ export default function HomePanelMobile(props: any) {
 
         {editMode && (
           <div style={{ background: "#FFF7E0", border: "1px dashed #FAC775", borderRadius: 12, padding: "8px 10px", marginBottom: 10, fontSize: 11, color: "#854F0B" }}>
-            Trascina i widget per riordinare Â· Tocca la X per rimuovere
+            Trascina i widget per riordinare · Tocca la X per rimuovere
           </div>
         )}
 
@@ -870,7 +870,7 @@ export default function HomePanelMobile(props: any) {
         <div onClick={() => setShowAdd(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", zIndex: 200 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#FFF", width: "100%", borderRadius: "20px 20px 0 0", padding: 16, maxHeight: "70vh", overflowY: "auto" }}>
             <div style={{ fontSize: 16, fontWeight: 600, color: "#1A1A1A", marginBottom: 12 }}>Aggiungi widget</div>
-            {availableToAdd.length === 0 && <div style={{ fontSize: 12, color: "#888", padding: 16, textAlign: "center" }}>Tutti i widget sono giÃ  aggiunti.</div>}
+            {availableToAdd.length === 0 && <div style={{ fontSize: 12, color: "#888", padding: 16, textAlign: "center" }}>Tutti i widget sono già aggiunti.</div>}
             {Object.entries(availableToAdd.reduce((acc: any, w: any) => { (acc[w.cat] = acc[w.cat] || []).push(w); return acc; }, {})).map(([cat, items]: any) => (
               <div key={cat} style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 11, color: "#888", fontWeight: 600, letterSpacing: 0.4, marginBottom: 6, paddingLeft: 4 }}>{cat.toUpperCase()}</div>

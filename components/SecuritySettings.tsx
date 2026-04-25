@@ -130,7 +130,7 @@ export default function SecuritySettings() {
   // Rimuovi 2FA
   const removeFactor = async () => {
     if (!enrolledFactor) return
-    if (!confirm('Disabilitare il 2FA? Il tuo account sarÃ  meno sicuro.')) return
+    if (!confirm('Disabilitare il 2FA? Il tuo account sarà meno sicuro.')) return
     setLoading(true)
     await supabase.auth.mfa.unenroll({ factorId: enrolledFactor.id })
     await loadFactors()
@@ -166,7 +166,7 @@ export default function SecuritySettings() {
         {!enrolledFactor && step === 'idle' && (
           <div>
             <p style={{ fontSize: 14, color: '#6B6B6B', margin: '0 0 20px', lineHeight: 1.6 }}>
-              Aggiungi un secondo livello di sicurezza. Dopo il login ti verrÃ  chiesto
+              Aggiungi un secondo livello di sicurezza. Dopo il login ti verrà chiesto
               un codice dall'app Google Authenticator o Authy.
             </p>
             <button
@@ -280,7 +280,7 @@ export default function SecuritySettings() {
                 <IcoCheck />
               </div>
               <span style={{ fontSize: 14, color: '#065F46', fontWeight: 500 }}>
-                2FA attivo â€” il tuo account Ã¨ protetto
+                2FA attivo â€” il tuo account è protetto
               </span>
             </div>
             <button

@@ -1,4 +1,4 @@
-﻿// â•â•â• MASTRO ERP â€” TabSettings (Phase B extraction) â•â•â•
+// â•â•â• MASTRO ERP â€” TabSettings (Phase B extraction) â•â•â•
 import { useMastro } from "../../MastroContext";
 
 export default function TabSettings() {
@@ -53,7 +53,7 @@ export default function TabSettings() {
         {/* === SETTORE === */}
         {settingsTab === "settore" && (
           <>
-            <div style={{ fontSize: 12, color: T.sub, padding: "0 4px 10px", lineHeight: 1.5 }}>Seleziona i settori in cui operi. MASTRO mostrerÃ  solo le tipologie e funzioni rilevanti per il tuo lavoro.</div>
+            <div style={{ fontSize: 12, color: T.sub, padding: "0 4px 10px", lineHeight: 1.5 }}>Seleziona i settori in cui operi. MASTRO mostrerà solo le tipologie e funzioni rilevanti per il tuo lavoro.</div>
             {SETTORI.map(s => {
               const isOn = settoriAttivi.includes(s.id);
               const count = TIPOLOGIE_RAPIDE.filter(t => t.settore === s.id).length;
@@ -87,7 +87,7 @@ export default function TabSettings() {
               );
             })}
             <div style={{ marginTop: 12, padding: 12, background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}`, fontSize: 11, color: T.sub, lineHeight: 1.5 }}>
-              <b>Settori attivi:</b> {settoriAttivi.length} Â· <b>Tipologie disponibili:</b> {tipologieFiltrate.length}<br />
+              <b>Settori attivi:</b> {settoriAttivi.length} · <b>Tipologie disponibili:</b> {tipologieFiltrate.length}<br />
               Le commesse esistenti con tipologie di settori disattivati resteranno visibili.
             </div>
           </>
@@ -116,7 +116,7 @@ export default function TabSettings() {
                     <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>Logo caricato âœ“</div>
                     <div style={{display:"flex",gap:6}}>
                       <div onClick={()=>logoInputRef.current?.click()} style={{fontSize:11,color:T.acc,fontWeight:700,cursor:"pointer"}}>Cambia</div>
-                      <span style={{color:T.bdr}}>Â·</span>
+                      <span style={{color:T.bdr}}>·</span>
                       <div onClick={()=>setAziendaInfo(a=>({...a,logo:null}))} style={{fontSize:11,color:"#ff3b30",fontWeight:700,cursor:"pointer"}}>Rimuovi</div>
                     </div>
                   </div>
@@ -125,7 +125,7 @@ export default function TabSettings() {
                 <div onClick={()=>logoInputRef.current?.click()} style={{border:`2px dashed ${T.bdr}`,borderRadius:10,padding:"16px",textAlign:"center",cursor:"pointer",background:"#fafafa"}}>
                   <div style={{fontSize:24,marginBottom:4}}>ðŸ–¼</div>
                   <div style={{fontSize:12,fontWeight:700,color:T.text}}>Carica logo</div>
-                  <div style={{fontSize:10,color:T.sub,marginTop:2}}>PNG, JPG, SVG Â· max 2MB</div>
+                  <div style={{fontSize:10,color:T.sub,marginTop:2}}>PNG, JPG, SVG · max 2MB</div>
                 </div>
               )}
             </div>
@@ -161,7 +161,7 @@ export default function TabSettings() {
                 </div>
               </div>
               {[
-                {label:"Condizioni di fornitura",field:"condFornitura",placeholder:"Es. L'azienda, nell'esecuzione della produzione Ã¨ garante dell'osservanza scrupolosa della regola d'arte e delle norme vigenti.",rows:3},
+                {label:"Condizioni di fornitura",field:"condFornitura",placeholder:"Es. L'azienda, nell'esecuzione della produzione è garante dell'osservanza scrupolosa della regola d'arte e delle norme vigenti.",rows:3},
                 {label:"Condizioni di pagamento",field:"condPagamento",placeholder:"Es. 50% acconto alla firma del contratto...\n50% a saldo, a comunicazione merce pronta...",rows:4},
                 {label:"Tempi di consegna",field:"condConsegna",placeholder:"Es. PVC Battente Standard 30 gg.\nPVC Porte 35 gg.\nAlluminio 45/50 gg lavorativi.",rows:5},
                 {label:"Condizioni di contratto",field:"condContratto",placeholder:"Es. Clausole contrattuali personalizzate, garanzia, trattamento dati...",rows:5},
@@ -302,7 +302,7 @@ export default function TabSettings() {
             {/* Free plan note */}
             <div style={{ padding: "8px 16px", marginBottom: 12 }}>
               <div style={{ fontSize: 11, color: T.sub, textAlign: "center" as const }}>
-                Il piano Free include 5 commesse e funzionalitÃ  base. I pagamenti saranno attivati al lancio ufficiale.
+                Il piano Free include 5 commesse e funzionalità base. I pagamenti saranno attivati al lancio ufficiale.
               </div>
             </div>
           </>
@@ -341,7 +341,7 @@ export default function TabSettings() {
                       <span style={{ fontSize: 9, color: T.sub }}>â‚¬/mq</span>
                       <input type="number" defaultValue={s.euroMq || ""} onBlur={e => setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, euroMq: parseFloat(e.target.value)||0, prezzoMq: parseFloat(e.target.value)||0 } : x))} style={{ width: 60, padding: "3px 6px", borderRadius: 4, border: `1px solid ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.grn, textAlign: "right", fontFamily: FM }} />
                     </div>
-                    <div style={{ fontSize: 9, color: T.sub }}>+{s.sovRAL}% RAL Â· +{s.sovLegno}% Legno</div>
+                    <div style={{ fontSize: 9, color: T.sub }}>+{s.sovRAL}% RAL · +{s.sovLegno}% Legno</div>
                     {s.griglia?.length > 0 && <div style={{ fontSize: 9, color: T.acc, fontWeight: 600, marginTop: 2 }}>ðŸ“Š Griglia {s.griglia.length} prezzi</div>}
                   </div>
                 </div>
@@ -408,7 +408,7 @@ export default function TabSettings() {
                   </div>
                   {s.griglia?.length > 0 ? (
                     <div>
-                      <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontStyle: "italic" }}>Il prezzo viene preso dalla combinazione LÃ—H piÃ¹ vicina (per eccesso). Se la finestra Ã¨ piÃ¹ grande della griglia, usa l'ultimo prezzo.</div>
+                      <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontStyle: "italic" }}>Il prezzo viene preso dalla combinazione LÃ—H più vicina (per eccesso). Se la finestra è più grande della griglia, usa l'ultimo prezzo.</div>
                       <div style={{ maxHeight: 120, overflowY: "auto", borderRadius: 4, border: `1px solid ${T.bdr}` }}>
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 9 }}>
                           <thead><tr style={{ background: T.bg, position: "sticky", top: 0 }}>
@@ -438,7 +438,7 @@ export default function TabSettings() {
                 {/* Minimi mq per tipologia */}
                 <div style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: T.bg, border: `1px dashed ${T.bdr}` }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 6 }}>Minimo mq fatturazione per tipologia</div>
-                  <div style={{ fontSize: 9, color: T.sub, marginBottom: 6, fontStyle: "italic" }}>Attiva solo le categorie che vuoi â€” se la finestra Ã¨ piÃ¹ piccola, il prezzo viene calcolato sulla metratura minima</div>
+                  <div style={{ fontSize: 9, color: T.sub, marginBottom: 6, fontStyle: "italic" }}>Attiva solo le categorie che vuoi â€” se la finestra è più piccola, il prezzo viene calcolato sulla metratura minima</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     {[
                       { key: "1anta", label: "1 Anta" },
@@ -505,7 +505,7 @@ export default function TabSettings() {
                 <div style={{ width: 28, height: 28, borderRadius: 6, background: c.hex, border: `1px solid ${T.bdr}`, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{c.nome}</div>
-                  <div style={{ fontSize: 10, color: T.sub }}>{c.code} Â· {c.tipo}</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>{c.code} · {c.tipo}</div>
                 </div>
                 <div style={{ fontSize: 10, color: T.sub }}>{sistemiDB.filter(s => s.colori.includes(c.code)).map(s => s.marca).join(", ") || "â€”"}</div>
                 <div onClick={() => deleteSettingsItem("colore", c.id)} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
@@ -634,7 +634,7 @@ export default function TabSettings() {
               </div></div>
             ))}
             <div onClick={() => { let n; try{n=window.prompt("Nuova tipologia telaio (es. Z 35):");}catch(e){} if (n?.trim()) setTelaiPersianaDB(prev => [...prev, { id: "tp" + Date.now(), code: n.trim() }]); }} style={{ padding: "12px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4, marginBottom: 16 }}>+ Aggiungi telaio</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>ðŸ“ 4Â° Lato / Posizionamento</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>ðŸ“ 4° Lato / Posizionamento</div>
             {posPersianaDB.map(pp => (
               <div key={pp.id} style={{ ...S.card, marginBottom: 4 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px" }}>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>{pp.code}</span>
@@ -656,9 +656,9 @@ export default function TabSettings() {
         {/* === SALITA === */}
         {settingsTab === "controtelaio" && (
           <>
-            <div style={{ fontSize: 11, color: T.sub, marginBottom: 12 }}>Configura profonditÃ , sezioni e modelli cielino per i controtelai</div>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 12 }}>Configura profondità, sezioni e modelli cielino per i controtelai</div>
             
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>ðŸ“ ProfonditÃ  disponibili (mm)</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>ðŸ“ Profondità disponibili (mm)</div>
             <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
               {ctProfDB.map(p => (
                 <div key={p.id} style={{display:"flex",alignItems:"center",gap:4,padding:"6px 10px",borderRadius:8,border:`1px solid ${T.bdr}`,background:T.card}}>
@@ -667,7 +667,7 @@ export default function TabSettings() {
                 </div>
               ))}
             </div>
-            <div onClick={() => { let n; try{n=window.prompt("Nuova profonditÃ  (mm):");}catch(e){} if (n?.trim()) setCtProfDB(prev => [...prev, { id: "cp" + Date.now(), code: n.trim() }]); }} style={{ padding: "10px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 11, fontWeight: 600, marginBottom: 16 }}>+ Aggiungi profonditÃ </div>
+            <div onClick={() => { let n; try{n=window.prompt("Nuova profondità (mm):");}catch(e){} if (n?.trim()) setCtProfDB(prev => [...prev, { id: "cp" + Date.now(), code: n.trim() }]); }} style={{ padding: "10px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 11, fontWeight: 600, marginBottom: 16 }}>+ Aggiungi profondità</div>
 
             <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>ðŸ“ Sezioni controtelaio</div>
             {ctSezioniDB.map(s => (
@@ -836,7 +836,7 @@ export default function TabSettings() {
                   <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, marginBottom: 6 }}>
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700 }}>N. {f.numero}/{f.anno} â€” {f.tipo.toUpperCase()}</div>
-                      <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} Â· {f.cmCode} Â· {f.data}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>{f.cliente} · {f.cmCode} · {f.data}</div>
                       <div style={{ fontSize: 9, color: f.pagata ? "#34c759" : (f.scadenza < new Date().toISOString().split("T")[0] ? "#ff3b30" : T.sub) }}>
                         {f.pagata ? `âœ… Pagata il ${f.dataPagamento}` : `â³ Scadenza: ${f.scadenza}`}
                       </div>
@@ -900,7 +900,7 @@ export default function TabSettings() {
                     {/* EXPAND BUTTON */}
                     <div onClick={()=>setExpandedPipelinePhase(isExpanded ? null : p.id)} style={{fontSize:14,cursor:"pointer",color:isExpanded?T.acc:T.sub,transition:"transform 0.2s",transform:isExpanded?"rotate(180deg)":"rotate(0deg)"}}>â–¾</div>
                   </div>
-                  {/* Mini badges: cosa Ã¨ configurato */}
+                  {/* Mini badges: cosa è configurato */}
                   {!isExpanded && (p.emailTemplate || p.checklistMontaggio?.length || p.automazioni?.length) && (
                     <div style={{display:"flex",gap:4,padding:"0 12px 8px",flexWrap:"wrap"}}>
                       {p.emailTemplate && <span style={{fontSize:8,padding:"2px 6px",borderRadius:10,background:"#34c75915",color:"#34c759",fontWeight:700}}>ðŸ“§ Email</span>}
@@ -969,7 +969,7 @@ export default function TabSettings() {
                       {/* â”€â”€â”€ TAB CHECKLIST (MONTAGGI) â”€â”€â”€ */}
                       {pipeTab === "checklist" && (
                         <div>
-                          <div style={{fontSize:11,color:T.sub,marginBottom:8}}>Checklist obbligatoria per i montatori quando la commessa Ã¨ in questa fase. Visibile in MASTRO MONTAGGI.</div>
+                          <div style={{fontSize:11,color:T.sub,marginBottom:8}}>Checklist obbligatoria per i montatori quando la commessa è in questa fase. Visibile in MASTRO MONTAGGI.</div>
                           {(p.checklistMontaggio || []).map((item, ci) => (
                             <div key={ci} style={{display:"flex",gap:6,alignItems:"center",marginBottom:6}}>
                               <span style={{fontSize:12,color:T.sub,fontFamily:"monospace",width:20,textAlign:"center"}}>{ci+1}.</span>
@@ -1038,7 +1038,7 @@ export default function TabSettings() {
                       {/* â”€â”€â”€ TAB GATE (REQUISITI) â”€â”€â”€ */}
                       {pipeTab === "gate" && (
                         <div>
-                          <div style={{fontSize:11,color:T.sub,marginBottom:8}}>Requisiti obbligatori per avanzare a questa fase. La commessa non puÃ² entrare qui finchÃ© non sono soddisfatti.</div>
+                          <div style={{fontSize:11,color:T.sub,marginBottom:8}}>Requisiti obbligatori per avanzare a questa fase. La commessa non può entrare qui finché non sono soddisfatti.</div>
                           {(p.gateRequisiti || []).map((req, ri) => (
                             <div key={ri} style={{display:"flex",gap:6,alignItems:"center",marginBottom:6}}>
                               <select value={req.tipo} onChange={e=>{
@@ -1233,7 +1233,7 @@ export default function TabSettings() {
                   <div style={{width:22,height:22,borderRadius:6,background:T.acc,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>3</div>
                   <div style={{fontSize:12,color:T.text,lineHeight:1.5}}>Completa <b>spallette</b>, <b>davanzale</b>, telaio e accessori</div>
                 </div>
-                <div style={{fontSize:11,color:T.sub,marginTop:4,padding:"8px 10px",background:T.bg||"#f8f8f5",borderRadius:8}}>ðŸ’¡ <b>Regola d'oro:</b> misura sempre dal CENTRO del vano â€” Ã¨ il punto piÃ¹ affidabile per il taglio</div>
+                <div style={{fontSize:11,color:T.sub,marginTop:4,padding:"8px 10px",background:T.bg||"#f8f8f5",borderRadius:8}}>ðŸ’¡ <b>Regola d'oro:</b> misura sempre dal CENTRO del vano â€” è il punto più affidabile per il taglio</div>
               </div>
             </div>
 
@@ -1750,7 +1750,7 @@ export default function TabSettings() {
                 </div>
                 <div style={{display:"flex",gap:12,marginBottom:8}}>
                   <div style={{width:22,height:22,borderRadius:6,background:T.acc,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>2</div>
-                  <div style={{fontSize:12,color:T.text,lineHeight:1.5}}>Scegli <b>tipo</b> (Materiale, Misure, Installazione...) e <b>prioritÃ </b></div>
+                  <div style={{fontSize:12,color:T.text,lineHeight:1.5}}>Scegli <b>tipo</b> (Materiale, Misure, Installazione...) e <b>priorità</b></div>
                 </div>
                 <div style={{display:"flex",gap:12,marginBottom:8}}>
                   <div style={{width:22,height:22,borderRadius:6,background:T.acc,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>3</div>
