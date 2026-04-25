@@ -1,18 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import type {
   DayTask, DayEvento, DayEventoInsert, DayProssimoStep,
   DayStripItem, DayStats, DayModuloOrigine, DayCategoria,
 } from "@/lib/types/day";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: { persistSession: true, autoRefreshToken: true },
-});
 
 const STRIP_WINDOW_HOURS = 2;
 const STRIP_MAX_ITEMS = 4;
