@@ -5,6 +5,7 @@
 // Estratto S4: ~1.505 righe (Dettaglio vano + misure + disegno + accessori)
 // ═══════════════════════════════════════════════════════════
 import DisegnoTecnico from "./DisegnoTecnico";
+import { useDay } from "@/hooks/useDay";
 import ConfiguratoreControtelaio from "./ConfiguratoreControtelaio";
 import SkizzoTecnico from "./SkizzoTecnico";
 import OrdineControtelaiPanel from "./OrdineControtelaiPanel";
@@ -119,6 +120,7 @@ function VanoBInput({ label, field, value, stepColor, textColor, subColor, bdrCo
 }
 
 export default function VanoDetailPanel() {
+  const { logEvento } = useDay();
   const {
     T, S, isDesktop, fs, tipologieFiltrate,
     // State
@@ -3089,6 +3091,18 @@ export default function VanoDetailPanel() {
                       const cmId = selectedCM?.id || "cm";
                       const vanoId = v.id || "vano";
                       const publicUrl = await uploadFotoVano(userId, cmId, vanoId, file, file.name);
+
+                      // === DAY · log foto_caricata ===
+                      try {
+                        await logEvento({
+                          tipo: 'foto_caricata',
+                          modulo_origine: 'commessa',
+                          cm_id: cmId ?? null,
+                          payload: { vano_id: vanoId, url: publicUrl, nome_file: file.name },
+                          titolo_breve: 'Foto caricata',
+                          contesto: file.name,
+                        });
+                      } catch (e) { console.warn('[Day] log foto_caricata fallito', e); }
                       if (publicUrl) {
                         const fotoObj = { url: publicUrl, dataUrl: null, nome: file.name, tipo: "foto", categoria: cat || null };
                         setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, rilievi: c.rilievi.map(r2 => r2.id === selectedRilievo?.id ? { ...r2, vani: r2.vani.map(vn => vn.id === v.id ? { ...vn, foto: { ...(vn.foto||{}), [key]: fotoObj } } : vn) } : r2) } : c));

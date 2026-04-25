@@ -14,6 +14,45 @@ export async function POST(request, { params }) {
       }
       case 'messaggi/invia': {
         const { data, error } = await supabase.from('messaggi').insert(body).select().single();
+
+      // === DAY · log mail / messaggio ===
+      if (!error && data) {
+        try {
+          const direzione: 'in' | 'out' = (body?.direzione === 'in' || body?.tipo === 'in') ? 'in' : 'out';
+          const tipo = direzione === 'in' ? 'mail_ricevuta' : 'mail_inviata';
+          const canale: string = body?.canale ?? body?.channel ?? 'email';
+          const cmId: string | null = body?.commessa_id ?? body?.cm_id ?? null;
+          const aziendaId: string | null = body?.azienda_id ?? null;
+          const userId: string | null = body?.user_id ?? null;
+          if (aziendaId && userId) {
+            await supabase.from('day_eventi').insert({
+              azienda_id: aziendaId,
+              user_id: userId,
+              tipo,
+              modulo_origine: 'mail',
+              direzione: direzione === 'in' ? 'entrata' : 'uscita',
+              cm_id: cmId,
+              payload: { messaggio_id: data.id, canale },
+              titolo_breve: direzione === 'in'
+                ? `Nuovo ${canale} ricevuto`
+                : `${canale[0].toUpperCase() + canale.slice(1)} inviato`,
+              contesto: body?.contesto ?? null,
+            });
+            // se in entrata · popolo anche backlog NUOVI
+            if (direzione === 'in') {
+              await supabase.from('day_backlog').insert({
+                azienda_id: aziendaId,
+                user_id: userId,
+                origine: canale === 'email' ? 'mail' : (canale === 'whatsapp' ? 'vocale' : 'evento_workflow'),
+                titolo: body?.oggetto ?? body?.testo?.slice(0, 80) ?? 'Nuovo messaggio',
+                descrizione: body?.testo ?? null,
+                cm_id: cmId,
+                payload: { messaggio_id: data.id, canale },
+              });
+            }
+          }
+        } catch (e) { console.warn('[Day] log mail fallito', e); }
+      }
         if (error) throw error;
         return NextResponse.json({ ok: true, messaggio: data });
       }
