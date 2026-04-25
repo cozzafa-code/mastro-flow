@@ -4,10 +4,10 @@ import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
 
 // =========================================================
-// KpiRowTablet - 5 KPI in row
+// KpiRowTablet - 5 KPI in row (layout verticale compatto)
 // =========================================================
-// Card con: icona quadrata 48px pastel-400 + label + valore -500 + delta
-// Allineato al mockup HD pastello approvato.
+// Card: icona quadrata 38px in alto + label small + valore -500 + delta
+// Layout verticale per stare in 1/5 della larghezza senza overflow.
 // =========================================================
 
 interface KpiCardData {
@@ -15,23 +15,20 @@ interface KpiCardData {
   label: string;
   value: string;
   delta?: string;
-  /** Tinta pastel: usa TT.<tint>[400] per icona, [500] per valore. */
   tint: "teal" | "red" | "blue" | "green" | "violet";
   icon: IconName;
 }
 
 const DEFAULT_DATA: KpiCardData[] = [
-  { id: "commesse",    label: "Commesse attive",    value: "20",       delta: "+2 da ieri",          tint: "teal",   icon: "kpiCommesse"    },
-  { id: "sopralluoghi",label: "Sopralluoghi oggi",  value: "4",        delta: "+1 da ieri",          tint: "red",    icon: "kpiSopralluogo" },
-  { id: "produzione",  label: "Produzione in corso",value: "6",        delta: "+2 da ieri",          tint: "blue",   icon: "kpiProduzione"  },
-  { id: "fatturato",   label: "Fatturato mese",     value: "€ 24.850", delta: "+12% vs mese scorso", tint: "green",  icon: "kpiFatturato"   },
-  { id: "margine",     label: "Margine medio",      value: "28%",      delta: "+4% vs mese scorso",  tint: "violet", icon: "kpiMargine"     },
+  { id: "commesse",    label: "Commesse attive",    value: "20",       delta: "+2 da ieri",        tint: "teal",   icon: "kpiCommesse"    },
+  { id: "sopralluoghi",label: "Sopralluoghi oggi",  value: "4",        delta: "+1 da ieri",        tint: "red",    icon: "kpiSopralluogo" },
+  { id: "produzione",  label: "Produzione in corso",value: "6",        delta: "+2 da ieri",        tint: "blue",   icon: "kpiProduzione"  },
+  { id: "fatturato",   label: "Fatturato mese",     value: "€ 24.850", delta: "+12% vs scorso", tint: "green",  icon: "kpiFatturato"   },
+  { id: "margine",     label: "Margine medio",      value: "28%",      delta: "+4% vs scorso",     tint: "violet", icon: "kpiMargine"     },
 ];
 
 export interface KpiRowTabletProps {
-  /** Override dei dati (per test / data live). Default = DEFAULT_DATA. */
   data?: KpiCardData[];
-  /** Click su una card. */
   onCardClick?: (id: string) => void;
 }
 
@@ -40,8 +37,8 @@ export default function KpiRowTablet({ data = DEFAULT_DATA, onCardClick }: KpiRo
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${data.length}, 1fr)`,
-        gap: 14,
+        gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))`,
+        gap: 12,
         marginBottom: 18,
       }}
     >
@@ -63,69 +60,80 @@ function KpiCard({ data, onClick }: KpiCardProps) {
     <div
       onClick={onClick}
       style={cardStyle({
-        padding: "16px 18px",
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
+        padding: "14px 14px 12px",
         cursor: onClick ? "pointer" : "default",
+        minWidth: 0,
+        overflow: "hidden",
       })}
     >
-      {/* Icon square pastel-400 */}
+      {/* Icon square pastel-400 - top */}
       <div
         style={{
-          width: 48,
-          height: 48,
-          borderRadius: 14,
+          width: 38,
+          height: 38,
+          borderRadius: 10,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
           background: ramp[400],
           color: "#fff",
+          marginBottom: 10,
         }}
       >
-        <Icon name={data.icon} size={22} color="#fff" strokeWidth={2} />
+        <Icon name={data.icon} size={18} color="#fff" strokeWidth={2} />
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 11,
-            color: TT.text2,
-            fontWeight: 500,
-            marginBottom: 4,
-            letterSpacing: "-0.1px",
-          }}
-        >
-          {data.label}
-        </div>
-        <div
-          style={{
-            fontSize: 26,
-            fontWeight: 800,
-            letterSpacing: "-0.8px",
-            lineHeight: 1,
-            color: ramp[500],
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {data.value}
-        </div>
-        {data.delta && (
-          <div
-            style={{
-              fontSize: 11,
-              color: TT.green[500],
-              fontWeight: 600,
-              marginTop: 6,
-              letterSpacing: "-0.05px",
-            }}
-          >
-            {data.delta}
-          </div>
-        )}
+      {/* Label */}
+      <div
+        style={{
+          fontSize: 11,
+          color: TT.text2,
+          fontWeight: 500,
+          marginBottom: 4,
+          letterSpacing: "-0.05px",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {data.label}
       </div>
+
+      {/* Value */}
+      <div
+        style={{
+          fontSize: 22,
+          fontWeight: 800,
+          letterSpacing: "-0.6px",
+          lineHeight: 1.1,
+          color: ramp[500],
+          fontVariantNumeric: "tabular-nums",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {data.value}
+      </div>
+
+      {/* Delta */}
+      {data.delta && (
+        <div
+          style={{
+            fontSize: 10,
+            color: TT.green[500],
+            fontWeight: 600,
+            marginTop: 5,
+            letterSpacing: "-0.05px",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {data.delta}
+        </div>
+      )}
     </div>
   );
 }
