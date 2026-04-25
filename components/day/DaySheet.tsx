@@ -116,7 +116,7 @@ function fmtHeaderDate(d: Date): string {
 }
 
 export function DaySheet({ open, onClose }: Props) {
-  const { activeTab, setActiveTab } = useDayUI();
+  const [activeTab, setActiveTab] = useState<DayTab>("day");
   const day = useDay();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState<string | null>(null);
