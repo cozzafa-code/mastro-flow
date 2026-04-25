@@ -20,9 +20,7 @@ import AiMastroTablet from "./ai/AiMastroTablet";
 import ImpostazioniTablet from "./impostazioni/ImpostazioniTablet";
 import { DashboardProvider, Preset } from "./dashboard-context";
 import ExpandModal from "./ExpandModal";
-
-// Render espansione: viste full-list dei blocchi dashboard
-import CommesseListaTablet_Embedded from "./commesse/CommesseListaTablet";
+import BackButton from "./BackButton";
 
 const PRESET_KEY = "mastro_tablet_preset";
 
@@ -32,7 +30,6 @@ export default function MastroTablet() {
   const [preset, setPresetState] = React.useState<Preset>("titolare");
   const [expanded, setExpanded] = React.useState<string | null>(null);
 
-  // Resize listener
   React.useEffect(() => {
     const check = () => setIsPortrait(window.innerWidth < 1024);
     check();
@@ -44,7 +41,6 @@ export default function MastroTablet() {
     };
   }, []);
 
-  // Carica preset da localStorage
   React.useEffect(() => {
     try {
       const saved = window.localStorage.getItem(PRESET_KEY) as Preset | null;
@@ -71,8 +67,10 @@ export default function MastroTablet() {
   }, []);
 
   const closeExpand = React.useCallback(() => setExpanded(null), []);
+  const goBack = React.useCallback(() => navigate("dashboard"), [navigate]);
 
   const sidebarW = isPortrait ? TT.sidebarWCollapsed : TT.sidebarW;
+  const isDashboard = active === "dashboard";
 
   return (
     <DashboardProvider
@@ -107,6 +105,11 @@ export default function MastroTablet() {
           padding: isPortrait ? "16px 18px 20px" : "20px 28px 24px",
           background: "transparent",
         }}>
+          {/* TASTO INDIETRO - visibile su tutte le schermate eccetto dashboard */}
+          {!isDashboard && (
+            <BackButton active={active} onBack={goBack} />
+          )}
+
           {active === "dashboard"     && <DashboardTablet />}
           {active === "commesse"      && <CommesseListaTablet />}
           {active === "calendario"    && <CalendarioTablet />}
@@ -186,7 +189,7 @@ export default function MastroTablet() {
 }
 
 // ============================================================
-// EXPANDED VIEWS - liste piu' complete dei blocchi
+// EXPANDED VIEWS
 // ============================================================
 
 function ExpandedAgenda({ onNavigate }: { onNavigate: (s: string) => void }) {
@@ -214,8 +217,6 @@ function ExpandedAgenda({ onNavigate }: { onNavigate: (s: string) => void }) {
             cursor: "pointer",
             transition: "transform 0.12s",
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.transform = "translateY(0)")}
         >
           <div style={{
             fontSize: 14, fontWeight: 800, color: i.tint[600],
@@ -248,16 +249,11 @@ function ExpandedAgenda({ onNavigate }: { onNavigate: (s: string) => void }) {
       <button
         onClick={() => onNavigate("calendario")}
         style={{
-          marginTop: 8,
-          padding: "10px 14px",
-          background: TT.violet[400],
-          color: "#fff",
-          border: "none",
-          borderRadius: TT.rMd,
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: "pointer",
-          fontFamily: TT.fontFamily,
+          marginTop: 8, padding: "10px 14px",
+          background: TT.violet[400], color: "#fff",
+          border: "none", borderRadius: TT.rMd,
+          fontSize: 12, fontWeight: 700,
+          cursor: "pointer", fontFamily: TT.fontFamily,
           boxShadow: `0 2px 8px ${TT.violet[200]}`,
         }}
       >
@@ -323,16 +319,11 @@ function ExpandedProduzione({ onNavigate }: { onNavigate: (s: string) => void })
       <button
         onClick={() => onNavigate("produzione")}
         style={{
-          width: "100%",
-          padding: "12px 16px",
-          background: TT.blue[400],
-          color: "#fff",
-          border: "none",
-          borderRadius: TT.rMd,
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: "pointer",
-          fontFamily: TT.fontFamily,
+          width: "100%", padding: "12px 16px",
+          background: TT.blue[400], color: "#fff",
+          border: "none", borderRadius: TT.rMd,
+          fontSize: 12, fontWeight: 700,
+          cursor: "pointer", fontFamily: TT.fontFamily,
           boxShadow: `0 2px 8px ${TT.blue[200]}`,
         }}
       >
@@ -351,16 +342,11 @@ function ExpandedCommesse({ onNavigate }: { onNavigate: (s: string) => void }) {
       <button
         onClick={() => onNavigate("commesse")}
         style={{
-          width: "100%",
-          padding: "12px 16px",
-          background: TT.orange[400],
-          color: "#fff",
-          border: "none",
-          borderRadius: TT.rMd,
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: "pointer",
-          fontFamily: TT.fontFamily,
+          width: "100%", padding: "12px 16px",
+          background: TT.orange[400], color: "#fff",
+          border: "none", borderRadius: TT.rMd,
+          fontSize: 12, fontWeight: 700,
+          cursor: "pointer", fontFamily: TT.fontFamily,
           boxShadow: `0 2px 8px ${TT.orange[200]}`,
         }}
       >
@@ -376,16 +362,11 @@ function ExpandedTeam({ onNavigate }: { onNavigate: (s: string) => void }) {
       <button
         onClick={() => onNavigate("team")}
         style={{
-          width: "100%",
-          padding: "12px 16px",
-          background: TT.teal[400],
-          color: "#fff",
-          border: "none",
-          borderRadius: TT.rMd,
-          fontSize: 12,
-          fontWeight: 700,
-          cursor: "pointer",
-          fontFamily: TT.fontFamily,
+          width: "100%", padding: "12px 16px",
+          background: TT.teal[400], color: "#fff",
+          border: "none", borderRadius: TT.rMd,
+          fontSize: 12, fontWeight: 700,
+          cursor: "pointer", fontFamily: TT.fontFamily,
           boxShadow: `0 2px 8px ${TT.teal[200]}`,
         }}
       >
