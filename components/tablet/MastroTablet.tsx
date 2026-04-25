@@ -4,14 +4,7 @@ import { TT, bodyStyle } from "./design-system";
 import SidebarTablet from "./SidebarTablet";
 import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
-
-// =========================================================
-// MastroTablet - root component versione tablet
-// =========================================================
-// Layout: 1280x800 (preview), grid sidebar+topbar+main.
-// Step 2: sidebar+topbar piene, main = DashboardTablet placeholder.
-// Step 3+: pannelli dashboard reali.
-// =========================================================
+import CommesseListaTablet from "./commesse/CommesseListaTablet";
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
@@ -50,11 +43,7 @@ export default function MastroTablet() {
         }}
       >
         <SidebarTablet active={active} onSelect={setActive} />
-
-        <TopbarTablet
-          greeting="Buongiorno, Fabio Cozza"
-          notificationCount={3}
-        />
+        <TopbarTablet greeting="Buongiorno, Fabio Cozza" notificationCount={3} />
 
         <main
           style={{
@@ -64,7 +53,8 @@ export default function MastroTablet() {
           }}
         >
           {active === "dashboard" && <DashboardTablet />}
-          {active !== "dashboard" && (
+          {active === "commesse" && <CommesseListaTablet />}
+          {active !== "dashboard" && active !== "commesse" && (
             <div
               style={{
                 padding: "40px 28px",
