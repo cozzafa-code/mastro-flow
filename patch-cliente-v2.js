@@ -42,7 +42,7 @@ const NEW = `    // Dettaglio cliente selezionato
 
           {/* TAB BAR */}
           <div style={{ display: "flex", margin: "0 16px 12px", background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, overflow: "hidden" }}>
-            {[{id:"info",l:"Info"},{id:"storia",l:"Storia"},{id:"soldi",l:"\u20AC Fatturato"},{id:"note",l:"\u{1F4DD} Note"}].map(tab => (
+            {[{id:"info",l:"Info"},{id:"storia",l:"Storia"},{id:"soldi",l:"€ Fatturato"},{id:"note",l:"\u{1F4DD} Note"}].map(tab => (
               <div key={tab.id} onClick={() => setClienteDetailTab(tab.id)}
                 style={{ flex: 1, padding: "10px 4px", textAlign: "center", fontSize: 11, fontWeight: 700, cursor: "pointer",
                   color: cTab === tab.id ? T.acc : T.sub,
@@ -90,11 +90,11 @@ const NEW = `    // Dettaglio cliente selezionato
               </div>
               <div style={{ flex: 1, background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, padding: "10px", textAlign: "center" }}>
                 <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Preventivi</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: T.acc }}>\u20AC{totPreventivi.toLocaleString("it-IT")}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: T.acc }}>€{totPreventivi.toLocaleString("it-IT")}</div>
               </div>
               <div style={{ flex: 1, background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, padding: "10px", textAlign: "center" }}>
                 <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Fatturato</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#34c759" }}>\u20AC{totFatturato.toLocaleString("it-IT")}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#34c759" }}>€{totFatturato.toLocaleString("it-IT")}</div>
               </div>
             </div>
 
@@ -112,9 +112,9 @@ const NEW = `    // Dettaglio cliente selezionato
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{cm.code}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>{PIPELINE.find(p => p.id === cm.fase)?.nome || cm.fase} \u00B7 {cm.indirizzo || "\u2014"}</div>
+                    <div style={{ fontSize: 11, color: T.sub }}>{PIPELINE.find(p => p.id === cm.fase)?.nome || cm.fase} · {cm.indirizzo || "—"}</div>
                   </div>
-                  {cm.totale > 0 && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>\u20AC{cm.totale?.toLocaleString("it-IT")}</div>}
+                  {cm.totale > 0 && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>€{cm.totale?.toLocaleString("it-IT")}</div>}
                 </div>
               ))}
             </div>
@@ -128,7 +128,7 @@ const NEW = `    // Dettaglio cliente selezionato
                   <div style={{ width: 4, height: 28, borderRadius: 2, background: tipoEvColor(ev.tipo) }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{ev.text}</div>
-                    <div style={{ fontSize: 10, color: T.sub }}>{ev.date} {ev.time && "\u00B7 " + ev.time}</div>
+                    <div style={{ fontSize: 10, color: T.sub }}>{ev.date} {ev.time && "· " + ev.time}</div>
                   </div>
                 </div>
               ))}
@@ -143,13 +143,13 @@ const NEW = `    // Dettaglio cliente selezionato
                 const tl = [];
                 cmList.forEach(cm => {
                   tl.push({ date: cm.dataCreazione || cm.data || "2025-01-01", ico: "\u{1F4C1}", text: "Commessa " + cm.code + " creata", sub: cm.indirizzo || "", color: T.acc });
-                  if (cm.dataFirma) tl.push({ date: cm.dataFirma, ico: "\u270D\uFE0F", text: "Preventivo " + cm.code + " firmato", sub: "\u20AC" + (cm.totale||0).toLocaleString("it-IT"), color: T.grn });
+                  if (cm.dataFirma) tl.push({ date: cm.dataFirma, ico: "\u270D\uFE0F", text: "Preventivo " + cm.code + " firmato", sub: "€" + (cm.totale||0).toLocaleString("it-IT"), color: T.grn });
                 });
                 evList.forEach(ev => {
                   tl.push({ date: ev.dateISO || ev.date || "2025-01-01", ico: "\u{1F4C5}", text: ev.text, sub: ev.date + (ev.time ? " " + ev.time : ""), color: "#007aff" });
                 });
                 fatList.forEach(f => {
-                  tl.push({ date: f.dataISO || f.data, ico: "\u{1F9FE}", text: "Fattura N." + f.numero + "/" + f.anno, sub: "\u20AC" + f.importo.toLocaleString("it-IT") + " \u2013 " + (f.pagata ? "Pagata" : "Da incassare"), color: f.pagata ? "#34c759" : "#ff3b30" });
+                  tl.push({ date: f.dataISO || f.data, ico: "\u{1F9FE}", text: "Fattura N." + f.numero + "/" + f.anno, sub: "€" + f.importo.toLocaleString("it-IT") + " \u2013 " + (f.pagata ? "Pagata" : "Da incassare"), color: f.pagata ? "#34c759" : "#ff3b30" });
                 });
                 tl.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
                 if (tl.length === 0) return <div style={{ padding: "20px", background: T.card, borderRadius: 10, textAlign: "center", fontSize: 12, color: T.sub }}>Nessuna attivit\u00E0 registrata</div>;
@@ -175,21 +175,21 @@ const NEW = `    // Dettaglio cliente selezionato
               <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                 <div style={{ flex: 1, background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, padding: 12, textAlign: "center" }}>
                   <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Preventivato</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: T.acc }}>\u20AC{totPreventivi.toLocaleString("it-IT")}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: T.acc }}>€{totPreventivi.toLocaleString("it-IT")}</div>
                 </div>
                 <div style={{ flex: 1, background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, padding: 12, textAlign: "center" }}>
                   <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Fatturato</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: T.text }}>\u20AC{totFatturato.toLocaleString("it-IT")}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: T.text }}>€{totFatturato.toLocaleString("it-IT")}</div>
                 </div>
                 <div style={{ flex: 1, background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, padding: 12, textAlign: "center" }}>
                   <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Incassato</div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: "#34c759" }}>\u20AC{totIncassato.toLocaleString("it-IT")}</div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: "#34c759" }}>€{totIncassato.toLocaleString("it-IT")}</div>
                 </div>
               </div>
               {totFatturato > 0 && totIncassato < totFatturato && (
                 <div style={{ background: "#fff3cd", borderRadius: 10, padding: "10px 14px", marginBottom: 12, border: "1px solid #ffc107", display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 16 }}>\u26A0\uFE0F</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#856404" }}>Da incassare: \u20AC{(totFatturato - totIncassato).toLocaleString("it-IT")}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#856404" }}>Da incassare: €{(totFatturato - totIncassato).toLocaleString("it-IT")}</span>
                 </div>
               )}
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Fatture ({fatList.length})</div>
@@ -198,10 +198,10 @@ const NEW = `    // Dettaglio cliente selezionato
                 <div key={f.id} style={{ padding: "10px 12px", background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>N. {f.numero}/{f.anno}</div>
-                    <div style={{ fontSize: 10, color: T.sub }}>{f.data} \u00B7 {f.tipo}</div>
+                    <div style={{ fontSize: 10, color: T.sub }}>{f.data} · {f.tipo}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>\u20AC{f.importo.toLocaleString("it-IT")}</div>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>€{f.importo.toLocaleString("it-IT")}</div>
                     <div style={{ fontSize: 9, color: f.pagata ? "#34c759" : "#ff3b30", fontWeight: 700 }}>{f.pagata ? "\u2705 Pagata" : "\u23F3 Da incassare"}</div>
                   </div>
                 </div>
@@ -212,9 +212,9 @@ const NEW = `    // Dettaglio cliente selezionato
                 <div key={cm.id} onClick={() => { setSelectedCM(cm); setTab("commesse"); }} style={{ padding: "10px 12px", background: T.card, borderRadius: 10, border: \`1px solid \${T.bdr}\`, marginBottom: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div>
                     <div style={{ fontSize: 12, fontWeight: 700 }}>{cm.code}</div>
-                    <div style={{ fontSize: 10, color: T.sub }}>{cm.indirizzo || "\u2014"}</div>
+                    <div style={{ fontSize: 10, color: T.sub }}>{cm.indirizzo || "—"}</div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>\u20AC{cm.totale?.toLocaleString("it-IT")}</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{cm.totale?.toLocaleString("it-IT")}</div>
                 </div>
               ))}
             </div>

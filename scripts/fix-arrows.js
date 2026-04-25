@@ -9,13 +9,13 @@ c = c.replace(/onClick=\{navPrev\}([^>]+)><\/div>/g, 'onClick={navPrev}$1>\u2039
 c = c.replace(/onClick=\{navNext\}([^>]+)><\/div>/g, 'onClick={navNext}$1>\u203A</div>');
 
 // 3. Fix "Apri" links — add →
-c = c.replace(/>Apri\s*<\/div>/g, '>Apri \u2192</div>');
+c = c.replace(/>Apri\s*<\/div>/g, '>Apri →</div>');
 
 // 4. Fix en-dash in week range (empty → –)
 c = c.replace(/getDate\(\) \+ "" \+/g, 'getDate() + "\u2013" + ');
 
 // 5. Fix middle dots in join
-c = c.replace(/\.join\(" "\)/g, '.join(" \u00B7 ")');
+c = c.replace(/\.join\(" "\)/g, '.join(" · ")');
 
 // 6. Add "Oggi" button in dashboard calendar
 c = c.replace(

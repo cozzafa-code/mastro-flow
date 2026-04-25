@@ -41,7 +41,7 @@ fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:FF,display:'inline-flex',
 function Badge({text,color}){return<span style={{padding:'4px 12px',borderRadius:6,fontSize:11,fontWeight:800,background:color+'18',color}}>{text}</span>}
 
 function fD(d){if(!d)return'-';try{return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}}
-function fE(n){return'\u20AC'+(n||0).toFixed(2).replace('.',',')}
+function fE(n){return'€'+(n||0).toFixed(2).replace('.',',')}
 
 export default function DesktopProdFlow({commessaId,onNavigate,onBack}){
 const[commessa,setCommessa]=useState(null);const[vani,setVani]=useState([]);const[profili,setProfili]=useState([]);const[ordini,setOrdini]=useState([]);

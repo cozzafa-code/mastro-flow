@@ -39,7 +39,7 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
       const tabs = [
         { id: "info", label: "Info", icon: "\\u{1F4CB}" },
         { id: "storia", label: "Storia", icon: "\\u{1F4C5}" },
-        { id: "fatturato", label: "\\u20AC Fatturato", icon: "" },
+        { id: "fatturato", label: "\€ Fatturato", icon: "" },
         { id: "note", label: "\\u{1F4DD} Note", icon: "" }
       ];
       return (
@@ -70,7 +70,7 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
             </div>
             <div style={{ background: T.card, borderRadius: 12, padding: "12px 10px", textAlign: "center", border: "1px solid " + T.bdr }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: T.orange }}>{fattureTot > 0 ? (fattureTot / 1000).toFixed(1) + "k" : "0"}</div>
-              <div style={{ fontSize: 10, color: T.sub, fontWeight: 600 }}>\\u20AC Totale</div>
+              <div style={{ fontSize: 10, color: T.sub, fontWeight: 600 }}>\€ Totale</div>
             </div>
           </div>
 
@@ -130,7 +130,7 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{cm.code}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>{PIPELINE.find(p => p.id === cm.fase)?.nome || cm.fase} \\u00B7 {cm.indirizzo || "\\u2014"}</div>
+                    <div style={{ fontSize: 11, color: T.sub }}>{PIPELINE.find(p => p.id === cm.fase)?.nome || cm.fase} \· {cm.indirizzo || "\—"}</div>
                   </div>
                 </div>
               ))}
@@ -152,7 +152,7 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
                   </div>
                   <div style={{ flex: 1, paddingBottom: 16 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{ev.text}</div>
-                    <div style={{ fontSize: 11, color: T.sub }}>{ev.date} {ev.time && "\\u00B7 " + ev.time} {ev.tipo && "\\u00B7 " + ev.tipo}</div>
+                    <div style={{ fontSize: 11, color: T.sub }}>{ev.date} {ev.time && "\· " + ev.time} {ev.tipo && "\· " + ev.tipo}</div>
                   </div>
                 </div>
               ))}
@@ -171,11 +171,11 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
                     <div style={{ background: T.card, borderRadius: 12, padding: 14, border: "1px solid " + T.bdr }}>
                       <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 4 }}>Fatturato totale</div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>\\u20AC {totaleFatt.toLocaleString("it-IT")}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>\€ {totaleFatt.toLocaleString("it-IT")}</div>
                     </div>
                     <div style={{ background: T.card, borderRadius: 12, padding: 14, border: "1px solid " + T.bdr }}>
                       <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 4 }}>Da incassare</div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: totaleNonPagato > 0 ? T.red : T.grn }}>\\u20AC {totaleNonPagato.toLocaleString("it-IT")}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: totaleNonPagato > 0 ? T.red : T.grn }}>\€ {totaleNonPagato.toLocaleString("it-IT")}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 8 }}>Fatture ({fattList.length})</div>
@@ -184,8 +184,8 @@ const NEW_SECTION = `    // Dettaglio cliente selezionato — ENRICHED
                     <div key={f.id} style={{ padding: "10px 12px", background: T.card, borderRadius: 10, border: "1px solid " + T.bdr, marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 8, height: 8, borderRadius: "50%", background: f.pagata ? T.grn : T.red }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>\\u20AC {(f.importo || 0).toLocaleString("it-IT")}</div>
-                        <div style={{ fontSize: 11, color: T.sub }}>{f.numero || "N/D"} \\u00B7 {f.data || ""}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>\€ {(f.importo || 0).toLocaleString("it-IT")}</div>
+                        <div style={{ fontSize: 11, color: T.sub }}>{f.numero || "N/D"} \· {f.data || ""}</div>
                       </div>
                       <div style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: f.pagata ? T.grnLt : T.redLt, color: f.pagata ? T.grn : T.red }}>{f.pagata ? "Pagata" : "Da pagare"}</div>
                     </div>

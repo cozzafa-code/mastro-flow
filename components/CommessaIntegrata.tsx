@@ -209,7 +209,7 @@ function ListaAvanzamenti({ avanzamenti }: any) {
         <div key={a.id} style={{ position: "relative", marginBottom: 10, paddingLeft: 14 }}>
           <div style={{ position: "absolute", left: -14, top: 5, width: 12, height: 12, borderRadius: "50%", background: TEAL, border: "2px solid #fff" }} />
           <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: INK }}>{a.fase_codice} {"\u2192"} {a.stato}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: INK }}>{a.fase_codice} {"→"} {a.stato}</div>
             {a.note && <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>{a.note}</div>}
             <div style={{ fontSize: 10, color: SUB, marginTop: 2 }}>{a.created_at && new Date(a.created_at).toLocaleString("it-IT")}</div>
           </div>

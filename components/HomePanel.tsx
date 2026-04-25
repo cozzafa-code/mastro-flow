@@ -193,9 +193,9 @@ function WidgetPicker({ currentId, visibleWidgets, onSelect, onRemove, onClose }
 // ── Compiti Widget ──
 function CompitiWidget({ onNavigate }) {
   const [compiti, setCompiti] = useState([
-    { id: '1', title: 'Sopralluogo \u2014 Rossi Mario', type: 'Sopralluogo', typeColor: DS.blue, typeBg: '#EBF5FF', address: 'Via Roma 12', time: '9:00', priority: 'urgente', done: false },
-    { id: '2', title: 'Misure \u2014 Bianchi Luigi', type: 'Misure', typeColor: DS.amber, typeBg: '#FFF8E1', address: 'Corso Mazzini 8', time: '11:00', priority: 'normale', done: false },
-    { id: '3', title: 'Consegna \u2014 Verdi Anna', type: 'Consegna', typeColor: DS.green, typeBg: '#E8F5E9', address: 'Via Napoli 3', time: '8:30', priority: 'bassa', done: true },
+    { id: '1', title: 'Sopralluogo — Rossi Mario', type: 'Sopralluogo', typeColor: DS.blue, typeBg: '#EBF5FF', address: 'Via Roma 12', time: '9:00', priority: 'urgente', done: false },
+    { id: '2', title: 'Misure — Bianchi Luigi', type: 'Misure', typeColor: DS.amber, typeBg: '#FFF8E1', address: 'Corso Mazzini 8', time: '11:00', priority: 'normale', done: false },
+    { id: '3', title: 'Consegna — Verdi Anna', type: 'Consegna', typeColor: DS.green, typeBg: '#E8F5E9', address: 'Via Napoli 3', time: '8:30', priority: 'bassa', done: true },
   ]);
 
   const toggleDone = (id) => setCompiti(prev => prev.map(c => c.id === id ? { ...c, done: !c.done } : c));
@@ -481,7 +481,7 @@ export default function HomePanel({ onNavigate }) {
         <div style={{ padding: '10px 16px' }}>
           <div onClick={() => nav('team')} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '6px 0' }}>
             <div style={{ width: 30, height: 30, borderRadius: 7, background: DS.teal, color: DS.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 11 }}>T</div>
-            <div><div style={{ fontSize: 12, fontWeight: 600, color: DS.dark }}>Titolare</div><div style={{ fontSize: 9, color: DS.green }}>Online \u2014 3 compiti</div></div>
+            <div><div style={{ fontSize: 12, fontWeight: 600, color: DS.dark }}>Titolare</div><div style={{ fontSize: 9, color: DS.green }}>Online — 3 compiti</div></div>
           </div>
         </div>,
         'Espandi team'
@@ -498,7 +498,7 @@ export default function HomePanel({ onNavigate }) {
       case 'contabilita': return w(
         { title: 'Contabilita', onAction: () => nav('contabilita') },
         <div style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {[{ l: 'Fatturato', v: '\u20AC0', c: DS.green }, { l: 'Incassato', v: '\u20AC0', c: DS.teal }, { l: 'Spese', v: '\u20AC0', c: DS.red }, { l: 'Margine', v: '\u2014', c: DS.dark }].map(s => (
+          {[{ l: 'Fatturato', v: '€0', c: DS.green }, { l: 'Incassato', v: '€0', c: DS.teal }, { l: 'Spese', v: '€0', c: DS.red }, { l: 'Margine', v: '—', c: DS.dark }].map(s => (
             <div key={s.l} onClick={() => nav('contabilita')} style={{ padding: 10, background: DS.light, borderRadius: 8, cursor: 'pointer' }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: DS.tealDark }}>{s.l}</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: s.c, fontFamily: "'JetBrains Mono', monospace", marginTop: 3 }}>{s.v}</div>
@@ -543,8 +543,8 @@ export default function HomePanel({ onNavigate }) {
       case 'spese_w': return w(
         { title: 'Spese recenti', dot: DS.red, onAction: () => nav('contabilita') },
         <>
-          <RowItem label="Questa settimana" value={'\u20AC0'} onClick={() => nav('contabilita')} />
-          <RowItem label="Questo mese" value={'\u20AC0'} onClick={() => nav('contabilita')} />
+          <RowItem label="Questa settimana" value={'€0'} onClick={() => nav('contabilita')} />
+          <RowItem label="Questo mese" value={'€0'} onClick={() => nav('contabilita')} />
           <RowItem label="Da approvare" value={0} onClick={() => nav('contabilita')} />
         </>,
         null
@@ -565,7 +565,7 @@ export default function HomePanel({ onNavigate }) {
       <div style={{ padding: '18px 24px 14px', background: DS.white, borderBottom: `1px solid ${DS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: DS.dark }}>{saluto}, {user?.nome || 'FABIO COZZA'}</h1>
-          <p style={{ margin: '2px 0 0', fontSize: 11, color: DS.tealDark }}>{now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} \u2014 trascina i widget per riordinare</p>
+          <p style={{ margin: '2px 0 0', fontSize: 11, color: DS.tealDark }}>{now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} — trascina i widget per riordinare</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button style={btn3dOutline} onMouseDown={press} onMouseUp={release} onClick={() => nav('task')}>{stats.attive} task</button>
@@ -580,8 +580,8 @@ export default function HomePanel({ onNavigate }) {
         {[
           { l: 'Commesse attive', v: stats.attive, c: DS.blue, s: '0 confermate', p: 'commesse' },
           { l: 'Ferme', v: stats.ferme, c: DS.amber, s: 'Soglia 5gg', p: 'commesse' },
-          { l: 'Pipeline', v: `\u20AC${(stats.pipeline/1000).toFixed(stats.pipeline>9999?0:1)}k`, c: DS.green, s: '\u20AC0 confermato', p: 'commesse' },
-          { l: 'Da incassare', v: `\u20AC${stats.daIncassare.toLocaleString('it-IT')}`, c: DS.red, s: '0 scadute', p: 'fatture' },
+          { l: 'Pipeline', v: `€${(stats.pipeline/1000).toFixed(stats.pipeline>9999?0:1)}k`, c: DS.green, s: '€0 confermato', p: 'commesse' },
+          { l: 'Da incassare', v: `€${stats.daIncassare.toLocaleString('it-IT')}`, c: DS.red, s: '0 scadute', p: 'fatture' },
           { l: 'Messaggi', v: stats.nonLetti, c: DS.teal, s: `${messaggi?.length||0} totali`, p: 'messaggi' },
           { l: 'Compiti', v: 3, c: DS.dark, s: '1 urgente', p: 'team' },
         ].map((s, i) => (

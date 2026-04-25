@@ -127,7 +127,7 @@ for (const pat of resetPatterns) {
           const oldHandler = c.substring(absIdx, braceStart + 1);
           const newHandler = oldHandler.replace(
             '{',
-            '{ if(!window.confirm("\\u26A0\\uFE0F ATTENZIONE\\n\\nSei sicuro di voler cancellare TUTTI i dati?\\nQuesta azione non \\u00E8 reversibile.")) return; if(!window.confirm("\\u{1F534} ULTIMA CONFERMA\\n\\nTutti i clienti, commesse, fatture e impostazioni verranno eliminati.\\nConfermi?")) return; localStorage.removeItem("mastro_erp_data");'
+            '{ if(!window.confirm("\\u26A0\\uFE0F ATTENZIONE\\n\\nSei sicuro di voler cancellare TUTTI i dati?\\nQuesta azione non \è reversibile.")) return; if(!window.confirm("\\u{1F534} ULTIMA CONFERMA\\n\\nTutti i clienti, commesse, fatture e impostazioni verranno eliminati.\\nConfermi?")) return; localStorage.removeItem("mastro_erp_data");'
           );
           c = c.substring(0, absIdx) + newHandler + c.substring(absIdx + oldHandler.length);
           resetFixed = true;

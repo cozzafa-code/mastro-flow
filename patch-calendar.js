@@ -56,7 +56,7 @@ const NB = `          calendario: (() => {
             const hours = [7,8,9,10,11,12,13,14,15,16,17,18,19];
             const dayEvs = events.filter(e => e.date === dateStr2(selDate)).sort((a,b) => (a.time||"99").localeCompare(b.time||"99"));
             return (<div style={{ marginBottom:12 }}>
-                <div style={S.section}><div style={S.sectionTitle}>Calendario</div><div onClick={() => { setTab("agenda"); }} style={{ padding:"4px 10px", borderRadius:6, fontSize:10, fontWeight:700, cursor:"pointer", color:T.acc }}>Apri \\u2192</div></div>
+                <div style={S.section}><div style={S.sectionTitle}>Calendario</div><div onClick={() => { setTab("agenda"); }} style={{ padding:"4px 10px", borderRadius:6, fontSize:10, fontWeight:700, cursor:"pointer", color:T.acc }}>Apri \→</div></div>
                 <div style={{ padding:"0 16px" }}>
                   <div style={{ background:T.card, borderRadius:T.r, border:` + '`1px solid ${T.bdr}`' + `, overflow:"hidden" }}
                     onTouchStart={(e) => { calTouchStartRef.current = e.targetTouches[0].clientX; }}
@@ -78,7 +78,7 @@ const NB = `          calendario: (() => {
                                   <div style={{ flex:1, padding:"2px 8px 2px 0" }}>
                                     {hEvs.map(ev => (<div key={ev.id} onClick={() => setSelectedEvent(ev)} style={{ padding:"6px 10px", borderRadius:8, marginBottom:2, background:(ev.color||T.acc)+"15", borderLeft:` + '`3px solid ${ev.color||T.acc}`' + `, cursor:"pointer" }}>
                                         <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{ev.text}</div>
-                                        <div style={{ fontSize:10, color:T.sub }}>{[ev.time, ev.persona, ev.cm, ev.addr].filter(Boolean).join(" \\u00b7 ")}</div>
+                                        <div style={{ fontSize:10, color:T.sub }}>{[ev.time, ev.persona, ev.cm, ev.addr].filter(Boolean).join(" \· ")}</div>
                                       </div>))}
                                   </div></div>); })}
                           </div>)}
@@ -100,7 +100,7 @@ const NB = `          calendario: (() => {
                                 style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 12px", cursor:"pointer", borderBottom:` + '`1px solid ${T.bdr}20`' + ` }}>
                                 <div style={{ width:4, height:24, borderRadius:2, background:ev.color||T.acc, flexShrink:0 }}/>
                                 <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:11, fontWeight:700, color:T.text, overflow:"hidden", whiteSpace:"nowrap", textOverflow:"ellipsis" }}>{ev.text}</div>
-                                  <div style={{ fontSize:10, color:T.sub }}>{wd.toLocaleDateString("it-IT",{weekday:"short",day:"numeric"}).slice(0,6)} {ev.time ? "\\u00b7 "+ev.time : ""}</div></div>
+                                  <div style={{ fontSize:10, color:T.sub }}>{wd.toLocaleDateString("it-IT",{weekday:"short",day:"numeric"}).slice(0,6)} {ev.time ? "\· "+ev.time : ""}</div></div>
                               </div>)); })}
                         </div></div>)}
                     {agendaView === "mese" && (<div>

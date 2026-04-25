@@ -193,7 +193,7 @@ export default function LandingPage() {
                 {p.best && <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: T.orange, color: "#fff", fontSize: 9, fontWeight: 800, padding: "3px 10px", borderRadius: 10, whiteSpace: "nowrap" }}>BEST SELLER</div>}
                 <div style={{ fontSize: 12, fontWeight: 800, color: p.best ? "#fff" : "#8BBCBC", marginBottom: 4, letterSpacing: 0.5 }}>{p.name}</div>
                 <div style={{ fontSize: 30, fontWeight: 900, color: "#fff", fontFamily: "JetBrains Mono,monospace" }}>
-                  {"\u20AC"}{p.price}<span style={{ fontSize: 12, fontWeight: 400 }}>/mese</span>
+                  {"€"}{p.price}<span style={{ fontSize: 12, fontWeight: 400 }}>/mese</span>
                 </div>
                 <div style={{ fontSize: 11, color: p.best ? "rgba(255,255,255,0.7)" : "#8BBCBC", marginBottom: 14 }}>{p.desc}</div>
                 {p.features.map(f => (
@@ -247,7 +247,7 @@ export default function LandingPage() {
           <a href="/termini" style={{ color: "#8BBCBC", fontSize: 11, textDecoration: "none" }}>Termini di Servizio</a>
           <a href="mailto:info@fliwox.com" style={{ color: "#8BBCBC", fontSize: 11, textDecoration: "none" }}>info@fliwox.com</a>
         </div>
-        <p style={{ color: "#4A7070", fontSize: 10 }}>{"\u00A9"} 2026 fliwoX {"\u00B7"} Tutti i diritti riservati {"\u00B7"} P.IVA registrata in Italia</p>
+        <p style={{ color: "#4A7070", fontSize: 10 }}>{"\u00A9"} 2026 fliwoX {"·"} Tutti i diritti riservati {"·"} P.IVA registrata in Italia</p>
       </footer>
 
     </main>

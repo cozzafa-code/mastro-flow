@@ -239,7 +239,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
                 ].map(f => (<div key={f.k} style={{ marginBottom:12 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>{f.l}</div><input autoComplete={f.auto} value={onbData[f.k]} onChange={e => setOnbData({...onbData,[f.k]:e.target.value})} placeholder={f.p} style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg||"#fff", color:T.text, outline:"none", boxSizing:"border-box" }} /></div>))}
                 <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:12 }}>
                   <div onClick={() => tourDone()} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>Salta tutto</div>
-                  <div onClick={() => { if(onbData.aziendaNome.trim()) setOnbStep(2); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.aziendaNome.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                  <div onClick={() => { if(onbData.aziendaNome.trim()) setOnbStep(2); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.aziendaNome.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
 
@@ -256,7 +256,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
                 ].map(f => (<div key={f.k} style={{ marginBottom:12 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>{f.l}</div><input autoComplete={f.auto} value={onbData[f.k]} onChange={e => setOnbData({...onbData,[f.k]:e.target.value})} placeholder={f.p} style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg||"#fff", color:T.text, outline:"none", boxSizing:"border-box" }} /></div>))}
                 <div style={{ display:"flex", justifyContent:"space-between", marginTop:12 }}>
                   <div onClick={() => setOnbStep(1)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>\u2039 Indietro</div>
-                  <div onClick={() => { if(onbData.clienteNome.trim()) setOnbStep(3); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.clienteNome.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                  <div onClick={() => { if(onbData.clienteNome.trim()) setOnbStep(3); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.clienteNome.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
 
@@ -279,7 +279,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between", marginTop:12 }}>
                   <div onClick={() => setOnbStep(2)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>\u2039 Indietro</div>
-                  <div onClick={() => { if(onbData.cmTitolo.trim()) setOnbStep(4); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.cmTitolo.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                  <div onClick={() => { if(onbData.cmTitolo.trim()) setOnbStep(4); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background: onbData.cmTitolo.trim() ? T.acc : "#ccc", borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
 
@@ -297,7 +297,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
                   <div style={{ fontSize:11, fontWeight:700, color:T.sub, marginBottom:8, textTransform:"uppercase" }}>Riepilogo</div>
                   <div style={{ fontSize:12, color:T.text, lineHeight:1.6 }}>
                     <div><b>Azienda:</b> {onbData.aziendaNome}</div>
-                    <div><b>Cliente:</b> {onbData.clienteNome} {onbData.clienteCognome} {onbData.clienteTel && " \u00B7 "+onbData.clienteTel}</div>
+                    <div><b>Cliente:</b> {onbData.clienteNome} {onbData.clienteCognome} {onbData.clienteTel && " · "+onbData.clienteTel}</div>
                     <div><b>Lavoro:</b> {onbData.cmTitolo}</div>
                     {onbData.cmIndirizzo && <div><b>Cantiere:</b> {onbData.cmIndirizzo}</div>}
                   </div>
@@ -319,7 +319,7 @@ const newWizardUI = `{/* === ONBOARDING WIZARD V2 === */}
             <div style={{ fontSize:12, color:T.sub||"#6B6B6B", lineHeight:1.6 }}>{tourStep===1?"La tua dashboard: appuntamenti del giorno, allerte commesse ferme, calendario a colpo d\u2019occhio.":tourStep===2?"Tutti i tuoi impegni in vista giorno, settimana o mese. Swipe per navigare.":tourStep===3?"Ogni commessa è un lavoro: dal sopralluogo alla posa. Qui gestisci tutto.":"Hai creato la tua prima commessa! Vai in Commesse per aggiungere i vani da misurare."}</div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:12 }}>
               <div style={{ fontSize:10, color:T.sub||"#6B6B6B" }}>{tourStep}/4</div>
-              <div onClick={() => { if(tourStep<4) setTourStep(tourStep+1); else tourDone(); }} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc||"#D08008", borderRadius:10, cursor:"pointer" }}>{tourStep<4?"Avanti \u2192":"Inizia! \uD83D\uDE80"}</div>
+              <div onClick={() => { if(tourStep<4) setTourStep(tourStep+1); else tourDone(); }} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc||"#D08008", borderRadius:10, cursor:"pointer" }}>{tourStep<4?"Avanti →":"Inizia! \uD83D\uDE80"}</div>
             </div>
             {tourStep<=3 && <div style={{ position:"absolute", bottom:-8, ...(tourStep===1?{left:24}:tourStep===2?{left:"50%",transform:"translateX(-50%)"}:{right:24}), width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>}
           </div>

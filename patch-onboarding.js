@@ -50,7 +50,7 @@ const ui = `
                 {[{l:"Nome azienda *",k:"aziendaNome",p:"Es: Serramenti Rossi SRL"},{l:"Telefono",k:"aziendaTel",p:"+39 0984..."},{l:"Email",k:"aziendaEmail",p:"info@tuaazienda.it"}].map(f => (<div key={f.k} style={{ marginBottom:14 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>{f.l}</div><input value={onbData[f.k]} onChange={e => setOnbData({...onbData,[f.k]:e.target.value})} placeholder={f.p} style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg, color:T.text, outline:"none", boxSizing:"border-box" }} /></div>))}
                 <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:8 }}>
                   <div onClick={() => tourDone()} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>Salta tutto</div>
-                  <div onClick={() => { if(onbData.aziendaNome.trim()){setAziendaInfo(prev=>({...prev,ragione:onbData.aziendaNome,telefono:onbData.aziendaTel,email:onbData.aziendaEmail}));setOnbStep(2);} }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                  <div onClick={() => { if(onbData.aziendaNome.trim()){setAziendaInfo(prev=>({...prev,ragione:onbData.aziendaNome,telefono:onbData.aziendaTel,email:onbData.aziendaEmail}));setOnbStep(2);} }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
               {onbStep === 2 && (<div>
@@ -59,7 +59,7 @@ const ui = `
                 {[{l:"Nome e cognome *",k:"clienteNome",p:"Es: Mario Rossi"},{l:"Telefono",k:"clienteTel",p:"333 1234567"},{l:"Indirizzo",k:"clienteIndirizzo",p:"Via Roma 1, Cosenza"}].map(f => (<div key={f.k} style={{ marginBottom:14 }}><div style={{ fontSize:11, fontWeight:600, color:T.sub, marginBottom:4 }}>{f.l}</div><input value={onbData[f.k]} onChange={e => setOnbData({...onbData,[f.k]:e.target.value})} placeholder={f.p} style={{ width:"100%", padding:"10px 14px", fontSize:14, border:"1.5px solid "+(T.bdr||"#E5E3DE"), borderRadius:10, background:T.bg, color:T.text, outline:"none", boxSizing:"border-box" }} /></div>))}
                 <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
                   <div onClick={() => setOnbStep(1)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>\u2039 Indietro</div>
-                  <div onClick={() => { if(onbData.clienteNome.trim()) setOnbStep(3); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                  <div onClick={() => { if(onbData.clienteNome.trim()) setOnbStep(3); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
               {onbStep === 3 && (<div>
@@ -77,7 +77,7 @@ const ui = `
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
                   <div onClick={() => setOnbStep(2)} style={{ padding:"10px 16px", fontSize:12, fontWeight:600, color:T.sub, cursor:"pointer" }}>\u2039 Indietro</div>
-                  <div onClick={() => { if(onbData.cmTitolo.trim()) setOnbStep(4); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                  <div onClick={() => { if(onbData.cmTitolo.trim()) setOnbStep(4); }} style={{ padding:"10px 24px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
                 </div>
               </div>)}
               {onbStep === 4 && (<div>
@@ -105,7 +105,7 @@ const ui = `
             <div style={{ fontSize:12, color:T.sub||"#6B6B6B", lineHeight:1.5 }}>{tourStep===1?"Qui trovi il riepilogo della giornata: appuntamenti, allerte e calendario.":tourStep===2?"L\u2019agenda mostra tutti gli impegni. Puoi vedere giorno, settimana o mese.":tourStep===3?"Le commesse sono il cuore di MASTRO. Qui gestisci ogni lavoro dalla richiesta alla posa.":"Hai configurato tutto! Ora esplora MASTRO liberamente."}</div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:12 }}>
               <div style={{ fontSize:10, color:T.sub||"#6B6B6B" }}>{tourStep}/4</div>
-              <div onClick={() => { if(tourStep<4) setTourStep(tourStep+1); else tourDone(); }} style={{ padding:"6px 16px", fontSize:12, fontWeight:700, color:"#fff", background:T.acc||"#D08008", borderRadius:8, cursor:"pointer" }}>{tourStep<4?"Avanti \u2192":"Inizia! \uD83D\uDE80"}</div>
+              <div onClick={() => { if(tourStep<4) setTourStep(tourStep+1); else tourDone(); }} style={{ padding:"6px 16px", fontSize:12, fontWeight:700, color:"#fff", background:T.acc||"#D08008", borderRadius:8, cursor:"pointer" }}>{tourStep<4?"Avanti →":"Inizia! \uD83D\uDE80"}</div>
             </div>
             {tourStep<=3 && <div style={{ position:"absolute", bottom:-8, ...(tourStep===1?{left:24}:tourStep===2?{left:"50%",transform:"translateX(-50%)"}:{right:24}), width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>}
           </div>

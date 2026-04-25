@@ -396,16 +396,16 @@ export default function CMDetailPanel() {
     })();
     const tEdifStructV70 = (() => {
       switch (tEdifV70) {
-        case "palazzo": return "Scala \u00b7 Piano \u00b7 Interno";
-        case "condominio": return "Piano \u00b7 Interno";
-        case "scuola": return "Edificio/Plesso \u00b7 Piano \u00b7 Aula";
-        case "ospedale": return "Padiglione \u00b7 Piano \u00b7 Reparto";
-        case "ufficio": return "Edificio \u00b7 Piano \u00b7 Ufficio";
-        case "hotel": return "Edificio \u00b7 Piano \u00b7 Camera";
-        case "centro_comm": return "Livello \u00b7 Negozio";
-        case "industriale": return "Corpo \u00b7 Settore";
-        case "personalizzato": return [cV70.livello1Label || "Livello 1", cV70.livello2Label || "Livello 2", cV70.livello3Label || "Livello 3"].join(" \u00b7 ");
-        default: return "Zona \u00b7 Piano \u00b7 Locale";
+        case "palazzo": return "Scala · Piano · Interno";
+        case "condominio": return "Piano · Interno";
+        case "scuola": return "Edificio/Plesso · Piano · Aula";
+        case "ospedale": return "Padiglione · Piano · Reparto";
+        case "ufficio": return "Edificio · Piano · Ufficio";
+        case "hotel": return "Edificio · Piano · Camera";
+        case "centro_comm": return "Livello · Negozio";
+        case "industriale": return "Corpo · Settore";
+        case "personalizzato": return [cV70.livello1Label || "Livello 1", cV70.livello2Label || "Livello 2", cV70.livello3Label || "Livello 3"].join(" · ");
+        default: return "Zona · Piano · Locale";
       }
     })();
 
@@ -422,7 +422,7 @@ export default function CMDetailPanel() {
       : vaniV70.length === 0
         ? "Compila 8 misure per ogni vano. Inizia dal primo."
         : vaniCompletiV70 < vaniV70.length
-          ? `${vaniCompletiV70}/${vaniV70.length} vani completi \u00b7 continua`
+          ? `${vaniCompletiV70}/${vaniV70.length} vani completi · continua`
           : "Passa al preventivo!";
     const btnV70 = rListV70.length === 0
       ? "CREA RILIEVO"
@@ -500,7 +500,7 @@ export default function CMDetailPanel() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.92, letterSpacing: "1px", textTransform: "uppercase" as any }}>
-                {cV70.code || "Commessa"}{rCurV70 ? ` \u00b7 RILIEVO MISURE R${rCurV70.n || 1}` : ""}
+                {cV70.code || "Commessa"}{rCurV70 ? ` · RILIEVO MISURE R${rCurV70.n || 1}` : ""}
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.6px", textShadow: "0 2px 5px rgba(0,0,0,0.18)", marginTop: 2, lineHeight: 1.05 }}>
                 {(cV70.cliente || "CLIENTE").toUpperCase()}
@@ -605,7 +605,7 @@ export default function CMDetailPanel() {
             }}>
               <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
                 <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length || "\u2014"}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length || "—"}</div>
                 <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{vaniV70.length === 0 ? "da creare" : (vaniCompletiV70 === vaniV70.length ? "tutti OK" : "in corso")}</div>
               </div>
               <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
@@ -761,7 +761,7 @@ export default function CMDetailPanel() {
               </div>
               <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
                 <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Stima lavoro</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "\u2014"}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "—"}</div>
                 <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{stimaLavoroV73 > 0 ? "da verificare" : "non calcolata"}</div>
               </div>
             </div>
@@ -853,7 +853,7 @@ export default function CMDetailPanel() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.2px" }}>{cV70.cliente || "Cliente"}</div>
                     <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>
-                      {[cV70.telefono, cV70.email].filter(Boolean).join(" \u00b7 ") || "Nessun contatto"}
+                      {[cV70.telefono, cV70.email].filter(Boolean).join(" · ") || "Nessun contatto"}
                     </div>
                     {cV70.indirizzo && <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>{cV70.indirizzo}</div>}
                   </div>
@@ -933,7 +933,7 @@ export default function CMDetailPanel() {
                       <textarea
                         value={diarioTestoV74}
                         onChange={(e) => setDiarioTestoV74(e.target.value)}
-                        placeholder="Cosa \u00e8 successo? Es. Ho chiamato per spiegare il preventivo, resta in attesa della firma..."
+                        placeholder="Cosa è successo? Es. Ho chiamato per spiegare il preventivo, resta in attesa della firma..."
                         style={{
                           width: "100%", minHeight: 70, padding: 10,
                           borderRadius: 10, border: "1px solid rgba(200,228,228,0.6)",
@@ -1224,7 +1224,7 @@ tr:nth-child(even){background:#F4F6F5;}
 <h2>Vani e misure</h2>
 ${vaniRows ? `<table><thead><tr><th>Rilievo</th><th>Vano</th><th>Stanza</th><th>Sistema</th><th>Colori</th><th>Telaio</th><th>Vetro</th><th>Misure</th><th>Pz</th></tr></thead><tbody>${vaniRows}</tbody></table>` : "<p><em>Nessun vano rilevato.</em></p>"}
 ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
-<p style="margin-top:40px;color:#8FA8A8;font-size:11px;">Generato da MASTRO Suite \u00b7 ${new Date().toISOString()}</p>
+<p style="margin-top:40px;color:#8FA8A8;font-size:11px;">Generato da MASTRO Suite · ${new Date().toISOString()}</p>
 </body></html>`;
                   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
                   const url = URL.createObjectURL(blob);
@@ -1306,7 +1306,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Cronologia</div>
                 <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>
-                  {logV70.length > 0 ? `${logV70.length} eventi \u00b7 ultima ${logV70[logV70.length - 1]?.quando || "Adesso"}` : "1 evento \u00b7 ultima Adesso"}
+                  {logV70.length > 0 ? `${logV70.length} eventi · ultima ${logV70[logV70.length - 1]?.quando || "Adesso"}` : "1 evento · ultima Adesso"}
                 </div>
               </div>
               <div style={{
@@ -1350,7 +1350,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     </div>
                     <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
                       <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
-                        <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> \u00b7 {ev.cosa || ev.tipo || "evento"}
+                        <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
                       </div>
                       <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
                     </div>
@@ -1370,7 +1370,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div>
                 <div style={{ fontSize: 18, fontWeight: 900, color: "#0D1F1F" }}>Nuovo rilievo</div>
-                <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Commessa {selectedCM.code} \u00b7 {selectedCM.cliente}</div>
+                <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Commessa {selectedCM.code} · {selectedCM.cliente}</div>
               </div>
               <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>\u2715</div>
             </div>
@@ -1450,7 +1450,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 setShowNuovoRilievoModal(false);
                 setCmSubTab("sopralluoghi");
               }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                Crea rilievo \u00b7 Aggiungi vani
+                Crea rilievo · Aggiungi vani
               </button>
             </div>
           </div>
@@ -1480,7 +1480,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div>
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nuovo vano \u00b7 posizione</div>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nuovo vano · posizione</div>
                   <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Indica dove si trova dentro lo stabile</div>
                 </div>
                 <div onClick={() => setShowAggiungiVanoModal(false)} style={{ width: 30, height: 30, borderRadius: 15, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>\u2715</div>
@@ -1511,8 +1511,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <button onClick={() => setShowAggiungiVanoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
                 <button disabled={!canCreateMV} onClick={() => {
                   if (!selectedCM || !selectedRilievo) return;
-                  const posStr = [nvL1, nvL2, nvL3].filter(Boolean).join(" \u00b7 ");
-                  const baseNome = [posStr, nvStanza].filter(Boolean).join(" \u00b7 ");
+                  const posStr = [nvL1, nvL2, nvL3].filter(Boolean).join(" · ");
+                  const baseNome = [posStr, nvStanza].filter(Boolean).join(" · ");
                   const v = {
                     id: Date.now(),
                     nome: baseNome || `Vano ${(selectedRilievo.vani?.length||0)+1}`,
@@ -1913,8 +1913,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               const base = [
                 { id: "fatt", name: "Fattura parlante", sub: "Descrizione chiara + riferimento normativo", obblig: true },
                 { id: "bon", name: "Ricevuta bonifico parlante", sub: "Causale con CF beneficiario + P.IVA fornitore", obblig: true },
-                { id: "sched", name: "Scheda tecnica infissi", sub: "Uw, marcatura CE, vetro \u00b7 dal produttore", obblig: true },
-                { id: "ce", name: "Dichiarazione conformit\u00e0 CE", sub: "Prodotto serramenti \u00b7 dal produttore", obblig: false },
+                { id: "sched", name: "Scheda tecnica infissi", sub: "Uw, marcatura CE, vetro · dal produttore", obblig: true },
+                { id: "ce", name: "Dichiarazione conformit\u00e0 CE", sub: "Prodotto serramenti · dal produttore", obblig: false },
                 { id: "cat", name: "Dati catastali immobile", sub: "Foglio, particella, subalterno", obblig: false },
                 { id: "cf", name: "Codice fiscale cliente", sub: "Copia tessera o documento identit\u00e0", obblig: true },
                 { id: "foto_pre", name: "Foto PRIMA della sostituzione", sub: "Prova stato vecchi infissi", obblig: false, consigl: true },
@@ -1924,7 +1924,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 // Ecobonus aggiunge
                 base.push({ id: "ape_ante", name: "APE ante operam", sub: "Attestato prestazione energetica pre-lavori", obblig: false, consigl: true } as any);
                 base.push({ id: "ape_post", name: "APE post operam", sub: "Attestato prestazione energetica post-lavori", obblig: false, consigl: true } as any);
-                base.push({ id: "ass", name: "Asseverazione tecnico", sub: "Firmata e timbrata \u00b7 obbligatoria per Ecobonus", obblig: true } as any);
+                base.push({ id: "ass", name: "Asseverazione tecnico", sub: "Firmata e timbrata · obbligatoria per Ecobonus", obblig: true } as any);
               }
               if (bonusV77 === "75") {
                 base.push({ id: "rel", name: "Relazione tecnica asseverata", sub: "Conformit\u00e0 norme abbattimento barriere", obblig: true } as any);
@@ -1978,7 +1978,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 color: "green",
                 nome: "Riepilogo detrazione recuperabile",
                 sub: "Quanto risparmia il cliente",
-                msg: `Ciao ${c.cliente || ""}, riepilogo economico del preventivo:\n\nTotale: \u20ac ${fmtV77(pwTotale)} IVA incl.\n${bonusLblV77[bonusV77]} recuperabile: \u20ac ${fmtV77(recuperoV77)} in 10 anni (\u20ac ${fmtV77(perAnnoV77)}/anno)\nCosto reale per te: \u20ac ${fmtV77(costoRealeV77)}\n\nResto a disposizione per qualsiasi chiarimento.`,
+                msg: `Ciao ${c.cliente || ""}, riepilogo economico del preventivo:\n\nTotale: € ${fmtV77(pwTotale)} IVA incl.\n${bonusLblV77[bonusV77]} recuperabile: € ${fmtV77(recuperoV77)} in 10 anni (€ ${fmtV77(perAnnoV77)}/anno)\nCosto reale per te: € ${fmtV77(costoRealeV77)}\n\nResto a disposizione per qualsiasi chiarimento.`,
               },
               {
                 id: "promemoria",
@@ -2032,12 +2032,12 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
 
                 <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>L'immobile \u00e8 abitazione principale del cliente?</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>L'immobile è abitazione principale del cliente?</div>
                   <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Decide l'aliquota: 50% (prima casa) o 36% (seconda/affitto/azienda)</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {[
-                      { k: "prima", big: "Prima casa", sub: "Residenza del cliente \u00b7 detrazione 50%" },
-                      { k: "seconda", big: "Seconda casa", sub: "Affitto, villeggiatura, aziendale \u00b7 36%" },
+                      { k: "prima", big: "Prima casa", sub: "Residenza del cliente · detrazione 50%" },
+                      { k: "seconda", big: "Seconda casa", sub: "Affitto, villeggiatura, aziendale · 36%" },
                     ].map((o: any) => {
                       const on = destV77 === o.k;
                       return (
@@ -2074,10 +2074,10 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Ogni bonus ha documenti diversi. Ti guido io, passo-passo.</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                     {[
-                      { k: "50", icoBg: "linear-gradient(145deg, #5DCAA5, #1D9E75)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(29,158,117,0.14)", percCol: "#04342C", desc: "Ristrutturazione edilizia \u00b7 art. 16-bis DPR 917/86 \u00b7 scelta pi\u00f9 comune, pi\u00f9 semplice", stats: "MAX \u20ac 96.000 \u00b7 10 ANNI \u00b7 NO LIMITI Uw" },
-                      { k: "65", icoBg: "linear-gradient(145deg, #FAC775, #EF9F27)", nome: "Ecobonus", perc: "50%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Risparmio energetico \u00b7 L. 296/2006 \u00b7 richiede Uw compatibile + ENEA obbligatoria", stats: "DETRAZIONE MAX \u20ac 60.000 \u00b7 ENEA S\u00cc" },
-                      { k: "75", icoBg: "linear-gradient(145deg, #AFA9EC, #7F77DD)", nome: "Barriere architettoniche", perc: "75%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Art. 119-ter DL 34/2020 \u00b7 richiede relazione tecnica asseverata", stats: "SOLO CONDOMINI 2026" },
-                      { k: "nessuna", icoBg: "linear-gradient(145deg, #B8C5C5, #7A9090)", nome: "Nessuna detrazione", perc: "0%", percBg: "rgba(122,144,144,0.14)", percCol: "#3C4F4F", desc: "Cliente non vuole o non pu\u00f2 \u00b7 bonifico ordinario, nessuna pratica", stats: "" },
+                      { k: "50", icoBg: "linear-gradient(145deg, #5DCAA5, #1D9E75)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(29,158,117,0.14)", percCol: "#04342C", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta pi\u00f9 comune, pi\u00f9 semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
+                      { k: "65", icoBg: "linear-gradient(145deg, #FAC775, #EF9F27)", nome: "Ecobonus", perc: "50%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Risparmio energetico · L. 296/2006 · richiede Uw compatibile + ENEA obbligatoria", stats: "DETRAZIONE MAX € 60.000 · ENEA S\u00cc" },
+                      { k: "75", icoBg: "linear-gradient(145deg, #AFA9EC, #7F77DD)", nome: "Barriere architettoniche", perc: "75%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Art. 119-ter DL 34/2020 · richiede relazione tecnica asseverata", stats: "SOLO CONDOMINI 2026" },
+                      { k: "nessuna", icoBg: "linear-gradient(145deg, #B8C5C5, #7A9090)", nome: "Nessuna detrazione", perc: "0%", percBg: "rgba(122,144,144,0.14)", percCol: "#3C4F4F", desc: "Cliente non vuole o non pu\u00f2 · bonifico ordinario, nessuna pratica", stats: "" },
                     ].map((b: any) => {
                       const on = bonusV77 === b.k;
                       return (
@@ -2123,8 +2123,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     </div>
                     <div style={{ flex: 1, position: "relative" }}>
                       <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "1px", textTransform: "uppercase" as any, color: "#854F0B", opacity: 0.85 }}>IL CLIENTE RECUPERA IN 10 ANNI</div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: "#854F0B", letterSpacing: "-0.5px", lineHeight: 1.1, marginTop: 2 }}>\u20ac {fmtV77(recuperoV77)}</div>
-                      <div style={{ fontSize: 10, color: "#6A4810", fontWeight: 700, marginTop: 3, lineHeight: 1.35 }}>{aliquotaV77}% di \u20ac {fmtV77(subtotV77)} imponibile \u00b7 \u20ac {fmtV77(perAnnoV77)}/anno per 10 anni</div>
+                      <div style={{ fontSize: 20, fontWeight: 900, color: "#854F0B", letterSpacing: "-0.5px", lineHeight: 1.1, marginTop: 2 }}>€ {fmtV77(recuperoV77)}</div>
+                      <div style={{ fontSize: 10, color: "#6A4810", fontWeight: 700, marginTop: 3, lineHeight: 1.35 }}>{aliquotaV77}% di € {fmtV77(subtotV77)} imponibile · € {fmtV77(perAnnoV77)}/anno per 10 anni</div>
                     </div>
                   </div>
                 )}
@@ -2146,7 +2146,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Trasmittanza Uw</div>
-                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>Richiesta per Ecobonus \u00b7 DM 6 agosto 2020</div>
+                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>Richiesta per Ecobonus · DM 6 agosto 2020</div>
                         </div>
                       </div>
                       <div style={{ fontSize: 9.5, fontWeight: 800, color: "#4A6E6E", letterSpacing: "0.6px", marginBottom: 5 }}>ZONA CLIMATICA</div>
@@ -2173,8 +2173,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
                         </div>
                         <div style={{ flex: 1, fontSize: 10.5, color: uwOk ? "#04342C" : "#8B1A1A", fontWeight: 800, lineHeight: 1.4 }}>
-                          <strong>{pwVani[0]?.sistema || "Sistema"} \u00b7 Uw {uwProd.toFixed(1)}</strong><br/>
-                          Richiesto \u2264 {uwLimit[fiscZonaV77].toFixed(2)} per Zona {uwZonaLbl[fiscZonaV77]} \u00b7 {uwOk ? "ampiamente conforme" : "NON CONFORME"}
+                          <strong>{pwVani[0]?.sistema || "Sistema"} · Uw {uwProd.toFixed(1)}</strong><br/>
+                          Richiesto \u2264 {uwLimit[fiscZonaV77].toFixed(2)} per Zona {uwZonaLbl[fiscZonaV77]} · {uwOk ? "ampiamente conforme" : "NON CONFORME"}
                         </div>
                       </div>
                     </div>
@@ -2199,7 +2199,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       <div style={{ fontSize: 10, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni \u00b7 L'Agenzia delle Entrate pu\u00f2 chiederli fino al {new Date().getFullYear() + 10}</div>
+                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate pu\u00f2 chiederli fino al {new Date().getFullYear() + 10}</div>
 
                   {checklistV77.map((d: any) => {
                     const isDone = !!checkSaved[d.id];
@@ -2262,7 +2262,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   </div>
 
                   <div style={{ background: "linear-gradient(155deg, #F7FAF9 0%, #EAF2F0 100%)", borderRadius: 16, padding: 14, border: "1px solid rgba(200,228,228,0.5)" }}>
-                    <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 800, lineHeight: 1.4 }}>Questa \u00e8 la causale che il cliente deve copiare <strong>ESATTAMENTE</strong> nel bonifico, altrimenti rischia di perdere la detrazione.</div>
+                    <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 800, lineHeight: 1.4 }}>Questa è la causale che il cliente deve copiare <strong>ESATTAMENTE</strong> nel bonifico, altrimenti rischia di perdere la detrazione.</div>
                     <div style={{ background: "#0F2525", color: "#AEE9E9", padding: "12px 14px", borderRadius: 11, fontFamily: "SF Mono, Monaco, Consolas, monospace", fontSize: 10.5, lineHeight: 1.55, marginTop: 10, fontWeight: 500, letterSpacing: "0.1px" }}>{causaleV77}</div>
                     <button onClick={() => {
                       navigator.clipboard?.writeText(causaleV77).then(() => {
@@ -2333,12 +2333,12 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       {bonusV77 === "65" ? "OBBLIGATORIA ENTRO 90 GG" : "NON OBBLIGATORIA PER " + bonusLblV77[bonusV77].toUpperCase()}
                     </div>
                     <div style={{ fontSize: 18, fontWeight: 900, marginTop: 10, letterSpacing: "-0.4px", lineHeight: 1.15, position: "relative", textShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>
-                      {bonusV77 === "65" ? "ENEA \u00e8 obbligatoria" : "ENEA qui \u00e8 consigliata, non dovuta"}
+                      {bonusV77 === "65" ? "ENEA è obbligatoria" : "ENEA qui è consigliata, non dovuta"}
                     </div>
                     <div style={{ fontSize: 11.5, opacity: 0.9, marginTop: 6, fontWeight: 500, lineHeight: 1.4, position: "relative" }}>
                       {bonusV77 === "65"
                         ? "Per Ecobonus va inviata entro 90 giorni dalla fine lavori, pena decadenza della detrazione."
-                        : `Hai scelto ${bonusLblV77[bonusV77]}. Prepariamo comunque la scheda: se cambi idea, \u00e8 pronta.`}
+                        : `Hai scelto ${bonusLblV77[bonusV77]}. Prepariamo comunque la scheda: se cambi idea, è pronta.`}
                     </div>
                     <button style={{ marginTop: 14, width: "100%", padding: 14, background: "#fff", color: "#0F5555", border: "none", borderRadius: 14, fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, letterSpacing: "0.3px", boxShadow: "0 6px 14px rgba(0,0,0,0.2), inset 0 -2px 0 rgba(15,85,85,0.08)", position: "relative" }}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F5555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -2357,13 +2357,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <div style={{ background: "linear-gradient(155deg, #8FE5C5 0%, #1D9E75 55%, #0F7A58 100%)", borderRadius: 24, padding: 18, color: "#fff", boxShadow: "0 18px 40px rgba(15,122,88,0.35)", position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" as any }} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 11, position: "relative" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 700 }}><span>Imponibile</span> <span>\u20ac {fmtV77(subtotV77)}</span></div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, opacity: 0.75 }}><span>+ IVA {pwIvaDefault}%</span> <span>\u20ac {fmtV77(pwIvaCalc)}</span></div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 700 }}><span>Imponibile</span> <span>€ {fmtV77(subtotV77)}</span></div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, opacity: 0.75 }}><span>+ IVA {pwIvaDefault}%</span> <span>€ {fmtV77(pwIvaCalc)}</span></div>
                     <div style={{ height: 1, background: "rgba(255,255,255,0.22)", margin: "4px 0" }} />
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", position: "relative", paddingTop: 4 }}>
                     <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: "0.5px", textTransform: "uppercase" as any, opacity: 0.92 }}>Totale IVA incl.</div>
-                    <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.9px", textShadow: "0 2px 6px rgba(0,0,0,0.18)" }}>\u20ac {fmtV77(pwTotale)}</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.9px", textShadow: "0 2px 6px rgba(0,0,0,0.18)" }}>€ {fmtV77(pwTotale)}</div>
                   </div>
                   {bonusV77 !== "nessuna" && recuperoV77 > 0 && (
                     <div style={{ marginTop: 11, padding: "11px 13px", background: "rgba(255,255,255,0.2)", borderRadius: 13, position: "relative", display: "flex", gap: 10, alignItems: "center" }}>
@@ -2372,7 +2372,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       </div>
                       <div>
                         <div style={{ fontSize: 9.5, fontWeight: 900, opacity: 0.88, letterSpacing: "0.3px", textTransform: "uppercase" as any }}>Costo reale per il cliente</div>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.9, marginTop: 2, lineHeight: 1.3 }}><strong style={{ fontWeight: 900, fontSize: 14.5 }}>\u20ac {fmtV77(costoRealeV77)}</strong> dopo bonus {aliquotaV77}% in 10 anni</div>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.9, marginTop: 2, lineHeight: 1.3 }}><strong style={{ fontWeight: 900, fontSize: 14.5 }}>€ {fmtV77(costoRealeV77)}</strong> dopo bonus {aliquotaV77}% in 10 anni</div>
                       </div>
                     </div>
                   )}
@@ -2384,7 +2384,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     Indietro
                   </button>
                   <button onClick={() => setPrevTab("condizioni")} style={{ flex: 1, padding: 14, borderRadius: 12, background: "linear-gradient(145deg, #1D9E75, #0F7A58)", color: "#fff", border: "none", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 14px rgba(15,122,88,0.3), inset 0 -2px 0 rgba(0,0,0,0.08)", letterSpacing: "0.3px" }}>
-                    Prossimo: Condizioni \u2192
+                    Prossimo: Condizioni →
                   </button>
                 </div>
 

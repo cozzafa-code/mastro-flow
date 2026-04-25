@@ -73,7 +73,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
                   </div>
                 ))}
               </div>
-              <div onClick={nextTuto} style={{ padding:"14px 32px", fontSize:15, fontWeight:800, color:"#fff", background:T.acc, borderRadius:14, cursor:"pointer", display:"inline-block" }}>Inizia il tour \u2192</div>
+              <div onClick={nextTuto} style={{ padding:"14px 32px", fontSize:15, fontWeight:800, color:"#fff", background:T.acc, borderRadius:14, cursor:"pointer", display:"inline-block" }}>Inizia il tour →</div>
               <div onClick={closeTuto} style={{ fontSize:11, color:"#8E8E93", marginTop:12, cursor:"pointer" }}>Salta, conosco già</div>
             </div>)}
 
@@ -87,7 +87,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Appena apri MASTRO vedi la <b>dashboard</b>: gli appuntamenti di oggi in alto, le <b>allerte</b> sulle commesse ferme, e il <b>calendario</b> del mese. Tocca qualsiasi elemento per aprirlo.</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div onClick={closeTuto} style={{ fontSize:11, color:"#8E8E93", cursor:"pointer" }}>Chiudi tour</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, left:24, width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
             </div>)}
@@ -102,7 +102,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Qui vedi <b>tutti gli impegni</b>: sopralluoghi, pose, consegne. Puoi vedere il <b>giorno singolo</b>, la <b>settimana</b> o il <b>mese</b>. Tocca il + per aggiungere un appuntamento. Ogni evento può essere collegato a una commessa.</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, left:"38%", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
             </div>)}
@@ -123,7 +123,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Dentro ogni commessa gestisci <b>vani</b> (finestre, porte), <b>misure</b>, <b>rilievi</b> e generi il <b>preventivo PDF</b>. Tocca + per creare la tua prima commessa!</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
             </div>)}
@@ -138,7 +138,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Tutte le comunicazioni: <b>WhatsApp, email, SMS, Telegram</b>. L\u2019AI Inbox analizza le email in arrivo e suggerisce azioni automatiche: creare commesse, collegare messaggi, avanzare fasi.</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, right:"35%", width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
             </div>)}
@@ -153,7 +153,7 @@ const tutorialUI = `{/* === TUTORIAL INTERATTIVO === */}
               <div style={{ fontSize:12, color:"#6B6B6B", lineHeight:1.6, marginBottom:12 }}>Configura la tua azienda: <b>ragione sociale, logo, listini prezzi, sistemi</b> (Sch\u00FCco, Rehau, Finstral...), <b>colori RAL</b>, vetri, coprifili, lamiere. Tutto quello che ti serve per fare preventivi precisi.</div>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div onClick={() => setTutoStep(tutoStep-1)} style={{ fontSize:12, color:"#8E8E93", cursor:"pointer" }}>\u2039 Indietro</div>
-                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti \u2192</div>
+                <div onClick={nextTuto} style={{ padding:"8px 20px", fontSize:13, fontWeight:700, color:"#fff", background:T.acc, borderRadius:10, cursor:"pointer" }}>Avanti →</div>
               </div>
               <div style={{ position:"absolute", bottom:-8, right:24, width:0, height:0, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderTop:"8px solid #fff" }}/>
             </div>)}

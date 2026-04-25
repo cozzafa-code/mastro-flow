@@ -44,7 +44,7 @@ const TIPO_CONT=['danno','articolo_errato','colore_errato','qta_errata','ritardo
 const CONF_FORN=[{id:'totale',l:'Conferma totale'},{id:'parziale',l:'Parziale'},{id:'nuova_data',l:'Nuova data'},{id:'indisponibile',l:'Indisponibile'},{id:'sostituzione',l:'Sostituzione'},{id:'variazione_prezzo',l:'Variazione prezzo'}];
 const SIF=['Fabbisogno','Sourcing','Ordinato','Confermato','Spedito','Ricevuto','Controllato','Utilizzato'];
 function fD(d){if(!d)return'-';try{return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})}catch{return d}}
-function fE(n){return'\u20AC'+(n||0).toFixed(2).replace('.',',')}
+function fE(n){return'€'+(n||0).toFixed(2).replace('.',',')}
 function ggR(dc){if(!dc)return 0;return Math.floor((Date.now()-new Date(dc).getTime())/864e5)}
 function stC(id,arr){return arr.find(s=>s.id===id)||arr[0]}
 function sifIdx(s){return({pending:1,da_confermare:2,confermata:3,modificata:3,in_produzione:3,spedita:4,ricevuta:5,contestata:5,chiusa:7})[s]||2}
