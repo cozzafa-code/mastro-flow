@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import DraggableFAB from "@/components/DraggableFAB";
 import NewEventModal from "@/components/NewEventModal";
 import GestureNav from "@/components/GestureNav";
@@ -46,6 +46,7 @@ import CMDetailPanel from "./CMDetailPanel";
 import ModalPanel from "./ModalPanel";
 import RiepilogoPanel from "./RiepilogoPanel";
 import AgendaPanel from "./AgendaPanel";
+import AgendaCalendarioPanel from "@/components/agenda/AgendaCalendarioPanel";
 import MessaggiPanel from "./MessaggiPanel";
 import AssistentePanel from "./AssistentePanel";
 import ContabilitaPanel from "./ContabilitaPanel";
@@ -2479,7 +2480,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     );
   };
 
-  const renderAgenda = () => <AgendaPanel />;
+  const renderAgenda = () => <AgendaCalendarioPanel />;
 
 // =======================================================
 // MASTRO ERP v2 - PARTE 4/5
