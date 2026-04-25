@@ -454,6 +454,12 @@ export default function MessaggiPanel() {
                   <button disabled={!gmailReply.trim() || gmailSending} onClick={() => {
                     const to = gmailSelected.from?.match(/<(.+)>/)?.[1] || gmailSelected.from;
                     gmailSendReply(to, gmailSelected.subject, gmailReply, gmailSelected.threadId);
+                    (async () => {
+                      try {
+                        const { Day } = await import("@/lib/day-logger");
+                        await Day.mailInviata({ destinatario: to, oggetto: gmailSelected?.subject || undefined });
+                      } catch (e) { console.warn("[MessaggiPanel] logEvento Day fallito", e); }
+                    })();
                   }} style={{ flex: 1, padding: 12, borderRadius: 10, border: "none", background: gmailReply.trim() ? "#007aff" : L.border, color: "#fff", fontSize: 13, fontWeight: 700, cursor: gmailReply.trim() ? "pointer" : "default", fontFamily: "inherit", opacity: gmailSending ? 0.6 : 1 }}>
                     {gmailSending ? "Invio..." : "Invia risposta"}
                   </button>
