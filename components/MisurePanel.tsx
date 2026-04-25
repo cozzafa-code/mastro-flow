@@ -184,25 +184,24 @@ export default function MisurePanel({ vanoId, onComplete }: MisurePanelProps) {
         updated_at: new Date().toISOString(),
       }).eq('id', vanoId);
 
-      if (statoGlobale === 'completato') {
-        try {
-          const { data: vanoInfo } = await supabase
-            .from('vani')
-            .select('commessa_id, commesse(code, nome_cliente)')
-            .eq('id', vanoId)
-            .maybeSingle();
-          const cm: any = vanoInfo?.commesse;
-          await logEvento({
-            tipo: 'misure_salvate',
-            modulo_origine: 'misure',
-            cm_id: vanoInfo?.commessa_id ?? null,
-            titolo_breve: 'Misure vano completate',
-            contesto: cm ? `${cm.code ?? ''} · ${cm.nome_cliente ?? ''}`.trim() : null,
-            payload: { vano_id: vanoId },
-          });
-        } catch (logErr) {
-          console.warn('[MisurePanel] logEvento Day fallito', logErr);
-        }
+      try {
+        const { data: vanoInfo } = await supabase
+          .from('vani')
+          .select('commessa_id, commesse(code, nome_cliente)')
+          .eq('id', vanoId)
+          .maybeSingle();
+        const cm: any = vanoInfo?.commesse;
+        const isComplete = statoGlobale === 'completato';
+        await logEvento({
+          tipo: 'misure_salvate',
+          modulo_origine: 'misure',
+          cm_id: vanoInfo?.commessa_id ?? null,
+          titolo_breve: isComplete ? 'Misure vano completate' : `Misure salvate · ${percCompilazione}%`,
+          contesto: cm ? `${cm.code ?? ''} · ${cm.nome_cliente ?? ''}`.trim() : null,
+          payload: { vano_id: vanoId, completate: isComplete, perc: percCompilazione },
+        });
+      } catch (logErr) {
+        console.warn('[MisurePanel] logEvento Day fallito', logErr);
       }
       if (statoGlobale === 'completato') onComplete?.();
     } finally {
