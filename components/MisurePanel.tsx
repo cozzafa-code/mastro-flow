@@ -4,6 +4,7 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useDay } from "@/hooks/useDay";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
@@ -89,6 +90,7 @@ interface MisurePanelProps {
 }
 
 export default function MisurePanel({ vanoId, onComplete }: MisurePanelProps) {
+  const { logEvento } = useDay();
   const [valori, setValori] = useState<Record<string, number | undefined>>({});
   const [saving, setSaving] = useState(false);
   const [espanso, setEspanso] = useState<Record<string, boolean>>({ 'Vano murario': true, 'Serramento': true });
@@ -181,6 +183,27 @@ export default function MisurePanel({ vanoId, onComplete }: MisurePanelProps) {
         misure_complete: statoGlobale === 'completato' ? { completato: true, data: new Date().toISOString() } : null,
         updated_at: new Date().toISOString(),
       }).eq('id', vanoId);
+
+      if (statoGlobale === 'completato') {
+        try {
+          const { data: vanoInfo } = await supabase
+            .from('vani')
+            .select('commessa_id, commesse(code, nome_cliente)')
+            .eq('id', vanoId)
+            .maybeSingle();
+          const cm: any = vanoInfo?.commesse;
+          await logEvento({
+            tipo: 'misure_salvate',
+            modulo_origine: 'misure',
+            cm_id: vanoInfo?.commessa_id ?? null,
+            titolo_breve: 'Misure vano completate',
+            contesto: cm ? `${cm.code ?? ''} · ${cm.nome_cliente ?? ''}`.trim() : null,
+            payload: { vano_id: vanoId },
+          });
+        } catch (logErr) {
+          console.warn('[MisurePanel] logEvento Day fallito', logErr);
+        }
+      }
       if (statoGlobale === 'completato') onComplete?.();
     } finally {
       setSaving(false);

@@ -80,6 +80,16 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const { toast, ToastContainer } = useToast();
   
   const [tab, setTab] = useState("home");
+
+  // Listener Day · navigazione bidirezionale
+  React.useEffect(() => {
+    const onNav = (e: any) => {
+      const tab = e?.detail?.tab;
+      if (typeof tab === "string") setTab(tab);
+    };
+    window.addEventListener("mastro:nav", onNav);
+    return () => window.removeEventListener("mastro:nav", onNav);
+  }, []);
   // === SUBSCRIPTION ===
   const [subPlan, setSubPlan] = useState<string>("pro");
   const [trialStart] = useState(() => { if (typeof window === "undefined") return new Date(); const s = localStorage.getItem("mastro_trial_start"); if (s) return new Date(s); const d = new Date(); localStorage.setItem("mastro_trial_start", d.toISOString()); return d; });

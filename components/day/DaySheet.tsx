@@ -378,7 +378,14 @@ export function DaySheet({ open, onClose }: Props) {
             )}
 
             <div style={{ position: "relative", marginTop: 14, display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 7 }}>
-              <button type="button" onClick={onClose}
+              <button type="button" onClick={() => {
+                  if (prossimoStep?.modulo) {
+                    window.dispatchEvent(new CustomEvent("mastro:nav", {
+                      detail: { tab: prossimoStep.modulo, cm_id: prossimoStep.cm_id, step: prossimoStep.step }
+                    }));
+                  }
+                  onClose();
+                }}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   padding: "13px 8px", borderRadius: 13, border: 0, cursor: "pointer",
@@ -417,7 +424,17 @@ export function DaySheet({ open, onClose }: Props) {
                   boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
                   display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
                 }}
-                onClick={() => alert(`Apri ${a.lbl} · in arrivo`)}
+                onClick={() => {
+                  const map: Record<string,string> = {
+                    "Misure": "misure",
+                    "Mail": "mail",
+                    "Preventivo": "preventivo",
+                    "Foto": "foto",
+                  };
+                  const tab = map[a.lbl] || "home";
+                  window.dispatchEvent(new CustomEvent("mastro:nav", { detail: { tab } }));
+                  onClose();
+                }}
               >
                 <div style={{
                   width: 30, height: 30, borderRadius: 9,

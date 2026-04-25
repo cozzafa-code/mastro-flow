@@ -3,6 +3,7 @@
 // Aggiunge componenti con +, sync misure, salva in libreria o genera preventivo
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useDay } from "@/hooks/useDay";
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -81,6 +82,7 @@ interface WizardVanoCompostoProps {
 }
 
 export default function WizardVanoComposto({ vanoId, commessaId, onClose, onSaved }: WizardVanoCompostoProps) {
+  const { logEvento } = useDay();
   const [componenti, setComponenti] = useState<Componente[]>([]);
   const [showSelector, setShowSelector] = useState(false);
   const [editingId, setEditingId] = useState<string|null>(null);
@@ -202,6 +204,17 @@ export default function WizardVanoComposto({ vanoId, commessaId, onClose, onSave
         if (c.tipo === 'lamiere') updates.lamiere_config = c.config;
       }
       await supabase.from('vani').update(updates).eq('id', vanoId);
+      try {
+        await logEvento({
+          tipo: 'vano_aggiornato',
+          modulo_origine: 'misure',
+          cm_id: null,
+          titolo_breve: 'Vano composto aggiornato',
+          payload: { vano_id: vanoId, componenti: componenti.length },
+        });
+      } catch (e) {
+        console.warn('[WizardVanoComposto] logEvento Day fallito', e);
+      }
       onSaved?.();
     } finally {
       setSaving(false);
