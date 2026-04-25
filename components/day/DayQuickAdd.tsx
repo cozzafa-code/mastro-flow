@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { createClient } from "@supabase/supabase-js";
 import type { DayCategoria } from "@/lib/types/day";
 import type { DayCreateResult } from "@/hooks/useDay";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { persistSession: true, autoRefreshToken: true },
+});
 
 interface Props {
   open: boolean;
@@ -12,6 +19,8 @@ interface Props {
     categoria: DayCategoria;
     ora_inizio: string | null;
     durata_min: number | null;
+    cm_id?: string | null;
+    evento_match?: string | null;
   }) => Promise<DayCreateResult>;
 }
 
@@ -26,6 +35,26 @@ const CATEGORIE: { v: DayCategoria; lbl: string; bg: string; fg: string }[] = [
 
 const DURATE = [15, 30, 45, 60, 90, 120];
 
+const EVENTI_MATCH: { v: string; lbl: string; col: string }[] = [
+  { v: "misure_salvate",      lbl: "Misure salvate",      col: "#7F77DD" },
+  { v: "prev_generato",       lbl: "Preventivo creato",   col: "#EF9F27" },
+  { v: "prev_inviato",        lbl: "Preventivo inviato",  col: "#EF9F27" },
+  { v: "mail_inviata",        lbl: "Mail inviata",        col: "#378ADD" },
+  { v: "mail_ricevuta",       lbl: "Mail ricevuta",       col: "#378ADD" },
+  { v: "risposta_cliente",    lbl: "Risposta cliente",    col: "#1D9E75" },
+  { v: "ordine_confermato",   lbl: "Ordine confermato",   col: "#1D9E75" },
+  { v: "fattura_emessa",      lbl: "Fattura emessa",      col: "#1D9E75" },
+  { v: "pagamento_ricevuto",  lbl: "Pagamento ricevuto",  col: "#1D9E75" },
+  { v: "foto_caricata",       lbl: "Foto caricate",       col: "#1D9E75" },
+];
+
+interface CmRow {
+  id: string;
+  code: string | null;
+  label_full: string;
+  fase: string | null;
+}
+
 export function DayQuickAdd({ open, onClose, onCreate }: Props) {
   const [titolo, setTitolo] = useState("");
   const [categoria, setCategoria] = useState<DayCategoria>("mastro");
@@ -34,10 +63,47 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
+  // D57 · CM associata
+  const [cmList, setCmList] = useState<CmRow[]>([]);
+  const [cmQuery, setCmQuery] = useState("");
+  const [cmId, setCmId] = useState<string | null>(null);
+  const [cmDropdownOpen, setCmDropdownOpen] = useState(false);
+
+  // D58 · sub-task evento_match
+  const [eventoMatch, setEventoMatch] = useState<string | null>(null);
+
+  // [advanced] toggle per mostrare campi opzionali
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // carico la lista CM la prima volta che apro il pannello avanzato
+  useEffect(() => {
+    if (!advancedOpen || cmList.length > 0) return;
+    (async () => {
+      const { data } = await supabase
+        .from("day_cm_autocomplete")
+        .select("id, code, label_full, fase")
+        .limit(50);
+      if (data) setCmList(data as CmRow[]);
+    })();
+  }, [advancedOpen, cmList.length]);
+
+  // filtraggio veloce
+  const cmFiltered = useMemo(() => {
+    const q = cmQuery.trim().toLowerCase();
+    if (!q) return cmList.slice(0, 8);
+    return cmList
+      .filter((c) => (c.label_full ?? "").toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [cmList, cmQuery]);
+
   if (!open) return null;
 
+  const cmSelected = cmList.find((c) => c.id === cmId);
+
   const reset = () => {
-    setTitolo(""); setCategoria("mastro"); setOraInizio(""); setDurata(30); setErrMsg(null);
+    setTitolo(""); setCategoria("mastro"); setOraInizio(""); setDurata(30);
+    setErrMsg(null); setCmId(null); setCmQuery(""); setEventoMatch(null);
+    setAdvancedOpen(false); setCmDropdownOpen(false);
   };
 
   const submit = async () => {
@@ -50,6 +116,8 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
         categoria,
         ora_inizio: oraInizio || null,
         durata_min: durata,
+        cm_id: cmId,
+        evento_match: eventoMatch,
       });
       if (res.ok) {
         reset();
@@ -101,7 +169,6 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
           </button>
         </div>
 
-        {/* Errore visibile */}
         {errMsg && (
           <div style={{
             marginBottom: 12, padding: "10px 12px", borderRadius: 11,
@@ -163,7 +230,7 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 900, color: "#5A7878", letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>
               Ora
@@ -197,6 +264,171 @@ export function DayQuickAdd({ open, onClose, onCreate }: Props) {
             </select>
           </div>
         </div>
+
+        {/* AVANZATE · toggle */}
+        <button type="button"
+          onClick={() => setAdvancedOpen((v) => !v)}
+          style={{
+            width: "100%",
+            padding: "8px 12px", borderRadius: 10, border: 0, cursor: "pointer",
+            background: advancedOpen ? "rgba(40,160,160,0.10)" : "transparent",
+            color: "#1A7A7A",
+            fontSize: 11, fontWeight: 900, letterSpacing: 0.3,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            fontFamily: "inherit",
+            marginBottom: advancedOpen ? 12 : 16,
+          }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: advancedOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+          {advancedOpen ? "Nascondi avanzate" : "Avanzate · CM + auto-spunta"}
+        </button>
+
+        {advancedOpen && (
+          <div style={{
+            padding: 12, borderRadius: 12,
+            background: "rgba(40,160,160,0.05)",
+            border: "1px dashed rgba(40,160,160,0.2)",
+            marginBottom: 16,
+          }}>
+            {/* D57 · CM associata */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 900, color: "#5A7878", letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>
+                CM associata · opzionale
+              </div>
+              {cmSelected ? (
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "10px 12px", borderRadius: 11,
+                  background: "linear-gradient(145deg, rgba(127,119,221,0.14), rgba(127,119,221,0.06))",
+                  border: "1px solid rgba(127,119,221,0.3)",
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: "#3C3489", letterSpacing: -0.1 }}>
+                      {cmSelected.label_full}
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "#6961CB", letterSpacing: 0.3, textTransform: "uppercase", marginTop: 2 }}>
+                      {cmSelected.fase ?? "—"}
+                    </div>
+                  </div>
+                  <button type="button"
+                    onClick={() => { setCmId(null); setCmQuery(""); }}
+                    style={{
+                      width: 22, height: 22, borderRadius: 6, border: 0, cursor: "pointer",
+                      background: "rgba(127,119,221,0.18)", color: "#7F77DD",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                    }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ position: "relative" }}>
+                  <input type="text"
+                    value={cmQuery}
+                    placeholder="cerca per codice o cliente · es. S-0027"
+                    onChange={(e) => { setCmQuery(e.target.value); setCmDropdownOpen(true); }}
+                    onFocus={() => setCmDropdownOpen(true)}
+                    style={{
+                      width: "100%", padding: "11px 12px",
+                      fontSize: 13, fontWeight: 600, color: "#0F2525",
+                      background: "#fff",
+                      border: "1px solid rgba(200,228,228,0.6)",
+                      borderRadius: 11, outline: "none",
+                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)",
+                      fontFamily: "inherit",
+                    }}/>
+                  {cmDropdownOpen && cmFiltered.length > 0 && (
+                    <div style={{
+                      position: "absolute", top: "100%", left: 0, right: 0,
+                      marginTop: 4,
+                      background: "#fff", borderRadius: 11,
+                      border: "1px solid rgba(200,228,228,0.6)",
+                      boxShadow: "0 8px 24px rgba(13,31,31,0.12)",
+                      maxHeight: 220, overflowY: "auto",
+                      zIndex: 5,
+                    }}>
+                      {cmFiltered.map((c) => (
+                        <button key={c.id} type="button"
+                          onClick={() => { setCmId(c.id); setCmDropdownOpen(false); }}
+                          style={{
+                            width: "100%", padding: "9px 12px",
+                            border: 0, borderBottom: "1px solid rgba(200,228,228,0.3)",
+                            background: "transparent", cursor: "pointer", textAlign: "left",
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            fontFamily: "inherit",
+                          }}>
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: "#0F2525", letterSpacing: -0.1 }}>
+                            {c.label_full}
+                          </span>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: "#5A7878", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                            {c.fase ?? "—"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {cmDropdownOpen && cmFiltered.length === 0 && cmQuery.length > 0 && (
+                    <div style={{
+                      position: "absolute", top: "100%", left: 0, right: 0,
+                      marginTop: 4, padding: 12,
+                      background: "#fff", borderRadius: 11,
+                      border: "1px solid rgba(200,228,228,0.6)",
+                      boxShadow: "0 8px 24px rgba(13,31,31,0.12)",
+                      fontSize: 11, fontWeight: 700, color: "#5A7878", textAlign: "center",
+                      zIndex: 5,
+                    }}>
+                      Nessuna commessa trovata
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* D58 · sub-task auto-spunta su evento */}
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 900, color: "#5A7878", letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 6 }}>
+                Sub-task auto-spunta · opzionale
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: "#5A7878", marginBottom: 8, lineHeight: 1.4 }}>
+                Quando questo evento arriva da MASTRO, il task spunta automaticamente
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                <button type="button"
+                  onClick={() => setEventoMatch(null)}
+                  style={{
+                    padding: "6px 10px", borderRadius: 8, border: 0, cursor: "pointer",
+                    fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
+                    background: !eventoMatch ? "rgba(40,160,160,0.14)" : "#fff",
+                    color: !eventoMatch ? "#04403B" : "#5A7878",
+                    boxShadow: !eventoMatch ? "0 2px 6px rgba(13,31,31,0.06)" : "inset 0 0 0 1px rgba(200,228,228,0.5)",
+                    fontFamily: "inherit",
+                  }}>
+                  Nessuno
+                </button>
+                {EVENTI_MATCH.map((e) => {
+                  const active = eventoMatch === e.v;
+                  return (
+                    <button key={e.v} type="button"
+                      onClick={() => setEventoMatch(e.v)}
+                      style={{
+                        padding: "6px 10px", borderRadius: 8, border: 0, cursor: "pointer",
+                        fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
+                        background: active ? `${e.col}22` : "#fff",
+                        color: active ? e.col : "#5A7878",
+                        boxShadow: active ? `0 2px 6px ${e.col}33, inset 0 0 0 1px ${e.col}44` : "inset 0 0 0 1px rgba(200,228,228,0.5)",
+                        fontFamily: "inherit",
+                      }}>
+                      {e.lbl}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 8 }}>
           <button type="button" onClick={onClose}

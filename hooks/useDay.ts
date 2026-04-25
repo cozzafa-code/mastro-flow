@@ -28,6 +28,7 @@ export interface DayTaskCreateInput {
   durata_min?: number | null;
   cm_id?: string | null;
   descrizione?: string | null;
+  evento_match?: string | null;  // se settato, crea 1 sub-task auto-spunta
 }
 
 export type DayCreateResult =
@@ -170,6 +171,16 @@ export function useDay(): UseDayResult {
         return `${String(fh).padStart(2, "0")}:${String(fm).padStart(2, "0")}:00`;
       })();
 
+      // se l'utente ha indicato un evento_match, seedo 1 sub-task auto-spunta
+      const sottoTaskSeed = input.evento_match
+        ? [{
+            id: `auto_${Date.now()}`,
+            testo: `Auto-spunta su: ${input.evento_match}`,
+            done: false,
+            evento_match: input.evento_match,
+          }]
+        : [];
+
       const row = {
         azienda_id,
         user_id: user.id,
@@ -183,7 +194,7 @@ export function useDay(): UseDayResult {
         energia: 2,
         stato: "pianificato" as const,
         cm_id: input.cm_id ?? null,
-        sotto_task: [],
+        sotto_task: sottoTaskSeed,
         ordine: 0,
       };
       const { data, error: insErr } = await supabase.from("day_tasks")
