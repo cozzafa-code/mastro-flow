@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import type {
   DayTask, DayEvento, DayEventoInsert, DayProssimoStep,
-  DayStripItem, DayStats, DayModuloOrigine,
+  DayStripItem, DayStats, DayModuloOrigine, DayCategoria,
 } from "@/lib/types/day";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -21,6 +21,15 @@ const EVENTI_LIMIT = 50;
 function todayISO(): string { return new Date().toISOString().slice(0, 10); }
 function nowMinusHours(h: number): string { return new Date(Date.now() - h * 3600 * 1000).toISOString(); }
 
+export interface DayTaskCreateInput {
+  titolo: string;
+  categoria: DayCategoria;
+  ora_inizio?: string | null;
+  durata_min?: number | null;
+  cm_id?: string | null;
+  descrizione?: string | null;
+}
+
 interface UseDayResult {
   loading: boolean;
   error: string | null;
@@ -31,6 +40,7 @@ interface UseDayResult {
   stats: DayStats;
   refetch: () => Promise<void>;
   logEvento: (e: DayEventoInsert) => Promise<DayEvento | null>;
+  createTask: (input: DayTaskCreateInput) => Promise<DayTask | null>;
   completaTask: (taskId: string) => Promise<void>;
   segnaInCorso: (taskId: string) => Promise<void>;
   skipProssimo: () => void;
@@ -105,14 +115,19 @@ export function useDay(): UseDayResult {
     };
   }, [fetchAll]);
 
+  // Helper · recupera azienda_id dell'operatore
+  const getAziendaId = useCallback(async (userId: string): Promise<string | null> => {
+    const opRes = await supabase.from("operatori").select("azienda_id")
+      .eq("user_id", userId).maybeSingle();
+    return opRes.data?.azienda_id ?? null;
+  }, []);
+
   const logEvento = useCallback(async (input: DayEventoInsert): Promise<DayEvento | null> => {
     try {
       const userRes = await supabase.auth.getUser();
       const user = userRes.data.user;
       if (!user) return null;
-      const opRes = await supabase.from("operatori").select("azienda_id")
-        .eq("user_id", user.id).maybeSingle();
-      const azienda_id = opRes.data?.azienda_id;
+      const azienda_id = await getAziendaId(user.id);
       if (!azienda_id) { console.warn("[logEvento] no operatore"); return null; }
       const row = {
         azienda_id, user_id: user.id,
@@ -127,7 +142,48 @@ export function useDay(): UseDayResult {
       if (insErr) { console.error("[logEvento] insert", insErr); return null; }
       return data as DayEvento;
     } catch (e) { console.error("[logEvento] catch", e); return null; }
-  }, []);
+  }, [getAziendaId]);
+
+  // CREATE TASK · NUOVO
+  const createTask = useCallback(async (input: DayTaskCreateInput): Promise<DayTask | null> => {
+    try {
+      const userRes = await supabase.auth.getUser();
+      const user = userRes.data.user;
+      if (!user) return null;
+      const azienda_id = await getAziendaId(user.id);
+      if (!azienda_id) { console.warn("[createTask] no operatore"); return null; }
+
+      const oraFine = (() => {
+        if (!input.ora_inizio || !input.durata_min) return null;
+        const [h, m] = input.ora_inizio.split(":").map((n) => parseInt(n, 10));
+        const totalMin = h * 60 + m + input.durata_min;
+        const fh = Math.floor((totalMin / 60) % 24);
+        const fm = totalMin % 60;
+        return `${String(fh).padStart(2, "0")}:${String(fm).padStart(2, "0")}:00`;
+      })();
+
+      const row = {
+        azienda_id,
+        user_id: user.id,
+        titolo: input.titolo,
+        descrizione: input.descrizione ?? null,
+        categoria: input.categoria,
+        giorno: todayISO(),
+        ora_inizio: input.ora_inizio ? `${input.ora_inizio}:00` : null,
+        ora_fine: oraFine,
+        durata_min: input.durata_min ?? null,
+        energia: 2,
+        stato: "pianificato" as const,
+        cm_id: input.cm_id ?? null,
+        sotto_task: [],
+        ordine: 0,
+      };
+      const { data, error: insErr } = await supabase.from("day_tasks")
+        .insert(row).select("*").single();
+      if (insErr) { console.error("[createTask] insert", insErr); return null; }
+      return data as DayTask;
+    } catch (e) { console.error("[createTask] catch", e); return null; }
+  }, [getAziendaId]);
 
   const completaTask = useCallback(async (taskId: string) => {
     const { error: e } = await supabase.from("day_tasks")
@@ -195,6 +251,6 @@ export function useDay(): UseDayResult {
   return {
     loading, error, tasks, eventi, strip,
     prossimoStep: prossimoFiltrato, stats,
-    refetch: fetchAll, logEvento, completaTask, segnaInCorso, skipProssimo,
+    refetch: fetchAll, logEvento, createTask, completaTask, segnaInCorso, skipProssimo,
   };
 }

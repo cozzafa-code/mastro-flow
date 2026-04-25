@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useDay } from "@/hooks/useDay";
 import type { DayProssimoColore, DayTask } from "@/lib/types/day";
+import { DayQuickAdd } from "./DayQuickAdd";
 
 interface Props { open: boolean; onClose: () => void; }
 
@@ -27,8 +28,9 @@ function fmtMinutesAgo(iso: string): string {
 }
 
 export function DaySheet({ open, onClose }: Props) {
-  const { loading, tasks, eventi, strip, prossimoStep, stats, completaTask, skipProssimo } = useDay();
+  const { loading, tasks, eventi, strip, prossimoStep, stats, createTask, completaTask, skipProssimo } = useDay();
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
 
   useEffect(() => { setBannerDismissed(false); }, [eventi[0]?.id]);
 
@@ -119,6 +121,24 @@ export function DaySheet({ open, onClose }: Props) {
                 Plancia
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setQuickOpen(true)}
+              aria-label="Aggiungi task"
+              style={{
+                width: 36, height: 36, borderRadius: 12, border: 0, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(255,255,255,0.22)", backdropFilter: "blur(12px)",
+                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25)",
+                marginRight: 8,
+                flexShrink: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
 
             <div style={{ flexShrink: 0, textAlign: "right" }}>
               <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>
@@ -341,6 +361,13 @@ export function DaySheet({ open, onClose }: Props) {
             </div>
           )}
         </div>
+<DayQuickAdd
+          open={quickOpen}
+          onClose={() => setQuickOpen(false)}
+          onCreate={async (input) => {
+            await createTask(input);
+          }}
+        />
       </div>
     </div>
   );
