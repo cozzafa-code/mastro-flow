@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { DaySheet } from "./DaySheet";
+import { DayFocus } from "./DayFocus";
 
 interface DayCtx {
   open: boolean;
@@ -38,9 +39,17 @@ export function DayProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // D63 · listener "mastro:open_day" (dalla barra Focus)
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener("mastro:open_day", onOpen);
+    return () => window.removeEventListener("mastro:open_day", onOpen);
+  }, []);
+
   return (
     <Ctx.Provider value={{ open, setOpen, toggle }}>
       {children}
+      <DayFocus />
       <DaySheet open={open} onClose={() => setOpen(false)} />
     </Ctx.Provider>
   );

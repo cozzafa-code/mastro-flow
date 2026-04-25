@@ -59,6 +59,7 @@ export function useDay(): UseDayResult {
   const [eventi, setEventi] = useState<DayEvento[]>([]);
   const [prossimoStep, setProssimoStep] = useState<DayProssimoStep | null>(null);
   const [skipUntilEventId, setSkipUntilEventId] = useState<string | null>(null);
+  const [deepMinutiOggi, setDeepMinutiOggi] = useState<number>(0);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -80,8 +81,9 @@ export function useDay(): UseDayResult {
         .order("created_at", { ascending: false }).limit(EVENTI_LIMIT);
 
       const prossimoReq = supabase.rpc("day_prossimo_step", { p_user_id: user.id });
+      const deepReq = supabase.rpc("day_deep_minuti_oggi", { p_user_id: user.id });
 
-      const [tRes, eRes, pRes] = await Promise.all([tasksReq, eventiReq, prossimoReq]);
+      const [tRes, eRes, pRes, dRes] = await Promise.all([tasksReq, eventiReq, prossimoReq, deepReq]);
       if (tRes.error) throw tRes.error;
       if (eRes.error) throw eRes.error;
       if (pRes.error) throw pRes.error;
@@ -89,6 +91,7 @@ export function useDay(): UseDayResult {
       setTasks((tRes.data ?? []) as DayTask[]);
       setEventi((eRes.data ?? []) as DayEvento[]);
       setProssimoStep((pRes.data ?? null) as DayProssimoStep | null);
+      setDeepMinutiOggi(typeof dRes.data === "number" ? dRes.data : 0);
     } catch (e: any) {
       console.error("[useDay] fetch error", e);
       setError(e?.message ?? "Errore caricamento Day");
@@ -287,9 +290,12 @@ export function useDay(): UseDayResult {
   const stats: DayStats = useMemo(() => {
     const totali = tasks.length;
     const fatti = tasks.filter((t) => t.stato === "fatto").length;
-    const oreDeep = tasks
+    // ore_deep · somma task deep/mastro pianificati + minuti focus_completato veri da DB (D65)
+    const oreDeepPianificate = tasks
       .filter((t) => t.categoria === "deep" || t.categoria === "mastro")
       .reduce((s, t) => s + (t.durata_min ?? 0), 0) / 60;
+    const oreDeepFocus = deepMinutiOggi / 60;
+    const oreDeep = Math.max(oreDeepPianificate, oreDeepFocus);
     const cmIds = new Set<string>();
     eventi.forEach((e) => e.cm_id && cmIds.add(e.cm_id));
     return {
@@ -297,7 +303,7 @@ export function useDay(): UseDayResult {
       ore_deep: Math.round(oreDeep * 10) / 10,
       cm_toccate: cmIds.size,
     };
-  }, [tasks, eventi]);
+  }, [tasks, eventi, deepMinutiOggi]);
 
   const prossimoFiltrato = useMemo(() => {
     if (!prossimoStep) return null;
