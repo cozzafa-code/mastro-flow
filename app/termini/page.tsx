@@ -26,10 +26,10 @@ export default function TerminiPage() {
         <Section title="3. Piani e Prezzi">
           <TableComp rows={[
             ['Piano', 'Prezzo mensile', 'Note'],
-            ['BASE', 'â‚¬9/mese', 'Funzionalità essenziali'],
-            ['START', 'â‚¬29/mese', 'Piano più utilizzato'],
-            ['PRO', 'â‚¬59/mese', 'Funzionalità avanzate'],
-            ['TITAN', 'â‚¬89/mese', 'Accesso completo'],
+            ['BASE', '€9/mese', 'Funzionalità essenziali'],
+            ['START', '€29/mese', 'Piano più utilizzato'],
+            ['PRO', '€59/mese', 'Funzionalità avanzate'],
+            ['TITAN', '€89/mese', 'Accesso completo'],
           ]} />
           <p className="mt-3">I prezzi sono IVA inclusa per i clienti italiani in regime ordinario. Il piano attivo è sempre visibile nell'area account. MASTRO si riserva il diritto di modificare i prezzi con preavviso scritto di 30 giorni.</p>
         </Section>

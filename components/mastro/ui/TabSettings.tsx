@@ -250,7 +250,7 @@ export default function TabSettings() {
                     </div>
                   </div>
                   {plan.prezzo > 0 && <div style={{ textAlign: "right" as const }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: T.acc, fontFamily: FM }}>â‚¬{plan.prezzo}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: T.acc, fontFamily: FM }}>€{plan.prezzo}</div>
                     <div style={{ fontSize: 10, color: T.sub }}>/mese</div>
                   </div>}
                 </div>
@@ -275,7 +275,7 @@ export default function TabSettings() {
                       <div style={{ fontSize: 18, fontWeight: 800, color: key === "pro" ? T.acc : T.text }}>{pl.nome}</div>
                     </div>
                     <div style={{ textAlign: "right" as const }}>
-                      <span style={{ fontSize: 26, fontWeight: 800, color: key === "pro" ? T.acc : T.text, fontFamily: FM }}>â‚¬{pl.prezzo}</span>
+                      <span style={{ fontSize: 26, fontWeight: 800, color: key === "pro" ? T.acc : T.text, fontFamily: FM }}>€{pl.prezzo}</span>
                       <span style={{ fontSize: 11, color: T.sub }}>/mese</span>
                     </div>
                   </div>
@@ -292,7 +292,7 @@ export default function TabSettings() {
                     <div style={{ marginTop: 10, padding: "8px 0", textAlign: "center" as const, borderRadius: 8, background: T.acc + "15", fontSize: 12, fontWeight: 700, color: T.acc }}>âœ“ Piano attivo</div>
                   ) : (
                     <div style={{ marginTop: 10, padding: "8px 0", textAlign: "center" as const, borderRadius: 8, background: T.acc, fontSize: 12, fontWeight: 700, color: "#fff" }}>
-                      {pl.prezzo > (plan.prezzo || 0) ? `Passa a ${pl.nome} â€” â‚¬${pl.prezzo}/mese` : `Passa a ${pl.nome}`}
+                      {pl.prezzo > (plan.prezzo || 0) ? `Passa a ${pl.nome} â€” €${pl.prezzo}/mese` : `Passa a ${pl.nome}`}
                     </div>
                   )}
                 </div>
@@ -338,7 +338,7 @@ export default function TabSettings() {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", marginBottom: 3 }}>
-                      <span style={{ fontSize: 9, color: T.sub }}>â‚¬/mq</span>
+                      <span style={{ fontSize: 9, color: T.sub }}>€/mq</span>
                       <input type="number" defaultValue={s.euroMq || ""} onBlur={e => setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, euroMq: parseFloat(e.target.value)||0, prezzoMq: parseFloat(e.target.value)||0 } : x))} style={{ width: 60, padding: "3px 6px", borderRadius: 4, border: `1px solid ${T.bdr}`, fontSize: 13, fontWeight: 700, color: T.grn, textAlign: "right", fontFamily: FM }} />
                     </div>
                     <div style={{ fontSize: 9, color: T.sub }}>+{s.sovRAL}% RAL · +{s.sovLegno}% Legno</div>
@@ -399,7 +399,7 @@ export default function TabSettings() {
                       <div onClick={() => {
                         const l = prompt("Larghezza (mm):", "1000");
                         const h = prompt("Altezza (mm):", "1200");
-                        const p = prompt("Prezzo â‚¬:", "300");
+                        const p = prompt("Prezzo €:", "300");
                         if (l && h && p && parseInt(l) > 0 && parseInt(h) > 0 && parseFloat(p) > 0) {
                           setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: [...(x.griglia||[]), { l: parseInt(l), h: parseInt(h), prezzo: parseFloat(p) }].sort((a,b) => a.l - b.l || a.h - b.h) } : x));
                         }
@@ -414,14 +414,14 @@ export default function TabSettings() {
                           <thead><tr style={{ background: T.bg, position: "sticky", top: 0 }}>
                             <th style={{ padding: "3px 6px", textAlign: "left", fontWeight: 700, color: T.sub }}>L (mm)</th>
                             <th style={{ padding: "3px 6px", textAlign: "left", fontWeight: 700, color: T.sub }}>H (mm)</th>
-                            <th style={{ padding: "3px 6px", textAlign: "right", fontWeight: 700, color: T.sub }}>Prezzo â‚¬</th>
+                            <th style={{ padding: "3px 6px", textAlign: "right", fontWeight: 700, color: T.sub }}>Prezzo €</th>
                             <th style={{ width: 20 }}></th>
                           </tr></thead>
                           <tbody>{s.griglia.map((g, gi) => (
                             <tr key={gi} style={{ borderTop: `1px solid ${T.bdr}20` }}>
                               <td style={{ padding: "2px 6px" }}>{g.l}</td>
                               <td style={{ padding: "2px 6px" }}>{g.h}</td>
-                              <td style={{ padding: "2px 6px", textAlign: "right", fontWeight: 700, color: T.grn }}>â‚¬{g.prezzo}</td>
+                              <td style={{ padding: "2px 6px", textAlign: "right", fontWeight: 700, color: T.grn }}>€{g.prezzo}</td>
                               <td style={{ padding: "2px 4px", cursor: "pointer", color: T.red, textAlign: "center" }} onClick={() => {
                                 setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: x.griglia.filter((_, i) => i !== gi) } : x));
                               }}>âœ•</td>
@@ -432,7 +432,7 @@ export default function TabSettings() {
                       <div onClick={() => { if(confirm("Cancellare tutta la griglia?")) setSistemiDB(prev => prev.map(x => x.id === s.id ? { ...x, griglia: [] } : x)); }} style={{ fontSize: 9, color: T.red, cursor: "pointer", textAlign: "right", marginTop: 4 }}>ðŸ—‘ Svuota griglia</div>
                     </div>
                   ) : (
-                    <div style={{ fontSize: 10, color: T.sub, fontStyle: "italic" }}>Nessuna griglia inserita â€” il prezzo viene calcolato a â‚¬/mq.<br/>Puoi caricare il listino del fornitore (CSV: Larghezza;Altezza;Prezzo per riga) oppure aggiungere i prezzi a mano.</div>
+                    <div style={{ fontSize: 10, color: T.sub, fontStyle: "italic" }}>Nessuna griglia inserita â€” il prezzo viene calcolato a €/mq.<br/>Puoi caricare il listino del fornitore (CSV: Larghezza;Altezza;Prezzo per riga) oppure aggiungere i prezzi a mano.</div>
                   )}
                 </div>
                 {/* Minimi mq per tipologia */}
@@ -763,7 +763,7 @@ export default function TabSettings() {
                         <input style={{ width: 80, padding: "2px 4px", fontSize: 10, border: `1px solid ${T.bdr}`, borderRadius: 4, background: T.bg }} defaultValue={item.categoria || ""} placeholder="Categoria" onBlur={e => setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, categoria: e.target.value } : x))} />
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                        <span style={{ fontSize: 9, color: T.sub }}>â‚¬</span>
+                        <span style={{ fontSize: 9, color: T.sub }}>€</span>
                         <input type="number" step="0.01" style={{ width: 60, padding: "2px 4px", fontSize: 12, fontWeight: 700, fontFamily: FM, color: T.grn, border: `1px solid ${T.bdr}`, borderRadius: 4, textAlign: "right" }} defaultValue={item.prezzo || 0} onBlur={e => setLibreriaDB(prev => prev.map(x => x.id === item.id ? { ...x, prezzo: parseFloat(e.target.value) || 0 } : x))} />
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
@@ -821,15 +821,15 @@ export default function TabSettings() {
                 <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                   <div style={{ flex: 1, background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, padding: 10, textAlign: "center" }}>
                     <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Totale emesso</div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: T.text }}>â‚¬{fattureDB.reduce((s, f) => s + f.importo, 0).toLocaleString("it-IT")}</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: T.text }}>€{fattureDB.reduce((s, f) => s + f.importo, 0).toLocaleString("it-IT")}</div>
                   </div>
                   <div style={{ flex: 1, background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, padding: 10, textAlign: "center" }}>
                     <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Incassato</div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: "#34c759" }}>â‚¬{fattureDB.filter(f => f.pagata).reduce((s, f) => s + f.importo, 0).toLocaleString("it-IT")}</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "#34c759" }}>€{fattureDB.filter(f => f.pagata).reduce((s, f) => s + f.importo, 0).toLocaleString("it-IT")}</div>
                   </div>
                   <div style={{ flex: 1, background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, padding: 10, textAlign: "center" }}>
                     <div style={{ fontSize: 8, color: T.sub, textTransform: "uppercase" }}>Da incassare</div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: "#ff3b30" }}>â‚¬{fattureDB.filter(f => !f.pagata).reduce((s, f) => s + f.importo, 0).toLocaleString("it-IT")}</div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "#ff3b30" }}>€{fattureDB.filter(f => !f.pagata).reduce((s, f) => s + f.importo, 0).toLocaleString("it-IT")}</div>
                   </div>
                 </div>
                 {fattureDB.sort((a, b) => b.numero - a.numero).map(f => (
@@ -842,7 +842,7 @@ export default function TabSettings() {
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>â‚¬{f.importo.toLocaleString("it-IT")}</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>€{f.importo.toLocaleString("it-IT")}</div>
                       <div onClick={() => setFattureDB(prev => prev.map(x => x.id === f.id ? { ...x, pagata: !x.pagata, dataPagamento: !x.pagata ? new Date().toLocaleDateString("it-IT") : null } : x))} style={{ padding: "4px 8px", borderRadius: 6, background: f.pagata ? "#34c75920" : "#ff3b3020", color: f.pagata ? "#34c759" : "#ff3b30", fontSize: 9, fontWeight: 700, cursor: "pointer" }}>
                         {f.pagata ? "âœ…" : "ðŸ’°"}
                       </div>
@@ -1250,7 +1250,7 @@ export default function TabSettings() {
                 </div>
                 <div style={{display:"flex",gap:12,marginBottom:8}}>
                   <div style={{width:22,height:22,borderRadius:6,background:T.acc,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>2</div>
-                  <div style={{fontSize:12,color:T.text,lineHeight:1.5}}>Tocca il pulsante <b>â‚¬ Preventivo</b> nella barra azioni</div>
+                  <div style={{fontSize:12,color:T.text,lineHeight:1.5}}>Tocca il pulsante <b>€ Preventivo</b> nella barra azioni</div>
                 </div>
                 <div style={{display:"flex",gap:12,marginBottom:8}}>
                   <div style={{width:22,height:22,borderRadius:6,background:T.acc,color:"#fff",fontSize:11,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>3</div>
@@ -1414,9 +1414,9 @@ export default function TabSettings() {
                 {[
                   {foglio:"SISTEMI", colonne:"Marca | Nome Sistema | Uf (W/mÂ²K)", es:"Aluplast | Ideal 4000 | 1.1"},
                   {foglio:"COLORI", colonne:"Nome | RAL/Codice | Tipo", es:"Grigio Antracite | 7016 | RAL"},
-                  {foglio:"VETRI", colonne:"Descrizione | Composizione | Ug (W/mÂ²K) | Prezzo â‚¬/mq", es:"Basso emissivo | 4/20/4 | 1.0 | 35"},
-                  {foglio:"COPRIFILI", colonne:"Descrizione | Codice | Prezzo â‚¬/ml", es:"Coprifilo 70mm | CF70 | 4.50"},
-                  {foglio:"LAMIERE", colonne:"Descrizione | Codice | Prezzo â‚¬/ml", es:"Lamiera 25/10 | LM25 | 8.20"},
+                  {foglio:"VETRI", colonne:"Descrizione | Composizione | Ug (W/mÂ²K) | Prezzo €/mq", es:"Basso emissivo | 4/20/4 | 1.0 | 35"},
+                  {foglio:"COPRIFILI", colonne:"Descrizione | Codice | Prezzo €/ml", es:"Coprifilo 70mm | CF70 | 4.50"},
+                  {foglio:"LAMIERE", colonne:"Descrizione | Codice | Prezzo €/ml", es:"Lamiera 25/10 | LM25 | 8.20"},
                 ].map((f,i) => (
                   <div key={i} style={{marginBottom:8,padding:"8px 10px",background:T.bg||"#f8f8f5",borderRadius:8,border:"1px solid "+(T.bdr||"#E5E3DE")}}>
                     <div style={{fontSize:11,fontWeight:800,color:T.blue||"#2563eb",marginBottom:3}}>{"ðŸ“‹ "+f.foglio}</div>

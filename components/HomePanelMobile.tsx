@@ -266,7 +266,7 @@ function PipelineWidgetV3({ cantieri, onNavigate, editMode }: any) {
             </div>
             <div style={{ textAlign: "right" as any }}>
               <div style={{ fontSize: 8, fontWeight: 800, color: "#5A7878", letterSpacing: "0.3px", textTransform: "uppercase" as any }}>Valore</div>
-              <div style={{ fontSize: 14, fontWeight: 900, color: sel.fase.dark }}>{sel.euro >= 1000 ? `â‚¬${(sel.euro/1000).toFixed(1)}k` : `â‚¬${Math.round(sel.euro)}`}</div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: sel.fase.dark }}>{sel.euro >= 1000 ? `€${(sel.euro/1000).toFixed(1)}k` : `€${Math.round(sel.euro)}`}</div>
             </div>
           </div>
           <button onClick={(e: any) => { e.stopPropagation(); onNavigate?.("commesse"); }} style={{
@@ -300,7 +300,7 @@ function LavoriRecentiWidgetV3({ recenti, onApriCommessa, onNavigate, editMode }
           const fase = c?.fase_corrente || c?.fase || c?.stato || "Sopralluogo";
           const f = getFaseV3(fase);
           const imp = Number(c?.totale || c?.importo || 0);
-          const impLabel = imp >= 1000 ? `â‚¬${(imp / 1000).toFixed(1)}k` : `â‚¬${Math.round(imp)}`;
+          const impLabel = imp >= 1000 ? `€${(imp / 1000).toFixed(1)}k` : `€${Math.round(imp)}`;
           const cliente = c?.cliente_nome || c?.cliente || "Cliente";
           const cod = c?.codice || c?.code || `S-00${64 + idx}`;
           return (
@@ -491,7 +491,7 @@ export default function HomePanelMobile(props: any) {
   const recenti = (commesseAttive || []).slice(0, 3);
   const taskOggi = recenti.length;
   const totMese = (commesseAttive || []).reduce((s: number, c: any) => s + Number(c?.totale || c?.importo || 0), 0);
-  const totMeseK = totMese >= 1000 ? `â‚¬${(totMese / 1000).toFixed(1)}k` : `â‚¬${Math.round(totMese)}`;
+  const totMeseK = totMese >= 1000 ? `€${(totMese / 1000).toFixed(1)}k` : `€${Math.round(totMese)}`;
 
   const faseColors: any = {
     Sopralluogo: { bg: "#EEEDFE", fg: "#3C3489" },
@@ -653,7 +653,7 @@ export default function HomePanelMobile(props: any) {
     <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#C0DD97", borderRadius: 20, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
       {editMode && <RemoveBtn id="fattanno" fg="#173404" onRemove={removeWidget} />}
       <div style={{ fontSize: 10, color: "#173404", fontWeight: 500, letterSpacing: 0.3 }}>FATTURATO ANNO</div>
-      <div style={{ fontSize: 24, color: "#173404", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>â‚¬{(totMese*10/1000).toFixed(0)}k</div>
+      <div style={{ fontSize: 24, color: "#173404", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>€{(totMese*10/1000).toFixed(0)}k</div>
       <div style={{ fontSize: 10, color: "#173404", marginTop: 4 }}>obiettivo 80%</div>
       <div style={{ height: 4, background: "rgba(255,255,255,0.5)", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
         <div style={{ width: "80%", height: "100%", background: "#3B6D11" }} />
@@ -664,7 +664,7 @@ export default function HomePanelMobile(props: any) {
     <div onClick={() => !editMode && onNavigate?.("contabilita")} style={{ background: "#FAC775", borderRadius: 18, padding: 14, position: "relative", cursor: editMode ? "grab" : "pointer" }}>
       {editMode && <RemoveBtn id="incassi" fg="#412402" onRemove={removeWidget} />}
       <div style={{ fontSize: 10, color: "#412402", fontWeight: 500, letterSpacing: 0.3 }}>DA RISCUOTERE</div>
-      <div style={{ fontSize: 24, color: "#412402", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>â‚¬{(totMese*0.3/1000).toFixed(1)}k</div>
+      <div style={{ fontSize: 24, color: "#412402", fontWeight: 600, marginTop: 6, lineHeight: 1 }}>€{(totMese*0.3/1000).toFixed(1)}k</div>
       <div style={{ fontSize: 10, color: "#412402", marginTop: 4 }}>fatture aperte</div>
     </div>
   );
