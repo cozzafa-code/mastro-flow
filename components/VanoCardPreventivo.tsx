@@ -1,4 +1,4 @@
-﻿// components/VanoCardPreventivo.tsx
+// components/VanoCardPreventivo.tsx
 // Card "galattica" per il vano nel workspace preventivo.
 // SOLO VISTA: click apre VanoDetailPanel fullscreen per edit completo.
 // Preview SVG a sinistra, info ricche al centro, prezzo destra, barra status sotto.

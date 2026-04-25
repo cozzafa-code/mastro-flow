@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 // @ts-nocheck
 // ═══════════════════════════════════════════════════════════════
 // MASTRO CAD ENGINE — Componente React con Fabric.js

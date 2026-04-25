@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import DraggableFAB from "@/components/DraggableFAB";
 // =======================================================
 // MASTRO ERP v2 - PARTE 1/5

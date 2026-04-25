@@ -1,4 +1,4 @@
-﻿// =======================================================
+// =======================================================
 // MASTRO ERP v2 — PARTE 1/5
 // Righe 1-1280: Costanti, Dati Demo (incluse visite/vaniList/euro/scadenza),
 //               MOTIVI_BLOCCO, AFASE, useDragOrder hook, Home, Helpers, Stili

@@ -1,4 +1,4 @@
-﻿// app/firma/completata/page.tsx
+// app/firma/completata/page.tsx
 // Landing page cliente dopo firma certificata completata.
 // Mostra conferma + ringraziamento + link download PDF firmato.
 

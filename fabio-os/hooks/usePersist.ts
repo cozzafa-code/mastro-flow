@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useRef } from 'react'
 
 const KEY = 'fabios_state_v1'

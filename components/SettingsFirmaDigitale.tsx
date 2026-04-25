@@ -1,4 +1,4 @@
-﻿// components/SettingsFirmaDigitale.tsx
+// components/SettingsFirmaDigitale.tsx
 // Card impostazioni per configurare provider firma certificata (Namirial/InfoCert/Aruba).
 // Stile unificato fliwoX (CM / RILIEVO MISURE).
 

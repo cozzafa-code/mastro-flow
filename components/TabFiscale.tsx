@@ -1,4 +1,4 @@
-﻿// components/TabFiscale.tsx
+// components/TabFiscale.tsx
 // Tab Fiscale — stile unificato Centro Comando / RILIEVO MISURE
 import { useState } from "react";
 import { useFiscale } from "../hooks/useFiscale";

@@ -1,4 +1,4 @@
-﻿// components/ModalFirma.tsx
+// components/ModalFirma.tsx
 // Modal per avviare firma certificata: scelta tipo PDF + livello firma (FEA/FEQ) + canale invio.
 // Chiama /api/firma/crea, riceve signer_url, apre WhatsApp/email con link.
 // Stile unificato Centro Comando / RILIEVO MISURE.
