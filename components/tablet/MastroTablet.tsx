@@ -13,6 +13,7 @@ import OrdiniFornitoriTablet from "./ordini/OrdiniFornitoriTablet";
 import MagazzinoTablet from "./magazzino/MagazzinoTablet";
 import ClientiTablet from "./clienti/ClientiTablet";
 import ContabilitaTablet from "./contabilita/ContabilitaTablet";
+import FiscaleTablet from "./fiscale/FiscaleTablet";
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
@@ -20,25 +21,16 @@ export default function MastroTablet() {
   return (
     <div
       style={{
-        ...bodyStyle,
-        width: "100%",
-        minHeight: "100vh",
+        ...bodyStyle, width: "100%", minHeight: "100vh",
         background: TT.bgSoft,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-start",
-        padding: 24,
-        boxSizing: "border-box",
+        display: "flex", justifyContent: "center", alignItems: "flex-start",
+        padding: 24, boxSizing: "border-box",
       }}
     >
       <div
         style={{
-          width: TT.contentMaxW,
-          maxWidth: "100%",
-          height: 800,
-          background: TT.bg,
-          borderRadius: TT.rLg,
-          overflow: "hidden",
+          width: TT.contentMaxW, maxWidth: "100%", height: 800,
+          background: TT.bg, borderRadius: TT.rLg, overflow: "hidden",
           display: "grid",
           gridTemplateColumns: `${TT.sidebarW}px 1fr`,
           gridTemplateRows: `${TT.topbarH}px 1fr`,
@@ -46,8 +38,7 @@ export default function MastroTablet() {
             "sidebar topbar"
             "sidebar main"
           `,
-          boxShadow: TT.shadowLg,
-          border: `1px solid ${TT.border}`,
+          boxShadow: TT.shadowLg, border: `1px solid ${TT.border}`,
         }}
       >
         <SidebarTablet active={active} onSelect={setActive} />
@@ -64,7 +55,8 @@ export default function MastroTablet() {
           {active === "magazzino"     && <MagazzinoTablet />}
           {active === "clienti"       && <ClientiTablet />}
           {active === "contabilita"   && <ContabilitaTablet />}
-          {!["dashboard","commesse","calendario","sopralluoghi","produzione","montaggi","ordini","magazzino","clienti","contabilita"].includes(active) && (
+          {active === "fiscale"       && <FiscaleTablet />}
+          {!["dashboard","commesse","calendario","sopralluoghi","produzione","montaggi","ordini","magazzino","clienti","contabilita","fiscale"].includes(active) && (
             <div style={{ padding: "40px 28px", textAlign: "center", color: TT.text3, fontSize: 14 }}>
               Sezione &quot;{active}&quot; in arrivo nei prossimi step.
             </div>
