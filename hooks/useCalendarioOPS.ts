@@ -4,9 +4,8 @@
 // Blocchi = fasi VIVE commessa. Engine: conflitti, next actions, saturazione
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from "@/lib/supabase";
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 // ── LAYER SYSTEM ──
 export const LAYERS = [

@@ -4,8 +4,7 @@
 // hooks/useFinance.ts — Zero commercialista
 // ═══════════════════════════════════════════════════════════
 import {useState,useEffect,useMemo,useCallback} from 'react';
-import {createClient} from '@supabase/supabase-js';
-const sb=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+import { supabase } from "@/lib/supabase";
 
 export const TIPI_MOV=['incasso','pagamento','trasferimento','stipendio','f24','leasing','carta','generico'];
 export const CAT_COSTO=['materiali','energia','stipendi','affitto','trasporti','manutenzione','tasse','software','assicurazioni','marketing','altro'];

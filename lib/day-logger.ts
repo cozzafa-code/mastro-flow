@@ -19,14 +19,9 @@
  * Best-effort: non blocca mai l'UI se il log fallisce.
  */
 
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: { persistSession: true, autoRefreshToken: true },
-});
 
 export type DayEventoTipo =
   | "misure_salvate"

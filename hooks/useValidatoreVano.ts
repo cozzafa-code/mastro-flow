@@ -4,7 +4,7 @@
 // e valida un vano restituendo errori/alert/info
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 // ─── Tipi ────────────────────────────────────────────────────────────────────
 
@@ -50,10 +50,6 @@ interface SistemaProfiloDB {
 
 // ─── Supabase client ─────────────────────────────────────────────────────────
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
