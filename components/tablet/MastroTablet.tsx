@@ -25,47 +25,46 @@ export default function MastroTablet() {
   return (
     <div
       style={{
-        ...bodyStyle, width: "100%", minHeight: "100vh",
-        background: TT.bgSoft,
-        display: "flex", justifyContent: "center", alignItems: "flex-start",
-        padding: 24, boxSizing: "border-box",
+        ...bodyStyle,
+        width: "100vw",
+        height: "100vh",
+        background: TT.bg,
+        display: "grid",
+        gridTemplateColumns: `${TT.sidebarW}px 1fr`,
+        gridTemplateRows: `${TT.topbarH}px 1fr`,
+        gridTemplateAreas: `
+          "sidebar topbar"
+          "sidebar main"
+        `,
+        overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
-      <div
-        style={{
-          width: TT.contentMaxW, maxWidth: "100%", height: 800,
-          background: TT.bg, borderRadius: TT.rLg, overflow: "hidden",
-          display: "grid",
-          gridTemplateColumns: `${TT.sidebarW}px 1fr`,
-          gridTemplateRows: `${TT.topbarH}px 1fr`,
-          gridTemplateAreas: `
-            "sidebar topbar"
-            "sidebar main"
-          `,
-          boxShadow: TT.shadowLg, border: `1px solid ${TT.border}`,
-        }}
-      >
-        <SidebarTablet active={active} onSelect={setActive} />
-        <TopbarTablet greeting="Buongiorno, Fabio Cozza" notificationCount={3} />
+      <SidebarTablet active={active} onSelect={setActive} />
+      <TopbarTablet greeting="Buongiorno, Fabio Cozza" notificationCount={3} />
 
-        <main style={{ gridArea: "main", overflowY: "auto", padding: "18px 24px 22px" }}>
-          {active === "dashboard"     && <DashboardTablet />}
-          {active === "commesse"      && <CommesseListaTablet />}
-          {active === "calendario"    && <CalendarioTablet />}
-          {active === "sopralluoghi"  && <SopralluoghiTablet />}
-          {active === "produzione"    && <ProduzioneTablet />}
-          {active === "montaggi"      && <MontaggiTablet />}
-          {active === "ordini"        && <OrdiniFornitoriTablet />}
-          {active === "magazzino"     && <MagazzinoTablet />}
-          {active === "clienti"       && <ClientiTablet />}
-          {active === "contabilita"   && <ContabilitaTablet />}
-          {active === "fiscale"       && <FiscaleTablet />}
-          {active === "team"          && <TeamTablet />}
-          {active === "ops"           && <OpsTablet />}
-          {active === "ai"            && <AiMastroTablet />}
-          {active === "impostazioni"  && <ImpostazioniTablet />}
-        </main>
-      </div>
+      <main style={{
+        gridArea: "main",
+        overflowY: "auto",
+        padding: "18px 24px 22px",
+        background: TT.bgSoft,
+      }}>
+        {active === "dashboard"     && <DashboardTablet />}
+        {active === "commesse"      && <CommesseListaTablet />}
+        {active === "calendario"    && <CalendarioTablet />}
+        {active === "sopralluoghi"  && <SopralluoghiTablet />}
+        {active === "produzione"    && <ProduzioneTablet />}
+        {active === "montaggi"      && <MontaggiTablet />}
+        {active === "ordini"        && <OrdiniFornitoriTablet />}
+        {active === "magazzino"     && <MagazzinoTablet />}
+        {active === "clienti"       && <ClientiTablet />}
+        {active === "contabilita"   && <ContabilitaTablet />}
+        {active === "fiscale"       && <FiscaleTablet />}
+        {active === "team"          && <TeamTablet />}
+        {active === "ops"           && <OpsTablet />}
+        {active === "ai"            && <AiMastroTablet />}
+        {active === "impostazioni"  && <ImpostazioniTablet />}
+      </main>
     </div>
   );
 }
