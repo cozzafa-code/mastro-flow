@@ -2615,7 +2615,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   setPdfBusy("pdf");
                   try {
                     await Promise.race([
-                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], coprifiliDB, lamiereDB, calcolaVanoPrezzo, getVaniAttivi }),
+                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
                       new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
                     ]);
                   } catch(err: any) {
@@ -2630,7 +2630,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   setPdfBusy("anteprima");
                   try {
                     await Promise.race([
-                      generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], coprifiliDB, lamiereDB, calcolaVanoPrezzo, getVaniAttivi }),
+                      generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
                       new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
                     ]);
                   } catch(err: any) {
@@ -2648,7 +2648,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   // 1. Genera PDF con timeout 20s
                   try {
                     await Promise.race([
-                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], coprifiliDB, lamiereDB, calcolaVanoPrezzo, getVaniAttivi }),
+                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
                       new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (20s)")), 20000)),
                     ]);
                   } catch(e: any) {
