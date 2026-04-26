@@ -42,11 +42,11 @@ const TOKENS = {
 const VARIANTI = {
   accettato: {
     icon: "✓",
-    title: "Cliente ha accettato — Manda conferma d'ordine",
+    title: "Cliente ha accettato il preventivo",
     bg: TOKENS.greenLight,
     bar: TOKENS.green,
     ink: TOKENS.greenInk,
-    cta: "→ Conferma ordine",
+    cta: "Crea conferma d'ordine",
   },
   modifiche: {
     icon: "⚠",

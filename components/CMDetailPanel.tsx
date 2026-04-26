@@ -368,6 +368,32 @@ export default function CMDetailPanel() {
   // =====================================================
   if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw) && !prevWorkspace) {
     const cV70 = selectedCM as any;
+
+    // ═══ Banner "Cliente ha accettato — Manda conferma" ═══
+    const _accettatoBanner = (rispostaCliente?.risposta === "accettato" && faseIndex(cV70.fase) < faseIndex("conferma")) ? (
+      <div style={{
+        position: "sticky" as any,
+        top: 0,
+        zIndex: 50,
+        background: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)",
+        color: "#fff",
+        padding: "14px 16px",
+        boxShadow: "0 4px 14px rgba(40,162,104,0.35)",
+        animation: "mastropulse 1.6s infinite",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        cursor: "pointer",
+      }} onClick={() => { setFaseTo(cV70.id, "conferma"); }}>
+        <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>✓</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3 }}>CLIENTE HA ACCETTATO IL PREVENTIVO</div>
+          <div style={{ fontSize: 11, opacity: 0.92, marginTop: 2 }}>{rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""} · Tocca qui per creare la conferma d’ordine</div>
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 900, flexShrink: 0 }}>→</div>
+      </div>
+    ) : null;
+
     const rListV70: any[] = cV70.rilievi || [];
     const rCurV70: any = selectedRilievo || (rListV70.length > 0 ? rListV70[rListV70.length - 1] : null);
     const vaniV70: any[] = rCurV70?.vani || [];
@@ -487,6 +513,7 @@ export default function CMDetailPanel() {
     return (
       <>
       <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 20 }}>
+        {_accettatoBanner}
         {/* ============ HEADER TEAL ============ */}
         <div style={{
           background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",

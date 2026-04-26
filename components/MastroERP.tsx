@@ -812,6 +812,14 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     enableBrowserNotif: true,
     enableEmail: !!aziendaInfo?.email,
     email: aziendaInfo?.email,
+    onAccettato: (item: any) => {
+      // AUTO-AVANZA FASE quando cliente accetta
+      try {
+        if (typeof setFaseTo === 'function') {
+          setFaseTo(item.cm_id, 'conferma');
+        }
+      } catch(e) { console.error('[auto-advance fase fail]', e); }
+    },
   });
 
   const handleApriRispostaCliente = (item: any) => {

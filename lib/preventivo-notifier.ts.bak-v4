@@ -1,11 +1,15 @@
 "use client";
 
 /* ════════════════════════════════════════════════════════════
-   MASTRO · Preventivo Notifier v5
-   - Polling 20s su risposte cliente
-   - Quando arriva risposta accettato: AVANZA FASE auto
-   - Suono + browser notification + email
-   - Messaggi action-oriented ("Manda conferma d'ordine" vs "ha accettato")
+   MASTRO · Preventivo Notifier
+   Hook globale che monitora risposte cliente in real-time.
+   Quando un cliente risponde a un preventivo, fa scattare:
+     - Suono in-app
+     - Browser notification (Notification API)
+     - Vibrazione mobile
+     - Popup toast persistente
+     - Email al titolare (via /api/notify-conferma-cliente)
+     - Badge widget Firme + navbar
    ════════════════════════════════════════════════════════════ */
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -31,9 +35,9 @@ interface UseNotifierOptions {
   enableEmail?: boolean;
   email?: string;
   onNuovaRisposta?: (item: PreventivoNotifyItem) => void;
-  onAccettato?: (item: PreventivoNotifyItem) => void;  // callback quando arriva ACCETTATO
 }
 
+/* ── Audio helper: suono "ding" generato programmaticamente con Web Audio ── */
 function playDing() {
   try {
     const AudioCtx: typeof AudioContext =
@@ -44,6 +48,7 @@ function playDing() {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
+    // Suono "ta-da" 2 toni
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, ctx.currentTime);
     osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.13);
@@ -70,8 +75,8 @@ async function showBrowserNotification(item: PreventivoNotifyItem) {
     if (Notification.permission !== "granted") return;
     const cliente = item.snapshot?.cliente || "Cliente";
     const titles: Record<string, string> = {
-      accettato: "✓ Preventivo accettato — Manda conferma d'ordine",
-      modifiche: "⚠ Cliente chiede modifiche al preventivo",
+      accettato: "✓ Preventivo accettato",
+      modifiche: "⚠ Cliente chiede modifiche",
       chiamare: "📞 Cliente chiede di essere chiamato",
     };
     const n = new Notification(titles[item.risposta] || "Risposta cliente", {
@@ -88,6 +93,7 @@ async function showBrowserNotification(item: PreventivoNotifyItem) {
   } catch {}
 }
 
+/* Richiede permesso notifiche al primo gesto utente */
 export async function requestNotificationPermission(): Promise<boolean> {
   try {
     if (typeof Notification === "undefined") return false;
@@ -100,6 +106,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
 }
 
+/* Hook principale */
 export function usePreventivoNotifier(opts: UseNotifierOptions) {
   const {
     azienda_id,
@@ -109,7 +116,6 @@ export function usePreventivoNotifier(opts: UseNotifierOptions) {
     enableEmail = true,
     email,
     onNuovaRisposta,
-    onAccettato,
   } = opts;
 
   const [pending, setPending] = useState<PreventivoNotifyItem[]>([]);
@@ -154,6 +160,7 @@ export function usePreventivoNotifier(opts: UseNotifierOptions) {
         const items: PreventivoNotifyItem[] = d.items || [];
         if (!alive) return;
 
+        // Prima passata: registra senza notificare (evita spam al refresh)
         if (!initialDone.current) {
           items.forEach((it) => seenTokens.current.add(it.token));
           setPending(items);
@@ -161,14 +168,19 @@ export function usePreventivoNotifier(opts: UseNotifierOptions) {
           return;
         }
 
+        // Trova nuovi (non ancora notificati in questa sessione)
         const nuovi = items.filter((it) => !seenTokens.current.has(it.token));
 
         if (nuovi.length > 0) {
+          // Marca seen
           nuovi.forEach((it) => seenTokens.current.add(it.token));
+
+          // Aggiorna stato
           setPending(items);
           const top = nuovi[0];
           setLatest(top);
 
+          // Effetti collaterali (suono, notification, email)
           if (enableSound) {
             playDing();
             vibrate();
@@ -193,24 +205,17 @@ export function usePreventivoNotifier(opts: UseNotifierOptions) {
             }
           }
 
+          // Callback custom
           if (onNuovaRisposta) for (const n of nuovi) onNuovaRisposta(n);
 
-          // Auto-advance fase quando ACCETTATO
-          if (onAccettato) {
-            for (const n of nuovi) {
-              if (n.risposta === "accettato") onAccettato(n);
-            }
-          }
-
+          // Custom event per notifica UI cross-component
           for (const n of nuovi) {
             try {
               window.dispatchEvent(new CustomEvent("mastro:nuova-risposta-cliente", { detail: n }));
-              if (n.risposta === "accettato") {
-                window.dispatchEvent(new CustomEvent("mastro:cliente-ha-accettato", { detail: n }));
-              }
             } catch {}
           }
         } else {
+          // Aggiorna lista ma niente effetti
           setPending(items);
         }
       } catch {}
@@ -220,7 +225,7 @@ export function usePreventivoNotifier(opts: UseNotifierOptions) {
     const iv = setInterval(poll, pollIntervalMs);
 
     return () => { alive = false; clearInterval(iv); };
-  }, [azienda_id, pollIntervalMs, enableSound, enableBrowserNotif, enableEmail, email, onNuovaRisposta, onAccettato]);
+  }, [azienda_id, pollIntervalMs, enableSound, enableBrowserNotif, enableEmail, email, onNuovaRisposta]);
 
   return { pending, latest, ack, ackAll };
 }
