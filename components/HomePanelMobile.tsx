@@ -4,6 +4,7 @@
 import React, { useState as RS } from "react";
 import { DayButton } from "@/components/day/DayButton";
 import { useMastro } from "./MastroContext";
+import { AgendaIOSWidgetS, AgendaIOSWidgetM, AgendaIOSWidgetL } from "./widgets/AgendaIOS";
 
 const ALL_WIDGETS: any[] = [
   // KPI & TODO
@@ -29,6 +30,9 @@ const ALL_WIDGETS: any[] = [
   { id: "settimana",   label: "Settimana",            bg: "#F4C0D1", fg: "#4B1528", cat: "Agenda" },
   { id: "sopralluoghi",label: "Sopralluoghi prog.",   bg: "#EEEDFE", fg: "#26215C", cat: "Agenda" },
   { id: "montaggi",    label: "Montaggi programm.",   bg: "#E1F5EE", fg: "#04342C", cat: "Agenda" },
+  { id: "agenda_ios_s",label: "Agenda iOS · S",       bg: "#FFFFFF", fg: "#1A1A1A", cat: "Agenda" },
+  { id: "agenda_ios_m",label: "Agenda iOS · M",       bg: "#FFFFFF", fg: "#1A1A1A", cat: "Agenda" },
+  { id: "agenda_ios_l",label: "Agenda iOS · L",       bg: "#FFFFFF", fg: "#1A1A1A", cat: "Agenda" },
   // TEAM & MAGAZZINO
   { id: "squadra",     label: "Squadra sul campo",    bg: "#CECBF6", fg: "#26215C", cat: "Team" },
   { id: "stock",       label: "Magazzino sotto-sc.",  bg: "#F7C1C1", fg: "#501313", cat: "Magazzino" },
@@ -558,6 +562,33 @@ export default function HomePanelMobile(props: any) {
     <div style={{ position: "relative" as any }}>
       {editMode && <RemoveBtn id="agenda" fg="#72243E" onRemove={removeWidget} />}
       <AgendaWidgetV3 events={mastro?.events || []} onNavigate={onNavigate} editMode={editMode} />
+    </div>
+  );
+
+  // === Agenda iOS · S/M/L (mini-app stile iOS, scroll interno su L) ===
+  const navIOS = {
+    goto: (tab: string) => onNavigate?.(tab),
+    openEvent: () => onNavigate?.("agenda"),
+  };
+
+  W.agenda_ios_s = () => (
+    <div style={{ position: "relative" as any }}>
+      {editMode && <RemoveBtn id="agenda_ios_s" fg="#888" onRemove={removeWidget} />}
+      <AgendaIOSWidgetS data={{ events: mastro?.events || [] }} nav={navIOS} />
+    </div>
+  );
+
+  W.agenda_ios_m = () => (
+    <div style={{ position: "relative" as any }}>
+      {editMode && <RemoveBtn id="agenda_ios_m" fg="#888" onRemove={removeWidget} />}
+      <AgendaIOSWidgetM data={{ events: mastro?.events || [] }} nav={navIOS} />
+    </div>
+  );
+
+  W.agenda_ios_l = () => (
+    <div style={{ position: "relative" as any }}>
+      {editMode && <RemoveBtn id="agenda_ios_l" fg="#888" onRemove={removeWidget} />}
+      <AgendaIOSWidgetL data={{ events: mastro?.events || [] }} nav={navIOS} />
     </div>
   );
 
