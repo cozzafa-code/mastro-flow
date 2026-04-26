@@ -308,6 +308,16 @@ export default function CMDetailPanel() {
     const [fiscCopied, setFiscCopied] = React.useState<string | null>(null);
     const [rispostaCliente, setRispostaCliente] = React.useState<any>(null);
     const [showSendModal, setShowSendModal] = React.useState<null | { link: string; nome: string; tel: string; email: string; code: string }>(null);
+    const [pdfBusy, setPdfBusy] = React.useState<null | "pdf" | "anteprima" | "invia">(null);
+    React.useEffect(() => {
+      const id = "mastro-pdf-spin-keyframes";
+      if (typeof document !== "undefined" && !document.getElementById(id)) {
+        const s = document.createElement("style");
+        s.id = id;
+        s.textContent = "@keyframes mastrospin { to { transform: rotate(360deg); } }";
+        document.head.appendChild(s);
+      }
+    }, []);
     React.useEffect(() => {
       if (!selectedCM?.preventivoInviato || !selectedCM?.id) { setRispostaCliente(null); return; }
       let alive = true;
@@ -2600,40 +2610,87 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
               </div>
               <div style={{ marginTop: 16, display: "flex", gap: 8, marginBottom: 8 }}>
-                <button onClick={() => { try { console.log("[PDF] click"); generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[PDF]", err); alert("Errore PDF: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
-                <button onClick={() => { try { console.log("[Anteprima] click"); generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(err) { console.error("[Anteprima]", err); alert("Errore Anteprima: " + (err?.message || err)); } }} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
+                <button disabled={!!pdfBusy} onClick={async () => {
+                  if (pdfBusy) return;
+                  setPdfBusy("pdf");
+                  try {
+                    await Promise.race([
+                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], coprifiliDB, lamiereDB, calcolaVanoPrezzo, getVaniAttivi }),
+                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
+                    ]);
+                  } catch(err: any) {
+                    console.error("[PDF]", err);
+                    alert("Errore generazione PDF: " + (err?.message || err));
+                  } finally {
+                    setPdfBusy(null);
+                  }
+                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "pdf" ? "#28A0A018" : "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "pdf" ? 0.5 : 1 }}>{pdfBusy === "pdf" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid #28A0A0", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.fileText} /> PDF</>}</button>
+                <button disabled={!!pdfBusy} onClick={async () => {
+                  if (pdfBusy) return;
+                  setPdfBusy("anteprima");
+                  try {
+                    await Promise.race([
+                      generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], coprifiliDB, lamiereDB, calcolaVanoPrezzo, getVaniAttivi }),
+                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
+                    ]);
+                  } catch(err: any) {
+                    console.error("[Anteprima]", err);
+                    alert("Errore Anteprima: " + (err?.message || err));
+                  } finally {
+                    setPdfBusy(null);
+                  }
+                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "anteprima" ? "#28A0A018" : T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "anteprima" ? 0.5 : 1 }}>{pdfBusy === "anteprima" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid " + T.sub, borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.eye} /> Anteprima</>}</button>
               </div>
-              <button onClick={async () => {
-                // 1. Genera PDF (non blocca se fallisce)
-                alert("[CLICK] INVIA premuto");
-                try { generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] }); } catch(e) { console.error("[PDF fail]", e); }
-                // 2. Segna inviato
+              <button disabled={!!pdfBusy} onClick={async () => {
+                if (pdfBusy) return;
+                setPdfBusy("invia");
                 try {
-                  setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
-                  setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }));
-                } catch(e) { console.error("[setCantieri fail]", e); }
-                // 3. Genera link pubblico (non blocca se fallisce)
-                let linkPubblico = "";
-                try {
-                  const snapshot = {
-                    cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
-                    totale: (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0,
-                    vani: ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []).map((v, i) => ({
-                      nome: v.nome || v.tipo || "Vano " + (i+1),
-                      tipo: v.tipo,
-                      misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
-                      prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
-                    })),
-                    azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
-                  };
-                  const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }) });
-                  if (r.ok) { const d = await r.json(); linkPubblico = window.location.origin + d.url; }
-                } catch(e) { console.error("[link fail]", e); }
-                // 4. Apri modal SEMPRE
-                const nome = c.cliente || "";
-                const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
-              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)" }}><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE -></button>
+                  // 1. Genera PDF con timeout 20s
+                  try {
+                    await Promise.race([
+                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], coprifiliDB, lamiereDB, calcolaVanoPrezzo, getVaniAttivi }),
+                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (20s)")), 20000)),
+                    ]);
+                  } catch(e: any) {
+                    console.error("[PDF fail]", e);
+                    alert("Generazione PDF non riuscita: " + (e?.message || e) + "\n\nIl preventivo viene comunque inviato senza allegato.");
+                  }
+
+                  // 2. Segna inviato (in stato locale)
+                  try {
+                    setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
+                    setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }) : prev);
+                  } catch(e) { console.error("[setCantieri fail]", e); }
+
+                  // 3. Genera link pubblico (non bloccante, timeout 8s)
+                  let linkPubblico = "";
+                  try {
+                    const snapshot = {
+                      cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
+                      totale: (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0,
+                      vani: ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []).map((v: any, i: number) => ({
+                        nome: v.nome || v.tipo || "Vano " + (i+1),
+                        tipo: v.tipo,
+                        misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
+                        prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
+                      })),
+                      azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
+                    };
+                    const ctrl = new AbortController();
+                    const t = setTimeout(() => ctrl.abort(), 8000);
+                    const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }), signal: ctrl.signal });
+                    clearTimeout(t);
+                    if (r.ok) { const d = await r.json(); linkPubblico = window.location.origin + d.url; }
+                  } catch(e) { console.error("[link fail]", e); }
+
+                  // 4. Apri modal SEMPRE
+                  const nome = c.cliente || "";
+                  const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                  setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
+                } finally {
+                  setPdfBusy(null);
+                }
+              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: pdfBusy === "invia" ? "#0D1F1F" : "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)", opacity: pdfBusy && pdfBusy !== "invia" ? 0.5 : 1 }}>{pdfBusy === "invia" ? <><span style={{ display: "inline-block", width: 14, height: 14, border: "2.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 8, verticalAlign: "middle" }} /> Generazione PDF e link...</> : <><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE {"->"}</>}</button>
               <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Invia PDF via WhatsApp. La firma verrà richiesta solo dopo la conferma del cliente.</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
                 <span onClick={() => { updCM("preventivoInviato", true); setCcDone("✓ Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>✓ Segna completato</span>
@@ -4386,7 +4443,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       )}
                       {firmaStep === 0 ? (
                         <div>
-                          <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA -></button>
+                          <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA {"->"}</button>
                           <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
                           <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                             <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #28A0A0", background: "#28A0A012", color: "#28A0A0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> Solo PDF</button>
