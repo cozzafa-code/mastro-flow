@@ -2713,9 +2713,23 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico Uw · Link cliente firma · Excel pratica ENEA</div>
               </div>
               {/* Avanti dopo invio · solo se non ancora confermato */}
-              {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (
-                <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}><I d={ICO.edit} />€+ AVANTI → Conferma ordine</button>
-              )}
+              {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (() => {
+                const accettato = rispostaCliente?.risposta === "accettato";
+                return (
+                  <div style={{ marginTop: 8 }}>
+                    {accettato && (
+                      <div style={{ background: "linear-gradient(135deg, #DDF5E6 0%, #C8EBD3 100%)", border: "1px solid #28A268", borderRadius: 12, padding: "10px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ fontSize: 22 }}>✓</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#0E5E33", letterSpacing: 0.3 }}>CLIENTE HA ACCETTATO</div>
+                          <div style={{ fontSize: 10, color: "#0E5E33", opacity: 0.85, marginTop: 1 }}>{rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT") : ""}{rispostaCliente?.risposta_ip ? " · IP " + rispostaCliente.risposta_ip : ""}</div>
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: accettato ? "linear-gradient(135deg, #28A268 0%, #1F8050 100%)" : T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: accettato ? "0 4px 14px rgba(40,162,104,0.35)" : undefined, animation: accettato ? "mastropulse 1.6s infinite" : undefined }}><I d={ICO.edit} /> {accettato ? "→ CREA CONFERMA D’ORDINE" : "€+ AVANTI → Conferma ordine"}</button>
+                  </div>
+                );
+              })()}
               {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
             </div>
           )}
