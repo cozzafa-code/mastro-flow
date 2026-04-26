@@ -121,6 +121,17 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       }
     };
     window.addEventListener("mastro:nav", onNav);
+
+    // Mastro safety net: cattura promise rejected non gestite
+    // (era causa di crash dopo INVIA PREVENTIVO quando errori async passavano nel vuoto)
+    const onUnhandled = (e: PromiseRejectionEvent) => {
+      console.error("[mastro:unhandled]", e.reason);
+      e.preventDefault(); // impedisce che vada nel default error handler del browser
+    };
+    if (typeof window !== "undefined" && !(window as any).__mastroUnhandledInstalled) {
+      window.addEventListener("unhandledrejection", onUnhandled);
+      (window as any).__mastroUnhandledInstalled = true;
+    }
     return () => window.removeEventListener("mastro:nav", onNav);
   }, []);
   // === SUBSCRIPTION ===
