@@ -5,6 +5,12 @@ import React, { useState as RS } from "react";
 import { DayButton } from "@/components/day/DayButton";
 import { useMastro } from "./MastroContext";
 import { AgendaIOSWidgetS, AgendaIOSWidgetM, AgendaIOSWidgetL } from "./widgets/AgendaIOS";
+import OggiDeviFareMini from "./widgets/OggiDeviFareMini";
+import TimelineOggiMini from "./widgets/TimelineOggiMini";
+import MessaggiNonLettiMini from "./widgets/MessaggiNonLettiMini";
+import FirmeInAttesaMini from "./widgets/FirmeInAttesaMini";
+import DaIncassareMini from "./widgets/DaIncassareMini";
+import LavoriRecentiMini from "./widgets/LavoriRecentiMini";
 
 const ALL_WIDGETS: any[] = [
   // KPI & TODO
@@ -590,6 +596,95 @@ export default function HomePanelMobile(props: any) {
       {editMode && <RemoveBtn id="agenda_ios_l" fg="#888" onRemove={removeWidget} />}
       <AgendaIOSWidgetL data={{ events: mastro?.events || [] }} nav={navIOS} />
     </div>
+  );
+
+  // ===== TIER 1 MINI-APP override =====
+  const _onApriCm = (cmId: string) => {
+    const cm = (mastro?.cantieri || mastro?.commesse || []).find((c: any) => c.id === cmId);
+    if (cm && mastro?.setSelectedCM) mastro.setSelectedCM(cm);
+    onNavigate?.("commesse");
+  };
+
+  W.oggi = () => (
+    <OggiDeviFareMini
+      tasks={mastro?.tasks || []}
+      commesse={mastro?.cantieri || mastro?.commesse || []}
+      onNavigate={onNavigate}
+      onCompleteTask={mastro?.toggleTask}
+      onApriCommessa={_onApriCm}
+      onNuovoTask={() => mastro?.setTab?.("agenda")}
+      editMode={editMode}
+      onRemove={() => removeWidget("oggi")}
+    />
+  );
+
+  W.timeline = () => (
+    <TimelineOggiMini
+      events={mastro?.events || []}
+      onNavigate={onNavigate}
+      onApriCommessa={_onApriCm}
+      onNuovoEvento={() => mastro?.setTab?.("agenda")}
+      editMode={editMode}
+      onRemove={() => removeWidget("timeline")}
+    />
+  );
+
+  W.msg = () => (
+    <MessaggiNonLettiMini
+      msgs={mastro?.msgs || []}
+      onNavigate={onNavigate}
+      onApriMsg={(mid: string) => {
+        const m = (mastro?.msgs || []).find((x: any) => x.id === mid);
+        if (m && mastro?.setSelectedMsg) mastro.setSelectedMsg(m);
+        onNavigate?.("messaggi");
+      }}
+      onApriCommessa={_onApriCm}
+      onMarkRead={(mid: string) => {
+        if (mastro?.setMsgs) {
+          mastro.setMsgs((prev: any[]) => prev.map((m: any) => m.id === mid ? { ...m, letto: true } : m));
+        }
+      }}
+      editMode={editMode}
+      onRemove={() => removeWidget("msg")}
+    />
+  );
+
+  W.firme = () => (
+    <FirmeInAttesaMini
+      commesse={mastro?.cantieri || mastro?.commesse || []}
+      onNavigate={onNavigate}
+      onApriCommessa={_onApriCm}
+      onApriDoc={(url: string) => { if (url) window.open(url, "_blank", "noopener"); }}
+      editMode={editMode}
+      onRemove={() => removeWidget("firme")}
+    />
+  );
+
+  W.incassi = () => (
+    <DaIncassareMini
+      fattureDB={mastro?.fattureDB || []}
+      onlyScadute={false}
+      onNavigate={onNavigate}
+      onApriCommessa={_onApriCm}
+      onApriFattura={(fid: string) => {
+        const f = (mastro?.fattureDB || []).find((x: any) => x.id === fid);
+        if (f && mastro?.setFatturaEdit) mastro.setFatturaEdit(f);
+        onNavigate?.("contabilita");
+      }}
+      editMode={editMode}
+      onRemove={() => removeWidget("incassi")}
+    />
+  );
+
+  W.recenti = () => (
+    <LavoriRecentiMini
+      commesse={mastro?.cantieri || mastro?.commesse || []}
+      onNavigate={onNavigate}
+      onApriCommessa={_onApriCm}
+      onNuovaCommessa={() => mastro?.setTab?.("commesse")}
+      editMode={editMode}
+      onRemove={() => removeWidget("recenti")}
+    />
   );
 
   
