@@ -4,6 +4,7 @@ import WidgetPicker from "./WidgetPicker";
 import { useWidgetConfig, DEFAULT_WIDGETS } from "@/hooks/useWidgetConfig";
 import { WIDGET_BY_ID } from "./widgetCatalog";
 import { renderWidgetBody } from "./widgetRenderers";
+import { AgendaIOSWidgetS, AgendaIOSWidgetM, AgendaIOSWidgetL } from "./widgets/AgendaIOS";
 import { useMastro } from "./MastroContext";
 
 const TEAL = "#28A0A0";
@@ -226,6 +227,9 @@ export default function HomeWidgetsDynamic() {
     iva_versare: "contabilita",
     top_clienti: "contabilita",
     eventi_oggi: "agenda",
+    agenda_ios_s: "agenda",
+    agenda_ios_m: "agenda",
+    agenda_ios_l: "agenda",
     prossimi_7gg: "agenda",
     scadenze_importanti: "agenda",
     appuntamenti_clienti: "agenda",
@@ -273,20 +277,53 @@ export default function HomeWidgetsDynamic() {
             } as any}
           >
             <WidgetEB>
-              <WCard
-                title={meta.label}
-                subtitle={meta.description}
-                iconPath={meta.iconPath}
-                onRemove={() => removeWidget(wid)}
-                onHeaderClick={() => {
-                  const tgt = WIDGET_TARGET[wid];
-                  if (tgt) { ctx?.setTab?.(tgt); trackEvent?.("widget_header_click", wid); }
-                }}
-                dragging={isDrag}
-                dragHover={isHover}
-              >
-                {renderWidgetBody(wid, data, nav)}
-              </WCard>
+              {wid === "agenda_ios_s" || wid === "agenda_ios_m" || wid === "agenda_ios_l" ? (
+                <div style={{
+                  marginBottom: 12,
+                  position: "relative",
+                  opacity: isDrag ? 0.95 : 1,
+                  transform: isDrag ? "scale(1.04) rotate(-0.5deg)" : "scale(1)",
+                  transition: isDrag ? "none" : "transform 0.25s cubic-bezier(.2,.9,.3,1.2)",
+                  boxShadow: isDrag
+                    ? "0 18px 40px rgba(31,120,120,0.35), 0 0 0 2px " + TEAL
+                    : "none",
+                  borderRadius: 22,
+                  border: isHover ? "2px dashed " + TEAL : undefined,
+                }}>
+                  {wid === "agenda_ios_s" && <AgendaIOSWidgetS data={data} nav={nav} />}
+                  {wid === "agenda_ios_m" && <AgendaIOSWidgetM data={data} nav={nav} />}
+                  {wid === "agenda_ios_l" && <AgendaIOSWidgetL data={data} nav={nav} />}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeWidget(wid); }}
+                    style={{
+                      position: "absolute" as any,
+                      top: -6, right: -6,
+                      width: 22, height: 22, borderRadius: 11,
+                      background: "#fff", border: "1px solid rgba(0,0,0,0.08)",
+                      color: "#888", fontSize: 14, fontWeight: 700,
+                      cursor: "pointer", lineHeight: 1, padding: 0,
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                    aria-label="Rimuovi widget"
+                  >×</button>
+                </div>
+              ) : (
+                <WCard
+                  title={meta.label}
+                  subtitle={meta.description}
+                  iconPath={meta.iconPath}
+                  onRemove={() => removeWidget(wid)}
+                  onHeaderClick={() => {
+                    const tgt = WIDGET_TARGET[wid];
+                    if (tgt) { ctx?.setTab?.(tgt); trackEvent?.("widget_header_click", wid); }
+                  }}
+                  dragging={isDrag}
+                  dragHover={isHover}
+                >
+                  {renderWidgetBody(wid, data, nav)}
+                </WCard>
+              )}
             </WidgetEB>
           </div>
         );
