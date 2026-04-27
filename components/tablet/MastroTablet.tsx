@@ -37,6 +37,8 @@ export default function MastroTablet() {
   const [preset, setPresetState] = React.useState<Preset>("titolare");
   const [expanded, setExpanded] = React.useState<string | null>(null);
   const [selectedCommessaId, setSelectedCommessaId] = React.useState<string | null>(null);
+  const [activeClienteId, setActiveClienteId] = React.useState<string | null>(null);
+  const [activeEntity, setActiveEntity] = React.useState<{ tipo: EntityType; id: string } | null>(null);
 
   React.useEffect(() => {
     const check = () => setIsPortrait(window.innerWidth < 1024);
@@ -65,8 +67,22 @@ export default function MastroTablet() {
 
   const openCommessa = React.useCallback((id: string) => {
     setSelectedCommessaId(id);
+    setActiveClienteId(null);
+    setActiveEntity(null);
     setActive("commesse");
     setExpanded(null);
+  }, []);
+
+  const openCliente = React.useCallback((id: string) => {
+    setActiveClienteId(id);
+    setSelectedCommessaId(null);
+    setActiveEntity(null);
+    setActive("clienti");
+    setExpanded(null);
+  }, []);
+
+  const openEntity = React.useCallback((tipo: EntityType, id: string) => {
+    setActiveEntity({ tipo, id });
   }, []);
 
   const closeCommessa = React.useCallback(() => {
@@ -80,6 +96,8 @@ export default function MastroTablet() {
     }
     setActive(sezione);
     setSelectedCommessaId(null);
+    setActiveClienteId(null);
+    setActiveEntity(null);
     setExpanded(null);
   }, [openCommessa]);
 
@@ -105,6 +123,8 @@ export default function MastroTablet() {
   const handleSidebarSelect = React.useCallback((s: string) => {
     setActive(s);
     setSelectedCommessaId(null);
+    setActiveClienteId(null);
+    setActiveEntity(null);
     setExpanded(null);
   }, []);
 
@@ -114,12 +134,15 @@ export default function MastroTablet() {
     <RuoloProvider ruolo={preset} currentUserId={currentUserId}>
       <BannerRuolo presetRuolo={preset} setPresetRuolo={setPreset} />
       <DashboardProvider
+      navigate={navigate}
       onNavigate={navigate}
       onExpand={expand}
       preset={preset}
       setPreset={setPreset}
       selectedCommessaId={selectedCommessaId}
       openCommessa={openCommessa}
+      openCliente={openCliente}
+      openEntity={openEntity}
       closeCommessa={closeCommessa}
     >
       <div
@@ -164,7 +187,7 @@ export default function MastroTablet() {
               {active === "montaggi"      && <MontaggiTablet />}
               {active === "ordini"        && <OrdiniFornitoriTablet />}
               {active === "magazzino"     && <MagazzinoTablet />}
-              {active === "clienti"       && <ClientiTablet />}
+              {active === "clienti"       && (activeClienteId ? <ClienteDettaglioTablet clienteId={activeClienteId} onBack={() => setActiveClienteId(null)} /> : <ClientiTablet />)}
               {active === "contabilita"   && <ContabilitaTablet />}
               {active === "fiscale"       && <FiscaleTablet />}
               {active === "team"          && <TeamTablet />}
