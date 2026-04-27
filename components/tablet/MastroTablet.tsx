@@ -9,6 +9,8 @@ import CommessaDettaglioTablet from "./commesse/CommessaDettaglioTablet";
 import ClienteDettaglioTablet from "./clienti/ClienteDettaglioTablet";
 import EntityDetailPanel from "./EntityDetailPanel";
 import { EntityType } from "./dashboard-context";
+import { RuoloProvider } from "./store";
+import BannerRuolo from "./BannerRuolo";
 import CalendarioTablet from "./calendario/CalendarioTablet";
 import SopralluoghiTablet from "./sopralluoghi/SopralluoghiTablet";
 import ProduzioneTablet from "./produzione/ProduzioneTablet";
@@ -105,8 +107,12 @@ export default function MastroTablet() {
     setExpanded(null);
   }, []);
 
+  const currentUserId = "op-walter"; // posatore corrente quando preset = posatore
+
   return (
-    <DashboardProvider
+    <RuoloProvider ruolo={presetRuolo} currentUserId={currentUserId}>
+      <BannerRuolo presetRuolo={presetRuolo} setPresetRuolo={setPresetRuolo} />
+      <DashboardProvider
       onNavigate={navigate}
       onExpand={expand}
       preset={preset}
@@ -191,6 +197,7 @@ export default function MastroTablet() {
         onOpenCommessa={openCommessa}
         onOpenCliente={openCliente}
       />
-    </DashboardProvider>
+      </DashboardProvider>
+    </RuoloProvider>
   );
 }
