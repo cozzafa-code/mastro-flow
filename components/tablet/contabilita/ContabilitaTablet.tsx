@@ -3,6 +3,7 @@ import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
 import { useMastroData } from "../store";
+import { useDashboard } from "../dashboard-context";
 
 const TINTS = {
   green: TT.green, red: TT.red, blue: TT.blue,
@@ -12,6 +13,7 @@ const TINTS = {
 
 export default function ContabilitaTablet() {
   const data = useMastroData();
+  const { openEntity } = useDashboard();
   const fatture = data.getFatture();
   const pagamenti = data.getPagamenti();
 

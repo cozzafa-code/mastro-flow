@@ -46,7 +46,7 @@ const FILTRI_ENEA: { id: FiltroEnea; label: string }[] = [
 
 export default function FiscaleTablet() {
   const data = useMastroData();
-  const { openCommessa } = useDashboard();
+  const { openEntity } = useDashboard();
   const [filtroBonus, setFiltroBonus] = React.useState<FiltroBonus>("tutti");
   const [filtroEnea, setFiltroEnea] = React.useState<FiltroEnea>("tutti");
 
@@ -173,7 +173,7 @@ export default function FiscaleTablet() {
           if (!cli) return null;
           return (
             <div key={p.id}
-              onClick={() => openCommessa(p.commessaId)}
+              onClick={() => openEntity("pratica", p.id)}
               style={cardStyle({ padding: 0, cursor: "pointer", overflow: "hidden" })}>
 
               {/* Header colorato */}

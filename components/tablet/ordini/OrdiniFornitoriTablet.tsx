@@ -3,6 +3,7 @@ import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
 import { useMastroData, StatoOrdineFornitore } from "../store";
+import { useDashboard } from "../dashboard-context";
 
 const STATI: Record<StatoOrdineFornitore, { label: string; tint: keyof typeof TINTS }> = {
   bozza:       { label: "Bozza",       tint: "slate"  },
@@ -30,6 +31,7 @@ const FILTRI: { id: Filtro; label: string; tint?: keyof typeof TINTS }[] = [
 
 export default function OrdiniFornitoriTablet() {
   const data = useMastroData();
+  const { openEntity } = useDashboard();
   const ordini = data.getOrdini();
   const [filtro, setFiltro] = React.useState<Filtro>("tutti");
 
@@ -112,7 +114,7 @@ export default function OrdiniFornitoriTablet() {
               const fornitoreRamp = TINTS[o.fornitoreColor as keyof typeof TINTS] || TINTS.slate;
               const r = o.giorniRitardo > 0;
               return (
-                <tr key={o.id} style={{ borderTop: `1px solid ${TT.border}`, cursor: "pointer" }}>
+                <tr key={o.id} onClick={() => openEntity("ordine", o.id)} style={{ borderTop: `1px solid ${TT.border}`, cursor: "pointer" }}>
                   <Td>
                     <div>
                       <div style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: TT.text1 }}>{o.numero}</div>
