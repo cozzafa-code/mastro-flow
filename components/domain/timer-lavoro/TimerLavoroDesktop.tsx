@@ -1,14 +1,16 @@
 'use client';
 
 // ============================================================
-// MASTRO — TimerLavoroDesktop (light Google-style)
-// Control room titolare/caposquadra: tabella + KPI + approvazioni
+// MASTRO — TimerLavoroDesktop
+// Light Google-style. Control Room titolare/caposquadra.
+// KPI in alto, filtri, tabella ore con avatar e approvazioni.
 // ============================================================
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDuration, formatHMS } from '@/hooks/useTimerLavoro';
-import { C, FONT, SHADOW, RADIUS, stateBadge } from '@/lib/timer-lavoro-ui';
+import { MC, MF, MS, MR, MP, sectionLabel, btnPrimary, stateBadge, inputStyle } from '@/constants/design-system';
+import { MastroCard, KpiCard, SectionLabel, MastroEmpty, OperatoreAvatar } from './_ui';
 import {
   FASI_LAVORO_LABEL,
   type FaseLavoro,
@@ -27,39 +29,22 @@ interface Props {
 }
 
 const S = {
-  root: { minHeight: '100vh', background: C.bg, color: C.text, fontFamily: FONT.ui, boxSizing: 'border-box' } as CSSProperties,
-  container: { maxWidth: 1280, margin: '0 auto', padding: 24 } as CSSProperties,
-  hLabel: { fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.muted, marginBottom: 4, fontWeight: 600 } as CSSProperties,
-  hTitle: { fontSize: 26, fontWeight: 600, margin: 0, color: C.text } as CSSProperties,
-  kpiRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, margin: '24px 0' } as CSSProperties,
-  kpiCard: {
-    background: C.card, border: `1px solid ${C.border}`, borderRadius: RADIUS.lg,
-    padding: 18, boxShadow: SHADOW.card,
-  } as CSSProperties,
-  kpiLabel: { fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.muted, fontWeight: 600 } as CSSProperties,
-  kpiValue: { fontFamily: FONT.mono, fontSize: 28, fontWeight: 600, color: C.text, marginTop: 8 } as CSSProperties,
-  kpiSub: { fontSize: 12, color: C.muted, marginTop: 4 } as CSSProperties,
-  filtersBox: {
-    background: C.card, border: `1px solid ${C.border}`, borderRadius: RADIUS.lg,
-    padding: 16, marginBottom: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12,
-    boxShadow: SHADOW.card,
-  } as CSSProperties,
-  fLabel: { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: C.muted, marginBottom: 6, fontWeight: 600 } as CSSProperties,
-  fSelect: {
-    width: '100%', padding: '8px 12px', fontSize: 14,
-    background: '#fff', color: C.text, border: `1px solid ${C.border}`,
-    borderRadius: RADIUS.md, outline: 'none', boxSizing: 'border-box', fontFamily: FONT.ui,
-  } as CSSProperties,
-  tableBox: { background: C.card, border: `1px solid ${C.border}`, borderRadius: RADIUS.lg, overflow: 'hidden', boxShadow: SHADOW.card } as CSSProperties,
+  root: { minHeight: '100vh', background: MC.bg, color: MC.text, fontFamily: MF.ui } as CSSProperties,
+  container: { maxWidth: 1280, margin: '0 auto', padding: MP.s6 } as CSSProperties,
+  hLabel: { ...sectionLabel, marginBottom: 4 } as CSSProperties,
+  hTitle: { fontSize: 26, fontWeight: 600, margin: 0, color: MC.text } as CSSProperties,
+  kpiRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: MP.s4, margin: `${MP.s6}px 0` } as CSSProperties,
+  filtersBox: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: MP.s3, marginBottom: MP.s4 } as CSSProperties,
+  fLabel: { ...sectionLabel, marginBottom: 6, letterSpacing: 1.2 } as CSSProperties,
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 14 } as CSSProperties,
-  th: { padding: '12px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.2, color: C.muted, textAlign: 'left' as const, background: C.bgSoft } as CSSProperties,
-  td: { padding: '14px 16px', color: C.text } as CSSProperties,
+  th: { padding: '12px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.2, color: MC.muted, textAlign: 'left' as const, background: MC.bgSoft, borderBottom: `1px solid ${MC.border}` } as CSSProperties,
+  td: { padding: '14px 16px', color: MC.text, verticalAlign: 'middle' as const } as CSSProperties,
   approveBtn: {
-    padding: '6px 14px', fontSize: 12, fontWeight: 600, letterSpacing: 0.5,
-    background: C.tealDark, color: '#fff', border: 'none', borderRadius: RADIUS.md,
-    cursor: 'pointer', fontFamily: 'inherit', boxShadow: SHADOW.button,
+    padding: '6px 14px', fontSize: 12, fontWeight: 600, letterSpacing: 0.3,
+    background: MC.tealDark, color: '#fff', border: 'none', borderRadius: MR.md,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: MS.button,
   } as CSSProperties,
-  empty: { padding: 40, textAlign: 'center' as const, color: C.muted } as CSSProperties,
+  opCell: { display: 'flex', alignItems: 'center', gap: 10 } as CSSProperties,
 };
 
 function Th({ children, align = 'left' }: { children: ReactNode; align?: 'left' | 'right' }) {
@@ -114,7 +99,6 @@ export default function TimerLavoroDesktop({
     return true;
   }), [ore, filtroSt]);
 
-  // KPI
   const kpi = useMemo(() => {
     const attivi = ore.filter(o => !o.stop_at).length;
     const daApprovare = ore.filter(o => o.stop_at && !o.approvata_at).length;
@@ -129,7 +113,7 @@ export default function TimerLavoroDesktop({
     }).eq('id', id);
   };
 
-  const opNome = (id: string) => operatori.find(o => o.id === id)?.nome ?? '—';
+  const opGet = (id: string) => operatori.find(o => o.id === id);
   const cmLabel = (id: string) => {
     const c = commesse.find(x => x.id === id);
     return c ? `${c.numero ?? '—'} · ${c.cliente_nome ?? ''}` : '—';
@@ -143,67 +127,71 @@ export default function TimerLavoroDesktop({
           <h1 style={S.hTitle}>Timer Lavoro</h1>
         </div>
 
-        {/* KPI */}
+        {/* KPI control room */}
         <div style={S.kpiRow}>
-          <div style={S.kpiCard}>
-            <div style={S.kpiLabel}>In esecuzione</div>
-            <div style={{ ...S.kpiValue, color: kpi.attivi > 0 ? C.tealDark : C.text }}>{kpi.attivi}</div>
-            <div style={S.kpiSub}>{kpi.opUnici} {kpi.opUnici === 1 ? 'operatore' : 'operatori'} attivi</div>
-          </div>
-          <div style={S.kpiCard}>
-            <div style={S.kpiLabel}>Da approvare</div>
-            <div style={{ ...S.kpiValue, color: kpi.daApprovare > 0 ? C.warn : C.text }}>{kpi.daApprovare}</div>
-            <div style={S.kpiSub}>sessioni in attesa</div>
-          </div>
-          <div style={S.kpiCard}>
-            <div style={S.kpiLabel}>Totale ore (periodo)</div>
-            <div style={S.kpiValue}>{formatDuration(kpi.totMin)}</div>
-            <div style={S.kpiSub}>{ore.length} sessioni totali</div>
-          </div>
-          <div style={S.kpiCard}>
-            <div style={S.kpiLabel}>Operatori censiti</div>
-            <div style={S.kpiValue}>{operatori.length}</div>
-            <div style={S.kpiSub}>nella squadra</div>
-          </div>
+          <KpiCard
+            label="In esecuzione"
+            value={kpi.attivi}
+            sub={`${kpi.opUnici} ${kpi.opUnici === 1 ? 'operatore' : 'operatori'} attivi`}
+            variant={kpi.attivi > 0 ? 'teal' : 'neutral'}
+          />
+          <KpiCard
+            label="Da approvare"
+            value={kpi.daApprovare}
+            sub="sessioni in attesa"
+            variant={kpi.daApprovare > 0 ? 'warn' : 'neutral'}
+          />
+          <KpiCard
+            label="Totale ore (periodo)"
+            value={formatDuration(kpi.totMin)}
+            sub={`${ore.length} sessioni totali`}
+          />
+          <KpiCard
+            label="Operatori censiti"
+            value={operatori.length}
+            sub="nella squadra"
+          />
         </div>
 
         {/* Filtri */}
-        <div style={S.filtersBox}>
-          <div>
-            <div style={S.fLabel}>Operatore</div>
-            <select style={S.fSelect} value={filtroOp} onChange={e => setFiltroOp(e.target.value)}>
-              <option value="">Tutti</option>
-              {operatori.map(o => <option key={o.id} value={o.id}>{o.nome ?? '—'}</option>)}
-            </select>
+        <MastroCard padding={MP.s4} style={{ marginBottom: MP.s4 }}>
+          <div style={S.filtersBox}>
+            <div>
+              <div style={S.fLabel}>Operatore</div>
+              <select style={inputStyle} value={filtroOp} onChange={e => setFiltroOp(e.target.value)}>
+                <option value="">Tutti</option>
+                {operatori.map(o => <option key={o.id} value={o.id}>{o.nome ?? '—'}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={S.fLabel}>Commessa</div>
+              <select style={inputStyle} value={filtroCm} onChange={e => setFiltroCm(e.target.value)}>
+                <option value="">Tutte</option>
+                {commesse.map(c => <option key={c.id} value={c.id}>{c.numero ?? '—'} · {c.cliente_nome ?? ''}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={S.fLabel}>Periodo</div>
+              <select style={inputStyle} value={filtroPer} onChange={e => setFiltroPer(e.target.value as any)}>
+                <option value="7g">Ultimi 7 giorni</option>
+                <option value="30g">Ultimi 30 giorni</option>
+                <option value="tutti">Tutti</option>
+              </select>
+            </div>
+            <div>
+              <div style={S.fLabel}>Stato</div>
+              <select style={inputStyle} value={filtroSt} onChange={e => setFiltroSt(e.target.value as any)}>
+                <option value="tutti">Tutti</option>
+                <option value="attivi">In esecuzione</option>
+                <option value="da_approvare">Da approvare</option>
+                <option value="approvati">Approvati</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <div style={S.fLabel}>Commessa</div>
-            <select style={S.fSelect} value={filtroCm} onChange={e => setFiltroCm(e.target.value)}>
-              <option value="">Tutte</option>
-              {commesse.map(c => <option key={c.id} value={c.id}>{c.numero ?? '—'} · {c.cliente_nome ?? ''}</option>)}
-            </select>
-          </div>
-          <div>
-            <div style={S.fLabel}>Periodo</div>
-            <select style={S.fSelect} value={filtroPer} onChange={e => setFiltroPer(e.target.value as any)}>
-              <option value="7g">Ultimi 7 giorni</option>
-              <option value="30g">Ultimi 30 giorni</option>
-              <option value="tutti">Tutti</option>
-            </select>
-          </div>
-          <div>
-            <div style={S.fLabel}>Stato</div>
-            <select style={S.fSelect} value={filtroSt} onChange={e => setFiltroSt(e.target.value as any)}>
-              <option value="tutti">Tutti</option>
-              <option value="attivi">In esecuzione</option>
-              <option value="da_approvare">Da approvare</option>
-              <option value="approvati">Approvati</option>
-            </select>
-          </div>
-        </div>
+        </MastroCard>
 
         {/* Tabella */}
-        <div style={S.tableBox}>
+        <MastroCard padding={0}>
           <table style={S.table}>
             <thead>
               <tr>
@@ -214,32 +202,42 @@ export default function TimerLavoroDesktop({
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={canApprove ? 8 : 7} style={S.empty}>Caricamento…</td></tr>}
+              {loading && (
+                <tr><td colSpan={canApprove ? 8 : 7}>
+                  <MastroEmpty title="Caricamento…" />
+                </td></tr>
+              )}
               {!loading && oreFiltrate.length === 0 && (
-                <tr><td colSpan={canApprove ? 8 : 7} style={S.empty}>Nessun risultato.</td></tr>
+                <tr><td colSpan={canApprove ? 8 : 7}>
+                  <MastroEmpty title="Nessun risultato" hint="Cambia filtri o avvia un timer dal mobile." />
+                </td></tr>
               )}
               {oreFiltrate.map((o, i) => {
                 const attivo = !o.stop_at;
                 const elapsed = attivo
                   ? Math.floor((Date.now() - new Date(o.start_at).getTime()) / 1000) - (o.pause_total_seconds || 0)
                   : 0;
-                const variant = attivo ? 'attivo' : o.approvata_at ? 'approvato' : 'da_approvare';
+                const op = opGet(o.operatore_id);
+                const variant = attivo ? 'attivo' : o.approvata_at ? 'success' : 'pending';
                 const label = attivo ? '● in corso' : o.approvata_at ? '✓ approvato' : 'da approvare';
                 return (
-                  <tr key={o.id} style={{ borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
-                    <Td>{opNome(o.operatore_id)}</Td>
+                  <tr key={o.id} style={{ borderTop: i > 0 ? `1px solid ${MC.border}` : 'none' }}>
+                    <Td>
+                      <div style={S.opCell}>
+                        <OperatoreAvatar nome={op?.nome ?? '?'} size={28} />
+                        <span>{op?.nome ?? '—'}</span>
+                      </div>
+                    </Td>
                     <Td>{cmLabel(o.commessa_id)}</Td>
                     <Td>{FASI_LAVORO_LABEL[o.fase as FaseLavoro] ?? o.fase}</Td>
                     <Td>{new Date(o.start_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</Td>
                     <Td>{o.stop_at ? new Date(o.stop_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</Td>
                     <Td align="right">
-                      <span style={{ fontFamily: FONT.mono, fontWeight: 600, color: attivo ? C.tealDark : C.text }}>
+                      <span style={{ fontFamily: MF.mono, fontWeight: 600, color: attivo ? MC.tealDark : MC.text }}>
                         {attivo ? formatHMS(elapsed) : formatDuration(o.durata_minuti)}
                       </span>
                     </Td>
-                    <Td>
-                      <span style={stateBadge(variant)}>{label}</span>
-                    </Td>
+                    <Td><span style={stateBadge(variant)}>{label}</span></Td>
                     {canApprove && (
                       <Td align="right">
                         {!attivo && !o.approvata_at && (
@@ -252,7 +250,7 @@ export default function TimerLavoroDesktop({
               })}
             </tbody>
           </table>
-        </div>
+        </MastroCard>
       </div>
     </div>
   );
