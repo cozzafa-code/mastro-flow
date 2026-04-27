@@ -442,6 +442,10 @@ export default function CMDetailPanel() {
           fase: "preventivo",
         }) : p);
         setSelectedRilievo(nuovoRilievo);
+        // v27: apri direttamente il primo vano del nuovo rilievo per modificarlo
+        if (vaniDuplicati.length > 0) {
+          setTimeout(() => { setSelectedVano(vaniDuplicati[0]); }, 100);
+        }
       };
 
       return (
