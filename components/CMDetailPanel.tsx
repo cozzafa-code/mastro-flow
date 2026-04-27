@@ -368,16 +368,18 @@ export default function CMDetailPanel() {
       return () => { alive = false; };
     }, [selectedCM?.id]);
 
-    // v41: se fase=conferma e firma non ancora ricevuta, apri ModalFirma automaticamente
+
+    const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
+    const [showAccontoModal, setShowAccontoModal] = useState(false);
+    const [showModalFirma, setShowModalFirma] = useState(false);
+
+    // v43: se fase=conferma e firma non ancora ricevuta, apri ModalFirma automaticamente
+    // (deve stare DOPO useState di showModalFirma per evitare TDZ)
     React.useEffect(() => {
       if (selectedCM?.fase === "conferma" && !(selectedCM as any)?.firmaCliente && !(selectedCM as any)?.firma_cliente) {
         setShowModalFirma(true);
       }
     }, [selectedCM?.id, selectedCM?.fase]);
-
-    const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
-    const [showAccontoModal, setShowAccontoModal] = useState(false);
-    const [showModalFirma, setShowModalFirma] = useState(false);
     const [accontoImporto, setAccontoImporto] = useState<string>("");
     const [showOrdinePreview, setShowOrdinePreview] = useState(false);
   const [noteOrdine, setNoteOrdine] = useState("");
