@@ -111,8 +111,8 @@ export default function MastroTablet() {
   const currentUserId = "op-walter"; // posatore corrente quando preset = posatore
 
   return (
-    <RuoloProvider ruolo={presetRuolo} currentUserId={currentUserId}>
-      <BannerRuolo presetRuolo={presetRuolo} setPresetRuolo={setPresetRuolo} />
+    <RuoloProvider ruolo={preset} currentUserId={currentUserId}>
+      <BannerRuolo presetRuolo={preset} setPresetRuolo={setPreset} />
       <DashboardProvider
       onNavigate={navigate}
       onExpand={expand}
