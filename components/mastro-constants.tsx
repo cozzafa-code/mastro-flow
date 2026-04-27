@@ -41,18 +41,28 @@ export const cloudLoadAll = async (userId: string): Promise<Record<string, any>>
     return result;
   } catch (e) { console.warn("Cloud load error:", e); return {}; }
 };
-export const getAziendaId = async () => null;
-export const loadAllData = async () => ({ cantieri: [], events: [], contatti: [], team: [], tasks: [], msgs: [], sistemi: null, colori: null, vetri: null, coprifili: null, lamiere: null, libreria: null, pipeline: null, azienda: null });
-export const saveCantiere = async (...a: any[]) => {};
-export const saveEvent = async (...a: any[]) => {};
-export const deleteEventDB = async (...a: any[]) => {};
-export const saveContatto = async (...a: any[]) => {};
-export const saveTeamMember = async (...a: any[]) => {};
-export const saveTask = async (...a: any[]) => {};
-export const saveAzienda = async (...a: any[]) => {};
-export const saveVanoDB = async (...a: any[]) => {};
-export const saveMateriali = async (...a: any[]) => {};
-export const savePipeline = async (...a: any[]) => {};
+// ═══════════════════════════════════════════════════════════
+// SYNC DB ATTIVO - re-export delle funzioni vere da lib/supabase-sync
+// (precedentemente erano stub no-op, niente veniva mai salvato)
+// ═══════════════════════════════════════════════════════════
+export {
+  getAziendaId,
+  loadAllData,
+  saveCantiere,
+  saveEvent,
+  deleteEventDB,
+  saveContatto,
+  saveTeamMember,
+  saveTask,
+  saveAzienda,
+  saveVanoDB,
+  saveMateriali,
+  savePipeline,
+  // Quick updates utili in tutto l'app:
+  markPreventivoInviato,
+  setFaseCommessa,
+  saveFirmaCliente,
+} from "@/lib/supabase-sync";
 
 /* =======================================================
    MASTRO MISURE ÔÇö v15 COMPLETE REBUILD

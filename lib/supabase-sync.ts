@@ -87,6 +87,46 @@ export async function loadAllData(azId: string) {
     scontoPerc: cm.sconto_perc,
     totaleFinale: cm.totale_finale,
     firmaCliente: cm.firma_cliente,
+    firmaData: cm.firma_data,
+    // ── Stato preventivo ──
+    preventivoInviato: !!cm.preventivo_inviato_at,
+    preventivoInviatoAt: cm.preventivo_inviato_at,
+    dataPreventivoInvio: cm.preventivo_inviato_at ? cm.preventivo_inviato_at.split("T")[0] : null,
+    // ── Stato fase / blocco ──
+    faseStart: cm.fase_start,
+    ferma: cm.ferma || false,
+    fermaDal: cm.ferma_dal,
+    motivoFerma: cm.motivo_ferma || "",
+    // ── Lead / fonte ──
+    fonteLead: cm.fonte_lead || "",
+    isLead: cm.is_lead || false,
+    leadSourceId: cm.lead_source_id,
+    richiestaAt: cm.richiesta_at,
+    zonaClima: cm.zona_clima || "",
+    tipologiaImmobile: cm.tipologia_immobile || "",
+    // ── OPS ──
+    opsFaseCorrente: cm.ops_fase_corrente,
+    opsBloccata: cm.ops_bloccata || false,
+    opsBloccoMotivo: cm.ops_blocco_motivo || "",
+    opsResponsabileId: cm.ops_responsabile_id,
+    opsUltimoAvanzamento: cm.ops_ultimo_avanzamento,
+    // ── Catasto / immobile ──
+    catastoFoglio: cm.catasto_foglio || "",
+    catastoParticella: cm.catasto_particella || "",
+    catastoSubalterno: cm.catasto_subalterno || "",
+    catastoComune: cm.catasto_comune || "",
+    catastoCategoria: cm.catasto_categoria || "",
+    catastoRendita: cm.catasto_rendita,
+    tipoEdificio: cm.tipo_edificio || "",
+    tipoEdificioCustom: cm.tipo_edificio_custom,
+    // ── Sistema referenze ──
+    contattoId: cm.contatto_id,
+    assegnatoA: cm.assegnato_a,
+    // ── Soft delete / archive ──
+    deletedAt: cm.deleted_at,
+    archivedAt: cm.archived_at,
+    mergedInto: cm.merged_into,
+    mergedAt: cm.merged_at,
     allegati: [],
     creato: cm.created_at ? new Date(cm.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "",
     aggiornato: cm.updated_at ? new Date(cm.updated_at).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "",
@@ -276,6 +316,42 @@ export async function saveCantiere(azId: string, c: any) {
       sconto_perc: c.scontoPerc || null,
       totale_finale: c.totaleFinale || null,
       firma_cliente: c.firmaCliente || null,
+      firma_data: c.firmaData || null,
+      // Stato preventivo
+      preventivo_inviato_at: c.preventivoInviato
+        ? (c.preventivoInviatoAt || (c.dataPreventivoInvio ? new Date(c.dataPreventivoInvio).toISOString() : new Date().toISOString()))
+        : null,
+      // Stato fase / blocco
+      fase_start: c.faseStart || null,
+      ferma: c.ferma || false,
+      ferma_dal: c.fermaDal || null,
+      motivo_ferma: c.motivoFerma || "",
+      // Lead / fonte
+      fonte_lead: c.fonteLead || null,
+      is_lead: c.isLead || false,
+      lead_source_id: c.leadSourceId || null,
+      richiesta_at: c.richiestaAt || null,
+      zona_clima: c.zonaClima || "",
+      tipologia_immobile: c.tipologiaImmobile || "",
+      // OPS
+      ops_fase_corrente: c.opsFaseCorrente || null,
+      ops_bloccata: c.opsBloccata || false,
+      ops_blocco_motivo: c.opsBloccoMotivo || "",
+      ops_responsabile_id: c.opsResponsabileId || null,
+      ops_ultimo_avanzamento: c.opsUltimoAvanzamento || null,
+      // Catasto
+      catasto_foglio: c.catastoFoglio || null,
+      catasto_particella: c.catastoParticella || null,
+      catasto_subalterno: c.catastoSubalterno || null,
+      catasto_comune: c.catastoComune || null,
+      catasto_categoria: c.catastoCategoria || null,
+      catasto_rendita: c.catastoRendita || null,
+      tipo_edificio: c.tipoEdificio || null,
+      tipo_edificio_custom: c.tipoEdificioCustom || null,
+      // Referenze
+      contatto_id: c.contattoId || null,
+      assegnato_a: c.assegnatoA || null,
+      updated_at: new Date().toISOString(),
     };
     if (isUUID) row.id = c.id;
 
@@ -573,3 +649,62 @@ export async function saveCantiereSync(azId: string, c: any): Promise<{ id: stri
     return null;
   }
 }
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║  QUICK UPDATE FUNCTIONS (single field updates, no debounce) ║
+// ║  Per quando devi essere SICURO che la modifica arrivi in DB ║
+// ╚══════════════════════════════════════════════════════════╝
+
+/** Marca commessa come preventivo inviato adesso (immediato, no debounce) */
+export async function markPreventivoInviato(cmId: string, totale?: number, fase?: string): Promise<boolean> {
+  if (!cmId) return false;
+  try {
+    const updates: any = {
+      preventivo_inviato_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    if (typeof totale === "number" && !isNaN(totale)) updates.totale_preventivo = totale;
+    if (fase) updates.fase = fase;
+    const { error } = await supabase.from("commesse").update(updates).eq("id", cmId);
+    if (error) {
+      console.error("[markPreventivoInviato] error:", error);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[markPreventivoInviato] exception:", e);
+    return false;
+  }
+}
+
+/** Avanza fase commessa (immediato) */
+export async function setFaseCommessa(cmId: string, fase: string): Promise<boolean> {
+  if (!cmId || !fase) return false;
+  try {
+    const { error } = await supabase.from("commesse").update({
+      fase,
+      ops_ultimo_avanzamento: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", cmId);
+    if (error) { console.error("[setFaseCommessa] error:", error); return false; }
+    return true;
+  } catch (e) { console.error("[setFaseCommessa] exception:", e); return false; }
+}
+
+/** Salva firma cliente (immediato) */
+export async function saveFirmaCliente(cmId: string, firmaDataUrl: string): Promise<boolean> {
+  if (!cmId || !firmaDataUrl) return false;
+  try {
+    const { error } = await supabase.from("commesse").update({
+      firma_cliente: firmaDataUrl,
+      firma_data: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq("id", cmId);
+    if (error) { console.error("[saveFirmaCliente] error:", error); return false; }
+    return true;
+  } catch (e) { console.error("[saveFirmaCliente] exception:", e); return false; }
+}
+
+// ── Alias retro-compat con stub names ──
+export { deleteEvent as deleteEventDB };
+export { saveVano as saveVanoDB };

@@ -813,11 +813,17 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     enableEmail: !!aziendaInfo?.email,
     email: aziendaInfo?.email,
     onAccettato: (item: any) => {
-      // AUTO-AVANZA FASE quando cliente accetta
+      // AUTO-AVANZA FASE quando cliente accetta (memoria + DB)
       try {
         if (typeof setFaseTo === 'function') {
           setFaseTo(item.cm_id, 'conferma');
         }
+        // Persisti in DB
+        import('@/lib/supabase-sync').then(m => {
+          m.setFaseCommessa(item.cm_id, 'conferma')
+            .then((ok: boolean) => { if (!ok) console.warn('[DB] auto-advance fase fail'); })
+            .catch((err: any) => console.warn('[DB] auto-advance error:', err));
+        });
       } catch(e) { console.error('[auto-advance fase fail]', e); }
     },
   });

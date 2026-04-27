@@ -11,7 +11,7 @@ import BulkEditBar from "./BulkEditBar";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
-import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey } from "./mastro-constants";
+import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
 import { buildSnapshot, creaFascicolo, getFascicoliCommessa, revocaFascicolo } from "../lib/fascicolo-service";
 import { generaFascicoloGeometraPDF } from "../lib/pdf-fascicolo";
 import { generaExcelFascicolo } from "../lib/excel-fascicolo";
@@ -2733,10 +2733,17 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     // PDF fallito ma link OK - vado avanti col solo link
                   }
 
-                  // ─── 3. MARCA COMMESSA COME PREVENTIVO INVIATO ───
+                  // ─── 3. MARCA COMMESSA COME PREVENTIVO INVIATO (memoria + DB) ───
                   try {
-                    setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
-                    setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }) : prev);
+                    const nowIso = new Date().toISOString();
+                    const today = nowIso.split("T")[0];
+                    setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" } : cm));
+                    setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" }) : prev);
+                    // Persisti in DB - non bloccante: se fallisce, lo stato locale comunque vale
+                    const totaleNum = (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0;
+                    markPreventivoInviato(c.id, totaleNum, "preventivo")
+                      .then(ok => { if (!ok) console.warn("[DB] markPreventivoInviato non riuscito"); })
+                      .catch(err => console.warn("[DB] markPreventivoInviato error:", err));
                   } catch(e) { console.error("[setCantieri fail]", e); }
 
                   // ─── 4. INVIO UNIFICATO ───
