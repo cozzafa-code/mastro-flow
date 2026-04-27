@@ -1088,7 +1088,7 @@ export default function TabSettings() {
             <div onClick={()=>{if((()=>{try{return window.confirm("Ripristinare le fasi predefinite?");}catch(e){return false;}})())setPipelineDB(PIPELINE_DEFAULT);}}
               style={{textAlign:"center",padding:"10px 0 4px",fontSize:11,color:T.sub,cursor:"pointer"}}>Ripristina predefinita</div>
           </>
-        )}}
+        )}
 
         {/* === GUIDA === */}
         {/* === IMPORTA CATALOGO === */}

@@ -158,7 +158,7 @@ export default function MastroAuth({ onAuth }: Props) {
     if (!onbNome.trim()) { setError("Inserisci il tuo nome"); return; }
     if (!gdprAccettato) { setError("Devi accettare la Privacy Policy per continuare"); return; }
     setError(""); setLoading(true);
-    try {; setLoading(false); return; }
+    try {
       const { data, error: err } = await supabase.rpc("onboard_new_user", {
         p_ragione: onbRagione.trim(),
         p_nome: onbNome.trim(),

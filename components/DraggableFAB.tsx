@@ -413,7 +413,7 @@ Per accettare il preventivo o per qualsiasi informazione non esiti a contattarci
 
   return (
     <>
-      {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}}
+      {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(26,26,28,0.45)", zIndex: 89 }} />}
       {fabOpen && (
         <div style={{ position: "fixed", zIndex: 92, [isRight ? "right" : "left"]: 58, top: actionsTop, display: "flex", flexDirection: "column", gap: 10, transition: "top 0.18s ease" }}>
           {items.map((item, i) => item.t === "SEP" ? (

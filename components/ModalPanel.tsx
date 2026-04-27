@@ -660,7 +660,7 @@ Fabio Cozza - Walter Cozza Serramenti` },
                           <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{label}</span>
                           {badge && <span style={{ ...S.badge(T.accLt,T.acc), fontSize:10 }}>{badge}</span>}
                         </div>
-                        <span style={{ fontSize:12, color:T.sub, transition:"transform 0.2s", display:"inline-block", transform:open?"rotate(180deg)":"rotate(0deg)" }}>>▾</span>
+                        <span style={{ fontSize:12, color:T.sub, transition:"transform 0.2s", display:"inline-block", transform:open?"rotate(180deg)":"rotate(0deg)" }}>▾</span>
                       </div>
                       {open && <div style={{ padding:"12px 14px", background:T.bg, borderTop:`1px solid ${T.bdr}` }}>{children}</div>}
                     </div>

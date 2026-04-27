@@ -3035,7 +3035,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                   <div key={o.id} style={{ fontSize: 10, color: isLate ? T.red : T.text, padding: "2px 0", display: "flex", gap: 8 }}>
                     <span style={{ fontWeight: 700, width: 30, color: "#E8A020" }}>{new Date(o.dataConsegnaPrev).toLocaleDateString("it-IT", { weekday: "short" })}</span>
                     <span style={{ fontWeight: 600 }}>{typeof o.fornitore === "object" ? (o.fornitore?.nome || "") : o.fornitore}</span>
-                    <span style={{ color: T.sub }}> > {cm?.cliente || o.cmId}</span>
+                    <span style={{ color: T.sub }}>{"> "}{cm?.cliente || o.cmId}</span>
                     {o.costo > 0 && <span style={{ color: T.sub }}>€{o.costo.toLocaleString("it-IT")}</span>}
                     {isLate && <span style={{ color: T.red, fontWeight: 700 }}><I d={ICO.alertTriangle} />ï¸ RITARDO</span>}
                   </div>
@@ -5235,7 +5235,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                       <div style={{ fontSize: 16, fontWeight: 900, color: col }}>{tipoLabels[inboxResult.docTipo] || "Documento"}</div>
                       {inboxResult.matchedCommessa && (
                         <div style={{ fontSize: 12, color: T.text, marginTop: 4 }}>
-                          > <b>{inboxResult.matchedCommessa.code} - {inboxResult.matchedCommessa.cliente} {inboxResult.matchedCommessa.cognome || ""}</b>
+                          {"> "}<b>{inboxResult.matchedCommessa.code} - {inboxResult.matchedCommessa.cliente} {inboxResult.matchedCommessa.cognome || ""}</b>
                         </div>
                       )}
                     </div>
@@ -5302,7 +5302,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                           <div style={{ fontSize: 12, fontWeight: 700 }}>{cm.code} - {cm.cliente} {cm.cognome || ""}</div>
                           <div style={{ fontSize: 10, color: T.sub }}>{cm.fase} · {cm.indirizzo || " - "}</div>
                         </div>
-                        <span style={{ fontSize: 16 }}> ></span>
+                        <span style={{ fontSize: 16 }}>{"> "}</span>
                       </div>
                     ))}
                   </div>
