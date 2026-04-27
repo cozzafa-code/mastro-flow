@@ -367,6 +367,14 @@ export default function CMDetailPanel() {
       })();
       return () => { alive = false; };
     }, [selectedCM?.id]);
+
+    // v41: se fase=conferma e firma non ancora ricevuta, apri ModalFirma automaticamente
+    React.useEffect(() => {
+      if (selectedCM?.fase === "conferma" && !(selectedCM as any)?.firmaCliente && !(selectedCM as any)?.firma_cliente) {
+        setShowModalFirma(true);
+      }
+    }, [selectedCM?.id, selectedCM?.fase]);
+
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
