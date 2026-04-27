@@ -745,7 +745,7 @@ function drawFooter(doc: jsPDF, az: any): void {
    FUNZIONE PRINCIPALE
    ═══════════════════════════════════════════════════════════════════ */
 
-export async function generaPreventivoPDF(c: any, ctx: any): Promise<void> {
+export async function generaPreventivoPDF(c: any, ctx: any, opts?: { returnBlob?: boolean }): Promise<void | { blob: Blob; filename: string }> {
   if (!c) {
     throw new Error("Commessa mancante");
   }
@@ -890,10 +890,15 @@ export async function generaPreventivoPDF(c: any, ctx: any): Promise<void> {
     }
   }
 
-  // ── Salva (mobile-safe) ──
+  // ── Output: blob (per share) o salvataggio mobile-safe ──
   const codice = safeFilename(clean(c.code || c.codice || String(c.id || "X")));
   const nome = safeFilename(clean(c.cliente || "cliente"));
   const filename = "preventivo_" + codice + "_" + nome + ".pdf";
+
+  if (opts?.returnBlob) {
+    const blob = doc.output("blob") as Blob;
+    return { blob, filename };
+  }
 
   savePdfMobileSafe(doc, filename);
 }

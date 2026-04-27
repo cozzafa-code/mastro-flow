@@ -2672,8 +2672,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 if (pdfBusy) return;
                 setPdfBusy("invia");
                 try {
-                  // 1. PRIMA crea il link pubblico (CRITICO - se fallisce, niente invio)
-                  // Retry 3 volte con timeout 15s ciascuno (cold start Vercel)
+                  // ─── 1. CREA LINK PUBBLICO (retry 3x, 15s ciascuno) ───
                   let linkPubblico = "";
                   let linkError: any = null;
                   const snapshot = {
@@ -2708,37 +2707,77 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     } catch(e: any) {
                       linkError = e?.message || e;
                       console.warn("[link attempt " + attempt + " fail]", e);
-                      if (attempt < 3) await new Promise(r => setTimeout(r, 1000)); // 1s tra retry
+                      if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
                     }
                   }
 
                   if (!linkPubblico) {
-                    alert("Errore creazione link cliente: " + linkError + "\n\nRiprova tra qualche secondo. Se persiste contatta supporto.");
+                    alert("Errore creazione link cliente: " + linkError + "\n\nRiprova tra qualche secondo.");
                     return;
                   }
 
-                  // 2. Genera PDF con timeout 25s (mobile pi\u00f9 lento)
+                  // ─── 2. GENERA PDF COME BLOB (per share + fallback) ───
+                  let pdfBlob: Blob | null = null;
+                  let pdfFilename = "preventivo_" + (c.code || "X") + ".pdf";
                   try {
-                    await Promise.race([
-                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
+                    const result = await Promise.race([
+                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }, { returnBlob: true }),
                       new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (25s)")), 25000)),
                     ]);
+                    if (result && typeof result === "object" && "blob" in result) {
+                      pdfBlob = (result as any).blob;
+                      pdfFilename = (result as any).filename;
+                    }
                   } catch(e: any) {
                     console.error("[PDF fail]", e);
-                    // PDF fallito ma link OK: posso comunque mandare il link al cliente
-                    // (lui apre il preventivo via web, non serve PDF)
+                    // PDF fallito ma link OK - vado avanti col solo link
                   }
 
-                  // 3. Segna inviato in stato locale
+                  // ─── 3. MARCA COMMESSA COME PREVENTIVO INVIATO ───
                   try {
                     setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                     setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }) : prev);
                   } catch(e) { console.error("[setCantieri fail]", e); }
 
-                  // 4. Apri modal con link GARANTITO non vuoto
-                  const nome = c.cliente || "";
-                  const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                  setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
+                  // ─── 4. INVIO UNIFICATO ───
+                  // Costruisci messaggio testuale con link
+                  const clienteNome = (c.cliente || "Cliente").split(" ")[0]; // primo nome
+                  const messaggio = "Ciao " + clienteNome + ", ecco il preventivo " + (c.code || "") + ".\n\nClicca qui per vederlo, accettarlo o richiedere modifiche:\n" + linkPubblico + "\n\nGrazie,\n" + (aziendaInfo?.ragione || aziendaInfo?.nome || "");
+
+                  // Tentativo 1: navigator.share con file + testo (iOS, Android moderni)
+                  let shared = false;
+                  if (typeof navigator !== "undefined" && (navigator as any).share && pdfBlob) {
+                    try {
+                      const file = new File([pdfBlob], pdfFilename, { type: "application/pdf" });
+                      // Verifica se supporta share di file (iOS Safari, Android Chrome)
+                      const canShareFile = (navigator as any).canShare ? (navigator as any).canShare({ files: [file] }) : true;
+                      if (canShareFile) {
+                        await (navigator as any).share({
+                          files: [file],
+                          text: messaggio,
+                          title: "Preventivo " + (c.code || ""),
+                        });
+                        shared = true;
+                        setCcDone && setCcDone("Preventivo inviato");
+                        setTimeout(() => { setCcDone && setCcDone(null); setPrevWorkspace && setPrevWorkspace(false); }, 2000);
+                      }
+                    } catch(e: any) {
+                      // Utente ha annullato il foglio condivisione, oppure share non supportato
+                      if (e && e.name !== "AbortError") {
+                        console.warn("[share fail, fallback to modal]", e);
+                      } else {
+                        // Annullato dall'utente - non fare nulla, lascia che riprovi
+                        shared = true; // evito di aprire modal fallback
+                      }
+                    }
+                  }
+
+                  // Tentativo 2 (fallback): modale con bottoni WhatsApp/Email/SMS
+                  if (!shared) {
+                    const nome = c.cliente || "";
+                    const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                    setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
+                  }
                 } finally {
                   setPdfBusy(null);
                 }
