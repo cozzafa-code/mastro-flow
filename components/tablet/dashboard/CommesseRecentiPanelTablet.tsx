@@ -2,33 +2,31 @@
 import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { useDashboard } from "../dashboard-context";
+import { useMastroData } from "../store";
+import { FaseCommessa } from "../store";
 import CardHeader from "../CardHeader";
 
-interface CommessaRow {
-  id: string;
-  cliente: string;
-  rif: string;
-  vani: number;
-  stato: string;
-  statoTint: keyof typeof TINTS;
-  valore: string;
-}
+const FASE_LABEL: Record<FaseCommessa, { label: string; tint: keyof typeof TINTS }> = {
+  rilievo:            { label: "Rilievo",     tint: "orange" },
+  rilievo_confermato: { label: "Rilievo OK",  tint: "orange" },
+  preventivo:         { label: "Preventivo",  tint: "violet" },
+  conferma_ordine:    { label: "Conferma",    tint: "amber"  },
+  ordine_confermato:  { label: "Ordine",      tint: "amber"  },
+  produzione:         { label: "Produzione",  tint: "blue"   },
+  montaggio:          { label: "Montaggio",   tint: "green"  },
+  fattura:            { label: "Fattura",     tint: "pink"   },
+  pagata:             { label: "Pagata",      tint: "green"  },
+};
 
 const TINTS = {
   blue: TT.blue, amber: TT.amber, green: TT.green,
-  violet: TT.violet, orange: TT.orange,
+  violet: TT.violet, orange: TT.orange, pink: TT.pink,
 } as const;
 
-const RIGHE: CommessaRow[] = [
-  { id: "C-2026-051", cliente: "Verdi G.",   rif: "C-2026-051", vani: 8,  stato: "Produzione", statoTint: "blue",   valore: "12.450" },
-  { id: "C-2026-050", cliente: "Bianchi M.", rif: "C-2026-050", vani: 4,  stato: "Confermata", statoTint: "amber",  valore: "6.820"  },
-  { id: "C-2026-049", cliente: "Rossi & Co.",rif: "C-2026-049", vani: 12, stato: "Montaggio",  statoTint: "green",  valore: "18.900" },
-  { id: "C-2026-048", cliente: "Esposito F.",rif: "C-2026-048", vani: 3,  stato: "Preventivo", statoTint: "violet", valore: "4.350"  },
-  { id: "C-2026-047", cliente: "De Luca P.", rif: "C-2026-047", vani: 6,  stato: "Rilievo",    statoTint: "orange", valore: "9.200"  },
-];
-
 export default function CommesseRecentiPanelTablet() {
-  const { navigate, expand } = useDashboard();
+  const { navigate } = useDashboard();
+  const data = useMastroData();
+  const commesse = data.getCommesse().slice(0, 5);
 
   return (
     <div style={cardStyle({ padding: "14px 16px" })}>
@@ -38,7 +36,6 @@ export default function CommesseRecentiPanelTablet() {
         tint="orange"
         seeAllLabel="Tutte"
         onSeeAll={() => navigate("commesse")}
-        onExpand={() => expand("commesse")}
       />
       <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 11 }}>
         <thead>
@@ -46,33 +43,34 @@ export default function CommesseRecentiPanelTablet() {
             <th style={th}>Cliente</th>
             <th style={th}>Riferimento</th>
             <th style={{ ...th, textAlign: "center" }}>Vani</th>
-            <th style={th}>Stato</th>
+            <th style={th}>Fase</th>
             <th style={{ ...th, textAlign: "right" }}>Valore</th>
           </tr>
         </thead>
         <tbody>
-          {RIGHE.map((r) => {
-            const ramp = TINTS[r.statoTint];
+          {commesse.map((c) => {
+            const cli = data.getCliente(c.clienteId);
+            const fase = FASE_LABEL[c.fase];
+            const ramp = TINTS[fase.tint];
             return (
-              <tr
-                key={r.id}
-                onClick={() => navigate("commesse", { commessaId: r.id })}
+              <tr key={c.id}
+                onClick={() => navigate("commesse", { commessaId: c.id })}
                 style={{ cursor: "pointer", transition: "background 0.1s" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLTableRowElement).style.background = TT.bgSoft)}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLTableRowElement).style.background = "transparent")}
               >
                 <td style={td}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: TT.text1, letterSpacing: "-0.1px" }}>
-                    {r.cliente}
+                    {cli?.nome.split(" ").slice(0, 2).join(" ") || "?"}
                   </span>
                 </td>
                 <td style={td}>
                   <span style={{ fontFamily: "monospace", fontSize: 10, color: TT.text3, fontWeight: 600 }}>
-                    {r.rif}
+                    {c.numero}
                   </span>
                 </td>
                 <td style={{ ...td, textAlign: "center", fontVariantNumeric: "tabular-nums", color: TT.text2, fontWeight: 600 }}>
-                  {r.vani}
+                  {c.vani.length}
                 </td>
                 <td style={td}>
                   <span style={{
@@ -82,7 +80,7 @@ export default function CommesseRecentiPanelTablet() {
                     fontSize: 9, fontWeight: 700,
                     letterSpacing: "0.3px", textTransform: "uppercase",
                   }}>
-                    {r.stato}
+                    {fase.label}
                   </span>
                 </td>
                 <td style={{ ...td, textAlign: "right" }}>
@@ -91,7 +89,7 @@ export default function CommesseRecentiPanelTablet() {
                     fontVariantNumeric: "tabular-nums", letterSpacing: "-0.2px",
                     whiteSpace: "nowrap",
                   }}>
-                    € {r.valore}
+                    € {c.valore.toLocaleString("it-IT")}
                   </span>
                 </td>
               </tr>
@@ -104,17 +102,11 @@ export default function CommesseRecentiPanelTablet() {
 }
 
 const th: React.CSSProperties = {
-  padding: "6px 8px",
-  fontSize: 9,
-  fontWeight: 700,
-  color: TT.text3,
-  letterSpacing: "0.4px",
-  textTransform: "uppercase",
-  textAlign: "left",
+  padding: "6px 8px", fontSize: 9, fontWeight: 700, color: TT.text3,
+  letterSpacing: "0.4px", textTransform: "uppercase", textAlign: "left",
   borderBottom: `1px solid ${TT.border}`,
 };
 
 const td: React.CSSProperties = {
-  padding: "8px 8px",
-  borderBottom: `1px solid ${TT.border}`,
+  padding: "8px 8px", borderBottom: `1px solid ${TT.border}`,
 };

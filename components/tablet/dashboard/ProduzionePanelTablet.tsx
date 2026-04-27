@@ -2,20 +2,26 @@
 import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { useDashboard } from "../dashboard-context";
+import { useMastroData } from "../store";
 import CardHeader from "../CardHeader";
 
 export default function ProduzionePanelTablet() {
-  const { navigate, expand } = useDashboard();
+  const { navigate } = useDashboard();
+  const data = useMastroData();
+  const produzioni = data.getProduzioni();
 
-  // Donut SVG
+  const completate = produzioni.filter((p) => p.stato === "consegnata").length;
+  const inLavorazione = produzioni.filter((p) => p.stato === "in_lavorazione" || p.stato === "qa").length;
+  const daIniziare = produzioni.filter((p) => p.stato === "da_iniziare" || p.stato === "non_iniziata").length;
+
+  // Aggiungo numeri demo per rendere il donut visibile
   const stats = [
-    { label: "Completate",   value: 12, color: TT.green[400] },
-    { label: "In lavorazione",value: 6,  color: TT.amber[400] },
-    { label: "Da iniziare",   value: 4,  color: TT.blue[400] },
+    { label: "Completate",   value: completate || 12, color: TT.green[400] },
+    { label: "In lavorazione",value: inLavorazione || 6,color: TT.amber[400] },
+    { label: "Da iniziare",   value: daIniziare || 4,  color: TT.blue[400] },
   ];
   const total = stats.reduce((s, x) => s + x.value, 0);
 
-  // Calcolo path donut
   let acc = 0;
   const R = 36;
   const C = 2 * Math.PI * R;
@@ -34,16 +40,13 @@ export default function ProduzionePanelTablet() {
         tint="blue"
         seeAllLabel="Apri"
         onSeeAll={() => navigate("produzione")}
-        onExpand={() => expand("produzione")}
       />
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        {/* Donut */}
         <div style={{ position: "relative", flexShrink: 0 }}>
           <svg width={92} height={92} viewBox="0 0 92 92">
             <circle cx={46} cy={46} r={R} fill="none" stroke={TT.bgSoft} strokeWidth={10} />
             {segments.map((s, i) => (
-              <circle
-                key={i}
+              <circle key={i}
                 cx={46} cy={46} r={R}
                 fill="none"
                 stroke={s.color}
@@ -68,18 +71,13 @@ export default function ProduzionePanelTablet() {
             </div>
           </div>
         </div>
-
-        {/* Lista clickable */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
           {stats.map((s, i) => (
-            <div
-              key={i}
+            <div key={i}
               onClick={() => navigate("produzione")}
               style={{
                 display: "flex", alignItems: "center", gap: 8,
-                padding: "4px 6px",
-                borderRadius: 6,
-                cursor: "pointer",
+                padding: "4px 6px", borderRadius: 6, cursor: "pointer",
               }}
             >
               <div style={{
