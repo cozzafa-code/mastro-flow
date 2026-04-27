@@ -28,35 +28,11 @@ import ImpostazioniTablet from "./impostazioni/ImpostazioniTablet";
 import { DashboardProvider, Preset } from "./dashboard-context";
 import ExpandModal from "./ExpandModal";
 import BackButton from "./BackButton";
-import { useMastro } from "../MastroContext";
 
 const PRESET_KEY = "mastro_tablet_preset";
 
 export default function MastroTablet() {
   const [active, setActive] = React.useState<string>("dashboard");
-  // SPRINT 2 BRIDGE: sincronizza sidebar fliwoX con tab ERP
-  // Quando user clicca una sezione che ha equivalente ERP, settiamo
-  // tab ERP cosi MastroTabletWrapper renderizza il pannello vero.
-  const erpCtx = (() => {
-    try { return useMastro(); } catch { return null; }
-  })();
-  const TABLET_TO_ERP_TAB = {
-    commesse: "commesse",
-    clienti: "clienti",
-    sopralluoghi: "sopralluoghi",
-    calendario: "agenda",
-    contabilita: "contabilita",
-    montaggi: "montaggi_cal",
-    impostazioni: "settings",
-  };
-  React.useEffect(() => {
-    if (!erpCtx) return;
-    const erpTab = TABLET_TO_ERP_TAB[active];
-    if (erpTab && erpCtx.tab !== erpTab && erpCtx.setTab) {
-      erpCtx.setTab(erpTab);
-    }
-  }, [active, erpCtx]);
-
   const [isPortrait, setIsPortrait] = React.useState(false);
   const [preset, setPresetState] = React.useState<Preset>("titolare");
   const [expanded, setExpanded] = React.useState<string | null>(null);

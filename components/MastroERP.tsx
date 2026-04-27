@@ -3500,16 +3500,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   if (isTablet && !isDesktop) {
     return (
       <MastroContext.Provider value={ctx}>
-        <>
-          <MastroTabletWrapper />
-          {/* Sprint 4: modal globali tablet */}
-          <PanelErrorBoundary name="Modal">{renderModal()}</PanelErrorBoundary>
-          {showPreventivoModal && (
-            <PanelErrorBoundary name="Preventivo">
-              <PreventivoModal />
-            </PanelErrorBoundary>
-          )}
-        </>
+        <MastroTabletWrapper />
       </MastroContext.Provider>
     );
   }
