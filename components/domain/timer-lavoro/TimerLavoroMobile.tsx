@@ -1,8 +1,14 @@
 'use client';
 
 // ============================================================
-// MASTRO — TimerLavoroMobile v6
-// Pattern A (struttura unica) + voce + sforamento stima/reale
+// MASTRO — TimerLavoroMobile v7
+// Layout a slot fissi: idle e running hanno IDENTICA struttura
+// - 1 slot input commessa (h:46)
+// - 1 slot input fase (h:46)
+// - 1 slot display timer (h:110)
+// - 1 slot voce (h:46) sempre presente
+// - 1 slot CTA (h:70) sempre 1 solo bottone
+// Pausa è inline dentro la card sotto al timer.
 // ============================================================
 
 import { useState } from 'react';
@@ -71,6 +77,28 @@ export default function TimerLavoroMobile({
     : MC.tealDark;
   const barWidth = Math.min(100, sforamento.percentuale);
 
+  // CTA unico bottone
+  const ctaConfig = isIdle
+    ? {
+        label: '▶  AVVIA',
+        bg: commessaId ? MC.tealDark : MC.borderStrong,
+        disabled: !commessaId,
+        onClick: () => commessaId && start({ commessaId, fase }),
+      }
+    : isPaused
+    ? {
+        label: '▶  RIPRENDI',
+        bg: MC.warn,
+        disabled: false,
+        onClick: () => resume(),
+      }
+    : {
+        label: '■  STOP',
+        bg: MC.danger,
+        disabled: false,
+        onClick: () => setShowStopModal(true),
+      };
+
   return (
     <>
       <style>{KEYFRAMES}</style>
@@ -87,38 +115,46 @@ export default function TimerLavoroMobile({
         {error && <div style={SM.err}>{error}</div>}
 
         <div style={SM.body}>
+          {/* CARD: slot identici, contenuto cambia */}
           <div style={SM.card}>
+            {/* SLOT 1 - Commessa */}
             <div style={SM.row}>
               <div style={SM.rowLabel}>Commessa</div>
-              {isIdle ? (
-                <select style={SM.rowSelect} value={commessaId} onChange={e => setCommessaId(e.target.value)}>
-                  <option value="">— Seleziona —</option>
-                  {commesseDisponibili.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.numero ?? '—'} · {c.cliente_nome ?? 'Cliente'}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div style={SM.rowReadonly}>
-                  {commessaAttiva ? `${commessaAttiva.numero ?? '—'} · ${commessaAttiva.cliente_nome ?? ''}` : '—'}
-                </div>
-              )}
+              <div style={SM.inputSlot}>
+                {isIdle ? (
+                  <select style={SM.rowSelect} value={commessaId} onChange={e => setCommessaId(e.target.value)}>
+                    <option value="">— Seleziona —</option>
+                    {commesseDisponibili.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.numero ?? '—'} · {c.cliente_nome ?? 'Cliente'}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={SM.rowReadonly}>
+                    {commessaAttiva ? `${commessaAttiva.numero ?? '—'} · ${commessaAttiva.cliente_nome ?? ''}` : '—'}
+                  </div>
+                )}
+              </div>
             </div>
 
+            {/* SLOT 2 - Fase */}
             <div style={SM.row}>
               <div style={SM.rowLabel}>Fase</div>
-              {isIdle ? (
-                <select style={SM.rowSelect} value={fase} onChange={e => setFase(e.target.value as FaseLavoro)}>
-                  {FASI.map(f => <option key={f} value={f}>{FASI_LAVORO_LABEL[f]}</option>)}
-                </select>
-              ) : (
-                <div style={SM.rowReadonly}>
-                  {FASI_LAVORO_LABEL[(sessione?.fase as FaseLavoro) ?? 'altro'] ?? sessione?.fase}
-                </div>
-              )}
+              <div style={SM.inputSlot}>
+                {isIdle ? (
+                  <select style={SM.rowSelect} value={fase} onChange={e => setFase(e.target.value as FaseLavoro)}>
+                    {FASI.map(f => <option key={f} value={f}>{FASI_LAVORO_LABEL[f]}</option>)}
+                  </select>
+                ) : (
+                  <div style={SM.rowReadonly}>
+                    {FASI_LAVORO_LABEL[(sessione?.fase as FaseLavoro) ?? 'altro'] ?? sessione?.fase}
+                  </div>
+                )}
+              </div>
             </div>
 
+            {/* SLOT 3 - Display timer */}
             <div style={SM.display}>
               {isIdle ? (
                 <div style={SM.timerNumPlaceholder}>00:00:00</div>
@@ -127,6 +163,11 @@ export default function TimerLavoroMobile({
                   <div style={{ ...SM.timerNum, color: timerColor }}>
                     {formatHMS(snapshot.elapsedSeconds)}
                   </div>
+                  {/* Pausa inline (solo running) */}
+                  {isRunning && (
+                    <button onClick={pause} style={SM.pausaInline}>❚❚  Metti in pausa</button>
+                  )}
+                  {/* Barra sforamento */}
                   {sforamento.stato !== 'non_definito' && (
                     <div style={SM.barWrap}>
                       <div style={SM.barTrack}>
@@ -150,54 +191,44 @@ export default function TimerLavoroMobile({
             </div>
           </div>
 
-          {!isIdle && voceSupportata && (
-            <div style={SM.voceBar}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {inAscolto && <span style={SM.voceLed} />}
-                {voceOn ? <>Voce attiva — di <strong>"stop"</strong>, "pausa", "riprendi"</> : 'Voce mani-libere'}
-              </span>
-              <button
-                onClick={() => setVoceOn(v => !v)}
-                style={{
-                  ...SM.voceBtn,
-                  background: voceOn ? MC.tealDark : 'transparent',
-                  color: voceOn ? '#fff' : MC.tealDark,
-                }}
-              >{voceOn ? 'Spegni 🎤' : 'Accendi 🎤'}</button>
-            </div>
-          )}
+          {/* SLOT VOCE - sempre presente */}
+          <div style={SM.voceSlot}>
+            {!isIdle && voceSupportata ? (
+              <div style={SM.voceBar}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                  {inAscolto && <span style={SM.voceLed} />}
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {voceOn ? <>Voce attiva — di <strong>"stop"</strong>, "pausa", "riprendi"</> : 'Voce mani-libere'}
+                  </span>
+                </span>
+                <button
+                  onClick={() => setVoceOn(v => !v)}
+                  style={{
+                    ...SM.voceBtn,
+                    background: voceOn ? MC.tealDark : 'transparent',
+                    color: voceOn ? '#fff' : MC.tealDark,
+                  }}
+                >{voceOn ? 'Spegni 🎤' : 'Accendi 🎤'}</button>
+              </div>
+            ) : (
+              <div style={SM.voceBarIdle}>
+                {voceSupportata ? '🎤 Voce mani-libere disponibile dopo l\'avvio' : ''}
+              </div>
+            )}
+          </div>
 
-          <div style={SM.ctaWrap}>
-            {isIdle && (
-              <button
-                onClick={() => commessaId && start({ commessaId, fase })}
-                disabled={!commessaId}
-                style={{
-                  ...SM.bigBtn,
-                  background: commessaId ? MC.tealDark : MC.borderStrong,
-                  cursor: commessaId ? 'pointer' : 'not-allowed',
-                  opacity: commessaId ? 1 : 0.6,
-                }}
-              >▶  AVVIA</button>
-            )}
-            {isRunning && (
-              <>
-                <button onClick={() => setShowStopModal(true)} style={{ ...SM.bigBtn, background: MC.danger }}>
-                  ■  STOP
-                </button>
-                <button onClick={pause} style={SM.secBtn}>❚❚  Pausa</button>
-              </>
-            )}
-            {isPaused && (
-              <>
-                <button onClick={resume} style={{ ...SM.bigBtn, background: MC.warn }}>
-                  ▶  RIPRENDI
-                </button>
-                <button onClick={() => setShowStopModal(true)} style={{ ...SM.secBtn, color: MC.danger, borderColor: MC.danger }}>
-                  ■  STOP
-                </button>
-              </>
-            )}
+          {/* SLOT CTA - sempre 1 bottone */}
+          <div style={SM.ctaSlot}>
+            <button
+              onClick={ctaConfig.onClick}
+              disabled={ctaConfig.disabled}
+              style={{
+                ...SM.bigBtn,
+                background: ctaConfig.bg,
+                cursor: ctaConfig.disabled ? 'not-allowed' : 'pointer',
+                opacity: ctaConfig.disabled ? 0.6 : 1,
+              }}
+            >{ctaConfig.label}</button>
           </div>
         </div>
       </div>
