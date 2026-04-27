@@ -9,6 +9,7 @@ import PassaggiSaltati from "./PassaggiSaltati";
 import VanoCardPreventivo from "./VanoCardPreventivo";
 import BulkEditBar from "./BulkEditBar";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
+import { buildVanoRighe } from "../lib/vano-helpers";
 import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
@@ -2676,16 +2677,44 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   // ─── 1. CREA LINK PUBBLICO (retry 3x, 15s ciascuno) ───
                   let linkPubblico = "";
                   let linkError: any = null;
+                  // v17: snapshot arricchito con tutti i dettagli vani per pagina cliente intera
+                  const _vaniSrc = ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []);
+                  const _imponibile = (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0;
+                  const _ivaPerc = Number(c.ivaPerc) || Number(aziendaInfo?.ivaDefault) || 10;
                   const snapshot = {
                     cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
-                    totale: (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0,
-                    vani: ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []).map((v: any, i: number) => ({
-                      nome: v.nome || v.tipo || "Vano " + (i+1),
-                      tipo: v.tipo,
-                      misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
-                      prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
-                    })),
-                    azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
+                    cliente_indirizzo: c.indirizzo || "",
+                    cliente_telefono: c.telefono || "",
+                    cliente_email: c.email || "",
+                    data_preventivo: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" }),
+                    totale: _imponibile,
+                    imponibile: _imponibile,
+                    iva_perc: _ivaPerc,
+                    iva: (_imponibile * _ivaPerc) / 100,
+                    totale_finale: _imponibile + (_imponibile * _ivaPerc) / 100,
+                    vani: _vaniSrc.map((v: any, i: number) => {
+                      const subtot = (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0;
+                      let righe: any[] = [];
+                      try {
+                        righe = (typeof buildVanoRighe === "function") ? buildVanoRighe(v) : [];
+                      } catch(e) { console.warn("[snapshot] buildVanoRighe fail vano", i, e); }
+                      return {
+                        nome: v.nome || v.tipo || "Vano " + (i+1),
+                        tipo: v.tipo,
+                        misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
+                        pezzi: Number(v.pezzi) || 1,
+                        prezzo: subtot,
+                        righe: righe.map(r => ({ label: r.label, valore: r.valore, gruppo: r.gruppo, importante: !!r.importante })),
+                      };
+                    }),
+                    azienda: {
+                      ragione: aziendaInfo?.ragione || aziendaInfo?.nome || "",
+                      indirizzo: aziendaInfo?.indirizzo || "",
+                      telefono: aziendaInfo?.telefono || "",
+                      email: aziendaInfo?.email || "",
+                      piva: aziendaInfo?.piva || aziendaInfo?.partitaIva || "",
+                      logo: aziendaInfo?.logo || "",
+                    },
                   };
 
                   for (let attempt = 1; attempt <= 3 && !linkPubblico; attempt++) {

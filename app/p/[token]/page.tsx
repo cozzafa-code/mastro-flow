@@ -1,6 +1,8 @@
 // app/p/[token]/page.tsx
-// Pagina pubblica preventivo - flusso completo cliente
-// v2: ACCETTO / MODIFICHE per-vano e generali / CONTATTAMI multi-canale
+// MASTRO v17 - Pagina pubblica preventivo INTERO (Opzione A)
+// Mostra: header azienda + cliente + lista vani con tutti i dettagli
+//         + totale + IVA + 3 bottoni Accetto/Modifiche/Contattami
+// Le modifiche restano per vano + generali (form sotto ogni vano).
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -17,6 +19,21 @@ type Data = {
 type RispostaTipo = "accettato" | "modifiche" | "chiamare";
 type CanaleContatto = "telefono" | "whatsapp" | "email";
 
+// ── BRAND TOKENS MASTRO (fliwoX) ─────────────────────────────
+const T = {
+  bg: "#F7FAFA",
+  card: "#FFFFFF",
+  bdr: "#C8E4E4",
+  acc: "#28A0A0",
+  accDark: "#0F5E55",
+  accLight: "#E0F1EE",
+  ink: "#0D1F1F",
+  sub: "#5A6B6B",
+  ok: "#10b981",
+  warn: "#f59e0b",
+  blue: "#3b82f6",
+};
+
 export default function PreventivoPubblicoPage() {
   const params = useParams();
   const token = params?.token as string;
@@ -28,16 +45,11 @@ export default function PreventivoPubblicoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
-  // Form state per modifiche
   const [modVani, setModVani] = useState<Record<number, string>>({});
   const [modGenerali, setModGenerali] = useState("");
-
-  // Form state per contatto
   const [canale, setCanale] = useState<CanaleContatto | null>(null);
   const [oraPref, setOraPref] = useState("");
   const [notaContatto, setNotaContatto] = useState("");
-
-  // Form state per accettazione
   const [notaAccettazione, setNotaAccettazione] = useState("");
 
   useEffect(() => {
@@ -61,15 +73,27 @@ export default function PreventivoPubblicoPage() {
     })();
   }, [token]);
 
-  // Calcolo totale dai vani (più affidabile dello snapshot.totale che a volte è 0)
-  const totaleCalcolato = useMemo(() => {
-    if (!data?.snapshot?.vani) return data?.snapshot?.totale || 0;
-    const sumVani = data.snapshot.vani.reduce(
-      (sum: number, v: any) => sum + (Number(v.prezzo) || 0),
-      0
-    );
-    return sumVani > 0 ? sumVani : data.snapshot.totale || 0;
-  }, [data]);
+  const snap = data?.snapshot || {};
+  const vani: any[] = snap.vani || [];
+  const azienda = snap.azienda || {};
+  const cliente_nome = snap.cliente || "Gentile cliente";
+  const cliente_indirizzo = snap.cliente_indirizzo || "";
+  const data_preventivo = snap.data_preventivo || "";
+
+  const calc = useMemo(() => {
+    const subtotali = vani.map((v: any) => {
+      const pezzi = Number(v.pezzi) || 1;
+      const prezzo = Number(v.prezzo) || 0;
+      return prezzo;
+    });
+    const imponibile = subtotali.reduce((s, n) => s + n, 0) || (snap.totale || 0);
+    const ivaPerc = Number(snap.iva_perc) || 10;
+    const iva = (imponibile * ivaPerc) / 100;
+    const totale = imponibile + iva;
+    return { imponibile, ivaPerc, iva, totale };
+  }, [vani, snap]);
+
+  const fmtEur = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const submitRisposta = async (tipo: RispostaTipo, nota: string) => {
     setSubmitting(true);
@@ -88,13 +112,11 @@ export default function PreventivoPubblicoPage() {
     setSubmitting(false);
   };
 
-  const handleAccetta = () => {
-    submitRisposta("accettato", notaAccettazione || "");
-  };
+  const handleAccetta = () => submitRisposta("accettato", notaAccettazione || "");
 
   const handleModifiche = () => {
-    const vaniText = data?.snapshot?.vani
-      ?.map((v: any, i: number) => {
+    const vaniText = vani
+      .map((v: any, i: number) => {
         const m = modVani[i];
         if (!m || !m.trim()) return null;
         const nomeVano = v.nome || v.tipo || `Vano ${i + 1}`;
@@ -108,10 +130,9 @@ export default function PreventivoPubblicoPage() {
     if (modGenerali.trim()) parts.push("MODIFICHE GENERALI:\n" + modGenerali.trim());
 
     if (parts.length === 0) {
-      alert("Scrivi almeno una modifica (su un vano specifico o generale)");
+      alert("Scrivi almeno una modifica");
       return;
     }
-
     submitRisposta("modifiche", parts.join("\n\n"));
   };
 
@@ -120,195 +141,112 @@ export default function PreventivoPubblicoPage() {
       alert("Scegli come vuoi essere contattato");
       return;
     }
-    const labels: Record<CanaleContatto, string> = {
-      telefono: "📞 Chiamata telefonica",
-      whatsapp: "💬 Messaggio WhatsApp",
-      email: "📧 Email",
-    };
-    const parts: string[] = [labels[canale]];
-    if (oraPref.trim()) parts.push("Orario preferito: " + oraPref.trim());
-    if (notaContatto.trim()) parts.push("Nota: " + notaContatto.trim());
-
+    const parts = [`Canale: ${canale}`];
+    if (oraPref) parts.push(`Orario preferito: ${oraPref}`);
+    if (notaContatto.trim()) parts.push(`Nota: ${notaContatto.trim()}`);
     submitRisposta("chiamare", parts.join("\n"));
   };
 
-  if (loading) return <div style={S.wrap}><div style={S.card}><div style={S.body}>Caricamento...</div></div></div>;
-  if (error) return <div style={S.wrap}><div style={S.card}><div style={S.body}>{error}</div></div></div>;
-  if (!data) return null;
+  // ─── Loading / Error ────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={S.wrap}>
+        <div style={S.card}>
+          <div style={{ padding: 40, textAlign: "center", color: T.sub }}>Caricamento...</div>
+        </div>
+      </div>
+    );
+  }
 
-  const snap = data.snapshot || {};
-  const vani = snap.vani || [];
-  const azienda = snap.azienda || {};
-  const cliente = (snap.cliente || "").trim();
+  if (error || !data) {
+    return (
+      <div style={S.wrap}>
+        <div style={S.card}>
+          <div style={{ padding: 40, textAlign: "center" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>⚠</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: T.ink, marginBottom: 8 }}>Preventivo non disponibile</div>
+            <div style={{ fontSize: 14, color: T.sub }}>{error || "Link non valido o scaduto"}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  // Stato "fatto" → schermata di conferma
+  // ─── Done — risposta già inviata ────────────────────────────
   if (done) {
+    const map: Record<string, { icon: string; titolo: string; sub: string; color: string }> = {
+      accettato: { icon: "✓", titolo: "Preventivo accettato", sub: "Grazie! L'azienda ti contatterà a breve per i prossimi passi.", color: T.ok },
+      modifiche: { icon: "✏", titolo: "Modifiche inviate", sub: "Le tue richieste sono state ricevute. L'azienda preparerà un nuovo preventivo aggiornato.", color: T.warn },
+      chiamare: { icon: "📞", titolo: "Richiesta contatto inviata", sub: "Riceverai una chiamata o messaggio a breve.", color: T.blue },
+    };
+    const info = map[done] || map.accettato;
     return (
       <div style={S.wrap}>
         <div style={S.card}>
-          <div style={S.header}>
-            <div style={S.brand}>MASTRO</div>
-            <div style={S.subBrand}>{azienda.ragione || azienda.nome || ""}</div>
-          </div>
-          <div style={S.body}>
-            <div style={S.doneBox}>
-              {done === "accettato" && (
-                <>
-                  <div style={S.doneIcon}>✓</div>
-                  <div style={S.doneTit}>Grazie {cliente.split(" ")[0]}!</div>
-                  <div style={S.doneTxt}>
-                    Hai accettato il preventivo.
-                    <br />
-                    <strong>{azienda.ragione || "Verremo"}</strong> ti contatterà presto per la conferma d'ordine e i prossimi passi.
-                  </div>
-                </>
-              )}
-              {done === "modifiche" && (
-                <>
-                  <div style={S.doneIcon}>↻</div>
-                  <div style={S.doneTit}>Richiesta ricevuta</div>
-                  <div style={S.doneTxt}>
-                    Abbiamo ricevuto la tua richiesta di modifica.
-                    <br />
-                    Ti invieremo un preventivo aggiornato il prima possibile.
-                  </div>
-                </>
-              )}
-              {done === "chiamare" && (
-                <>
-                  <div style={S.doneIcon}>📞</div>
-                  <div style={S.doneTit}>Ti contatteremo presto</div>
-                  <div style={S.doneTxt}>Abbiamo ricevuto la tua richiesta. A presto!</div>
-                </>
-              )}
-            </div>
-            {azienda.telefono && (
-              <div style={S.contatti}>
-                Per qualsiasi domanda: <a href={`tel:${azienda.telefono}`} style={S.link}>{azienda.telefono}</a>
-              </div>
-            )}
+          <div style={{ padding: "48px 24px", textAlign: "center" }}>
+            <div style={{ fontSize: 64, color: info.color, marginBottom: 16, lineHeight: 1 }}>{info.icon}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.ink, marginBottom: 12 }}>{info.titolo}</div>
+            <div style={{ fontSize: 15, color: T.sub, lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>{info.sub}</div>
           </div>
         </div>
       </div>
     );
   }
 
-  // ── VIEW: ACCETTAZIONE ──
-  if (view === "accettato") {
-    return (
-      <div style={S.wrap}>
-        <div style={S.card}>
-          <div style={S.header}>
-            <div style={S.brand}>MASTRO</div>
-            <div style={S.subBrand}>{azienda.ragione || azienda.nome || ""}</div>
-          </div>
-          <div style={S.body}>
-            <button onClick={() => setView(null)} style={S.btnBack}>← Torna al preventivo</button>
-            <div style={S.titolo}>Conferma accettazione</div>
-            <div style={S.subTitolo}>
-              Stai per accettare il preventivo <strong>{data.cm_code}</strong> per <strong>€ {totaleCalcolato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>.
-            </div>
-
-            <div style={S.totCard}>
-              <div style={S.totLabel}>Importo</div>
-              <div style={S.totValore}>€ {totaleCalcolato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div style={S.totSub}>{vani.length} {vani.length === 1 ? "serramento" : "serramenti"}</div>
-            </div>
-
-            <label style={S.label}>Vuoi aggiungere una nota? (opzionale)</label>
-            <textarea
-              value={notaAccettazione}
-              onChange={(e) => setNotaAccettazione(e.target.value)}
-              placeholder="Es. preferenze posa, tempistica, ecc."
-              style={S.textarea}
-            />
-
-            <button
-              onClick={handleAccetta}
-              disabled={submitting}
-              style={{ ...S.btn, ...S.btnOk, marginTop: 16, opacity: submitting ? 0.6 : 1 }}
-            >
-              {submitting ? "Invio..." : "✓ Confermo l'accettazione"}
-            </button>
-
-            <button
-              onClick={() => setView(null)}
-              disabled={submitting}
-              style={{ ...S.btn, ...S.btnCancel, marginTop: 8 }}
-            >
-              Annulla
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── VIEW: MODIFICHE ──
+  // ─── VIEW: form modifiche ───────────────────────────────────
   if (view === "modifiche") {
     return (
       <div style={S.wrap}>
         <div style={S.card}>
-          <div style={S.header}>
-            <div style={S.brand}>MASTRO</div>
-            <div style={S.subBrand}>{azienda.ragione || azienda.nome || ""}</div>
+          <div style={S.head}>
+            <div style={{ fontSize: 13, color: T.sub, fontWeight: 600 }}>RICHIEDI MODIFICHE</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.ink, marginTop: 4 }}>Preventivo {data.cm_code}</div>
           </div>
-          <div style={S.body}>
-            <button onClick={() => setView(null)} style={S.btnBack}>← Torna al preventivo</button>
-            <div style={S.titolo}>Richiesta modifiche</div>
-            <div style={S.subTitolo}>
+          <div style={{ padding: 20 }}>
+            <div style={{ fontSize: 14, color: T.sub, marginBottom: 16, lineHeight: 1.5 }}>
               Indica le modifiche che vorresti per uno o più vani, oppure modifiche generali al preventivo.
             </div>
 
             {vani.length > 0 && (
-              <>
+              <div style={{ marginBottom: 24 }}>
                 <div style={S.sectionLabel}>Modifiche per singolo vano</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
                   {vani.map((v: any, i: number) => {
-                    const nomeVano = v.nome || v.tipo || `Vano ${i + 1}`;
+                    const nome = v.nome || v.tipo || `Vano ${i + 1}`;
                     return (
-                      <div key={i} style={S.vanoModRow}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-                          <div style={S.vanoModNome}>{nomeVano}</div>
-                          <div style={S.vanoModInfo}>
-                            {v.misure ? `${v.misure} mm` : ""}
-                            {v.prezzo ? ` · € ${Number(v.prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}
-                          </div>
+                      <div key={i} style={S.modVanoBox}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 6 }}>
+                          {nome}
+                          {v.misure ? <span style={{ fontWeight: 500, color: T.sub }}> · {v.misure}</span> : null}
+                          {v.prezzo ? <span style={{ fontWeight: 500, color: T.sub }}>{` · ${fmtEur(v.prezzo)}`}</span> : null}
                         </div>
                         <textarea
+                          placeholder="Cosa vorresti cambiare per questo vano? (es: vetro acustico, colore diverso...)"
                           value={modVani[i] || ""}
-                          onChange={(e) => setModVani((m) => ({ ...m, [i]: e.target.value }))}
-                          placeholder={`Es. cambiare colore, aggiungere zanzariera, ridurre dimensione...`}
-                          style={{ ...S.textarea, minHeight: 56 }}
+                          onChange={(e) => setModVani((s) => ({ ...s, [i]: e.target.value }))}
+                          style={S.textarea}
+                          rows={2}
                         />
                       </div>
                     );
                   })}
                 </div>
-              </>
+              </div>
             )}
 
             <div style={S.sectionLabel}>Modifiche generali (prezzo, tempi, condizioni)</div>
             <textarea
+              placeholder="Es: si può fare a settembre invece di luglio? Si può rateizzare il pagamento?"
               value={modGenerali}
               onChange={(e) => setModGenerali(e.target.value)}
-              placeholder="Es. vorrei uno sconto, posso pagare a rate, posa anticipata..."
-              style={S.textarea}
+              style={{ ...S.textarea, marginTop: 8 }}
+              rows={3}
             />
 
-            <button
-              onClick={handleModifiche}
-              disabled={submitting}
-              style={{ ...S.btn, ...S.btnMod, marginTop: 16, opacity: submitting ? 0.6 : 1 }}
-            >
-              {submitting ? "Invio..." : "Invia richiesta modifiche"}
+            <button onClick={handleModifiche} disabled={submitting} style={S.btnPrimary}>
+              {submitting ? "Invio..." : "INVIA RICHIESTA"}
             </button>
-
-            <button
-              onClick={() => setView(null)}
-              disabled={submitting}
-              style={{ ...S.btn, ...S.btnCancel, marginTop: 8 }}
-            >
+            <button onClick={() => setView(null)} disabled={submitting} style={S.btnSecondary}>
               Annulla
             </button>
           </div>
@@ -317,84 +255,65 @@ export default function PreventivoPubblicoPage() {
     );
   }
 
-  // ── VIEW: CONTATTAMI ──
+  // ─── VIEW: form contattami ──────────────────────────────────
   if (view === "chiamare") {
     return (
       <div style={S.wrap}>
         <div style={S.card}>
-          <div style={S.header}>
-            <div style={S.brand}>MASTRO</div>
-            <div style={S.subBrand}>{azienda.ragione || azienda.nome || ""}</div>
+          <div style={S.head}>
+            <div style={{ fontSize: 13, color: T.sub, fontWeight: 600 }}>RICHIEDI CONTATTO</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.ink, marginTop: 4 }}>Preventivo {data.cm_code}</div>
           </div>
-          <div style={S.body}>
-            <button onClick={() => setView(null)} style={S.btnBack}>← Torna al preventivo</button>
-            <div style={S.titolo}>Come preferisci essere contattato?</div>
-            <div style={S.subTitolo}>Ti ricontatteremo nel modo che preferisci.</div>
-
-            <div style={S.sectionLabel}>Canale preferito</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>
-              <button
-                onClick={() => setCanale("telefono")}
-                style={{ ...S.canaleBtn, ...(canale === "telefono" ? S.canaleSel : {}) }}
-              >
-                <span style={S.canaleIcon}>📞</span>
-                <div>
-                  <div style={S.canaleTit}>Chiamata telefonica</div>
-                  <div style={S.canaleSub}>Ti chiamiamo nel tuo orario preferito</div>
-                </div>
-              </button>
-              <button
-                onClick={() => setCanale("whatsapp")}
-                style={{ ...S.canaleBtn, ...(canale === "whatsapp" ? S.canaleSel : {}) }}
-              >
-                <span style={S.canaleIcon}>💬</span>
-                <div>
-                  <div style={S.canaleTit}>Messaggio WhatsApp</div>
-                  <div style={S.canaleSub}>Ti scriviamo su WhatsApp</div>
-                </div>
-              </button>
-              <button
-                onClick={() => setCanale("email")}
-                style={{ ...S.canaleBtn, ...(canale === "email" ? S.canaleSel : {}) }}
-              >
-                <span style={S.canaleIcon}>📧</span>
-                <div>
-                  <div style={S.canaleTit}>Email</div>
-                  <div style={S.canaleSub}>Ti rispondiamo via email</div>
-                </div>
-              </button>
+          <div style={{ padding: 20 }}>
+            <div style={S.sectionLabel}>Come preferisci essere contattato?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 8 }}>
+              {[
+                { v: "telefono" as const, lbl: "Telefono", icon: "📞" },
+                { v: "whatsapp" as const, lbl: "WhatsApp", icon: "💬" },
+                { v: "email" as const, lbl: "Email", icon: "✉" },
+              ].map((opt) => (
+                <button
+                  key={opt.v}
+                  onClick={() => setCanale(opt.v)}
+                  style={{
+                    ...S.canaleBtn,
+                    background: canale === opt.v ? T.acc : T.card,
+                    color: canale === opt.v ? "#fff" : T.ink,
+                    borderColor: canale === opt.v ? T.acc : T.bdr,
+                  }}
+                >
+                  <div style={{ fontSize: 22 }}>{opt.icon}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4 }}>{opt.lbl}</div>
+                </button>
+              ))}
             </div>
 
-            <label style={S.label}>Quando preferisci essere contattato? (opzionale)</label>
-            <input
-              type="text"
-              value={oraPref}
-              onChange={(e) => setOraPref(e.target.value)}
-              placeholder="Es. lun-ven 18-20, sabato mattina..."
-              style={S.input}
-            />
+            <div style={{ marginTop: 16 }}>
+              <div style={S.sectionLabel}>Orario preferito (opzionale)</div>
+              <input
+                type="text"
+                placeholder="Es: dopo le 18, in pausa pranzo..."
+                value={oraPref}
+                onChange={(e) => setOraPref(e.target.value)}
+                style={S.input}
+              />
+            </div>
 
-            <label style={{ ...S.label, marginTop: 12 }}>Argomento o domande (opzionale)</label>
-            <textarea
-              value={notaContatto}
-              onChange={(e) => setNotaContatto(e.target.value)}
-              placeholder="Es. vorrei spiegazioni sui materiali, parlare delle tempistiche..."
-              style={S.textarea}
-            />
+            <div style={{ marginTop: 16 }}>
+              <div style={S.sectionLabel}>Nota (opzionale)</div>
+              <textarea
+                placeholder="Qualcosa che vuoi dire prima del contatto?"
+                value={notaContatto}
+                onChange={(e) => setNotaContatto(e.target.value)}
+                style={S.textarea}
+                rows={3}
+              />
+            </div>
 
-            <button
-              onClick={handleContatto}
-              disabled={submitting || !canale}
-              style={{ ...S.btn, ...S.btnCall, marginTop: 16, opacity: submitting || !canale ? 0.5 : 1 }}
-            >
-              {submitting ? "Invio..." : "Conferma richiesta di contatto"}
+            <button onClick={handleContatto} disabled={submitting} style={S.btnPrimary}>
+              {submitting ? "Invio..." : "INVIA RICHIESTA"}
             </button>
-
-            <button
-              onClick={() => setView(null)}
-              disabled={submitting}
-              style={{ ...S.btn, ...S.btnCancel, marginTop: 8 }}
-            >
+            <button onClick={() => setView(null)} disabled={submitting} style={S.btnSecondary}>
               Annulla
             </button>
           </div>
@@ -403,270 +322,285 @@ export default function PreventivoPubblicoPage() {
     );
   }
 
-  // ── VIEW DEFAULT: PREVENTIVO ──
+  // ─── VIEW: form accettazione ────────────────────────────────
+  if (view === "accettato") {
+    return (
+      <div style={S.wrap}>
+        <div style={S.card}>
+          <div style={S.head}>
+            <div style={{ fontSize: 13, color: T.sub, fontWeight: 600 }}>CONFERMA ACCETTAZIONE</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.ink, marginTop: 4 }}>Preventivo {data.cm_code}</div>
+          </div>
+          <div style={{ padding: 20 }}>
+            <div style={{
+              background: T.accLight, border: `1px solid ${T.acc}33`, borderRadius: 12,
+              padding: 16, textAlign: "center", marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 12, color: T.accDark, fontWeight: 700, letterSpacing: 0.5 }}>TOTALE ACCETTATO</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: T.accDark, marginTop: 4 }}>{fmtEur(calc.totale)}</div>
+              <div style={{ fontSize: 12, color: T.accDark, opacity: 0.7, marginTop: 2 }}>IVA inclusa</div>
+            </div>
+
+            <div style={S.sectionLabel}>Vuoi aggiungere una nota? (opzionale)</div>
+            <textarea
+              placeholder="Es: confermo i tempi di consegna, prepariamo l'acconto..."
+              value={notaAccettazione}
+              onChange={(e) => setNotaAccettazione(e.target.value)}
+              style={{ ...S.textarea, marginTop: 8 }}
+              rows={3}
+            />
+
+            <button onClick={handleAccetta} disabled={submitting} style={{ ...S.btnPrimary, background: T.ok }}>
+              {submitting ? "Invio..." : "✓ CONFERMA ACCETTAZIONE"}
+            </button>
+            <button onClick={() => setView(null)} disabled={submitting} style={S.btnSecondary}>
+              Annulla
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── VIEW DEFAULT: preventivo intero ────────────────────────
   return (
     <div style={S.wrap}>
       <div style={S.card}>
-        <div style={S.header}>
-          <div style={S.brand}>MASTRO</div>
-          <div style={S.subBrand}>{azienda.ragione || azienda.nome || "La tua azienda"}</div>
+        {/* HEADER azienda */}
+        <div style={S.headerAzienda}>
+          {azienda.logo && (
+            <img src={azienda.logo} alt="" style={{ maxHeight: 56, marginBottom: 10 }} />
+          )}
+          <div style={{ fontSize: 18, fontWeight: 800, color: T.ink, letterSpacing: 0.3 }}>
+            {azienda.ragione || "Azienda"}
+          </div>
+          {azienda.indirizzo && <div style={{ fontSize: 12, color: T.sub, marginTop: 3 }}>{azienda.indirizzo}</div>}
+          {(azienda.telefono || azienda.email) && (
+            <div style={{ fontSize: 12, color: T.sub, marginTop: 3 }}>
+              {azienda.telefono ? <>Tel. {azienda.telefono}</> : null}
+              {azienda.telefono && azienda.email ? " · " : ""}
+              {azienda.email}
+            </div>
+          )}
+          {azienda.piva && <div style={{ fontSize: 11, color: T.sub, marginTop: 3, opacity: 0.7 }}>P.IVA {azienda.piva}</div>}
         </div>
 
-        <div style={S.body}>
-          <div style={S.titolo}>Preventivo {data.cm_code}</div>
-          <div style={S.subTitolo}>
-            Gentile {cliente},
-            <br />
-            ecco il preventivo che hai richiesto.
+        {/* BANDA TITOLO */}
+        <div style={S.bandTitolo}>
+          <div style={{ fontSize: 11, color: T.acc, fontWeight: 700, letterSpacing: 1.5 }}>PREVENTIVO</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.ink }}>N. {data.cm_code}</div>
+            {data_preventivo && <div style={{ fontSize: 12, color: T.sub }}>{data_preventivo}</div>}
           </div>
+        </div>
 
-          <div style={S.totCard}>
-            <div style={S.totLabel}>Totale preventivo</div>
-            <div style={S.totValore}>€ {totaleCalcolato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div style={S.totSub}>{vani.length} {vani.length === 1 ? "serramento" : "serramenti"}</div>
+        {/* CLIENTE */}
+        <div style={S.boxCliente}>
+          <div style={{ fontSize: 11, color: T.sub, fontWeight: 700, letterSpacing: 0.5 }}>SPETT.LE</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: T.ink, marginTop: 4 }}>{cliente_nome}</div>
+          {cliente_indirizzo && <div style={{ fontSize: 13, color: T.sub, marginTop: 2 }}>{cliente_indirizzo}</div>}
+        </div>
+
+        {/* DETTAGLIO LAVORI */}
+        <div style={{ padding: "20px 20px 0" }}>
+          <div style={S.sectionTitle}>📋 Dettaglio lavori</div>
+        </div>
+
+        {vani.length === 0 ? (
+          <div style={{ padding: 20, color: T.sub, fontStyle: "italic", textAlign: "center" }}>
+            Nessun vano nel preventivo
           </div>
+        ) : (
+          <div style={{ padding: "8px 20px 20px" }}>
+            {vani.map((v: any, i: number) => {
+              const nome = v.nome || v.tipo || `Vano ${i + 1}`;
+              const pezzi = Number(v.pezzi) || 1;
+              const subtotale = Number(v.prezzo) || 0;
+              const prezzoUnit = pezzi > 1 ? subtotale / pezzi : subtotale;
+              const righe: { label: string; valore: string }[] = Array.isArray(v.righe) ? v.righe : [];
 
-          {vani.length > 0 && (
-            <div style={S.vaniList}>
-              {vani.map((v: any, i: number) => {
-                const nomeVano = v.nome || v.tipo || `Vano ${i + 1}`;
-                return (
-                  <div key={i} style={S.vanoRow}>
-                    <span style={S.vanoNome}>
-                      {nomeVano}
-                      {v.misure ? <span style={S.vanoMisure}> · {v.misure}</span> : null}
-                    </span>
-                    <span style={S.vanoPrezzo}>
-                      € {Number(v.prezzo || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
+              return (
+                <div key={i} style={S.vanoCard}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: T.acc, fontWeight: 700, letterSpacing: 0.5 }}>VANO {i + 1}</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: T.ink, marginTop: 2 }}>
+                        {nome}
+                        {v.tipo && nome !== v.tipo && <span style={{ fontWeight: 500, color: T.sub, fontSize: 13 }}> · {v.tipo}</span>}
+                      </div>
+                      {v.misure && <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>Misure: {v.misure} mm</div>}
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: T.ink }}>{fmtEur(subtotale)}</div>
+                      {pezzi > 1 && (
+                        <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>
+                          {pezzi} × {fmtEur(prezzoUnit)}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
 
-          <div style={S.sectionLabel}>Cosa vuoi fare?</div>
+                  {righe.length > 0 && (
+                    <div style={S.righeBox}>
+                      {righe.map((r, j) => (
+                        <div key={j} style={S.rigaRow}>
+                          <span style={S.rigaLabel}>{r.label}</span>
+                          <span style={S.rigaValore}>{r.valore}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-          <button onClick={() => setView("accettato")} style={{ ...S.btn, ...S.btnOk }}>
-            <span style={S.btnIcon}>✓</span>
-            <div style={S.btnContent}>
-              <div style={S.btnTit}>Accetto il preventivo</div>
-              <div style={S.btnSub}>Procedi alla conferma d'ordine</div>
-            </div>
+        {/* TOTALE */}
+        <div style={S.totBox}>
+          <div style={S.totRiga}>
+            <span style={{ fontSize: 13, color: T.sub }}>Imponibile</span>
+            <span style={{ fontSize: 14, color: T.ink, fontWeight: 600 }}>{fmtEur(calc.imponibile)}</span>
+          </div>
+          <div style={S.totRiga}>
+            <span style={{ fontSize: 13, color: T.sub }}>IVA {calc.ivaPerc}%</span>
+            <span style={{ fontSize: 14, color: T.ink, fontWeight: 600 }}>{fmtEur(calc.iva)}</span>
+          </div>
+          <div style={{ height: 1, background: T.bdr, margin: "8px 0" }} />
+          <div style={S.totRiga}>
+            <span style={{ fontSize: 14, color: T.ink, fontWeight: 800 }}>TOTALE</span>
+            <span style={{ fontSize: 22, color: T.acc, fontWeight: 800 }}>{fmtEur(calc.totale)}</span>
+          </div>
+        </div>
+
+        {/* CTA bottoni */}
+        <div style={{ padding: "16px 20px 24px", borderTop: `1px solid ${T.bdr}` }}>
+          <div style={{ fontSize: 13, color: T.sub, textAlign: "center", marginBottom: 14, fontWeight: 600 }}>
+            Cosa vuoi fare?
+          </div>
+          <button onClick={() => setView("accettato")} style={{ ...S.ctaBtn, background: T.ok }}>
+            ✓ Accetta preventivo
           </button>
-
-          <button onClick={() => setView("modifiche")} style={{ ...S.btn, ...S.btnMod }}>
-            <span style={S.btnIcon}>↻</span>
-            <div style={S.btnContent}>
-              <div style={S.btnTit}>Chiedo modifiche</div>
-              <div style={S.btnSub}>Modifiche per singoli vani o generali</div>
-            </div>
+          <button onClick={() => setView("modifiche")} style={{ ...S.ctaBtn, background: T.warn }}>
+            ✏ Richiedi modifiche
           </button>
-
-          <button onClick={() => setView("chiamare")} style={{ ...S.btn, ...S.btnCall }}>
-            <span style={S.btnIcon}>📞</span>
-            <div style={S.btnContent}>
-              <div style={S.btnTit}>Contattami</div>
-              <div style={S.btnSub}>Chiamata, WhatsApp o email</div>
-            </div>
+          <button onClick={() => setView("chiamare")} style={{ ...S.ctaBtn, background: T.blue }}>
+            📞 Contattami
           </button>
+        </div>
 
-          {azienda.telefono && (
-            <div style={S.contatti}>
-              Per qualsiasi domanda: <a href={`tel:${azienda.telefono}`} style={S.link}>{azienda.telefono}</a>
-            </div>
-          )}
+        {/* footer brand */}
+        <div style={S.footer}>
+          Generato con MASTRO · ERP per serramentisti
         </div>
       </div>
     </div>
   );
 }
 
-// ─── STYLES ───
-const S: any = {
+// ── STYLES ────────────────────────────────────────────────────
+const S: Record<string, React.CSSProperties> = {
   wrap: {
-    minHeight: "100vh",
-    background: "#F7FAFA",
-    padding: 16,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    minHeight: "100vh", background: T.bg,
+    padding: "16px",
+    display: "flex", justifyContent: "center", alignItems: "flex-start",
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     boxSizing: "border-box",
   },
   card: {
-    width: "100%",
-    maxWidth: 480,
-    background: "#fff",
-    borderRadius: 16,
-    overflow: "hidden",
-    boxShadow: "0 10px 40px rgba(13,31,31,0.08)",
+    width: "100%", maxWidth: 520, background: T.card, borderRadius: 16,
+    overflow: "hidden", boxShadow: "0 10px 40px rgba(13,31,31,0.08)",
   },
-  header: { padding: "20px 24px", background: "#0D1F1F", color: "#fff" },
-  brand: { fontSize: 20, fontWeight: 900, letterSpacing: -0.5 },
-  subBrand: { fontSize: 12, opacity: 0.7, marginTop: 2 },
-  body: { padding: "24px" },
-
-  btnBack: {
-    background: "transparent",
-    color: "#28A0A0",
-    border: "none",
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    padding: "0 0 12px 0",
-    marginLeft: -2,
+  headerAzienda: {
+    padding: "24px 20px 16px",
+    background: `linear-gradient(180deg, ${T.accLight} 0%, ${T.card} 100%)`,
+    borderBottom: `1px solid ${T.bdr}`,
+    textAlign: "center" as const,
   },
-
-  titolo: { fontSize: 22, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 },
-  subTitolo: { fontSize: 13, color: "#6A8484", lineHeight: 1.5, marginBottom: 20 },
-
-  totCard: {
-    background: "#EEF8F8",
-    borderRadius: 12,
-    padding: 20,
-    textAlign: "center",
-    marginBottom: 18,
-    border: "1px solid #C8E4E4",
+  bandTitolo: {
+    padding: "16px 20px",
+    background: T.card,
   },
-  totLabel: { fontSize: 11, color: "#6A8484", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 },
-  totValore: { fontSize: 32, fontWeight: 900, color: "#28A0A0", margin: "4px 0", letterSpacing: -1 },
-  totSub: { fontSize: 12, color: "#6A8484" },
-
-  vaniList: {
-    background: "#fff",
-    border: "1px solid #E5F0F0",
+  boxCliente: {
+    margin: "0 20px",
+    padding: "12px 14px",
+    background: T.accLight,
     borderRadius: 10,
-    padding: 6,
-    marginBottom: 18,
+    border: `1px solid ${T.bdr}`,
   },
-  vanoRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: 13,
-    padding: "10px 12px",
-    color: "#0D1F1F",
-    alignItems: "center",
-    gap: 8,
+  head: {
+    padding: "20px 20px 16px",
+    borderBottom: `1px solid ${T.bdr}`,
   },
-  vanoNome: { flex: 1, minWidth: 0 },
-  vanoMisure: { color: "#6A8484", fontSize: 12 },
-  vanoPrezzo: { fontWeight: 700, color: "#28A0A0", whiteSpace: "nowrap" },
-
-  vanoModRow: {
-    background: "#F7FAFA",
-    borderRadius: 10,
-    padding: 12,
-    border: "1px solid #E5F0F0",
+  sectionTitle: {
+    fontSize: 11, fontWeight: 700, color: T.sub, letterSpacing: 1,
+    paddingBottom: 8, borderBottom: `1px solid ${T.bdr}`,
   },
-  vanoModNome: { fontSize: 14, fontWeight: 700, color: "#0D1F1F" },
-  vanoModInfo: { fontSize: 11, color: "#6A8484" },
-
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: 800,
-    color: "#28A0A0",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 10,
-    marginTop: 4,
+    fontSize: 11, fontWeight: 700, color: T.sub, letterSpacing: 0.8,
+    textTransform: "uppercase" as const, marginTop: 8,
   },
-
-  btn: {
-    width: "100%",
-    padding: "16px 18px",
+  vanoCard: {
+    background: T.card, border: `1px solid ${T.bdr}`,
+    borderRadius: 12, padding: 14, marginBottom: 10,
+  },
+  righeBox: {
+    background: T.bg, borderRadius: 8, padding: "10px 12px",
+    marginTop: 8,
+  },
+  rigaRow: {
+    display: "flex", justifyContent: "space-between", alignItems: "baseline",
+    gap: 12, padding: "3px 0", fontSize: 12,
+  },
+  rigaLabel: { color: T.sub, flexShrink: 0 },
+  rigaValore: { color: T.ink, fontWeight: 600, textAlign: "right" as const, wordBreak: "break-word" as const },
+  totBox: {
+    margin: "0 20px 0", padding: "16px 18px",
+    background: T.accLight, border: `1px solid ${T.acc}33`,
     borderRadius: 12,
-    border: "none",
-    fontSize: 14,
-    fontWeight: 800,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    marginBottom: 8,
-    textAlign: "left",
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    boxSizing: "border-box",
   },
-  btnIcon: { fontSize: 22, flexShrink: 0, lineHeight: 1 },
-  btnContent: { flex: 1, minWidth: 0 },
-  btnTit: { fontSize: 14, fontWeight: 800, lineHeight: 1.2 },
-  btnSub: { fontSize: 11, fontWeight: 500, opacity: 0.85, marginTop: 2 },
-
-  btnOk: { background: "#28A0A0", color: "#fff" },
-  btnMod: { background: "#fff", color: "#F5A623", border: "1.5px solid #F5A623" },
-  btnCall: { background: "#fff", color: "#3B7FE0", border: "1.5px solid #3B7FE0" },
-  btnCancel: {
-    background: "#fff",
-    color: "#6A8484",
-    border: "1px solid #C8E4E4",
-    fontSize: 13,
-    justifyContent: "center",
+  totRiga: {
+    display: "flex", justifyContent: "space-between", alignItems: "baseline",
+    padding: "4px 0",
   },
-
-  label: {
-    display: "block",
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#0D1F1F",
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
-    marginBottom: 6,
-    marginTop: 6,
+  ctaBtn: {
+    width: "100%", padding: 16, borderRadius: 12, border: "none",
+    color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer",
+    fontFamily: "inherit", marginBottom: 10,
+    boxShadow: "0 4px 12px rgba(13,31,31,0.12)",
   },
-  input: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #C8E4E4",
-    fontSize: 13,
-    fontFamily: "inherit",
-    boxSizing: "border-box",
-    color: "#0D1F1F",
+  modVanoBox: {
+    border: `1px solid ${T.bdr}`, borderRadius: 10, padding: 12, background: T.bg,
   },
   textarea: {
-    width: "100%",
-    minHeight: 80,
-    padding: 12,
-    borderRadius: 8,
-    border: "1px solid #C8E4E4",
-    fontSize: 13,
-    fontFamily: "inherit",
-    resize: "vertical",
-    boxSizing: "border-box",
-    color: "#0D1F1F",
+    width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`,
+    background: T.card, color: T.ink, fontSize: 14, fontFamily: "inherit",
+    boxSizing: "border-box" as const, resize: "vertical" as const,
   },
-
+  input: {
+    width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`,
+    background: T.card, color: T.ink, fontSize: 14, fontFamily: "inherit",
+    boxSizing: "border-box" as const, marginTop: 6,
+  },
   canaleBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    width: "100%",
-    padding: "12px 14px",
-    background: "#fff",
-    border: "1.5px solid #C8E4E4",
-    borderRadius: 12,
-    cursor: "pointer",
-    fontFamily: "inherit",
-    textAlign: "left",
-    color: "#0D1F1F",
-    boxSizing: "border-box",
+    padding: "12px 6px", borderRadius: 10, border: `2px solid ${T.bdr}`,
+    cursor: "pointer", fontFamily: "inherit",
+    display: "flex", flexDirection: "column" as const, alignItems: "center",
+    transition: "all 0.15s",
   },
-  canaleSel: {
-    background: "#EEF8F8",
-    border: "1.5px solid #28A0A0",
-    boxShadow: "0 0 0 3px rgba(40,160,160,0.12)",
+  btnPrimary: {
+    width: "100%", padding: 14, borderRadius: 10, border: "none",
+    background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800,
+    cursor: "pointer", marginTop: 16, fontFamily: "inherit",
   },
-  canaleIcon: { fontSize: 22, flexShrink: 0 },
-  canaleTit: { fontSize: 14, fontWeight: 700 },
-  canaleSub: { fontSize: 11, color: "#6A8484", marginTop: 2 },
-
-  contatti: { textAlign: "center", fontSize: 12, color: "#6A8484", marginTop: 18, lineHeight: 1.6 },
-  link: { color: "#28A0A0", textDecoration: "none", fontWeight: 700 },
-
-  doneBox: { textAlign: "center", padding: "30px 20px", background: "#F0FDF9", borderRadius: 12, border: "1px solid #28A0A0" },
-  doneIcon: { fontSize: 56, marginBottom: 8, lineHeight: 1 },
-  doneTit: { fontSize: 18, color: "#0D1F1F", fontWeight: 800, marginBottom: 8 },
-  doneTxt: { fontSize: 13, color: "#0D1F1F", lineHeight: 1.5 },
+  btnSecondary: {
+    width: "100%", padding: 12, borderRadius: 10, border: `1px solid ${T.bdr}`,
+    background: T.card, color: T.sub, fontSize: 13, fontWeight: 600,
+    cursor: "pointer", marginTop: 8, fontFamily: "inherit",
+  },
+  footer: {
+    padding: "12px 20px 18px",
+    fontSize: 10, color: T.sub, textAlign: "center" as const,
+    opacity: 0.6, letterSpacing: 0.5,
+  },
 };
