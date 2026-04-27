@@ -1278,6 +1278,178 @@ export default function CMDetailPanel() {
           </div>
           )}
 
+          {/* v29 · PANNELLO GESTIONE PREVENTIVI */}
+          {(() => {
+            const c29 = cV70 as any;
+            const ris29 = rispostaCliente;
+            const tipoRis29 = ris29?.risposta as ("accettato" | "modificiamo" | "modifiche" | "chiamare" | undefined);
+            const haPreventivoInviato = !!c29.preventivoInviato || !!c29.preventivoInviatoAt || c29.fase === "modifiche" || c29.fase === "da_contattare" || c29.fase === "conferma";
+            if (!haPreventivoInviato) return null;
+
+            const tuttiRilievi29 = (c29.rilievi || []) as any[];
+            const rilievoCorr29 = selectedRilievo || (tuttiRilievi29.length > 0 ? tuttiRilievi29[tuttiRilievi29.length - 1] : null);
+            const numCorr29 = rilievoCorr29?.numero || tuttiRilievi29.length || 1;
+            const dataInvio29 = c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+            const totale29 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c29) : (c29.totalePreventivo || 0)) || 0;
+            const fmtEur29 = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            const telPul29 = (c29.telefono || "").replace(/[^0-9+]/g, "");
+            const numWA29 = telPul29.startsWith("+") ? telPul29.slice(1) : (telPul29.startsWith("39") ? telPul29 : "39" + telPul29);
+
+            // Badge stato
+            const badge29 = tipoRis29 === "accettato" ? { txt: "ACCETTATO", bg: "#28A268", icon: "✓" } :
+                            tipoRis29 === "modifiche" ? { txt: "CHIEDE MODIFICHE", bg: "#F59E0B", icon: "✏" } :
+                            tipoRis29 === "chiamare" ? { txt: "VUOLE CONTATTO", bg: "#3B82F6", icon: "📞" } :
+                            ris29?.visualizzato ? { txt: "VISTO DAL CLIENTE", bg: "#8B5CF6", icon: "👁" } :
+                            { txt: "IN ATTESA", bg: "#71717A", icon: "⏳" };
+
+            // Prossima azione consigliata
+            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); } } :
+                           tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
+                             // Crea R(N+1) duplicando il corrente
+                             const oggiIso = new Date().toISOString().split("T")[0];
+                             const oraOra = new Date().toTimeString().slice(0, 5);
+                             const nextNum = Math.max(0, ...tuttiRilievi29.map((r: any) => Number(r.numero) || 0)) + 1;
+                             const vaniDup = (rilievoCorr29?.vani || []).map((v: any) => ({ ...JSON.parse(JSON.stringify(v)), id: "vano-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) }));
+                             const nuovo = { id: "rilievo-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8), tipo: "definitivo", numero: nextNum, data: oggiIso, ora: oraOra, rilevatore: rilievoCorr29?.rilevatore || "", note: "Aggiornamento dopo modifiche cliente", motivoModifica: ris29?.risposta_nota || "Modifiche richieste", completato: false, complesso: false, vani: vaniDup };
+                             setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, rilievi: [...(x.rilievi || []), nuovo], preventivoInviato: false, preventivoInviatoAt: null, dataPreventivoInvio: null, fase: "preventivo" } : x));
+                             setSelectedCM((p: any) => p ? ({ ...p, rilievi: [...(p.rilievi || []), nuovo], preventivoInviato: false, preventivoInviatoAt: null, dataPreventivoInvio: null, fase: "preventivo" }) : p);
+                             setSelectedRilievo(nuovo);
+                             if (vaniDup.length > 0) setTimeout(() => setSelectedVano(vaniDup[0]), 100);
+                           } } :
+                           tipoRis29 === "chiamare" && telPul29 ? { lbl: "💬 CONTATTA SU WHATSAPP", bg: "#3B82F6", action: () => window.open("https://wa.me/" + numWA29, "_blank") } :
+                           { lbl: "REINVIA PREVENTIVO", bg: "#28A0A0", action: () => { setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, preventivoInviato: false } : x)); setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p); } };
+
+            return (
+              <div style={{
+                background: "#fff",
+                borderRadius: 18,
+                padding: "14px 16px",
+                boxShadow: "0 4px 14px rgba(13,31,31,0.08)",
+                border: "1px solid rgba(40,160,160,0.15)",
+                marginTop: 0,
+              }}>
+                {/* Header pannello */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: "#28A0A0", fontWeight: 900, letterSpacing: 1.2 }}>📋 GESTIONE PREVENTIVI</div>
+                    <div style={{ fontSize: 13, color: "#0D1F1F", fontWeight: 800, marginTop: 2 }}>
+                      {tuttiRilievi29.length} {tuttiRilievi29.length === 1 ? "versione" : "versioni"} · totale {fmtEur29(totale29)}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: badge29.bg, color: "#fff",
+                    padding: "4px 10px", borderRadius: 50,
+                    fontSize: 9, fontWeight: 900, letterSpacing: 0.6,
+                    display: "flex", alignItems: "center", gap: 4,
+                  }}>
+                    <span style={{ fontSize: 10 }}>{badge29.icon}</span>
+                    {badge29.txt}
+                  </div>
+                </div>
+
+                {/* Lista rilievi */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                  {tuttiRilievi29.slice().reverse().map((r: any, idx: number) => {
+                    const isAttivo = idx === 0;
+                    return (
+                      <div key={r.id || idx} style={{
+                        background: isAttivo ? "linear-gradient(135deg, rgba(40,160,160,0.08) 0%, rgba(40,160,160,0.02) 100%)" : "#FAFAFA",
+                        border: isAttivo ? "1.5px solid rgba(40,160,160,0.3)" : "1px solid #E4E4E7",
+                        borderRadius: 12, padding: "10px 12px",
+                        display: "flex", alignItems: "center", gap: 10,
+                      }}>
+                        <div style={{
+                          width: 30, height: 30, borderRadius: 15, flexShrink: 0,
+                          background: isAttivo ? "#28A0A0" : "#A1A1AA",
+                          color: "#fff",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 11, fontWeight: 900,
+                        }}>R{r.numero || idx + 1}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0D1F1F", display: "flex", alignItems: "center", gap: 6 }}>
+                            Rilievo R{r.numero || idx + 1}
+                            {isAttivo && <span style={{ fontSize: 8, fontWeight: 900, color: "#28A0A0", background: "rgba(40,160,160,0.15)", padding: "2px 6px", borderRadius: 50, letterSpacing: 0.5 }}>ATTIVO</span>}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#71717A", marginTop: 2 }}>
+                            {r.data ? new Date(r.data).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "—"}
+                            {r.ora ? " · " + r.ora : ""}
+                            {r.vani ? " · " + r.vani.length + " vani" : ""}
+                          </div>
+                          {r.motivoModifica && (
+                            <div style={{ fontSize: 10, color: "#52525B", marginTop: 3, fontStyle: "italic" as any }}>
+                              {r.motivoModifica.length > 60 ? r.motivoModifica.slice(0, 60) + "..." : r.motivoModifica}
+                            </div>
+                          )}
+                        </div>
+                        {isAttivo && (
+                          <button onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRilievo(r);
+                            if (r.vani && r.vani.length > 0) setTimeout(() => setSelectedVano(r.vani[0]), 50);
+                          }} style={{
+                            padding: "6px 10px", borderRadius: 8, border: "1px solid #28A0A0",
+                            background: "#fff", color: "#0F5E55",
+                            fontSize: 10, fontWeight: 800, cursor: "pointer", flexShrink: 0,
+                          }}>
+                            APRI →
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Nota cliente se presente */}
+                {ris29?.risposta_nota && (
+                  <div style={{
+                    background: "#FEF3C7",
+                    border: "1px solid #FCD34D",
+                    borderRadius: 10, padding: "8px 10px", marginBottom: 12,
+                    fontSize: 11, color: "#78350F",
+                    whiteSpace: "pre-wrap" as const, lineHeight: 1.4,
+                    maxHeight: 100, overflowY: "auto" as const,
+                  }}>
+                    <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.5, marginBottom: 3 }}>💬 CLIENTE HA SCRITTO:</div>
+                    {ris29.risposta_nota}
+                  </div>
+                )}
+
+                {/* Bottone prossima azione */}
+                <button onClick={prossima.action} style={{
+                  width: "100%", padding: 14, borderRadius: 12, border: "none",
+                  background: prossima.bg, color: "#fff",
+                  fontSize: 13, fontWeight: 900, cursor: "pointer",
+                  fontFamily: "inherit", letterSpacing: 0.4,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                }}>
+                  {prossima.lbl} →
+                </button>
+
+                {/* Link secondari */}
+                <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 10 }}>
+                  {ris29?.token && (
+                    <button onClick={() => window.open("/p/" + ris29.token, "_blank")} style={{
+                      padding: 4, border: "none", background: "transparent",
+                      color: "#71717A", fontSize: 10, fontWeight: 700, cursor: "pointer",
+                      textDecoration: "underline", fontFamily: "inherit",
+                    }}>
+                      🔗 Vedi link cliente
+                    </button>
+                  )}
+                  {telPul29 && (
+                    <button onClick={() => window.open("https://wa.me/" + numWA29, "_blank")} style={{
+                      padding: 4, border: "none", background: "transparent",
+                      color: "#71717A", fontSize: 10, fontWeight: 700, cursor: "pointer",
+                      textDecoration: "underline", fontFamily: "inherit",
+                    }}>
+                      💬 WhatsApp
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* MENU 4 CENTRI */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
             {[
