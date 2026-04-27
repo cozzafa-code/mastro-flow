@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { TT, cardStyle } from "../design-system";
-import { Icon, IconName } from "../icons";
+import { Icon } from "../icons";
 import { useDashboard } from "../dashboard-context";
 import { useMastroData, FaseCommessa } from "../store";
 import AvatarGradient from "../AvatarGradient";
@@ -37,24 +37,19 @@ const FILTRI: { id: Filtro; label: string }[] = [
 
 export default function CommesseListaTablet() {
   const data = useMastroData();
+  const { openCommessa } = useDashboard();
   const [filtro, setFiltro] = React.useState<Filtro>("tutte");
-  const [search, setSearch] = React.useState("");
 
   const all = data.getCommesse();
-  const filtered = filtro === "tutte"
-    ? all
-    : all.filter((c) => c.fase === filtro);
+  const filtered = filtro === "tutte" ? all : all.filter((c) => c.fase === filtro);
 
   return (
     <div>
-      {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: TT.text1, letterSpacing: "-0.5px" }}>
-            Commesse
-          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: TT.text1, letterSpacing: "-0.5px" }}>Commesse</div>
           <div style={{ fontSize: 12, color: TT.text3, marginTop: 2 }}>
-            {all.length} commesse totali &middot; {data.getCommesseByFase("produzione").length} in produzione &middot; valore totale € {all.reduce((s, c) => s + c.valore, 0).toLocaleString("it-IT")}
+            {all.length} commesse &middot; valore totale € {all.reduce((s, c) => s + c.valore, 0).toLocaleString("it-IT")}
           </div>
         </div>
         <button style={{
@@ -71,63 +66,40 @@ export default function CommesseListaTablet() {
         </button>
       </div>
 
-      {/* FILTRI + SEARCH */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
-          {FILTRI.map((f) => {
-            const ramp = f.id !== "tutte" ? TINTS[FASE_DEF[f.id as FaseCommessa].tint] : null;
-            const isActive = f.id === filtro;
-            const count = f.id === "tutte" ? all.length : all.filter((c) => c.fase === f.id).length;
-            return (
-              <div key={f.id}
-                onClick={() => setFiltro(f.id)}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "6px 12px",
-                  background: isActive ? (ramp ? ramp[400] : TT.text1) : TT.surface,
-                  color: isActive ? "#fff" : TT.text2,
-                  border: `1px solid ${isActive ? "transparent" : TT.borderStrong}`,
-                  borderRadius: 999,
-                  fontSize: 12, fontWeight: 600,
-                  cursor: "pointer", transition: "all 0.12s",
-                }}
-              >
-                {f.label}
-                <span style={{
-                  background: isActive ? "rgba(255,255,255,0.28)" : (ramp ? ramp[100] : TT.bgSoft),
-                  color: isActive ? "#fff" : (ramp ? ramp[600] : TT.text3),
-                  fontSize: 10, fontWeight: 700,
-                  padding: "1px 7px", borderRadius: 999,
-                  fontVariantNumeric: "tabular-nums",
-                }}>
-                  {count}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div style={{ position: "relative", width: 240 }}>
-          <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>
-            <Icon name="search" size={13} color={TT.text3} strokeWidth={2} />
-          </div>
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cerca cliente, riferimento..."
-            style={{
-              width: "100%", height: 36,
-              padding: "0 12px 0 34px",
-              background: TT.surface,
-              border: `1px solid ${TT.borderStrong}`,
-              borderRadius: 10,
-              fontSize: 12, fontFamily: TT.fontFamily,
-              color: TT.text1, outline: "none",
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {FILTRI.map((f) => {
+          const ramp = f.id !== "tutte" ? TINTS[FASE_DEF[f.id as FaseCommessa].tint] : null;
+          const isActive = f.id === filtro;
+          const count = f.id === "tutte" ? all.length : all.filter((c) => c.fase === f.id).length;
+          return (
+            <div key={f.id}
+              onClick={() => setFiltro(f.id)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "6px 12px",
+                background: isActive ? (ramp ? ramp[400] : TT.text1) : TT.surface,
+                color: isActive ? "#fff" : TT.text2,
+                border: `1px solid ${isActive ? "transparent" : TT.borderStrong}`,
+                borderRadius: 999,
+                fontSize: 12, fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {f.label}
+              <span style={{
+                background: isActive ? "rgba(255,255,255,0.28)" : (ramp ? ramp[100] : TT.bgSoft),
+                color: isActive ? "#fff" : (ramp ? ramp[600] : TT.text3),
+                fontSize: 10, fontWeight: 700,
+                padding: "1px 7px", borderRadius: 999,
+                fontVariantNumeric: "tabular-nums",
+              }}>
+                {count}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
-      {/* TABELLA */}
       <div style={cardStyle({ padding: 0, overflow: "hidden" })}>
         <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 12 }}>
           <thead>
@@ -160,33 +132,19 @@ export default function CommesseListaTablet() {
                   fase={fase}
                   rampFase={ramp}
                   valore={c.valore}
+                  onClick={() => openCommessa(c.id)}
                 />
               );
             })}
           </tbody>
         </table>
-
-        <div style={{
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          padding: "12px 16px",
-          borderTop: `1px solid ${TT.border}`,
-          background: TT.bgSoft,
-          fontSize: 11, color: TT.text3,
-        }}>
-          <span>Mostro {filtered.length} di {all.length} commesse</span>
-          <span style={{ fontWeight: 700, color: TT.text1 }}>
-            Valore visualizzato: € {filtered.reduce((s, c) => s + c.valore, 0).toLocaleString("it-IT")}
-          </span>
-        </div>
       </div>
     </div>
   );
 }
 
 interface CommessaRowProps {
-  numero: string;
-  cliente: string;
-  citta: string;
+  numero: string; cliente: string; citta: string;
   preset: "a"|"b"|"c"|"d"|"e";
   vani: number;
   posatore: string;
@@ -194,12 +152,14 @@ interface CommessaRowProps {
   fase: { label: string; tint: keyof typeof TINTS };
   rampFase: any;
   valore: number;
+  onClick: () => void;
 }
 
-function CommessaRow({ numero, cliente, citta, preset, vani, posatore, posatoreAvatar, fase, rampFase, valore }: CommessaRowProps) {
+function CommessaRow({ numero, cliente, citta, preset, vani, posatore, posatoreAvatar, fase, rampFase, valore, onClick }: CommessaRowProps) {
   const [hover, setHover] = React.useState(false);
   return (
     <tr
+      onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
@@ -212,27 +172,17 @@ function CommessaRow({ numero, cliente, citta, preset, vani, posatore, posatoreA
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           <AvatarGradient size={32} preset={preset} />
           <div>
-            <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 700, color: TT.text3 }}>
-              {numero}
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: TT.text1, letterSpacing: "-0.1px" }}>
-              {cliente}
-            </div>
+            <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 700, color: TT.text3 }}>{numero}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: TT.text1, letterSpacing: "-0.1px" }}>{cliente}</div>
           </div>
         </div>
       </Td>
-      <Td>
-        <span style={{ fontSize: 11, color: TT.text2, fontWeight: 600 }}>{citta}</span>
-      </Td>
-      <Td align="center">
-        <span style={{ fontSize: 12, fontWeight: 700, color: TT.text1, fontVariantNumeric: "tabular-nums" }}>{vani}</span>
-      </Td>
+      <Td><span style={{ fontSize: 11, color: TT.text2, fontWeight: 600 }}>{citta}</span></Td>
+      <Td align="center"><span style={{ fontSize: 12, fontWeight: 700, color: TT.text1, fontVariantNumeric: "tabular-nums" }}>{vani}</span></Td>
       <Td>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <AvatarGradient size={20} preset={posatoreAvatar} />
-          <span style={{ fontSize: 11, color: TT.text2, fontWeight: 600, whiteSpace: "nowrap" }}>
-            {posatore.split(" ")[0]}
-          </span>
+          <span style={{ fontSize: 11, color: TT.text2, fontWeight: 600, whiteSpace: "nowrap" }}>{posatore.split(" ")[0]}</span>
         </div>
       </Td>
       <Td>
@@ -265,8 +215,7 @@ function CommessaRow({ numero, cliente, citta, preset, vani, posatore, posatoreA
 function Th({ children, align, width }: { children?: React.ReactNode; align?: "left"|"center"|"right"; width?: string }) {
   return (
     <th style={{
-      padding: "10px 14px",
-      textAlign: align || "left",
+      padding: "10px 14px", textAlign: align || "left",
       fontSize: 10, fontWeight: 700, color: TT.text3,
       letterSpacing: "0.6px", textTransform: "uppercase",
       width,
@@ -277,9 +226,5 @@ function Th({ children, align, width }: { children?: React.ReactNode; align?: "l
 }
 
 function Td({ children, align }: { children?: React.ReactNode; align?: "left"|"center"|"right" }) {
-  return (
-    <td style={{ padding: "10px 14px", textAlign: align || "left", verticalAlign: "middle" }}>
-      {children}
-    </td>
-  );
+  return <td style={{ padding: "10px 14px", textAlign: align || "left", verticalAlign: "middle" }}>{children}</td>;
 }

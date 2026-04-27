@@ -8,6 +8,10 @@ interface DashboardCtx {
   expand: (blocco: string) => void;
   preset: Preset;
   setPreset: (p: Preset) => void;
+  // NUOVO: commessa aperta
+  selectedCommessaId: string | null;
+  openCommessa: (id: string) => void;
+  closeCommessa: () => void;
 }
 
 const DashboardContext = React.createContext<DashboardCtx | null>(null);
@@ -18,19 +22,21 @@ export interface DashboardProviderProps {
   onExpand: (blocco: string) => void;
   preset: Preset;
   setPreset: (p: Preset) => void;
+  selectedCommessaId: string | null;
+  openCommessa: (id: string) => void;
+  closeCommessa: () => void;
 }
 
 export function DashboardProvider({
-  children,
-  onNavigate,
-  onExpand,
-  preset,
-  setPreset,
+  children, onNavigate, onExpand, preset, setPreset,
+  selectedCommessaId, openCommessa, closeCommessa,
 }: DashboardProviderProps) {
   return (
-    <DashboardContext.Provider
-      value={{ navigate: onNavigate, expand: onExpand, preset, setPreset }}
-    >
+    <DashboardContext.Provider value={{
+      navigate: onNavigate, expand: onExpand,
+      preset, setPreset,
+      selectedCommessaId, openCommessa, closeCommessa,
+    }}>
       {children}
     </DashboardContext.Provider>
   );
@@ -39,12 +45,11 @@ export function DashboardProvider({
 export function useDashboard(): DashboardCtx {
   const ctx = React.useContext(DashboardContext);
   if (!ctx) {
-    // Fallback no-op per quando il context non e' montato
     return {
-      navigate: () => {},
-      expand: () => {},
-      preset: "titolare",
-      setPreset: () => {},
+      navigate: () => {}, expand: () => {},
+      preset: "titolare", setPreset: () => {},
+      selectedCommessaId: null,
+      openCommessa: () => {}, closeCommessa: () => {},
     };
   }
   return ctx;
