@@ -65,8 +65,8 @@ export default function TeamTablet() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
         {operatori.map((o) => {
-          const ruolo = RUOLO_DEF[o.ruolo];
-          const ruoloRamp = TINTS[ruolo.tint];
+          const ruolo = RUOLO_DEF[o.ruolo] || RUOLO_DEF.posatore;
+          const ruoloRamp = TINTS[ruolo.tint] || TINTS.green;
           return (
             <div key={o.id} style={cardStyle({ padding: "16px 18px", cursor: "pointer" })}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
