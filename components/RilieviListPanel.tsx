@@ -7,6 +7,7 @@
 import React from "react";
 import { useMastro } from "./MastroContext";
 import { FM, ICO, Ico, I , markPreventivoInviato } from "./mastro-constants";
+import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
 
 
 // ─── Lumina Design Tokens ────────────────────────────────
@@ -1488,55 +1489,38 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                     }
                                   } catch(e) { console.error("[setCantieri fail]", e); }
 
-                                  // 4. INVIO UNIFICATO con navigator.share
-                                  const clienteNome = (c.cliente || "Cliente").split(" ")[0];
-                                  const messaggio = "Ciao " + clienteNome + ", ecco il preventivo " + (c.code || "") + ".\n\nClicca qui per vederlo, accettarlo o richiedere modifiche:\n" + linkPubblico + "\n\nGrazie,\n" + (aziendaInfo?.ragione || aziendaInfo?.nome || "");
-
-                                  let shared = false;
-                                  if (typeof navigator !== "undefined" && (navigator as any).share && pdfBlob) {
+                                  // v16: WhatsApp link diretto con PDF caricato su Storage
+                                  // Carico PDF su Storage per URL pubblico
+                                  let pdfPublicUrl: string | null = null;
+                                  if (pdfBlob) {
                                     try {
-                                      const file = new File([pdfBlob], pdfFilename, { type: "application/pdf" });
-                                      const canShareFile = (navigator as any).canShare ? (navigator as any).canShare({ files: [file] }) : true;
-                                      if (canShareFile) {
-                                        await (navigator as any).share({
-                                          files: [file],
-                                          text: messaggio,
-                                          title: "Preventivo " + (c.code || ""),
-                                        });
-                                        shared = true;
-                                        setFirmaStep(1);
-                                      }
-                                    } catch(e: any) {
-                                      if (e && e.name === "AbortError") {
-                                        shared = true; // utente ha annullato share - non aprire fallback
-                                      } else {
-                                        console.warn("[share fail, fallback to modal]", e);
-                                      }
-                                    }
+                                      const tokenMatch = linkPubblico.match(/\/p\/([^/?#]+)/);
+                                      const token = tokenMatch ? tokenMatch[1] : "preventivo";
+                                      pdfPublicUrl = await Promise.race([
+                                        uploadPreventivoPdf(pdfBlob, token, c.code || "preventivo"),
+                                        new Promise<null>((res) => setTimeout(() => res(null), 12000)),
+                                      ]);
+                                    } catch(e) { console.warn("[v16] upload PDF crash:", e); }
                                   }
 
-                                  // 5. FALLBACK: clipboard + alert (no modale, evita conflitti context)
-                                  if (!shared) {
-                                    const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                                    const numero = tel ? (tel.startsWith("+") ? tel.slice(1) : "39" + tel) : "";
-                                    const clienteNomeShort = (c.cliente || "Cliente").split(" ")[0];
-                                    const msgWA = "Ciao " + clienteNomeShort + ", ecco il preventivo " + (c.code || "") + ":\n" + linkPubblico;
+                                  // Messaggio WhatsApp con PDF link + accetta link
+                                  const clienteNome2 = (c.cliente || "Cliente").split(" ")[0];
+                                  const ragione = aziendaInfo?.ragione || aziendaInfo?.nome || "";
+                                  let msgWA = "Ciao " + clienteNome2 + ",\n\nEcco il preventivo " + (c.code || "") + ".";
+                                  if (pdfPublicUrl) msgWA += "\n\nPDF: " + pdfPublicUrl;
+                                  msgWA += "\n\nPer accettare o richiedere modifiche:\n" + linkPubblico;
+                                  if (ragione) msgWA += "\n\nGrazie,\n" + ragione;
 
-                                    if (numero) {
-                                      // Apre direttamente WhatsApp Web/App con messaggio precompilato
-                                      const wa = "https://wa.me/" + numero + "?text=" + encodeURIComponent(msgWA);
-                                      window.open(wa, "_blank");
-                                    } else {
-                                      // No telefono: copia link in clipboard
-                                      try {
-                                        await navigator.clipboard.writeText(linkPubblico);
-                                        alert("Link copiato negli appunti:\n" + linkPubblico + "\n\nIncollalo dove vuoi.");
-                                      } catch {
-                                        alert("Link preventivo:\n" + linkPubblico);
-                                      }
-                                    }
-                                    setFirmaStep(1);
+                                  const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                                  let waUrl = "";
+                                  if (tel) {
+                                    const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
+                                    waUrl = "https://wa.me/" + numero + "?text=" + encodeURIComponent(msgWA);
+                                  } else {
+                                    waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msgWA);
                                   }
+                                  window.open(waUrl, "_blank");
+                                  setFirmaStep(1);
                                 } finally {
                                   if (typeof window !== "undefined") (window as any).__mastroInviaInCorso = false;
                                 }

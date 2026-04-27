@@ -9,6 +9,7 @@ import PassaggiSaltati from "./PassaggiSaltati";
 import VanoCardPreventivo from "./VanoCardPreventivo";
 import BulkEditBar from "./BulkEditBar";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
+import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
@@ -2751,40 +2752,46 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   const clienteNome = (c.cliente || "Cliente").split(" ")[0]; // primo nome
                   const messaggio = "Ciao " + clienteNome + ", ecco il preventivo " + (c.code || "") + ".\n\nClicca qui per vederlo, accettarlo o richiedere modifiche:\n" + linkPubblico + "\n\nGrazie,\n" + (aziendaInfo?.ragione || aziendaInfo?.nome || "");
 
-                  // Tentativo 1: navigator.share con file + testo (iOS, Android moderni)
-                  let shared = false;
-                  if (typeof navigator !== "undefined" && (navigator as any).share && pdfBlob) {
+                  // ─── v16: WhatsApp link diretto (no piu' navigator.share) ───
+                  // Carico PDF su Supabase Storage per avere URL pubblico cliccabile
+                  let pdfPublicUrl: string | null = null;
+                  if (pdfBlob) {
                     try {
-                      const file = new File([pdfBlob], pdfFilename, { type: "application/pdf" });
-                      // Verifica se supporta share di file (iOS Safari, Android Chrome)
-                      const canShareFile = (navigator as any).canShare ? (navigator as any).canShare({ files: [file] }) : true;
-                      if (canShareFile) {
-                        await (navigator as any).share({
-                          files: [file],
-                          text: messaggio,
-                          title: "Preventivo " + (c.code || ""),
-                        });
-                        shared = true;
-                        setCcDone && setCcDone("Preventivo inviato");
-                        setTimeout(() => { setCcDone && setCcDone(null); setPrevWorkspace && setPrevWorkspace(false); }, 2000);
-                      }
-                    } catch(e: any) {
-                      // Utente ha annullato il foglio condivisione, oppure share non supportato
-                      if (e && e.name !== "AbortError") {
-                        console.warn("[share fail, fallback to modal]", e);
-                      } else {
-                        // Annullato dall'utente - non fare nulla, lascia che riprovi
-                        shared = true; // evito di aprire modal fallback
-                      }
-                    }
+                      // Estraggo token dal linkPubblico (e' tipo /p/abc123)
+                      const tokenMatch = linkPubblico.match(/\/p\/([^/?#]+)/);
+                      const token = tokenMatch ? tokenMatch[1] : "preventivo";
+                      pdfPublicUrl = await Promise.race([
+                        uploadPreventivoPdf(pdfBlob, token, c.code || "preventivo"),
+                        new Promise<null>((res) => setTimeout(() => res(null), 12000)),
+                      ]);
+                      if (!pdfPublicUrl) console.warn("[v16] upload PDF fallito o timeout - mando solo link accetta");
+                    } catch(e) { console.warn("[v16] upload PDF crash:", e); }
                   }
 
-                  // Tentativo 2 (fallback): modale con bottoni WhatsApp/Email/SMS
-                  if (!shared) {
-                    const nome = c.cliente || "";
-                    const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                    setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
+                  // Costruisco messaggio WhatsApp con 1 o 2 link
+                  const ragione = aziendaInfo?.ragione || aziendaInfo?.nome || "";
+                  let msgWA = "Ciao " + clienteNome + ",\n\nEcco il preventivo " + (c.code || "") + ".";
+                  if (pdfPublicUrl) {
+                    msgWA += "\n\nPDF: " + pdfPublicUrl;
                   }
+                  msgWA += "\n\nPer accettare o richiedere modifiche:\n" + linkPubblico;
+                  if (ragione) msgWA += "\n\nGrazie,\n" + ragione;
+
+                  // Apro WhatsApp con messaggio precompilato
+                  const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                  let waUrl = "";
+                  if (tel) {
+                    // Se ha telefono: wa.me/<numero> apre chat diretta
+                    const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
+                    waUrl = "https://wa.me/" + numero + "?text=" + encodeURIComponent(msgWA);
+                  } else {
+                    // Senza telefono: api.whatsapp.com chiede al cliente di scegliere il contatto
+                    waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msgWA);
+                  }
+                  window.open(waUrl, "_blank");
+
+                  setCcDone && setCcDone("Preventivo inviato");
+                  setTimeout(() => { setCcDone && setCcDone(null); setPrevWorkspace && setPrevWorkspace(false); }, 2000);
                 } finally {
                   setPdfBusy(null);
                 }
