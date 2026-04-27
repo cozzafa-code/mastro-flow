@@ -51,6 +51,12 @@ function showPdfInAppModal(blob: Blob, filename: string): void {
     "display:flex",
     "flex-direction:column",
     "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
+    // Safe area iOS Dynamic Island / notch
+    "padding-top:env(safe-area-inset-top, 0px)",
+    "padding-bottom:env(safe-area-inset-bottom, 0px)",
+    "padding-left:env(safe-area-inset-left, 0px)",
+    "padding-right:env(safe-area-inset-right, 0px)",
+    "box-sizing:border-box",
   ].join(";");
 
   // Toolbar in alto
@@ -72,32 +78,64 @@ function showPdfInAppModal(blob: Blob, filename: string): void {
   title.textContent = filename;
   toolbar.appendChild(title);
 
-  // Bottone Scarica (anchor con download)
-  const btnDownload = document.createElement("a");
-  btnDownload.href = url;
-  btnDownload.download = filename;
-  btnDownload.style.cssText = [
-    "display:inline-flex",
-    "align-items:center",
-    "justify-content:center",
-    "background:#28A0A0",
-    "color:#fff",
-    "padding:8px 14px",
-    "border-radius:8px",
-    "font-size:12px",
-    "font-weight:700",
-    "text-decoration:none",
-    "cursor:pointer",
-    "min-height:36px",
-    "min-width:36px",
-  ].join(";");
-  btnDownload.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Scarica';
-  toolbar.appendChild(btnDownload);
+  // Bottone PRIMARIO: cambia in base al sistema
+  // - Android: "Scarica" funziona sicuro (download in Downloads, app non esce)
+  // - iOS: "Scarica" apre PDF viewer e killa MASTRO → uso "Condividi" come primario
+  //   (Web Share API permette di mandarlo via WhatsApp/email/AirDrop senza uscire dall'app)
+  const supportsShare = typeof navigator !== "undefined" && (navigator as any).share && (navigator as any).canShare;
+  const fileForShare = new File([blob], filename, { type: "application/pdf" });
+  const canShareFile = supportsShare && (navigator as any).canShare({ files: [fileForShare] });
 
-  // Bottone Condividi (Web Share API se disponibile)
-  if (typeof navigator !== "undefined" && (navigator as any).share && (navigator as any).canShare) {
-    const file = new File([blob], filename, { type: "application/pdf" });
-    if ((navigator as any).canShare({ files: [file] })) {
+  if (isIOS() && canShareFile) {
+    // iOS: bottone primario = Condividi (Web Share API)
+    const btnShareMain = document.createElement("button");
+    btnShareMain.style.cssText = [
+      "display:inline-flex",
+      "align-items:center",
+      "justify-content:center",
+      "background:#28A0A0",
+      "color:#fff",
+      "padding:8px 14px",
+      "border-radius:8px",
+      "font-size:12px",
+      "font-weight:700",
+      "border:none",
+      "cursor:pointer",
+      "min-height:36px",
+      "font-family:inherit",
+    ].join(";");
+    btnShareMain.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>Condividi';
+    btnShareMain.onclick = async () => {
+      try {
+        await (navigator as any).share({ files: [fileForShare], title: filename });
+      } catch (e) { /* utente ha annullato */ }
+    };
+    toolbar.appendChild(btnShareMain);
+  } else {
+    // Android (o fallback): bottone Scarica primario
+    const btnDownload = document.createElement("a");
+    btnDownload.href = url;
+    btnDownload.download = filename;
+    btnDownload.style.cssText = [
+      "display:inline-flex",
+      "align-items:center",
+      "justify-content:center",
+      "background:#28A0A0",
+      "color:#fff",
+      "padding:8px 14px",
+      "border-radius:8px",
+      "font-size:12px",
+      "font-weight:700",
+      "text-decoration:none",
+      "cursor:pointer",
+      "min-height:36px",
+      "min-width:36px",
+    ].join(";");
+    btnDownload.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Scarica';
+    toolbar.appendChild(btnDownload);
+
+    // E aggiungo Condividi come secondario se disponibile
+    if (canShareFile) {
       const btnShare = document.createElement("button");
       btnShare.style.cssText = [
         "display:inline-flex",
@@ -119,7 +157,7 @@ function showPdfInAppModal(blob: Blob, filename: string): void {
       btnShare.title = "Condividi";
       btnShare.onclick = async () => {
         try {
-          await (navigator as any).share({ files: [file], title: filename });
+          await (navigator as any).share({ files: [fileForShare], title: filename });
         } catch (e) { /* utente ha annullato */ }
       };
       toolbar.appendChild(btnShare);
@@ -157,11 +195,12 @@ function showPdfInAppModal(blob: Blob, filename: string): void {
   // Su Android, iframe funziona OK
   if (isIOS()) {
     const iosCard = document.createElement("div");
-    iosCard.style.cssText = "padding:32px;text-align:center;color:#0D1F1F;max-width:340px;";
+    iosCard.style.cssText = "padding:32px 24px;text-align:center;color:#0D1F1F;max-width:340px;";
     iosCard.innerHTML = (
-      '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>' +
-      '<div style="font-size:18px;font-weight:700;margin-bottom:8px">PDF pronto</div>' +
-      '<div style="font-size:13px;color:#6A8484;margin-bottom:18px;line-height:1.5">Tocca <b>Scarica</b> in alto per salvare il PDF. Lo trovi nei tuoi Download. MASTRO non si chiude.</div>'
+      '<div style="display:inline-block;background:#E0F1EE;border-radius:50%;padding:24px;margin-bottom:16px"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>' +
+      '<div style="font-size:20px;font-weight:800;margin-bottom:10px;letter-spacing:-0.3px">PDF pronto</div>' +
+      '<div style="font-size:14px;color:#6A8484;margin-bottom:6px;line-height:1.5">Tocca <b style="color:#28A0A0">Condividi</b> in alto per inviare il PDF al cliente via WhatsApp, email o AirDrop.</div>' +
+      '<div style="font-size:12px;color:#6A8484;line-height:1.5;margin-top:14px;padding-top:14px;border-top:1px solid #E0F1EE">MASTRO non si chiude. Quando hai finito, tocca <b>X</b> in alto a destra.</div>'
     );
     body.appendChild(iosCard);
   } else {

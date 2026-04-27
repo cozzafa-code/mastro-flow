@@ -2672,45 +2672,70 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 if (pdfBusy) return;
                 setPdfBusy("invia");
                 try {
-                  // 1. Genera PDF con timeout 20s
+                  // 1. PRIMA crea il link pubblico (CRITICO - se fallisce, niente invio)
+                  // Retry 3 volte con timeout 15s ciascuno (cold start Vercel)
+                  let linkPubblico = "";
+                  let linkError: any = null;
+                  const snapshot = {
+                    cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
+                    totale: (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0,
+                    vani: ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []).map((v: any, i: number) => ({
+                      nome: v.nome || v.tipo || "Vano " + (i+1),
+                      tipo: v.tipo,
+                      misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
+                      prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
+                    })),
+                    azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
+                  };
+
+                  for (let attempt = 1; attempt <= 3 && !linkPubblico; attempt++) {
+                    try {
+                      const ctrl = new AbortController();
+                      const t = setTimeout(() => ctrl.abort(), 15000);
+                      const r = await fetch("/api/preventivo-link", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }),
+                        signal: ctrl.signal,
+                      });
+                      clearTimeout(t);
+                      if (r.ok) {
+                        const d = await r.json();
+                        linkPubblico = window.location.origin + d.url;
+                      } else {
+                        linkError = "HTTP " + r.status;
+                      }
+                    } catch(e: any) {
+                      linkError = e?.message || e;
+                      console.warn("[link attempt " + attempt + " fail]", e);
+                      if (attempt < 3) await new Promise(r => setTimeout(r, 1000)); // 1s tra retry
+                    }
+                  }
+
+                  if (!linkPubblico) {
+                    alert("Errore creazione link cliente: " + linkError + "\n\nRiprova tra qualche secondo. Se persiste contatta supporto.");
+                    return;
+                  }
+
+                  // 2. Genera PDF con timeout 25s (mobile pi\u00f9 lento)
                   try {
                     await Promise.race([
                       generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
-                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (20s)")), 20000)),
+                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (25s)")), 25000)),
                     ]);
                   } catch(e: any) {
                     console.error("[PDF fail]", e);
-                    alert("Generazione PDF non riuscita: " + (e?.message || e) + "\n\nIl preventivo viene comunque inviato senza allegato.");
+                    // PDF fallito ma link OK: posso comunque mandare il link al cliente
+                    // (lui apre il preventivo via web, non serve PDF)
                   }
 
-                  // 2. Segna inviato (in stato locale)
+                  // 3. Segna inviato in stato locale
                   try {
                     setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                     setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] }) : prev);
                   } catch(e) { console.error("[setCantieri fail]", e); }
 
-                  // 3. Genera link pubblico (non bloccante, timeout 8s)
-                  let linkPubblico = "";
-                  try {
-                    const snapshot = {
-                      cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
-                      totale: (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0,
-                      vani: ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []).map((v: any, i: number) => ({
-                        nome: v.nome || v.tipo || "Vano " + (i+1),
-                        tipo: v.tipo,
-                        misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
-                        prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
-                      })),
-                      azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
-                    };
-                    const ctrl = new AbortController();
-                    const t = setTimeout(() => ctrl.abort(), 8000);
-                    const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }), signal: ctrl.signal });
-                    clearTimeout(t);
-                    if (r.ok) { const d = await r.json(); linkPubblico = window.location.origin + d.url; }
-                  } catch(e) { console.error("[link fail]", e); }
-
-                  // 4. Apri modal SEMPRE
+                  // 4. Apri modal con link GARANTITO non vuoto
                   const nome = c.cliente || "";
                   const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
                   setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
