@@ -11,6 +11,7 @@ import GestureNav from "@/components/GestureNav";
 // MASTRO ERP - adattato per Next.js + Supabase
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import MastroDesktop from "./MastroDesktop";
+import MastroTabletWrapper from "./tablet/MastroTabletWrapper";
 // import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEvent as deleteEventDB, saveContatto, saveTeamMember, saveTask, saveAzienda, saveVano, deleteVano, saveMateriali, savePipeline } from "@/lib/supabase-sync";
 import { supabase } from "@/lib/supabase";
 import "@/lib/mastro-boot"; // Sync Engine v1 — auto-boot
@@ -3494,6 +3495,15 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
 
   /* ======= MAIN RENDER ======= */
+
+  //  TABLET SHELL (>= 768px e non desktop) - usa MastroContext + UI fliwoX
+  if (isTablet && !isDesktop) {
+    return (
+      <MastroContext.Provider value={ctx}>
+        <MastroTabletWrapper />
+      </MastroContext.Provider>
+    );
+  }
 
   //  DESKTOP SHELL 
   if (isDesktop) {
