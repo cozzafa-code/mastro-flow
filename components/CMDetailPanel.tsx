@@ -405,22 +405,10 @@ export default function CMDetailPanel() {
   if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw) && !prevWorkspace) {
     const cV70 = selectedCM as any;
 
-    // ═══ v38 · FASE=CONFERMA · pannello Conferma d'ordine ═══
-    if (cV70.fase === "conferma") {
+    // ═══ v39 · FASE=CONFERMA · apre ModalFirma per firma cliente ═══
+    if (cV70.fase === "conferma" && !cV70.firma_cliente) {
       const fmtEur = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      const totV38 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70 as any) : ((cV70 as any).totalePreventivo || 0)) || 0;
-      const accontoV38 = Number((cV70 as any).accontoRicevuto || 0);
-      const saldoV38 = Math.max(0, totV38 - accontoV38);
-      const dataConfV38 = (cV70 as any).dataConferma || "";
-      const dataPosaV38 = (cV70 as any).dataPosaPrevista || "";
-      const metodoV38 = (cV70 as any).metodoPagamento || "";
-      const ckContrV38 = !!(cV70 as any).ck_contratto;
-      const ckAccV38 = !!(cV70 as any).ck_acconto_inc;
-      const ckPosaV38 = !!(cV70 as any).ck_data_posa;
-      const updateField = (field: string, value: any) => {
-        setCantieri((cs: any[]) => cs.map((c: any) => c.id === cV70.id ? { ...c, [field]: value } : c));
-        setSelectedCM((p: any) => p ? ({ ...p, [field]: value }) : p);
-      };
+      const totV39 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70 as any) : ((cV70 as any).totalePreventivo || 0)) || 0;
 
       return (
         <div style={{ padding: "16px 14px 80px 14px", background: "linear-gradient(180deg, #F5FBFB 0%, #E6F6F0 100%)", minHeight: "100vh" }}>
@@ -428,7 +416,7 @@ export default function CMDetailPanel() {
           <div style={{
             background: "linear-gradient(135deg, #28A268 0%, #1F8050 50%, #134D30 100%)",
             borderRadius: 22, padding: "22px 20px 26px", color: "#fff",
-            boxShadow: "0 12px 30px rgba(31,128,80,0.25)", marginBottom: 14, position: "relative" as any,
+            boxShadow: "0 12px 30px rgba(31,128,80,0.25)", marginBottom: 14,
           }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6,
@@ -437,107 +425,34 @@ export default function CMDetailPanel() {
               fontSize: 9, fontWeight: 900, letterSpacing: 1.2, marginBottom: 12,
             }}>✓ PREVENTIVO ACCETTATO</div>
             <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.05, marginBottom: 6, letterSpacing: -0.5 }}>
-              Conferma<br/>d'ordine
+              Manda al cliente<br/>la firma
             </div>
             <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 14 }}>
-              Compila i dati per chiudere l'ordine
+              Il cliente ha accettato il preventivo. Invia la conferma d'ordine per la firma certificata (FEA / FEQ).
             </div>
-            {/* KPI */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "10px 12px" }}>
-                <div style={{ fontSize: 8, opacity: 0.7, fontWeight: 800, letterSpacing: 1 }}>TOTALE</div>
-                <div style={{ fontSize: 18, fontWeight: 900 }}>{fmtEur(totV38)}</div>
-              </div>
-              <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "10px 12px" }}>
-                <div style={{ fontSize: 8, opacity: 0.7, fontWeight: 800, letterSpacing: 1 }}>SALDO</div>
-                <div style={{ fontSize: 18, fontWeight: 900 }}>{fmtEur(saldoV38)}</div>
-              </div>
+            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "10px 12px", marginBottom: 14 }}>
+              <div style={{ fontSize: 8, opacity: 0.7, fontWeight: 800, letterSpacing: 1 }}>TOTALE PREVENTIVO</div>
+              <div style={{ fontSize: 22, fontWeight: 900 }}>{fmtEur(totV39)}</div>
             </div>
-          </div>
-
-          {/* Pannello dati conferma */}
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "16px 16px 8px",
-            boxShadow: "0 4px 14px rgba(13,31,31,0.08)", marginBottom: 14,
-            border: "1px solid rgba(40,160,160,0.15)",
-          }}>
-            <div style={{ fontSize: 10, color: "#0F7A58", fontWeight: 900, letterSpacing: 1.2, marginBottom: 12 }}>📋 DATI CONFERMA</div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: "#71717A", fontWeight: 700, marginBottom: 4 }}>Data conferma</div>
-              <input type="date" value={dataConfV38}
-                onChange={(e) => updateField("dataConferma", e.target.value)}
-                style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #E4E4E7", fontSize: 13, fontFamily: "inherit" }} />
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: "#71717A", fontWeight: 700, marginBottom: 4 }}>Acconto ricevuto €</div>
-              <input type="number" value={accontoV38} placeholder="0"
-                onChange={(e) => updateField("accontoRicevuto", Number(e.target.value) || 0)}
-                style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #E4E4E7", fontSize: 13, fontFamily: "inherit" }} />
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: "#71717A", fontWeight: 700, marginBottom: 4 }}>Metodo pagamento</div>
-              <input type="text" value={metodoV38} placeholder="Bonifico / Contanti / Carta..."
-                onChange={(e) => updateField("metodoPagamento", e.target.value)}
-                style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #E4E4E7", fontSize: 13, fontFamily: "inherit" }} />
-            </div>
-
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: "#71717A", fontWeight: 700, marginBottom: 4 }}>Data prevista posa</div>
-              <input type="date" value={dataPosaV38}
-                onChange={(e) => updateField("dataPosaPrevista", e.target.value)}
-                style={{ width: "100%", padding: 10, borderRadius: 8, border: "1px solid #E4E4E7", fontSize: 13, fontFamily: "inherit" }} />
-            </div>
-          </div>
-
-          {/* Checklist */}
-          <div style={{
-            background: "#fff", borderRadius: 18, padding: "16px",
-            boxShadow: "0 4px 14px rgba(13,31,31,0.08)", marginBottom: 14,
-            border: "1px solid rgba(40,160,160,0.15)",
-          }}>
-            <div style={{ fontSize: 10, color: "#0F7A58", fontWeight: 900, letterSpacing: 1.2, marginBottom: 12 }}>✓ CHECKLIST</div>
-
-            {[
-              { key: "ck_contratto", lbl: "Contratto firmato", val: ckContrV38 },
-              { key: "ck_acconto_inc", lbl: "Acconto incassato", val: ckAccV38 },
-              { key: "ck_data_posa", lbl: "Data posa concordata", val: ckPosaV38 },
-            ].map((item) => (
-              <div key={item.key} onClick={() => updateField(item.key, !item.val)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "12px", borderRadius: 10, cursor: "pointer",
-                  background: item.val ? "rgba(40,162,104,0.08)" : "#FAFAFA",
-                  border: item.val ? "1.5px solid rgba(40,162,104,0.4)" : "1px solid #E4E4E7",
-                  marginBottom: 6,
-                }}>
-                <div style={{
-                  width: 22, height: 22, borderRadius: 11, flexShrink: 0,
-                  background: item.val ? "#28A268" : "#fff",
-                  border: item.val ? "none" : "2px solid #D4D4D8",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", fontSize: 13, fontWeight: 900,
-                }}>{item.val ? "✓" : ""}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: item.val ? "#0D1F1F" : "#52525B" }}>{item.lbl}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Bottone avanza fase */}
-          {ckContrV38 && ckAccV38 && (
-            <button onClick={() => { setFaseTo(cV70.id, "ordini"); }}
+            <button onClick={() => setShowModalFirma(true)}
               style={{
                 width: "100%", padding: 16, borderRadius: 14, border: "none",
-                background: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)",
-                color: "#fff", fontSize: 14, fontWeight: 900, cursor: "pointer",
+                background: "#fff", color: "#1F8050",
+                fontSize: 15, fontWeight: 900, cursor: "pointer",
                 fontFamily: "inherit", letterSpacing: 0.4,
-                boxShadow: "0 6px 16px rgba(40,162,104,0.35)",
+                boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
               }}>
-              ORDINA MATERIALI →
+              📝 INVIA AL CLIENTE PER FIRMA →
             </button>
-          )}
+          </div>
+
+          {/* Link secondari */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 14 }}>
+            <button onClick={() => { setFaseTo(cV70.id, "preventivo"); }}
+              style={{ padding: 6, border: "none", background: "transparent", color: "#71717A", fontSize: 11, fontWeight: 700, cursor: "pointer", textDecoration: "underline", fontFamily: "inherit" }}>
+              ← Torna al preventivo
+            </button>
+          </div>
         </div>
       );
     }
