@@ -251,7 +251,7 @@ export default function CommessePanel() {
   // ─── Routing (invariato) ─────────────────────────────────────
   if (showRiepilogo && selectedCM) return <RiepilogoPanel />;
   if (selectedVano) return <VanoSectorRouter />;
-  if (selectedRilievo) return <CMDetailPanel />;
+  if (selectedRilievo && selectedCM) return <CMDetailPanel />;
   if (selectedCM) return <CMDetailPanel />;
 
   const fermeCount = cantieri.filter(c => isFerma(c)).length;
