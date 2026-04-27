@@ -9,6 +9,7 @@ import PassaggiSaltati from "./PassaggiSaltati";
 import VanoCardPreventivo from "./VanoCardPreventivo";
 import BulkEditBar from "./BulkEditBar";
 import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
+import { supabase } from "@/lib/supabase";
 import { buildVanoRighe } from "../lib/vano-helpers";
 import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
 import ModalFirma from "./ModalFirma";
