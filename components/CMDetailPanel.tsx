@@ -371,246 +371,355 @@ export default function CMDetailPanel() {
   if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw) && !prevWorkspace) {
     const cV70 = selectedCM as any;
 
-    // ═══ v22 · PAGINA PREVENTIVO INVIATO ═══
-    // Quando preventivo gia' inviato (e non ancora confermato),
-    // sostituisci Centro Comando v70 con la pagina dedicata.
+    // ═══ v23 · PAGINA PREVENTIVO INVIATO (layout tipo Preventivo al volo) ═══
     if (cV70.preventivoInviato && faseIndex(cV70.fase) < faseIndex("conferma")) {
       const ris = rispostaCliente;
       const tipoRis = ris?.risposta as ("accettato" | "modifiche" | "chiamare" | undefined);
 
-      // Banner stato in base alla risposta cliente
-      const stato = tipoRis === "accettato" ? {
-        bg: "linear-gradient(135deg, #DDF5E6 0%, #C8EBD3 100%)",
-        border: "#28A268", txt: "#0E5E33", icon: "✓",
-        title: "CLIENTE HA ACCETTATO",
-        sub: "Pronto per la conferma d'ordine",
-      } : tipoRis === "modifiche" ? {
-        bg: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
-        border: "#F59E0B", txt: "#78350F", icon: "✏",
-        title: "CLIENTE CHIEDE MODIFICHE",
-        sub: "Aggiorna il preventivo e rimanda",
-      } : tipoRis === "chiamare" ? {
-        bg: "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
-        border: "#3B82F6", txt: "#1E3A8A", icon: "📞",
-        title: "CLIENTE VUOLE ESSERE CONTATTATO",
-        sub: "Chiamalo o scrivigli su WhatsApp",
-      } : {
-        bg: "linear-gradient(135deg, #F4F4F5 0%, #E4E4E7 100%)",
-        border: "#A1A1AA", txt: "#3F3F46", icon: "⏳",
-        title: "IN ATTESA DI RISPOSTA",
-        sub: ris?.visualizzato ? "Cliente ha visualizzato il preventivo" : "Cliente non ha ancora aperto il link",
+      const dataInvio = cV70.preventivoInviatoAt ? new Date(cV70.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+
+      const totaleV23 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70) : (cV70.totalePreventivo || 0)) || 0;
+      const fmtEurV23 = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+      const telPulitoV23 = (cV70.telefono || "").replace(/[^0-9+]/g, "");
+      const numeroWAV23 = telPulitoV23.startsWith("+") ? telPulitoV23.slice(1) : (telPulitoV23.startsWith("39") ? telPulitoV23 : "39" + telPulitoV23);
+
+      // Stato pill
+      const stato = tipoRis === "accettato" ? { txt: "ACCETTATO", icon: "✓", color: "#28A268" } :
+                    tipoRis === "modifiche" ? { txt: "CHIEDE MODIFICHE", icon: "✏", color: "#F59E0B" } :
+                    tipoRis === "chiamare" ? { txt: "VUOLE CONTATTO", icon: "📞", color: "#3B82F6" } :
+                    ris?.visualizzato ? { txt: "CLIENTE HA APERTO", icon: "👁", color: "#8B5CF6" } :
+                    { txt: "IN ATTESA", icon: "⏳", color: "#71717A" };
+
+      const rilievoCorrente = selectedRilievo || (cV70.rilievi && cV70.rilievi.length > 0 ? cV70.rilievi[cV70.rilievi.length - 1] : null);
+      const numeroRilievo = rilievoCorrente?.numero || (cV70.rilievi?.length || 1);
+      const tuttiRilievi = (cV70.rilievi || []) as any[];
+
+      // Crea nuovo rilievo (R2, R3...) duplicando il corrente
+      const handleAggiornaPreventivo = () => {
+        const oggiIso = new Date().toISOString().split("T")[0];
+        const oraOra = new Date().toTimeString().slice(0, 5);
+        const nextNumero = Math.max(0, ...tuttiRilievi.map((r: any) => Number(r.numero) || 0)) + 1;
+
+        // Duplica vani del rilievo corrente (deep clone)
+        const vaniDuplicati = (rilievoCorrente?.vani || []).map((v: any) => ({
+          ...JSON.parse(JSON.stringify(v)),
+          id: "vano-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+        }));
+
+        const nuovoRilievo = {
+          id: "rilievo-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+          tipo: "definitivo",
+          numero: nextNumero,
+          data: oggiIso,
+          ora: oraOra,
+          rilevatore: rilievoCorrente?.rilevatore || "",
+          note: "Aggiornamento dopo modifiche cliente",
+          motivoModifica: ris?.risposta_nota || "Modifiche richieste dal cliente",
+          completato: false,
+          complesso: false,
+          vani: vaniDuplicati,
+        };
+
+        // Aggiorna commessa: aggiungi nuovo rilievo, resetta preventivoInviato
+        setCantieri((cs: any[]) => cs.map((cm: any) => {
+          if (cm.id !== cV70.id) return cm;
+          return {
+            ...cm,
+            rilievi: [...(cm.rilievi || []), nuovoRilievo],
+            preventivoInviato: false,
+            preventivoInviatoAt: null,
+            dataPreventivoInvio: null,
+            fase: "preventivo",
+          };
+        }));
+        setSelectedCM((p: any) => p ? ({
+          ...p,
+          rilievi: [...(p.rilievi || []), nuovoRilievo],
+          preventivoInviato: false,
+          preventivoInviatoAt: null,
+          dataPreventivoInvio: null,
+          fase: "preventivo",
+        }) : p);
+        setSelectedRilievo(nuovoRilievo);
       };
 
-      const dataInvio = cV70.preventivoInviatoAt ? new Date(cV70.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
-
-      // Helper telefono pulito per WhatsApp
-      const telPulito = (cV70.telefono || "").replace(/[^0-9+]/g, "");
-      const numeroWA = telPulito.startsWith("+") ? telPulito.slice(1) : (telPulito.startsWith("39") ? telPulito : "39" + telPulito);
-
-      const totale = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70) : (cV70.totalePreventivo || 0)) || 0;
-      const fmtEur = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
       return (
-        <div style={{ minHeight: "100vh", background: "#F7FAFA", padding: 16, paddingBottom: 100, fontFamily: "inherit" }}>
-          {/* Header */}
-          <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", marginBottom: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: "#28A0A0", fontWeight: 700, letterSpacing: 1.2 }}>📤 PREVENTIVO INVIATO</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "#0D1F1F", marginTop: 2, letterSpacing: "-0.3px" }}>{cV70.code}</div>
-                <div style={{ fontSize: 13, color: "#0D1F1F", marginTop: 2, fontWeight: 600 }}>{(cV70.cliente || "") + (cV70.cognome ? " " + cV70.cognome : "")}</div>
-                {cV70.indirizzo && <div style={{ fontSize: 11, color: "#5A6B6B", marginTop: 2 }}>{cV70.indirizzo}</div>}
+        <div style={{
+          minHeight: "100vh",
+          background: "#F7FAFA",
+          padding: 16,
+          paddingBottom: 100,
+          fontFamily: "inherit",
+        }}>
+          {/* HEADER (codice + cliente) */}
+          <div style={{
+            background: "linear-gradient(135deg, #1B6B5E 0%, #0F4D44 100%)",
+            borderRadius: 20,
+            padding: "16px 18px",
+            marginBottom: 12,
+            color: "#fff",
+            display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+            boxShadow: "0 8px 20px rgba(15,77,68,0.25)",
+          }}>
+            <button onClick={() => setSelectedCM(null)} style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "rgba(255,255,255,0.18)", border: "none", color: "#fff",
+              fontSize: 18, fontWeight: 700, cursor: "pointer", flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>‹</button>
+            <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, letterSpacing: 1.2 }}>
+                {cV70.code} · PREVENTIVO N°{numeroRilievo}
               </div>
-              <button onClick={() => setSelectedCM(null)} style={{
-                width: 36, height: 36, borderRadius: 18, border: "none",
-                background: "#F4F4F5", color: "#71717A", fontSize: 18, fontWeight: 700, cursor: "pointer", flexShrink: 0,
-              }}>×</button>
+              <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>
+                {(cV70.cliente || "").toUpperCase() + (cV70.cognome ? " " + cV70.cognome.toUpperCase() : "")}
+              </div>
+              {cV70.indirizzo && <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>{cV70.indirizzo}</div>}
             </div>
-            <div style={{ fontSize: 11, color: "#71717A", marginTop: 8, paddingTop: 8, borderTop: "1px solid #E4E4E7" }}>
-              Inviato il {dataInvio} · Totale {fmtEur(totale)}
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1 }}>{fmtEurV23(totaleV23)}</div>
+              <div style={{ fontSize: 10, opacity: 0.85, marginTop: 3 }}>totale</div>
             </div>
           </div>
 
-          {/* Banner stato grosso */}
-          <div style={{
-            background: stato.bg, border: "2px solid " + stato.border,
-            borderRadius: 16, padding: "16px 18px", marginBottom: 12,
-            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-          }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{stato.icon}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 900, color: stato.txt, letterSpacing: 0.3 }}>{stato.title}</div>
-                <div style={{ fontSize: 12, color: stato.txt, opacity: 0.8, marginTop: 3 }}>{stato.sub}</div>
-                {ris?.risposta_at && (
-                  <div style={{ fontSize: 10, color: stato.txt, opacity: 0.65, marginTop: 4 }}>
-                    Risposta del {new Date(ris.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                  </div>
-                )}
-              </div>
+          {/* PROGRESS BAR PASSO */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, paddingLeft: 4, paddingRight: 4 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#71717A", letterSpacing: 1 }}>PASSO 3/8</div>
+            <div style={{ flex: 1, display: "flex", gap: 3 }}>
+              {[1,2,3,4,5,6,7,8].map(i => (
+                <div key={i} style={{
+                  flex: 1, height: 5, borderRadius: 3,
+                  background: i <= 3 ? "#1B6B5E" : "#E4E4E7",
+                }} />
+              ))}
             </div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#1B6B5E", letterSpacing: 0.5 }}>INVIATO</div>
+          </div>
+
+          {/* BIG CARD PREVENTIVO INVIATO (layout v73-style ma colore teal scuro) */}
+          <div style={{
+            borderRadius: 26, padding: "22px 20px 20px",
+            background: "linear-gradient(155deg, #2DA89A 0%, #1B6B5E 55%, #0F4D44 100%)",
+            color: "#fff",
+            boxShadow: "0 18px 40px rgba(15,77,68,0.35), 0 6px 12px rgba(15,77,68,0.2)",
+            position: "relative", overflow: "hidden",
+            display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
+
+            {/* Pillola stato cliente */}
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
+              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
+              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
+              textTransform: "uppercase" as any, position: "relative",
+            }}>
+              <span style={{ fontSize: 11, lineHeight: 1 }}>{stato.icon}</span>
+              {stato.txt}
+            </div>
+
+            <div style={{
+              fontSize: 24, fontWeight: 900, marginTop: 14,
+              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
+              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
+            }}>{tipoRis === "accettato" ? "Cliente ha\naccettato" : tipoRis === "modifiche" ? "Cliente chiede\nmodifiche" : tipoRis === "chiamare" ? "Cliente vuole\nessere contattato" : "In attesa di\nrisposta"}</div>
+
+            <div style={{
+              fontSize: 12.5, opacity: 0.94, marginTop: 8,
+              lineHeight: 1.4, fontWeight: 500, position: "relative",
+            }}>{tipoRis === "accettato" ? "Crea conferma d'ordine e parti con la produzione" : tipoRis === "modifiche" ? "Aggiorna il preventivo e rimanda al cliente" : tipoRis === "chiamare" ? "Chiama o scrivi su WhatsApp" : "Cliente non ha ancora risposto · Inviato il " + dataInvio}</div>
 
             {/* Nota cliente se presente */}
             {ris?.risposta_nota && (
               <div style={{
-                background: "rgba(255,255,255,0.85)",
-                border: "1px solid rgba(0,0,0,0.06)",
-                borderRadius: 10, padding: "10px 12px", marginTop: 12,
-                fontSize: 12, color: "#0D1F1F",
-                whiteSpace: "pre-wrap" as const, lineHeight: 1.5,
-                maxHeight: 240, overflowY: "auto" as const,
+                marginTop: 12, padding: "10px 12px",
+                background: "rgba(0,0,0,0.18)", borderRadius: 12,
+                fontSize: 12, lineHeight: 1.4, position: "relative",
+                whiteSpace: "pre-wrap" as const, maxHeight: 120, overflowY: "auto" as any,
               }}>
                 {ris.risposta_nota}
               </div>
             )}
-          </div>
 
-          {/* Bottoni azione (cambiano in base allo stato) */}
-          <div style={{ background: "#fff", borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
-            <div style={{ fontSize: 11, color: "#71717A", fontWeight: 700, letterSpacing: 1, marginBottom: 10, paddingLeft: 4 }}>AZIONI</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {/* STRADE */}
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
 
-              {/* Azione principale (varia in base a stato) */}
-              {tipoRis === "accettato" && (
-                <button onClick={() => {
-                  setFaseTo(cV70.id, "conferma");
-                  setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, fase: "conferma" } : cm));
-                }} style={{
-                  width: "100%", padding: 16, borderRadius: 12, border: "none",
-                  background: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", color: "#fff",
-                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                  boxShadow: "0 4px 12px rgba(40,162,104,0.35)",
+              {/* STRADA 1 - Aggiorna preventivo (CONSIGLIATO se modifiche) */}
+              <div onClick={handleAggiornaPreventivo} style={{
+                background: "#fff",
+                borderRadius: 16,
+                padding: 14,
+                cursor: "pointer",
+                position: "relative",
+                zIndex: 10,
+                display: "flex", alignItems: "center", gap: 12,
+                boxShadow: "0 8px 22px rgba(0,0,0,0.22), inset 0 -3px 0 rgba(15,77,68,0.06)",
+              }}>
+                <div style={{
+                  width: 46, height: 46, borderRadius: 13,
+                  background: tipoRis === "accettato" ? "linear-gradient(145deg, #5FE0A8, #1D9E75)" : "linear-gradient(145deg, #2DA89A, #0F4D44)",
+                  boxShadow: "0 4px 10px rgba(15,77,68,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
+                  color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
                 }}>
-                  ✓ CREA CONFERMA D'ORDINE
-                </button>
-              )}
-
-              {tipoRis === "modifiche" && (
-                <button onClick={() => {
-                  // Riapre il Centro Comando per modificare il preventivo
-                  setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, preventivoInviato: false } : cm));
-                  setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p);
-                }} style={{
-                  width: "100%", padding: 16, borderRadius: 12, border: "none",
-                  background: "#F59E0B", color: "#fff",
-                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                  boxShadow: "0 4px 12px rgba(245,158,11,0.35)",
-                }}>
-                  ✏ AGGIORNA PREVENTIVO
-                </button>
-              )}
-
-              {tipoRis === "chiamare" && telPulito && (
-                <button onClick={() => window.open("https://wa.me/" + numeroWA, "_blank")} style={{
-                  width: "100%", padding: 16, borderRadius: 12, border: "none",
-                  background: "#3B82F6", color: "#fff",
-                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                  boxShadow: "0 4px 12px rgba(59,130,246,0.35)",
-                }}>
-                  💬 CONTATTA CLIENTE SU WHATSAPP
-                </button>
-              )}
-
-              {!tipoRis && (
-                <button onClick={() => {
-                  // Riapre il Centro Comando per rifare/aggiornare il preventivo
-                  setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, preventivoInviato: false } : cm));
-                  setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p);
-                }} style={{
-                  width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #28A0A0",
-                  background: "#fff", color: "#0F5E55",
-                  fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                }}>
-                  🔄 RIAPRI / AGGIORNA PREVENTIVO
-                </button>
-              )}
-
-              {/* Azioni secondarie (sempre disponibili) */}
-              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                {telPulito && tipoRis !== "chiamare" && (
-                  <button onClick={() => window.open("https://wa.me/" + numeroWA, "_blank")} style={{
-                    flex: 1, padding: 12, borderRadius: 10, border: "1px solid #E4E4E7",
-                    background: "#fff", color: "#0D1F1F",
-                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                  }}>
-                    💬 WhatsApp
-                  </button>
-                )}
-                {cV70.telefono && (
-                  <button onClick={() => window.open("tel:" + cV70.telefono, "_self")} style={{
-                    flex: 1, padding: 12, borderRadius: 10, border: "1px solid #E4E4E7",
-                    background: "#fff", color: "#0D1F1F",
-                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                  }}>
-                    📞 Chiama
-                  </button>
-                )}
-              </div>
-
-              {/* Vedi pagina cliente */}
-              {ris?.token && (
-                <button onClick={() => window.open("/p/" + ris.token, "_blank")} style={{
-                  width: "100%", padding: 12, borderRadius: 10, border: "1px solid #E4E4E7",
-                  background: "#fff", color: "#71717A",
-                  fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                  marginTop: 4,
-                }}>
-                  🔗 Vedi pagina cliente
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Statistiche / Storico */}
-          <div style={{ background: "#fff", borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
-            <div style={{ fontSize: 11, color: "#71717A", fontWeight: 700, letterSpacing: 1, marginBottom: 10, paddingLeft: 4 }}>STORICO</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 4, background: "#28A0A0", flexShrink: 0 }} />
-                <div style={{ flex: 1, fontSize: 12, color: "#0D1F1F" }}>
-                  <span style={{ fontWeight: 700 }}>Preventivo inviato</span>
-                  <div style={{ fontSize: 10, color: "#71717A", marginTop: 1 }}>{dataInvio}</div>
+                  {tipoRis === "accettato" ? (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  ) : (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  )}
                 </div>
-              </div>
-              {ris?.visualizzato_at && (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 4, background: "#3B82F6", flexShrink: 0 }} />
-                  <div style={{ flex: 1, fontSize: 12, color: "#0D1F1F" }}>
-                    <span style={{ fontWeight: 700 }}>Cliente ha aperto il link</span>
-                    {ris.letture_count && ris.letture_count > 1 ? <span style={{ color: "#71717A" }}> ({ris.letture_count} volte)</span> : null}
-                    <div style={{ fontSize: 10, color: "#71717A", marginTop: 1 }}>
-                      {new Date(ris.visualizzato_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F4D44", letterSpacing: "-0.1px" }}>
+                    {tipoRis === "accettato" ? "Crea conferma d'ordine" : "Aggiorna preventivo"}
                   </div>
-                </div>
-              )}
-              {ris?.risposta_at && (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>
+                    {tipoRis === "accettato" ? "Avanza alla fase conferma e parti con l'ordine" : "Crea un nuovo preventivo R" + (numeroRilievo + 1) + " partendo da quello attuale"}
+                  </div>
                   <div style={{
-                    width: 8, height: 8, borderRadius: 4, flexShrink: 0,
-                    background: tipoRis === "accettato" ? "#28A268" : tipoRis === "modifiche" ? "#F59E0B" : "#3B82F6",
-                  }} />
-                  <div style={{ flex: 1, fontSize: 12, color: "#0D1F1F" }}>
-                    <span style={{ fontWeight: 700 }}>
-                      {tipoRis === "accettato" ? "Cliente ha accettato" : tipoRis === "modifiche" ? "Cliente ha chiesto modifiche" : "Cliente vuole essere contattato"}
-                    </span>
-                    <div style={{ fontSize: 10, color: "#71717A", marginTop: 1 }}>
-                      {new Date(ris.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                    </div>
+                    fontSize: 8.5, fontWeight: 900, color: "#0F4D44",
+                    background: "linear-gradient(145deg, rgba(45,168,154,0.3), rgba(15,77,68,0.18))",
+                    padding: "3px 8px", borderRadius: 50,
+                    letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
+                    border: "1px solid rgba(15,77,68,0.25)",
+                  }}>{tipoRis === "accettato" ? "⚡ CONSIGLIATO" : tipoRis === "modifiche" ? "⚡ CONSIGLIATO" : "⚡ CREA R" + (numeroRilievo + 1)}</div>
+                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              {/* STRADA 2 - Aspetta cliente / Contatta */}
+              <div onClick={() => {
+                if (telPulitoV23 && tipoRis !== "accettato") {
+                  window.open("https://wa.me/" + numeroWAV23, "_blank");
+                } else {
+                  setSelectedCM(null);
+                }
+              }} style={{
+                background: "rgba(255,255,255,0.95)",
+                borderRadius: 16,
+                padding: 14,
+                cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 12,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                border: "2px solid transparent",
+              }}>
+                <div style={{
+                  width: 46, height: 46, borderRadius: 13,
+                  background: "linear-gradient(145deg, rgba(45,168,154,0.2), rgba(15,77,68,0.1))",
+                  boxShadow: "inset 0 1px 2px rgba(255,255,255,0.5)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  {telPulitoV23 ? (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  ) : (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F4D44", letterSpacing: "-0.1px" }}>
+                    {telPulitoV23 && tipoRis !== "accettato" ? "Contatta cliente" : "Aspetta cliente"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>
+                    {telPulitoV23 && tipoRis !== "accettato" ? "Apri WhatsApp e scrivi al cliente" : "Torna alla lista commesse, ti aggiorno appena risponde"}
                   </div>
                 </div>
-              )}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+
+            {/* Meta tiles - INVIATO IL / VISTO N VOLTE */}
+            <div style={{
+              marginTop: 14, display: "grid",
+              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
+            }}>
+              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Inviato</div>
+                <div style={{ fontSize: 14, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{dataInvio || "—"}</div>
+                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>via WhatsApp</div>
+              </div>
+              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Cliente</div>
+                <div style={{ fontSize: 14, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>
+                  {ris?.visualizzato ? (ris.letture_count || 1) + " " + ((ris.letture_count || 1) === 1 ? "vista" : "viste") : "Non aperto"}
+                </div>
+                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>
+                  {ris?.visualizzato_at ? new Date(ris.visualizzato_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Footer info */}
-          <div style={{ textAlign: "center", fontSize: 10, color: "#A1A1AA", marginTop: 8 }}>
-            Commessa {cV70.code} · Fase: {cV70.fase}
-          </div>
+          {/* TIMELINE STORICA RILIEVI/INVII */}
+          {tuttiRilievi.length >= 1 && (
+            <div style={{ background: "#fff", borderRadius: 16, padding: "14px 16px", marginTop: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
+              <div style={{ fontSize: 11, color: "#71717A", fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>
+                📜 STORICO PREVENTIVO ({tuttiRilievi.length} {tuttiRilievi.length === 1 ? "versione" : "versioni"})
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
+                {tuttiRilievi.slice().reverse().map((r: any, idx: number) => {
+                  const isCurrent = idx === 0;
+                  return (
+                    <div key={r.id || idx} style={{
+                      display: "flex", gap: 12, padding: "8px 0",
+                      borderBottom: idx < tuttiRilievi.length - 1 ? "1px solid #F4F4F5" : "none",
+                    }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: 14, flexShrink: 0,
+                        background: isCurrent ? "#1B6B5E" : "#E4E4E7",
+                        color: isCurrent ? "#fff" : "#71717A",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 800,
+                      }}>R{r.numero || idx + 1}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#0D1F1F" }}>
+                          Rilievo R{r.numero || idx + 1}
+                          {isCurrent && <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 900, color: "#1B6B5E", letterSpacing: 0.5 }}>· ATTIVO</span>}
+                        </div>
+                        <div style={{ fontSize: 10, color: "#71717A", marginTop: 2 }}>
+                          {r.data ? new Date(r.data).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                          {r.ora ? " alle " + r.ora : ""}
+                          {r.rilevatore ? " · " + r.rilevatore : ""}
+                        </div>
+                        {r.motivoModifica && (
+                          <div style={{ fontSize: 11, color: "#52525B", marginTop: 4, fontStyle: "italic" as any, padding: "6px 8px", background: "#FAFAFA", borderRadius: 6 }}>
+                            {r.motivoModifica}
+                          </div>
+                        )}
+                        {r.vani && (
+                          <div style={{ fontSize: 10, color: "#A1A1AA", marginTop: 3 }}>
+                            {r.vani.length} {r.vani.length === 1 ? "vano" : "vani"}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Vedi pagina cliente / Vedi PDF */}
+          {ris?.token && (
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={() => window.open("/p/" + ris.token, "_blank")} style={{
+                flex: 1, padding: 12, borderRadius: 12, border: "1px solid #E4E4E7",
+                background: "#fff", color: "#52525B",
+                fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>
+                🔗 Vedi link cliente
+              </button>
+            </div>
+          )}
         </div>
       );
     }
-    // ═══ Fine v22 PreventivoInviatoView ═══
+    // ═══ Fine v23 PreventivoInviatoView ═══
+
+
+
 
 
     // ═══ Banner "Cliente ha accettato — Manda conferma" ═══
