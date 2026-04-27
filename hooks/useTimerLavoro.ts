@@ -1,18 +1,19 @@
 'use client';
 
 // ============================================================
-// MASTRO — useTimerLavoro
-// Logica condivisa: start / pause / resume / stop / realtime
+// MASTRO — useTimerLavoro v2
+// + stop({ motivo, dettaglio })
+// + se motivo='problema' → ops_alert al responsabile
+// + avvio ottimistico (no scatto)
 // ============================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { creaAlertProblema } from '@/lib/timer-lavoro-alerts';
 import type {
-  OraLavoro,
-  StatoTimer,
-  TimerSnapshot,
-  FaseLavoro,
+  OraLavoro, StatoTimer, TimerSnapshot, FaseLavoro, StopArgs,
 } from '@/lib/timer-lavoro-types';
+import { MOTIVI_CHE_NOTIFICANO } from '@/lib/timer-lavoro-types';
 
 interface UseTimerLavoroOpts {
   operatoreId: string | null;
@@ -35,7 +36,7 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
   const [now, setNow] = useState(() => Date.now());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ---- Tick 1Hz solo se c'è una sessione attiva ----
+  // Tick 1Hz
   useEffect(() => {
     if (!sessione || sessione.stop_at) {
       if (tickRef.current) clearInterval(tickRef.current);
@@ -43,43 +44,25 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
       return;
     }
     tickRef.current = setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => {
-      if (tickRef.current) clearInterval(tickRef.current);
-    };
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [sessione]);
 
-  // ---- Fetch sessione attiva + ultimo storico ----
   const refresh = useCallback(async () => {
     if (!operatoreId) {
-      setSessione(null);
-      setStorico([]);
-      setLoading(false);
+      setSessione(null); setStorico([]); setLoading(false);
       return;
     }
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       const [attivaRes, storicoRes] = await Promise.all([
-        supabase
-          .from('ore_lavoro')
-          .select('*')
-          .eq('operatore_id', operatoreId)
-          .is('stop_at', null)
-          .order('start_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('ore_lavoro')
-          .select('*')
-          .eq('operatore_id', operatoreId)
-          .not('stop_at', 'is', null)
-          .order('start_at', { ascending: false })
-          .limit(20),
+        supabase.from('ore_lavoro').select('*').eq('operatore_id', operatoreId)
+          .is('stop_at', null).order('start_at', { ascending: false })
+          .limit(1).maybeSingle(),
+        supabase.from('ore_lavoro').select('*').eq('operatore_id', operatoreId)
+          .not('stop_at', 'is', null).order('start_at', { ascending: false }).limit(20),
       ]);
-
       if (attivaRes.error) throw attivaRes.error;
       if (storicoRes.error) throw storicoRes.error;
-
       setSessione((attivaRes.data as OraLavoro) ?? null);
       setStorico((storicoRes.data as OraLavoro[]) ?? []);
     } catch (e: any) {
@@ -89,32 +72,19 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
     }
   }, [operatoreId]);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  // ---- Realtime: aggiornamenti su ore_lavoro per questo operatore ----
+  // Realtime
   useEffect(() => {
     if (!operatoreId) return;
-    const ch = supabase
-      .channel(`ore_lavoro_${operatoreId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ore_lavoro',
-          filter: `operatore_id=eq.${operatoreId}`,
-        },
+    const ch = supabase.channel(`ore_lavoro_${operatoreId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'ore_lavoro', filter: `operatore_id=eq.${operatoreId}` },
         () => refresh(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
+      ).subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [operatoreId, refresh]);
 
-  // ---- Snapshot derivato ----
   const snapshot: TimerSnapshot = useMemo(() => {
     if (!sessione || sessione.stop_at) {
       return { stato: 'idle', sessione: null, elapsedSeconds: 0, pausedSeconds: 0 };
@@ -122,27 +92,23 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
     const startMs = new Date(sessione.start_at).getTime();
     const totalElapsed = Math.floor((now - startMs) / 1000);
     const pauseAccumulated = sessione.pause_total_seconds || 0;
-
     if (sessione.pause_started_at) {
       const pauseStartMs = new Date(sessione.pause_started_at).getTime();
       const currentPause = Math.floor((now - pauseStartMs) / 1000);
-      const elapsed = Math.max(0, totalElapsed - pauseAccumulated - currentPause);
       return {
-        stato: 'paused',
-        sessione,
-        elapsedSeconds: elapsed,
+        stato: 'paused', sessione,
+        elapsedSeconds: Math.max(0, totalElapsed - pauseAccumulated - currentPause),
         pausedSeconds: currentPause,
       };
     }
     return {
-      stato: 'running',
-      sessione,
+      stato: 'running', sessione,
       elapsedSeconds: Math.max(0, totalElapsed - pauseAccumulated),
       pausedSeconds: 0,
     };
   }, [sessione, now]);
 
-  // ---- START ----
+  // ---- START (avvio ottimistico, niente scatto) ----
   const start = useCallback(
     async ({ commessaId, fase, sottofase }: StartArgs) => {
       if (!operatoreId || !aziendaId) {
@@ -150,23 +116,50 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
         return null;
       }
       if (sessione && !sessione.stop_at) {
-        setError('Timer già attivo. Stoppalo prima di iniziarne un altro.');
+        setError('Timer già attivo. Stoppalo prima.');
         return null;
       }
       setError(null);
+
+      const nowIso = new Date().toISOString();
+      // Ottimistico: settiamo subito una sessione locale fittizia
+      const optimistic: OraLavoro = {
+        id: `temp-${Date.now()}`,
+        azienda_id: aziendaId,
+        operatore_id: operatoreId,
+        commessa_id: commessaId,
+        fase: fase as string,
+        sottofase: sottofase ?? null,
+        start_at: nowIso,
+        stop_at: null,
+        pause_total_seconds: 0,
+        pause_started_at: null,
+        durata_minuti: null,
+        note: null,
+        motivo_stop: null,
+        motivo_stop_dettaglio: null,
+        parent_ora_id: null,
+        auto_started_da: null,
+        approvata_da: null,
+        approvata_at: null,
+        created_at: nowIso,
+        updated_at: nowIso,
+      };
+      setSessione(optimistic);
+
       const { data, error: insErr } = await supabase
         .from('ore_lavoro')
         .insert({
           azienda_id: aziendaId,
           operatore_id: operatoreId,
           commessa_id: commessaId,
-          fase,
-          sottofase: sottofase ?? null,
-          start_at: new Date().toISOString(),
+          fase, sottofase: sottofase ?? null,
+          start_at: nowIso,
         })
-        .select('*')
-        .single();
+        .select('*').single();
+
       if (insErr) {
+        setSessione(null);
         setError(insErr.message);
         return null;
       }
@@ -176,107 +169,87 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
     [operatoreId, aziendaId, sessione],
   );
 
-  // ---- PAUSE ----
   const pause = useCallback(async () => {
     if (!sessione || sessione.stop_at || sessione.pause_started_at) return;
-    const { data, error: upErr } = await supabase
-      .from('ore_lavoro')
+    const { data, error: upErr } = await supabase.from('ore_lavoro')
       .update({ pause_started_at: new Date().toISOString() })
-      .eq('id', sessione.id)
-      .select('*')
-      .single();
-    if (upErr) {
-      setError(upErr.message);
-      return;
-    }
+      .eq('id', sessione.id).select('*').single();
+    if (upErr) { setError(upErr.message); return; }
     setSessione(data as OraLavoro);
   }, [sessione]);
 
-  // ---- RESUME ----
   const resume = useCallback(async () => {
     if (!sessione || sessione.stop_at || !sessione.pause_started_at) return;
     const pausedFor = Math.floor(
       (Date.now() - new Date(sessione.pause_started_at).getTime()) / 1000,
     );
     const newTotal = (sessione.pause_total_seconds || 0) + pausedFor;
-    const { data, error: upErr } = await supabase
-      .from('ore_lavoro')
-      .update({
-        pause_started_at: null,
-        pause_total_seconds: newTotal,
-      })
-      .eq('id', sessione.id)
-      .select('*')
-      .single();
-    if (upErr) {
-      setError(upErr.message);
-      return;
-    }
+    const { data, error: upErr } = await supabase.from('ore_lavoro')
+      .update({ pause_started_at: null, pause_total_seconds: newTotal })
+      .eq('id', sessione.id).select('*').single();
+    if (upErr) { setError(upErr.message); return; }
     setSessione(data as OraLavoro);
   }, [sessione]);
 
-  // ---- STOP ----
+  // ---- STOP con motivo + notifica problema ----
   const stop = useCallback(
-    async (note?: string) => {
+    async ({ motivo, dettaglio }: StopArgs) => {
       if (!sessione || sessione.stop_at) return null;
-      // Se in pausa, chiudi prima la pausa
+
       let pauseTotal = sessione.pause_total_seconds || 0;
       if (sessione.pause_started_at) {
         pauseTotal += Math.floor(
           (Date.now() - new Date(sessione.pause_started_at).getTime()) / 1000,
         );
       }
-      const { data, error: upErr } = await supabase
-        .from('ore_lavoro')
+
+      const { data, error: upErr } = await supabase.from('ore_lavoro')
         .update({
           stop_at: new Date().toISOString(),
           pause_started_at: null,
           pause_total_seconds: pauseTotal,
-          note: note ?? sessione.note,
+          motivo_stop: motivo,
+          motivo_stop_dettaglio: dettaglio?.trim() || null,
         })
-        .eq('id', sessione.id)
-        .select('*')
-        .single();
-      if (upErr) {
-        setError(upErr.message);
-        return null;
+        .eq('id', sessione.id).select('*').single();
+      if (upErr) { setError(upErr.message); return null; }
+
+      // Se motivo è "problema" → genera alert al responsabile
+      if (MOTIVI_CHE_NOTIFICANO.includes(motivo) && aziendaId) {
+        await creaAlertProblema({
+          aziendaId,
+          commessaId: sessione.commessa_id,
+          operatoreId: sessione.operatore_id,
+          oraId: sessione.id,
+          fase: sessione.fase,
+          dettaglio: dettaglio ?? '',
+        });
       }
+
       setSessione(null);
-      setStorico((prev) => [data as OraLavoro, ...prev].slice(0, 20));
+      setStorico(prev => [data as OraLavoro, ...prev].slice(0, 20));
       return data as OraLavoro;
     },
-    [sessione],
+    [sessione, aziendaId],
   );
 
-  // ---- ANNULLA (timer attivo erroneo) ----
   const annulla = useCallback(async () => {
     if (!sessione || sessione.stop_at) return;
-    const { error: delErr } = await supabase
-      .from('ore_lavoro')
-      .delete()
-      .eq('id', sessione.id);
-    if (delErr) {
-      setError(delErr.message);
-      return;
-    }
+    const { error: delErr } = await supabase.from('ore_lavoro')
+      .delete().eq('id', sessione.id);
+    if (delErr) { setError(delErr.message); return; }
     setSessione(null);
   }, [sessione]);
 
   return {
-    snapshot,
-    storico,
-    loading,
-    error,
-    start,
-    pause,
-    resume,
-    stop,
-    annulla,
-    refresh,
+    snapshot, storico, loading, error,
+    start, pause, resume, stop, annulla, refresh,
   };
 }
 
-// ---- Helper formatter ----
+// ============================================================
+// Helpers formatter
+// ============================================================
 export function formatHMS(totalSec: number): string {
   const s = Math.max(0, Math.floor(totalSec));
   const h = Math.floor(s / 3600);

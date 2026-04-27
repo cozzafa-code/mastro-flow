@@ -9,6 +9,7 @@ import { useState, type CSSProperties } from 'react';
 import { useTimerLavoro, formatHMS, formatDuration } from '@/hooks/useTimerLavoro';
 import { MC, MF, MS, MR, MP, sectionLabel } from '@/constants/design-system';
 import { MastroCard, SectionLabel, MastroEmpty } from './_ui';
+import TimerStopMotivoModal from './TimerStopMotivoModal';
 import {
   FASI_LAVORO_LABEL,
   type FaseLavoro,
@@ -75,6 +76,7 @@ export default function TimerLavoroTablet({ operatoreId, aziendaId, commesseDisp
     useTimerLavoro({ operatoreId, aziendaId });
   const [commessaSel, setCommessaSel] = useState('');
   const [faseSel, setFaseSel] = useState<FaseLavoro>('posa');
+  const [showStopModal, setShowStopModal] = useState(false);
 
   const stato = snapshot.stato;
   const sessione = snapshot.sessione;
@@ -194,13 +196,22 @@ export default function TimerLavoroTablet({ operatoreId, aziendaId, commesseDisp
                   ) : (
                     <button onClick={pause} style={{ ...S.ctlBtn, background: MC.card, color: MC.text, border: `2px solid ${MC.border}` }}>❚❚  PAUSA</button>
                   )}
-                  <button onClick={() => stop()} style={{ ...S.ctlBtn, background: MC.danger }}>■  STOP</button>
+                  <button onClick={() => setShowStopModal(true)} style={{ ...S.ctlBtn, background: MC.danger }}>■  STOP</button>
                 </div>
               </>
             )}
           </MastroCard>
         </div>
       </div>
+
+      <TimerStopMotivoModal
+        open={showStopModal}
+        onCancel={() => setShowStopModal(false)}
+        onConfirm={async (args) => {
+          setShowStopModal(false);
+          await stop(args);
+        }}
+      />
     </div>
   );
 }
