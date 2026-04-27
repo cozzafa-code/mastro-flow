@@ -667,7 +667,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       try{const _v=localStorage.getItem("mastro:piano");if(_v)setPianoAttivo(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:team");if(_v)setTeam(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:contatti");if(_v)setContatti(JSON.parse(_v));}catch(e){}
-      try{const _v=localStorage.getItem("mastro:pipeline");if(_v){const parsed=JSON.parse(_v); if(parsed.some(p=>p.id==="collaudo")){setPipelineDB(parsed);}else{setPipelineDB(PIPELINE_DEFAULT);localStorage.setItem("mastro:pipeline",JSON.stringify(PIPELINE_DEFAULT));}} }catch(e){}
+      // v21: migra pipeline localStorage se non contiene 'modifiche' (fasi v18)
+      try{const _v=localStorage.getItem("mastro:pipeline");if(_v){const parsed=JSON.parse(_v); if(parsed.some(p=>p.id==="collaudo") && parsed.some(p=>p.id==="modifiche")){setPipelineDB(parsed);}else{setPipelineDB(PIPELINE_DEFAULT);localStorage.setItem("mastro:pipeline",JSON.stringify(PIPELINE_DEFAULT));console.log("[v21] pipeline migrata a PIPELINE_DEFAULT con fasi modifiche/da_contattare");}} }catch(e){}
       try{const _v=localStorage.getItem("mastro:azienda");if(_v)setAziendaInfo(JSON.parse(_v));}catch(e){}
 },[]);
 
@@ -866,7 +867,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         };
         try {
           if (typeof setTasks === 'function') setTasks((ts: any[]) => [newTask, ...(ts || [])]);
-          if (typeof saveTask === 'function' && aziendaInfo?.id) saveTask(aziendaInfo.id, newTask);
+          if (typeof saveTask === 'function' && (aziendaIdReal || aziendaInfo?.id)) saveTask((aziendaIdReal || aziendaInfo.id) as string, newTask);
         } catch(e) { console.error('[v18 task create modifiche]', e); }
       } catch(e) { console.error('[v18 onModifiche]', e); }
     },
@@ -900,7 +901,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         };
         try {
           if (typeof setTasks === 'function') setTasks((ts: any[]) => [newTask, ...(ts || [])]);
-          if (typeof saveTask === 'function' && aziendaInfo?.id) saveTask(aziendaInfo.id, newTask);
+          if (typeof saveTask === 'function' && (aziendaIdReal || aziendaInfo?.id)) saveTask((aziendaIdReal || aziendaInfo.id) as string, newTask);
         } catch(e) { console.error('[v18 task create chiamare]', e); }
       } catch(e) { console.error('[v18 onChiamare]', e); }
     },

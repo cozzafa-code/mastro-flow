@@ -372,6 +372,120 @@ export default function CMDetailPanel() {
     const cV70 = selectedCM as any;
 
     // ═══ Banner "Cliente ha accettato — Manda conferma" ═══
+    // v21: Card "Modifiche richieste" - mostra quando cliente ha chiesto modifiche
+    const _modificheCard = (rispostaCliente?.risposta === "modifiche") ? (
+      <div style={{
+        background: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+        border: "2px solid #F59E0B",
+        borderRadius: 14,
+        padding: "14px 16px",
+        marginBottom: 12,
+        boxShadow: "0 4px 14px rgba(245,158,11,0.25)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>✏</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#78350F", letterSpacing: 0.3 }}>CLIENTE CHIEDE MODIFICHE</div>
+            <div style={{ fontSize: 11, color: "#78350F", opacity: 0.85, marginTop: 2 }}>
+              {rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+            </div>
+          </div>
+        </div>
+        {rispostaCliente?.risposta_nota && (
+          <div style={{
+            background: "rgba(255,255,255,0.7)",
+            border: "1px solid rgba(245,158,11,0.3)",
+            borderRadius: 10,
+            padding: "10px 12px",
+            marginBottom: 10,
+            fontSize: 12,
+            color: "#451A03",
+            whiteSpace: "pre-wrap" as const,
+            lineHeight: 1.5,
+            maxHeight: 200,
+            overflowY: "auto" as const,
+          }}>
+            {rispostaCliente.risposta_nota}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => {
+            setFaseTo(cV70.id, "preventivo");
+            setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, preventivoInviato: false } : cm));
+          }} style={{
+            flex: 1, padding: "12px 8px", borderRadius: 10, border: "none",
+            background: "#F59E0B", color: "#fff",
+            fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+          }}>
+            ✏ AGGIORNA PREVENTIVO
+          </button>
+          {cV70.telefono && (
+            <button onClick={() => {
+              const tel = (cV70.telefono || "").replace(/[^0-9+]/g, "");
+              const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
+              window.open("https://wa.me/" + numero, "_blank");
+            }} style={{
+              flex: 1, padding: "12px 8px", borderRadius: 10, border: "1.5px solid #F59E0B",
+              background: "#fff", color: "#78350F",
+              fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+            }}>
+              💬 CONTATTA
+            </button>
+          )}
+        </div>
+      </div>
+    ) : null;
+
+    // v21: Card "Da contattare" - cliente vuole essere chiamato
+    const _contattaCard = (rispostaCliente?.risposta === "chiamare") ? (
+      <div style={{
+        background: "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
+        border: "2px solid #3B82F6",
+        borderRadius: 14,
+        padding: "14px 16px",
+        marginBottom: 12,
+        boxShadow: "0 4px 14px rgba(59,130,246,0.25)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <div style={{ fontSize: 28, lineHeight: 1 }}>📞</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A8A", letterSpacing: 0.3 }}>CLIENTE VUOLE ESSERE CONTATTATO</div>
+            <div style={{ fontSize: 11, color: "#1E3A8A", opacity: 0.85, marginTop: 2 }}>
+              {rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+            </div>
+          </div>
+        </div>
+        {rispostaCliente?.risposta_nota && (
+          <div style={{
+            background: "rgba(255,255,255,0.7)",
+            border: "1px solid rgba(59,130,246,0.3)",
+            borderRadius: 10,
+            padding: "10px 12px",
+            marginBottom: 10,
+            fontSize: 12,
+            color: "#1E3A8A",
+            whiteSpace: "pre-wrap" as const,
+            lineHeight: 1.5,
+          }}>
+            {rispostaCliente.risposta_nota}
+          </div>
+        )}
+        {cV70.telefono && (
+          <button onClick={() => {
+            const tel = (cV70.telefono || "").replace(/[^0-9+]/g, "");
+            const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
+            window.open("https://wa.me/" + numero, "_blank");
+          }} style={{
+            width: "100%", padding: 12, borderRadius: 10, border: "none",
+            background: "#3B82F6", color: "#fff",
+            fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+          }}>
+            💬 CHIAMA / SCRIVI ORA
+          </button>
+        )}
+      </div>
+    ) : null;
+
     const _accettatoBanner = (rispostaCliente?.risposta === "accettato" && faseIndex(cV70.fase) < faseIndex("conferma")) ? (
       <div style={{
         position: "sticky" as any,
@@ -515,7 +629,7 @@ export default function CMDetailPanel() {
     return (
       <>
       <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 20 }}>
-        {_accettatoBanner}
+        {_accettatoBanner}{_modificheCard}{_contattaCard}
         {/* ============ HEADER TEAL ============ */}
         <div style={{
           background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",
