@@ -8,6 +8,7 @@ import React from "react";
 import { useMastro } from "./MastroContext";
 import { FM, ICO, Ico, I , markPreventivoInviato } from "./mastro-constants";
 import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
+import { getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
 import { buildVanoRighe } from "../lib/vano-helpers";
 
 
@@ -1465,7 +1466,7 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                       const r = await fetch("/api/preventivo-link", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }),
+                                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: (typeof getAziendaIdDB === "function" ? (await getAziendaIdDB()) : null) || aziendaInfo?.id }),
                                         signal: ctrl.signal,
                                       });
                                       clearTimeout(t);

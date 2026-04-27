@@ -2724,7 +2724,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       const r = await fetch("/api/preventivo-link", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }),
+                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: (await getAziendaIdDB()) || aziendaInfo?.id }),
                         signal: ctrl.signal,
                       });
                       clearTimeout(t);
