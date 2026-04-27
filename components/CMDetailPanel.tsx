@@ -372,7 +372,7 @@ export default function CMDetailPanel() {
     const cV70 = selectedCM as any;
 
     // ═══ v23 · PAGINA PREVENTIVO INVIATO (layout tipo Preventivo al volo) ═══
-    if ((cV70.preventivoInviato || cV70.fase === "modifiche" || cV70.fase === "da_contattare") && faseIndex(cV70.fase) < faseIndex("conferma")) {
+    if ((cV70.preventivoInviato || !!cV70.preventivoInviatoAt || !!cV70.dataPreventivoInvio || cV70.fase === "modifiche" || cV70.fase === "da_contattare") && faseIndex(cV70.fase) < faseIndex("conferma")) {
       const ris = rispostaCliente;
       const tipoRis = ris?.risposta as ("accettato" | "modifiche" | "chiamare" | undefined);
 
