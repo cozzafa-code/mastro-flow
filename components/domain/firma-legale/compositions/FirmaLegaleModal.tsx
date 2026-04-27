@@ -10,9 +10,9 @@
 import { useRef, useState, type CSSProperties } from 'react';
 import { useFirma } from '@/hooks/useFirma';
 import { MC, MF, MR, MS, MP } from '@/constants/design-system';
-import CanvasFirma, { type CanvasFirmaHandle } from './primitives/CanvasFirma';
-import FirmaCardCommessa from './primitives/FirmaCardCommessa';
-import FirmaBannerLegale from './primitives/FirmaBannerLegale';
+import CanvasFirma, { type CanvasFirmaHandle } from '../primitives/CanvasFirma';
+import FirmaCardCommessa from '../primitives/FirmaCardCommessa';
+import FirmaBannerLegale from '../primitives/FirmaBannerLegale';
 import { TIPO_FIRMA_LABEL, type TipoFirma } from '@/lib/firma-legale-types';
 
 interface Props {
