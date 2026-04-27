@@ -807,8 +807,19 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const isDesktop = forceDesktop ? true : forceMobile ? false : (winW >= 1024 && !isTouchDevice);
 
   // --- Notifica risposta cliente preventivo ---
+  // v20: aziendaIdReal viene caricato al boot da getAziendaId() (lib/supabase-sync.ts)
+  // perche' aziendaInfo?.id e' undefined (lo state non contiene mai .id)
+  const [aziendaIdReal, setAziendaIdReal] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    let alive = true;
+    getAziendaId().then(id => {
+      if (alive && id) setAziendaIdReal(id);
+    }).catch(err => console.warn("[v20] getAziendaId fail:", err));
+    return () => { alive = false; };
+  }, []);
+
   const { pending: prevPending, latest: prevLatest, ack: prevAck, ackAll: prevAckAll } = usePreventivoNotifier({
-    azienda_id: aziendaInfo?.id || null,
+    azienda_id: aziendaIdReal || aziendaInfo?.id || null,
     pollIntervalMs: 20000,
     enableSound: true,
     enableBrowserNotif: true,
