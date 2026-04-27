@@ -100,8 +100,8 @@ const S = {
     borderRadius: MR.full, textTransform: 'uppercase',
   } as CSSProperties,
 
-  // CTA
-  ctaWrap: { marginTop: 'auto', paddingTop: MP.s6 } as CSSProperties,
+  // CTA — visibile subito, non in fondo
+  ctaWrap: { marginTop: MP.s6 } as CSSProperties,
   bigBtn: {
     width: '100%', padding: '24px 0', fontSize: 22,
     fontWeight: 700, letterSpacing: 1, color: '#fff',

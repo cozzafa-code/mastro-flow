@@ -2,6 +2,8 @@
 
 // ============================================================
 // MASTRO — Demo TimerLavoro (switcher device)
+// FIX v4.1: schema commesse corretto (code, cliente, cognome)
+// FIX v4.1: operatore lookup via user_id corretto
 // ============================================================
 
 import { useEffect, useState, type CSSProperties } from 'react';
@@ -14,7 +16,8 @@ import { MastroTopbar } from '@/components/domain/timer-lavoro/_ui';
 import type { CommessaMinima } from '@/lib/timer-lavoro-types';
 
 const AZIENDA_ID = 'ccca51c1-656b-4e7c-a501-55753e20da29';
-const OPERATORE_TEST_ID = '2a98547f-338b-4926-aa7b-0859cde5a1bf';
+// user_id Fabio (auth.users)
+const USER_ID_FABIO = '2a98547f-338b-4926-aa7b-0859cde5a1bf';
 
 type Device = 'mobile' | 'tablet' | 'desktop';
 
@@ -50,32 +53,67 @@ const S = {
   } as CSSProperties,
 };
 
+// Helper: combina cliente + cognome in un nome leggibile
+function makeClienteName(cliente: string | null, cognome: string | null): string | null {
+  const c = (cliente ?? '').trim();
+  const cog = (cognome ?? '').trim();
+  if (c && cog) return `${c} ${cog}`.toUpperCase();
+  return c || cog || null;
+}
+
 export default function DemoTimerLavoroPage() {
   const [device, setDevice] = useState<Device>('mobile');
   const [commesse, setCommesse] = useState<CommessaMinima[]>([]);
   const [operatori, setOperatori] = useState<{ id: string; nome: string | null; ruolo: string | null }[]>([]);
-  const [ruolo, setRuolo] = useState<string>('titolare');
+  const [meId, setMeId] = useState<string>(''); // ID operatore reale (non user_id)
   const [meNome, setMeNome] = useState<string | null>(null);
+  const [meRuolo, setMeRuolo] = useState<string>('titolare');
 
   useEffect(() => {
     const load = async () => {
+      // 1) Commesse — usa schema reale: code, cliente, cognome, indirizzo
       const { data: cs } = await supabase
         .from('commesse')
-        .select('id, numero, cliente_nome, indirizzo')
+        .select('id, code, cliente, cognome, indirizzo')
         .eq('azienda_id', AZIENDA_ID)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(20);
-      setCommesse((cs as CommessaMinima[]) ?? []);
 
+      const mapped: CommessaMinima[] = (cs ?? []).map((c: any) => ({
+        id: c.id,
+        numero: c.code ?? null,
+        cliente_nome: makeClienteName(c.cliente, c.cognome),
+        indirizzo: c.indirizzo ?? null,
+      }));
+      setCommesse(mapped);
+
+      // 2) Operatori
       const { data: ops } = await supabase
         .from('operatori')
-        .select('id, nome, ruolo')
+        .select('id, nome, cognome, ruolo, user_id')
         .eq('azienda_id', AZIENDA_ID);
-      setOperatori((ops as any) ?? []);
 
-      const me = (ops as any[])?.find(o => o.id === OPERATORE_TEST_ID);
-      if (me?.ruolo) setRuolo(me.ruolo);
-      if (me?.nome) setMeNome(me.nome);
+      const mappedOps = (ops ?? []).map((o: any) => ({
+        id: o.id,
+        nome: [o.nome, o.cognome].filter(Boolean).join(' ') || null,
+        ruolo: o.ruolo,
+      }));
+      setOperatori(mappedOps);
+
+      // 3) Trova ME = operatore con user_id = USER_ID_FABIO
+      const me = (ops ?? []).find((o: any) => o.user_id === USER_ID_FABIO);
+      if (me) {
+        setMeId(me.id);
+        setMeNome([me.nome, me.cognome].filter(Boolean).join(' ') || null);
+        setMeRuolo(me.ruolo ?? 'titolare');
+      } else if ((ops ?? []).length > 0) {
+        // Fallback: primo operatore
+        const first = ops![0] as any;
+        setMeId(first.id);
+        setMeNome([first.nome, first.cognome].filter(Boolean).join(' ') || null);
+        setMeRuolo(first.ruolo ?? 'titolare');
+      }
     };
     load();
   }, []);
@@ -96,6 +134,18 @@ export default function DemoTimerLavoroPage() {
     </>
   );
 
+  // Aspetto di avere l'operatore prima di renderizzare i componenti
+  if (!meId) {
+    return (
+      <div style={S.page}>
+        <MastroTopbar breadcrumb="Demo · Timer Lavoro" right={switcher} />
+        <div style={{ padding: 48, textAlign: 'center', color: MC.muted, fontSize: 14 }}>
+          Caricamento operatore…
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={S.page}>
       <MastroTopbar breadcrumb="Demo · Timer Lavoro" right={switcher} />
@@ -104,7 +154,7 @@ export default function DemoTimerLavoroPage() {
         {device === 'mobile' && (
           <div style={S.mobileFrame}>
             <TimerLavoroMobile
-              operatoreId={OPERATORE_TEST_ID}
+              operatoreId={meId}
               aziendaId={AZIENDA_ID}
               operatoreNome={meNome}
               commesseDisponibili={commesse}
@@ -114,7 +164,7 @@ export default function DemoTimerLavoroPage() {
         {device === 'tablet' && (
           <div style={S.tabletFrame}>
             <TimerLavoroTablet
-              operatoreId={OPERATORE_TEST_ID}
+              operatoreId={meId}
               aziendaId={AZIENDA_ID}
               commesseDisponibili={commesse}
             />
@@ -124,8 +174,8 @@ export default function DemoTimerLavoroPage() {
           <div style={S.desktopFrame}>
             <TimerLavoroDesktop
               aziendaId={AZIENDA_ID}
-              utenteCorrenteId={OPERATORE_TEST_ID}
-              utenteCorrenteRuolo={ruolo}
+              utenteCorrenteId={meId}
+              utenteCorrenteRuolo={meRuolo}
               operatori={operatori}
               commesse={commesse.map(c => ({ id: c.id, numero: c.numero, cliente_nome: c.cliente_nome }))}
             />
