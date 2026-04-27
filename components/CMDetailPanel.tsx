@@ -476,10 +476,6 @@ export default function CMDetailPanel() {
           fase: "preventivo",
         }) : p);
         setSelectedRilievo(nuovoRilievo);
-        // v27: apri direttamente il primo vano del nuovo rilievo per modificarlo
-        if (vaniDuplicati.length > 0) {
-          setTimeout(() => { setSelectedVano(vaniDuplicati[0]); }, 100);
-        }
       };
 
       return (
@@ -1348,7 +1344,6 @@ export default function CMDetailPanel() {
                              setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, rilievi: [...(x.rilievi || []), nuovo], preventivoInviato: false, preventivoInviatoAt: null, dataPreventivoInvio: null, fase: "preventivo" } : x));
                              setSelectedCM((p: any) => p ? ({ ...p, rilievi: [...(p.rilievi || []), nuovo], preventivoInviato: false, preventivoInviatoAt: null, dataPreventivoInvio: null, fase: "preventivo" }) : p);
                              setSelectedRilievo(nuovo);
-                             if (vaniDup.length > 0) setTimeout(() => setSelectedVano(vaniDup[0]), 100);
                            } } :
                            tipoRis29 === "chiamare" && telPul29 ? { lbl: "💬 CONTATTA SU WHATSAPP", bg: "#3B82F6", action: () => window.open("https://wa.me/" + numWA29, "_blank") } :
                            { lbl: "REINVIA PREVENTIVO", bg: "#28A0A0", action: () => { setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, preventivoInviato: false } : x)); setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p); } };
@@ -1419,7 +1414,6 @@ export default function CMDetailPanel() {
                           <button onClick={(e) => {
                             e.stopPropagation();
                             setSelectedRilievo(r);
-                            if (r.vani && r.vani.length > 0) setTimeout(() => setSelectedVano(r.vani[0]), 50);
                           }} style={{
                             padding: "6px 10px", borderRadius: 8, border: "1px solid #28A0A0",
                             background: "#fff", color: "#0F5E55",
