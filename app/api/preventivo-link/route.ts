@@ -193,7 +193,7 @@ export async function PATCH(req: NextRequest) {
 
     const { ip, ua } = getClientMeta(req);
     const sb = sbAdmin();
-    const { error } = await sb.from("preventivo_tokens")
+    const { data: tokenRow, error: errToken } = await sb.from("preventivo_tokens")
       .update({
         risposta,
         risposta_nota: nota || null,
@@ -203,9 +203,23 @@ export async function PATCH(req: NextRequest) {
         // Reset notify flag così il titolare riceve la notifica
         notify_titolare_inviata: false,
       })
-      .eq("token", token);
+      .eq("token", token)
+      .select("cm_id, azienda_id")
+      .maybeSingle();
 
-    if (error) throw error;
+    if (errToken) throw errToken;
+
+    // v36: aggiorna anche la fase della commessa in base alla risposta
+    if (tokenRow?.cm_id) {
+      const nuovaFase = risposta === "accettato" ? "conferma"
+                      : risposta === "modifiche" ? "modifiche"
+                      : risposta === "chiamare" ? "da_contattare"
+                      : null;
+      if (nuovaFase) {
+        await sb.from("commesse").update({ fase: nuovaFase }).eq("id", tokenRow.cm_id);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "error" }, { status: 500 });
