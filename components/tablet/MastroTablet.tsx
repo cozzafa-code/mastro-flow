@@ -8,6 +8,7 @@ import CommesseListaTablet from "./commesse/CommesseListaTablet";
 import CommessaDettaglioTablet from "./commesse/CommessaDettaglioTablet";
 import ClienteDettaglioTablet from "./clienti/ClienteDettaglioTablet";
 import EntityDetailPanel from "./EntityDetailPanel";
+import SideEffectsToaster from "./SideEffectsToaster";
 import { EntityType } from "./dashboard-context";
 import { RuoloProvider } from "./store";
 import BannerRuolo from "./BannerRuolo";
@@ -190,6 +191,7 @@ export default function MastroTablet() {
           <div style={{ padding: 12, color: TT.text2 }}>Vista estesa.</div>
         </ExpandModal>
       </div>
+      <SideEffectsToaster />
       <EntityDetailPanel
         tipo={activeEntity?.tipo || null}
         id={activeEntity?.id || null}
