@@ -333,6 +333,39 @@ export default function CMDetailPanel() {
       const iv = setInterval(fetchRisposta, 15000);
       return () => { alive = false; clearInterval(iv); };
     }, [selectedCM?.id, selectedCM?.preventivoInviato]);
+
+    // v33: sync commessa dal DB quando si apre - risolve il bug dove
+    // localStorage ha preventivoInviato=false anche se DB e' aggiornato
+    React.useEffect(() => {
+      if (!selectedCM?.id) return;
+      let alive = true;
+      (async () => {
+        try {
+          const { data, error } = await supabase
+            .from("commesse")
+            .select("fase, preventivo_inviato_at")
+            .eq("id", selectedCM.id)
+            .maybeSingle();
+          if (!alive || error || !data) return;
+          const dbInviato = !!data.preventivo_inviato_at;
+          const dbFase = data.fase;
+          const localInviato = !!(selectedCM as any).preventivoInviato || !!(selectedCM as any).preventivoInviatoAt;
+          // Se DB e local divergono, aggiorna local
+          if (dbInviato !== localInviato || dbFase !== (selectedCM as any).fase) {
+            console.log("[v33 sync] DB ha aggiornamenti per", selectedCM.id, { dbFase, dbInviato, localFase: (selectedCM as any).fase, localInviato });
+            const update = {
+              preventivoInviato: dbInviato,
+              preventivoInviatoAt: data.preventivo_inviato_at,
+              dataPreventivoInvio: data.preventivo_inviato_at ? data.preventivo_inviato_at.split("T")[0] : null,
+              fase: dbFase,
+            };
+            setCantieri((cs: any[]) => cs.map((c: any) => c.id === selectedCM.id ? { ...c, ...update } : c));
+            setSelectedCM((p: any) => p ? ({ ...p, ...update }) : p);
+          }
+        } catch (e) { console.warn("[v33] sync error", e); }
+      })();
+      return () => { alive = false; };
+    }, [selectedCM?.id]);
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
     const [showModalFirma, setShowModalFirma] = useState(false);
@@ -372,8 +405,6 @@ export default function CMDetailPanel() {
     const cV70 = selectedCM as any;
 
     // ═══ v23 · PAGINA PREVENTIVO INVIATO (layout tipo Preventivo al volo) ═══
-    // v32 DIAGNOSTIC LOG
-    if (typeof console !== "undefined") console.log("[v32 check]", { code: cV70.code, fase: cV70.fase, preventivoInviato: cV70.preventivoInviato, preventivoInviatoAt: cV70.preventivoInviatoAt, dataPreventivoInvio: cV70.dataPreventivoInvio, faseIdx: faseIndex(cV70.fase), confermaIdx: faseIndex("conferma") });
     if ((cV70.preventivoInviato || !!cV70.preventivoInviatoAt || !!cV70.dataPreventivoInvio || cV70.fase === "modifiche" || cV70.fase === "da_contattare") && faseIndex(cV70.fase) < faseIndex("conferma")) {
       const ris = rispostaCliente;
       const tipoRis = ris?.risposta as ("accettato" | "modifiche" | "chiamare" | undefined);
