@@ -1341,7 +1341,7 @@ export default function CMDetailPanel() {
                             { txt: "IN ATTESA", bg: "#71717A", icon: "⏳" };
 
             // Prossima azione consigliata
-            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); } } :
+            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
                              // Crea R(N+1) duplicando il corrente
                              const oggiIso = new Date().toISOString().split("T")[0];
