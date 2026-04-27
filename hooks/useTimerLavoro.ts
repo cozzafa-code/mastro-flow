@@ -1,12 +1,5 @@
 'use client';
 
-// ============================================================
-// MASTRO — useTimerLavoro v2
-// + stop({ motivo, dettaglio })
-// + se motivo='problema' → ops_alert al responsabile
-// + avvio ottimistico (no scatto)
-// ============================================================
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { creaAlertProblema } from '@/lib/timer-lavoro-alerts';
@@ -26,6 +19,8 @@ interface StartArgs {
   sottofase?: string | null;
 }
 
+export type StatoSforamento = 'verde' | 'giallo' | 'rosso' | 'critico' | 'non_definito';
+
 const TICK_MS = 1000;
 
 export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
@@ -35,8 +30,24 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [stimePerFase, setStimePerFase] = useState<Record<string, number>>({});
 
-  // Tick 1Hz
+  useEffect(() => {
+    if (!aziendaId) return;
+    supabase.from('ops_workflow_fasi')
+      .select('codice, tempo_stimato_min')
+      .eq('azienda_id', aziendaId).eq('attiva', true)
+      .then(({ data }) => {
+        const map: Record<string, number> = {};
+        (data ?? []).forEach((r: any) => {
+          if (r.codice && r.tempo_stimato_min) {
+            map[r.codice.toLowerCase()] = r.tempo_stimato_min;
+          }
+        });
+        setStimePerFase(map);
+      });
+  }, [aziendaId]);
+
   useEffect(() => {
     if (!sessione || sessione.stop_at) {
       if (tickRef.current) clearInterval(tickRef.current);
@@ -56,8 +67,7 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
     try {
       const [attivaRes, storicoRes] = await Promise.all([
         supabase.from('ore_lavoro').select('*').eq('operatore_id', operatoreId)
-          .is('stop_at', null).order('start_at', { ascending: false })
-          .limit(1).maybeSingle(),
+          .is('stop_at', null).order('start_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('ore_lavoro').select('*').eq('operatore_id', operatoreId)
           .not('stop_at', 'is', null).order('start_at', { ascending: false }).limit(20),
       ]);
@@ -74,7 +84,6 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Realtime
   useEffect(() => {
     if (!operatoreId) return;
     const ch = supabase.channel(`ore_lavoro_${operatoreId}`)
@@ -108,61 +117,53 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
     };
   }, [sessione, now]);
 
-  // ---- START (avvio ottimistico, niente scatto) ----
+  const sforamento = useMemo(() => {
+    if (!sessione || sessione.stop_at) {
+      return { stato: 'non_definito' as StatoSforamento, percentuale: 0, stimaMin: null as number | null, restantiMin: null as number | null };
+    }
+    const stima = stimePerFase[String(sessione.fase).toLowerCase()];
+    if (!stima || stima <= 0) {
+      return { stato: 'non_definito' as StatoSforamento, percentuale: 0, stimaMin: null, restantiMin: null };
+    }
+    const elapsedMin = snapshot.elapsedSeconds / 60;
+    const perc = (elapsedMin / stima) * 100;
+    const restanti = Math.max(0, stima - elapsedMin);
+    let stato: StatoSforamento = 'verde';
+    if (perc >= 125) stato = 'critico';
+    else if (perc >= 100) stato = 'rosso';
+    else if (perc >= 75) stato = 'giallo';
+    return { stato, percentuale: Math.round(perc), stimaMin: stima, restantiMin: Math.round(restanti) };
+  }, [sessione, snapshot.elapsedSeconds, stimePerFase]);
+
   const start = useCallback(
     async ({ commessaId, fase, sottofase }: StartArgs) => {
       if (!operatoreId || !aziendaId) {
-        setError('Operatore o azienda non identificati');
-        return null;
+        setError('Operatore o azienda non identificati'); return null;
       }
       if (sessione && !sessione.stop_at) {
-        setError('Timer già attivo. Stoppalo prima.');
-        return null;
+        setError('Timer già attivo. Stoppalo prima.'); return null;
       }
       setError(null);
-
       const nowIso = new Date().toISOString();
-      // Ottimistico: settiamo subito una sessione locale fittizia
       const optimistic: OraLavoro = {
         id: `temp-${Date.now()}`,
-        azienda_id: aziendaId,
-        operatore_id: operatoreId,
-        commessa_id: commessaId,
-        fase: fase as string,
-        sottofase: sottofase ?? null,
-        start_at: nowIso,
-        stop_at: null,
-        pause_total_seconds: 0,
-        pause_started_at: null,
-        durata_minuti: null,
-        note: null,
-        motivo_stop: null,
-        motivo_stop_dettaglio: null,
-        parent_ora_id: null,
-        auto_started_da: null,
-        approvata_da: null,
-        approvata_at: null,
-        created_at: nowIso,
-        updated_at: nowIso,
+        azienda_id: aziendaId, operatore_id: operatoreId, commessa_id: commessaId,
+        fase: fase as string, sottofase: sottofase ?? null,
+        start_at: nowIso, stop_at: null,
+        pause_total_seconds: 0, pause_started_at: null, durata_minuti: null,
+        note: null, motivo_stop: null, motivo_stop_dettaglio: null,
+        parent_ora_id: null, auto_started_da: null,
+        approvata_da: null, approvata_at: null,
+        created_at: nowIso, updated_at: nowIso,
       };
       setSessione(optimistic);
-
       const { data, error: insErr } = await supabase
         .from('ore_lavoro')
         .insert({
-          azienda_id: aziendaId,
-          operatore_id: operatoreId,
-          commessa_id: commessaId,
-          fase, sottofase: sottofase ?? null,
-          start_at: nowIso,
-        })
-        .select('*').single();
-
-      if (insErr) {
-        setSessione(null);
-        setError(insErr.message);
-        return null;
-      }
+          azienda_id: aziendaId, operatore_id: operatoreId, commessa_id: commessaId,
+          fase, sottofase: sottofase ?? null, start_at: nowIso,
+        }).select('*').single();
+      if (insErr) { setSessione(null); setError(insErr.message); return null; }
       setSessione(data as OraLavoro);
       return data as OraLavoro;
     },
@@ -180,9 +181,7 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
 
   const resume = useCallback(async () => {
     if (!sessione || sessione.stop_at || !sessione.pause_started_at) return;
-    const pausedFor = Math.floor(
-      (Date.now() - new Date(sessione.pause_started_at).getTime()) / 1000,
-    );
+    const pausedFor = Math.floor((Date.now() - new Date(sessione.pause_started_at).getTime()) / 1000);
     const newTotal = (sessione.pause_total_seconds || 0) + pausedFor;
     const { data, error: upErr } = await supabase.from('ore_lavoro')
       .update({ pause_started_at: null, pause_total_seconds: newTotal })
@@ -191,41 +190,28 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
     setSessione(data as OraLavoro);
   }, [sessione]);
 
-  // ---- STOP con motivo + notifica problema ----
   const stop = useCallback(
     async ({ motivo, dettaglio }: StopArgs) => {
       if (!sessione || sessione.stop_at) return null;
-
       let pauseTotal = sessione.pause_total_seconds || 0;
       if (sessione.pause_started_at) {
-        pauseTotal += Math.floor(
-          (Date.now() - new Date(sessione.pause_started_at).getTime()) / 1000,
-        );
+        pauseTotal += Math.floor((Date.now() - new Date(sessione.pause_started_at).getTime()) / 1000);
       }
-
       const { data, error: upErr } = await supabase.from('ore_lavoro')
         .update({
           stop_at: new Date().toISOString(),
-          pause_started_at: null,
-          pause_total_seconds: pauseTotal,
+          pause_started_at: null, pause_total_seconds: pauseTotal,
           motivo_stop: motivo,
           motivo_stop_dettaglio: dettaglio?.trim() || null,
-        })
-        .eq('id', sessione.id).select('*').single();
+        }).eq('id', sessione.id).select('*').single();
       if (upErr) { setError(upErr.message); return null; }
-
-      // Se motivo è "problema" → genera alert al responsabile
       if (MOTIVI_CHE_NOTIFICANO.includes(motivo) && aziendaId) {
         await creaAlertProblema({
-          aziendaId,
-          commessaId: sessione.commessa_id,
-          operatoreId: sessione.operatore_id,
-          oraId: sessione.id,
-          fase: sessione.fase,
-          dettaglio: dettaglio ?? '',
+          aziendaId, commessaId: sessione.commessa_id,
+          operatoreId: sessione.operatore_id, oraId: sessione.id,
+          fase: sessione.fase, dettaglio: dettaglio ?? '',
         });
       }
-
       setSessione(null);
       setStorico(prev => [data as OraLavoro, ...prev].slice(0, 20));
       return data as OraLavoro;
@@ -235,21 +221,16 @@ export function useTimerLavoro({ operatoreId, aziendaId }: UseTimerLavoroOpts) {
 
   const annulla = useCallback(async () => {
     if (!sessione || sessione.stop_at) return;
-    const { error: delErr } = await supabase.from('ore_lavoro')
-      .delete().eq('id', sessione.id);
-    if (delErr) { setError(delErr.message); return; }
+    await supabase.from('ore_lavoro').delete().eq('id', sessione.id);
     setSessione(null);
   }, [sessione]);
 
   return {
-    snapshot, storico, loading, error,
+    snapshot, storico, loading, error, sforamento,
     start, pause, resume, stop, annulla, refresh,
   };
 }
 
-// ============================================================
-// Helpers formatter
-// ============================================================
 export function formatHMS(totalSec: number): string {
   const s = Math.max(0, Math.floor(totalSec));
   const h = Math.floor(s / 3600);
