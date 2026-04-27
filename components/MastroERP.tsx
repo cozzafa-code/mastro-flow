@@ -828,6 +828,71 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         });
       } catch(e) { console.error('[auto-advance fase fail]', e); }
     },
+    // v18: cliente chiede MODIFICHE -> fase 'modifiche' + task
+    onModifiche: (item: any) => {
+      try {
+        if (typeof setFaseTo === 'function') setFaseTo(item.cm_id, 'modifiche');
+        import('@/lib/supabase-sync').then(m => {
+          m.setFaseCommessa(item.cm_id, 'modifiche')
+            .then((ok: boolean) => { if (!ok) console.warn('[DB] modifiche fase fail'); })
+            .catch((err: any) => console.warn('[DB] modifiche fase error:', err));
+        });
+        // Crea task automatico
+        const cliente = item.snapshot?.cliente || 'Cliente';
+        const codice = item.cm_code || item.cm_id;
+        const today = new Date().toISOString().split('T')[0];
+        const taskId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+        const newTask = {
+          id: taskId,
+          text: 'Modificare preventivo ' + codice + ' - ' + cliente,
+          meta: item.risposta_nota || 'Modifiche richieste dal cliente',
+          date: today,
+          time: '',
+          priority: 'alta',
+          persona: '',
+          done: false,
+          cm: item.cm_id,
+        };
+        try {
+          if (typeof setTasks === 'function') setTasks((ts: any[]) => [newTask, ...(ts || [])]);
+          if (typeof saveTask === 'function' && aziendaInfo?.id) saveTask(aziendaInfo.id, newTask);
+        } catch(e) { console.error('[v18 task create modifiche]', e); }
+      } catch(e) { console.error('[v18 onModifiche]', e); }
+    },
+    // v18: cliente vuole CONTATTO -> fase 'da_contattare' + task
+    onChiamare: (item: any) => {
+      try {
+        if (typeof setFaseTo === 'function') setFaseTo(item.cm_id, 'da_contattare');
+        import('@/lib/supabase-sync').then(m => {
+          m.setFaseCommessa(item.cm_id, 'da_contattare')
+            .then((ok: boolean) => { if (!ok) console.warn('[DB] da_contattare fase fail'); })
+            .catch((err: any) => console.warn('[DB] da_contattare fase error:', err));
+        });
+        // Estraggo orario preferito dalla nota
+        const cliente = item.snapshot?.cliente || 'Cliente';
+        const codice = item.cm_code || item.cm_id;
+        const nota = item.risposta_nota || '';
+        const orarioMatch = nota.match(/Orario preferito:\s*([^\n]+)/i);
+        const oraPref = orarioMatch ? orarioMatch[1].trim() : '';
+        const today = new Date().toISOString().split('T')[0];
+        const taskId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+        const newTask = {
+          id: taskId,
+          text: 'Chiamare ' + cliente + ' - commessa ' + codice + (oraPref ? ' (preferito: ' + oraPref + ')' : ''),
+          meta: nota || 'Cliente vuole essere contattato',
+          date: today,
+          time: '',
+          priority: 'alta',
+          persona: '',
+          done: false,
+          cm: item.cm_id,
+        };
+        try {
+          if (typeof setTasks === 'function') setTasks((ts: any[]) => [newTask, ...(ts || [])]);
+          if (typeof saveTask === 'function' && aziendaInfo?.id) saveTask(aziendaInfo.id, newTask);
+        } catch(e) { console.error('[v18 task create chiamare]', e); }
+      } catch(e) { console.error('[v18 onChiamare]', e); }
+    },
   });
 
   const handleApriRispostaCliente = (item: any) => {

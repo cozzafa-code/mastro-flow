@@ -215,6 +215,8 @@ export const PLANS = {
 export const PIPELINE_DEFAULT = [
   { id: "sopralluogo", nome: "Sopralluogo", ico: "search", color: "#3B7FE0", attiva: true, desc: "Vai al cantiere, prendi misure, foto, note" },
   { id: "preventivo", nome: "Preventivo", ico: "clipboard", color: "#F5A623", attiva: true, desc: "Rivedi misure, calcola prezzi, sconti, condizioni" },
+  { id: "modifiche", nome: "Modifiche richieste", ico: "edit3", color: "#F59E0B", attiva: true, desc: "Cliente ha chiesto modifiche al preventivo" },
+  { id: "da_contattare", nome: "Da contattare", ico: "phone", color: "#3B82F6", attiva: true, desc: "Cliente vuole essere contattato" },
   { id: "conferma", nome: "Conferma", ico: "signatureEdit", color: "#28A0A0", attiva: true, desc: "Firma del cliente, conferma ordine, acconto" },
   { id: "ordini", nome: "Ordini", ico: "package", color: "#EF4444", attiva: true, desc: "Ordina materiali ai fornitori" },
   { id: "produzione", nome: "Produzione", ico: "factory", color: "#F59E0B", attiva: true, desc: "In lavorazione, attesa materiali" },
@@ -243,6 +245,8 @@ export const AFASE = {
   posa:        { i: "wrench", t: "Schedula montaggio",            c: "#F97316" },
   collaudo:    { i: "search", t: "Verifica lavoro, foto finale",   c: "#8B5CF6" },
   chiusura:    { i: "check", t: "Fattura saldo e chiudi",    c: "#10B981" },
+  modifiche:   { i: "edit3", t: "Modifica preventivo come richiesto dal cliente", c: "#F59E0B" },
+  da_contattare: { i: "phone", t: "Chiama il cliente come richiesto", c: "#3B82F6" },
 };
 
 // ÔòÉÔòÉÔòÉ 20 COMMESSE DEMO REALISTICHE ÔòÉÔòÉÔòÉ

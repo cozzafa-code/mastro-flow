@@ -32,6 +32,8 @@ interface UseNotifierOptions {
   email?: string;
   onNuovaRisposta?: (item: PreventivoNotifyItem) => void;
   onAccettato?: (item: PreventivoNotifyItem) => void;  // callback quando arriva ACCETTATO
+  onModifiche?: (item: PreventivoNotifyItem) => void;  // v18: cliente chiede modifiche
+  onChiamare?: (item: PreventivoNotifyItem) => void;   // v18: cliente vuole essere contattato
 }
 
 function playDing() {
@@ -110,6 +112,8 @@ export function usePreventivoNotifier(opts: UseNotifierOptions) {
     email,
     onNuovaRisposta,
     onAccettato,
+    onModifiche,
+    onChiamare,
   } = opts;
 
   const [pending, setPending] = useState<PreventivoNotifyItem[]>([]);
@@ -199,6 +203,18 @@ export function usePreventivoNotifier(opts: UseNotifierOptions) {
           if (onAccettato) {
             for (const n of nuovi) {
               if (n.risposta === "accettato") onAccettato(n);
+            }
+          }
+          // v18: callback per MODIFICHE
+          if (onModifiche) {
+            for (const n of nuovi) {
+              if (n.risposta === "modifiche") onModifiche(n);
+            }
+          }
+          // v18: callback per CHIAMARE
+          if (onChiamare) {
+            for (const n of nuovi) {
+              if (n.risposta === "chiamare") onChiamare(n);
             }
           }
 
