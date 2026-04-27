@@ -405,58 +405,6 @@ export default function CMDetailPanel() {
   if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw) && !prevWorkspace) {
     const cV70 = selectedCM as any;
 
-    // ═══ v39 · FASE=CONFERMA · apre ModalFirma per firma cliente ═══
-    if (cV70.fase === "conferma" && !cV70.firma_cliente) {
-      const fmtEur = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      const totV39 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70 as any) : ((cV70 as any).totalePreventivo || 0)) || 0;
-
-      return (
-        <div style={{ padding: "16px 14px 80px 14px", background: "linear-gradient(180deg, #F5FBFB 0%, #E6F6F0 100%)", minHeight: "100vh" }}>
-          {/* Header big card verde */}
-          <div style={{
-            background: "linear-gradient(135deg, #28A268 0%, #1F8050 50%, #134D30 100%)",
-            borderRadius: 22, padding: "22px 20px 26px", color: "#fff",
-            boxShadow: "0 12px 30px rgba(31,128,80,0.25)", marginBottom: 14,
-          }}>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(255,255,255,0.18)",
-              padding: "4px 10px", borderRadius: 50,
-              fontSize: 9, fontWeight: 900, letterSpacing: 1.2, marginBottom: 12,
-            }}>✓ PREVENTIVO ACCETTATO</div>
-            <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1.05, marginBottom: 6, letterSpacing: -0.5 }}>
-              Manda al cliente<br/>la firma
-            </div>
-            <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 14 }}>
-              Il cliente ha accettato il preventivo. Invia la conferma d'ordine per la firma certificata (FEA / FEQ).
-            </div>
-            <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: "10px 12px", marginBottom: 14 }}>
-              <div style={{ fontSize: 8, opacity: 0.7, fontWeight: 800, letterSpacing: 1 }}>TOTALE PREVENTIVO</div>
-              <div style={{ fontSize: 22, fontWeight: 900 }}>{fmtEur(totV39)}</div>
-            </div>
-            <button onClick={() => setShowModalFirma(true)}
-              style={{
-                width: "100%", padding: 16, borderRadius: 14, border: "none",
-                background: "#fff", color: "#1F8050",
-                fontSize: 15, fontWeight: 900, cursor: "pointer",
-                fontFamily: "inherit", letterSpacing: 0.4,
-                boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
-              }}>
-              📝 INVIA AL CLIENTE PER FIRMA →
-            </button>
-          </div>
-
-          {/* Link secondari */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 14 }}>
-            <button onClick={() => { setFaseTo(cV70.id, "preventivo"); }}
-              style={{ padding: 6, border: "none", background: "transparent", color: "#71717A", fontSize: 11, fontWeight: 700, cursor: "pointer", textDecoration: "underline", fontFamily: "inherit" }}>
-              ← Torna al preventivo
-            </button>
-          </div>
-        </div>
-      );
-    }
-
     // ═══ v37 · v23 PAGINA MODIFICHE/DA_CONTATTARE (flusso pulito) ═══
     if (cV70.fase === "modifiche" || cV70.fase === "da_contattare") {
       const ris = rispostaCliente;
