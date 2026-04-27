@@ -5,6 +5,7 @@
 //              spSx/spDx, arch, davInt/davEst, casL/casH/casP
 // =====================================================================
 import jsPDF from "jspdf";
+import { savePdfMobileSafe } from "./pdf-mobile-safe";
 import autoTable from "jspdf-autotable";
 
 const C = {
@@ -118,7 +119,7 @@ export function generaPDFMisure(c, ctx) {
   if (vani.length === 0) {
     doc.setFontSize(11); doc.setTextColor(...C.sub);
     doc.text("Nessun vano attivo.", W / 2, 110, { align: "center" });
-    doc.save("misure_" + (c.code || c.id) + ".pdf");
+    savePdfMobileSafe(doc, "misure_" + (c.code || c.id) + ".pdf");
     return;
   }
   const head = [[
@@ -196,5 +197,5 @@ export function generaPDFMisure(c, ctx) {
   doc.setDrawColor(...C.sub); doc.setLineWidth(0.3); doc.line(W - 55, footY + 6, W - 12, footY + 6);
   doc.setFontSize(6); doc.setTextColor(...C.sub);
   doc.text("MASTRO ERP  |  " + new Date().toLocaleString("it-IT"), W / 2, footY + 8, { align: "center" });
-  doc.save("misure_" + cl(c.code || c.id) + "_" + (cl(c.cliente) || "cliente").replace(/\s/g, "_") + ".pdf");
+  savePdfMobileSafe(doc, "misure_" + cl(c.code || c.id) + "_" + (cl(c.cliente) || "cliente").replace(/\s/g, "_") + ".pdf");
 }

@@ -19,7 +19,6 @@
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { savePdfMobileSafe } from "./pdf-mobile-safe";
 
 /* ───────────────── BRAND TOKENS MASTRO (fliwoX) ───────────────── */
 
@@ -890,10 +889,10 @@ export async function generaPreventivoPDF(c: any, ctx: any): Promise<void> {
     }
   }
 
-  // ── Salva (mobile-safe) ──
+  // ── Salva ──
   const codice = safeFilename(clean(c.code || c.codice || String(c.id || "X")));
   const nome = safeFilename(clean(c.cliente || "cliente"));
   const filename = "preventivo_" + codice + "_" + nome + ".pdf";
 
-  savePdfMobileSafe(doc, filename);
+  doc.save(filename);
 }
