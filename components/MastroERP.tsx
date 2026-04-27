@@ -36,6 +36,7 @@ import { getAziendaId, loadAllData, saveCantiere, saveEvent, deleteEventDB, save
 import { MastroContext } from "./MastroContext";
 import { usePreventivoNotifier } from "../lib/preventivo-notifier";
 import PreventivoRispostaToast from "./PreventivoRispostaToast";
+import { MastroUpdateBanner } from "./MastroUpdateBanner";
 import SettingsPanel from "./SettingsPanel";
 import PreventivoModal from "./PreventivoModal";
 import RilieviListPanel from "./RilieviListPanel";
@@ -3523,6 +3524,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         onAck={(it) => prevAck(it.token)}
         onAckAll={prevAckAll}
       />
+      <MastroUpdateBanner />
       <div style={S.app}>
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && <PanelErrorBoundary name="Home">{renderHome()}</PanelErrorBoundary>}
