@@ -1,25 +1,19 @@
 'use client';
 
 // ============================================================
-// MASTRO - TimerLavoroDesktop
-// Read-only tabella - 100% inline CSS
+// MASTRO — TimerLavoroDesktop (light Google-style)
+// Control room titolare/caposquadra: tabella + KPI + approvazioni
 // ============================================================
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDuration, formatHMS } from '@/hooks/useTimerLavoro';
+import { C, FONT, SHADOW, RADIUS, stateBadge } from '@/lib/timer-lavoro-ui';
 import {
   FASI_LAVORO_LABEL,
   type FaseLavoro,
   type OraLavoro,
 } from '@/lib/timer-lavoro-types';
-
-const TT = {
-  bg: '#F8FAFC', card: '#FFFFFF', bdr: '#E2E8F0',
-  text: '#0F172A', muted: '#64748B',
-  acc: '#0F766E', accSoft: '#CCFBF1',
-  warn: '#D97706', danger: '#DC2626',
-};
 
 interface OperatoreLite { id: string; nome: string | null; ruolo: string | null; }
 interface CommessaLite { id: string; numero: string | null; cliente_nome: string | null; }
@@ -33,39 +27,39 @@ interface Props {
 }
 
 const S = {
-  root: { background: TT.bg, color: TT.text, minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif', boxSizing: 'border-box' } as CSSProperties,
+  root: { minHeight: '100vh', background: C.bg, color: C.text, fontFamily: FONT.ui, boxSizing: 'border-box' } as CSSProperties,
   container: { maxWidth: 1280, margin: '0 auto', padding: 24 } as CSSProperties,
-  hWrap: { marginBottom: 24 } as CSSProperties,
-  hLabel: { fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: TT.muted, marginBottom: 4 } as CSSProperties,
-  hTitle: { fontSize: 24, fontWeight: 600, margin: 0 } as CSSProperties,
-  filtersBox: {
-    background: TT.card, border: `1px solid ${TT.bdr}`, borderRadius: 12,
-    padding: 16, marginBottom: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12,
+  hLabel: { fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.muted, marginBottom: 4, fontWeight: 600 } as CSSProperties,
+  hTitle: { fontSize: 26, fontWeight: 600, margin: 0, color: C.text } as CSSProperties,
+  kpiRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, margin: '24px 0' } as CSSProperties,
+  kpiCard: {
+    background: C.card, border: `1px solid ${C.border}`, borderRadius: RADIUS.lg,
+    padding: 18, boxShadow: SHADOW.card,
   } as CSSProperties,
-  fLabel: { fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: TT.muted, marginBottom: 6 } as CSSProperties,
+  kpiLabel: { fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', color: C.muted, fontWeight: 600 } as CSSProperties,
+  kpiValue: { fontFamily: FONT.mono, fontSize: 28, fontWeight: 600, color: C.text, marginTop: 8 } as CSSProperties,
+  kpiSub: { fontSize: 12, color: C.muted, marginTop: 4 } as CSSProperties,
+  filtersBox: {
+    background: C.card, border: `1px solid ${C.border}`, borderRadius: RADIUS.lg,
+    padding: 16, marginBottom: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12,
+    boxShadow: SHADOW.card,
+  } as CSSProperties,
+  fLabel: { fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase', color: C.muted, marginBottom: 6, fontWeight: 600 } as CSSProperties,
   fSelect: {
     width: '100%', padding: '8px 12px', fontSize: 14,
-    background: '#fff', color: TT.text, border: `1px solid ${TT.bdr}`,
-    borderRadius: 8, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+    background: '#fff', color: C.text, border: `1px solid ${C.border}`,
+    borderRadius: RADIUS.md, outline: 'none', boxSizing: 'border-box', fontFamily: FONT.ui,
   } as CSSProperties,
-  tableBox: { background: TT.card, border: `1px solid ${TT.bdr}`, borderRadius: 12, overflow: 'hidden' } as CSSProperties,
+  tableBox: { background: C.card, border: `1px solid ${C.border}`, borderRadius: RADIUS.lg, overflow: 'hidden', boxShadow: SHADOW.card } as CSSProperties,
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 14 } as CSSProperties,
-  th: { padding: '12px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, color: TT.muted, textAlign: 'left' as const } as CSSProperties,
-  td: { padding: '12px 16px' } as CSSProperties,
-  badge: { display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 } as CSSProperties,
+  th: { padding: '12px 16px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.2, color: C.muted, textAlign: 'left' as const, background: C.bgSoft } as CSSProperties,
+  td: { padding: '14px 16px', color: C.text } as CSSProperties,
   approveBtn: {
-    padding: '6px 12px', fontSize: 12, fontWeight: 600,
-    background: TT.acc, color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+    padding: '6px 14px', fontSize: 12, fontWeight: 600, letterSpacing: 0.5,
+    background: C.tealDark, color: '#fff', border: 'none', borderRadius: RADIUS.md,
+    cursor: 'pointer', fontFamily: 'inherit', boxShadow: SHADOW.button,
   } as CSSProperties,
-  totaliBox: {
-    marginTop: 24, background: TT.card, border: `1px solid ${TT.bdr}`,
-    borderRadius: 12, padding: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
-  } as CSSProperties,
-  totRow: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px 12px', borderRadius: 8, background: TT.bg, fontSize: 14,
-  } as CSSProperties,
-  empty: { padding: 24, textAlign: 'center' as const, color: TT.muted } as CSSProperties,
+  empty: { padding: 40, textAlign: 'center' as const, color: C.muted } as CSSProperties,
 };
 
 function Th({ children, align = 'left' }: { children: ReactNode; align?: 'left' | 'right' }) {
@@ -73,9 +67,6 @@ function Th({ children, align = 'left' }: { children: ReactNode; align?: 'left' 
 }
 function Td({ children, align = 'left' }: { children: ReactNode; align?: 'left' | 'right' }) {
   return <td style={{ ...S.td, textAlign: align }}>{children}</td>;
-}
-function Badge({ children, color, bg }: { children: ReactNode; color: string; bg: string }) {
-  return <span style={{ ...S.badge, color, background: bg }}>{children}</span>;
 }
 
 export default function TimerLavoroDesktop({
@@ -123,13 +114,14 @@ export default function TimerLavoroDesktop({
     return true;
   }), [ore, filtroSt]);
 
-  const totali = useMemo(() => {
-    const m = new Map<string, number>();
-    oreFiltrate.forEach(o => {
-      if (o.durata_minuti != null) m.set(o.operatore_id, (m.get(o.operatore_id) ?? 0) + o.durata_minuti);
-    });
-    return m;
-  }, [oreFiltrate]);
+  // KPI
+  const kpi = useMemo(() => {
+    const attivi = ore.filter(o => !o.stop_at).length;
+    const daApprovare = ore.filter(o => o.stop_at && !o.approvata_at).length;
+    const totMin = ore.reduce((s, o) => s + (o.durata_minuti ?? 0), 0);
+    const opUnici = new Set(ore.filter(o => !o.stop_at).map(o => o.operatore_id)).size;
+    return { attivi, daApprovare, totMin, opUnici };
+  }, [ore]);
 
   const handleApprova = async (id: string) => {
     await supabase.from('ore_lavoro').update({
@@ -146,11 +138,36 @@ export default function TimerLavoroDesktop({
   return (
     <div style={S.root}>
       <div style={S.container}>
-        <div style={S.hWrap}>
-          <div style={S.hLabel}>Ore lavorate</div>
-          <h1 style={S.hTitle}>Timer Lavoro — Riepilogo</h1>
+        <div>
+          <div style={S.hLabel}>Manodopera · ore lavorate</div>
+          <h1 style={S.hTitle}>Timer Lavoro</h1>
         </div>
 
+        {/* KPI */}
+        <div style={S.kpiRow}>
+          <div style={S.kpiCard}>
+            <div style={S.kpiLabel}>In esecuzione</div>
+            <div style={{ ...S.kpiValue, color: kpi.attivi > 0 ? C.tealDark : C.text }}>{kpi.attivi}</div>
+            <div style={S.kpiSub}>{kpi.opUnici} {kpi.opUnici === 1 ? 'operatore' : 'operatori'} attivi</div>
+          </div>
+          <div style={S.kpiCard}>
+            <div style={S.kpiLabel}>Da approvare</div>
+            <div style={{ ...S.kpiValue, color: kpi.daApprovare > 0 ? C.warn : C.text }}>{kpi.daApprovare}</div>
+            <div style={S.kpiSub}>sessioni in attesa</div>
+          </div>
+          <div style={S.kpiCard}>
+            <div style={S.kpiLabel}>Totale ore (periodo)</div>
+            <div style={S.kpiValue}>{formatDuration(kpi.totMin)}</div>
+            <div style={S.kpiSub}>{ore.length} sessioni totali</div>
+          </div>
+          <div style={S.kpiCard}>
+            <div style={S.kpiLabel}>Operatori censiti</div>
+            <div style={S.kpiValue}>{operatori.length}</div>
+            <div style={S.kpiSub}>nella squadra</div>
+          </div>
+        </div>
+
+        {/* Filtri */}
         <div style={S.filtersBox}>
           <div>
             <div style={S.fLabel}>Operatore</div>
@@ -178,17 +195,18 @@ export default function TimerLavoroDesktop({
             <div style={S.fLabel}>Stato</div>
             <select style={S.fSelect} value={filtroSt} onChange={e => setFiltroSt(e.target.value as any)}>
               <option value="tutti">Tutti</option>
-              <option value="attivi">Timer attivi</option>
+              <option value="attivi">In esecuzione</option>
               <option value="da_approvare">Da approvare</option>
               <option value="approvati">Approvati</option>
             </select>
           </div>
         </div>
 
+        {/* Tabella */}
         <div style={S.tableBox}>
           <table style={S.table}>
             <thead>
-              <tr style={{ borderBottom: `1px solid ${TT.bdr}` }}>
+              <tr>
                 <Th>Operatore</Th><Th>Commessa</Th><Th>Fase</Th>
                 <Th>Inizio</Th><Th>Fine</Th>
                 <Th align="right">Durata</Th><Th>Stato</Th>
@@ -196,7 +214,7 @@ export default function TimerLavoroDesktop({
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={canApprove ? 8 : 7} style={S.empty}>Caricamento...</td></tr>}
+              {loading && <tr><td colSpan={canApprove ? 8 : 7} style={S.empty}>Caricamento…</td></tr>}
               {!loading && oreFiltrate.length === 0 && (
                 <tr><td colSpan={canApprove ? 8 : 7} style={S.empty}>Nessun risultato.</td></tr>
               )}
@@ -205,22 +223,22 @@ export default function TimerLavoroDesktop({
                 const elapsed = attivo
                   ? Math.floor((Date.now() - new Date(o.start_at).getTime()) / 1000) - (o.pause_total_seconds || 0)
                   : 0;
+                const variant = attivo ? 'attivo' : o.approvata_at ? 'approvato' : 'da_approvare';
+                const label = attivo ? '● in corso' : o.approvata_at ? '✓ approvato' : 'da approvare';
                 return (
-                  <tr key={o.id} style={{ borderBottom: i < oreFiltrate.length - 1 ? `1px solid ${TT.bdr}` : 'none' }}>
+                  <tr key={o.id} style={{ borderTop: i > 0 ? `1px solid ${C.border}` : 'none' }}>
                     <Td>{opNome(o.operatore_id)}</Td>
                     <Td>{cmLabel(o.commessa_id)}</Td>
                     <Td>{FASI_LAVORO_LABEL[o.fase as FaseLavoro] ?? o.fase}</Td>
                     <Td>{new Date(o.start_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</Td>
                     <Td>{o.stop_at ? new Date(o.stop_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</Td>
                     <Td align="right">
-                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600 }}>
+                      <span style={{ fontFamily: FONT.mono, fontWeight: 600, color: attivo ? C.tealDark : C.text }}>
                         {attivo ? formatHMS(elapsed) : formatDuration(o.durata_minuti)}
                       </span>
                     </Td>
                     <Td>
-                      {attivo && <Badge color={TT.acc} bg={TT.accSoft}>● ATTIVO</Badge>}
-                      {!attivo && o.approvata_at && <Badge color={TT.acc} bg={TT.accSoft}>✓ Approvato</Badge>}
-                      {!attivo && !o.approvata_at && <Badge color={TT.warn} bg="#FEF3C7">Da approvare</Badge>}
+                      <span style={stateBadge(variant)}>{label}</span>
                     </Td>
                     {canApprove && (
                       <Td align="right">
@@ -235,22 +253,6 @@ export default function TimerLavoroDesktop({
             </tbody>
           </table>
         </div>
-
-        {totali.size > 0 && (
-          <>
-            <div style={{ ...S.hLabel, marginTop: 24, marginBottom: 12 }}>Totale ore per operatore</div>
-            <div style={S.totaliBox}>
-              {Array.from(totali.entries()).map(([opId, min]) => (
-                <div key={opId} style={S.totRow}>
-                  <span>{opNome(opId)}</span>
-                  <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, color: TT.acc }}>
-                    {formatDuration(min)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
       </div>
     </div>
   );
