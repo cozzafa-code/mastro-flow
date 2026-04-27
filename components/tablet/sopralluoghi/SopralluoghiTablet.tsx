@@ -4,6 +4,8 @@ import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
 import { useMastroData, StatoSopralluogo } from "../store";
 import AvatarGradient from "../AvatarGradient";
+import NuovoSopralluogoModal from "./NuovoSopralluogoModal";
+import { ToastSuccess } from "../FormModal";
 
 const STATI: Record<StatoSopralluogo, { label: string; tint: keyof typeof TINTS }> = {
   in_attesa:  { label: "In attesa",  tint: "amber"  },
@@ -18,23 +20,20 @@ const TINTS = {
 
 export default function SopralluoghiTablet() {
   const data = useMastroData();
-  const [filtro, setFiltro] = React.useState<"tutti" | StatoSopralluogo>("tutti");
-
   const all = data.getSopralluoghi();
-  const filtered = filtro === "tutti" ? all : all.filter((s) => s.stato === filtro);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [toast, setToast] = React.useState(false);
 
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: TT.text1, letterSpacing: "-0.5px" }}>
-            Sopralluoghi
-          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: TT.text1, letterSpacing: "-0.5px" }}>Sopralluoghi</div>
           <div style={{ fontSize: 12, color: TT.text3, marginTop: 2 }}>
-            {all.length} sopralluoghi totali &middot; {all.filter((s) => s.stato === "confermato").length} confermati &middot; {all.filter((s) => s.stato === "in_attesa").length} in attesa
+            {all.length} sopralluoghi &middot; {all.filter((s) => s.stato === "confermato").length} confermati &middot; {all.filter((s) => s.stato === "in_attesa").length} in attesa
           </div>
         </div>
-        <button style={{
+        <button onClick={() => setModalOpen(true)} style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "9px 14px",
           background: TT.red[400], color: "#fff",
@@ -48,17 +47,15 @@ export default function SopralluoghiTablet() {
         </button>
       </div>
 
-      {/* KPI MINI */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
-        <KpiMini icon="sopralluoghi" label="Totale"       value={String(all.length)}                                  tint="red"   />
-        <KpiMini icon="calendario"   label="Confermati"   value={String(all.filter((s) => s.stato === "confermato").length)} tint="blue"  />
-        <KpiMini icon="bell"         label="In attesa"    value={String(all.filter((s) => s.stato === "in_attesa").length)}  tint="amber" />
-        <KpiMini icon="check"        label="Completati"    value={String(all.filter((s) => s.stato === "completato").length)} tint="green" />
+        <KpiMini icon="sopralluoghi" label="Totale"    value={String(all.length)} tint="red" />
+        <KpiMini icon="calendario"   label="Confermati"value={String(all.filter((s) => s.stato === "confermato").length)} tint="blue" />
+        <KpiMini icon="bell"         label="In attesa" value={String(all.filter((s) => s.stato === "in_attesa").length)}  tint="amber" />
+        <KpiMini icon="check"        label="Completati"value={String(all.filter((s) => s.stato === "completato").length)} tint="green" />
       </div>
 
-      {/* GRID */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        {filtered.map((s) => {
+        {all.map((s) => {
           const cli = data.getCliente(s.clienteId);
           const pos = data.getOperatore(s.posatoreId);
           const stato = STATI[s.stato];
@@ -92,9 +89,7 @@ export default function SopralluoghiTablet() {
                       background: ramp[100], color: ramp[600],
                       borderRadius: 999, fontSize: 9, fontWeight: 700,
                       letterSpacing: "0.3px", textTransform: "uppercase",
-                    }}>
-                      {stato.label}
-                    </span>
+                    }}>{stato.label}</span>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: TT.text1, letterSpacing: "-0.2px", marginBottom: 3 }}>
                     {cli.nome}
@@ -104,7 +99,6 @@ export default function SopralluoghiTablet() {
                   </div>
                 </div>
               </div>
-
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "10px 12px",
@@ -123,7 +117,6 @@ export default function SopralluoghiTablet() {
                   </div>
                 </div>
               </div>
-
               {s.note && (
                 <div style={{
                   marginTop: 8, padding: "6px 10px",
@@ -131,14 +124,23 @@ export default function SopralluoghiTablet() {
                   border: `1px solid ${TT.amber[100]}`,
                   borderRadius: 6, fontSize: 10, color: TT.text2,
                   fontStyle: "italic", lineHeight: 1.4,
-                }}>
-                  {s.note}
-                </div>
+                }}>{s.note}</div>
               )}
             </div>
           );
         })}
       </div>
+
+      <NuovoSopralluogoModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => {
+          setModalOpen(false);
+          setToast(true);
+          setTimeout(() => setToast(false), 3000);
+        }}
+      />
+      <ToastSuccess open={toast} msg="Sopralluogo pianificato" />
     </div>
   );
 }

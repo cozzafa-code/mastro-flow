@@ -4,6 +4,8 @@ import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
 import { useMastroData } from "../store";
 import AvatarGradient from "../AvatarGradient";
+import NuovoClienteModal from "./NuovoClienteModal";
+import { ToastSuccess } from "../FormModal";
 
 const TINTS = {
   blue: TT.blue, violet: TT.violet, green: TT.green,
@@ -19,6 +21,8 @@ const TIPO_DEF = {
 export default function ClientiTablet() {
   const data = useMastroData();
   const clienti = data.getClienti();
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [toast, setToast] = React.useState(false);
 
   return (
     <div>
@@ -29,7 +33,7 @@ export default function ClientiTablet() {
             {clienti.length} clienti &middot; {clienti.filter((c) => c.tipo === "privato").length} privati &middot; {clienti.filter((c) => c.tipo === "azienda").length} aziende
           </div>
         </div>
-        <button style={{
+        <button onClick={() => setModalOpen(true)} style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "9px 14px",
           background: TT.violet[400], color: "#fff",
@@ -50,7 +54,7 @@ export default function ClientiTablet() {
         <KpiMini icon="trendUp"  label="Showroom"value={String(clienti.filter(c=>c.tipo==="showroom").length)} tint="amber" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
         {clienti.map((cli) => {
           const tipo = TIPO_DEF[cli.tipo];
           const tipoRamp = TINTS[tipo.tint];
@@ -58,7 +62,6 @@ export default function ClientiTablet() {
           const aperte = commesse.filter((c) => c.fase !== "pagata").length;
           const chiuse = commesse.filter((c) => c.fase === "pagata").length;
           const fatt = commesse.reduce((s, c) => s + c.valore, 0);
-
           return (
             <div key={cli.id} style={cardStyle({ padding: "16px 18px", cursor: "pointer" })}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
@@ -70,18 +73,14 @@ export default function ClientiTablet() {
                       background: tipoRamp[100], color: tipoRamp[600],
                       borderRadius: 999, fontSize: 9, fontWeight: 700,
                       letterSpacing: "0.3px", textTransform: "uppercase",
-                    }}>
-                      {tipo.label}
-                    </span>
+                    }}>{tipo.label}</span>
                     {commesse.length > 0 && (
                       <span style={{
                         padding: "1px 7px",
                         background: TT.green[100], color: TT.green[600],
                         borderRadius: 999, fontSize: 9, fontWeight: 700,
                         letterSpacing: "0.3px", textTransform: "uppercase",
-                      }}>
-                        Attivo
-                      </span>
+                      }}>Attivo</span>
                     )}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: TT.text1, letterSpacing: "-0.2px" }}>
@@ -93,18 +92,16 @@ export default function ClientiTablet() {
                   </div>
                 </div>
               </div>
-
               <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${TT.border}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: TT.text2 }}>
                   <Icon name="chat" size={11} color={TT.text3} strokeWidth={2} />
-                  <span>{cli.telefono}</span>
+                  <span>{cli.telefono || "-"}</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: TT.text2 }}>
                   <Icon name="documento" size={11} color={TT.text3} strokeWidth={2} />
-                  <span>{cli.email}</span>
+                  <span>{cli.email || "-"}</span>
                 </div>
               </div>
-
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.2fr", gap: 8 }}>
                 <Stat label="Aperte" value={String(aperte)} tint="teal" />
                 <Stat label="Chiuse" value={String(chiuse)} tint="slate" />
@@ -114,6 +111,17 @@ export default function ClientiTablet() {
           );
         })}
       </div>
+
+      <NuovoClienteModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => {
+          setModalOpen(false);
+          setToast(true);
+          setTimeout(() => setToast(false), 3000);
+        }}
+      />
+      <ToastSuccess open={toast} msg="Cliente aggiunto" />
     </div>
   );
 }
@@ -147,8 +155,7 @@ function Stat({ label, value, tint }: { label: string; value: string; tint: keyo
   return (
     <div style={{
       padding: "6px 8px",
-      background: ramp[50],
-      border: `1px solid ${ramp[100]}`,
+      background: ramp[50], border: `1px solid ${ramp[100]}`,
       borderRadius: 6, textAlign: "center",
     }}>
       <div style={{ fontSize: 9, fontWeight: 700, color: ramp[600], letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 1 }}>

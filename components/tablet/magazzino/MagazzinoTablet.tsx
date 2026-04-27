@@ -3,6 +3,8 @@ import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
 import { useMastroData } from "../store";
+import NuovoArticoloModal from "./NuovoArticoloModal";
+import { ToastSuccess } from "../FormModal";
 
 const TINTS = {
   blue: TT.blue, violet: TT.violet, amber: TT.amber,
@@ -19,6 +21,8 @@ const CAT_DEF: Record<string, { label: string; tint: keyof typeof TINTS }> = {
 
 export default function MagazzinoTablet() {
   const data = useMastroData();
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [toast, setToast] = React.useState(false);
   const articoli = data.getArticoli();
   const movimenti = data.getMovimenti();
   const sottoSoglia = articoli.filter((a) => a.scorta < a.scortaMin).length;
@@ -34,7 +38,7 @@ export default function MagazzinoTablet() {
             {articoli.length} articoli &middot; valore € {valore.toLocaleString("it-IT", { maximumFractionDigits: 0 })} &middot; {sottoSoglia} sotto soglia &middot; {esauriti} esauriti
           </div>
         </div>
-        <button style={{
+        <button onClick={() => setModalOpen(true)} style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "9px 14px",
           background: TT.amber[400], color: "#fff",
@@ -200,6 +204,17 @@ export default function MagazzinoTablet() {
           </div>
         </div>
       </div>
+
+      <NuovoArticoloModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => {
+          setModalOpen(false);
+          setToast(true);
+          setTimeout(() => setToast(false), 3000);
+        }}
+      />
+      <ToastSuccess open={toast} msg="Articolo aggiunto al magazzino" />
     </div>
   );
 }
