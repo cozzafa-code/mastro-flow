@@ -371,6 +371,248 @@ export default function CMDetailPanel() {
   if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw) && !prevWorkspace) {
     const cV70 = selectedCM as any;
 
+    // ═══ v22 · PAGINA PREVENTIVO INVIATO ═══
+    // Quando preventivo gia' inviato (e non ancora confermato),
+    // sostituisci Centro Comando v70 con la pagina dedicata.
+    if (cV70.preventivoInviato && faseIndex(cV70.fase) < faseIndex("conferma")) {
+      const ris = rispostaCliente;
+      const tipoRis = ris?.risposta as ("accettato" | "modifiche" | "chiamare" | undefined);
+
+      // Banner stato in base alla risposta cliente
+      const stato = tipoRis === "accettato" ? {
+        bg: "linear-gradient(135deg, #DDF5E6 0%, #C8EBD3 100%)",
+        border: "#28A268", txt: "#0E5E33", icon: "✓",
+        title: "CLIENTE HA ACCETTATO",
+        sub: "Pronto per la conferma d'ordine",
+      } : tipoRis === "modifiche" ? {
+        bg: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+        border: "#F59E0B", txt: "#78350F", icon: "✏",
+        title: "CLIENTE CHIEDE MODIFICHE",
+        sub: "Aggiorna il preventivo e rimanda",
+      } : tipoRis === "chiamare" ? {
+        bg: "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
+        border: "#3B82F6", txt: "#1E3A8A", icon: "📞",
+        title: "CLIENTE VUOLE ESSERE CONTATTATO",
+        sub: "Chiamalo o scrivigli su WhatsApp",
+      } : {
+        bg: "linear-gradient(135deg, #F4F4F5 0%, #E4E4E7 100%)",
+        border: "#A1A1AA", txt: "#3F3F46", icon: "⏳",
+        title: "IN ATTESA DI RISPOSTA",
+        sub: ris?.visualizzato ? "Cliente ha visualizzato il preventivo" : "Cliente non ha ancora aperto il link",
+      };
+
+      const dataInvio = cV70.preventivoInviatoAt ? new Date(cV70.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+
+      // Helper telefono pulito per WhatsApp
+      const telPulito = (cV70.telefono || "").replace(/[^0-9+]/g, "");
+      const numeroWA = telPulito.startsWith("+") ? telPulito.slice(1) : (telPulito.startsWith("39") ? telPulito : "39" + telPulito);
+
+      const totale = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70) : (cV70.totalePreventivo || 0)) || 0;
+      const fmtEur = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      return (
+        <div style={{ minHeight: "100vh", background: "#F7FAFA", padding: 16, paddingBottom: 100, fontFamily: "inherit" }}>
+          {/* Header */}
+          <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", marginBottom: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: "#28A0A0", fontWeight: 700, letterSpacing: 1.2 }}>📤 PREVENTIVO INVIATO</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#0D1F1F", marginTop: 2, letterSpacing: "-0.3px" }}>{cV70.code}</div>
+                <div style={{ fontSize: 13, color: "#0D1F1F", marginTop: 2, fontWeight: 600 }}>{(cV70.cliente || "") + (cV70.cognome ? " " + cV70.cognome : "")}</div>
+                {cV70.indirizzo && <div style={{ fontSize: 11, color: "#5A6B6B", marginTop: 2 }}>{cV70.indirizzo}</div>}
+              </div>
+              <button onClick={() => setSelectedCM(null)} style={{
+                width: 36, height: 36, borderRadius: 18, border: "none",
+                background: "#F4F4F5", color: "#71717A", fontSize: 18, fontWeight: 700, cursor: "pointer", flexShrink: 0,
+              }}>×</button>
+            </div>
+            <div style={{ fontSize: 11, color: "#71717A", marginTop: 8, paddingTop: 8, borderTop: "1px solid #E4E4E7" }}>
+              Inviato il {dataInvio} · Totale {fmtEur(totale)}
+            </div>
+          </div>
+
+          {/* Banner stato grosso */}
+          <div style={{
+            background: stato.bg, border: "2px solid " + stato.border,
+            borderRadius: 16, padding: "16px 18px", marginBottom: 12,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+          }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ fontSize: 32, lineHeight: 1, flexShrink: 0 }}>{stato.icon}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 900, color: stato.txt, letterSpacing: 0.3 }}>{stato.title}</div>
+                <div style={{ fontSize: 12, color: stato.txt, opacity: 0.8, marginTop: 3 }}>{stato.sub}</div>
+                {ris?.risposta_at && (
+                  <div style={{ fontSize: 10, color: stato.txt, opacity: 0.65, marginTop: 4 }}>
+                    Risposta del {new Date(ris.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Nota cliente se presente */}
+            {ris?.risposta_nota && (
+              <div style={{
+                background: "rgba(255,255,255,0.85)",
+                border: "1px solid rgba(0,0,0,0.06)",
+                borderRadius: 10, padding: "10px 12px", marginTop: 12,
+                fontSize: 12, color: "#0D1F1F",
+                whiteSpace: "pre-wrap" as const, lineHeight: 1.5,
+                maxHeight: 240, overflowY: "auto" as const,
+              }}>
+                {ris.risposta_nota}
+              </div>
+            )}
+          </div>
+
+          {/* Bottoni azione (cambiano in base allo stato) */}
+          <div style={{ background: "#fff", borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
+            <div style={{ fontSize: 11, color: "#71717A", fontWeight: 700, letterSpacing: 1, marginBottom: 10, paddingLeft: 4 }}>AZIONI</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+
+              {/* Azione principale (varia in base a stato) */}
+              {tipoRis === "accettato" && (
+                <button onClick={() => {
+                  setFaseTo(cV70.id, "conferma");
+                  setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, fase: "conferma" } : cm));
+                }} style={{
+                  width: "100%", padding: 16, borderRadius: 12, border: "none",
+                  background: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", color: "#fff",
+                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "0 4px 12px rgba(40,162,104,0.35)",
+                }}>
+                  ✓ CREA CONFERMA D'ORDINE
+                </button>
+              )}
+
+              {tipoRis === "modifiche" && (
+                <button onClick={() => {
+                  // Riapre il Centro Comando per modificare il preventivo
+                  setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, preventivoInviato: false } : cm));
+                  setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p);
+                }} style={{
+                  width: "100%", padding: 16, borderRadius: 12, border: "none",
+                  background: "#F59E0B", color: "#fff",
+                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "0 4px 12px rgba(245,158,11,0.35)",
+                }}>
+                  ✏ AGGIORNA PREVENTIVO
+                </button>
+              )}
+
+              {tipoRis === "chiamare" && telPulito && (
+                <button onClick={() => window.open("https://wa.me/" + numeroWA, "_blank")} style={{
+                  width: "100%", padding: 16, borderRadius: 12, border: "none",
+                  background: "#3B82F6", color: "#fff",
+                  fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "0 4px 12px rgba(59,130,246,0.35)",
+                }}>
+                  💬 CONTATTA CLIENTE SU WHATSAPP
+                </button>
+              )}
+
+              {!tipoRis && (
+                <button onClick={() => {
+                  // Riapre il Centro Comando per rifare/aggiornare il preventivo
+                  setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, preventivoInviato: false } : cm));
+                  setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p);
+                }} style={{
+                  width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #28A0A0",
+                  background: "#fff", color: "#0F5E55",
+                  fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                }}>
+                  🔄 RIAPRI / AGGIORNA PREVENTIVO
+                </button>
+              )}
+
+              {/* Azioni secondarie (sempre disponibili) */}
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                {telPulito && tipoRis !== "chiamare" && (
+                  <button onClick={() => window.open("https://wa.me/" + numeroWA, "_blank")} style={{
+                    flex: 1, padding: 12, borderRadius: 10, border: "1px solid #E4E4E7",
+                    background: "#fff", color: "#0D1F1F",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  }}>
+                    💬 WhatsApp
+                  </button>
+                )}
+                {cV70.telefono && (
+                  <button onClick={() => window.open("tel:" + cV70.telefono, "_self")} style={{
+                    flex: 1, padding: 12, borderRadius: 10, border: "1px solid #E4E4E7",
+                    background: "#fff", color: "#0D1F1F",
+                    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  }}>
+                    📞 Chiama
+                  </button>
+                )}
+              </div>
+
+              {/* Vedi pagina cliente */}
+              {ris?.token && (
+                <button onClick={() => window.open("/p/" + ris.token, "_blank")} style={{
+                  width: "100%", padding: 12, borderRadius: 10, border: "1px solid #E4E4E7",
+                  background: "#fff", color: "#71717A",
+                  fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                  marginTop: 4,
+                }}>
+                  🔗 Vedi pagina cliente
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Statistiche / Storico */}
+          <div style={{ background: "#fff", borderRadius: 16, padding: 14, marginBottom: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
+            <div style={{ fontSize: 11, color: "#71717A", fontWeight: 700, letterSpacing: 1, marginBottom: 10, paddingLeft: 4 }}>STORICO</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 4, background: "#28A0A0", flexShrink: 0 }} />
+                <div style={{ flex: 1, fontSize: 12, color: "#0D1F1F" }}>
+                  <span style={{ fontWeight: 700 }}>Preventivo inviato</span>
+                  <div style={{ fontSize: 10, color: "#71717A", marginTop: 1 }}>{dataInvio}</div>
+                </div>
+              </div>
+              {ris?.visualizzato_at && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 4, background: "#3B82F6", flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontSize: 12, color: "#0D1F1F" }}>
+                    <span style={{ fontWeight: 700 }}>Cliente ha aperto il link</span>
+                    {ris.letture_count && ris.letture_count > 1 ? <span style={{ color: "#71717A" }}> ({ris.letture_count} volte)</span> : null}
+                    <div style={{ fontSize: 10, color: "#71717A", marginTop: 1 }}>
+                      {new Date(ris.visualizzato_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {ris?.risposta_at && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: 4, flexShrink: 0,
+                    background: tipoRis === "accettato" ? "#28A268" : tipoRis === "modifiche" ? "#F59E0B" : "#3B82F6",
+                  }} />
+                  <div style={{ flex: 1, fontSize: 12, color: "#0D1F1F" }}>
+                    <span style={{ fontWeight: 700 }}>
+                      {tipoRis === "accettato" ? "Cliente ha accettato" : tipoRis === "modifiche" ? "Cliente ha chiesto modifiche" : "Cliente vuole essere contattato"}
+                    </span>
+                    <div style={{ fontSize: 10, color: "#71717A", marginTop: 1 }}>
+                      {new Date(ris.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer info */}
+          <div style={{ textAlign: "center", fontSize: 10, color: "#A1A1AA", marginTop: 8 }}>
+            Commessa {cV70.code} · Fase: {cV70.fase}
+          </div>
+        </div>
+      );
+    }
+    // ═══ Fine v22 PreventivoInviatoView ═══
+
+
     // ═══ Banner "Cliente ha accettato — Manda conferma" ═══
     // v21: Card "Modifiche richieste" - mostra quando cliente ha chiesto modifiche
     const _modificheCard = (rispostaCliente?.risposta === "modifiche") ? (
