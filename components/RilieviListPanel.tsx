@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════
 import React from "react";
 import { useMastro } from "./MastroContext";
-import { FM, ICO, Ico, I } from "./mastro-constants";
+import { FM, ICO, Ico, I , markPreventivoInviato } from "./mastro-constants";
 
 
 // ─── Lumina Design Tokens ────────────────────────────────
@@ -61,6 +61,8 @@ export default function RilieviListPanel() {
     // Business logic
     generaPreventivoPDF, generaPreventivoCondivisibile, creaFattura, creaOrdineFornitore,
     apriInboxDocumento,
+    // v14 - aggiunti per fix bottone INVIA con navigator.share
+    aziendaInfo, sistemiDB, vetriDB, setShowSendModal,
   } = useMastro();
   const [showGuidaFiscale, setShowGuidaFiscale] = React.useState(false);
   const [showRilieviForm, setShowRilieviForm] = React.useState(false);
@@ -1402,14 +1404,135 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Anteprima
                                 </button>
                               </div>
-                              <button onClick={async () => {
-                                // 1. Genera PDF scaricabile
-                                generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
-                                // 2. Genera pagina con firma elettronica + invia WhatsApp
-                                await generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] });
-                                setFirmaStep(1);
+                              <button disabled={!!(typeof window !== "undefined" && (window as any).__mastroInviaInCorso)} onClick={async () => {
+                                // v14 - FLUSSO UNIFICATO con navigator.share
+                                if (typeof window !== "undefined" && (window as any).__mastroInviaInCorso) return;
+                                if (typeof window !== "undefined") (window as any).__mastroInviaInCorso = true;
+                                try {
+                                  // 1. CREA LINK PUBBLICO (retry 3x, 15s ciascuno)
+                                  let linkPubblico = "";
+                                  let linkError: any = null;
+                                  const calcolaTotaleCommessa = (cm: any) => {
+                                    if (!cm) return 0;
+                                    const vani = (typeof getVaniAttivi === "function" ? getVaniAttivi(cm) : (cm.vani || [])) || [];
+                                    return vani.reduce((s: number, v: any) => s + (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, cm) : 0) * (v.pezzi || 1), 0);
+                                  };
+                                  const totale = (c.totalePreventivo || calcolaTotaleCommessa(c)) || 0;
+                                  const snapshot = {
+                                    cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
+                                    totale,
+                                    vani: ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []).map((v: any, i: number) => ({
+                                      nome: v.nome || v.tipo || "Vano " + (i+1),
+                                      tipo: v.tipo,
+                                      misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
+                                      prezzo: (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0,
+                                    })),
+                                    azienda: { ragione: aziendaInfo?.ragione || aziendaInfo?.nome, telefono: aziendaInfo?.telefono },
+                                  };
+
+                                  for (let attempt = 1; attempt <= 3 && !linkPubblico; attempt++) {
+                                    try {
+                                      const ctrl = new AbortController();
+                                      const t = setTimeout(() => ctrl.abort(), 15000);
+                                      const r = await fetch("/api/preventivo-link", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: aziendaInfo?.id }),
+                                        signal: ctrl.signal,
+                                      });
+                                      clearTimeout(t);
+                                      if (r.ok) {
+                                        const d = await r.json();
+                                        linkPubblico = window.location.origin + d.url;
+                                      } else {
+                                        linkError = "HTTP " + r.status;
+                                      }
+                                    } catch(e: any) {
+                                      linkError = e?.message || e;
+                                      if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
+                                    }
+                                  }
+
+                                  if (!linkPubblico) {
+                                    alert("Errore creazione link cliente: " + linkError + "\n\nRiprova tra qualche secondo.");
+                                    return;
+                                  }
+
+                                  // 2. GENERA PDF COME BLOB
+                                  let pdfBlob: Blob | null = null;
+                                  let pdfFilename = "preventivo_" + (c.code || "X") + ".pdf";
+                                  try {
+                                    const result = await Promise.race([
+                                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }, { returnBlob: true }),
+                                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (25s)")), 25000)),
+                                    ]);
+                                    if (result && typeof result === "object" && "blob" in result) {
+                                      pdfBlob = (result as any).blob;
+                                      pdfFilename = (result as any).filename;
+                                    }
+                                  } catch(e: any) {
+                                    console.error("[PDF fail]", e);
+                                  }
+
+                                  // 3. MARCA PREVENTIVO INVIATO (memoria + DB)
+                                  try {
+                                    const nowIso = new Date().toISOString();
+                                    const today = nowIso.split("T")[0];
+                                    setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" } : cm));
+                                    setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" }) : prev);
+                                    if (typeof markPreventivoInviato === "function") {
+                                      markPreventivoInviato(c.id, totale, "preventivo")
+                                        .then((ok: boolean) => { if (!ok) console.warn("[DB] markPreventivoInviato fail"); })
+                                        .catch((err: any) => console.warn("[DB] markPreventivoInviato error:", err));
+                                    }
+                                  } catch(e) { console.error("[setCantieri fail]", e); }
+
+                                  // 4. INVIO UNIFICATO con navigator.share
+                                  const clienteNome = (c.cliente || "Cliente").split(" ")[0];
+                                  const messaggio = "Ciao " + clienteNome + ", ecco il preventivo " + (c.code || "") + ".\n\nClicca qui per vederlo, accettarlo o richiedere modifiche:\n" + linkPubblico + "\n\nGrazie,\n" + (aziendaInfo?.ragione || aziendaInfo?.nome || "");
+
+                                  let shared = false;
+                                  if (typeof navigator !== "undefined" && (navigator as any).share && pdfBlob) {
+                                    try {
+                                      const file = new File([pdfBlob], pdfFilename, { type: "application/pdf" });
+                                      const canShareFile = (navigator as any).canShare ? (navigator as any).canShare({ files: [file] }) : true;
+                                      if (canShareFile) {
+                                        await (navigator as any).share({
+                                          files: [file],
+                                          text: messaggio,
+                                          title: "Preventivo " + (c.code || ""),
+                                        });
+                                        shared = true;
+                                        setFirmaStep(1);
+                                      }
+                                    } catch(e: any) {
+                                      if (e && e.name === "AbortError") {
+                                        shared = true; // utente ha annullato share - non aprire fallback
+                                      } else {
+                                        console.warn("[share fail, fallback to modal]", e);
+                                      }
+                                    }
+                                  }
+
+                                  // 5. FALLBACK: modale WhatsApp/Email/SMS
+                                  if (!shared && typeof setShowSendModal === "function") {
+                                    const nome = c.cliente || "";
+                                    const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
+                                    setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
+                                    setFirmaStep(1);
+                                  } else if (!shared) {
+                                    // Ultima spiaggia: copia link clipboard
+                                    try {
+                                      await navigator.clipboard.writeText(linkPubblico);
+                                      alert("Link copiato negli appunti:\n" + linkPubblico + "\n\nIncollalo in WhatsApp.");
+                                    } catch {}
+                                    setFirmaStep(1);
+                                  }
+                                } finally {
+                                  if (typeof window !== "undefined") (window as any).__mastroInviaInCorso = false;
+                                }
                               }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#25d366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> GENERA PDF + INVIA CON FIRMA →
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> GENERA PDF + INVIA AL CLIENTE →
                               </button>
                               <div style={{ fontSize: 10, color: L.sub, textAlign: "center", marginTop: 4, lineHeight: 1.5 }}>
                                 Scarica il PDF e invia via WhatsApp il link per la firma elettronica
