@@ -62,7 +62,8 @@ export default function RilieviListPanel() {
     generaPreventivoPDF, generaPreventivoCondivisibile, creaFattura, creaOrdineFornitore,
     apriInboxDocumento,
     // v14 - aggiunti per fix bottone INVIA con navigator.share
-    aziendaInfo, sistemiDB, vetriDB, setShowSendModal,
+    // (setShowSendModal RIMOSSO in v15: confliggeva col setShowSendModal di MastroERP che ha tipo boolean diverso)
+    aziendaInfo, sistemiDB, vetriDB,
   } = useMastro();
   const [showGuidaFiscale, setShowGuidaFiscale] = React.useState(false);
   const [showRilieviForm, setShowRilieviForm] = React.useState(false);
@@ -1514,18 +1515,26 @@ ${msgsCm.length > 0 ? "<h2>Comunicazioni (" + msgsCm.length + " conversazioni)</
                                     }
                                   }
 
-                                  // 5. FALLBACK: modale WhatsApp/Email/SMS
-                                  if (!shared && typeof setShowSendModal === "function") {
-                                    const nome = c.cliente || "";
+                                  // 5. FALLBACK: clipboard + alert (no modale, evita conflitti context)
+                                  if (!shared) {
                                     const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                                    setShowSendModal({ link: linkPubblico, nome, tel, email: c.email || "", code: c.code || "" });
-                                    setFirmaStep(1);
-                                  } else if (!shared) {
-                                    // Ultima spiaggia: copia link clipboard
-                                    try {
-                                      await navigator.clipboard.writeText(linkPubblico);
-                                      alert("Link copiato negli appunti:\n" + linkPubblico + "\n\nIncollalo in WhatsApp.");
-                                    } catch {}
+                                    const numero = tel ? (tel.startsWith("+") ? tel.slice(1) : "39" + tel) : "";
+                                    const clienteNomeShort = (c.cliente || "Cliente").split(" ")[0];
+                                    const msgWA = "Ciao " + clienteNomeShort + ", ecco il preventivo " + (c.code || "") + ":\n" + linkPubblico;
+
+                                    if (numero) {
+                                      // Apre direttamente WhatsApp Web/App con messaggio precompilato
+                                      const wa = "https://wa.me/" + numero + "?text=" + encodeURIComponent(msgWA);
+                                      window.open(wa, "_blank");
+                                    } else {
+                                      // No telefono: copia link in clipboard
+                                      try {
+                                        await navigator.clipboard.writeText(linkPubblico);
+                                        alert("Link copiato negli appunti:\n" + linkPubblico + "\n\nIncollalo dove vuoi.");
+                                      } catch {
+                                        alert("Link preventivo:\n" + linkPubblico);
+                                      }
+                                    }
                                     setFirmaStep(1);
                                   }
                                 } finally {
