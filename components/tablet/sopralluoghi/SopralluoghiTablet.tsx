@@ -18,11 +18,22 @@ const TINTS = {
   green: TT.green, slate: TT.slate, red: TT.red,
 } as const;
 
+type Filtro = "tutti" | StatoSopralluogo;
+const FILTRI: { id: Filtro; label: string }[] = [
+  { id: "tutti", label: "Tutti" },
+  { id: "in_attesa", label: "In attesa" },
+  { id: "confermato", label: "Confermati" },
+  { id: "completato", label: "Completati" },
+];
+
 export default function SopralluoghiTablet() {
   const data = useMastroData();
   const all = data.getSopralluoghi();
+  const [filtro, setFiltro] = React.useState<Filtro>("tutti");
   const [modalOpen, setModalOpen] = React.useState(false);
   const [toast, setToast] = React.useState(false);
+
+  const filtered = filtro === "tutti" ? all : all.filter((s) => s.stato === filtro);
 
   return (
     <div>
@@ -54,8 +65,26 @@ export default function SopralluoghiTablet() {
         <KpiMini icon="check"        label="Completati"value={String(all.filter((s) => s.stato === "completato").length)} tint="green" />
       </div>
 
+      {/* FILTRI STATO */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {FILTRI.map((f) => {
+          const isActive = f.id === filtro;
+          const count = f.id === "tutti" ? all.length : all.filter((s) => s.stato === f.id).length;
+          const ramp = f.id === "tutti" ? null : TINTS[STATI[f.id as StatoSopralluogo].tint];
+          return (
+            <FilterPill key={f.id}
+              label={f.label}
+              count={count}
+              active={isActive}
+              onClick={() => setFiltro(f.id)}
+              ramp={ramp}
+            />
+          );
+        })}
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        {all.map((s) => {
+        {filtered.map((s) => {
           const cli = data.getCliente(s.clienteId);
           const pos = data.getOperatore(s.posatoreId);
           const stato = STATI[s.stato];
@@ -129,6 +158,15 @@ export default function SopralluoghiTablet() {
             </div>
           );
         })}
+        {filtered.length === 0 && (
+          <div style={{
+            gridColumn: "span 2",
+            padding: 30, textAlign: "center",
+            color: TT.text3, fontSize: 12,
+          }}>
+            Nessun sopralluogo nello stato selezionato.
+          </div>
+        )}
       </div>
 
       <NuovoSopralluogoModal
@@ -141,6 +179,30 @@ export default function SopralluoghiTablet() {
         }}
       />
       <ToastSuccess open={toast} msg="Sopralluogo pianificato" />
+    </div>
+  );
+}
+
+function FilterPill({ label, count, active, onClick, ramp }: { label: string; count: number; active: boolean; onClick: () => void; ramp: any }) {
+  return (
+    <div onClick={onClick} style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "6px 12px",
+      background: active ? (ramp ? ramp[400] : TT.text1) : TT.surface,
+      color: active ? "#fff" : TT.text2,
+      border: `1px solid ${active ? "transparent" : TT.borderStrong}`,
+      borderRadius: 999,
+      fontSize: 12, fontWeight: 600,
+      cursor: "pointer", transition: "all 0.12s",
+    }}>
+      {label}
+      <span style={{
+        background: active ? "rgba(255,255,255,0.28)" : (ramp ? ramp[100] : TT.bgSoft),
+        color: active ? "#fff" : (ramp ? ramp[600] : TT.text3),
+        fontSize: 10, fontWeight: 700,
+        padding: "1px 7px", borderRadius: 999,
+        fontVariantNumeric: "tabular-nums",
+      }}>{count}</span>
     </div>
   );
 }

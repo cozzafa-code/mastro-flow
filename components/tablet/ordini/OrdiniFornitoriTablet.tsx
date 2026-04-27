@@ -17,9 +17,28 @@ const TINTS = {
   amber: TT.amber, green: TT.green, red: TT.red, orange: TT.orange, teal: TT.teal,
 } as const;
 
+type Filtro = "tutti" | StatoOrdineFornitore | "ritardo";
+
+const FILTRI: { id: Filtro; label: string; tint?: keyof typeof TINTS }[] = [
+  { id: "tutti",       label: "Tutti" },
+  { id: "ritardo",     label: "In ritardo",  tint: "red"   },
+  { id: "inviato",     label: "Inviati",      tint: "blue"  },
+  { id: "confermato",  label: "Confermati",   tint: "violet"},
+  { id: "in_consegna", label: "In consegna",  tint: "amber" },
+  { id: "ricevuto",    label: "Ricevuti",     tint: "green" },
+];
+
 export default function OrdiniFornitoriTablet() {
   const data = useMastroData();
   const ordini = data.getOrdini();
+  const [filtro, setFiltro] = React.useState<Filtro>("tutti");
+
+  const filtered = React.useMemo(() => {
+    if (filtro === "tutti") return ordini;
+    if (filtro === "ritardo") return ordini.filter((o) => o.giorniRitardo > 0);
+    return ordini.filter((o) => o.stato === filtro);
+  }, [ordini, filtro]);
+
   const totAttesa = ordini.filter((o) => o.stato !== "ricevuto").reduce((s, o) => s + o.importo, 0);
   const ritardo = ordini.filter((o) => o.giorniRitardo > 0).length;
 
@@ -53,6 +72,26 @@ export default function OrdiniFornitoriTablet() {
         <KpiMini icon="bell"        label="In ritardo"      value={String(ritardo)} tint="red" />
       </div>
 
+      {/* FILTRI STATO */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {FILTRI.map((f) => {
+          const isActive = f.id === filtro;
+          const ramp = f.tint ? TINTS[f.tint] : null;
+          let count = 0;
+          if (f.id === "tutti") count = ordini.length;
+          else if (f.id === "ritardo") count = ritardo;
+          else count = ordini.filter((o) => o.stato === f.id).length;
+          return (
+            <FilterPill key={f.id}
+              label={f.label} count={count}
+              active={isActive}
+              onClick={() => setFiltro(f.id)}
+              ramp={ramp}
+            />
+          );
+        })}
+      </div>
+
       <div style={cardStyle({ padding: 0, overflow: "hidden" })}>
         <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 12 }}>
           <thead>
@@ -67,11 +106,11 @@ export default function OrdiniFornitoriTablet() {
             </tr>
           </thead>
           <tbody>
-            {ordini.map((o) => {
+            {filtered.map((o) => {
               const stato = STATI[o.stato];
               const ramp = TINTS[stato.tint];
               const fornitoreRamp = TINTS[o.fornitoreColor as keyof typeof TINTS] || TINTS.slate;
-              const ritardo = o.giorniRitardo > 0;
+              const r = o.giorniRitardo > 0;
               return (
                 <tr key={o.id} style={{ borderTop: `1px solid ${TT.border}`, cursor: "pointer" }}>
                   <Td>
@@ -106,9 +145,7 @@ export default function OrdiniFornitoriTablet() {
                       background: TT.bgSoft, color: TT.text2,
                       border: `1px solid ${TT.border}`, borderRadius: 6,
                       fontSize: 10, fontWeight: 600,
-                    }}>
-                      {o.categoria}
-                    </span>
+                    }}>{o.categoria}</span>
                   </Td>
                   <Td align="center">
                     <span style={{ color: TT.text2, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{o.pezzi}</span>
@@ -121,19 +158,15 @@ export default function OrdiniFornitoriTablet() {
                   <Td>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{
-                        fontSize: 11, color: ritardo ? TT.red[600] : TT.text2,
-                        fontWeight: ritardo ? 700 : 500,
-                      }}>
-                        {o.consegnaPrevista}
-                      </span>
-                      {ritardo && (
+                        fontSize: 11, color: r ? TT.red[600] : TT.text2,
+                        fontWeight: r ? 700 : 500,
+                      }}>{o.consegnaPrevista}</span>
+                      {r && (
                         <span style={{
                           padding: "1px 5px",
                           background: TT.red[100], color: TT.red[600],
                           borderRadius: 4, fontSize: 9, fontWeight: 800,
-                        }}>
-                          +{o.giorniRitardo}g
-                        </span>
+                        }}>+{o.giorniRitardo}g</span>
                       )}
                     </div>
                   </Td>
@@ -143,16 +176,43 @@ export default function OrdiniFornitoriTablet() {
                       background: ramp[100], color: ramp[600],
                       borderRadius: 12, fontSize: 10, fontWeight: 700,
                       letterSpacing: "0.2px", textTransform: "uppercase",
-                    }}>
-                      {stato.label}
-                    </span>
+                    }}>{stato.label}</span>
                   </Td>
                 </tr>
               );
             })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={7} style={{ padding: 30, textAlign: "center", color: TT.text3, fontSize: 12 }}>
+                Nessun ordine in questo stato.
+              </td></tr>
+            )}
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function FilterPill({ label, count, active, onClick, ramp }: { label: string; count: number; active: boolean; onClick: () => void; ramp: any }) {
+  return (
+    <div onClick={onClick} style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "6px 12px",
+      background: active ? (ramp ? ramp[400] : TT.text1) : TT.surface,
+      color: active ? "#fff" : TT.text2,
+      border: `1px solid ${active ? "transparent" : TT.borderStrong}`,
+      borderRadius: 999,
+      fontSize: 12, fontWeight: 600,
+      cursor: "pointer", transition: "all 0.12s",
+    }}>
+      {label}
+      <span style={{
+        background: active ? "rgba(255,255,255,0.28)" : (ramp ? ramp[100] : TT.bgSoft),
+        color: active ? "#fff" : (ramp ? ramp[600] : TT.text3),
+        fontSize: 10, fontWeight: 700,
+        padding: "1px 7px", borderRadius: 999,
+        fontVariantNumeric: "tabular-nums",
+      }}>{count}</span>
     </div>
   );
 }
@@ -187,9 +247,7 @@ function Th({ children, align }: { children?: React.ReactNode; align?: "left"|"c
       padding: "10px 14px", textAlign: align || "left",
       fontSize: 10, fontWeight: 700, color: TT.text3,
       letterSpacing: "0.6px", textTransform: "uppercase",
-    }}>
-      {children}
-    </th>
+    }}>{children}</th>
   );
 }
 
