@@ -2,40 +2,68 @@
 import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
-import { useMastroData, TipoBonus, StatoPraticaFiscale, EsitoEnea } from "../store";
+import { useDashboard } from "../dashboard-context";
+import { useMastroData, TipoBonus, StatoEnea } from "../store";
 
 const TINTS = {
   green: TT.green, blue: TT.blue, amber: TT.amber,
-  violet: TT.violet, teal: TT.teal, red: TT.red, slate: TT.slate,
+  violet: TT.violet, red: TT.red, pink: TT.pink,
+  teal: TT.teal, slate: TT.slate, orange: TT.orange,
 } as const;
 
-const TIPO_LABEL: Record<TipoBonus, { label: string; tint: keyof typeof TINTS }> = {
-  ecobonus_65:    { label: "Ecobonus 65%",   tint: "green"  },
-  ecobonus_50:    { label: "Ecobonus 50%",   tint: "blue"   },
-  bonus_casa_50:  { label: "Bonus Casa 50%", tint: "violet" },
-  iva_10:         { label: "IVA 10%",        tint: "amber"  },
-  iva_4:          { label: "IVA 4%",         tint: "teal"   },
+const BONUS_DEF: Record<TipoBonus, { label: string; perc: string; tint: keyof typeof TINTS }> = {
+  bonus_casa:     { label: "Bonus Casa",     perc: "50%", tint: "blue"   },
+  ecobonus_50:    { label: "Ecobonus",        perc: "50%", tint: "green"  },
+  ecobonus_65:    { label: "Ecobonus",        perc: "65%", tint: "teal"   },
+  bonus_mobili:   { label: "Bonus Mobili",    perc: "50%", tint: "amber"  },
+  superbonus_90:  { label: "Superbonus",      perc: "90%", tint: "violet" },
 };
 
-const STATO_DEF: Record<StatoPraticaFiscale, { label: string; tint: keyof typeof TINTS }> = {
-  aperta:         { label: "Aperta",         tint: "blue"   },
-  in_lavorazione: { label: "In lavorazione", tint: "amber"  },
-  completata:     { label: "Completata",     tint: "green"  },
-  richiede_doc:   { label: "Richiede doc.",  tint: "red"    },
+const ENEA_DEF: Record<StatoEnea, { label: string; tint: keyof typeof TINTS }> = {
+  da_inviare:  { label: "Da inviare",  tint: "red"   },
+  inviato:     { label: "Inviato",     tint: "blue"  },
+  confermato:  { label: "Confermato",  tint: "green" },
 };
 
-const ENEA_DEF: Record<EsitoEnea, { label: string; tint: keyof typeof TINTS }> = {
-  inviata:        { label: "Inviata ENEA",  tint: "green" },
-  da_inviare:     { label: "Da inviare",    tint: "amber" },
-  non_richiesta:  { label: "Non richiesta", tint: "slate" },
-};
+type FiltroBonus = "tutti" | TipoBonus;
+type FiltroEnea = "tutti" | StatoEnea;
+
+const FILTRI_BONUS: { id: FiltroBonus; label: string }[] = [
+  { id: "tutti",          label: "Tutti i bonus" },
+  { id: "bonus_casa",     label: "Bonus Casa 50%" },
+  { id: "ecobonus_50",    label: "Ecobonus 50%" },
+  { id: "ecobonus_65",    label: "Ecobonus 65%" },
+  { id: "bonus_mobili",   label: "Bonus Mobili 50%" },
+  { id: "superbonus_90",  label: "Superbonus 90%" },
+];
+
+const FILTRI_ENEA: { id: FiltroEnea; label: string }[] = [
+  { id: "tutti",      label: "ENEA tutti" },
+  { id: "da_inviare", label: "Da inviare" },
+  { id: "inviato",    label: "Inviato" },
+  { id: "confermato", label: "Confermato" },
+];
 
 export default function FiscaleTablet() {
   const data = useMastroData();
-  const pratiche = data.getPratiche();
-  const totDetraibile = pratiche.reduce((s, p) => s + p.importoDetraibile, 0);
-  const eneaDaInviare = pratiche.filter((p) => p.enea === "da_inviare").length;
-  const docMancanti = pratiche.filter((p) => p.stato === "richiede_doc").length;
+  const { openCommessa } = useDashboard();
+  const [filtroBonus, setFiltroBonus] = React.useState<FiltroBonus>("tutti");
+  const [filtroEnea, setFiltroEnea] = React.useState<FiltroEnea>("tutti");
+
+  const all = data.getPratiche();
+
+  const filtered = React.useMemo(() => {
+    return all.filter((p) => {
+      if (filtroBonus !== "tutti" && p.tipo !== filtroBonus) return false;
+      if (filtroEnea !== "tutti" && p.enea !== filtroEnea) return false;
+      return true;
+    });
+  }, [all, filtroBonus, filtroEnea]);
+
+  const totDetr = all.reduce((s, p) => s + p.importoDetraibile, 0);
+  const totDetrFiltrato = filtered.reduce((s, p) => s + p.importoDetraibile, 0);
+  const eneaDaInviare = all.filter((p) => p.enea === "da_inviare").length;
+  const camRichiesto = all.filter((p) => p.cam).length;
 
   return (
     <div>
@@ -43,17 +71,17 @@ export default function FiscaleTablet() {
         <div>
           <div style={{ fontSize: 20, fontWeight: 800, color: TT.text1, letterSpacing: "-0.5px" }}>Fiscale</div>
           <div style={{ fontSize: 12, color: TT.text3, marginTop: 2 }}>
-            {pratiche.length} pratiche &middot; € {totDetraibile.toLocaleString("it-IT")} detraibili &middot; {eneaDaInviare} ENEA da inviare
+            {all.length} pratiche &middot; € {totDetr.toLocaleString("it-IT")} detraibili totali &middot; {eneaDaInviare} ENEA da inviare
           </div>
         </div>
         <button style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "9px 14px",
-          background: TT.green[400], color: "#fff",
+          background: TT.amber[400], color: "#fff",
           border: "none", borderRadius: 10,
           fontSize: 13, fontWeight: 700,
           cursor: "pointer", fontFamily: TT.fontFamily,
-          boxShadow: `0 2px 8px ${TT.green[300]}`,
+          boxShadow: `0 2px 8px ${TT.amber[300]}`,
         }}>
           <Icon name="plus" size={13} color="#fff" strokeWidth={2.4} />
           Nuova pratica
@@ -61,146 +89,252 @@ export default function FiscaleTablet() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 14 }}>
-        <KpiMini icon="fiscale"  label="Pratiche aperte"   value={String(pratiche.length)} tint="blue" />
-        <KpiMini icon="check"    label="Tot detraibile"     value={`€ ${(totDetraibile/1000).toFixed(1).replace(".",",")}k`} tint="green" />
-        <KpiMini icon="bell"     label="ENEA da inviare"    value={String(eneaDaInviare)} tint="amber" />
-        <KpiMini icon="x"        label="Doc. mancanti"      value={String(docMancanti)} tint="red" />
+        <KpiMini icon="fiscale"     label="Pratiche totali" value={String(all.length)} tint="amber" />
+        <KpiMini icon="contabilita" label="Detraibile" value={`€ ${(totDetr/1000).toFixed(1).replace(".", ",")}k`} tint="green" />
+        <KpiMini icon="bell"        label="ENEA da inviare" value={String(eneaDaInviare)} tint={eneaDaInviare > 0 ? "red" : "green"} />
+        <KpiMini icon="check"       label="CAM richiesto" value={String(camRichiesto)} tint="violet" />
       </div>
 
-      <div style={cardStyle({ padding: "12px 16px", marginBottom: 14, background: TT.blue[50], borderColor: TT.blue[100] })}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: TT.blue[400],
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0,
-          }}>
-            <Icon name="ai" size={18} color="#fff" strokeWidth={2.2} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: TT.blue[600], marginBottom: 2 }}>
-              Decisore fiscale automatico attivo
-            </div>
-            <div style={{ fontSize: 11, color: TT.text2, lineHeight: 1.5 }}>
-              Per ogni nuova pratica l'AI determina automaticamente IVA, detrazione applicabile e documenti necessari. Riferimenti: DPR 633/72, DPR 917/86 art.16-bis, L.296/2006, DL 34/2020.
-            </div>
-          </div>
+      {/* FILTRI TIPO BONUS */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: TT.text3, letterSpacing: "0.4px", textTransform: "uppercase", marginBottom: 6 }}>
+          Tipo agevolazione
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {FILTRI_BONUS.map((f) => {
+            const isActive = f.id === filtroBonus;
+            const ramp = f.id !== "tutti" ? TINTS[BONUS_DEF[f.id as TipoBonus].tint] : null;
+            const count = f.id === "tutti" ? all.length : all.filter((p) => p.tipo === f.id).length;
+            return (
+              <FilterPill key={f.id}
+                label={f.label} count={count}
+                active={isActive}
+                onClick={() => setFiltroBonus(f.id)}
+                ramp={ramp}
+              />
+            );
+          })}
         </div>
       </div>
 
-      <div style={cardStyle({ padding: 0, overflow: "hidden" })}>
-        <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, fontSize: 12 }}>
-          <thead>
-            <tr style={{ background: TT.bgSoft }}>
-              <Th>Pratica / Cliente</Th>
-              <Th>Tipologia bonus</Th>
-              <Th align="center">IVA</Th>
-              <Th align="center">CAM</Th>
-              <Th align="right">Importo lordo</Th>
-              <Th align="right">Detraibile</Th>
-              <Th>ENEA</Th>
-              <Th>Stato</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {pratiche.map((p) => {
-              const c = data.getCommessa(p.commessaId);
-              const cli = c ? data.getCliente(c.clienteId) : null;
-              const tipo = TIPO_LABEL[p.tipo];
-              const tipoRamp = TINTS[tipo.tint];
-              const stato = STATO_DEF[p.stato];
-              const statoRamp = TINTS[stato.tint];
-              const enea = ENEA_DEF[p.enea];
-              const eneaRamp = TINTS[enea.tint];
-              return (
-                <tr key={p.id} style={{ borderTop: `1px solid ${TT.border}`, cursor: "pointer" }}>
-                  <Td>
-                    <div>
-                      <div style={{ fontFamily: "monospace", fontSize: 10, color: TT.text3, fontWeight: 700, marginBottom: 2 }}>
-                        {p.numero} &middot; {c?.numero}
-                      </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: TT.text1, letterSpacing: "-0.1px" }}>
-                        {cli?.nome || "?"}
-                      </div>
-                      <div style={{ fontSize: 10, color: TT.text3, marginTop: 1 }}>
-                        Zona climatica: {p.zonaClimatica}
-                      </div>
-                    </div>
-                  </Td>
-                  <Td>
-                    <div>
-                      <span style={{
-                        display: "inline-block",
-                        padding: "2px 8px",
-                        background: tipoRamp[400], color: "#fff",
-                        borderRadius: 6, fontSize: 10, fontWeight: 800,
-                        marginBottom: 4,
-                      }}>
-                        {tipo.label}
-                      </span>
-                      <div style={{ fontSize: 9, fontFamily: "monospace", color: TT.text3, fontWeight: 600 }}>
-                        {p.norma}
-                      </div>
-                    </div>
-                  </Td>
-                  <Td align="center">
-                    <span style={{
-                      display: "inline-flex",
-                      padding: "3px 9px",
-                      background: TT.bgSoft, color: TT.text1,
-                      borderRadius: 6, fontSize: 11, fontWeight: 800,
-                      fontVariantNumeric: "tabular-nums",
-                    }}>
-                      {p.iva}%
-                    </span>
-                  </Td>
-                  <Td align="center">
-                    {p.cam ? (
-                      <Icon name="check" size={16} color={TT.green[600]} strokeWidth={3} />
-                    ) : (
-                      <Icon name="x" size={16} color={TT.slate[400]} strokeWidth={3} />
-                    )}
-                  </Td>
-                  <Td align="right">
-                    <div style={{ fontWeight: 700, color: TT.text2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-                      € {p.importoLordo.toLocaleString("it-IT")}
-                    </div>
-                  </Td>
-                  <Td align="right">
-                    <div style={{
-                      fontWeight: 800,
-                      color: p.importoDetraibile > 0 ? TT.green[600] : TT.text3,
-                      fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap",
-                    }}>
-                      {p.importoDetraibile > 0 ? `€ ${p.importoDetraibile.toLocaleString("it-IT")}` : "—"}
-                    </div>
-                  </Td>
-                  <Td>
-                    <span style={{
-                      padding: "2px 8px",
-                      background: eneaRamp[100], color: eneaRamp[600],
-                      borderRadius: 999, fontSize: 9, fontWeight: 700,
-                      letterSpacing: "0.3px", textTransform: "uppercase",
-                    }}>
-                      {enea.label}
-                    </span>
-                  </Td>
-                  <Td>
-                    <span style={{
-                      padding: "2px 8px",
-                      background: statoRamp[100], color: statoRamp[600],
-                      borderRadius: 12, fontSize: 10, fontWeight: 700,
-                      letterSpacing: "0.2px", textTransform: "uppercase",
-                    }}>
-                      {stato.label}
-                    </span>
-                  </Td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* FILTRI ENEA */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: TT.text3, letterSpacing: "0.4px", textTransform: "uppercase", marginBottom: 6 }}>
+          Stato ENEA
+        </div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {FILTRI_ENEA.map((f) => {
+            const isActive = f.id === filtroEnea;
+            const ramp = f.id !== "tutti" ? TINTS[ENEA_DEF[f.id as StatoEnea].tint] : null;
+            const count = f.id === "tutti" ? all.length : all.filter((p) => p.enea === f.id).length;
+            return (
+              <FilterPill key={f.id}
+                label={f.label} count={count}
+                active={isActive}
+                onClick={() => setFiltroEnea(f.id)}
+                ramp={ramp}
+              />
+            );
+          })}
+        </div>
       </div>
+
+      {/* RISULTATI BANNER */}
+      {(filtroBonus !== "tutti" || filtroEnea !== "tutti") && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "8px 14px",
+          background: TT.teal[50],
+          border: `1px solid ${TT.teal[100]}`,
+          borderRadius: 9,
+          marginBottom: 10,
+          fontSize: 11,
+        }}>
+          <div style={{ color: TT.text2 }}>
+            <strong style={{ color: TT.teal[700], fontVariantNumeric: "tabular-nums" }}>
+              {filtered.length}
+            </strong> pratich{filtered.length === 1 ? "a" : "e"} con i filtri attivi
+          </div>
+          <div style={{ color: TT.text2, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+            Detraibile filtrato: <span style={{ color: TT.teal[700] }}>€ {totDetrFiltrato.toLocaleString("it-IT")}</span>
+          </div>
+        </div>
+      )}
+
+      {/* PRATICHE GRID */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        {filtered.map((p) => {
+          const cli = data.getCliente(p.clienteId);
+          const com = data.getCommessa(p.commessaId);
+          const bonus = BONUS_DEF[p.tipo];
+          const enea = ENEA_DEF[p.enea];
+          const bonusRamp = TINTS[bonus.tint];
+          const eneaRamp = TINTS[enea.tint];
+          if (!cli) return null;
+          return (
+            <div key={p.id}
+              onClick={() => openCommessa(p.commessaId)}
+              style={cardStyle({ padding: 0, cursor: "pointer", overflow: "hidden" })}>
+
+              {/* Header colorato */}
+              <div style={{
+                padding: "12px 16px",
+                background: `linear-gradient(135deg, ${bonusRamp[50]}, ${TT.bg})`,
+                borderBottom: `1px solid ${TT.border}`,
+                display: "flex", alignItems: "center", gap: 12,
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 11,
+                  background: `linear-gradient(135deg, ${bonusRamp[300]}, ${bonusRamp[500]})`,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                  boxShadow: `0 3px 10px ${bonusRamp[200]}`,
+                  color: "#fff",
+                  letterSpacing: "-0.5px",
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+                    {bonus.perc}
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                    <span style={{ fontFamily: "monospace", fontSize: 10, color: TT.text3, fontWeight: 700 }}>{p.numero}</span>
+                    {p.cam && (
+                      <span style={{
+                        padding: "1px 6px",
+                        background: TT.violet[100], color: TT.violet[600],
+                        borderRadius: 4, fontSize: 8, fontWeight: 800,
+                        letterSpacing: "0.4px", textTransform: "uppercase",
+                      }}>CAM</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: TT.text1, letterSpacing: "-0.2px" }}>
+                    {bonus.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: TT.text2, marginTop: 1 }}>
+                    {cli.nome} &middot; {com?.numero || ""}
+                  </div>
+                </div>
+                <span style={{
+                  padding: "3px 9px",
+                  background: eneaRamp[400], color: "#fff",
+                  borderRadius: 999, fontSize: 9, fontWeight: 800,
+                  letterSpacing: "0.4px", textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                  boxShadow: `0 2px 6px ${eneaRamp[200]}`,
+                }}>
+                  ENEA {enea.label}
+                </span>
+              </div>
+
+              {/* Body con dettagli */}
+              <div style={{ padding: "14px 16px" }}>
+                <div style={{
+                  display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
+                  marginBottom: 12,
+                }}>
+                  <Stat label="Importo lavori" value={`€ ${p.importoTotale.toLocaleString("it-IT")}`} tint="slate" />
+                  <Stat label="Detraibile" value={`€ ${p.importoDetraibile.toLocaleString("it-IT")}`} tint={bonus.tint} />
+                </div>
+
+                {/* Deadline ENEA */}
+                {p.enea === "da_inviare" && p.deadlineEnea && (
+                  <div style={{
+                    padding: "8px 12px",
+                    background: TT.red[50],
+                    border: `1px solid ${TT.red[100]}`,
+                    borderRadius: 8,
+                    display: "flex", alignItems: "center", gap: 9,
+                  }}>
+                    <Icon name="bell" size={14} color={TT.red[600]} strokeWidth={2.4} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: TT.red[600], letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 1 }}>
+                        Deadline ENEA
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: TT.text1 }}>
+                        Entro {p.deadlineEnea}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {p.enea === "inviato" && p.dataInvioEnea && (
+                  <div style={{
+                    padding: "8px 12px",
+                    background: TT.blue[50],
+                    border: `1px solid ${TT.blue[100]}`,
+                    borderRadius: 8,
+                    display: "flex", alignItems: "center", gap: 9,
+                  }}>
+                    <Icon name="check" size={14} color={TT.blue[600]} strokeWidth={2.4} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: TT.blue[600], letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 1 }}>
+                        Inviato il
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: TT.text1 }}>
+                        {p.dataInvioEnea} &middot; In attesa conferma
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {p.enea === "confermato" && (
+                  <div style={{
+                    padding: "8px 12px",
+                    background: TT.green[50],
+                    border: `1px solid ${TT.green[100]}`,
+                    borderRadius: 8,
+                    display: "flex", alignItems: "center", gap: 9,
+                  }}>
+                    <Icon name="check" size={14} color={TT.green[600]} strokeWidth={2.6} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: TT.green[600], letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 1 }}>
+                        ENEA Confermato
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: TT.text1 }}>
+                        Pratica completata
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div style={{
+            gridColumn: "span 2",
+            padding: 30, textAlign: "center",
+            color: TT.text3, fontSize: 12,
+          }}>
+            Nessuna pratica con i filtri attivi.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilterPill({ label, count, active, onClick, ramp }: { label: string; count: number; active: boolean; onClick: () => void; ramp: any }) {
+  return (
+    <div onClick={onClick} style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "5px 11px",
+      background: active ? (ramp ? ramp[400] : TT.text1) : TT.surface,
+      color: active ? "#fff" : TT.text2,
+      border: `1px solid ${active ? "transparent" : TT.borderStrong}`,
+      borderRadius: 999,
+      fontSize: 11, fontWeight: 600,
+      cursor: "pointer", transition: "all 0.12s",
+    }}>
+      {label}
+      <span style={{
+        background: active ? "rgba(255,255,255,0.28)" : (ramp ? ramp[100] : TT.bgSoft),
+        color: active ? "#fff" : (ramp ? ramp[600] : TT.text3),
+        fontSize: 9, fontWeight: 700,
+        padding: "1px 6px", borderRadius: 999,
+        fontVariantNumeric: "tabular-nums",
+      }}>{count}</span>
     </div>
   );
 }
@@ -229,18 +363,24 @@ function KpiMini({ icon, label, value, tint }: { icon: IconName; label: string; 
   );
 }
 
-function Th({ children, align }: { children?: React.ReactNode; align?: "left"|"center"|"right" }) {
+function Stat({ label, value, tint }: { label: string; value: string; tint: keyof typeof TINTS }) {
+  const ramp = TINTS[tint];
   return (
-    <th style={{
-      padding: "10px 12px", textAlign: align || "left",
-      fontSize: 10, fontWeight: 700, color: TT.text3,
-      letterSpacing: "0.6px", textTransform: "uppercase",
+    <div style={{
+      padding: "8px 10px",
+      background: ramp[50], border: `1px solid ${ramp[100]}`,
+      borderRadius: 7,
     }}>
-      {children}
-    </th>
+      <div style={{ fontSize: 9, fontWeight: 700, color: TT.text3, letterSpacing: "0.3px", textTransform: "uppercase", marginBottom: 2 }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 13, fontWeight: 800, color: ramp[600],
+        fontVariantNumeric: "tabular-nums", letterSpacing: "-0.2px",
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+      }}>
+        {value}
+      </div>
+    </div>
   );
-}
-
-function Td({ children, align }: { children?: React.ReactNode; align?: "left"|"center"|"right" }) {
-  return <td style={{ padding: "10px 12px", textAlign: align || "left", verticalAlign: "middle" }}>{children}</td>;
 }
