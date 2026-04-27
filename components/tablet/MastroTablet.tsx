@@ -6,6 +6,7 @@ import TopbarTablet from "./TopbarTablet";
 import DashboardTablet from "./dashboard/DashboardTablet";
 import CommesseListaTablet from "./commesse/CommesseListaTablet";
 import CommessaDettaglioTablet from "./commesse/CommessaDettaglioTablet";
+import ClienteDettaglioTablet from "./clienti/ClienteDettaglioTablet";
 import CalendarioTablet from "./calendario/CalendarioTablet";
 import SopralluoghiTablet from "./sopralluoghi/SopralluoghiTablet";
 import ProduzioneTablet from "./produzione/ProduzioneTablet";

@@ -1,58 +1,44 @@
 "use client";
 import * as React from "react";
 
-type Preset = "titolare" | "posatore" | "segreteria";
-
-interface DashboardCtx {
-  navigate: (sezione: string, params?: any) => void;
-  expand: (blocco: string) => void;
-  preset: Preset;
-  setPreset: (p: Preset) => void;
-  // NUOVO: commessa aperta
-  selectedCommessaId: string | null;
-  openCommessa: (id: string) => void;
-  closeCommessa: () => void;
+interface DashboardContextValue {
+  navigate: (sezione: string) => void;
+  openCommessa: (commessaId: string) => void;
+  openCliente: (clienteId: string) => void;
+  expandPanel: (panelId: string | null) => void;
+  presetRuolo: "titolare" | "posatore" | "segreteria";
+  setPresetRuolo: (p: "titolare" | "posatore" | "segreteria") => void;
 }
 
-const DashboardContext = React.createContext<DashboardCtx | null>(null);
+const Ctx = React.createContext<DashboardContextValue | null>(null);
+
+export function useDashboard(): DashboardContextValue {
+  const c = React.useContext(Ctx);
+  if (!c) throw new Error("useDashboard must be used inside DashboardProvider");
+  return c;
+}
 
 export interface DashboardProviderProps {
   children: React.ReactNode;
-  onNavigate: (sezione: string, params?: any) => void;
-  onExpand: (blocco: string) => void;
-  preset: Preset;
-  setPreset: (p: Preset) => void;
-  selectedCommessaId: string | null;
+  navigate: (sezione: string) => void;
   openCommessa: (id: string) => void;
-  closeCommessa: () => void;
+  openCliente: (id: string) => void;
+  expandPanel: (id: string | null) => void;
+  presetRuolo: "titolare" | "posatore" | "segreteria";
+  setPresetRuolo: (p: "titolare" | "posatore" | "segreteria") => void;
 }
 
-export function DashboardProvider({
-  children, onNavigate, onExpand, preset, setPreset,
-  selectedCommessaId, openCommessa, closeCommessa,
-}: DashboardProviderProps) {
+export function DashboardProvider(props: DashboardProviderProps) {
   return (
-    <DashboardContext.Provider value={{
-      navigate: onNavigate, expand: onExpand,
-      preset, setPreset,
-      selectedCommessaId, openCommessa, closeCommessa,
+    <Ctx.Provider value={{
+      navigate: props.navigate,
+      openCommessa: props.openCommessa,
+      openCliente: props.openCliente,
+      expandPanel: props.expandPanel,
+      presetRuolo: props.presetRuolo,
+      setPresetRuolo: props.setPresetRuolo,
     }}>
-      {children}
-    </DashboardContext.Provider>
+      {props.children}
+    </Ctx.Provider>
   );
 }
-
-export function useDashboard(): DashboardCtx {
-  const ctx = React.useContext(DashboardContext);
-  if (!ctx) {
-    return {
-      navigate: () => {}, expand: () => {},
-      preset: "titolare", setPreset: () => {},
-      selectedCommessaId: null,
-      openCommessa: () => {}, closeCommessa: () => {},
-    };
-  }
-  return ctx;
-}
-
-export type { Preset };

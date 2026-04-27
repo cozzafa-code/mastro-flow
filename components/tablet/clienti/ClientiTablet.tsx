@@ -2,6 +2,7 @@
 import * as React from "react";
 import { TT, cardStyle } from "../design-system";
 import { Icon, IconName } from "../icons";
+import { useDashboard } from "../dashboard-context";
 import { useMastroData } from "../store";
 import AvatarGradient from "../AvatarGradient";
 import NuovoClienteModal from "./NuovoClienteModal";
@@ -20,9 +21,24 @@ const TIPO_DEF = {
 
 export default function ClientiTablet() {
   const data = useMastroData();
+  const { openCliente } = useDashboard();
   const clienti = data.getClienti();
+  const [search, setSearch] = React.useState("");
+  const [filtroTipo, setFiltroTipo] = React.useState<"tutti" | "privato" | "azienda" | "showroom">("tutti");
   const [modalOpen, setModalOpen] = React.useState(false);
   const [toast, setToast] = React.useState(false);
+
+  const filtered = React.useMemo(() => {
+    let r = filtroTipo === "tutti" ? clienti : clienti.filter((c) => c.tipo === filtroTipo);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      r = r.filter((c) => {
+        const haystack = [c.nome, c.citta, c.indirizzo, c.telefono, c.email].filter(Boolean).join(" ").toLowerCase();
+        return q.split(/\s+/).every((token) => haystack.includes(token));
+      });
+    }
+    return r;
+  }, [clienti, search, filtroTipo]);
 
   return (
     <div>
@@ -54,8 +70,76 @@ export default function ClientiTablet() {
         <KpiMini icon="trendUp"  label="Showroom"value={String(clienti.filter(c=>c.tipo==="showroom").length)} tint="amber" />
       </div>
 
+      {/* TOOLBAR Search + Filtri */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <div style={{ position: "relative", flex: "0 0 320px" }}>
+          <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+            <Icon name="search" size={14} color={search ? TT.violet[600] : TT.text3} strokeWidth={2.2} />
+          </div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cerca nome, citta, telefono, email..."
+            style={{
+              width: "100%", height: 38,
+              padding: "0 36px 0 36px",
+              background: TT.surface,
+              border: `1px solid ${search ? TT.violet[400] : TT.borderStrong}`,
+              borderRadius: 10,
+              fontSize: 12, fontFamily: TT.fontFamily,
+              color: TT.text1, outline: "none",
+              boxSizing: "border-box",
+              boxShadow: search ? `0 0 0 3px ${TT.violet[100]}` : "none",
+              transition: "all 0.12s",
+            }}
+          />
+          {search && (
+            <button onClick={() => setSearch("")} style={{
+              position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+              width: 22, height: 22, borderRadius: 6,
+              background: TT.bgSoft, border: "none",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+            }}>
+              <Icon name="x" size={11} color={TT.text2} strokeWidth={2.4} />
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {(["tutti","privato","azienda","showroom"] as const).map((t) => {
+            const ramp = t !== "tutti" ? TINTS[TIPO_DEF[t as "privato"].tint] : null;
+            const isActive = t === filtroTipo;
+            const count = t === "tutti" ? clienti.length : clienti.filter((c) => c.tipo === t).length;
+            const label = t === "tutti" ? "Tutti" : TIPO_DEF[t as "privato"].label;
+            return (
+              <div key={t} onClick={() => setFiltroTipo(t)} style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                padding: "6px 12px",
+                background: isActive ? (ramp ? ramp[400] : TT.text1) : TT.surface,
+                color: isActive ? "#fff" : TT.text2,
+                border: `1px solid ${isActive ? "transparent" : TT.borderStrong}`,
+                borderRadius: 999,
+                fontSize: 12, fontWeight: 600,
+                cursor: "pointer",
+              }}>
+                {label}
+                <span style={{
+                  background: isActive ? "rgba(255,255,255,0.28)" : (ramp ? ramp[100] : TT.bgSoft),
+                  color: isActive ? "#fff" : (ramp ? ramp[600] : TT.text3),
+                  fontSize: 10, fontWeight: 700,
+                  padding: "1px 7px", borderRadius: 999,
+                  fontVariantNumeric: "tabular-nums",
+                }}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-        {clienti.map((cli) => {
+        {filtered.map((cli) => {
           const tipo = TIPO_DEF[cli.tipo];
           const tipoRamp = TINTS[tipo.tint];
           const commesse = data.getCommesseByCliente(cli.id);
@@ -63,7 +147,9 @@ export default function ClientiTablet() {
           const chiuse = commesse.filter((c) => c.fase === "pagata").length;
           const fatt = commesse.reduce((s, c) => s + c.valore, 0);
           return (
-            <div key={cli.id} style={cardStyle({ padding: "16px 18px", cursor: "pointer" })}>
+            <div key={cli.id}
+              onClick={() => openCliente(cli.id)}
+              style={cardStyle({ padding: "16px 18px", cursor: "pointer" })}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                 <AvatarGradient size={44} preset={cli.preset} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -91,6 +177,7 @@ export default function ClientiTablet() {
                     {cli.indirizzo}, {cli.citta}
                   </div>
                 </div>
+                <Icon name="chevronRight" size={16} color={tipoRamp[400]} strokeWidth={2.2} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${TT.border}` }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: TT.text2 }}>
@@ -110,6 +197,15 @@ export default function ClientiTablet() {
             </div>
           );
         })}
+        {filtered.length === 0 && (
+          <div style={{
+            gridColumn: "span 2",
+            padding: 30, textAlign: "center",
+            color: TT.text3, fontSize: 12,
+          }}>
+            {search ? `Nessun cliente per "${search}"` : "Nessun cliente in questa categoria."}
+          </div>
+        )}
       </div>
 
       <NuovoClienteModal
