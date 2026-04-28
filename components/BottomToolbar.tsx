@@ -4,7 +4,7 @@
 import React from "react";
 
 type Props = {
-  active?: "home" | "commesse" | "agenda" | "talk" | "altro";
+  active?: "home" | "commesse" | "agenda" | "talk" | "team";
   onNavigate?: (dest: string) => void;
   unreadTalk?: number;
 };
@@ -14,7 +14,7 @@ const THEMES: any = {
   commesse: { pill: "#EEEDFE", ic: "#3C3489" },
   agenda:   { pill: "#FBEAF0", ic: "#993556" },
   talk:     { pill: "#FAEEDA", ic: "#854F0B" },
-  altro:    { pill: "#E6F1FB", ic: "#185FA5" },
+  team:     { pill: "#E0F2EE", ic: "#0F766E" },
 };
 
 export default function BottomToolbar({ active = "home", onNavigate, unreadTalk = 0 }: Props) {
@@ -41,7 +41,7 @@ export default function BottomToolbar({ active = "home", onNavigate, unreadTalk 
     commesse: (c: string) => <svg width="18" height="18" viewBox="0 0 24 24" fill={c} stroke="none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></svg>,
     agenda: (c: string) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2.5}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>,
     talk: (c: string) => <svg width="18" height="18" viewBox="0 0 24 24" fill={c} stroke="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>,
-    altro: (c: string) => <svg width="18" height="18" viewBox="0 0 24 24" fill={c} stroke="none"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>,
+    team: (c: string) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   };
 
   return (
@@ -50,7 +50,7 @@ export default function BottomToolbar({ active = "home", onNavigate, unreadTalk 
       <Tab k="commesse" label="Commesse" icon={ic.commesse} />
       <Tab k="agenda" label="Agenda" icon={ic.agenda} />
       <Tab k="talk" label="Talk" icon={ic.talk} />
-      <Tab k="altro" label="Altro" icon={ic.altro} />
+      <Tab k="team" label="Team" icon={ic.team} />
     </div>
   );
 }
