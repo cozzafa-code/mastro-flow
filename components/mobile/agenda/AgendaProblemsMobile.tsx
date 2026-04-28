@@ -16,6 +16,7 @@ interface Props {
   events: AgendaEvent[];
   onSegnala: () => void;
   onTap: (id: string) => void;
+  onBack?: () => void;
 }
 
 const MOCK_PROBLEMS: ProblemRow[] = [
@@ -24,7 +25,7 @@ const MOCK_PROBLEMS: ProblemRow[] = [
   { id: "p3", titolo: "MISURE DA VERIFICARE", riferimento: "S-0002 · Bianchi", segnalatoDa: "Fabio", badge: "2g fa", risolto: false },
 ];
 
-export default function AgendaProblemsMobile({ events, onSegnala, onTap }: Props) {
+export default function AgendaProblemsMobile({ events, onSegnala, onTap, onBack }: Props) {
   const [tab, setTab] = useState<"aperti" | "risolti">("aperti");
 
   // Combino mock + eventi reali tipo problema
@@ -64,7 +65,15 @@ export default function AgendaProblemsMobile({ events, onSegnala, onTap }: Props
   return (
     <div style={{ background: "#F8FAFA", minHeight: "100vh", paddingBottom: 100 }}>
       {/* Header */}
-      <div style={{ background: "#fff", padding: "44px 18px 14px", borderBottom: "1px solid #E4E4E7" }}>
+      <div style={{ background: "#fff", padding: "44px 18px 14px", borderBottom: "1px solid #E4E4E7", display: "flex", alignItems: "center", gap: 12 }}>
+        {onBack && (
+          <button onClick={onBack} style={{ background: "none", border: "none", padding: 4, cursor: "pointer" }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0D1F1F" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+          </button>
+        )}
         <div style={{ fontSize: 22, fontWeight: 900, color: "#0D1F1F" }}>Problemi</div>
       </div>
 

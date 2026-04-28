@@ -3,44 +3,39 @@
 import React, { useMemo } from "react";
 
 interface Props {
-  selectedDate: string; // YYYY-MM-DD
+  selectedDate: string;
   onSelect: (d: string) => void;
-  daysCount?: number; // default 5
-  centered?: boolean; // default false (parte da -1 giorno)
+  daysCount?: number;
+  // se true => stile chiaro bianco su gradient (dentro header), altrimenti su sfondo card
+  inHeader?: boolean;
 }
 
 const DOW = ["DOM", "LUN", "MAR", "MER", "GIO", "VEN", "SAB"];
 
-export default function AgendaDayStripMobile({ selectedDate, onSelect, daysCount = 5, centered = false }: Props) {
+export default function AgendaDayStripMobile({ selectedDate, onSelect, daysCount = 5, inHeader = false }: Props) {
   const days = useMemo(() => {
     const base = new Date();
     base.setHours(0, 0, 0, 0);
-    const offsetStart = centered ? -Math.floor(daysCount / 2) : -1;
-    const arr: { iso: string; day: number; dow: string; isToday: boolean }[] = [];
+    const offsetStart = -1; // ieri come primo
     const todayIso = base.toISOString().split("T")[0];
+    const arr: { iso: string; day: number; dow: string; isToday: boolean }[] = [];
     for (let i = 0; i < daysCount; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + offsetStart + i);
       const iso = d.toISOString().split("T")[0];
-      arr.push({
-        iso,
-        day: d.getDate(),
-        dow: DOW[d.getDay()],
-        isToday: iso === todayIso,
-      });
+      arr.push({ iso, day: d.getDate(), dow: DOW[d.getDay()], isToday: iso === todayIso });
     }
     return arr;
-  }, [daysCount, centered]);
+  }, [daysCount]);
 
   return (
     <div
       style={{
-        background: "linear-gradient(135deg, #0F4F4F 0%, #0D1F1F 100%)",
-        padding: "0 12px 16px",
         display: "flex",
         gap: 8,
-        overflowX: "auto",
-        WebkitOverflowScrolling: "touch",
+        padding: inHeader ? "0" : "10px 14px 0",
+        marginTop: inHeader ? 14 : 0,
+        background: inHeader ? "transparent" : "transparent",
       }}
     >
       {days.map((d) => {
@@ -51,22 +46,22 @@ export default function AgendaDayStripMobile({ selectedDate, onSelect, daysCount
             onClick={() => onSelect(d.iso)}
             style={{
               flex: "1 1 0",
-              minWidth: 56,
-              padding: "10px 6px",
+              minWidth: 50,
+              padding: "9px 4px",
               borderRadius: 14,
-              background: active ? "#28A0A0" : "rgba(255,255,255,0.08)",
-              border: active ? "1px solid #28A0A0" : "1px solid rgba(255,255,255,0.12)",
+              background: active ? "#28A0A0" : (inHeader ? "rgba(255,255,255,0.12)" : "#FFFFFF"),
+              border: active ? "1px solid #28A0A0" : (inHeader ? "1px solid rgba(255,255,255,0.18)" : "1px solid #E4E4E7"),
               textAlign: "center",
               cursor: "pointer",
               transition: "all 0.15s",
-              boxShadow: active ? "0 4px 12px rgba(40,160,160,0.4)" : "none",
+              boxShadow: active ? "0 4px 14px rgba(40,160,160,0.45)" : "none",
             }}
           >
             <div
               style={{
                 fontSize: 10,
-                fontWeight: 700,
-                color: active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.65)",
+                fontWeight: 800,
+                color: active ? "rgba(255,255,255,0.95)" : (inHeader ? "rgba(255,255,255,0.7)" : "#71717A"),
                 letterSpacing: 0.5,
               }}
             >
@@ -74,9 +69,9 @@ export default function AgendaDayStripMobile({ selectedDate, onSelect, daysCount
             </div>
             <div
               style={{
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: 900,
-                color: "#fff",
+                color: active ? "#fff" : (inHeader ? "#fff" : "#0D1F1F"),
                 marginTop: 2,
                 fontFamily: "'JetBrains Mono', monospace",
               }}

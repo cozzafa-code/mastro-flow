@@ -10,13 +10,12 @@ import AgendaFiltersMobile from "./AgendaFiltersMobile";
 import AgendaWeekMobile from "./AgendaWeekMobile";
 import AgendaMonthMobile from "./AgendaMonthMobile";
 import AgendaProblemsMobile from "./AgendaProblemsMobile";
+import AgendaBottomNav from "./AgendaBottomNav";
 import { useAgendaMobile } from "../../../hooks/useAgendaMobile";
 import type { AgendaEvent } from "../../../lib/types/agenda";
 
 interface Props {
-  // bottom nav esterno (passa da MastroERP/page). Se non passato, mostra placeholder navigazione.
-  bottomNav?: React.ReactNode;
-  // callback per aprire commessa nel router della app
+  bottomNav?: React.ReactNode; // se passi una nav esterna, sostituisce quella default
   onOpenCommessa?: (cmId: string | undefined, code: string | undefined) => void;
 }
 
@@ -28,6 +27,12 @@ function formatHeaderSub(iso: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+function formatHeaderTitle(view: "giorno" | "settimana" | "mese") {
+  if (view === "settimana") return "Settimana";
+  if (view === "mese") return "Mese";
+  return "Agenda";
+}
+
 export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
   const a = useAgendaMobile();
   const [tap, setTap] = useState<AgendaEvent | null>(null);
@@ -35,18 +40,29 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [completed, setCompleted] = useState<AgendaEvent | null>(null);
 
-  const headerSub = useMemo(() => formatHeaderSub(a.selectedDate), [a.selectedDate]);
+  const headerSub = useMemo(() => {
+    if (a.view === "settimana") {
+      const d = new Date(a.selectedDate + "T00:00:00");
+      const day = d.getDay();
+      const diff = (day === 0 ? -6 : 1 - day);
+      const s = new Date(d); s.setDate(d.getDate() + diff);
+      const e = new Date(s); e.setDate(s.getDate() + 6);
+      return `${s.toLocaleDateString("it-IT", { day: "numeric", month: "short" })} – ${e.toLocaleDateString("it-IT", { day: "numeric", month: "short" })}`;
+    }
+    if (a.view === "mese") {
+      const d = new Date(a.selectedDate + "T00:00:00");
+      const m = d.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+      return m.charAt(0).toUpperCase() + m.slice(1);
+    }
+    return formatHeaderSub(a.selectedDate);
+  }, [a.selectedDate, a.view]);
 
   const handleAction = (action: "vai" | "chiama" | "mappa" | "risolvi", e: AgendaEvent) => {
     if (action === "mappa" || action === "vai") {
-      if (e.indirizzo) {
-        const q = encodeURIComponent(e.indirizzo);
-        window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank");
-      }
+      if (e.indirizzo) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.indirizzo)}`, "_blank");
       return;
     }
     if (action === "chiama") {
-      // numero non noto da mock; mostro alert simbolico
       window.alert(`Chiama ${e.cliente || "cliente"}: numero non disponibile in MOCK`);
       return;
     }
@@ -62,111 +78,94 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
       if (e.indirizzo) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.indirizzo)}`, "_blank");
       return;
     }
-    if (action === "chiama") {
-      window.alert(`Chiama ${e.cliente || "cliente"}: numero non disponibile in MOCK`);
-      return;
-    }
-    if (action === "chat" || action === "foto") {
-      window.alert(`${action.toUpperCase()}: collegamento da implementare`);
-    }
+    if (action === "chiama") { window.alert(`Chiama ${e.cliente || "cliente"}`); return; }
+    if (action === "chat" || action === "foto") { window.alert(`${action.toUpperCase()}: da implementare`); }
   };
 
+  // ===== VISTA PROBLEMI =====
   if (a.view === "problemi") {
     return (
-      <div style={{ background: "#F8FAFA", minHeight: "100vh" }}>
+      <div style={{ background: "#F5F8F8", minHeight: "100vh", paddingBottom: 90, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
         <AgendaProblemsMobile
           events={a.events}
           onSegnala={() => setFabOpen(true)}
           onTap={() => {}}
+          onBack={() => a.setView("giorno")}
         />
-        {/* Toolbar switch tornare ad agenda */}
-        <div style={{ position: "fixed", top: 12, right: 12, zIndex: 60 }}>
-          <button
-            onClick={() => a.setView("giorno")}
-            style={{ padding: "8px 14px", borderRadius: 10, background: "#0D1F1F", color: "#fff", border: "none", fontSize: 11, fontWeight: 800, cursor: "pointer" }}
-          >
-            ← Agenda
-          </button>
-        </div>
-        {bottomNav}
+        {bottomNav ?? <AgendaBottomNav active="agenda" />}
       </div>
     );
   }
 
   return (
-    <div style={{ background: "#F8FAFA", minHeight: "100vh", paddingBottom: 100, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
+    <div style={{ background: "#F5F8F8", minHeight: "100vh", paddingBottom: 90, fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
+      {/* HEADER GRADIENT con TUTTO dentro: titolo + day strip + switch */}
       <AgendaHeaderMobile
-        title="Agenda"
+        title={formatHeaderTitle(a.view)}
         subtitle={headerSub}
         onMenu={() => a.setView("problemi")}
-      />
+      >
+        {a.view === "giorno" && (
+          <AgendaDayStripMobile selectedDate={a.selectedDate} onSelect={a.setSelectedDate} inHeader />
+        )}
 
-      {/* Day strip */}
-      <AgendaDayStripMobile selectedDate={a.selectedDate} onSelect={a.setSelectedDate} />
-
-      {/* Switch giorno/settimana/mese */}
-      <div style={{ padding: "14px 14px 0", display: "flex", gap: 6, justifyContent: "center" }}>
-        {(["giorno", "settimana", "mese"] as const).map((v) => {
-          const active = a.view === v;
-          return (
-            <div
-              key={v}
-              onClick={() => a.setView(v)}
-              style={{
-                padding: "8px 18px",
-                borderRadius: 10,
-                background: active ? "#0D1F1F" : "#fff",
-                color: active ? "#fff" : "#0D1F1F",
-                fontSize: 12,
-                fontWeight: 800,
-                cursor: "pointer",
-                border: active ? "none" : "1px solid #E4E4E7",
-                textTransform: "capitalize" as const,
-                boxShadow: active ? "0 3px 10px rgba(13,31,31,0.18)" : "none",
-                transition: "all 0.15s",
-              }}
-            >
-              {v}
-            </div>
-          );
-        })}
-      </div>
+        {/* Switch GIORNO/SETTIMANA/MESE — pill bianco active */}
+        <div style={{ display: "flex", gap: 6, marginTop: 14, justifyContent: "center" }}>
+          {(["giorno", "settimana", "mese"] as const).map((v) => {
+            const active = a.view === v;
+            return (
+              <div
+                key={v}
+                onClick={() => a.setView(v)}
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  padding: "8px 14px",
+                  borderRadius: 999,
+                  background: active ? "#fff" : "rgba(255,255,255,0.12)",
+                  color: active ? "#0D1F1F" : "rgba(255,255,255,0.85)",
+                  fontSize: 12,
+                  fontWeight: active ? 800 : 600,
+                  cursor: "pointer",
+                  border: active ? "1px solid rgba(255,255,255,0.4)" : "1px solid rgba(255,255,255,0.18)",
+                  textTransform: "capitalize" as const,
+                  transition: "all 0.15s",
+                  boxShadow: active ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
+                }}
+              >
+                {v}
+              </div>
+            );
+          })}
+        </div>
+      </AgendaHeaderMobile>
 
       {/* === VISTA GIORNO === */}
       {a.view === "giorno" && (
         <>
-          {/* Card titolo "OGGI · N IMPEGNI" + filtri */}
-          <div style={{ padding: "14px 16px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 900, color: "#28A0A0", letterSpacing: 1 }}>
-                {a.selectedDate === TODAY_ISO ? "OGGI" : "GIORNO"} · {a.eventsOfDay.length} {a.eventsOfDay.length === 1 ? "IMPEGNO" : "IMPEGNI"}
-              </div>
+          <div style={{ padding: "16px 16px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: "#28A0A0", letterSpacing: 1 }}>
+              {a.selectedDate === TODAY_ISO ? "OGGI" : "GIORNO"} · {a.eventsOfDay.length} {a.eventsOfDay.length === 1 ? "IMPEGNO" : "IMPEGNI"}
             </div>
             <button
               onClick={() => setFiltersOpen(true)}
-              style={{ padding: "7px 12px", borderRadius: 10, background: "#fff", border: "1px solid #E4E4E7", fontSize: 11, fontWeight: 700, color: "#0D1F1F", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+              style={{ padding: "6px 12px", borderRadius: 10, background: "#fff", border: "1px solid #E4E4E7", fontSize: 11, fontWeight: 700, color: "#0D1F1F", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0D1F1F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0D1F1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
               Filtri
             </button>
           </div>
 
-          {/* Eventi */}
-          <div style={{ padding: "8px 16px 0" }}>
+          <div style={{ padding: "8px 14px 0" }}>
             {a.eventsOfDay.length === 0 ? (
-              <div style={{ background: "#fff", borderRadius: 14, padding: "30px 16px", textAlign: "center", color: "#71717A", fontSize: 13 }}>
+              <div style={{ background: "#fff", borderRadius: 16, padding: "30px 16px", textAlign: "center", color: "#71717A", fontSize: 13 }}>
                 Nessun impegno per questo giorno
               </div>
             ) : (
               a.eventsOfDay.map((e) => (
-                <AgendaEventCardMobile
-                  key={e.id}
-                  event={e}
-                  onTap={setTap}
-                  onAction={handleAction}
-                />
+                <AgendaEventCardMobile key={e.id} event={e} onTap={setTap} onAction={handleAction} />
               ))
             )}
           </div>
@@ -199,28 +198,29 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
         style={{
           position: "fixed",
           right: 18,
-          bottom: 90,
-          width: 58,
-          height: 58,
+          bottom: 84,
+          width: 56,
+          height: 56,
           borderRadius: "50%",
           background: "linear-gradient(135deg, #28A0A0 0%, #1A7A7A 100%)",
           border: "none",
           color: "#fff",
-          fontSize: 28,
+          fontSize: 30,
           fontWeight: 300,
           cursor: "pointer",
-          boxShadow: "0 8px 24px rgba(40,160,160,0.5)",
+          boxShadow: "0 8px 22px rgba(40,160,160,0.5)",
           zIndex: 90,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          lineHeight: 1,
         }}
       >
         +
       </button>
 
-      {/* Bottom nav passata da fuori */}
-      {bottomNav}
+      {/* Bottom nav */}
+      {bottomNav ?? <AgendaBottomNav active="agenda" />}
 
       {/* Sheets */}
       <AgendaEventSheetMobile
@@ -233,10 +233,8 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
         open={fabOpen}
         onClose={() => setFabOpen(false)}
         onPick={(kind) => {
-          // mock: aggiungo evento placeholder
-          const id = "ev_" + Date.now();
           a.addEvent({
-            id,
+            id: "ev_" + Date.now(),
             tipo: kind === "nota" ? "task" : kind,
             oraInizio: "09:00",
             oraFine: "10:00",
@@ -245,97 +243,106 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
           });
         }}
       />
-      <AgendaFiltersMobile
-        open={filtersOpen}
-        current={a.filters}
-        onClose={() => setFiltersOpen(false)}
-        onApply={a.setFilters}
-      />
+      <AgendaFiltersMobile open={filtersOpen} current={a.filters} onClose={() => setFiltersOpen(false)} onApply={a.setFilters} />
 
       {/* Schermata completato */}
-      {completed && (
+      {completed && <CompletedScreen event={completed} onClose={() => setCompleted(null)} onOpenCommessa={() => { onOpenCommessa?.(completed.cmId, completed.commessaCode); setCompleted(null); }} />}
+    </div>
+  );
+}
+
+function CompletedScreen({ event, onClose, onOpenCommessa }: { event: AgendaEvent; onClose: () => void; onOpenCommessa: () => void }) {
+  // confetti pseudo-random posizionati
+  const confetti = useMemo(() => {
+    const arr: { x: number; y: number; c: string; r: number }[] = [];
+    const colors = ["#FFD166", "#28A0A0", "#F08599", "#7AA0E0", "#5FBA7D", "#F0A658"];
+    for (let i = 0; i < 26; i++) {
+      arr.push({
+        x: Math.random() * 100,
+        y: Math.random() * 60,
+        c: colors[i % colors.length],
+        r: Math.random() * 6 + 3,
+      });
+    }
+    return arr;
+  }, []);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "linear-gradient(160deg, #1F8B8B 0%, #0F4040 100%)",
+        zIndex: 1500,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 28,
+        color: "#fff",
+        overflow: "hidden",
+      }}
+    >
+      {confetti.map((c, i) => (
         <div
-          onClick={() => setCompleted(null)}
+          key={i}
           style={{
-            position: "fixed",
-            inset: 0,
-            background: "linear-gradient(135deg, #0F4F4F 0%, #0D1F1F 100%)",
-            zIndex: 1500,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 28,
-            color: "#fff",
+            position: "absolute",
+            top: `${c.y}%`,
+            left: `${c.x}%`,
+            width: c.r,
+            height: c.r,
+            borderRadius: "50%",
+            background: c.c,
+            opacity: 0.85,
           }}
-        >
-          {/* Coriandoli decorativi */}
-          <div style={{ position: "absolute", top: 60, left: 40, fontSize: 16 }}>✨</div>
-          <div style={{ position: "absolute", top: 90, right: 50, fontSize: 14 }}>✨</div>
-          <div style={{ position: "absolute", top: 140, left: 80, fontSize: 12 }}>✨</div>
+        />
+      ))}
 
-          <div
-            style={{
-              width: 84,
-              height: 84,
-              borderRadius: "50%",
-              background: "rgba(40,160,160,0.18)",
-              border: "3px solid #28A0A0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 22,
-              boxShadow: "0 0 0 8px rgba(40,160,160,0.08)",
-            }}
-          >
-            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div style={{ fontSize: 22, fontWeight: 900 }}>
-            {completed.tipo === "montaggio" ? "Montaggio completato!" : "Completato!"}
-          </div>
-          <div style={{ fontSize: 13, marginTop: 6, opacity: 0.85 }}>
-            {completed.commessaCode ? `Commessa ${completed.commessaCode}${completed.cliente ? " · " + completed.cliente : ""}` : completed.titolo}
-          </div>
-          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.75, fontFamily: "'JetBrains Mono', monospace" }}>
-            {new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })} · {formatHeaderSub(completed.data)}
-          </div>
+      <div
+        style={{
+          width: 90,
+          height: 90,
+          borderRadius: "50%",
+          background: "#28A0A0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 22,
+          boxShadow: "0 0 0 10px rgba(40,160,160,0.18)",
+          zIndex: 1,
+        }}
+      >
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 900, zIndex: 1, textAlign: "center" }}>
+        {event.tipo === "montaggio" ? "Montaggio completato!" : "Completato!"}
+      </div>
+      <div style={{ fontSize: 13, marginTop: 6, opacity: 0.92, zIndex: 1, textAlign: "center" }}>
+        {event.commessaCode ? `Commessa ${event.commessaCode}${event.cliente ? " · " + event.cliente : ""}` : event.titolo}
+      </div>
+      <div style={{ fontSize: 12, marginTop: 4, opacity: 0.78, fontFamily: "'JetBrains Mono', monospace", zIndex: 1 }}>
+        {new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })} · Martedì 28 Aprile
+      </div>
 
-          <div style={{ width: "100%", maxWidth: 320, marginTop: 28, display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ fontSize: 10, fontWeight: 900, color: "#28A0A0", letterSpacing: 1.5, textAlign: "center", marginBottom: 4 }}>COSA VUOI FARE ORA?</div>
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenCommessa?.(completed.cmId, completed.commessaCode); setCompleted(null); }}
-              style={{ padding: 13, background: "#28A0A0", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
-            >
-              Vai alla commessa
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setCompleted(null); setFabOpen(true); }}
-              style={{ padding: 13, background: "transparent", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
-            >
-              Nuovo montaggio
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setCompleted(null); }}
-              style={{ padding: 13, background: "transparent", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
-            >
-              Torna all&apos;agenda
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (typeof navigator !== "undefined" && (navigator as any).share) {
-                  (navigator as any).share({ title: "Aggiornamento", text: `${completed.tipo} completato` });
-                }
-              }}
-              style={{ padding: 13, background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-            >
-              ↗ Condividi aggiornamento
-            </button>
-          </div>
-        </div>
-      )}
+      <div style={{ width: "100%", maxWidth: 320, marginTop: 28, display: "flex", flexDirection: "column", gap: 10, zIndex: 1 }}>
+        <div style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.7)", letterSpacing: 1.5, textAlign: "center", marginBottom: 4 }}>COSA VUOI FARE ORA?</div>
+        <button onClick={(e) => { e.stopPropagation(); onOpenCommessa(); }} style={{ padding: 13, background: "#28A0A0", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
+          Vai alla commessa
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ padding: 13, background: "transparent", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          Nuovo montaggio
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ padding: 13, background: "transparent", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          Torna all&apos;agenda
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); if ((navigator as any).share) (navigator as any).share({ title: "Aggiornamento", text: "Completato" }); }} style={{ padding: 13, background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          ↗ Condividi aggiornamento
+        </button>
+      </div>
     </div>
   );
 }
