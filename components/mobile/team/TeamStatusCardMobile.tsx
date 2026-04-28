@@ -2,6 +2,7 @@
 "use client";
 import React from "react";
 import { PAL } from "@/lib/types/team";
+import { IcoChevronRight } from "./icons";
 
 interface Props {
   attivi: number;
@@ -15,21 +16,23 @@ export default function TeamStatusCardMobile({ attivi, pausa, problemi, offline,
   return (
     <div onClick={onClick} style={{
       background: PAL.card,
-      borderRadius: 14,
-      padding: "12px 14px",
-      margin: "12px 14px 0",
-      border: `1px solid ${PAL.cardBorder}`,
+      borderRadius: 16,                  // SPEC: card radius 16px
+      padding: "14px 16px",
+      margin: "12px 16px 0",             // SPEC: padding screen 16px
+      border: `1px solid ${PAL.border}`,
       cursor: onClick ? "pointer" : "default",
+      fontFamily: "Inter, sans-serif",
     }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: PAL.text, marginBottom: 8 }}>
-        Stato azienda oggi
+      {/* H3 16px SemiBold */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: PAL.text }}>Stato azienda oggi</span>
+        <span style={{ color: PAL.textGrey }}><IcoChevronRight s={18} /></span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Item count={attivi}   color={PAL.attivoDot}   label="Attivi" />
-        <Item count={pausa}    color={PAL.pausaDot}    label="In pausa" />
-        <Item count={problemi} color={PAL.problemaDot} label="Problemi" />
-        <Item count={offline}  color={PAL.offlineDot}  label="Offline" />
-        <span style={{ fontSize: 16, color: PAL.textSub, fontWeight: 500, marginLeft: 4 }}>›</span>
+        <Item count={attivi}   color={PAL.attivoGreen}   label="Attivi" />
+        <Item count={pausa}    color={PAL.warningOrange} label="In pausa" />
+        <Item count={problemi} color={PAL.errorRed}      label="Problemi" />
+        <Item count={offline}  color="#9CA3AF"            label="Offline" />
       </div>
     </div>
   );
@@ -37,12 +40,14 @@ export default function TeamStatusCardMobile({ attivi, pausa, problemi, offline,
 
 function Item({ count, color, label }: { count: number; color: string; label: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, flex: 1 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 8, height: 8, borderRadius: 999, background: color }} />
-        <span style={{ fontSize: 20, fontWeight: 800, color: PAL.text, lineHeight: 1 }}>{count}</span>
+        {/* H1 24px Bold (numero) */}
+        <span style={{ fontSize: 22, fontWeight: 700, color: PAL.text, lineHeight: 1, fontFamily: "Inter" }}>{count}</span>
       </div>
-      <span style={{ fontSize: 10, color: PAL.textSub, fontWeight: 600 }}>{label}</span>
+      {/* Caption 11px */}
+      <span style={{ fontSize: 11, color: PAL.textGrey, fontWeight: 400 }}>{label}</span>
     </div>
   );
 }

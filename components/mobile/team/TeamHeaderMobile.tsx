@@ -13,13 +13,16 @@ export default function TeamHeaderMobile({ totalOperators, attivi, problemi }: P
   return (
     <div style={{
       background: PAL.headerGrad,
-      padding: "10px 16px 18px",
-      color: "#fff",
+      padding: "16px 16px 20px",
+      color: "#FFFFFF",
+      fontFamily: "Inter, -apple-system, sans-serif",
     }}>
-      <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.3px", lineHeight: 1.1, marginTop: 4 }}>
+      {/* H1 24px Bold */}
+      <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.5px", lineHeight: 1.1 }}>
         TEAM
       </div>
-      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 600, marginTop: 4 }}>
+      {/* Body2 12px Regular */}
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 400, marginTop: 6 }}>
         {totalOperators} operatori · {attivi} attivi{problemi > 0 ? ` · ${problemi} problema${problemi > 1 ? 'i' : ''}` : ''}
       </div>
     </div>

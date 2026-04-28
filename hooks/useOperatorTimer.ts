@@ -10,11 +10,10 @@ export function useLiveTimer(startedAt: string | null | undefined, isPaused?: bo
   }, [startedAt, isPaused]);
   if (!startedAt) return "—";
   try {
-    const start = new Date(startedAt).getTime();
-    const diff = Math.max(0, now - start);
-    const h = Math.floor(diff / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    if (h > 0) return `${h}h ${String(m).padStart(2,"0")}m`;
-    return `${m}m`;
+    const s = new Date(startedAt).getTime();
+    const d = Math.max(0, now - s);
+    const h = Math.floor(d / 3600000);
+    const m = Math.floor((d % 3600000) / 60000);
+    return h > 0 ? `${h}h ${String(m).padStart(2,"0")}m` : `${m}m`;
   } catch { return "—"; }
 }

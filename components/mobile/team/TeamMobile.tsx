@@ -16,10 +16,11 @@ import TeamProblemsMobile from "./TeamProblemsMobile";
 import TeamMapMobile from "./TeamMapMobile";
 import NewTaskSheetMobile from "./NewTaskSheetMobile";
 import NewTeamActionSheetMobile from "./NewTeamActionSheetMobile";
+import { IcoPlus } from "./icons";
 
 interface Props {
   hideBottomNav?: boolean;
-  onOpenCommessa?: (commessaId: string) => void;
+  onOpenCommessa?: (id: string) => void;
 }
 
 type View = "list" | "detail" | "map";
@@ -32,12 +33,10 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
   const [selectedOp, setSelectedOp] = useState<Operator | null>(null);
   const [showFab, setShowFab] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
-  const [taskDefaultOp, setTaskDefaultOp] = useState<string | undefined>(undefined);
+  const [taskDefaultOp, setTaskDefaultOp] = useState<string | undefined>();
 
   const handleOpen = (op: Operator) => { setSelectedOp(op); setView("detail"); };
   const handleChiama = (op: Operator) => { if (op.phone) window.location.href = "tel:" + op.phone.replace(/\s/g, ""); };
-  const handleMappa = () => { setView("map"); };
-  const handleTask = (op: Operator) => { setTaskDefaultOp(op.id); setShowNewTask(true); };
 
   if (view === "detail" && selectedOp) {
     return (
@@ -70,7 +69,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
   }
 
   return (
-    <div style={{ background: PAL.pageBg, minHeight: "100vh", paddingBottom: hideBottomNav ? 16 : 100 }}>
+    <div style={{ background: PAL.pageBg, minHeight: "100vh", paddingBottom: hideBottomNav ? 16 : 100, fontFamily: "Inter, -apple-system, sans-serif" }}>
       <TeamHeaderMobile
         totalOperators={stats.total}
         attivi={stats.attivi}
@@ -88,7 +87,8 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
             offline={stats.offline}
           />
 
-          <div style={{ padding: "14px 14px 0", fontSize: 12, fontWeight: 700, color: PAL.text }}>
+          {/* H3 16px SemiBold "Operatori" */}
+          <div style={{ padding: "16px 16px 0", fontSize: 14, fontWeight: 600, color: PAL.text }}>
             Operatori
           </div>
 
@@ -99,8 +99,8 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
                 op={op}
                 onOpen={handleOpen}
                 onChiama={handleChiama}
-                onMappa={handleMappa}
-                onTask={handleTask}
+                onMappa={() => setView("map")}
+                onTask={(o) => { setTaskDefaultOp(o.id); setShowNewTask(true); }}
                 onRisolvi={(o) => handleOpen(o)}
                 onTraccia={() => setView("map")}
               />
@@ -110,11 +110,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
       )}
 
       {tab === "squadre" && (
-        <TeamSquadsMobile
-          teams={teams}
-          onOpen={() => {}}
-          onNuovaSquadra={() => {}}
-        />
+        <TeamSquadsMobile teams={teams} onOpen={() => {}} onNuovaSquadra={() => {}} />
       )}
 
       {tab === "problemi" && (
@@ -126,15 +122,22 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
         />
       )}
 
-      {/* FAB */}
+      {/* FAB SPEC: diametro 48px, position 16px dx, 80px da bottom nav */}
       <div onClick={() => setShowFab(true)} style={{
-        position: "fixed", bottom: hideBottomNav ? 24 : 88, right: 16, zIndex: 100,
-        width: 48, height: 48, borderRadius: 999,
-        background: PAL.teal, color: "#fff",
+        position: "fixed",
+        bottom: hideBottomNav ? 24 : 80,
+        right: 16,
+        zIndex: 100,
+        width: 48, height: 48,
+        borderRadius: 999,
+        background: PAL.gradEnd,
+        color: "#FFFFFF",
         display: "flex", alignItems: "center", justifyContent: "center",
-        cursor: "pointer", boxShadow: "0 4px 12px rgba(40,160,160,0.45)",
-        fontSize: 26, fontWeight: 300, lineHeight: 1,
-      }}>+</div>
+        cursor: "pointer",
+        boxShadow: "0 4px 12px rgba(40,160,160,0.4)",
+      }}>
+        <IcoPlus s={20} />
+      </div>
 
       {showFab && (
         <NewTeamActionSheetMobile
