@@ -1150,6 +1150,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const updateMisura = (vanoId, key, value) => {
     if (isStorico) return; // rilievo storico = sola lettura
     const numVal = sanitize.misura(value);
+    // === DIAG bug 1111->1109 — RIMUOVERE DOPO FIX ===
+    if (typeof value === "number" && value !== numVal) {
+      console.error("[DIAG MISURA] sanitize ha cambiato il valore!", { vanoId, key, valueIn: value, valueOut: numVal });
+      console.trace("stack");
+    }
+    console.log("[DIAG MISURA]", { key, valueIn: value, valueOut: numVal, vanoId });
+    // === FINE DIAG ===
     const mv = validateMisura(key, numVal);
     if (!mv.valid) { toast(mv.errors[0], "warning"); }
     // Capture IDs NOW to prevent stale closures
