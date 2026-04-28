@@ -45,6 +45,7 @@ import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobile";
 import BottomToolbar from "./BottomToolbar";
+import TeamMobile from "./mobile/team/TeamMobile";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
 import ModalPanel from "./ModalPanel";
@@ -89,7 +90,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // Listener Day · navigazione bidirezionale (con whitelist tab validi)
   React.useEffect(() => {
-    const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro"];
+    const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro","team"];
     const MAPPA_DAY: Record<string,string> = {
       preventivo: "commesse",
       mail: "messaggi",
@@ -4225,6 +4226,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           );
         })()}</PanelErrorBoundary>}
           {tab === "settings" && <PanelErrorBoundary name="Impostazioni">{renderSettings()}</PanelErrorBoundary>}
+        {tab === "team" && (
+          <TeamMobile
+            hideBottomNav={false}
+            onOpenCommessa={(id) => { const cm = cantieri.find((c: any) => c.id === id); if (cm) { setSelectedCM(cm); setTab("commesse"); } }}
+          />
+        )}
+
         {tab === "altro" && (() => {
           return (
             <div style={{ padding:"20px 16px 100px", minHeight:"100vh" }}>
@@ -5544,7 +5552,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
-      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : "altro"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
+      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "team" ? "team" : "altro"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
     </>
     </MastroContext.Provider>
   );
