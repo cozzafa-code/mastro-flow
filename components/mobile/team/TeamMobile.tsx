@@ -87,8 +87,8 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
             offline={stats.offline}
           />
 
-          {/* H3 16px SemiBold "Operatori" */}
-          <div style={{ padding: "16px 16px 0", fontSize: 14, fontWeight: 600, color: PAL.text }}>
+          {/* H3 16px SemiBold "Operatori" — mockup */}
+          <div style={{ padding: "20px 16px 0", fontSize: 16, fontWeight: 600, color: PAL.text }}>
             Operatori
           </div>
 
@@ -122,7 +122,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa }: Props) {
         />
       )}
 
-      {/* FAB SPEC: diametro 48px, position 16px dx, 80px da bottom nav */}
+      {/* FAB 48px - 16dx 80bottom */}
       <div onClick={() => setShowFab(true)} style={{
         position: "fixed",
         bottom: hideBottomNav ? 24 : 80,

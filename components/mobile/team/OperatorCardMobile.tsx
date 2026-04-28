@@ -43,17 +43,29 @@ function Avatar({ name, url, size = 44 }: { name: string; url?: string; size?: n
 export default function OperatorCardMobile({ op, onOpen, onChiama, onMappa, onTask, onRisolvi, onTraccia }: Props) {
   const s = STATUS_INFO[op.status];
 
-  // Bottoni: 3 per attivo, 2 per altri stati - icone Lucide ESATTE da spec
+  // SFONDO CARD: bianco per attivo/offline; pastello solo per pausa/problema/viaggio/fermo
+  const cardBg =
+    op.status === "attivo"  ? PAL.card :
+    op.status === "offline" ? PAL.card :
+    s.bg;
+
+  // BORDER: sempre 1px - colore neutro o tinta pastello stato
+  const cardBorder =
+    op.status === "attivo"  ? PAL.border :
+    op.status === "offline" ? PAL.border :
+    "transparent"; // pastelli mockup non hanno border visibile
+
+  // Bottoni per stato
   let buttons: { lbl: string; ico: React.ReactNode; onClick: () => void; danger?: boolean }[] = [];
   if (op.status === "problema") {
     buttons = [
       { lbl: "Risolvi", ico: <IcoXCircle s={14} />, onClick: () => onRisolvi?.(op), danger: true },
-      { lbl: "Chiama", ico: <IcoPhone s={14} />, onClick: () => onChiama?.(op), danger: true },
+      { lbl: "Chiama",  ico: <IcoPhone s={14} />,   onClick: () => onChiama?.(op),  danger: true },
     ];
   } else if (op.status === "viaggio") {
     buttons = [
       { lbl: "Traccia", ico: <IcoNavigation s={14} />, onClick: () => onTraccia?.(op) },
-      { lbl: "Chiama", ico: <IcoPhone s={14} />, onClick: () => onChiama?.(op) },
+      { lbl: "Chiama",  ico: <IcoPhone s={14} />,      onClick: () => onChiama?.(op) },
     ];
   } else if (op.status === "pausa") {
     buttons = [
@@ -62,27 +74,27 @@ export default function OperatorCardMobile({ op, onOpen, onChiama, onMappa, onTa
     ];
   } else {
     buttons = [
-      { lbl: "Apri", ico: <IcoApri s={14} />, onClick: () => onOpen?.(op) },
-      { lbl: "Chiama", ico: <IcoPhone s={14} />, onClick: () => onChiama?.(op) },
-      { lbl: "Mappa", ico: <IcoMapPin s={14} />, onClick: () => onMappa?.(op) },
+      { lbl: "Apri",   ico: <IcoApri s={14} />,   onClick: () => onOpen?.(op) },
+      { lbl: "Chiama", ico: <IcoPhone s={14} />,  onClick: () => onChiama?.(op) },
+      { lbl: "Mappa",  ico: <IcoMapPin s={14} />, onClick: () => onMappa?.(op) },
     ];
   }
 
   return (
     <div onClick={() => onOpen?.(op)} style={{
-      background: s.bg,
-      borderRadius: 16,                          // SPEC: card radius 16px
-      padding: 16,                                // SPEC: padding 16px
-      margin: "12px 16px 0",                     // SPEC: gap 12px, padding screen 16px
+      background: cardBg,
+      borderRadius: 16,
+      padding: 16,
+      margin: "12px 16px 0",
+      border: `1px solid ${cardBorder}`,
       cursor: "pointer",
       fontFamily: "Inter, -apple-system, sans-serif",
     }}>
-      {/* HEADER: avatar 44px + nome + (pallino + stato) inline a destra */}
+      {/* HEADER: avatar 44px + nome + stato (dot+testo) inline a destra */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
         <Avatar name={op.name} url={op.avatar_url} size={44} />
         <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          {/* Body 14px Bold per nome */}
-          <span style={{ fontSize: 14, fontWeight: 700, color: PAL.text }}>{op.name}</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: PAL.text }}>{op.name}</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
             <span style={{ width: 8, height: 8, borderRadius: 999, background: s.dot }} />
             <span style={{ fontSize: 12, color: s.tx, fontWeight: 600 }}>{s.text}</span>
@@ -90,7 +102,7 @@ export default function OperatorCardMobile({ op, onOpen, onChiama, onMappa, onTa
         </div>
       </div>
 
-      {/* RIGHE INFO con icone 16px */}
+      {/* RIGHE INFO con icone 14px */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12, paddingLeft: 4 }}>
         {op.position_label && <Row icon={<IcoMapPin s={14} />} text={op.position_label} />}
         {op.cliente && op.status === "problema" && <Row icon={<IcoMapPin s={14} />} text={op.cliente} />}
@@ -112,17 +124,16 @@ export default function OperatorCardMobile({ op, onOpen, onChiama, onMappa, onTa
         </div>
       )}
 
-      {/* BOTTONI button radius 12px, border 1px */}
+      {/* BOTTONI */}
       <div style={{ display: "flex", gap: 8 }}>
         {buttons.map((b, i) => (
           <button key={i} onClick={(e) => { e.stopPropagation(); b.onClick(); }} style={{
             flex: 1,
             padding: "10px 12px",
-            borderRadius: 12,                    // SPEC: button radius 12px
+            borderRadius: 12,
             background: PAL.card,
             color: b.danger ? PAL.errorRed : PAL.text,
-            border: `1px solid ${b.danger ? PAL.errorRed + "60" : PAL.border}`,    // SPEC: border 1px
-            // Body2 12px
+            border: `1px solid ${b.danger ? PAL.errorRed + "60" : PAL.border}`,
             fontSize: 12, fontWeight: 600,
             cursor: "pointer",
             fontFamily: "inherit",

@@ -1,4 +1,4 @@
-// lib/types/team.ts - palette ESATTA dalla specifica pixel-perfect
+// lib/types/team.ts - palette ESATTA pixel-perfect dal mockup HD
 export type OperatorStatus = 'attivo' | 'pausa' | 'viaggio' | 'problema' | 'offline' | 'fermo';
 
 export interface Operator {
@@ -57,42 +57,43 @@ export interface TimelineEvent {
   has_photo?: boolean;
 }
 
-// PALETTE ESATTA SPEC
+// PALETTE PIXEL-PERFECT — dal mockup HD (sezione 1)
 export const PAL = {
-  // Gradient header
+  // Gradient header (sezione 1 mockup)
   gradStart: '#1F8B8B',
-  gradEnd: '#176868',
+  gradEnd:   '#176868',
   headerGrad: 'linear-gradient(160deg, #1F8B8B 0%, #176868 100%)',
   // Base
-  dark: '#0D1F1F',
-  pageBg: '#F5F1EA',
-  card: '#FFFFFF',
-  border: '#E5E7EB',
+  dark:    '#0D1F1F',
+  pageBg:  '#F5F1EA',   // fondo pagina (mockup: beige tenuissimo)
+  card:    '#FFFFFF',
+  border:  '#E5E7EB',
   // Text
-  text: '#0F172A',
+  text:     '#0F172A',
   textGrey: '#64748B',
-  textBody2: '#64748B',
-  // Status colors
-  attivoGreen: '#22C55E',
+  textBody2:'#64748B',
+  // Status colors (numeri/dots mockup)
+  attivoGreen:   '#22C55E',
   warningOrange: '#F59E0B',
-  errorRed: '#EF4444',
-  infoBlue: '#3B82F6',
-  pauseYellow: '#FACC15',
-  // Pastel backgrounds (specifica: pastelli per stati)
-  attivoBg: '#E8F5EC',     // verde menta chiarissimo
-  pausaBg: '#FEF3C7',      // giallo crema
-  problemaBg: '#FFE4E1',   // rosa pastello
-  viaggioBg: '#DBEAFE',    // azzurro chiaro
-  // Stato testo (più scuro)
-  attivoText: '#16A34A',
-  pausaText: '#D97706',
+  errorRed:      '#EF4444',
+  infoBlue:      '#3B82F6',
+  pauseYellow:   '#FACC15',
+  offlineGrey:   '#9CA3AF',
+  // Pastel backgrounds card stato (mockup)
+  attivoBg:   '#E8F5EC',
+  pausaBg:    '#FEF3C7',
+  problemaBg: '#FFE4E1',
+  viaggioBg:  '#DBEAFE',
+  // Stato testo (più scuro, badge accanto al nome)
+  attivoText:   '#16A34A',
+  pausaText:    '#D97706',
   problemaText: '#DC2626',
-  viaggioText: '#2563EB',
+  viaggioText:  '#2563EB',
   // Priorità
   altaBg: '#FEE2E2', altaTx: '#DC2626',
-  mediaBg: '#FEF3C7', mediaTx: '#D97706',
+  mediaBg:'#FEF3C7', mediaTx:'#D97706',
   // Tab pill
-  pillActive: '#0D1F1F',
+  pillActive:     '#0D1F1F',
   pillInactiveBg: '#FFFFFF',
 };
 
@@ -101,8 +102,8 @@ export const STATUS_INFO: Record<OperatorStatus, { dot: string; text: string; bg
   pausa:    { dot: PAL.warningOrange, text: 'In pausa',   bg: PAL.pausaBg,    tx: PAL.pausaText },
   viaggio:  { dot: PAL.infoBlue,      text: 'In viaggio', bg: PAL.viaggioBg,  tx: PAL.viaggioText },
   problema: { dot: PAL.errorRed,      text: 'Problema',   bg: PAL.problemaBg, tx: PAL.problemaText },
-  offline:  { dot: '#9CA3AF',          text: 'Offline',    bg: '#F3F4F6',      tx: '#4B5563' },
-  fermo:    { dot: '#F97316',          text: 'Fermo',      bg: '#FFEDD5',      tx: '#EA580C' },
+  offline:  { dot: '#9CA3AF',         text: 'Offline',    bg: '#F3F4F6',      tx: '#4B5563' },
+  fermo:    { dot: '#F97316',         text: 'Fermo',      bg: '#FFEDD5',      tx: '#EA580C' },
 };
 
 // Avatar URL via DiceBear (foto stile uomini)
