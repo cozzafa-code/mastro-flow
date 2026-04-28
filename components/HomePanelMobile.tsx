@@ -957,9 +957,8 @@ export default function HomePanelMobile(props: any) {
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <DayButton />
-            <div onClick={() => onNavigate?.("altro")} style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            </div>
+            <div style={{ width: 6, height: 6, borderRadius: 50, background: "#FFB84D" }} />
+            <div style={{ width: 6, height: 6, borderRadius: 50, background: "#7FD97F" }} />
             <div style={{ width: 34, height: 34, borderRadius: 50, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", color: "#28A0A0", fontSize: 12, fontWeight: 600, marginLeft: 4 }}>{iniziali}</div>
           </div>
         </div>

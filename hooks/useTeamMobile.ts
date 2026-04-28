@@ -2,12 +2,13 @@
 "use client";
 import { useState, useMemo } from "react";
 import type { Operator, Team, TeamProblem, TimelineEvent } from "@/lib/types/team";
+import { getAvatarUrl } from "@/lib/types/team";
 
 const MOCK_OPERATORS: Operator[] = [
-  { id: "op_marco", name: "Marco Rossi", status: "attivo", position_label: "Via Roma (cantiere)", current_job: "Montaggio S-0003", commessa_id: "cm_3", commessa_code: "S-0003", cliente: "Rossi", team_id: "sq_1", timer_label: "2h 15m", progress: 65, phone: "+39 333 1112233" },
-  { id: "op_luca",  name: "Luca Bianchi", status: "pausa", position_label: "Officina", current_job: "Produzione Ordine 9131G", timer_label: "Pausa da 25m", progress: 30, team_id: "sq_1", phone: "+39 333 2223344" },
-  { id: "op_gianni",name: "Gianni Verdi", status: "problema", cliente: "Cliente Verdi", commessa_id: "cm_1", commessa_code: "S-0001", problem_title: "Vetro mancante", problem_reported_ago: "10m fa", team_id: "sq_2", phone: "+39 333 3334455" },
-  { id: "op_paolo", name: "Paolo Neri", status: "viaggio", destination_label: "cantiere", arrival_eta: "14:30", timer_label: "Arrivo 14:30", team_id: "sq_2", phone: "+39 333 4445566" },
+  { id: "op_marco", name: "Marco Rossi", avatar_url: getAvatarUrl("marco-rossi"), status: "attivo", position_label: "Via Roma (cantiere)", current_job: "Montaggio S-0003", commessa_id: "cm_3", commessa_code: "S-0003", cliente: "Rossi", team_id: "sq_1", timer_label: "2h 15m", progress: 65, phone: "+39 333 1112233" },
+  { id: "op_luca",  name: "Luca Bianchi", avatar_url: getAvatarUrl("luca-bianchi"), status: "pausa", position_label: "Officina", current_job: "Produzione Ordine 9131G", timer_label: "Pausa da 25m", progress: 30, team_id: "sq_1", phone: "+39 333 2223344" },
+  { id: "op_gianni",name: "Gianni Verdi", avatar_url: getAvatarUrl("gianni-verdi"), status: "problema", cliente: "Cliente Verdi", commessa_id: "cm_1", commessa_code: "S-0001", problem_title: "Vetro mancante", problem_reported_ago: "10m fa", team_id: "sq_2", phone: "+39 333 3334455" },
+  { id: "op_paolo", name: "Paolo Neri", avatar_url: getAvatarUrl("paolo-neri"), status: "viaggio", destination_label: "cantiere", arrival_eta: "14:30", timer_label: "Arrivo 14:30", team_id: "sq_2", phone: "+39 333 4445566" },
 ];
 
 const MOCK_TEAMS: Team[] = [

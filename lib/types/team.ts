@@ -58,47 +58,36 @@ export interface TimelineEvent {
   has_photo?: boolean;
 }
 
-// === PALETTE ESATTA DAL MOCKUP ===
+// Palette esatta dai mockup HD
 export const PAL = {
-  // Sfondo pagina (beige-grigio caldo chiaro)
-  pageBg: '#F5F1EA',
-  // Card bianca
+  pageBg: '#FFFFFF',
   card: '#FFFFFF',
-  // Header gradient teal scuro
   headerGrad: 'linear-gradient(160deg, #1F8B8B 0%, #176868 100%)',
-  // Tab pill attiva (nero quasi)
   tabActive: '#0D1F1F',
   tabInactive: '#FFFFFF',
   tabInactiveText: '#0D1F1F',
   tabBorder: '#E5E0D6',
-  // Testo
   text: '#0D1F1F',
   textSub: '#71717A',
-  // Bordi card
   cardBorder: '#EAE6DE',
-  // Accent teal
   teal: '#28A0A0',
   tealDark: '#176868',
-  // Pastelli card operatore (esatti dal mockup)
-  attivoBg: '#E8F5EC',     // verde menta chiarissimo
-  pausaBg: '#FEF3C7',      // giallo crema
-  problemaBg: '#FFE4E1',   // rosa pastello
-  viaggioBg: '#DBEAFE',    // azzurro chiaro
-  fermoBg: '#FFEDD5',      // arancio chiarissimo
-  // Pallini stato
+  attivoBg: '#E8F5EC',
+  pausaBg: '#FEF3C7',
+  problemaBg: '#FFE4E1',
+  viaggioBg: '#DBEAFE',
+  fermoBg: '#FFEDD5',
   attivoDot: '#22C55E',
   pausaDot: '#F59E0B',
   problemaDot: '#EF4444',
   viaggioDot: '#3B82F6',
   fermoDot: '#F97316',
   offlineDot: '#9CA3AF',
-  // Testo stato (più scuro)
   attivoText: '#16A34A',
   pausaText: '#D97706',
   problemaText: '#DC2626',
   viaggioText: '#2563EB',
   fermoText: '#EA580C',
-  // Priorità tag
   altaBg: '#FEE2E2', altaTx: '#DC2626',
   mediaBg: '#FEF3C7', mediaTx: '#D97706',
 };
@@ -111,3 +100,8 @@ export const STATUS_INFO: Record<OperatorStatus, { dot: string; text: string; bg
   offline:  { dot: PAL.offlineDot,  text: 'Offline',    bg: '#F3F4F6',      tx: '#4B5563' },
   fermo:    { dot: PAL.fermoDot,    text: 'Fermo',      bg: PAL.fermoBg,    tx: PAL.fermoText },
 };
+
+// Avatar foto reali via DiceBear (no auth, no API key)
+export function getAvatarUrl(seed: string): string {
+  return `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
+}
