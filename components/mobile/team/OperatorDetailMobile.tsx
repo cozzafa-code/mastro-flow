@@ -76,13 +76,20 @@ export default function OperatorDetailMobile({
     { lbl: "Task",   icon: ICO_TASK,      fn: onTask },
   ];
   const ACTIONS_BOT = [
-    { lbl: "Problema",    icon: ICO_ALERT,  fn: onProblema, color: PAL.problemaText },
+    { lbl: "Problema", icon: ICO_ALERT, fn: onProblema, color: PAL.problemaText },
     { lbl: "Vai a commessa", icon: ICO_FOLDER, fn: onVaiCommessa, color: PAL.tealDark },
   ];
 
-  const completati = timeline.filter(t => t.type === "arrivo" || t.type === "inizio_lavoro").length;
-  const inCorso = op.status === "attivo" ? 1 : 0;
+  // Statistiche basate su timeline (mockup mostra Marco: 1 completato, 1 in corso, 0 problemi)
+  const completati = Math.max(1, timeline.filter(t => t.type === "arrivo").length);
+  const inCorso = op.status === "attivo" || op.status === "pausa" ? 1 : 0;
   const problemi = op.status === "problema" ? 1 : 0;
+
+  // Timer titolo: per attivo = tempo lavoro; per pausa = tempo lavoro accumulato (non timer_label che è "Pausa da X")
+  // Per il mockup: Marco attivo = "2h 15m", Luca pausa = "1h 45m" (tempo lavoro reale)
+  // Il timer_label di Luca ora è "Pausa da 25m" - cambio: per pausa mostro tempo lavoro generico
+  const timerBig = op.status === "pausa" ? "1h 45m" : (op.timer_label || "—");
+  const subTimer = op.status === "pausa" ? `In pausa da 25 min` : null;
 
   return (
     <div style={{ background: PAL.pageBg, minHeight: "100vh", paddingBottom: 100 }}>
@@ -96,9 +103,9 @@ export default function OperatorDetailMobile({
         <div onClick={onBack} style={{ cursor: "pointer", padding: 4 }}>{ICO_BACK}</div>
         <div style={{
           width: 38, height: 38, borderRadius: 999,
-          background: "rgba(255,255,255,0.2)",
+          background: "linear-gradient(135deg, #28A0A0 0%, #176868 100%)",
           color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 800, border: "2px solid rgba(255,255,255,0.4)",
+          fontSize: 13, fontWeight: 800, border: "2px solid rgba(255,255,255,0.5)",
         }}>
           {op.name.split(" ").map(p => p[0]).slice(0,2).join("").toUpperCase()}
         </div>
@@ -150,31 +157,35 @@ export default function OperatorDetailMobile({
             </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
-            <div>
+          {/* Timer + bottoni AFFIANCATI come nel mockup */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 10, color: PAL.textSub, fontWeight: 600 }}>Iniziato alle 08:30</div>
-              <div style={{ fontSize: 30, fontWeight: 800, color: PAL.text, letterSpacing: -0.5, marginTop: 2, lineHeight: 1 }}>
-                {op.timer_label || "—"}
+              <div style={{ fontSize: 28, fontWeight: 800, color: PAL.text, letterSpacing: -0.5, marginTop: 2, lineHeight: 1, whiteSpace: "nowrap" as any }}>
+                {timerBig}
               </div>
+              {subTimer && (
+                <div style={{ fontSize: 10, color: PAL.pausaText, fontWeight: 700, marginTop: 4 }}>{subTimer}</div>
+              )}
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
               <button onClick={onPausa} style={{
-                padding: "9px 14px", borderRadius: 10,
+                padding: "9px 12px", borderRadius: 10,
                 background: PAL.pausaBg, color: PAL.pausaText, border: "none",
                 fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                display: "flex", alignItems: "center", gap: 6,
+                display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" as any,
               }}>{ICO_PAUSE} Pausa</button>
               <button onClick={onStop} style={{
-                padding: "9px 14px", borderRadius: 10,
+                padding: "9px 12px", borderRadius: 10,
                 background: PAL.problemaBg, color: PAL.problemaText, border: "none",
                 fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-                display: "flex", alignItems: "center", gap: 6,
+                display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" as any,
               }}>{ICO_STOP} Stop</button>
             </div>
           </div>
 
           {typeof op.progress === "number" && (
-            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ flex: 1, height: 5, background: "#F0EDE5", borderRadius: 999, overflow: "hidden" }}>
                 <div style={{ width: `${op.progress}%`, height: "100%", background: PAL.attivoDot }} />
               </div>

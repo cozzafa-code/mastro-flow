@@ -45,7 +45,6 @@ import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobile";
 import BottomToolbar from "./BottomToolbar";
-import TeamMobile from "./mobile/team/TeamMobile";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
 import ModalPanel from "./ModalPanel";
@@ -61,7 +60,6 @@ import { OnboardingPanel, FirmaModalPanel } from "./OnboardingPanel";
 import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 import { useOfflineCache } from "@/hooks/useOfflineCache";
-import AgendaMobileNew from "./mobile/agenda/AgendaMobile";
 
 function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDesktop }: { user?: any, azienda?: any, forceMobile?: boolean, forceDesktop?: boolean }) {
   const [theme, setTheme] = useState("fliwox");
@@ -90,7 +88,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // Listener Day · navigazione bidirezionale (con whitelist tab validi)
   React.useEffect(() => {
-    const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro","team"];
+    const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro"];
     const MAPPA_DAY: Record<string,string> = {
       preventivo: "commesse",
       mail: "messaggi",
@@ -669,8 +667,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       try{const _v=localStorage.getItem("mastro:piano");if(_v)setPianoAttivo(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:team");if(_v)setTeam(JSON.parse(_v));}catch(e){}
       try{const _v=localStorage.getItem("mastro:contatti");if(_v)setContatti(JSON.parse(_v));}catch(e){}
-      // v21: migra pipeline localStorage se non contiene 'modifiche' (fasi v18)
-      try{const _v=localStorage.getItem("mastro:pipeline");if(_v){const parsed=JSON.parse(_v); if(parsed.some(p=>p.id==="collaudo") && parsed.some(p=>p.id==="modifiche")){setPipelineDB(parsed);}else{setPipelineDB(PIPELINE_DEFAULT);localStorage.setItem("mastro:pipeline",JSON.stringify(PIPELINE_DEFAULT));console.log("[v21] pipeline migrata a PIPELINE_DEFAULT con fasi modifiche/da_contattare");}} }catch(e){}
+      try{const _v=localStorage.getItem("mastro:pipeline");if(_v){const parsed=JSON.parse(_v); if(parsed.some(p=>p.id==="collaudo")){setPipelineDB(parsed);}else{setPipelineDB(PIPELINE_DEFAULT);localStorage.setItem("mastro:pipeline",JSON.stringify(PIPELINE_DEFAULT));}} }catch(e){}
       try{const _v=localStorage.getItem("mastro:azienda");if(_v)setAziendaInfo(JSON.parse(_v));}catch(e){}
 },[]);
 
@@ -810,19 +807,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const isDesktop = forceDesktop ? true : forceMobile ? false : (winW >= 1024 && !isTouchDevice);
 
   // --- Notifica risposta cliente preventivo ---
-  // v20: aziendaIdReal viene caricato al boot da getAziendaId() (lib/supabase-sync.ts)
-  // perche' aziendaInfo?.id e' undefined (lo state non contiene mai .id)
-  const [aziendaIdReal, setAziendaIdReal] = React.useState<string | null>(null);
-  React.useEffect(() => {
-    let alive = true;
-    getAziendaId().then(id => {
-      if (alive && id) setAziendaIdReal(id);
-    }).catch(err => console.warn("[v20] getAziendaId fail:", err));
-    return () => { alive = false; };
-  }, []);
-
   const { pending: prevPending, latest: prevLatest, ack: prevAck, ackAll: prevAckAll } = usePreventivoNotifier({
-    azienda_id: aziendaIdReal || aziendaInfo?.id || null,
+    azienda_id: aziendaInfo?.id || null,
     pollIntervalMs: 20000,
     enableSound: true,
     enableBrowserNotif: true,
@@ -869,7 +855,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         };
         try {
           if (typeof setTasks === 'function') setTasks((ts: any[]) => [newTask, ...(ts || [])]);
-          if (typeof saveTask === 'function' && (aziendaIdReal || aziendaInfo?.id)) saveTask((aziendaIdReal || aziendaInfo.id) as string, newTask);
+          if (typeof saveTask === 'function' && aziendaInfo?.id) saveTask(aziendaInfo.id, newTask);
         } catch(e) { console.error('[v18 task create modifiche]', e); }
       } catch(e) { console.error('[v18 onModifiche]', e); }
     },
@@ -903,7 +889,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
         };
         try {
           if (typeof setTasks === 'function') setTasks((ts: any[]) => [newTask, ...(ts || [])]);
-          if (typeof saveTask === 'function' && (aziendaIdReal || aziendaInfo?.id)) saveTask((aziendaIdReal || aziendaInfo.id) as string, newTask);
+          if (typeof saveTask === 'function' && aziendaInfo?.id) saveTask(aziendaInfo.id, newTask);
         } catch(e) { console.error('[v18 task create chiamare]', e); }
       } catch(e) { console.error('[v18 onChiamare]', e); }
     },
@@ -1152,13 +1138,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
   const updateMisura = (vanoId, key, value) => {
     if (isStorico) return; // rilievo storico = sola lettura
     const numVal = sanitize.misura(value);
-    // === DIAG bug 1111->1109 — RIMUOVERE DOPO FIX ===
-    if (typeof value === "number" && value !== numVal) {
-      console.error("[DIAG MISURA] sanitize ha cambiato il valore!", { vanoId, key, valueIn: value, valueOut: numVal });
-      console.trace("stack");
-    }
-    console.log("[DIAG MISURA]", { key, valueIn: value, valueOut: numVal, vanoId });
-    // === FINE DIAG ===
     const mv = validateMisura(key, numVal);
     if (!mv.valid) { toast(mv.errors[0], "warning"); }
     // Capture IDs NOW to prevent stale closures
@@ -2645,25 +2624,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     );
   };
 
-  const renderAgenda = () => (
-    <AgendaMobileNew
-      cantieri={cantieri}
-      hideBottomNav
-      onOpenCommessa={(cmId, code) => {
-        const target = (cantieri || []).find((c: any) => c.id === cmId || c.code === code);
-        if (target) {
-          setSelectedCM(target);
-          setTab("commesse");
-        }
-      }}
-      onCreateEvent={(kind, dateIso) => {
-        try {
-          setNewEvent((prev: any) => ({ ...(prev || {}), date: dateIso, type: kind === "nota" ? "task" : kind }));
-        } catch {}
-        setShowNewEvent(true);
-      }}
-    />
-  );
+  const renderAgenda = () => <AgendaCalendarioPanel />;
 
 // =======================================================
 // MASTRO ERP v2 - PARTE 4/5
@@ -2706,19 +2667,13 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return annoPrev.length + 1;
   };
 
-  const creaFattura = (c, tipo: "acconto" | "sal" | "saldo" | "unica", importoOverride?: number, scadenzaIso?: string, noteCustom?: string) => {
+  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica", importoOverride?: number) => {
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
     const importoBase = calcolaTotaleCommessa(c);
     const giaPagato = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s, f) => s + (f.importo || 0), 0);
-    const giaFatturatoFn = fattureDB.filter(f => f.cmId === c.id).reduce((s, f) => s + (f.importo || 0), 0);
-    const importo = importoOverride && importoOverride > 0
-      ? Math.round(importoOverride)
-      : (tipo === "acconto" ? Math.round(importoBase * 0.5)
-        : tipo === "sal" ? Math.round((importoBase - giaFatturatoFn) * 0.5)
-        : tipo === "saldo" ? Math.round(importoBase - giaPagato)
-        : importoBase);
+    const importo = importoOverride && importoOverride > 0 ? Math.round(importoOverride) : (tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase);
     const iva = 10; // serramenti = 10% se ristrutturazione, 22% se nuova costruzione
     const imponibile = Math.round(importo / (1 + iva / 100) * 100) / 100;
     const ivaAmt = importo - imponibile;
@@ -2745,11 +2700,8 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       pagata: false,
       dataPagamento: null,
       metodoPagamento: "",
-      scadenza: scadenzaIso || (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split("T")[0]; })(),
-      note: noteCustom || (tipo === "acconto" ? "Acconto 50% su ordine"
-                          : tipo === "sal" ? "SAL stato avanzamento lavori"
-                          : tipo === "saldo" ? "Saldo a completamento lavori"
-                          : ""),
+      scadenza: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split("T")[0]; })(),
+      note: tipo === "acconto" ? "Acconto 50% su ordine" : tipo === "saldo" ? "Saldo a completamento lavori" : "",
     };
     setFattureDB(prev => [...prev, fattura]);
     // AUTO-ADVANCE pipeline
@@ -4226,13 +4178,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           );
         })()}</PanelErrorBoundary>}
           {tab === "settings" && <PanelErrorBoundary name="Impostazioni">{renderSettings()}</PanelErrorBoundary>}
-        {tab === "team" && (
-          <TeamMobile
-            hideBottomNav={false}
-            onOpenCommessa={(id) => { const cm = cantieri.find((c: any) => c.id === id); if (cm) { setSelectedCM(cm); setTab("commesse"); } }}
-          />
-        )}
-
         {tab === "altro" && (() => {
           return (
             <div style={{ padding:"20px 16px 100px", minHeight:"100vh" }}>
@@ -5552,7 +5497,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
-      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : tab === "team" ? "team" : "home"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
+      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : "altro"} onNavigate={setTab} />
     </>
     </MastroContext.Provider>
   );
