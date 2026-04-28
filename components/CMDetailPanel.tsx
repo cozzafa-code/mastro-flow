@@ -1039,7 +1039,7 @@ export default function CMDetailPanel() {
           }}
         />
       )}
-      <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 20 }}>
+      <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 100 }}>
         {_accettatoBanner}{_modificheCard}{_contattaCard}
         {/* ============ HEADER TEAL ============ */}
         <div style={{
@@ -1384,7 +1384,31 @@ export default function CMDetailPanel() {
                              setSelectedRilievo(nuovo);
                            } } :
                            tipoRis29 === "chiamare" && telPul29 ? { lbl: "💬 CONTATTA SU WHATSAPP", bg: "#3B82F6", action: () => window.open("https://wa.me/" + numWA29, "_blank") } :
-                           { lbl: "REINVIA PREVENTIVO", bg: "#28A0A0", action: () => { setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, preventivoInviato: false } : x)); setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p); } };
+                           { lbl: "REINVIA PREVENTIVO", bg: "#28A0A0", action: async () => {
+                             // v54: rigenero il link + apro il modal di invio
+                             try {
+                               const r = await fetch("/api/preventivo-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cm_id: c29.id, cm_code: c29.code, cliente: (c29.cliente || "") + " " + (c29.cognome || "")}) });
+                               const d = await r.json();
+                               const link = d?.url || (typeof window !== "undefined" ? window.location.origin + "/p/" + (d?.token || ris29?.token || "") : "");
+                               setShowSendModal({
+                                 link,
+                                 nome: ((c29.cliente || "") + " " + (c29.cognome || "")).trim() || "Cliente",
+                                 tel: telPul29 || "",
+                                 email: c29.email || "",
+                                 code: c29.code || "",
+                               });
+                             } catch (e) {
+                               // Fallback: usa link esistente se token gia' presente
+                               const link = ris29?.token && typeof window !== "undefined" ? window.location.origin + "/p/" + ris29.token : "";
+                               setShowSendModal({
+                                 link,
+                                 nome: ((c29.cliente || "") + " " + (c29.cognome || "")).trim() || "Cliente",
+                                 tel: telPul29 || "",
+                                 email: c29.email || "",
+                                 code: c29.code || "",
+                               });
+                             }
+                           } };
 
             return (
               <div style={{
