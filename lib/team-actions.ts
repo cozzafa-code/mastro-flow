@@ -426,3 +426,36 @@ export async function getSquadra(id: string): Promise<SquadraDettaglio | null> {
     .is("data_uscita", null);
   return { ...sq, membri_ids: (membri || []).map((m: any) => m.team_id) } as SquadraDettaglio;
 }
+
+
+// =================== FASE 5C: GPS / MAPPA ===================
+export interface GPSSnapshot {
+  operatore_id: string;
+  lat: number;
+  lng: number;
+  accuracy_metri: number | null;
+  velocita_kmh: number | null;
+  batteria_percent: number | null;
+  stato_dedotto: string | null;
+  pingato_at: string;
+}
+
+// Ritorna l'ULTIMO snapshot GPS per ogni operatore dell'azienda (entro 24h)
+export async function getUltimePosizioniGPS(): Promise<Record<string, GPSSnapshot>> {
+  const { azienda_id } = await getCtx();
+  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("gps_snapshots")
+    .select("operatore_id, lat, lng, accuracy_metri, velocita_kmh, batteria_percent, stato_dedotto, pingato_at")
+    .eq("azienda_id", azienda_id)
+    .gte("pingato_at", since)
+    .order("pingato_at", { ascending: false });
+  if (error) throw error;
+  const out: Record<string, GPSSnapshot> = {};
+  (data || []).forEach((row: any) => {
+    if (!out[row.operatore_id]) {
+      out[row.operatore_id] = row as GPSSnapshot;
+    }
+  });
+  return out;
+}
