@@ -1422,9 +1422,11 @@ export default function CMDetailPanel() {
                 {/* Header pannello */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <div>
-                    <div style={{ fontSize: 9, color: "#28A0A0", fontWeight: 900, letterSpacing: 1.2 }}>📋 GESTIONE PREVENTIVI</div>
+                    <div style={{ fontSize: 9, color: "#28A0A0", fontWeight: 900, letterSpacing: 1.2 }}>{haFirmato29 ? "📋 GESTIONE CONFERMA D'ORDINE" : "📋 GESTIONE PREVENTIVI"}</div>
                     <div style={{ fontSize: 13, color: "#0D1F1F", fontWeight: 800, marginTop: 2 }}>
-                      {tuttiRilievi29.length} {tuttiRilievi29.length === 1 ? "versione" : "versioni"} · totale {fmtEur29(totale29)}
+                      {haFirmato29
+                        ? <>Firmata {dataFirmaFmt29 || "—"} · totale {fmtEur29(totale29)}</>
+                        : <>{tuttiRilievi29.length} {tuttiRilievi29.length === 1 ? "versione" : "versioni"} · totale {fmtEur29(totale29)}</>}
                     </div>
                   </div>
                   <div style={{
@@ -1497,7 +1499,9 @@ export default function CMDetailPanel() {
                       { lbl: "Inviato", done: !!c29.preventivoInviatoAt || !!c29.dataPreventivoInvio || haPreventivoInviato, ts: c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : (c29.dataPreventivoInvio ? new Date(c29.dataPreventivoInvio).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : null) },
                       { lbl: tipoRis29 === "modifiche" ? "Cliente vuole modifiche" : tipoRis29 === "chiamare" ? "Cliente vuole contatto" : "Cliente accettato", done: !!tipoRis29 && tipoRis29 !== "modifiche" && tipoRis29 !== "chiamare", warn: tipoRis29 === "modifiche" || tipoRis29 === "chiamare", ts: ris29?.risposta_at ? new Date(ris29.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null },
                       { lbl: "Conferma firmata", done: haFirmato29, ts: dataFirmaFmt29 },
-                      { lbl: "Acconto / Saldo", done: false, ts: null },
+                      { lbl: "Acconto fatturato", done: !!(c29.fattureDB || []).find ? !!((c29.fattureDB || []).find((f: any) => f.cmId === c29.id && (f.tipo === "acconto" || f.tipo === "unica"))) : false, ts: null },
+                      { lbl: "Produzione / Montaggio", done: c29.fase === "ordini" || c29.fase === "produzione" || c29.fase === "montaggio" || c29.fase === "chiusura", ts: null },
+                      { lbl: "Saldo / Pagata", done: c29.fase === "chiusura" || c29.fase === "pagata", ts: null },
                     ];
                     const activeIdx = steps.findIndex((s: any) => !s.done);
                     return steps.map((s: any, i: number) => {
@@ -1566,6 +1570,81 @@ export default function CMDetailPanel() {
                     </button>
                   )}
                 </div>
+
+                {/* v55: BLOCCO MODALITA FIRMATO - sostituisce sezione preventivo con conferma+acconto+navigazione */}
+                {haFirmato29 && (() => {
+                  const fattCmId55 = (typeof fattureDB !== "undefined" && Array.isArray(fattureDB)) ? fattureDB.filter((f: any) => f.cmId === c29.id) : [];
+                  const haAcconto55 = fattCmId55.some((f: any) => f.tipo === "acconto" || f.tipo === "unica");
+                  const importoSugg55 = Math.round((totale29 || 0) * (typeof fattPerc !== "undefined" ? fattPerc : 30) / 100);
+                  return (
+                    <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px dashed #C8E4E4" }}>
+                      {/* Documento firmato */}
+                      <div style={{ background: "#28A0A012", border: "1px solid #28A0A030", borderRadius: 10, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 10, background: "#28A0A0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, flexShrink: 0 }}>✓</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F" }}>Conferma firmata</div>
+                          <div style={{ fontSize: 10, color: "#28A0A0", marginTop: 1 }}>{dataFirmaFmt29 || "documento ricevuto"}</div>
+                        </div>
+                        {ris29?.token && (
+                          <button onClick={() => window.open("/p/" + ris29.token, "_blank")} style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#fff", color: "#28A0A0", fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>VEDI →</button>
+                        )}
+                      </div>
+
+                      {!haAcconto55 ? (
+                        <>
+                          {/* Selettore percentuale acconto */}
+                          <div style={{ fontSize: 10, fontWeight: 800, color: "#28A0A0", letterSpacing: 0.6, marginBottom: 6 }}>ACCONTO DA FATTURARE</div>
+                          <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" as any }}>
+                            {[30, 40, 50, 60, 100].map((p: number) => (
+                              <div key={p} onClick={() => { if (typeof setFattPerc === "function") setFattPerc(p); }} style={{
+                                flex: 1, minWidth: 50, padding: "8px 6px", borderRadius: 8, cursor: "pointer", textAlign: "center" as any,
+                                fontSize: 11, fontWeight: 800,
+                                background: (typeof fattPerc !== "undefined" && fattPerc === p) ? "#28A0A0" : "#fff",
+                                color: (typeof fattPerc !== "undefined" && fattPerc === p) ? "#fff" : "#0D1F1F",
+                                border: `1.5px solid ${(typeof fattPerc !== "undefined" && fattPerc === p) ? "#28A0A0" : "#C8E4E4"}`,
+                              }}>
+                                {p === 100 ? "Unica" : p + "%"}
+                              </div>
+                            ))}
+                          </div>
+                          {/* Bottone CREA FATTURA ACCONTO */}
+                          <button onClick={() => {
+                            if (typeof setAccontoImporto === "function") setAccontoImporto(String(importoSugg55));
+                            if (typeof setShowAccontoModal === "function") setShowAccontoModal(true);
+                          }} style={{
+                            width: "100%", padding: "14px 16px", marginBottom: 10,
+                            background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
+                            border: "none", borderRadius: 12, color: "#fff",
+                            fontSize: 13, fontWeight: 900, cursor: "pointer",
+                            fontFamily: "inherit", letterSpacing: 0.4,
+                            boxShadow: "0 4px 12px rgba(245,158,11,0.3)",
+                          }}>
+                            + CREA FATTURA ACCONTO {fmtEur29(importoSugg55)} →
+                          </button>
+                        </>
+                      ) : (
+                        <div style={{ background: "#D1FAE5", border: "1px solid #6EE7B7", borderRadius: 10, padding: "10px 12px", marginBottom: 10, fontSize: 11, fontWeight: 800, color: "#065F46", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>✓</span>
+                          <span style={{ flex: 1 }}>Acconto già fatturato {fmtEur29(fattCmId55.filter((f: any) => f.tipo === "acconto" || f.tipo === "unica").reduce((s: number, f: any) => s + (f.importo || 0), 0))}</span>
+                        </div>
+                      )}
+
+                      {/* Bottoni navigazione moduli esistenti */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        <button onClick={() => { if (typeof setTab === "function") setTab("contabilita"); }} style={{
+                          padding: "10px 8px", borderRadius: 10,
+                          background: "#fff", border: "1.5px solid #28A0A0",
+                          color: "#28A0A0", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                        }}>📊 Contabilità</button>
+                        <button onClick={() => { if (typeof setTab === "function") setTab("montaggi_cal"); }} style={{
+                          padding: "10px 8px", borderRadius: 10,
+                          background: "#fff", border: "1.5px solid #7F77DD",
+                          color: "#7F77DD", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                        }}>📅 Pianifica montaggio</button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}
