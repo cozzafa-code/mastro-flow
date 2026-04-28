@@ -225,6 +225,8 @@ export default function CMDetailPanel() {
     showPreventivoModal, setShowPreventivoModal,
     showModal, setShowModal, showRiepilogo, setShowRiepilogo,
     showAllegatiModal, setShowAllegatiModal, allegatiText, setAllegatiText,
+    // FIX workflow acconto
+    setTab, calcolaTotaleCommessa,
     showProblemaModal, setShowProblemaModal, problemaForm, setProblemaForm,
     showProblemiView, setShowProblemiView,
     // Events
@@ -1709,22 +1711,63 @@ export default function CMDetailPanel() {
                         </div>
                       )}
 
-                      {/* Bottoni navigazione moduli esistenti */}
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                        <button onClick={() => { if (typeof setTab === "function") setTab("contabilita"); }} style={{
-                          padding: "10px 8px", borderRadius: 10,
-                          background: "#fff", border: "1.5px solid #28A0A0",
-                          color: "#28A0A0", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                        }}>📊 Contabilità</button>
-                        <button onClick={() => { if (typeof setTab === "function") setTab("montaggi_cal"); }} style={{
-                          padding: "10px 8px", borderRadius: 10,
-                          background: "#fff", border: "1.5px solid #7F77DD",
-                          color: "#7F77DD", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                        }}>📅 Pianifica montaggio</button>
-                      </div>
+                      {/* Bottoni navigazione moduli esistenti — Pianifica montaggio solo se acconto PAGATO */}
+                      {(() => {
+                        const accontoPagato55 = (fattCmId55 || []).some((f: any) => (f.tipo === "acconto" || f.tipo === "unica") && !!f.pagata);
+                        return (
+                          <div style={{ display: "grid", gridTemplateColumns: accontoPagato55 ? "1fr 1fr" : "1fr", gap: 8 }}>
+                            <button onClick={() => { if (typeof setTab === "function") setTab("contabilita"); }} style={{
+                              padding: "10px 8px", borderRadius: 10,
+                              background: "#fff", border: "1.5px solid #28A0A0",
+                              color: "#28A0A0", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                            }}>📊 Contabilità</button>
+                            {accontoPagato55 && (
+                              <button onClick={() => { if (typeof setTab === "function") setTab("montaggi_cal"); }} style={{
+                                padding: "10px 8px", borderRadius: 10,
+                                background: "#fff", border: "1.5px solid #7F77DD",
+                                color: "#7F77DD", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                              }}>📅 Pianifica montaggio</button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })()}
+
+                {/* MODAL FATTURA ACCONTO inline pannello v29 */}
+                {showAccontoModal && (
+                  <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+                    <div style={{ background: T.card, borderRadius: 16, padding: 24, width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>Fattura {fattPerc === 100 ? "unica" : "acconto"}</div>
+                      <div style={{ fontSize: 12, color: T.sub, marginBottom: 16 }}>Commessa <strong>{(selectedCM as any)?.code}</strong></div>
+                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 6, fontWeight: 600 }}>Importo da fatturare (€)</div>
+                      <input
+                        type="number"
+                        value={accontoImporto}
+                        onChange={e => setAccontoImporto(e.target.value)}
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${T.acc}`, fontSize: 18, fontWeight: 800, color: T.acc, background: T.bg, fontFamily: "inherit", marginBottom: 16, boxSizing: "border-box" as any, outline: "none" }}
+                        autoFocus
+                      />
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => setShowAccontoModal(false)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
+                        <button onClick={() => {
+                          const imp = parseFloat(accontoImporto);
+                          if (!imp || imp <= 0) return;
+                          if (typeof creaFattura === "function") {
+                            creaFattura(selectedCM, fattPerc === 100 ? "unica" : "acconto", imp);
+                          }
+                          setShowAccontoModal(false);
+                          if (typeof setCcDone === "function") {
+                            setCcDone("Fattura creata");
+                            setTimeout(() => setCcDone(null), 3000);
+                          }
+                        }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>CREA FATTURA</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
               </div>
             );
           })()}
