@@ -1,4 +1,5 @@
 // components/mobile/team/OperatorDetailMobile.tsx
+// FASE 3 - bottoni Avvia/Pausa/Riprende/Stop dinamici per stato corrente
 "use client";
 import React from "react";
 import type { Operator, TimelineEvent } from "@/lib/types/team";
@@ -19,9 +20,13 @@ interface Props {
   onTask?: () => void;
   onProblema?: () => void;
   onVaiCommessa?: () => void;
+  // FASE 3
+  onAvvia?: () => void;
   onPausa?: () => void;
+  onRiprende?: () => void;
   onStop?: () => void;
   onAssegnaTask?: () => void;
+  busy?: boolean;
 }
 
 const TL_COLOR: Record<TimelineEvent["type"], string> = {
@@ -34,20 +39,23 @@ const TL_COLOR: Record<TimelineEvent["type"], string> = {
   previsto: '#9CA3AF',
 };
 
+// Play icon (Avvia)
+const IcoPlay = ({ s = 12 }: { s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+);
+
 export default function OperatorDetailMobile({
   op, timeline, onBack,
   onChiama, onMappa, onChat, onFoto, onTask, onProblema, onVaiCommessa,
-  onPausa, onStop, onAssegnaTask,
+  onAvvia, onPausa, onRiprende, onStop, onAssegnaTask, busy = false,
 }: Props) {
   const s = STATUS_INFO[op.status];
 
-  // Per Marco mockup: 2 / 1 / 0
   const completati = op.status === "attivo" ? 2 : 0;
   const inCorso = op.status === "attivo" || op.status === "pausa" ? 1 : 0;
   const problemi = op.status === "problema" ? 1 : 0;
 
-  // Timer titolo
-  const timerBig = op.status === "pausa" ? "1h 45m" : (op.timer_label || "—");
+  const timerBig = op.timer_label || "--";
 
   return (
     <div style={{ background: PAL.pageBg, minHeight: "100vh", paddingBottom: 100, fontFamily: "Inter, -apple-system, sans-serif" }}>
@@ -59,7 +67,6 @@ export default function OperatorDetailMobile({
         display: "flex", alignItems: "center", gap: 12,
       }}>
         <div onClick={onBack} style={{ cursor: "pointer", padding: 4, color: "#FFFFFF" }}><IcoBack s={22} /></div>
-        {/* Avatar 56px nel detail (SPEC) */}
         {op.avatar_url ? (
           <img src={op.avatar_url} alt={op.name} style={{
             width: 44, height: 44, borderRadius: 999,
@@ -87,8 +94,6 @@ export default function OperatorDetailMobile({
       {/* AZIONI RAPIDE */}
       <div style={{ background: PAL.card, padding: 16, borderBottom: `1px solid ${PAL.border}` }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: PAL.text, marginBottom: 12 }}>Azioni rapide</div>
-
-        {/* RIGA 1: 5 azioni Chiama / Mappa / Chat / Foto / Task */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 4, marginBottom: 12 }}>
           <ActionIcon label="Chiama" color={PAL.gradEnd} onClick={onChiama} icon={<IcoPhone s={20} />} />
           <ActionIcon label="Mappa"  color={PAL.gradEnd} onClick={onMappa}  icon={<IcoMapPin s={20} />} />
@@ -96,69 +101,90 @@ export default function OperatorDetailMobile({
           <ActionIcon label="Foto"   color={PAL.gradEnd} onClick={onFoto}   icon={<IcoCamera s={20} />} />
           <ActionIcon label="Task"   color={PAL.gradEnd} onClick={onTask}   icon={<IcoTask s={20} />} />
         </div>
-
-        {/* RIGA 2: Problema (rosso/arancio) + Vai a commessa (teal) */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
           <ActionIcon label="Problema" color={PAL.warningOrange} onClick={onProblema} icon={<IcoAlert s={20} />} />
           <ActionIcon label="Vai a commessa" color={PAL.gradEnd} onClick={onVaiCommessa} icon={<IcoFolder s={20} />} />
         </div>
       </div>
 
-      {/* LAVORO ATTUALE */}
-      {op.current_job && (
-        <div style={{ background: PAL.card, padding: 16, borderBottom: `1px solid ${PAL.border}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: PAL.textGrey }}>Lavoro attuale</div>
-            <span style={{ color: PAL.textGrey, cursor: "pointer" }}><IcoChevronRight s={18} /></span>
+      {/* CONTROLLO STATO LAVORO (FASE 3) */}
+      <div style={{ background: PAL.card, padding: 16, borderBottom: `1px solid ${PAL.border}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 500, color: PAL.textGrey }}>
+            {op.status === "attivo"   ? "Lavoro in corso" :
+             op.status === "pausa"    ? "In pausa" :
+             op.status === "viaggio"  ? "Programmato oggi" :
+             op.status === "problema" ? "Problema attivo" :
+                                        "Nessun lavoro attivo"}
           </div>
-
-          {/* Body 14px Bold col verde */}
-          <div style={{ fontSize: 16, fontWeight: 600, color: PAL.text, marginBottom: 4 }}>{op.current_job}</div>
-          {op.commessa_code && (
-            <div style={{ fontSize: 12, color: PAL.textGrey, marginBottom: 12 }}>
-              Commessa {op.commessa_code} {op.cliente && `· ${op.cliente}`}
-            </div>
-          )}
-
-          <div style={{ fontSize: 11, color: PAL.textGrey, fontWeight: 500, marginBottom: 4 }}>Iniziato alle 08:30</div>
-
-          {/* Timer 2h 15m grande + Pausa/Stop A DESTRA INLINE */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            {/* Timer H1 24px Bold ma più grande mockup ~32px */}
-            <div style={{ fontSize: 32, fontWeight: 700, color: PAL.text, letterSpacing: -0.8, lineHeight: 1, whiteSpace: "nowrap" as any }}>
-              {timerBig}
-            </div>
-            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-              {/* Pausa GIALLO */}
-              <button onClick={onPausa} style={{
-                padding: "10px 16px", borderRadius: 12,
-                background: PAL.pausaBg, color: PAL.pausaText, border: "none",
-                fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" as any,
-              }}><IcoPause s={12} /> Pausa</button>
-              {/* Stop ROSSO */}
-              <button onClick={onStop} style={{
-                padding: "10px 16px", borderRadius: 12,
-                background: PAL.problemaBg, color: PAL.problemaText, border: "none",
-                fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" as any,
-              }}><IcoStop s={12} /> Stop</button>
-            </div>
-          </div>
-
-          {/* Progress */}
-          {typeof op.progress === "number" && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ flex: 1, height: 6, background: "#F0F0F0", borderRadius: 999, overflow: "hidden" }}>
-                <div style={{ width: `${op.progress}%`, height: "100%", background: PAL.attivoGreen }} />
-              </div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: PAL.textGrey }}>{op.progress}%</span>
-            </div>
+          {op.commessa_id && (
+            <span style={{ color: PAL.textGrey, cursor: "pointer" }} onClick={onVaiCommessa}><IcoChevronRight s={18} /></span>
           )}
         </div>
-      )}
 
-      {/* TIMELINE */}
+        {op.current_job ? (
+          <>
+            <div style={{ fontSize: 16, fontWeight: 600, color: PAL.text, marginBottom: 4 }}>{op.current_job}</div>
+            {op.commessa_code && (
+              <div style={{ fontSize: 12, color: PAL.textGrey, marginBottom: 12 }}>
+                Commessa {op.commessa_code} {op.cliente && `· ${op.cliente}`}
+              </div>
+            )}
+
+            {/* Timer + bottoni dinamici */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ fontSize: 32, fontWeight: 700, color: PAL.text, letterSpacing: -0.8, lineHeight: 1, whiteSpace: "nowrap" as any }}>
+                {timerBig}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                {op.status === "attivo" && (
+                  <>
+                    <BtnAction onClick={onPausa} disabled={busy} bg={PAL.pausaBg} fg={PAL.pausaText} icon={<IcoPause s={12} />} label="Pausa" />
+                    <BtnAction onClick={onStop}  disabled={busy} bg={PAL.problemaBg} fg={PAL.problemaText} icon={<IcoStop s={12} />} label="Stop" />
+                  </>
+                )}
+                {op.status === "pausa" && (
+                  <>
+                    <BtnAction onClick={onRiprende} disabled={busy} bg={PAL.attivoBg} fg={PAL.attivoText} icon={<IcoPlay s={12} />} label="Riprendi" />
+                    <BtnAction onClick={onStop}     disabled={busy} bg={PAL.problemaBg} fg={PAL.problemaText} icon={<IcoStop s={12} />} label="Stop" />
+                  </>
+                )}
+                {(op.status === "viaggio" || op.status === "offline") && (
+                  <BtnAction onClick={onAvvia} disabled={busy} bg={PAL.attivoBg} fg={PAL.attivoText} icon={<IcoPlay s={12} />} label="Avvia lavoro" />
+                )}
+              </div>
+            </div>
+
+            {typeof op.progress === "number" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ flex: 1, height: 6, background: "#F0F0F0", borderRadius: 999, overflow: "hidden" }}>
+                  <div style={{ width: `${op.progress}%`, height: "100%", background: PAL.attivoGreen }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: PAL.textGrey }}>{op.progress}%</span>
+              </div>
+            )}
+          </>
+        ) : (
+          // OFFLINE - solo bottone Avvia
+          <div style={{ paddingTop: 4 }}>
+            <button onClick={onAvvia} disabled={busy} style={{
+              width: "100%", padding: "14px 16px",
+              background: PAL.gradEnd,
+              color: "#FFFFFF", border: "none",
+              borderRadius: 12,
+              fontSize: 14, fontWeight: 600,
+              cursor: busy ? "default" : "pointer",
+              opacity: busy ? 0.5 : 1,
+              fontFamily: "inherit",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}>
+              <IcoPlay s={14} /> Avvia lavoro
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* TIMELINE (se presente) */}
       {timeline.length > 0 && (
         <div style={{ background: PAL.card, padding: 16, borderBottom: `1px solid ${PAL.border}` }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: PAL.text, marginBottom: 14 }}>Timeline di oggi</div>
@@ -187,16 +213,6 @@ export default function OperatorDetailMobile({
                       {ev.label}{ev.detail && ` · ${ev.detail}`}
                     </div>
                   </div>
-                  {ev.has_photo && (
-                    <div style={{
-                      width: 38, height: 28, borderRadius: 4,
-                      background: "linear-gradient(135deg,#6B7280,#4B5563)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                    }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -237,6 +253,20 @@ function ActionIcon({ icon, label, color, onClick }: { icon: React.ReactNode; la
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, color }}>{icon}</div>
       <div style={{ fontSize: 11, fontWeight: 500, color: PAL.text }}>{label}</div>
     </div>
+  );
+}
+
+function BtnAction({ onClick, disabled, bg, fg, icon, label }: { onClick?: () => void; disabled?: boolean; bg: string; fg: string; icon: React.ReactNode; label: string }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: "10px 14px", borderRadius: 12,
+      background: bg, color: fg, border: "none",
+      fontSize: 12, fontWeight: 600,
+      cursor: disabled ? "default" : "pointer",
+      opacity: disabled ? 0.5 : 1,
+      fontFamily: "inherit",
+      display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" as any,
+    }}>{icon} {label}</button>
   );
 }
 

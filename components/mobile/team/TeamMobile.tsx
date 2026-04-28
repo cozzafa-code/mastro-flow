@@ -1,12 +1,16 @@
 // components/mobile/team/TeamMobile.tsx
-// FASE 2 - Tutte le navigazioni in uscita cablate.
+// FASE 3 - wire-up Avvia/Pausa/Riprende/Stop con scrittura DB
 "use client";
 import React, { useState, useMemo } from "react";
 import { useTeamMobile } from "@/hooks/useTeamMobile";
 import { useTeamFilters } from "@/hooks/useTeamFilters";
 import type { Operator } from "@/lib/types/team";
 import { useMastro } from "@/components/MastroContext";
-import { submitTask, risolviAnomalia, creaAnomalia } from "@/lib/team-actions";
+import {
+  submitTask, risolviAnomalia, creaAnomalia,
+  avviaLavoro, pausaLavoro, riprendiLavoro, stopLavoro,
+  type CommessaPerAvvio,
+} from "@/lib/team-actions";
 
 import { MiniAppCard, MiniListRow, MiniBadge, MiniLivePulse, TOKENS } from "@/components/widgets/MiniAppCard";
 import {
@@ -20,11 +24,11 @@ import TeamProblemsMobile from "./TeamProblemsMobile";
 import TeamMapMobile from "./TeamMapMobile";
 import NewTaskSheetMobile from "./NewTaskSheetMobile";
 import NewTeamActionSheetMobile from "./NewTeamActionSheetMobile";
+import StartLavoroSheet from "./StartLavoroSheet";
 
 interface Props {
   hideBottomNav?: boolean;
   onOpenCommessa?: (id: string) => void;
-  // FASE 2: navigazione verso altri tab principali (messaggi/agenda/...)
   onNavigate?: (tab: string) => void;
 }
 
@@ -61,12 +65,21 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const [showFab, setShowFab] = useState(false);
   const [showNewTask, setShowNewTask] = useState(false);
   const [taskDefaultOp, setTaskDefaultOp] = useState<string | undefined>();
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busy, setBusy] = useState<boolean>(false);
   const [toast, setToast] = useState<string | null>(null);
+  // FASE 3: sheet "Avvia lavoro" (selezione commessa)
+  const [showStartSheet, setShowStartSheet] = useState<{ op: Operator } | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
-  // --- HANDLERS ---
+  // Aggiorna selectedOp dopo refetch (cosi' il dettaglio aperto vede i nuovi dati)
+  const syncSelectedOp = () => {
+    if (selectedOp) {
+      const fresh = operators.find(o => o.id === selectedOp.id);
+      if (fresh) setSelectedOp(fresh);
+    }
+  };
+
   const handleOpen = (op: Operator) => { setSelectedOp(op); setView("detail"); };
 
   const handleChiama = (op: Operator) => {
@@ -74,13 +87,11 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
     else showToast("Telefono non disponibile per " + op.name);
   };
 
-  // Apre commessa corrente operatore (o messaggio se non ne ha)
   const handleApriCommessa = (op: Operator) => {
     if (op.commessa_id) onOpenCommessa?.(op.commessa_id);
     else showToast(op.name + " non ha una commessa attiva");
   };
 
-  // Naviga al tab Messaggi (FASE 2: solo apertura, FASE 4 filtro per operatore)
   const handleChat = (op: Operator) => {
     if (onNavigate) onNavigate("messaggi");
     else showToast("Apri Messaggi dal menu");
@@ -93,39 +104,33 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
     setShowNewTask(true);
   };
 
-  // Crea anomalia da operatore (bottone "Problema" nel detail / FAB)
   const handleNuovoProblema = async (op?: Operator) => {
     try {
-      setBusyId("problema");
+      setBusy(true);
       const titolo = window.prompt("Titolo del problema:");
       if (!titolo) return;
       await creaAnomalia({
-        operatore_id: op?.id,
-        commessa_id: op?.commessa_id,
-        titolo,
-        severita: "media",
-        origine: "team_app",
+        operatore_id: op?.id, commessa_id: op?.commessa_id,
+        titolo, severita: "media", origine: "team_app",
       });
       showToast("Problema segnalato");
-      refetch();
+      await refetch();
     } catch (e: any) {
       showToast("Errore: " + (e?.message || "salvataggio fallito"));
-    } finally { setBusyId(null); }
+    } finally { setBusy(false); }
   };
 
-  // Risolve un problema dalla lista o dalla card operatore
   const handleRisolviProblema = async (problemId: string) => {
     try {
-      setBusyId(problemId);
+      setBusy(true);
       await risolviAnomalia(problemId);
       showToast("Problema risolto");
-      refetch();
+      await refetch();
     } catch (e: any) {
       showToast("Errore: " + (e?.message || "risoluzione fallita"));
-    } finally { setBusyId(null); }
+    } finally { setBusy(false); }
   };
 
-  // Risolve l'anomalia ATTIVA di un operatore (cliccando "Risolvi" sulla sua card)
   const handleRisolviProblemaOp = async (op: Operator) => {
     const myProblem = problems.find(p =>
       p.status === "aperto" && (
@@ -140,7 +145,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
     handleRisolviProblema(myProblem.id);
   };
 
-  // Submit task -> Supabase
   const handleSubmitTask = async (data: any) => {
     try {
       const operatore = operators.find(o => o.id === taskDefaultOp);
@@ -157,20 +161,74 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
       showToast("Task creato");
       setShowNewTask(false);
       setTaskDefaultOp(undefined);
-      refetch();
+      await refetch();
     } catch (e: any) {
       showToast("Errore: " + (e?.message || "salvataggio fallito"));
     }
   };
 
-  // Tap su KPI -> filtra tab
+  // === FASE 3 HANDLERS ===
+  const handleAvvia = (op: Operator) => {
+    // Apre sheet selezione commessa
+    setShowStartSheet({ op });
+  };
+
+  const handleStartConfirm = async (commessa: CommessaPerAvvio) => {
+    if (!showStartSheet) return;
+    const opTarget = showStartSheet.op;
+    setShowStartSheet(null);
+    try {
+      setBusy(true);
+      await avviaLavoro({ operatore_id: opTarget.id, commessa_id: commessa.id });
+      showToast(`${opTarget.name} ha avviato ${commessa.code || "il lavoro"}`);
+      await refetch();
+      syncSelectedOp();
+    } catch (e: any) {
+      showToast("Errore: " + (e?.message || "avvio fallito"));
+    } finally { setBusy(false); }
+  };
+
+  const handlePausa = async (op: Operator) => {
+    try {
+      setBusy(true);
+      await pausaLavoro({ operatore_id: op.id, motivo: "manuale" });
+      showToast(`${op.name} in pausa`);
+      await refetch();
+      syncSelectedOp();
+    } catch (e: any) {
+      showToast("Errore: " + (e?.message || "pausa fallita"));
+    } finally { setBusy(false); }
+  };
+
+  const handleRiprende = async (op: Operator) => {
+    try {
+      setBusy(true);
+      await riprendiLavoro({ operatore_id: op.id });
+      showToast(`${op.name} ha ripreso`);
+      await refetch();
+      syncSelectedOp();
+    } catch (e: any) {
+      showToast("Errore: " + (e?.message || "ripresa fallita"));
+    } finally { setBusy(false); }
+  };
+
+  const handleStop = async (op: Operator) => {
+    try {
+      setBusy(true);
+      await stopLavoro({ operatore_id: op.id });
+      showToast(`${op.name} ha completato`);
+      await refetch();
+      syncSelectedOp();
+    } catch (e: any) {
+      showToast("Errore: " + (e?.message || "stop fallito"));
+    } finally { setBusy(false); }
+  };
+
   const handleTapKPI = (which: "attivi" | "pausa" | "problemi" | "offline") => {
-    if (which === "attivi") setTab("attivi");
-    else if (which === "problemi") setTab("problemi");
+    if (which === "problemi") setTab("problemi");
     else setTab("attivi");
   };
 
-  // --- Saluto / nome / data ---
   const now = useMemo(() => new Date(), []);
   const greeting = useMemo(() => {
     const h = now.getHours();
@@ -182,24 +240,43 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const nome = (user?.nome || user?.email?.split("@")[0] || "FABIO").toString().toUpperCase();
   const iniziali = nome.slice(0, 2);
 
-  // === SUBVIEW: dettaglio operatore ===
   if (view === "detail" && selectedOp) {
     return (
-      <OperatorDetailMobile
-        op={selectedOp}
-        timeline={getTimelineFor(selectedOp.id)}
-        onBack={() => { setView("list"); setSelectedOp(null); }}
-        onChiama={() => handleChiama(selectedOp)}
-        onMappa={() => setView("map")}
-        onChat={() => handleChat(selectedOp)}
-        onFoto={() => showToast("Foto: in arrivo")}
-        onTask={() => handleTask(selectedOp)}
-        onProblema={() => handleNuovoProblema(selectedOp)}
-        onVaiCommessa={() => selectedOp.commessa_id && onOpenCommessa?.(selectedOp.commessa_id)}
-        onPausa={() => showToast("Pausa: in arrivo (FASE 3)")}
-        onStop={() => showToast("Stop: in arrivo (FASE 3)")}
-        onAssegnaTask={() => handleTask(selectedOp)}
-      />
+      <>
+        <OperatorDetailMobile
+          op={selectedOp}
+          timeline={getTimelineFor(selectedOp.id)}
+          onBack={() => { setView("list"); setSelectedOp(null); }}
+          onChiama={() => handleChiama(selectedOp)}
+          onMappa={() => setView("map")}
+          onChat={() => handleChat(selectedOp)}
+          onFoto={() => showToast("Foto: in arrivo")}
+          onTask={() => handleTask(selectedOp)}
+          onProblema={() => handleNuovoProblema(selectedOp)}
+          onVaiCommessa={() => selectedOp.commessa_id && onOpenCommessa?.(selectedOp.commessa_id)}
+          onAvvia={() => handleAvvia(selectedOp)}
+          onPausa={() => handlePausa(selectedOp)}
+          onRiprende={() => handleRiprende(selectedOp)}
+          onStop={() => handleStop(selectedOp)}
+          onAssegnaTask={() => handleTask(selectedOp)}
+          busy={busy}
+        />
+        {showStartSheet && (
+          <StartLavoroSheet
+            operatorName={showStartSheet.op.name}
+            onClose={() => setShowStartSheet(null)}
+            onSelect={handleStartConfirm}
+          />
+        )}
+        {toast && (
+          <div style={{
+            position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)",
+            background: "#0D1F1F", color: "#FFF", padding: "10px 16px", borderRadius: 12,
+            fontSize: 12, fontWeight: 500, zIndex: 10000, boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+            maxWidth: "85%", textAlign: "center" as any,
+          }}>{toast}</div>
+        )}
+      </>
     );
   }
   if (view === "map") {
@@ -216,7 +293,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   return (
     <div style={{ background: PAGE_BG, minHeight: "100vh", paddingBottom: hideBottomNav ? 16 : 100, fontFamily: FONT }}>
 
-      {/* HEADER fliwoX */}
       <div style={{ padding: "12px 10px 0" }}>
         <div style={{
           background: `linear-gradient(135deg, #28A0A0 0%, #1E8080 100%)`,
@@ -250,7 +326,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
         </div>
       </div>
 
-      {/* PILL TABS */}
       <div style={{ padding: "14px 14px 0", display: "flex", gap: 6 }}>
         {TABS.map(t => {
           const active = tab === t.id;
@@ -280,7 +355,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
 
       <div style={{ padding: "14px 14px 0", display: "flex", flexDirection: "column", gap: 12 }}>
 
-        {/* Loading / errore / empty */}
         {loading && (
           <div style={{ padding: 24, textAlign: "center" as any, color: TOKENS.muted, fontSize: 13 }}>Caricamento operatori...</div>
         )}
@@ -300,7 +374,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
 
         {!loading && !error && operators.length > 0 && (tab === "tutti" || tab === "attivi") && (
           <>
-            {/* Card "Stato azienda oggi" */}
             <MiniAppCard
               icon={<IconUsers size={14} color={TOKENS.teal} />}
               title="Stato azienda oggi"
@@ -318,31 +391,31 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
               }
             />
 
-            {/* Una MiniAppCard per operatore */}
             {filtered.map(op => {
               const s = statusInfo(op.status);
               const actions: any[] = [];
-              if (op.status === "problema") {
-                actions.push({ label: "Risolvi", variant: "danger", icon: <IconCheck size={11} color={TOKENS.redInk} />, onClick: () => handleRisolviProblemaOp(op), disabled: busyId !== null });
+
+              // FASE 3: bottoni stato dinamici inline su card
+              if (op.status === "attivo") {
+                actions.push({ label: "Pausa", variant: "secondary", icon: <IconPause size={11} color={TOKENS.amberInk} />, onClick: () => handlePausa(op), disabled: busy });
+                actions.push({ label: "Stop",  variant: "danger", icon: <IconCheck size={11} color={TOKENS.redInk} />, onClick: () => handleStop(op), disabled: busy });
+                actions.push({ label: "Apri",  variant: "secondary", icon: <IconFile size={11} color={TOKENS.ink} />, onClick: () => handleApriCommessa(op) });
+              } else if (op.status === "pausa") {
+                actions.push({ label: "Riprendi", variant: "primary", icon: <IconCheck size={11} color="#FFF" />, onClick: () => handleRiprende(op), disabled: busy });
+                actions.push({ label: "Stop",     variant: "danger", icon: <IconCheck size={11} color={TOKENS.redInk} />, onClick: () => handleStop(op), disabled: busy });
+                actions.push({ label: "Apri",     variant: "secondary", icon: <IconFile size={11} color={TOKENS.ink} />, onClick: () => handleApriCommessa(op) });
+              } else if (op.status === "problema") {
+                actions.push({ label: "Risolvi", variant: "danger", icon: <IconCheck size={11} color={TOKENS.redInk} />, onClick: () => handleRisolviProblemaOp(op), disabled: busy });
                 actions.push({ label: "Chiama",  variant: "secondary", icon: <IconPhone size={11} color={TOKENS.ink} />, onClick: () => handleChiama(op) });
                 actions.push({ label: "Apri",    variant: "secondary", icon: <IconFile size={11} color={TOKENS.ink} />, onClick: () => handleApriCommessa(op) });
               } else if (op.status === "viaggio") {
-                actions.push({ label: "Traccia", variant: "primary",   icon: <IconNav size={11} color="#fff" />, onClick: () => handleMappa() });
+                actions.push({ label: "Avvia",   variant: "primary", icon: <IconCheck size={11} color="#FFF" />, onClick: () => handleAvvia(op), disabled: busy });
                 actions.push({ label: "Chiama",  variant: "secondary", icon: <IconPhone size={11} color={TOKENS.ink} />, onClick: () => handleChiama(op) });
-                actions.push({ label: "Apri",    variant: "secondary", icon: <IconFile size={11} color={TOKENS.ink} />, onClick: () => handleApriCommessa(op) });
-              } else if (op.status === "pausa") {
-                actions.push({ label: "Apri", variant: "secondary", icon: <IconFile size={11} color={TOKENS.ink} />, onClick: () => handleApriCommessa(op) });
-                actions.push({ label: "Chat", variant: "secondary", icon: <IconChat size={11} color={TOKENS.ink} />, onClick: () => handleChat(op) });
-                actions.push({ label: "Task", variant: "secondary", icon: <IconPlus size={11} color={TOKENS.ink} />, onClick: () => handleTask(op) });
-              } else if (op.status === "attivo") {
-                actions.push({ label: "Apri",   variant: "secondary", icon: <IconFile size={11} color={TOKENS.ink} />, onClick: () => handleApriCommessa(op) });
-                actions.push({ label: "Chiama", variant: "secondary", icon: <IconPhone size={11} color={TOKENS.ink} />, onClick: () => handleChiama(op) });
-                actions.push({ label: "Mappa",  variant: "secondary", icon: <IconPin size={11} color={TOKENS.ink} />, onClick: () => handleMappa() });
+                actions.push({ label: "Mappa",   variant: "secondary", icon: <IconPin size={11} color={TOKENS.ink} />, onClick: () => handleMappa() });
               } else {
                 // Offline
+                actions.push({ label: "Avvia lavoro", variant: "primary", icon: <IconCheck size={11} color="#FFF" />, onClick: () => handleAvvia(op), disabled: busy });
                 actions.push({ label: "Chiama", variant: "secondary", icon: <IconPhone size={11} color={TOKENS.ink} />, onClick: () => handleChiama(op) });
-                actions.push({ label: "Chat",   variant: "secondary", icon: <IconChat size={11} color={TOKENS.ink} />, onClick: () => handleChat(op) });
-                actions.push({ label: "Task",   variant: "secondary", icon: <IconPlus size={11} color={TOKENS.ink} />, onClick: () => handleTask(op) });
               }
 
               return (
@@ -469,7 +542,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
         )}
       </div>
 
-      {/* TOAST */}
       {toast && (
         <div style={{
           position: "fixed", bottom: hideBottomNav ? 90 : 140, left: "50%", transform: "translateX(-50%)",
@@ -479,7 +551,6 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
         }}>{toast}</div>
       )}
 
-      {/* FAB */}
       <div onClick={() => setShowFab(true)} style={{
         position: "fixed",
         bottom: hideBottomNav ? 24 : 80,
@@ -511,6 +582,14 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
           defaultOperatorId={taskDefaultOp}
           onClose={() => { setShowNewTask(false); setTaskDefaultOp(undefined); }}
           onSubmit={handleSubmitTask}
+        />
+      )}
+
+      {showStartSheet && (
+        <StartLavoroSheet
+          operatorName={showStartSheet.op.name}
+          onClose={() => setShowStartSheet(null)}
+          onSelect={handleStartConfirm}
         />
       )}
     </div>
