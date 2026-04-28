@@ -1353,15 +1353,25 @@ export default function CMDetailPanel() {
             const giorniDaInvio29 = (() => { const dt = c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt) : (c29.dataPreventivoInvio ? new Date(c29.dataPreventivoInvio) : null); if (!dt || isNaN(dt.getTime())) return null; return Math.max(0, Math.floor((Date.now() - dt.getTime()) / 86400000)); })();
             const giorniLbl29 = giorniDaInvio29 == null ? "" : giorniDaInvio29 === 0 ? " · oggi" : giorniDaInvio29 === 1 ? " · 1g" : " · " + giorniDaInvio29 + "g";
             const inAttesaBg29 = giorniDaInvio29 != null && giorniDaInvio29 >= 3 ? "#DC2626" : "#71717A";
+
+            // v53: stato firmato (legge da DB o state)
+            const haFirmato29 = !!(c29.firmaCliente || c29.firma_cliente || c29.firmaData || c29.firma_data);
+            const dataFirma29 = c29.firmaData || c29.firma_data;
+            const dataFirmaFmt29 = dataFirma29 ? new Date(dataFirma29).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null;
+
             // Badge stato
-            const badge29 = tipoRis29 === "accettato" ? { txt: "ACCETTATO", bg: "#28A268", icon: "✓" } :
+            const badge29 = haFirmato29 ? { txt: "FIRMATO", bg: "#15803D", icon: "✓" } :
+                            (tipoRis29 === "accettato" && c29.fase === "conferma") ? { txt: "DA FIRMARE", bg: "#F59E0B", icon: "✍" } :
+                            tipoRis29 === "accettato" ? { txt: "ACCETTATO", bg: "#28A268", icon: "✓" } :
                             tipoRis29 === "modifiche" ? { txt: "CHIEDE MODIFICHE", bg: "#F59E0B", icon: "✏" } :
                             tipoRis29 === "chiamare" ? { txt: "VUOLE CONTATTO", bg: "#3B82F6", icon: "📞" } :
                             ris29?.visualizzato ? { txt: "VISTO DAL CLIENTE" + giorniLbl29, bg: "#8B5CF6", icon: "👁" } :
                             { txt: "IN ATTESA" + giorniLbl29, bg: inAttesaBg29, icon: "⏳" };
 
             // Prossima azione consigliata
-            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
+            const prossima = haFirmato29 ? { lbl: "AVVIA PRODUZIONE", bg: "linear-gradient(135deg, #28A0A0 0%, #1A7A7A 100%)", action: () => { setFaseTo(c29.id, "ordini"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "ordini" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "ordini" }) : p); } } :
+                           (tipoRis29 === "accettato" && c29.fase === "conferma") ? { lbl: "INVIA LINK FIRMA AL CLIENTE", bg: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)", action: () => setShowModalFirma(true) } :
+                           tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D\'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
                              // Crea R(N+1) duplicando il corrente
                              const oggiIso = new Date().toISOString().split("T")[0];
@@ -1453,6 +1463,36 @@ export default function CMDetailPanel() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* v53: TIMELINE 4 step ciclo preventivo */}
+                <div style={{ background: "#F8FAFA", borderRadius: 10, padding: "10px 12px", marginBottom: 12, border: "1px solid #E4F2F2" }}>
+                  <div style={{ fontSize: 9, fontWeight: 900, color: "#28A0A0", letterSpacing: 1, marginBottom: 8 }}>CICLO PREVENTIVO</div>
+                  {(() => {
+                    const steps = [
+                      { lbl: "Inviato", done: !!c29.preventivoInviatoAt || !!c29.dataPreventivoInvio || haPreventivoInviato, ts: c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : (c29.dataPreventivoInvio ? new Date(c29.dataPreventivoInvio).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : null) },
+                      { lbl: tipoRis29 === "modifiche" ? "Cliente vuole modifiche" : tipoRis29 === "chiamare" ? "Cliente vuole contatto" : "Cliente accettato", done: !!tipoRis29 && tipoRis29 !== "modifiche" && tipoRis29 !== "chiamare", warn: tipoRis29 === "modifiche" || tipoRis29 === "chiamare", ts: ris29?.risposta_at ? new Date(ris29.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null },
+                      { lbl: "Conferma firmata", done: haFirmato29, ts: dataFirmaFmt29 },
+                      { lbl: "Acconto / Saldo", done: false, ts: null },
+                    ];
+                    const activeIdx = steps.findIndex((s: any) => !s.done);
+                    return steps.map((s: any, i: number) => {
+                      const isActive = i === activeIdx;
+                      const dot = s.warn ? "#F59E0B" : s.done ? "#15803D" : isActive ? "#28A0A0" : "#D4D4D8";
+                      const txt = s.done ? "#0D1F1F" : isActive ? "#0D1F1F" : "#A1A1AA";
+                      return (
+                        <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: i === steps.length - 1 ? 0 : 6 }}>
+                          <div style={{ width: 16, height: 16, borderRadius: "50%", background: s.done || isActive ? dot : "transparent", border: `2px solid ${dot}`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, flexShrink: 0, marginTop: 1 }}>
+                            {s.done ? "✓" : s.warn ? "!" : ""}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: isActive ? 900 : 700, color: txt }}>{s.lbl}</div>
+                            {s.ts && <div style={{ fontSize: 9, color: "#71717A", marginTop: 1 }}>{s.ts}</div>}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
 
                 {/* Nota cliente se presente */}
