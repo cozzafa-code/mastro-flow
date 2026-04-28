@@ -152,16 +152,18 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
 
   const handleSubmitTask = async (data: any) => {
     try {
-      const operatore = operators.find(o => o.id === taskDefaultOp);
+      // FASE 5D: il sheet ora passa direttamente operatore_id, cm_id, ecc.
       await submitTask({
-        operatore_id: taskDefaultOp,
-        operatore_nome: operatore?.name,
-        cm_id: data?.cm_id || operatore?.commessa_id,
-        cliente: data?.cliente || operatore?.cliente,
-        titolo: data?.titolo || data?.task || "Nuovo task",
+        operatore_id: data?.operatore_id,
+        operatore_nome: data?.operatore_nome,
+        cm_id: data?.cm_id || undefined,
+        cliente: data?.cliente,
+        titolo: data?.titolo || "Nuovo task",
         note: data?.note,
         giorno: data?.giorno,
         ora_inizio: data?.ora_inizio,
+        ora_fine: data?.ora_fine,
+        tipo: data?.tipo,
       });
       showToast("Task creato");
       setShowNewTask(false);
@@ -169,6 +171,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
       await refetch();
     } catch (e: any) {
       showToast("Errore: " + (e?.message || "salvataggio fallito"));
+      throw e;
     }
   };
 
@@ -618,6 +621,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
         <NewTaskSheetMobile
           operators={operators}
           defaultOperatorId={taskDefaultOp}
+          defaultCommessaId={taskDefaultOp ? operators.find(o => o.id === taskDefaultOp)?.commessa_id : undefined}
           onClose={() => { setShowNewTask(false); setTaskDefaultOp(undefined); }}
           onSubmit={handleSubmitTask}
         />

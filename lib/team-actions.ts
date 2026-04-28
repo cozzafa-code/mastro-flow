@@ -46,6 +46,14 @@ export interface NewTaskInput {
 export async function submitTask(input: NewTaskInput): Promise<{ id: string }> {
   const { user, azienda_id } = await getCtx();
   const today = new Date().toISOString().slice(0, 10);
+  // ora_inizio e ora_fine sono NOT NULL in DB: applico default sensati
+  const ora_inizio = input.ora_inizio || "09:00";
+  // ora_fine: se non specificata, default = ora_inizio + 1h
+  const oraFineDefault = (() => {
+    const [h, m] = ora_inizio.split(":").map(Number);
+    const next = new Date(); next.setHours(h + 1, m || 0, 0, 0);
+    return `${next.getHours().toString().padStart(2,"0")}:${next.getMinutes().toString().padStart(2,"0")}`;
+  })();
   const { data, error } = await supabase
     .from("agenda_eventi")
     .insert({
@@ -55,8 +63,8 @@ export async function submitTask(input: NewTaskInput): Promise<{ id: string }> {
       cm_id: input.cm_id || null, cliente: input.cliente || null,
       titolo: input.titolo, note: input.note || null,
       giorno: input.giorno || today,
-      ora_inizio: input.ora_inizio || null,
-      ora_fine: input.ora_fine || null,
+      ora_inizio,
+      ora_fine: input.ora_fine || oraFineDefault,
       tipo: input.tipo || "task",
       stato: "programmato", luogo: input.luogo || null,
     })
