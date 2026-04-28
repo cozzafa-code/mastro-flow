@@ -60,6 +60,7 @@ import { OnboardingPanel, FirmaModalPanel } from "./OnboardingPanel";
 import MastroStrutture from "./MastroStrutture";
 import MontaggiCalendar from "./MontaggiCalendar";
 import { useOfflineCache } from "@/hooks/useOfflineCache";
+import AgendaMobileNew from "./mobile/agenda/AgendaMobile";
 
 function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDesktop }: { user?: any, azienda?: any, forceMobile?: boolean, forceDesktop?: boolean }) {
   const [theme, setTheme] = useState("fliwox");
@@ -2643,7 +2644,19 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     );
   };
 
-  const renderAgenda = () => <AgendaCalendarioPanel />;
+  const renderAgenda = () => (
+    <AgendaMobileNew
+      cantieri={cantieri}
+      hideBottomNav
+      onOpenCommessa={(cmId, code) => {
+        const target = (cantieri || []).find((c: any) => c.id === cmId || c.code === code);
+        if (target) {
+          setSelectedCM(target);
+          setTab("commesse");
+        }
+      }}
+    />
+  );
 
 // =======================================================
 // MASTRO ERP v2 - PARTE 4/5
