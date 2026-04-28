@@ -100,6 +100,9 @@ export default function CMDetailPanel() {
     const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere">("provvisorio");
     const [nuovoRilievoRilevatore, setNuovoRilievoRilevatore] = useState("");
     const [nuovoRilievoNote, setNuovoRilievoNote] = useState("");
+    // v47: ripristino state firma rimossi nel refactor (causavano ReferenceError)
+    const [firmaLinkCopiato, setFirmaLinkCopiato] = useState(false);
+    const [firmaToken, setFirmaToken] = useState<string | null>(null);
 
   // NULL GUARD: tutti gli hook devono essere dichiarati prima di questo return
   if (!selectedCM) return null;
