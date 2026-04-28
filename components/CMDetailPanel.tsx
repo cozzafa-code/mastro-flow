@@ -338,7 +338,70 @@ export default function CMDetailPanel() {
     // v33: sync commessa dal DB quando si apre - risolve il bug dove
     // localStorage ha preventivoInviato=false anche se DB e' aggiornato
     // FIX DEFINITIVO: sync firma da DB - gira ogni volta che cambia selectedCM
+    // FIX BRUTE FORCE: polling firma da DB ogni 5 secondi
     React.useEffect(() => {
+      if (!selectedCM?.id) return;
+      const cmId = selectedCM.id;
+      let alive = true;
+      let pollCount = 0;
+
+      const checkOnce = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("commesse")
+            .select("fase, preventivo_inviato_at, firma_cliente, firma_data")
+            .eq("id", cmId)
+            .maybeSingle();
+          if (!alive || error || !data) return false;
+
+          const dbFase = (data as any).fase;
+          const dbInviato = !!(data as any).preventivo_inviato_at;
+          const dbFirmaData = (data as any).firma_data;
+          const dbFirmaCliente = (data as any).firma_cliente;
+
+          // Forza update sempre quando arriva firma o cambia fase
+          const update: any = {};
+          if (dbFirmaData) {
+            update.firma_data = dbFirmaData;
+            update.firmaData = dbFirmaData;
+          }
+          if (dbFirmaCliente) {
+            update.firma_cliente = dbFirmaCliente;
+            update.firmaCliente = dbFirmaCliente;
+          }
+          if (dbFase) update.fase = dbFase;
+          if (dbInviato) {
+            update.preventivoInviato = true;
+            update.preventivoInviatoAt = (data as any).preventivo_inviato_at;
+            update.dataPreventivoInvio = String((data as any).preventivo_inviato_at).split("T")[0];
+          }
+
+          if (Object.keys(update).length > 0) {
+            setCantieri((cs: any[]) => cs.map((c: any) => c.id === cmId ? { ...c, ...update } : c));
+            setSelectedCM((p: any) => p && p.id === cmId ? ({ ...p, ...update }) : p);
+          }
+
+          // Se firma c'e', smetto di pollare
+          return !!dbFirmaData;
+        } catch { return false; }
+      };
+
+      // Check immediato
+      checkOnce();
+
+      // Poll ogni 5 secondi finche' non trova firma o per max 12 cicli (1 min)
+      const interval = setInterval(async () => {
+        pollCount++;
+        const found = await checkOnce();
+        if (found || pollCount >= 12) clearInterval(interval);
+      }, 5000);
+
+      return () => { alive = false; clearInterval(interval); };
+    }, [selectedCM?.id]);
+
+    // OLD effect disabilitato - sostituito dal blocco sopra
+    React.useEffect(() => {
+      if (false) {
       if (!selectedCM?.id) return;
       let alive = true;
       (async () => {
@@ -380,6 +443,7 @@ export default function CMDetailPanel() {
         } catch (e) { console.warn("[v33] sync error", e); }
       })();
       return () => { alive = false; };
+      }
     }, [selectedCM?.id]);
 
 
