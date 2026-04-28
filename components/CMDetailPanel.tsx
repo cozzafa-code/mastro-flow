@@ -5,16 +5,8 @@
 // Estratto S6: ~938 righe (Dettaglio commessa)
 // 
 import React, { useState } from "react";
-import PassaggiSaltati from "./PassaggiSaltati";
-import VanoCardPreventivo from "./VanoCardPreventivo";
-import BulkEditBar from "./BulkEditBar";
-import { saveCantiereSync, getAziendaId as getAziendaIdDB } from "../lib/supabase-sync";
-import { supabase } from "@/lib/supabase";
-import { buildVanoRighe } from "../lib/vano-helpers";
-import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
-import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
-import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
+import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey } from "./mastro-constants";
 import { buildSnapshot, creaFascicolo, getFascicoliCommessa, revocaFascicolo } from "../lib/fascicolo-service";
 import { generaFascicoloGeometraPDF } from "../lib/pdf-fascicolo";
 import { generaExcelFascicolo } from "../lib/excel-fascicolo";
@@ -22,179 +14,8 @@ import InterventoTab from "./InterventoTab";
 import InterventoFlowPanel from "./InterventoFlowPanel";
 import PreventivoConfiguratoreTab from "./PreventivoConfiguratoreTab";
 import GuidaIvaDetrazioni from "./GuidaIvaDetrazioni";
-import TabFiscale from "./TabFiscale";
 import DisegnoTecnico from "./DisegnoTecnico";
 // @cadDraw state added below
-
-// ═══ v58 · Cronologia app-nell-app ═══
-function CronologiaBlock({ log, EV_COLORS, detectType, initials, commessa, T, S, operatoriDB }: any) {
-  const [expanded, setExpanded] = React.useState<number | null>(null);
-
-  // Helper per trovare contatti operatore se log contiene ref
-  const findOp = (nome: string): any => {
-    if (!operatoriDB || !Array.isArray(operatoriDB)) return null;
-    const n = (nome || "").toLowerCase().trim();
-    return operatoriDB.find((o: any) => {
-      const full = ((o?.nome || "") + " " + (o?.cognome || "")).toLowerCase().trim();
-      return full === n || (o?.nome || "").toLowerCase() === n;
-    });
-  };
-
-  const telLink = (t: string | null | undefined) => t ? `tel:${t}` : "#";
-  const waLink = (t: string | null | undefined, msg: string = "") => t ? `https://wa.me/${t.replace(/\D/g, "")}${msg ? "?text=" + encodeURIComponent(msg) : ""}` : "#";
-
-  return (
-    <>
-      <div style={{ ...S.section, marginTop: 8 }}>
-        <div style={S.sectionTitle}>Cronologia · {log.length}</div>
-      </div>
-      <div style={{ padding: "0 16px 8px", display: "flex", flexDirection: "column" as const, gap: 6, position: "relative" as any }}>
-        {/* Linea timeline verticale */}
-        <div style={{
-          position: "absolute" as any,
-          left: 36, top: 20, bottom: 20,
-          width: 2,
-          background: "linear-gradient(180deg, rgba(127,119,221,0.25), rgba(29,158,117,0.25), rgba(239,159,39,0.25), rgba(55,138,221,0.25), rgba(212,83,126,0.25))",
-          borderRadius: 1,
-          pointerEvents: "none" as any,
-          zIndex: 0,
-        }} />
-
-        {log.map((l: any, i: number) => {
-          const tipo = detectType(l.cosa);
-          const ev = EV_COLORS[tipo] || EV_COLORS.creazione;
-          const isOpen = expanded === i;
-          const op = findOp(l.chi);
-          const tel = op?.telefono || op?.phone;
-          const mail = op?.email;
-
-          return (
-            <div key={i} style={{
-              display: "flex", gap: 10,
-              position: "relative" as any,
-              zIndex: 1,
-            }}>
-              {/* Bubble icona tipo */}
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: ev.grad,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#fff", fontSize: 16, fontWeight: 900,
-                flexShrink: 0,
-                boxShadow: `0 3px 8px ${ev.tint}, inset 0 1px 1px rgba(255,255,255,0.25)`,
-                textShadow: "0 1px 2px rgba(0,0,0,0.15)",
-                marginTop: 2,
-              }}>{ev.icon}</div>
-
-              {/* Card contenuto */}
-              <div
-                onClick={() => setExpanded(isOpen ? null : i)}
-                style={{
-                  flex: 1, minWidth: 0,
-                  background: "#fff",
-                  borderRadius: 10,
-                  border: "1px solid rgba(200,228,228,0.5)",
-                  borderLeft: `3px solid ${ev.solid}`,
-                  padding: "9px 11px",
-                  cursor: "pointer",
-                  boxShadow: isOpen ? `0 6px 16px ${ev.tint}` : "0 2px 6px rgba(13,31,31,0.04)",
-                  transition: "all 0.2s",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {/* Avatar iniziali chi */}
-                  <div style={{
-                    width: 24, height: 24, borderRadius: 8,
-                    background: ev.tint, color: ev.dark,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 9, fontWeight: 900, flexShrink: 0,
-                    letterSpacing: "-0.1px",
-                  }}>{initials(l.chi)}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: "#0F2525", lineHeight: 1.3, fontWeight: 700 }}>
-                      <strong style={{ color: ev.dark, fontWeight: 900 }}>{l.chi}</strong>{" "}
-                      <span style={{ fontWeight: 600, color: "#5A7878" }}>{l.cosa}</span>
-                    </div>
-                    <div style={{ fontSize: 10, color: "#8FA8A8", fontWeight: 600, marginTop: 2, letterSpacing: "0.2px" }}>{l.quando}</div>
-                  </div>
-                  <span style={{
-                    color: ev.solid, fontSize: 13, fontWeight: 900,
-                    transform: isOpen ? "rotate(180deg)" : "none",
-                    transition: "transform 0.2s",
-                    flexShrink: 0,
-                  }}>▾</span>
-                </div>
-
-                {isOpen && (
-                  <div style={{
-                    marginTop: 9, paddingTop: 9,
-                    borderTop: "1px dashed rgba(200,228,228,0.6)",
-                  }}>
-                    <div style={{
-                      padding: "6px 10px", marginBottom: 8,
-                      background: ev.tint, color: ev.dark,
-                      borderRadius: 7,
-                      fontSize: 10, fontWeight: 800,
-                      letterSpacing: "0.4px",
-                      textTransform: "uppercase" as any,
-                      display: "inline-block",
-                    }}>{ev.icon} {tipo}</div>
-
-                    {op && (
-                      <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 600, marginBottom: 8 }}>
-                        Operatore: <strong style={{ color: "#0F2525" }}>{op.nome} {op.cognome || ""}</strong>
-                        {op.ruolo && <span style={{ opacity: 0.7 }}> · {op.ruolo}</span>}
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", gap: 6 }}>
-                      {tel && (
-                        <a href={telLink(tel)} onClick={(e: any) => e.stopPropagation()} style={{
-                          flex: 1, padding: "7px", borderRadius: 8, textDecoration: "none",
-                          background: "rgba(29,158,117,0.1)", color: "#04342C",
-                          fontSize: 10, fontWeight: 900, textAlign: "center" as any,
-                          letterSpacing: "0.3px",
-                          border: "1px solid rgba(29,158,117,0.3)",
-                        }}>☎ CHIAMA</a>
-                      )}
-                      {tel && (
-                        <a href={waLink(tel, `Ciao ${l.chi}, ti scrivo per la commessa ${commessa?.code || ""}`)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} style={{
-                          flex: 1, padding: "7px", borderRadius: 8, textDecoration: "none",
-                          background: "rgba(37,211,102,0.12)", color: "#075E54",
-                          fontSize: 10, fontWeight: 900, textAlign: "center" as any,
-                          letterSpacing: "0.3px",
-                          border: "1px solid rgba(37,211,102,0.3)",
-                        }}>💬 CHAT</a>
-                      )}
-                      {mail && (
-                        <a href={`mailto:${mail}?subject=Commessa ${commessa?.code || ""}`} onClick={(e: any) => e.stopPropagation()} style={{
-                          flex: 1, padding: "7px", borderRadius: 8, textDecoration: "none",
-                          background: "rgba(55,138,221,0.1)", color: "#042C53",
-                          fontSize: 10, fontWeight: 900, textAlign: "center" as any,
-                          letterSpacing: "0.3px",
-                          border: "1px solid rgba(55,138,221,0.3)",
-                        }}>✉ EMAIL</a>
-                      )}
-                      {!tel && !mail && (
-                        <div style={{
-                          flex: 1, padding: "7px", borderRadius: 8,
-                          background: "rgba(200,228,228,0.25)", color: "#8FA8A8",
-                          fontSize: 10, fontWeight: 700, textAlign: "center" as any,
-                          letterSpacing: "0.3px",
-                          fontStyle: "italic" as any,
-                        }}>Nessun contatto disponibile</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </>
-  );
-}
 
 export default function CMDetailPanel() {
   const {
@@ -244,14 +65,6 @@ export default function CMDetailPanel() {
 
   // AUTO_PICK: se ci sono rilievi, seleziona l'ultimo. NON crea pi+ bozze automatiche.
   const [autoPickDoneForCm, setAutoPickDoneForCm] = React.useState<number | null>(null);
-  const [cronOpenV70, setCronOpenV70] = React.useState<boolean>(false);
-  const [centroApertoV70, setCentroApertoV70] = React.useState<string | null>(null);
-  const [diarioFormOpenV74, setDiarioFormOpenV74] = React.useState<boolean>(false);
-  const [diarioChiV74, setDiarioChiV74] = React.useState<"IO" | "CLIENTE">("IO");
-  const [diarioTagV74, setDiarioTagV74] = React.useState<string>("NOTA");
-  const [diarioTestoV74, setDiarioTestoV74] = React.useState<string>(""); // 'cliente' | 'allegati' | 'note' | 'azioni' | null
-  const [azioniOpenV66, setAzioniOpenV66] = React.useState<boolean>(false);
-  const [cronOpenV67, setCronOpenV67] = React.useState<boolean>(false);
   React.useEffect(() => {
     if (!selectedCM) { setAutoPickDoneForCm(null); return; }
     if (selectedRilievo) return;
@@ -266,120 +79,11 @@ export default function CMDetailPanel() {
     setAutoPickDoneForCm(selectedCM.id);
   }, [selectedCM?.id, selectedRilievo, autoPickDoneForCm]);
 
-  // -- AUTO-SYNC SUPABASE (top-level, fuori da qualsiasi condizione) --
-  const _isUuidCM = (v: any): boolean => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
-  const _syncTimerRef = React.useRef<any>(null);
-  const _syncedKeyRef = React.useRef<string>('');
-
-  React.useEffect(() => {
-    const cm = selectedCM;
-    console.log("[autosync] effect fired. cm?", !!cm, "code?", cm?.code, "id type:", typeof cm?.id);
-    if (!cm || !cm.code) return;
-    const key = JSON.stringify({ id: cm.id, fase: cm.fase, tot: cm.totalePreventivo, sc: cm.scontoPerc, detr: cm.detrazione, iva: cm.ivaPerc, sent: cm.preventivoInviato });
-    if (key === _syncedKeyRef.current) return;
-    _syncedKeyRef.current = key;
-
-    if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current);
-    _syncTimerRef.current = setTimeout(async () => {
-      try {
-        const azId = await getAziendaIdDB();
-        if (!azId) return;
-        const saved = await saveCantiereSync(azId, cm);
-        if (saved && saved.id && !_isUuidCM(cm.id)) {
-          const newId = saved.id;
-          setCantieri((cs: any[]) => cs.map((c: any) => c.id === cm.id ? { ...c, id: newId } : c));
-          setSelectedCM((prev: any) => prev && prev.id === cm.id ? { ...prev, id: newId } : prev);
-          console.log('[autosync] ID:', cm.id, '->', newId);
-        }
-      } catch (err) { console.warn('[autosync] fail:', err); }
-    }, 800);
-    return () => { if (_syncTimerRef.current) clearTimeout(_syncTimerRef.current); };
-  }, [selectedCM?.id, selectedCM?.fase, selectedCM?.totalePreventivo, selectedCM?.scontoPerc, selectedCM?.detrazione, selectedCM?.ivaPerc, selectedCM?.preventivoInviato]);
-
-
 
   // STATES (tutti prima del null guard — React Rules of Hooks)
     const [fabSecOpen, setFabSecOpen] = React.useState(false);
-    const [selectedVaniBulk, setSelectedVaniBulk] = React.useState<number[]>([]);
-    const [quickEditCliente, setQuickEditCliente] = React.useState<null | "telefono" | "email">(null);
-    const [quickEditValue, setQuickEditValue] = React.useState("");
-    const [firmaLinkCopiato, setFirmaLinkCopiato] = React.useState(false);
-    const [firmaToken, setFirmaToken] = React.useState<string | null>(null);
-    // v77 · stati tab fiscale guidato
-    const [fiscDestV77, setFiscDestV77] = React.useState<"prima" | "seconda" | null>(null);
-    const [fiscZonaV77, setFiscZonaV77] = React.useState<"AB" | "C" | "D" | "E" | "F">("C");
-    const [fiscCopied, setFiscCopied] = React.useState<string | null>(null);
-    const [rispostaCliente, setRispostaCliente] = React.useState<any>(null);
-    const [showSendModal, setShowSendModal] = React.useState<null | { link: string; nome: string; tel: string; email: string; code: string }>(null);
-    const [pdfBusy, setPdfBusy] = React.useState<null | "pdf" | "anteprima" | "invia">(null);
-    React.useEffect(() => {
-      const id = "mastro-pdf-spin-keyframes";
-      if (typeof document !== "undefined" && !document.getElementById(id)) {
-        const s = document.createElement("style");
-        s.id = id;
-        s.textContent = "@keyframes mastrospin { to { transform: rotate(360deg); } }";
-        document.head.appendChild(s);
-      }
-    }, []);
-    React.useEffect(() => {
-      if (!selectedCM?.preventivoInviato || !selectedCM?.id) { setRispostaCliente(null); return; }
-      let alive = true;
-      const fetchRisposta = () => {
-        fetch("/api/preventivo-link?cm_id=" + encodeURIComponent(selectedCM.id))
-          .then(r => r.json())
-          .then(d => { if (alive && d?.found) setRispostaCliente(d); })
-          .catch(() => {});
-      };
-      fetchRisposta();
-      const iv = setInterval(fetchRisposta, 15000);
-      return () => { alive = false; clearInterval(iv); };
-    }, [selectedCM?.id, selectedCM?.preventivoInviato]);
-
-    // v33: sync commessa dal DB quando si apre - risolve il bug dove
-    // localStorage ha preventivoInviato=false anche se DB e' aggiornato
-    React.useEffect(() => {
-      if (!selectedCM?.id) return;
-      let alive = true;
-      (async () => {
-        try {
-          const { data, error } = await supabase
-            .from("commesse")
-            .select("fase, preventivo_inviato_at")
-            .eq("id", selectedCM.id)
-            .maybeSingle();
-          if (!alive || error || !data) return;
-          const dbInviato = !!data.preventivo_inviato_at;
-          const dbFase = data.fase;
-          const localInviato = !!(selectedCM as any).preventivoInviato || !!(selectedCM as any).preventivoInviatoAt;
-          // Se DB e local divergono, aggiorna local
-          if (dbInviato !== localInviato || dbFase !== (selectedCM as any).fase) {
-            console.log("[v33 sync] DB ha aggiornamenti per", selectedCM.id, { dbFase, dbInviato, localFase: (selectedCM as any).fase, localInviato });
-            const update = {
-              preventivoInviato: dbInviato,
-              preventivoInviatoAt: data.preventivo_inviato_at,
-              dataPreventivoInvio: data.preventivo_inviato_at ? data.preventivo_inviato_at.split("T")[0] : null,
-              fase: dbFase,
-            };
-            setCantieri((cs: any[]) => cs.map((c: any) => c.id === selectedCM.id ? { ...c, ...update } : c));
-            setSelectedCM((p: any) => p ? ({ ...p, ...update }) : p);
-          }
-        } catch (e) { console.warn("[v33] sync error", e); }
-      })();
-      return () => { alive = false; };
-    }, [selectedCM?.id]);
-
-
     const [workWeekend, setWorkWeekend] = useState<boolean | null>(null);
     const [showAccontoModal, setShowAccontoModal] = useState(false);
-    const [showModalFirma, setShowModalFirma] = useState(false);
-
-    // v43: se fase=conferma e firma non ancora ricevuta, apri ModalFirma automaticamente
-    // (deve stare DOPO useState di showModalFirma per evitare TDZ)
-    React.useEffect(() => {
-      if (selectedCM?.fase === "conferma" && !(selectedCM as any)?.firmaCliente && !(selectedCM as any)?.firma_cliente) {
-        setShowModalFirma(true);
-      }
-    }, [selectedCM?.id, selectedCM?.fase]);
     const [accontoImporto, setAccontoImporto] = useState<string>("");
     const [showOrdinePreview, setShowOrdinePreview] = useState(false);
   const [noteOrdine, setNoteOrdine] = useState("");
@@ -393,1912 +97,12 @@ export default function CMDetailPanel() {
     const [fascicoliStorico, setFascicoliStorico] = useState<any[]>([]);
     // Modal "Crea nuovo rilievo" dentro Centro Comando
     const [showNuovoRilievoModal, setShowNuovoRilievoModal] = useState(false);
-    const [nuovoRilievoComplesso, setNuovoRilievoComplesso] = useState(false);
-    const [showAggiungiVanoModal, setShowAggiungiVanoModal] = useState(false);
-    const [nvL1, setNvL1] = useState("");
-    const [nvL2, setNvL2] = useState("");
-    const [nvL3, setNvL3] = useState("");
-    const [nvStanza, setNvStanza] = useState("");
-    const [nvCustom, setNvCustom] = useState<Array<{label:string,value:string}>>([]);
-    const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere"|"personalizzato">("provvisorio");
+    const [nuovoRilievoTipo, setNuovoRilievoTipo] = useState<"provvisorio"|"verificato"|"definitivo"|"da_rivedere">("provvisorio");
     const [nuovoRilievoRilevatore, setNuovoRilievoRilevatore] = useState("");
     const [nuovoRilievoNote, setNuovoRilievoNote] = useState("");
 
   // NULL GUARD: tutti gli hook devono essere dichiarati prima di questo return
   if (!selectedCM) return null;
-
-  // =====================================================
-  // v70 · EARLY RETURN · Pannello mockup v8 completo
-  // Bypassa il render normale e mostra il nuovo pannello guidato.
-  // Per tornare al vecchio layout: rimuovi questo blocco o aggiungi un flag.
-  // =====================================================
-  if (selectedCM && !(typeof showCadDraw !== "undefined" && showCadDraw) && !prevWorkspace) {
-    const cV70 = selectedCM as any;
-
-    // ═══ v37 · v23 PAGINA MODIFICHE/DA_CONTATTARE (flusso pulito) ═══
-    if (cV70.fase === "modifiche" || cV70.fase === "da_contattare") {
-      const ris = rispostaCliente;
-      const tipoRis = ris?.risposta as ("accettato" | "modifiche" | "chiamare" | undefined);
-
-      const dataInvio = cV70.preventivoInviatoAt ? new Date(cV70.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
-
-      const totaleV23 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(cV70) : (cV70.totalePreventivo || 0)) || 0;
-      const fmtEurV23 = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
-      const telPulitoV23 = (cV70.telefono || "").replace(/[^0-9+]/g, "");
-      const numeroWAV23 = telPulitoV23.startsWith("+") ? telPulitoV23.slice(1) : (telPulitoV23.startsWith("39") ? telPulitoV23 : "39" + telPulitoV23);
-
-      // Stato pill
-      const stato = tipoRis === "accettato" ? { txt: "ACCETTATO", icon: "✓", color: "#28A268" } :
-                    tipoRis === "modifiche" ? { txt: "CHIEDE MODIFICHE", icon: "✏", color: "#F59E0B" } :
-                    tipoRis === "chiamare" ? { txt: "VUOLE CONTATTO", icon: "📞", color: "#3B82F6" } :
-                    ris?.visualizzato ? { txt: "CLIENTE HA APERTO", icon: "👁", color: "#8B5CF6" } :
-                    { txt: "IN ATTESA", icon: "⏳", color: "#71717A" };
-
-      const rilievoCorrente = selectedRilievo || (cV70.rilievi && cV70.rilievi.length > 0 ? cV70.rilievi[cV70.rilievi.length - 1] : null);
-      const numeroRilievo = rilievoCorrente?.numero || (cV70.rilievi?.length || 1);
-      const tuttiRilievi = (cV70.rilievi || []) as any[];
-
-      // Crea nuovo rilievo (R2, R3...) duplicando il corrente
-      const handleAggiornaPreventivo = () => {
-        const oggiIso = new Date().toISOString().split("T")[0];
-        const oraOra = new Date().toTimeString().slice(0, 5);
-        const nextNumero = Math.max(0, ...tuttiRilievi.map((r: any) => Number(r.numero) || 0)) + 1;
-
-        // Duplica vani del rilievo corrente (deep clone)
-        const vaniDuplicati = (rilievoCorrente?.vani || []).map((v: any) => ({
-          ...JSON.parse(JSON.stringify(v)),
-          id: "vano-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-        }));
-
-        const nuovoRilievo = {
-          id: "rilievo-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-          tipo: "definitivo",
-          numero: nextNumero,
-          data: oggiIso,
-          ora: oraOra,
-          rilevatore: rilievoCorrente?.rilevatore || "",
-          note: "Aggiornamento dopo modifiche cliente",
-          motivoModifica: ris?.risposta_nota || "Modifiche richieste dal cliente",
-          completato: false,
-          complesso: false,
-          vani: vaniDuplicati,
-        };
-
-        // Aggiorna commessa: aggiungi nuovo rilievo, resetta preventivoInviato
-        setCantieri((cs: any[]) => cs.map((cm: any) => {
-          if (cm.id !== cV70.id) return cm;
-          return {
-            ...cm,
-            rilievi: [...(cm.rilievi || []), nuovoRilievo],
-            preventivoInviato: false,
-            preventivoInviatoAt: null,
-            dataPreventivoInvio: null,
-            fase: "preventivo",
-          };
-        }));
-        setSelectedCM((p: any) => p ? ({
-          ...p,
-          rilievi: [...(p.rilievi || []), nuovoRilievo],
-          preventivoInviato: false,
-          preventivoInviatoAt: null,
-          dataPreventivoInvio: null,
-          fase: "preventivo",
-        }) : p);
-        setSelectedRilievo(nuovoRilievo);
-      };
-
-      return (
-        <div style={{
-          minHeight: "100vh",
-          background: "#F7FAFA",
-          padding: 16,
-          paddingBottom: 100,
-          fontFamily: "inherit",
-        }}>
-          {/* HEADER (codice + cliente) */}
-          <div style={{
-            background: "linear-gradient(135deg, #1B6B5E 0%, #0F4D44 100%)",
-            borderRadius: 20,
-            padding: "16px 18px",
-            marginBottom: 12,
-            color: "#fff",
-            display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-            boxShadow: "0 8px 20px rgba(15,77,68,0.25)",
-          }}>
-            <button onClick={() => setSelectedCM(null)} style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: "rgba(255,255,255,0.18)", border: "none", color: "#fff",
-              fontSize: 18, fontWeight: 700, cursor: "pointer", flexShrink: 0,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>‹</button>
-            <div style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.85, letterSpacing: 1.2 }}>
-                {cV70.code} · PREVENTIVO N°{numeroRilievo}
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>
-                {(cV70.cliente || "").toUpperCase() + (cV70.cognome ? " " + cV70.cognome.toUpperCase() : "")}
-              </div>
-              {cV70.indirizzo && <div style={{ fontSize: 11, opacity: 0.9, marginTop: 2 }}>{cV70.indirizzo}</div>}
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 900, lineHeight: 1 }}>{fmtEurV23(totaleV23)}</div>
-              <div style={{ fontSize: 10, opacity: 0.85, marginTop: 3 }}>totale</div>
-            </div>
-          </div>
-
-          {/* PROGRESS BAR PASSO */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, paddingLeft: 4, paddingRight: 4 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#71717A", letterSpacing: 1 }}>PASSO 3/8</div>
-            <div style={{ flex: 1, display: "flex", gap: 3 }}>
-              {[1,2,3,4,5,6,7,8].map(i => (
-                <div key={i} style={{
-                  flex: 1, height: 5, borderRadius: 3,
-                  background: i <= 3 ? "#1B6B5E" : "#E4E4E7",
-                }} />
-              ))}
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "#1B6B5E", letterSpacing: 0.5 }}>INVIATO</div>
-          </div>
-
-          {/* BIG CARD PREVENTIVO INVIATO (layout v73-style ma colore teal scuro) */}
-          <div style={{
-            borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(155deg, #2DA89A 0%, #1B6B5E 55%, #0F4D44 100%)",
-            color: "#fff",
-            boxShadow: "0 18px 40px rgba(15,77,68,0.35), 0 6px 12px rgba(15,77,68,0.2)",
-            position: "relative", overflow: "hidden",
-            display: "flex", flexDirection: "column",
-          }}>
-            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
-
-            {/* Pillola stato cliente */}
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
-              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
-              textTransform: "uppercase" as any, position: "relative",
-            }}>
-              <span style={{ fontSize: 11, lineHeight: 1 }}>{stato.icon}</span>
-              {stato.txt}
-            </div>
-
-            <div style={{
-              fontSize: 24, fontWeight: 900, marginTop: 14,
-              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
-              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
-            }}>{tipoRis === "accettato" ? "Cliente ha\naccettato" : tipoRis === "modifiche" ? "Cliente chiede\nmodifiche" : tipoRis === "chiamare" ? "Cliente vuole\nessere contattato" : "In attesa di\nrisposta"}</div>
-
-            <div style={{
-              fontSize: 12.5, opacity: 0.94, marginTop: 8,
-              lineHeight: 1.4, fontWeight: 500, position: "relative",
-            }}>{tipoRis === "accettato" ? "Crea conferma d'ordine e parti con la produzione" : tipoRis === "modifiche" ? "Aggiorna il preventivo e rimanda al cliente" : tipoRis === "chiamare" ? "Chiama o scrivi su WhatsApp" : "Cliente non ha ancora risposto · Inviato il " + dataInvio}</div>
-
-            {/* Nota cliente se presente */}
-            {ris?.risposta_nota && (
-              <div style={{
-                marginTop: 12, padding: "10px 12px",
-                background: "rgba(0,0,0,0.18)", borderRadius: 12,
-                fontSize: 12, lineHeight: 1.4, position: "relative",
-                whiteSpace: "pre-wrap" as const, maxHeight: 120, overflowY: "auto" as any,
-              }}>
-                {ris.risposta_nota}
-              </div>
-            )}
-
-            {/* STRADE */}
-            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
-
-              {/* STRADA 1 - Aggiorna preventivo (CONSIGLIATO se modifiche) */}
-              <div onClick={handleAggiornaPreventivo} style={{
-                background: "#fff",
-                borderRadius: 16,
-                padding: 14,
-                cursor: "pointer",
-                position: "relative",
-                zIndex: 10,
-                display: "flex", alignItems: "center", gap: 12,
-                boxShadow: "0 8px 22px rgba(0,0,0,0.22), inset 0 -3px 0 rgba(15,77,68,0.06)",
-              }}>
-                <div style={{
-                  width: 46, height: 46, borderRadius: 13,
-                  background: tipoRis === "accettato" ? "linear-gradient(145deg, #5FE0A8, #1D9E75)" : "linear-gradient(145deg, #2DA89A, #0F4D44)",
-                  boxShadow: "0 4px 10px rgba(15,77,68,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
-                  color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  {tipoRis === "accettato" ? (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  ) : (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F4D44", letterSpacing: "-0.1px" }}>
-                    {tipoRis === "accettato" ? "Crea conferma d'ordine" : "Aggiorna preventivo"}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>
-                    {tipoRis === "accettato" ? "Avanza alla fase conferma e parti con l'ordine" : "Crea un nuovo preventivo R" + (numeroRilievo + 1) + " partendo da quello attuale"}
-                  </div>
-                  <div style={{
-                    fontSize: 8.5, fontWeight: 900, color: "#0F4D44",
-                    background: "linear-gradient(145deg, rgba(45,168,154,0.3), rgba(15,77,68,0.18))",
-                    padding: "3px 8px", borderRadius: 50,
-                    letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
-                    border: "1px solid rgba(15,77,68,0.25)",
-                  }}>{tipoRis === "accettato" ? "⚡ CONSIGLIATO" : tipoRis === "modifiche" ? "⚡ CONSIGLIATO" : "⚡ CREA R" + (numeroRilievo + 1)}</div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-
-              {/* STRADA 2 - Aspetta cliente / Contatta */}
-              <div onClick={() => {
-                if (telPulitoV23 && tipoRis !== "accettato") {
-                  window.open("https://wa.me/" + numeroWAV23, "_blank");
-                } else {
-                  setSelectedCM(null);
-                }
-              }} style={{
-                background: "rgba(255,255,255,0.95)",
-                borderRadius: 16,
-                padding: 14,
-                cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 12,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                border: "2px solid transparent",
-              }}>
-                <div style={{
-                  width: 46, height: 46, borderRadius: 13,
-                  background: "linear-gradient(145deg, rgba(45,168,154,0.2), rgba(15,77,68,0.1))",
-                  boxShadow: "inset 0 1px 2px rgba(255,255,255,0.5)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  {telPulitoV23 ? (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                  ) : (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#0F4D44", letterSpacing: "-0.1px" }}>
-                    {telPulitoV23 && tipoRis !== "accettato" ? "Contatta cliente" : "Aspetta cliente"}
-                  </div>
-                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>
-                    {telPulitoV23 && tipoRis !== "accettato" ? "Apri WhatsApp e scrivi al cliente" : "Torna alla lista commesse, ti aggiorno appena risponde"}
-                  </div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B6B5E" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-            </div>
-
-            {/* Meta tiles - INVIATO IL / VISTO N VOLTE */}
-            <div style={{
-              marginTop: 14, display: "grid",
-              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
-            }}>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Inviato</div>
-                <div style={{ fontSize: 14, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{dataInvio || "—"}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>via WhatsApp</div>
-              </div>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Cliente</div>
-                <div style={{ fontSize: 14, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>
-                  {ris?.visualizzato ? (ris.letture_count || 1) + " " + ((ris.letture_count || 1) === 1 ? "vista" : "viste") : "Non aperto"}
-                </div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>
-                  {ris?.visualizzato_at ? new Date(ris.visualizzato_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* TIMELINE STORICA RILIEVI/INVII */}
-          {tuttiRilievi.length >= 1 && (
-            <div style={{ background: "#fff", borderRadius: 16, padding: "14px 16px", marginTop: 12, boxShadow: "0 2px 8px rgba(13,31,31,0.06)" }}>
-              <div style={{ fontSize: 11, color: "#71717A", fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>
-                📜 STORICO PREVENTIVO ({tuttiRilievi.length} {tuttiRilievi.length === 1 ? "versione" : "versioni"})
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
-                {tuttiRilievi.slice().reverse().map((r: any, idx: number) => {
-                  const isCurrent = idx === 0;
-                  return (
-                    <div key={r.id || idx} style={{
-                      display: "flex", gap: 12, padding: "8px 0",
-                      borderBottom: idx < tuttiRilievi.length - 1 ? "1px solid #F4F4F5" : "none",
-                    }}>
-                      <div style={{
-                        width: 28, height: 28, borderRadius: 14, flexShrink: 0,
-                        background: isCurrent ? "#1B6B5E" : "#E4E4E7",
-                        color: isCurrent ? "#fff" : "#71717A",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 11, fontWeight: 800,
-                      }}>R{r.numero || idx + 1}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#0D1F1F" }}>
-                          Rilievo R{r.numero || idx + 1}
-                          {isCurrent && <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 900, color: "#1B6B5E", letterSpacing: 0.5 }}>· ATTIVO</span>}
-                        </div>
-                        <div style={{ fontSize: 10, color: "#71717A", marginTop: 2 }}>
-                          {r.data ? new Date(r.data).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" }) : "—"}
-                          {r.ora ? " alle " + r.ora : ""}
-                          {r.rilevatore ? " · " + r.rilevatore : ""}
-                        </div>
-                        {r.motivoModifica && (
-                          <div style={{ fontSize: 11, color: "#52525B", marginTop: 4, fontStyle: "italic" as any, padding: "6px 8px", background: "#FAFAFA", borderRadius: 6 }}>
-                            {r.motivoModifica}
-                          </div>
-                        )}
-                        {r.vani && (
-                          <div style={{ fontSize: 10, color: "#A1A1AA", marginTop: 3 }}>
-                            {r.vani.length} {r.vani.length === 1 ? "vano" : "vani"}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Vedi pagina cliente / Vedi PDF */}
-          {ris?.token && (
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => window.open("/p/" + ris.token, "_blank")} style={{
-                flex: 1, padding: 12, borderRadius: 12, border: "1px solid #E4E4E7",
-                background: "#fff", color: "#52525B",
-                fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-              }}>
-                🔗 Vedi link cliente
-              </button>
-            </div>
-          )}
-        </div>
-      );
-    }
-    // ═══ Fine v23 PreventivoInviatoView ═══
-
-
-
-
-
-
-
-    // ═══ Banner "Cliente ha accettato — Manda conferma" ═══
-    // v21: Card "Modifiche richieste" - mostra quando cliente ha chiesto modifiche
-    const _modificheCard = (rispostaCliente?.risposta === "modifiche") ? (
-      <div style={{
-        background: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
-        border: "2px solid #F59E0B",
-        borderRadius: 14,
-        padding: "14px 16px",
-        marginBottom: 12,
-        boxShadow: "0 4px 14px rgba(245,158,11,0.25)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>✏</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#78350F", letterSpacing: 0.3 }}>CLIENTE CHIEDE MODIFICHE</div>
-            <div style={{ fontSize: 11, color: "#78350F", opacity: 0.85, marginTop: 2 }}>
-              {rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
-            </div>
-          </div>
-        </div>
-        {rispostaCliente?.risposta_nota && (
-          <div style={{
-            background: "rgba(255,255,255,0.7)",
-            border: "1px solid rgba(245,158,11,0.3)",
-            borderRadius: 10,
-            padding: "10px 12px",
-            marginBottom: 10,
-            fontSize: 12,
-            color: "#451A03",
-            whiteSpace: "pre-wrap" as const,
-            lineHeight: 1.5,
-            maxHeight: 200,
-            overflowY: "auto" as const,
-          }}>
-            {rispostaCliente.risposta_nota}
-          </div>
-        )}
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => {
-            setFaseTo(cV70.id, "preventivo");
-            setCantieri((cs: any[]) => cs.map((cm: any) => cm.id === cV70.id ? { ...cm, preventivoInviato: false } : cm));
-          }} style={{
-            flex: 1, padding: "12px 8px", borderRadius: 10, border: "none",
-            background: "#F59E0B", color: "#fff",
-            fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-          }}>
-            ✏ AGGIORNA PREVENTIVO
-          </button>
-          {cV70.telefono && (
-            <button onClick={() => {
-              const tel = (cV70.telefono || "").replace(/[^0-9+]/g, "");
-              const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
-              window.open("https://wa.me/" + numero, "_blank");
-            }} style={{
-              flex: 1, padding: "12px 8px", borderRadius: 10, border: "1.5px solid #F59E0B",
-              background: "#fff", color: "#78350F",
-              fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-            }}>
-              💬 CONTATTA
-            </button>
-          )}
-        </div>
-      </div>
-    ) : null;
-
-    // v21: Card "Da contattare" - cliente vuole essere chiamato
-    const _contattaCard = (rispostaCliente?.risposta === "chiamare") ? (
-      <div style={{
-        background: "linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)",
-        border: "2px solid #3B82F6",
-        borderRadius: 14,
-        padding: "14px 16px",
-        marginBottom: 12,
-        boxShadow: "0 4px 14px rgba(59,130,246,0.25)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{ fontSize: 28, lineHeight: 1 }}>📞</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#1E3A8A", letterSpacing: 0.3 }}>CLIENTE VUOLE ESSERE CONTATTATO</div>
-            <div style={{ fontSize: 11, color: "#1E3A8A", opacity: 0.85, marginTop: 2 }}>
-              {rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
-            </div>
-          </div>
-        </div>
-        {rispostaCliente?.risposta_nota && (
-          <div style={{
-            background: "rgba(255,255,255,0.7)",
-            border: "1px solid rgba(59,130,246,0.3)",
-            borderRadius: 10,
-            padding: "10px 12px",
-            marginBottom: 10,
-            fontSize: 12,
-            color: "#1E3A8A",
-            whiteSpace: "pre-wrap" as const,
-            lineHeight: 1.5,
-          }}>
-            {rispostaCliente.risposta_nota}
-          </div>
-        )}
-        {cV70.telefono && (
-          <button onClick={() => {
-            const tel = (cV70.telefono || "").replace(/[^0-9+]/g, "");
-            const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
-            window.open("https://wa.me/" + numero, "_blank");
-          }} style={{
-            width: "100%", padding: 12, borderRadius: 10, border: "none",
-            background: "#3B82F6", color: "#fff",
-            fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-          }}>
-            💬 CHIAMA / SCRIVI ORA
-          </button>
-        )}
-      </div>
-    ) : null;
-
-    const _accettatoBanner = (rispostaCliente?.risposta === "accettato" && faseIndex(cV70.fase) < faseIndex("conferma")) ? (
-      <div style={{
-        position: "sticky" as any,
-        top: 0,
-        zIndex: 50,
-        background: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)",
-        color: "#fff",
-        padding: "14px 16px",
-        boxShadow: "0 4px 14px rgba(40,162,104,0.35)",
-        animation: "mastropulse 1.6s infinite",
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        cursor: "pointer",
-      }} onClick={() => { setFaseTo(cV70.id, "conferma"); }}>
-        <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>✓</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 0.3 }}>CLIENTE HA ACCETTATO IL PREVENTIVO</div>
-          <div style={{ fontSize: 11, opacity: 0.92, marginTop: 2 }}>{rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""} · Tocca qui per creare la conferma d’ordine</div>
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 900, flexShrink: 0 }}>→</div>
-      </div>
-    ) : null;
-
-    const rListV70: any[] = cV70.rilievi || [];
-    const rCurV70: any = selectedRilievo || (rListV70.length > 0 ? rListV70[rListV70.length - 1] : null);
-    const vaniV70: any[] = rCurV70?.vani || [];
-    const vaniCompletiV70 = vaniV70.filter((v: any) => Object.values(v.misure || {}).filter((x: any) => (x as number) > 0).length >= 6).length;
-    const fotoCountV70 = vaniV70.reduce((a: number, v: any) => a + Object.keys(v.foto || {}).length, 0);
-    const fotoGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "foto").length;
-    const audioGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "vocale").length;
-    const noteGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "nota").length;
-    const fileGlobalV70 = (cV70.allegati || []).filter((a: any) => a.tipo === "file").length;
-    const allegatiTotV70 = fotoGlobalV70 + audioGlobalV70 + noteGlobalV70 + fileGlobalV70;
-    // v73 · rilievo completo ==> mostro pagina preventivo verde
-    const rilievoCompletoV73 = vaniV70.length > 0 && vaniCompletiV70 === vaniV70.length;
-    const stimaLavoroV73 = (() => {
-      try {
-        if (typeof calcolaVanoPrezzo !== "function") return 0;
-        return vaniV70.reduce((s: number, v: any) => s + (calcolaVanoPrezzo(v, cV70) || 0), 0);
-      } catch (e) { return 0; }
-    })();
-    const fmtEurV73 = (n: number) => n >= 1000 ? `~€${(n/1000).toFixed(1).replace(".", ",")}k` : `~€${Math.round(n)}`;
-
-    // Tipo edificio
-    const tEdifV70 = cV70.tipoEdificio || cV70.tipo_edificio || "";
-    const tEdifLabelV70 = (() => {
-      switch (tEdifV70) {
-        case "palazzo": return "Palazzo residenziale";
-        case "condominio": return "Condominio";
-        case "scuola": return "Scuola";
-        case "ospedale": return "Ospedale / Clinica";
-        case "ufficio": return "Ufficio / Direzionale";
-        case "hotel": return "Hotel / RSA";
-        case "centro_comm": return "Centro commerciale";
-        case "industriale": return "Capannone / Industriale";
-        case "personalizzato": return "Personalizzato";
-        default: return "Casa singola";
-      }
-    })();
-    const tEdifStructV70 = (() => {
-      switch (tEdifV70) {
-        case "palazzo": return "Scala · Piano · Interno";
-        case "condominio": return "Piano · Interno";
-        case "scuola": return "Edificio/Plesso · Piano · Aula";
-        case "ospedale": return "Padiglione · Piano · Reparto";
-        case "ufficio": return "Edificio · Piano · Ufficio";
-        case "hotel": return "Edificio · Piano · Camera";
-        case "centro_comm": return "Livello · Negozio";
-        case "industriale": return "Corpo · Settore";
-        case "personalizzato": return [cV70.livello1Label || "Livello 1", cV70.livello2Label || "Livello 2", cV70.livello3Label || "Livello 3"].join(" · ");
-        default: return "Zona · Piano · Locale";
-      }
-    })();
-
-    // Titolo dinamico
-    const titoloV70 = rListV70.length === 0
-      ? "Crea il primo\nsopralluogo"
-      : vaniV70.length === 0
-        ? "Aggiungi\nil primo vano"
-        : vaniCompletiV70 < vaniV70.length
-          ? "Completa\nle misure"
-          : "Rilievo\ncompleto";
-    const descV70 = rListV70.length === 0
-      ? "Vai in cantiere e fai il rilievo delle misure."
-      : vaniV70.length === 0
-        ? "Compila 8 misure per ogni vano. Inizia dal primo."
-        : vaniCompletiV70 < vaniV70.length
-          ? `${vaniCompletiV70}/${vaniV70.length} vani completi · continua`
-          : "Passa al preventivo!";
-    const btnV70 = rListV70.length === 0
-      ? "CREA RILIEVO"
-      : vaniV70.length === 0
-        ? "AGGIUNGI PRIMO VANO"
-        : vaniCompletiV70 < vaniV70.length
-          ? "APRI RILIEVO"
-          : "VAI AL PREVENTIVO";
-
-    const onClickBtnV70 = () => {
-      if (rListV70.length === 0) {
-        // Apri modal nuovo rilievo
-        if (typeof setNuovoRilievoTipo !== "undefined") {
-          try {
-            (setNuovoRilievoTipo as any)("provvisorio");
-            (setNuovoRilievoRilevatore as any)("");
-            (setNuovoRilievoComplesso as any)(false);
-            (setNuovoRilievoNote as any)("");
-            (setShowNuovoRilievoModal as any)(true);
-          } catch (e) { console.warn("v70 modal nuovo rilievo setters mancanti", e); }
-        }
-        return;
-      }
-      // C'e' un rilievo: selezionalo
-      setSelectedRilievo(rCurV70);
-      if (rCurV70.complesso && vaniV70.length === 0) {
-        try {
-          (setNvL1 as any)(""); (setNvL2 as any)(""); (setNvL3 as any)("");
-          (setNvStanza as any)(""); (setNvCustom as any)([]);
-          (setShowAggiungiVanoModal as any)(true);
-        } catch (e) { console.warn("v70 modal aggiungi vano complesso setters mancanti", e); }
-        return;
-      }
-      if (vaniV70.length > 0) {
-        setSelectedVano(vaniV70[0]);
-        setVanoStep(0);
-        return;
-      }
-      // Rilievo semplice, 0 vani: crea primo vano e apri
-      const nuovoVano = { id: Date.now(), nome: "Vano 1", tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
-      const updR = { ...rCurV70, vani: [...(rCurV70.vani || []), nuovoVano] };
-      setCantieri(cs => cs.map(cm => cm.id === cV70.id ? { ...cm, rilievi: cm.rilievi.map((r2: any) => r2.id === rCurV70.id ? updR : r2), aggiornato: "Oggi" } : cm));
-      setSelectedCM((prev: any) => ({ ...prev, rilievi: (prev.rilievi || []).map((r2: any) => r2.id === rCurV70.id ? updR : r2) }));
-      setSelectedRilievo(updR);
-      setSelectedVano(nuovoVano);
-      setVanoStep(0);
-    };
-
-    // log cronologia
-    const logV70: any[] = cV70.log || [];
-
-    return (
-      <>
-      {/* v45: ModalFirma anche qui, per fase=conferma quando si cade nel Centro Comando v70 */}
-      {showModalFirma && cV70 && (
-        <ModalFirma
-          commessaId={cV70.id || ""}
-          clienteNome={cV70.cliente || (cV70 as any).nomeCliente || "Cliente"}
-          clienteTelefono={cV70.telefono || null}
-          clienteEmail={(cV70 as any).email || null}
-          onClose={() => setShowModalFirma(false)}
-          onSuccess={() => {
-            setCcDone("Firma inviata al cliente");
-            setTimeout(() => setCcDone(null), 3000);
-          }}
-        />
-      )}
-      <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 20 }}>
-        {_accettatoBanner}{_modificheCard}{_contattaCard}
-        {/* ============ HEADER TEAL ============ */}
-        <div style={{
-          background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",
-          padding: "22px 18px 26px",
-          color: "#fff",
-          position: "relative",
-          borderRadius: "0 0 26px 26px",
-          boxShadow: "0 4px 20px rgba(40,160,160,0.2)",
-        }}>
-          <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.15), transparent 65%)", pointerEvents: "none" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
-            <div onClick={() => setSelectedCM(null)} style={{
-              width: 40, height: 40, borderRadius: 13,
-              background: "rgba(255,255,255,0.22)",
-              backdropFilter: "blur(12px)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "inset 0 1px 1px rgba(255,255,255,0.35), 0 2px 8px rgba(0,0,0,0.1)",
-              flexShrink: 0, cursor: "pointer",
-            }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.92, letterSpacing: "1px", textTransform: "uppercase" as any }}>
-                {cV70.code || "Commessa"}{rCurV70 ? ` · RILIEVO MISURE R${rCurV70.n || 1}` : ""}
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.6px", textShadow: "0 2px 5px rgba(0,0,0,0.18)", marginTop: 2, lineHeight: 1.05 }}>
-                {(cV70.cliente || "CLIENTE").toUpperCase()}
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.88, marginTop: 3, fontWeight: 600, textTransform: "uppercase" as any }}>
-                {cV70.indirizzo || ""}
-              </div>
-            </div>
-            <div style={{ textAlign: "right" as any, flexShrink: 0 }}>
-              <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.4px", textShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>
-                {vaniV70.length > 0 ? Math.round((vaniCompletiV70 / vaniV70.length) * 100) : 0}%
-              </div>
-              <div style={{ fontSize: 10, opacity: 0.88, fontWeight: 700, marginTop: 2 }}>
-                {vaniCompletiV70}/{vaniV70.length} vani
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ============ BODY ============ */}
-        <div style={{ padding: "16px 16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-
-          {/* MINI STEPPER 8 puntini (dinamico v73) */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Passo 2/8" : "Passo 1/8"}</div>
-            <div style={{ display: "flex", gap: 3, flex: 1 }}>
-              {rilievoCompletoV73 ? (
-                <>
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #3ABDBD, #28A0A0)", boxShadow: "0 0 4px rgba(40,160,160,0.4)" }} />
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", boxShadow: "0 0 6px rgba(29,158,117,0.5)" }} />
-                  {[1,2,3,4,5,6].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
-                </>
-              ) : (
-                <>
-                  <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
-                  {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
-                </>
-              )}
-            </div>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: rilievoCompletoV73 ? "#1D9E75" : "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>{rilievoCompletoV73 ? "Preventivo" : "Rilievo"}</div>
-          </div>
-
-          {/* v73 · BIG ACTION condizionale: VIOLA se rilievo in corso, VERDE se completo */}
-          {!rilievoCompletoV73 && (
-          <div style={{
-            borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
-            color: "#fff",
-            boxShadow: "0 18px 40px rgba(0,0,0,0.18), 0 6px 12px rgba(0,0,0,0.1)",
-            position: "relative", overflow: "hidden",
-            display: "flex", flexDirection: "column",
-          }}>
-            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
-
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
-              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
-              textTransform: "uppercase" as any, position: "relative",
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
-              Prossima mossa
-            </div>
-
-            <div style={{
-              fontSize: 24, fontWeight: 900, marginTop: 14,
-              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
-              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
-            }}>{titoloV70}</div>
-
-            <div style={{
-              fontSize: 12.5, opacity: 0.94, marginTop: 8,
-              lineHeight: 1.4, fontWeight: 500, position: "relative",
-            }}>{descV70}</div>
-
-            {/* Pill tipo edificio */}
-            <div style={{
-              marginTop: 14, background: "rgba(255,255,255,0.18)",
-              borderRadius: 14, padding: "12px 14px",
-              display: "flex", alignItems: "center", gap: 12, position: "relative",
-            }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: "rgba(255,255,255,0.22)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
-              }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
-                <div style={{ fontSize: 14, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV70}</div>
-                <div style={{ fontSize: 10.5, opacity: 0.88, marginTop: 2, fontWeight: 600 }}>{tEdifStructV70}</div>
-              </div>
-            </div>
-
-            {/* Meta tiles */}
-            <div style={{
-              marginTop: 14, display: "grid",
-              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
-            }}>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length || "—"}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{vaniV70.length === 0 ? "da creare" : (vaniCompletiV70 === vaniV70.length ? "tutti OK" : "in corso")}</div>
-              </div>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Misure</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70 * 8}/{(vaniV70.length * 8) || 8}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>per vano</div>
-              </div>
-            </div>
-
-            {/* BIG BTN */}
-            <button onClick={onClickBtnV70} style={{
-              marginTop: 18, width: "100%", padding: 17,
-              background: "#fff", color: "#3C3489",
-              border: "none", borderRadius: 18,
-              fontSize: 15, fontWeight: 900, letterSpacing: "0.4px",
-              cursor: "pointer", fontFamily: "inherit",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-              boxShadow: "0 6px 18px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
-              position: "relative",
-            }}>
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              {btnV70}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
-          </div>
-          )}
-
-          {/* v73 · BIG ACTION VERDE - 2 STRADE quando rilievo completo */}
-          {rilievoCompletoV73 && (
-          <div style={{
-            borderRadius: 26, padding: "22px 20px 20px",
-            background: "linear-gradient(155deg, #6BD9B0 0%, #1D9E75 55%, #0F8060 100%)",
-            color: "#fff",
-            boxShadow: "0 18px 40px rgba(29,158,117,0.35), 0 6px 12px rgba(29,158,117,0.2)",
-            position: "relative", overflow: "hidden",
-            display: "flex", flexDirection: "column",
-          }}>
-            <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.24), transparent 65%)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -70, left: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" }} />
-
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-              padding: "5px 12px", background: "rgba(255,255,255,0.22)",
-              borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px",
-              textTransform: "uppercase" as any, position: "relative",
-            }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Rilievo completo
-            </div>
-
-            <div style={{
-              fontSize: 24, fontWeight: 900, marginTop: 14,
-              letterSpacing: "-0.6px", lineHeight: 1.15, whiteSpace: "pre-line" as any,
-              textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
-            }}>Scegli come{"\n"}vuoi procedere</div>
-
-            <div style={{
-              fontSize: 12.5, opacity: 0.94, marginTop: 8,
-              lineHeight: 1.4, fontWeight: 500, position: "relative",
-            }}>Hai {vaniV70.length} {vaniV70.length === 1 ? "vano" : "vani"} con tutte le misure. Due strade per il preventivo:</div>
-
-            {/* STRADE */}
-            <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
-              {/* STRADA 1 - Preventivo al volo (CONSIGLIATO) */}
-              <div onClick={(ev) => {
-                ev.stopPropagation();
-                console.log("[v79 click] Preventivo al volo triggered", { setPrevWorkspace: typeof setPrevWorkspace, setPrevTab: typeof setPrevTab });
-                try {
-                  setPrevWorkspace(true);
-                  setPrevTab("fiscale");
-                  setEditingVanoId(null);
-                  console.log("[v79 click] setState OK");
-                } catch (e) {
-                  console.error("[v79 click] ERROR", e);
-                  alert("Errore apertura preventivo: " + (e as any)?.message);
-                }
-              }} style={{
-                background: "#fff",
-                borderRadius: 16,
-                padding: 14,
-                cursor: "pointer",
-                position: "relative",
-                zIndex: 10,
-                display: "flex", alignItems: "center", gap: 12,
-                boxShadow: "0 8px 22px rgba(0,0,0,0.22), inset 0 -3px 0 rgba(4,52,44,0.06)",
-              }}>
-                <div style={{
-                  width: 46, height: 46, borderRadius: 13,
-                  background: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
-                  boxShadow: "0 4px 10px rgba(29,158,117,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
-                  color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#04342C", letterSpacing: "-0.1px" }}>Preventivo al volo</div>
-                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Hai già i prezzi, invia subito al cliente in 2 tap</div>
-                  <div style={{
-                    fontSize: 8.5, fontWeight: 900, color: "#04342C",
-                    background: "linear-gradient(145deg, rgba(93,202,165,0.3), rgba(29,158,117,0.18))",
-                    padding: "3px 8px", borderRadius: 50,
-                    letterSpacing: "0.4px", display: "inline-block", marginTop: 6,
-                    border: "1px solid rgba(29,158,117,0.25)",
-                  }}>⚡ CONSIGLIATO</div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-
-              {/* STRADA 2 - Chiudi rilievo e basta */}
-              <div onClick={() => {
-                // chiude il rilievo, lascia la commessa in fase sopralluogo, torna alla lista
-                try {
-                  setSelectedRilievo(null);
-                  setSelectedCM(null);
-                } catch (e) { console.warn("v73 chiudi rilievo", e); }
-              }} style={{
-                background: "rgba(255,255,255,0.95)",
-                borderRadius: 16,
-                padding: 14,
-                cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 12,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                border: "2px solid transparent",
-              }}>
-                <div style={{
-                  width: 46, height: 46, borderRadius: 13,
-                  background: "linear-gradient(145deg, rgba(93,202,165,0.2), rgba(29,158,117,0.1))",
-                  boxShadow: "inset 0 1px 2px rgba(255,255,255,0.5)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: "#04342C", letterSpacing: "-0.1px" }}>Chiudi rilievo e basta</div>
-                  <div style={{ fontSize: 11, color: "#516B68", fontWeight: 600, marginTop: 3, lineHeight: 1.3 }}>Salva il rilievo, il preventivo lo fai dopo in azienda con calma</div>
-                </div>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-            </div>
-
-            {/* Meta tiles */}
-            <div style={{
-              marginTop: 14, display: "grid",
-              gridTemplateColumns: "1fr 1fr", gap: 10, position: "relative",
-            }}>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani pronti</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{vaniCompletiV70}/{vaniV70.length}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>tutte misure OK</div>
-              </div>
-              <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 14, padding: "11px 13px" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Stima lavoro</div>
-                <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3, letterSpacing: "-0.3px" }}>{stimaLavoroV73 > 0 ? fmtEurV73(stimaLavoroV73) : "—"}</div>
-                <div style={{ fontSize: 10, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{stimaLavoroV73 > 0 ? "da verificare" : "non calcolata"}</div>
-              </div>
-            </div>
-          </div>
-          )}
-
-          {/* v29 · PANNELLO GESTIONE PREVENTIVI */}
-          {(() => {
-            const c29 = cV70 as any;
-            const ris29 = rispostaCliente;
-            const tipoRis29 = ris29?.risposta as ("accettato" | "modificiamo" | "modifiche" | "chiamare" | undefined);
-            const haPreventivoInviato = !!c29.preventivoInviato || !!c29.preventivoInviatoAt || c29.fase === "modifiche" || c29.fase === "da_contattare" || c29.fase === "conferma";
-            if (!haPreventivoInviato) return null;
-
-            const tuttiRilievi29 = (c29.rilievi || []) as any[];
-            const rilievoCorr29 = selectedRilievo || (tuttiRilievi29.length > 0 ? tuttiRilievi29[tuttiRilievi29.length - 1] : null);
-            const numCorr29 = rilievoCorr29?.numero || tuttiRilievi29.length || 1;
-            const dataInvio29 = c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
-            const totale29 = (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c29) : (c29.totalePreventivo || 0)) || 0;
-            const fmtEur29 = (n: number) => "€ " + (Number(n) || 0).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-            const telPul29 = (c29.telefono || "").replace(/[^0-9+]/g, "");
-            const numWA29 = telPul29.startsWith("+") ? telPul29.slice(1) : (telPul29.startsWith("39") ? telPul29 : "39" + telPul29);
-
-            // Badge stato
-            const badge29 = tipoRis29 === "accettato" ? { txt: "ACCETTATO", bg: "#28A268", icon: "✓" } :
-                            tipoRis29 === "modifiche" ? { txt: "CHIEDE MODIFICHE", bg: "#F59E0B", icon: "✏" } :
-                            tipoRis29 === "chiamare" ? { txt: "VUOLE CONTATTO", bg: "#3B82F6", icon: "📞" } :
-                            ris29?.visualizzato ? { txt: "VISTO DAL CLIENTE", bg: "#8B5CF6", icon: "👁" } :
-                            { txt: "IN ATTESA", bg: "#71717A", icon: "⏳" };
-
-            // Prossima azione consigliata
-            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { console.log("[v44 CLICK] CREA CONFERMA D'ORDINE", { cmId: c29.id, fasePrima: c29.fase }); setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); console.log("[v44 CLICK] setShowModalFirma(true) chiamato"); setShowModalFirma(true); } } :
-                           tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
-                             // Crea R(N+1) duplicando il corrente
-                             const oggiIso = new Date().toISOString().split("T")[0];
-                             const oraOra = new Date().toTimeString().slice(0, 5);
-                             const nextNum = Math.max(0, ...tuttiRilievi29.map((r: any) => Number(r.numero) || 0)) + 1;
-                             const vaniDup = (rilievoCorr29?.vani || []).map((v: any) => ({ ...JSON.parse(JSON.stringify(v)), id: "vano-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) }));
-                             const nuovo = { id: "rilievo-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8), tipo: "definitivo", numero: nextNum, data: oggiIso, ora: oraOra, rilevatore: rilievoCorr29?.rilevatore || "", note: "Aggiornamento dopo modifiche cliente", motivoModifica: ris29?.risposta_nota || "Modifiche richieste", completato: false, complesso: false, vani: vaniDup };
-                             setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, rilievi: [...(x.rilievi || []), nuovo], preventivoInviato: false, preventivoInviatoAt: null, dataPreventivoInvio: null, fase: "preventivo" } : x));
-                             setSelectedCM((p: any) => p ? ({ ...p, rilievi: [...(p.rilievi || []), nuovo], preventivoInviato: false, preventivoInviatoAt: null, dataPreventivoInvio: null, fase: "preventivo" }) : p);
-                             setSelectedRilievo(nuovo);
-                           } } :
-                           tipoRis29 === "chiamare" && telPul29 ? { lbl: "💬 CONTATTA SU WHATSAPP", bg: "#3B82F6", action: () => window.open("https://wa.me/" + numWA29, "_blank") } :
-                           { lbl: "REINVIA PREVENTIVO", bg: "#28A0A0", action: () => { setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, preventivoInviato: false } : x)); setSelectedCM((p: any) => p ? ({ ...p, preventivoInviato: false }) : p); } };
-
-            return (
-              <div style={{
-                background: "#fff",
-                borderRadius: 18,
-                padding: "14px 16px",
-                boxShadow: "0 4px 14px rgba(13,31,31,0.08)",
-                border: "1px solid rgba(40,160,160,0.15)",
-                marginTop: 0,
-              }}>
-                {/* Header pannello */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 9, color: "#28A0A0", fontWeight: 900, letterSpacing: 1.2 }}>📋 GESTIONE PREVENTIVI</div>
-                    <div style={{ fontSize: 13, color: "#0D1F1F", fontWeight: 800, marginTop: 2 }}>
-                      {tuttiRilievi29.length} {tuttiRilievi29.length === 1 ? "versione" : "versioni"} · totale {fmtEur29(totale29)}
-                    </div>
-                  </div>
-                  <div style={{
-                    background: badge29.bg, color: "#fff",
-                    padding: "4px 10px", borderRadius: 50,
-                    fontSize: 9, fontWeight: 900, letterSpacing: 0.6,
-                    display: "flex", alignItems: "center", gap: 4,
-                  }}>
-                    <span style={{ fontSize: 10 }}>{badge29.icon}</span>
-                    {badge29.txt}
-                  </div>
-                </div>
-
-                {/* Lista rilievi */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-                  {tuttiRilievi29.slice().reverse().map((r: any, idx: number) => {
-                    const isAttivo = idx === 0;
-                    return (
-                      <div key={r.id || idx} style={{
-                        background: isAttivo ? "linear-gradient(135deg, rgba(40,160,160,0.08) 0%, rgba(40,160,160,0.02) 100%)" : "#FAFAFA",
-                        border: isAttivo ? "1.5px solid rgba(40,160,160,0.3)" : "1px solid #E4E4E7",
-                        borderRadius: 12, padding: "10px 12px",
-                        display: "flex", alignItems: "center", gap: 10,
-                      }}>
-                        <div style={{
-                          width: 30, height: 30, borderRadius: 15, flexShrink: 0,
-                          background: isAttivo ? "#28A0A0" : "#A1A1AA",
-                          color: "#fff",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: 11, fontWeight: 900,
-                        }}>R{r.numero || idx + 1}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0D1F1F", display: "flex", alignItems: "center", gap: 6 }}>
-                            Rilievo R{r.numero || idx + 1}
-                            {isAttivo && <span style={{ fontSize: 8, fontWeight: 900, color: "#28A0A0", background: "rgba(40,160,160,0.15)", padding: "2px 6px", borderRadius: 50, letterSpacing: 0.5 }}>ATTIVO</span>}
-                          </div>
-                          <div style={{ fontSize: 10, color: "#71717A", marginTop: 2 }}>
-                            {r.data ? new Date(r.data).toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "—"}
-                            {r.ora ? " · " + r.ora : ""}
-                            {r.vani ? " · " + r.vani.length + " vani" : ""}
-                          </div>
-                          {r.motivoModifica && (
-                            <div style={{ fontSize: 10, color: "#52525B", marginTop: 3, fontStyle: "italic" as any }}>
-                              {r.motivoModifica.length > 60 ? r.motivoModifica.slice(0, 60) + "..." : r.motivoModifica}
-                            </div>
-                          )}
-                        </div>
-                        {isAttivo && (
-                          <button onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRilievo(r);
-                          }} style={{
-                            padding: "6px 10px", borderRadius: 8, border: "1px solid #28A0A0",
-                            background: "#fff", color: "#0F5E55",
-                            fontSize: 10, fontWeight: 800, cursor: "pointer", flexShrink: 0,
-                          }}>
-                            APRI →
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Nota cliente se presente */}
-                {ris29?.risposta_nota && (
-                  <div style={{
-                    background: "#FEF3C7",
-                    border: "1px solid #FCD34D",
-                    borderRadius: 10, padding: "8px 10px", marginBottom: 12,
-                    fontSize: 11, color: "#78350F",
-                    whiteSpace: "pre-wrap" as const, lineHeight: 1.4,
-                    maxHeight: 100, overflowY: "auto" as const,
-                  }}>
-                    <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.5, marginBottom: 3 }}>💬 CLIENTE HA SCRITTO:</div>
-                    {ris29.risposta_nota}
-                  </div>
-                )}
-
-                {/* Bottone prossima azione */}
-                <button onClick={prossima.action} style={{
-                  width: "100%", padding: 14, borderRadius: 12, border: "none",
-                  background: prossima.bg, color: "#fff",
-                  fontSize: 13, fontWeight: 900, cursor: "pointer",
-                  fontFamily: "inherit", letterSpacing: 0.4,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                }}>
-                  {prossima.lbl} →
-                </button>
-
-                {/* Link secondari */}
-                <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 10 }}>
-                  {ris29?.token && (
-                    <button onClick={() => window.open("/p/" + ris29.token, "_blank")} style={{
-                      padding: 4, border: "none", background: "transparent",
-                      color: "#71717A", fontSize: 10, fontWeight: 700, cursor: "pointer",
-                      textDecoration: "underline", fontFamily: "inherit",
-                    }}>
-                      🔗 Vedi link cliente
-                    </button>
-                  )}
-                  {telPul29 && (
-                    <button onClick={() => window.open("https://wa.me/" + numWA29, "_blank")} style={{
-                      padding: 4, border: "none", background: "transparent",
-                      color: "#71717A", fontSize: 10, fontWeight: 700, cursor: "pointer",
-                      textDecoration: "underline", fontFamily: "inherit",
-                    }}>
-                      💬 WhatsApp
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* MENU 4 CENTRI */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-            {[
-              { id: "cliente", label: "Cliente", color: "#1D9E75", tintFrom: "rgba(93,202,165,0.22)", tintTo: "rgba(29,158,117,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
-              { id: "allegati", label: "Allegati", color: "#7F77DD", tintFrom: "rgba(175,169,236,0.22)", tintTo: "rgba(127,119,221,0.12)", badge: allegatiTotV70, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> },
-              { id: "note", label: "Note", color: "#EF9F27", tintFrom: "rgba(250,199,117,0.25)", tintTo: "rgba(239,159,39,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
-              { id: "azioni", label: "Azioni", color: "#378ADD", tintFrom: "rgba(133,183,235,0.22)", tintTo: "rgba(55,138,221,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="M1 12h6m6 0h6"/></svg> },
-            ].map((m) => (
-              <div key={m.id} onClick={() => setCentroApertoV70((v) => v === m.id ? null : m.id)} style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                padding: "14px 6px",
-                background: centroApertoV70 === m.id ? `linear-gradient(145deg, ${m.tintFrom}, ${m.tintTo})` : "#fff",
-                border: centroApertoV70 === m.id ? `1.5px solid ${m.color}66` : "1px solid rgba(200,228,228,0.4)",
-                borderRadius: 16,
-                cursor: "pointer",
-                boxShadow: centroApertoV70 === m.id ? `0 6px 14px ${m.color}22` : "0 3px 8px rgba(13,31,31,0.04)",
-                position: "relative",
-                transition: "all 0.15s",
-              }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 11,
-                  background: `linear-gradient(145deg, ${m.tintFrom}, ${m.tintTo})`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: m.color,
-                  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
-                }}>
-                  {m.icon}
-                </div>
-                <span style={{ fontSize: 10.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>{m.label}</span>
-                {m.badge > 0 && (
-                  <div style={{
-                    position: "absolute", top: 8, right: 10,
-                    fontSize: 9, fontWeight: 900,
-                    background: "linear-gradient(145deg, #E24B4A, #C53030)",
-                    color: "#fff", padding: "1px 6px", borderRadius: 50,
-                    boxShadow: "0 2px 6px rgba(226,75,74,0.35)",
-                    minWidth: 16, textAlign: "center" as any,
-                  }}>{m.badge}</div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* PANNELLO CENTRO ATTIVO */}
-          {centroApertoV70 === "cliente" && (() => {
-            const diarioList: any[] = (cV70.diarioCliente || []).slice().sort((a: any, b: any) => (b.ts || 0) - (a.ts || 0));
-            const TAG_COLORS: any = {
-              ACCORDO:      { bg: "rgba(239,159,39,0.14)",  fg: "#854F0B" },
-              TELEFONATA:   { bg: "rgba(127,119,221,0.14)", fg: "#3C3489" },
-              SOPRALLUOGO:  { bg: "rgba(55,138,221,0.14)",  fg: "#042C53" },
-              WHATSAPP:     { bg: "rgba(37,211,102,0.14)",  fg: "#075E54" },
-              EMAIL:        { bg: "rgba(55,138,221,0.14)",  fg: "#042C53" },
-              NOTA:         { bg: "rgba(95,94,90,0.14)",    fg: "#2C2C2A" },
-              RECLAMO:      { bg: "rgba(226,75,74,0.14)",   fg: "#8B1A1A" },
-            };
-            const fmtQuandoV74 = (ts: number) => {
-              try {
-                const d = new Date(ts); const now = new Date();
-                const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-                const nOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                const diffD = Math.round((nOnly - dOnly) / 86400000);
-                const hhmm = d.toTimeString().slice(0,5);
-                if (diffD === 0) return `Oggi ${hhmm}`;
-                if (diffD === 1) return `Ieri ${hhmm}`;
-                if (diffD < 7) return `${diffD} gg fa ${hhmm}`;
-                return d.toLocaleDateString("it-IT", { day: "2-digit", month: "short" }) + " " + hhmm;
-              } catch (e) { return ""; }
-            };
-            return (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {/* Scheda cliente */}
-                <div style={{ background: "linear-gradient(155deg, #E8F8F3 0%, #C4EAD9 100%)", border: "1px solid rgba(29,158,117,0.18)", borderRadius: 18, padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{
-                    width: 52, height: 52, borderRadius: 16,
-                    background: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
-                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 17, fontWeight: 900,
-                    boxShadow: "0 4px 12px rgba(29,158,117,0.35), inset 0 1px 1px rgba(255,255,255,0.3)",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.15)", flexShrink: 0,
-                  }}>
-                    {((cV70.cliente || "?").split(/\s+/).slice(0, 2).map((w: string) => w[0] || "").join("") || "?").toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.2px" }}>{cV70.cliente || "Cliente"}</div>
-                    <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>
-                      {[cV70.telefono, cV70.email].filter(Boolean).join(" · ") || "Nessun contatto"}
-                    </div>
-                    {cV70.indirizzo && <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>{cV70.indirizzo}</div>}
-                  </div>
-                </div>
-
-                {/* Azioni rapide */}
-                <div style={{ display: "flex", gap: 6 }}>
-                  {cV70.telefono && <a href={`tel:${cV70.telefono}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(29,158,117,0.12)", color: "#04342C", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(29,158,117,0.25)" }}>☎ CHIAMA</a>}
-                  {cV70.telefono && <a href={`https://wa.me/${(cV70.telefono || "").replace(/\D/g, "")}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(37,211,102,0.12)", color: "#075E54", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(37,211,102,0.25)" }}>💬 WA</a>}
-                  {cV70.email && <a href={`mailto:${cV70.email}?subject=Commessa ${cV70.code || ""}`} style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>✉ EMAIL</a>}
-                  {cV70.indirizzo && <a href={`https://maps.google.com/?q=${encodeURIComponent(cV70.indirizzo)}`} target="_blank" rel="noopener" style={{ flex: 1, padding: "9px 8px", background: "rgba(55,138,221,0.1)", color: "#042C53", borderRadius: 10, textAlign: "center" as any, textDecoration: "none", fontSize: 10, fontWeight: 900, letterSpacing: "0.3px", border: "1px solid rgba(55,138,221,0.25)" }}>🗺 NAVIGA</a>}
-                </div>
-
-                {/* DIARIO DEL CANTIERE */}
-                <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.04)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Diario del cantiere</div>
-                      <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>{diarioList.length} {diarioList.length === 1 ? "voce" : "voci"}</div>
-                    </div>
-                    <div onClick={() => { setDiarioFormOpenV74(v => !v); setDiarioTestoV74(""); setDiarioChiV74("IO"); setDiarioTagV74("NOTA"); }} style={{
-                      display: "flex", alignItems: "center", gap: 5,
-                      padding: "7px 12px",
-                      background: diarioFormOpenV74 ? "rgba(226,75,74,0.12)" : "linear-gradient(145deg, #5DCAA5, #1D9E75)",
-                      color: diarioFormOpenV74 ? "#8B1A1A" : "#fff",
-                      borderRadius: 50, fontSize: 10, fontWeight: 900, letterSpacing: "0.3px",
-                      cursor: "pointer",
-                      boxShadow: diarioFormOpenV74 ? "none" : "0 3px 8px rgba(29,158,117,0.3)",
-                      border: diarioFormOpenV74 ? "1px solid rgba(226,75,74,0.3)" : "none",
-                    }}>
-                      {diarioFormOpenV74 ? "✕ CHIUDI" : "+ SCRIVI"}
-                    </div>
-                  </div>
-
-                  {/* Form scrittura */}
-                  {diarioFormOpenV74 && (
-                    <div style={{ marginBottom: 10, padding: 12, background: "rgba(200,228,228,0.15)", borderRadius: 12, border: "1px dashed rgba(200,228,228,0.6)" }}>
-                      {/* Chi */}
-                      <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                        <div onClick={() => setDiarioChiV74("IO")} style={{
-                          flex: 1, padding: "8px 10px", borderRadius: 10, cursor: "pointer",
-                          background: diarioChiV74 === "IO" ? "rgba(127,119,221,0.18)" : "#fff",
-                          border: `1.5px solid ${diarioChiV74 === "IO" ? "#7F77DD" : "rgba(200,228,228,0.5)"}`,
-                          textAlign: "center" as any, fontSize: 11, fontWeight: 900,
-                          color: diarioChiV74 === "IO" ? "#3C3489" : "#5A7878",
-                          letterSpacing: "0.3px",
-                        }}>IO</div>
-                        <div onClick={() => setDiarioChiV74("CLIENTE")} style={{
-                          flex: 1, padding: "8px 10px", borderRadius: 10, cursor: "pointer",
-                          background: diarioChiV74 === "CLIENTE" ? "rgba(29,158,117,0.14)" : "#fff",
-                          border: `1.5px solid ${diarioChiV74 === "CLIENTE" ? "#1D9E75" : "rgba(200,228,228,0.5)"}`,
-                          textAlign: "center" as any, fontSize: 11, fontWeight: 900,
-                          color: diarioChiV74 === "CLIENTE" ? "#04342C" : "#5A7878",
-                          letterSpacing: "0.3px",
-                        }}>CLIENTE</div>
-                      </div>
-
-                      {/* Tag */}
-                      <div style={{ display: "flex", flexWrap: "wrap" as any, gap: 5, marginBottom: 8 }}>
-                        {Object.keys(TAG_COLORS).map((t: string) => {
-                          const c = TAG_COLORS[t];
-                          const on = diarioTagV74 === t;
-                          return (
-                            <div key={t} onClick={() => setDiarioTagV74(t)} style={{
-                              padding: "4px 9px", borderRadius: 6,
-                              background: on ? c.bg : "#fff",
-                              border: `1px solid ${on ? c.fg + "55" : "rgba(200,228,228,0.5)"}`,
-                              color: on ? c.fg : "#8FA8A8",
-                              fontSize: 9.5, fontWeight: 900, letterSpacing: "0.4px",
-                              cursor: "pointer",
-                            }}>{t}</div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Testo */}
-                      <textarea
-                        value={diarioTestoV74}
-                        onChange={(e) => setDiarioTestoV74(e.target.value)}
-                        placeholder="Cosa è successo? Es. Ho chiamato per spiegare il preventivo, resta in attesa della firma..."
-                        style={{
-                          width: "100%", minHeight: 70, padding: 10,
-                          borderRadius: 10, border: "1px solid rgba(200,228,228,0.6)",
-                          fontSize: 12, fontFamily: "inherit", resize: "vertical" as any,
-                          boxSizing: "border-box" as any, background: "#fff",
-                          lineHeight: 1.4, color: "#0F2525",
-                        }}
-                      />
-
-                      {/* Salva */}
-                      <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                        <div onClick={() => { setDiarioFormOpenV74(false); setDiarioTestoV74(""); }} style={{
-                          flex: 1, padding: "9px 10px", borderRadius: 10, cursor: "pointer",
-                          background: "#fff", border: "1px solid rgba(200,228,228,0.5)",
-                          textAlign: "center" as any, fontSize: 11, fontWeight: 800,
-                          color: "#5A7878", letterSpacing: "0.3px",
-                        }}>Annulla</div>
-                        <div onClick={() => {
-                          const testo = diarioTestoV74.trim();
-                          if (!testo) return;
-                          const newEntry = {
-                            id: Date.now(),
-                            ts: Date.now(),
-                            chi: diarioChiV74,
-                            tag: diarioTagV74,
-                            testo: testo,
-                          };
-                          setCantieri((cs: any[]) => cs.map((x: any) => x.id === selectedCM!.id ? { ...x, diarioCliente: [...(x.diarioCliente || []), newEntry] } : x));
-                          setSelectedCM((p: any) => p ? ({ ...p, diarioCliente: [...(p.diarioCliente || []), newEntry] }) : p);
-                          setDiarioFormOpenV74(false); setDiarioTestoV74("");
-                        }} style={{
-                          flex: 2, padding: "9px 10px", borderRadius: 10, cursor: "pointer",
-                          background: diarioTestoV74.trim() ? "linear-gradient(145deg, #5DCAA5, #1D9E75)" : "#ccc",
-                          textAlign: "center" as any, fontSize: 11, fontWeight: 900,
-                          color: "#fff", letterSpacing: "0.3px",
-                          boxShadow: diarioTestoV74.trim() ? "0 3px 8px rgba(29,158,117,0.3)" : "none",
-                        }}>SALVA VOCE</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Lista voci */}
-                  {diarioList.length === 0 ? (
-                    <div style={{ padding: "22px 12px", background: "rgba(200,228,228,0.15)", borderRadius: 12, fontSize: 11.5, color: "#5A7878", fontWeight: 600, textAlign: "center" as any, lineHeight: 1.5 }}>
-                      Nessuna voce ancora.<br/>Tocca <strong>+ SCRIVI</strong> per aggiungere la prima conversazione col cliente.
-                    </div>
-                  ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                      {diarioList.map((ev: any) => {
-                        const tagC = TAG_COLORS[ev.tag] || TAG_COLORS.NOTA;
-                        const isIo = ev.chi === "IO";
-                        return (
-                          <div key={ev.id} style={{
-                            background: "#fff",
-                            border: "1px solid rgba(200,228,228,0.4)",
-                            borderRadius: 12, padding: "10px 12px",
-                            boxShadow: "0 2px 5px rgba(13,31,31,0.03)",
-                          }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" as any }}>
-                              <span style={{
-                                fontSize: 10, fontWeight: 900,
-                                color: isIo ? "#3C3489" : "#04342C",
-                                background: isIo ? "rgba(127,119,221,0.14)" : "rgba(29,158,117,0.14)",
-                                padding: "2px 8px", borderRadius: 6, letterSpacing: "0.2px",
-                              }}>{ev.chi}</span>
-                              <span style={{
-                                fontSize: 9, fontWeight: 900,
-                                color: tagC.fg, background: tagC.bg,
-                                padding: "2px 7px", borderRadius: 5, letterSpacing: "0.4px",
-                              }}>{ev.tag}</span>
-                              <span style={{ flex: 1, fontSize: 10, color: "#8FA8A8", fontWeight: 700, letterSpacing: "0.2px", textAlign: "right" as any }}>{fmtQuandoV74(ev.ts)}</span>
-                              <span onClick={() => {
-                                if (!window.confirm("Elimina questa voce?")) return;
-                                setCantieri((cs: any[]) => cs.map((x: any) => x.id === selectedCM!.id ? { ...x, diarioCliente: (x.diarioCliente || []).filter((e: any) => e.id !== ev.id) } : x));
-                                setSelectedCM((p: any) => p ? ({ ...p, diarioCliente: (p.diarioCliente || []).filter((e: any) => e.id !== ev.id) }) : p);
-                              }} style={{ fontSize: 11, color: "#C53030", cursor: "pointer", fontWeight: 700, padding: "2px 6px" }}>✕</span>
-                            </div>
-                            <div style={{ fontSize: 12.5, color: "#0F2525", fontWeight: 500, lineHeight: 1.45 }}>{ev.testo}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {centroApertoV70 === "allegati" && (
-            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", marginBottom: 10 }}>Cosa vuoi allegare?</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[
-                  { k: "foto", l: "Foto", c: "#7F77DD", cDark: "#3C3489", tintA: "#AFA9EC", tintB: "#7F77DD", n: fotoGlobalV70, act: () => { try { (fotoInputRef as any).current?.click(); } catch (e) {} } },
-                  { k: "audio", l: "Audio", c: "#EF9F27", cDark: "#854F0B", tintA: "#FAC775", tintB: "#EF9F27", n: audioGlobalV70, act: () => { try { (setShowAllegatiModal as any)("vocale"); } catch (e) {} } },
-                  { k: "nota", l: "Nota", c: "#1D9E75", cDark: "#04342C", tintA: "#5DCAA5", tintB: "#1D9E75", n: noteGlobalV70, act: () => { try { (setShowAllegatiModal as any)("nota"); (setAllegatiText as any)(""); } catch (e) {} } },
-                  { k: "file", l: "File", c: "#378ADD", cDark: "#042C53", tintA: "#85B7EB", tintB: "#378ADD", n: fileGlobalV70, act: () => { try { (fileInputRef as any).current?.click(); } catch (e) {} } },
-                ].map((a: any) => (
-                  <div key={a.k} onClick={a.act} style={{
-                    background: "#fff", border: "1px solid rgba(200,228,228,0.4)",
-                    borderRadius: 16, padding: "14px 12px", cursor: "pointer",
-                    boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
-                  }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 13,
-                      background: `linear-gradient(145deg, ${a.tintA}, ${a.tintB})`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#fff", marginBottom: 10,
-                      boxShadow: `0 4px 10px ${a.tintB}55, inset 0 1px 1px rgba(255,255,255,0.3)`,
-                    }}>
-                      {a.k === "foto" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>}
-                      {a.k === "audio" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>}
-                      {a.k === "nota" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>}
-                      {a.k === "file" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>}
-                    </div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525" }}>{a.l}</div>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: "#5A7878", marginTop: 2 }}>{a.n} salvati</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {centroApertoV70 === "note" && (
-            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 14, boxShadow: "0 3px 10px rgba(13,31,31,0.05)" }}>
-              <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", marginBottom: 4 }}>Appunti del lavoro</div>
-              <div style={{ fontSize: 11, color: "#5A7878", fontWeight: 600, marginBottom: 10 }}>Tutte le note tecniche di questa commessa</div>
-              {(cV70.note && cV70.note.trim()) ? (
-                <div style={{ padding: "10px 12px", background: "rgba(250,199,117,0.1)", border: "1px solid rgba(239,159,39,0.22)", borderRadius: 10, fontSize: 12.5, color: "#0F2525", lineHeight: 1.4 }}>
-                  {cV70.note}
-                </div>
-              ) : (
-                <div style={{ padding: "14px 12px", background: "rgba(200,228,228,0.25)", borderRadius: 10, fontSize: 12, color: "#5A7878", fontWeight: 600, textAlign: "center" as any }}>
-                  Nessuna nota ancora. Scrivi dal centro Allegati &gt; Nota.
-                </div>
-              )}
-            </div>
-          )}
-
-          {centroApertoV70 === "azioni" && (
-            <div style={{ background: "#fff", border: "1px solid rgba(200,228,228,0.4)", borderRadius: 16, padding: 10, boxShadow: "0 3px 10px rgba(13,31,31,0.05)", display: "flex", flexDirection: "column", gap: 6 }}>
-              {rCurV70 && (
-                <div onClick={() => { setSelectedRilievo(rCurV70); (setShowRiepilogo as any)(true); }} style={{
-                  display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                  borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
-                }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(55,138,221,0.15), rgba(55,138,221,0.08))", color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Riepilogo rilievo</div>
-                    <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Vedi scheda completa</div>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              )}
-              {rCurV70 && (
-                <div onClick={() => { setSelectedRilievo(rCurV70); exportPDF(); }} style={{
-                  display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                  borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
-                }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(29,158,117,0.15), rgba(29,158,117,0.08))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta PDF</div>
-                    <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                </div>
-              )}
-              {/* v75 · EXPORT CSV */}
-              <div onClick={() => {
-                try {
-                  const rows: string[] = [];
-                  rows.push(["Commessa","Cliente","Rilievo","Vano","Stanza","Sistema","Colore int","Colore est","Telaio","Vetro","L centro","H centro","L alto","H sx","Pezzi","Note"].join(";"));
-                  const rilievi = cV70.rilievi || [];
-                  rilievi.forEach((ril: any) => {
-                    (ril.vani || []).forEach((v: any) => {
-                      const m = v.misure || {};
-                      rows.push([
-                        cV70.code || "",
-                        cV70.cliente || "",
-                        `R${ril.n || ""}`,
-                        v.nome || "",
-                        v.stanza || "",
-                        v.sistema || "",
-                        v.coloreInt || "",
-                        v.coloreEst || "",
-                        v.telaio || "",
-                        v.vetro || "",
-                        m.lCentro || "",
-                        m.hCentro || "",
-                        m.lAlto || "",
-                        m.hSx || "",
-                        v.pezzi || 1,
-                        (v.note || "").replace(/[;\n\r]/g, " "),
-                      ].map(x => `"${String(x).replace(/"/g, '""')}"`).join(";"));
-                    });
-                  });
-                  const csv = "﻿" + rows.join("\n");
-                  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `commessa_${cV70.code || cV70.id}_${new Date().toISOString().slice(0,10)}.csv`;
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
-                } catch (e) { console.error("Export CSV", e); alert("Errore export CSV"); }
-              }} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
-              }}>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(99,153,34,0.15), rgba(99,153,34,0.08))", color: "#639922", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta CSV</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Tabella vani per Excel / Google Sheets</div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#639922" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-
-              {/* v75 · EXPORT JSON */}
-              <div onClick={() => {
-                try {
-                  const payload = {
-                    exportedAt: new Date().toISOString(),
-                    app: "MASTRO ERP",
-                    commessa: cV70,
-                  };
-                  const json = JSON.stringify(payload, null, 2);
-                  const blob = new Blob([json], { type: "application/json;charset=utf-8" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `commessa_${cV70.code || cV70.id}_${new Date().toISOString().slice(0,10)}.json`;
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
-                } catch (e) { console.error("Export JSON", e); alert("Errore export JSON"); }
-              }} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
-              }}>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(127,119,221,0.15), rgba(127,119,221,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta JSON</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Backup completo commessa (sviluppatori)</div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-
-              {/* v75 · EXPORT HTML */}
-              <div onClick={() => {
-                try {
-                  const esc = (s: any) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                  const rilievi = cV70.rilievi || [];
-                  let vaniRows = "";
-                  rilievi.forEach((ril: any) => {
-                    (ril.vani || []).forEach((v: any) => {
-                      const m = v.misure || {};
-                      vaniRows += `<tr><td>R${esc(ril.n)}</td><td>${esc(v.nome)}</td><td>${esc(v.stanza)}</td><td>${esc(v.sistema)}</td><td>${esc(v.coloreInt)} / ${esc(v.coloreEst)}</td><td>${esc(v.telaio)}</td><td>${esc(v.vetro)}</td><td>${esc(m.lCentro || m.lAlto || "")} × ${esc(m.hCentro || m.hSx || "")}</td><td>${esc(v.pezzi || 1)}</td></tr>`;
-                    });
-                  });
-                  const html = `<!DOCTYPE html>
-<html lang="it"><head><meta charset="UTF-8"><title>Commessa ${esc(cV70.code || cV70.id)}</title>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#0D1F1F;max-width:900px;margin:40px auto;padding:20px;}
-h1{color:#28A0A0;border-bottom:3px solid #28A0A0;padding-bottom:8px;}
-h2{color:#1E8080;margin-top:30px;}
-table{width:100%;border-collapse:collapse;margin-top:12px;}
-th{background:#28A0A0;color:#fff;padding:10px;text-align:left;font-size:12px;}
-td{padding:8px 10px;border-bottom:1px solid #E4F2F2;font-size:13px;}
-tr:nth-child(even){background:#F4F6F5;}
-.meta{background:#F4F6F5;padding:14px;border-radius:10px;margin-top:10px;}
-.meta div{margin:4px 0;font-size:13px;}
-.meta strong{color:#1A7A7A;margin-right:8px;}</style></head><body>
-<h1>Commessa ${esc(cV70.code || cV70.id)}</h1>
-<div class="meta">
-<div><strong>Cliente:</strong> ${esc(cV70.cliente || "")}</div>
-<div><strong>Indirizzo:</strong> ${esc(cV70.indirizzo || "")}</div>
-<div><strong>Telefono:</strong> ${esc(cV70.telefono || "")}</div>
-<div><strong>Email:</strong> ${esc(cV70.email || "")}</div>
-<div><strong>Tipo edificio:</strong> ${esc(tEdifLabelV70)}</div>
-<div><strong>Data export:</strong> ${new Date().toLocaleString("it-IT")}</div>
-</div>
-<h2>Vani e misure</h2>
-${vaniRows ? `<table><thead><tr><th>Rilievo</th><th>Vano</th><th>Stanza</th><th>Sistema</th><th>Colori</th><th>Telaio</th><th>Vetro</th><th>Misure</th><th>Pz</th></tr></thead><tbody>${vaniRows}</tbody></table>` : "<p><em>Nessun vano rilevato.</em></p>"}
-${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
-<p style="margin-top:40px;color:#8FA8A8;font-size:11px;">Generato da MASTRO Suite · ${new Date().toISOString()}</p>
-</body></html>`;
-                  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = `commessa_${cV70.code || cV70.id}_${new Date().toISOString().slice(0,10)}.html`;
-                  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
-                } catch (e) { console.error("Export HTML", e); alert("Errore export HTML"); }
-              }} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
-              }}>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(212,83,126,0.15), rgba(212,83,126,0.08))", color: "#D4537E", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta HTML</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Report leggibile da browser</div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-
-              <div onClick={() => {
-                try {
-                  (setProblemaForm as any)({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
-                  (setShowProblemaModal as any)(true);
-                } catch (e) {}
-              }} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer",
-              }}>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(239,159,39,0.15), rgba(239,159,39,0.08))", color: "#EF9F27", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Segnala problema</div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 1 }}>Imprevisto, materiale mancante</div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-              <div onClick={() => { if (window.confirm("Eliminare definitivamente la commessa?")) deleteCommessa(cV70.id); }} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                cursor: "pointer",
-              }}>
-                <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, #F09595, #E24B4A)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 3px 8px rgba(226,75,74,0.3)" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 900, color: "#8B1A1A" }}>Elimina commessa</div>
-                  <div style={{ fontSize: 10, color: "#E24B4A", fontWeight: 700, marginTop: 1 }}>Azione irreversibile</div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-            </div>
-          )}
-
-          {/* CRONOLOGIA ACCORDION */}
-          <div>
-            <div onClick={() => setCronOpenV70(v => !v)} style={{
-              background: "#fff",
-              border: "1px solid rgba(200,228,228,0.4)",
-              borderRadius: cronOpenV70 ? "14px 14px 0 0" : 14,
-              borderBottomColor: cronOpenV70 ? "transparent" : "rgba(200,228,228,0.4)",
-              padding: "12px 14px",
-              display: "flex", alignItems: "center", gap: 12,
-              cursor: "pointer",
-              boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
-            }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: "linear-gradient(145deg, rgba(127,119,221,0.18), rgba(29,158,117,0.12))",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#3C3489",
-                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-              }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Cronologia</div>
-                <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginTop: 2 }}>
-                  {logV70.length > 0 ? `${logV70.length} eventi · ultima ${logV70[logV70.length - 1]?.quando || "Adesso"}` : "1 evento · ultima Adesso"}
-                </div>
-              </div>
-              <div style={{
-                fontSize: 10, fontWeight: 900, color: "#3C3489",
-                background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(127,119,221,0.15))",
-                padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
-                border: "1px solid rgba(127,119,221,0.22)",
-              }}>{logV70.length || 1}</div>
-              <div style={{
-                width: 24, height: 24, borderRadius: 8,
-                background: "rgba(40,160,160,0.08)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#1A7A7A",
-                transform: cronOpenV70 ? "rotate(180deg)" : "none",
-                transition: "transform 0.2s",
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </div>
-            </div>
-            {cronOpenV70 && (
-              <div style={{
-                background: "#fff",
-                border: "1px solid rgba(200,228,228,0.4)",
-                borderTop: "1px dashed rgba(200,228,228,0.6)",
-                borderRadius: "0 0 14px 14px",
-                padding: "14px 12px 12px",
-                position: "relative",
-                boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
-              }}>
-                <div style={{ position: "absolute", left: 30, top: 22, bottom: 22, width: 2, background: "linear-gradient(180deg, #AFA9EC 0%, #5DCAA5 50%, #FAC775 100%)", borderRadius: 1, opacity: 0.3 }} />
-                {(logV70.length > 0 ? logV70.slice().reverse() : [{ chi: cV70.creatoDa || "Tu", cosa: "creato la commessa", quando: "Adesso" }]).map((ev: any, k: number) => (
-                  <div key={k} style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 11,
-                      background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
-                      color: "#fff", flexShrink: 0,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
-                    </div>
-                    <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
-                      <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
-                        <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
-                      </div>
-                      <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>
-      </div>
-
-      {/* v71 · MODAL NUOVO RILIEVO */}
-      {showNuovoRilievoModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9500, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowNuovoRilievoModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#0D1F1F" }}>Nuovo rilievo</div>
-                <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Commessa {selectedCM.code} · {selectedCM.cliente}</div>
-              </div>
-              <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo rilievo</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                <div onClick={() => setNuovoRilievoComplesso(false)} style={{
-                  padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                  background: !nuovoRilievoComplesso ? "#28A0A015" : T.card,
-                  border: `1.5px solid ${!nuovoRilievoComplesso ? "#28A0A0" : T.bdr}`,
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#28A0A0" : T.text }}>Semplice</div>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Vani senza gerarchia</div>
-                </div>
-                <div onClick={() => setNuovoRilievoComplesso(true)} style={{
-                  padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                  background: nuovoRilievoComplesso ? "#3C348915" : T.card,
-                  border: `1.5px solid ${nuovoRilievoComplesso ? "#3C3489" : T.bdr}`,
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: nuovoRilievoComplesso ? "#3C3489" : T.text }}>Complesso</div>
-                  <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Organizza per zone/piani</div>
-                </div>
-              </div>
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo misure</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {[
-                  { id: "provvisorio",    l: "Provvisorie",   d: "Prima visita, misure indicative",    c: "#D08008" },
-                  { id: "verificato",     l: "Verificate",    d: "Controllate sul posto",              c: "#185FA5" },
-                  { id: "definitivo",     l: "Definitive",    d: "Misure finali, preventivo sbloccato", c: "#0F6E56" },
-                  { id: "da_rivedere",    l: "Da rivedere",   d: "Discrepanze, ricontrollare",         c: "#DC4444" },
-                  { id: "personalizzato", l: "Personalizzato", d: "Tipo a scelta, descrivi nelle note", c: "#3C3489" },
-                ].map(t => {
-                  const on = nuovoRilievoTipo === t.id;
-                  return (
-                    <div key={t.id} onClick={() => setNuovoRilievoTipo(t.id as any)} style={{
-                      padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                      background: on ? `${t.c}15` : T.card,
-                      border: `1.5px solid ${on ? t.c : T.bdr}`,
-                    }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: on ? t.c : T.text }}>{t.l}</div>
-                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2, lineHeight: 1.4 }}>{t.d}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>Chi ha fatto il rilievo</div>
-              <input type="text" value={nuovoRilievoRilevatore} onChange={e => setNuovoRilievoRilevatore(e.target.value)} placeholder="Nome rilevatore" style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as any, background: T.card }} />
-            </div>
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 6 }}>Note (opzionale)</div>
-              <textarea value={nuovoRilievoNote} onChange={e => setNuovoRilievoNote(e.target.value)} placeholder="Es. Seconda visita dopo modifiche" style={{ width: "100%", minHeight: 60, padding: 10, borderRadius: 10, border: `1.5px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any, background: T.card }} />
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setShowNuovoRilievoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-              <button onClick={() => {
-                const oggiISO = new Date().toISOString().split("T")[0];
-                const rilieviAtt = selectedCM.rilievi || [];
-                const nextN = rilieviAtt.length + 1;
-                const newR = {
-                  id: Date.now(),
-                  n: nextN,
-                  tipo: nuovoRilievoTipo,
-                  data: oggiISO,
-                  ora: new Date().toTimeString().slice(0,5),
-                  rilevatore: nuovoRilievoRilevatore || "",
-                  note: nuovoRilievoNote || "",
-                  vani: [],
-                  complesso: nuovoRilievoComplesso,
-                };
-                setCantieri((cs: any[]) => cs.map(cm => cm.id === selectedCM.id ? { ...cm, rilievi: [...(cm.rilievi || []), newR] } : cm));
-                setSelectedCM((prev: any) => prev ? ({ ...prev, rilievi: [...(prev.rilievi || []), newR] }) : prev);
-                setSelectedRilievo(newR);
-                setShowNuovoRilievoModal(false);
-                setCmSubTab("sopralluoghi");
-              }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                Crea rilievo · Aggiungi vani
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* v71 · MODAL AGGIUNGI VANO COMPLESSO */}
-      {showAggiungiVanoModal && (() => {
-        const tEdifMV = (selectedCM as any).tipoEdificio || (selectedCM as any).tipo_edificio || "";
-        const labelsMV = (() => {
-          switch (tEdifMV) {
-            case "palazzo": return { l1: "Scala", l2: "Piano", l3: "Interno" };
-            case "condominio": return { l1: "", l2: "Piano", l3: "Interno" };
-            case "scuola": return { l1: "Edificio/Plesso", l2: "Piano", l3: "Aula" };
-            case "ospedale": return { l1: "Padiglione", l2: "Piano", l3: "Reparto" };
-            case "ufficio": return { l1: "Edificio", l2: "Piano", l3: "Ufficio" };
-            case "hotel": return { l1: "Edificio", l2: "Piano", l3: "Camera" };
-            case "centro_comm": return { l1: "", l2: "Livello", l3: "Negozio" };
-            case "industriale": return { l1: "Corpo", l2: "", l3: "Settore" };
-            case "personalizzato": return { l1: (selectedCM as any).livello1Label || "Livello 1", l2: (selectedCM as any).livello2Label || "Livello 2", l3: (selectedCM as any).livello3Label || "Livello 3" };
-            default: return { l1: "Zona", l2: "Piano", l3: "Locale" };
-          }
-        })();
-        const canCreateMV = (!labelsMV.l1 || nvL1.trim()) && (!labelsMV.l2 || nvL2.trim()) && (!labelsMV.l3 || nvL3.trim());
-        return (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9500, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAggiungiVanoModal(false)}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                <div>
-                  <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nuovo vano · posizione</div>
-                  <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Indica dove si trova dentro lo stabile</div>
-                </div>
-                <div onClick={() => setShowAggiungiVanoModal(false)} style={{ width: 30, height: 30, borderRadius: 15, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>✕</div>
-              </div>
-              {labelsMV.l1 && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labelsMV.l1} *</div>
-                  <input style={S.input} placeholder={`Es. ${labelsMV.l1} A`} value={nvL1} onChange={e => setNvL1(e.target.value)} />
-                </div>
-              )}
-              {labelsMV.l2 && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labelsMV.l2} *</div>
-                  <input style={S.input} placeholder={`Es. 1, Terra, 3`} value={nvL2} onChange={e => setNvL2(e.target.value)} />
-                </div>
-              )}
-              {labelsMV.l3 && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labelsMV.l3} *</div>
-                  <input style={S.input} placeholder={`Es. ${labelsMV.l3} 5`} value={nvL3} onChange={e => setNvL3(e.target.value)} />
-                </div>
-              )}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>Stanza / ambiente</div>
-                <input style={S.input} placeholder="Es. Cucina, Bagno, Camera, Aula magna…" value={nvStanza} onChange={e => setNvStanza(e.target.value)} />
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setShowAggiungiVanoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                <button disabled={!canCreateMV} onClick={() => {
-                  if (!selectedCM || !selectedRilievo) return;
-                  const posStr = [nvL1, nvL2, nvL3].filter(Boolean).join(" · ");
-                  const baseNome = [posStr, nvStanza].filter(Boolean).join(" · ");
-                  const v = {
-                    id: Date.now(),
-                    nome: baseNome || `Vano ${(selectedRilievo.vani?.length||0)+1}`,
-                    tipo: "", stanza: nvStanza, piano: nvL2,
-                    livello_1: nvL1, livello_2: nvL2, livello_3: nvL3,
-                    sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "",
-                    misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1,
-                    accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
-                  };
-                  const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
-                  setCantieri(cs => cs.map(cm => cm.id === selectedCM.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
-                  setSelectedRilievo(updR);
-                  setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2) }) : prev);
-                  setSelectedVano(v);
-                  setVanoStep(0);
-                  setShowAggiungiVanoModal(false);
-                }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: canCreateMV ? T.acc : "#ccc", color: "#fff", fontSize: 14, fontWeight: 800, cursor: canCreateMV ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
-                  + Crea vano
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* v72 · INPUT hidden per File e Foto - servono per i bottoni Allegati */}
-      <input ref={fileInputRef} type="file" style={{display:"none"}} onChange={e=>{
-        const f = (e.target as any).files?.[0]; if (!f) return;
-        const r = new FileReader();
-        r.onload = (ev: any) => {
-          const a = { id: Date.now(), tipo: "file", nome: f.name, data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), dataUrl: ev.target.result };
-          setCantieri((cs: any[]) => cs.map(x => x.id === selectedCM!.id ? { ...x, allegati: [...(x.allegati || []), a] } : x));
-          setSelectedCM((p: any) => ({ ...p, allegati: [...(p.allegati || []), a] }));
-        };
-        r.readAsDataURL(f);
-        (e.target as any).value = "";
-      }} />
-      <input ref={fotoInputRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{
-        const f = (e.target as any).files?.[0]; if (!f) return;
-        const r = new FileReader();
-        r.onload = (ev: any) => {
-          const a = { id: Date.now(), tipo: "foto", nome: f.name, data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), dataUrl: ev.target.result };
-          setCantieri((cs: any[]) => cs.map(x => x.id === selectedCM!.id ? { ...x, allegati: [...(x.allegati || []), a] } : x));
-          setSelectedCM((p: any) => ({ ...p, allegati: [...(p.allegati || []), a] }));
-        };
-        r.readAsDataURL(f);
-        (e.target as any).value = "";
-      }} />
-      </>
-    );
-  }
-
 
   // · CAD DRAW FULLSCREEN ·
   if (showCadDraw) {
@@ -2376,8 +180,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, [field]: val } : cm));
         setSelectedCM(prev => ({ ...prev, [field]: val }));
       };
-
-
       const pwUpdVano = (vanoId, field, val) => {
         setCantieri(cs => cs.map(cm => {
           if (cm.id !== c.id) return cm;
@@ -2413,95 +215,32 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
       const chipPw = (on) => ({ padding: "7px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: "pointer", background: on ? `${T.acc}15` : T.card, color: on ? T.acc : T.sub, border: `1.5px solid ${on ? T.acc : T.bdr}` });
       const chipPwGrn = (on) => ({ padding: "7px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: "pointer", background: on ? `${T.grn}15` : T.card, color: on ? T.grn : T.sub, border: `1.5px solid ${on ? T.grn : T.bdr}` });
       const inputPw = { width: "100%", padding: "10px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" as any, background: T.card };
-      const tabPw = (t) => ({ flex: 1, padding: "10px 6px", textAlign: "center" as any, fontSize: 11, fontWeight: 700, cursor: "pointer", color: prevTab === t ? "#fff" : "#6A8484", background: prevTab === t ? "#28A0A0" : "transparent", borderRadius: 8, margin: "4px 2px", transition: "all .15s" });
+      const tabPw = (t) => ({ flex: 1, padding: "10px 4px", textAlign: "center" as any, fontSize: 11, fontWeight: 700, cursor: "pointer", borderBottom: `2.5px solid ${prevTab === t ? T.acc : "transparent"}`, color: prevTab === t ? T.acc : T.sub });
 
       return (
         <div style={{ paddingBottom: 80 }}>
-          {/* v81 · HEADER ULTRA HD identico pannello v8 */}
-          <div style={{
-            background: "linear-gradient(135deg, #2FB2A8 0%, #28A0A0 45%, #1E8080 100%)",
-            padding: "calc(env(safe-area-inset-top, 0px) + 22px) 18px 22px",
-            color: "#fff", position: "sticky", top: 0, zIndex: 30, overflow: "hidden",
-            boxShadow: "0 10px 32px rgba(30,128,128,0.35), 0 4px 12px rgba(30,128,128,0.15)",
-          }}>
-            <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.1) 40%, transparent 70%)", pointerEvents: "none" as any }} />
-            <div style={{ position: "absolute", bottom: -80, left: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.12), transparent 70%)", pointerEvents: "none" as any }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
-              <div onClick={() => { setPrevWorkspace(false); setPrevTab && setPrevTab("riepilogo"); }} style={{
-                width: 42, height: 42, borderRadius: 14,
-                background: "rgba(255,255,255,0.22)", backdropFilter: "blur(16px) saturate(180%)", WebkitBackdropFilter: "blur(16px) saturate(180%)" as any,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "inset 0 1px 1.5px rgba(255,255,255,0.45), inset 0 -1px 1px rgba(0,0,0,0.08), 0 3px 8px rgba(0,0,0,0.14)",
-                cursor: "pointer", flexShrink: 0,
-              }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.92, letterSpacing: "1.3px", textTransform: "uppercase" as any }}>{c.code} &middot; Preventivo</div>
-                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.8px", marginTop: 3, lineHeight: 1.05, textTransform: "uppercase" as any, textShadow: "0 2px 6px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>
-                  {(c.cliente || "") + (c.cognome ? " " + c.cognome : "")}
-                </div>
-                <div style={{ fontSize: 10.5, opacity: 0.9, marginTop: 4, fontWeight: 600, textTransform: "uppercase" as any, letterSpacing: "0.4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>{c.indirizzo || ""}</div>
-              </div>
-              <div style={{ textAlign: "right" as any, flexShrink: 0 }}>
-                <div style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1, textShadow: "0 2px 5px rgba(0,0,0,0.18)" }}>&euro; {pwFmt(pwTotale)}</div>
-                <div style={{ fontSize: 9, opacity: 0.88, fontWeight: 700, marginTop: 4, letterSpacing: "0.4px" }}>IVA {pwIvaDefault}% incl.</div>
-              </div>
+          {/* Header sticky */}
+          <div style={{ background: T.topbar || "#1A1A1C", padding: "calc(env(safe-area-inset-top, 0px) + 12px) 14px 12px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 10 }}>
+            <div onClick={() => setPrevWorkspace(false)} style={{ fontSize: 18, cursor: "pointer", color: "#fff" }}>←</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.code} · {c.cliente} {c.cognome || ""}</div>
+              <div style={{ fontSize: 10, color: "#ffffff60" }}>{c.indirizzo || ""}</div>
             </div>
+            {fattureDB.filter(f => f.cmId === c.id).length > 0 && (
+              <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#28A0A030" : "#D0800830", color: fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "#28A0A0" : "#D08008", flexShrink: 0 }}>
+                {fattureDB.filter(f => f.cmId === c.id).every(f => f.pagata) ? "✓ Pagata" : "📋 Fattura"}
+              </span>
+            )}
+            <div style={{ background: T.acc, padding: "5px 10px", borderRadius: 8, fontSize: 12, fontWeight: 900, color: "#fff", flexShrink: 0 }}>€{pwFmt(pwTotale)}</div>
           </div>
 
-          {/* v81 · STEPPER 8 puntini */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "14px 18px 0" }}>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#5A7878", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 2/8</div>
-            <div style={{ display: "flex", gap: 3, flex: 1 }}>
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #3ABDBD, #28A0A0)", boxShadow: "0 0 5px rgba(40,160,160,0.5)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", boxShadow: "0 0 7px rgba(29,158,117,0.6)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
-              <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.55)" }} />
-            </div>
-            <div style={{ fontSize: 9.5, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.5px", textTransform: "uppercase" as any, flexShrink: 0 }}>Preventivo</div>
-          </div>
-
-          {/* v81 · 2 TAB SOLTANTO */}
-          <div style={{ display: "flex", gap: 6, padding: "13px 14px 0" }}>
-            <div onClick={() => setPrevTab("fiscale")} style={{
-              flex: 1, padding: "12px 10px", borderRadius: 13, fontSize: 11, fontWeight: 900,
-              textAlign: "center" as any, cursor: "pointer",
-              background: prevTab === "fiscale"
-                ? "linear-gradient(145deg, #2FB2A8 0%, #1E8080 100%)"
-                : "#fff",
-              color: prevTab === "fiscale" ? "#fff" : "#5A7878",
-              letterSpacing: "0.4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              border: prevTab === "fiscale" ? "1px solid transparent" : "1px solid rgba(200,228,228,0.5)",
-              textTransform: "uppercase" as any,
-              boxShadow: prevTab === "fiscale"
-                ? "0 6px 16px rgba(30,128,128,0.35), inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -2px 2px rgba(0,0,0,0.08)"
-                : "0 2px 6px rgba(13,31,31,0.04)",
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 11 13 15 9"/></svg>
-              Fiscale &amp; Condizioni
-            </div>
-            <div onClick={() => setPrevTab("riepilogo")} style={{
-              flex: 1, padding: "12px 10px", borderRadius: 13, fontSize: 11, fontWeight: 900,
-              textAlign: "center" as any, cursor: "pointer",
-              background: prevTab === "riepilogo"
-                ? "linear-gradient(145deg, #2FB2A8 0%, #1E8080 100%)"
-                : "#fff",
-              color: prevTab === "riepilogo" ? "#fff" : "#5A7878",
-              letterSpacing: "0.4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              border: prevTab === "riepilogo" ? "1px solid transparent" : "1px solid rgba(200,228,228,0.5)",
-              textTransform: "uppercase" as any,
-              boxShadow: prevTab === "riepilogo"
-                ? "0 6px 16px rgba(30,128,128,0.35), inset 0 1px 1px rgba(255,255,255,0.25), inset 0 -2px 2px rgba(0,0,0,0.08)"
-                : "0 2px 6px rgba(13,31,31,0.04)",
-            }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              Riepilogo &amp; Invio
-            </div>
+          {/* Tabs */}
+          <div style={{ display: "flex", background: T.card, borderBottom: `1px solid ${T.bdr}`, position: "sticky", top: 52, zIndex: 10 }}>
+            <div onClick={() => setPrevTab("riepilogo")} style={tabPw("riepilogo")}><I d={ICO.barChart} /> Riepilogo</div>
+            <div onClick={() => setPrevTab("fiscale")} style={tabPw("fiscale")}><I d={ICO.euro} /> Fiscale</div>
+            <div onClick={() => setPrevTab("condizioni")} style={tabPw("condizioni")}><I d={ICO.fileText} /> Condizioni</div>
+            <div onClick={() => setPrevTab("sopralluogo")} style={tabPw("sopralluogo")}><I d={ICO.search} /> Report</div>
+            <div onClick={() => setPrevTab("importa")} style={tabPw("importa")}><I d={ICO.download} /> Importa</div>
           </div>
 
           <div style={{ paddingTop: 12 }}>
@@ -2531,600 +270,200 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 ))}
               </div>
 
-              {pwVani.length > 0 && (
-                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-                  <button
-                    onClick={() => setSelectedVaniBulk(selectedVaniBulk.length === pwVani.length ? [] : pwVani.map(v => v.id))}
-                    style={{
-                      padding: "6px 12px", borderRadius: 6,
-                      background: selectedVaniBulk.length === pwVani.length ? "#28A0A0" : "#fff",
-                      color: selectedVaniBulk.length === pwVani.length ? "#fff" : "#28A0A0",
-                      border: "1px solid #28A0A0",
-                      fontSize: 11, fontWeight: 700, cursor: "pointer",
-                      fontFamily: "inherit",
-                    }}>
-                    {selectedVaniBulk.length === pwVani.length ? "✓ Tutti selezionati" : "☐ Seleziona tutti"}
-                  </button>
-                </div>
-              )}
-              {pwVani.map((v, idx) => (
-                <VanoCardPreventivo
-                  key={v.id}
-                  vano={v}
-                  commessa={c}
-                  index={idx}
-                  isSelected={selectedVaniBulk.includes(v.id)}
-                  onToggleSelect={() => setSelectedVaniBulk(p => p.includes(v.id) ? p.filter(x => x !== v.id) : [...p, v.id])}
-                  onClickEdit={() => { if (selectedVaniBulk.length > 0) { setSelectedVaniBulk(p => p.includes(v.id) ? p.filter(x => x !== v.id) : [...p, v.id]); return; } setSelectedVano(v); }}
-                  onCalcPrezzo={(vv) => calcolaVanoPrezzo(vv, c)}
-                />
-              ))}
-              <BulkEditBar
-                selectedIds={selectedVaniBulk}
-                totalVani={pwVani.length}
-                onClearSelection={() => setSelectedVaniBulk([])}
-                onSelectAll={() => setSelectedVaniBulk(pwVani.map(v => v.id))}
-                onApply={(action, value) => {
-                  const ids = selectedVaniBulk;
-                  if (action === "elimina") {
-                    pwVani.filter(v => ids.includes(v.id)).forEach(v => deleteVano(c.id, v.id));
-                    setSelectedVaniBulk([]);
-                    return;
-                  }
-                  if (action === "duplica") {
-                    const toDup = pwVani.filter(v => ids.includes(v.id));
-                    for (let i = 0; i < (value as number); i++) {
-                      toDup.forEach(v => pwDuplicaVano(v, false));
-                    }
-                    setSelectedVaniBulk([]);
-                    return;
-                  }
-                  ids.forEach(id => {
-                    if (action === "sconto_perc") {
-                      const vv = pwVani.find(x => x.id === id);
-                      if (vv) {
-                        const prezzoBase = calcolaVanoPrezzo(vv, c);
-                        const nuovo = prezzoBase * (1 + (value / 100));
-                        pwUpdVano(id, "prezzoManuale", Math.round(nuovo * 100) / 100);
-                      }
-                      return;
-                    }
-                    if (action === "note_append") {
-                      const vv = pwVani.find(x => x.id === id);
-                      const prev = vv?.note || "";
-                      pwUpdVano(id, "note", prev ? prev + "\n" + value : value);
-                      return;
-                    }
-                    if (action === "tapparella" || action === "persiana" || action === "zanzariera") {
-                      const vv = pwVani.find(x => x.id === id);
-                      const prevAcc = vv?.accessori || {};
-                      pwUpdVano(id, "accessori", { ...prevAcc, [action]: value });
-                      return;
-                    }
-                    pwUpdVano(id, action, value);
-                  });
-                }}
-              />
-              <div style={{ marginTop: 24, padding: "16px 0" }}>
-                <button onClick={() => setPrevTab("fiscale")} style={{ width: "100%", padding: 18, borderRadius: 12, background: "#28A0A0", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(40,160,160,0.25)" }}>
-                  Prossimo: Imposta fiscalità
-                </button>
-              </div>
+              {pwVani.map(v => {
+                const mis = v.misure || {};
+                const nMis = Object.values(mis).filter(x => (x as number) > 0).length;
+                const misOk = nMis >= 6;
+                const lv = mis.lCentro || v.larghezza || v.l || 0;
+                const hv = mis.hCentro || v.altezza || v.h || 0;
+                const hasModifica = v.parentId || pwVani.some(vx => vx.parentId === v.id);
+                return (
+                  <div key={v.id} style={{ background: T.card, borderRadius: 12, padding: 12, marginBottom: 10, border: `1px solid ${T.bdr}`, borderLeft: `4px solid ${misOk ? T.grn : T.orange}` }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 800 }}>{v.nome || `Vano ${v.id}`}
+                          {v.versione > 1 && <span style={{ fontSize: 9, background: `${T.purple}15`, color: T.purple, padding: "2px 6px", borderRadius: 4, marginLeft: 6 }}>v{v.versione}</span>}
+                          {v.parentId && <span style={{ fontSize: 9, background: `${T.orange}15`, color: T.orange, padding: "2px 6px", borderRadius: 4, marginLeft: 4 }}>MODIFICA</span>}
+                        </div>
+                        <div style={{ fontSize: 10, color: T.sub }}>{v.tipo || "F2A"} · {v.stanza || "·"} · {v.piano || "PT"} · {v.pezzi || 1}pz</div>
+                      </div>
+                      <span style={{ fontSize: 10, background: misOk ? `${T.grn}15` : `${T.red}15`, color: misOk ? T.grn : T.red, padding: "3px 8px", borderRadius: 6, fontWeight: 700, height: "fit-content" }}>{misOk ? `✓ ${nMis}` : `⏹+ ${nMis}/6`}</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, marginBottom: 8 }}>
+                      {[{ l: "Larg.", val: lv }, { l: "Alt.", val: hv }, { l: "mq", val: ((lv * hv) / 1000000).toFixed(2) }].map((m, mi) => (
+                        <div key={mi} style={{ background: T.bg, borderRadius: 8, padding: 8, textAlign: "center" }}>
+                          <div style={{ fontSize: 9, color: T.sub }}>{m.l}</div>
+                          <div style={{ fontSize: 16, fontWeight: 900, color: mi === 2 ? T.acc : T.text }}>{m.val}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.8 }}>
+                      <I d={ICO.building} /> {v.sistema || c.sistema || "·"} · <I d={ICO.palette} /> {v.colore || "Bianco"} · <I d={ICO.grid} /> {v.vetro || "Standard"}
+                      {v.controtelaio && v.controtelaio !== "Nessuno" && ` · 🪟 ${v.controtelaio}`}
+                      {v.accessori?.tapparella?.attivo && ` · Tapp. ${v.accessori.tapparella.tipo || ""}`}
+                      {v.accessori?.persiana?.attivo && ` · Pers. ${v.accessori.persiana.tipo || ""}`}
+                      {v.accessori?.zanzariera?.attivo && ` · Zanz. ${v.accessori.zanzariera.tipo || ""}`}
+                      {v.coprifilo && ` · Coprifilo ${v.coprifilo}`}
+                      {v.soglia && ` · Soglia ${v.soglia}`}
+                      {v.davanzale && ` · Davanz. ${v.davanzale}`}
+                    </div>
+                    {v.note && <div style={{ fontSize: 11, color: T.orange, fontWeight: 600, marginTop: 4 }}><I d={ICO.mapPin} /> {v.note}</div>}
+
+                    {/* PDF Tecnico Fornitore badge */}
+                    {v.pdfFornitore ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, padding: "7px 10px", borderRadius: 8, background: "#3B7FE010", border: "1px solid #3B7FE030" }}>
+                        <span style={{ fontSize: 14 }}>📐</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#3B7FE0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {v.pdfFornitoreNome || "Disegno tecnico.pdf"}
+                          </div>
+                          <div style={{ fontSize: 9, color: T.sub }}>{v.pdfFornitoreData || ""}</div>
+                        </div>
+                        <div onClick={() => {
+                          const link = document.createElement("a");
+                          link.href = v.pdfFornitore;
+                          link.download = v.pdfFornitoreNome || "disegno_tecnico.pdf";
+                          link.click();
+                        }} style={{ padding: "4px 10px", borderRadius: 6, background: "#3B7FE015", border: "1px solid #3B7FE040", cursor: "pointer", fontSize: 11, fontWeight: 700, color: "#3B7FE0", whiteSpace: "nowrap" as const }}>
+                          🔗 Apri
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "#D0800808", border: "1px dashed #D0800840", fontSize: 10, color: T.sub, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>📐</span> PDF tecnico fornitore non caricato · aprire il vano per aggiungerlo
+                      </div>
+                    )}
+
+                    {/* Foto gallery */}
+                    {(Array.isArray(v.foto) && v.foto.length > 0) && (
+                      <div style={{ display: "flex", gap: 6, marginTop: 8, overflowX: "auto" }}>
+                        {v.foto.map((f, fi) => (
+                          <div key={fi} style={{ minWidth: 64, height: 64, borderRadius: 8, background: `${T.blue}08`, border: `1px solid ${T.blue}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <span style={{ fontSize: 22 }}><I d={ICO.camera} /></span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Diff: se c' una modifica, mostra differenze */}
+                    {v.parentId && (() => {
+                      const orig = pwVani.find(vx => vx.id === v.parentId);
+                      if (!orig) return null;
+                      const diffs = [];
+                      if ((orig.tipo || "") !== (v.tipo || "")) diffs.push({ l: "Tipo", da: orig.tipo, a: v.tipo });
+                      if ((orig.colore || "") !== (v.colore || "")) diffs.push({ l: "Colore", da: orig.colore, a: v.colore });
+                      if ((orig.vetro || "") !== (v.vetro || "")) diffs.push({ l: "Vetro", da: orig.vetro, a: v.vetro });
+                      if ((orig.sistema || "") !== (v.sistema || "")) diffs.push({ l: "Sistema", da: orig.sistema, a: v.sistema });
+                      if ((orig.controtelaio || "") !== (v.controtelaio || "")) diffs.push({ l: "Controtelaio", da: orig.controtelaio, a: v.controtelaio });
+                      const origL = orig.misure?.lCentro || orig.larghezza || orig.l || 0;
+                      const origH = orig.misure?.hCentro || orig.altezza || orig.h || 0;
+                      if (origL !== lv) diffs.push({ l: "Larghezza", da: origL, a: lv });
+                      if (origH !== hv) diffs.push({ l: "Altezza", da: origH, a: hv });
+                      if (diffs.length === 0) return null;
+                      return (
+                        <div style={{ marginTop: 8, padding: 8, background: `${T.purple}08`, borderRadius: 8, border: `1px solid ${T.purple}20` }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: T.purple, marginBottom: 4 }}><I d={ICO.refreshCw} /> Differenze da originale</div>
+                          {diffs.map((d, di) => (
+                            <div key={di} style={{ fontSize: 10, display: "flex", gap: 4, marginBottom: 2 }}>
+                              <span style={{ fontWeight: 700, color: T.sub, width: 70 }}>{d.l}:</span>
+                              <span style={{ color: T.red, textDecoration: "line-through" }}>{d.da || "·"}</span>
+                              <span style={{ color: T.sub }}>→</span>
+                              <span style={{ color: T.grn, fontWeight: 700 }}>{d.a || "·"}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Quick actions */}
+                    <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                      <div onClick={() => { setPrevTab("preventivo"); setEditingVanoId(v.id); }} style={{ flex: 1, padding: "6px 0", borderRadius: 6, textAlign: "center", fontSize: 10, fontWeight: 700, color: T.acc, background: `${T.acc}08`, cursor: "pointer", border: `1px solid ${T.acc}20` }}><I d={ICO.clipboard} /> Modifica nel preventivo</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          {/* v77 · TAB FISCALE GUIDATO (mockup v3) */}
-          {prevTab === "fiscale" && (() => {
-            // ─── Setup variabili del pannello ───
-            const destV77 = fiscDestV77 || (c.destImmobile === "seconda" ? "seconda" : "prima");
-            const bonusV77 = c.detrazione || "50";  // "50" = Bonus Casa (default)
-            // Aliquota effettiva in base a destinazione
-            const aliquotaV77 = (() => {
-              if (bonusV77 === "nessuna") return 0;
-              if (bonusV77 === "75") return 75;
-              return destV77 === "prima" ? 50 : 36;
-            })();
-            // Subtotali
-            const subtotV77 = pwImponibile;
-            const recuperoV77 = subtotV77 * aliquotaV77 / 100;
-            const costoRealeV77 = pwTotale - recuperoV77;
-            const perAnnoV77 = recuperoV77 / 10;
-            const fmtV77 = (n: number) => n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            // Uw limite per zona (DM 6 agosto 2020)
-            const uwLimit: any = { "AB": 3.00, "C": 2.20, "D": 1.80, "E": 1.40, "F": 1.10 };
-            const uwZonaLbl: any = { "AB": "A/B", "C": "C", "D": "D", "E": "E", "F": "F" };
-            // Uw prodotto (dal primo vano, se esiste)
-            const uwProd = (() => {
-              const firstSystem = pwVani[0]?.sistema || "";
-              const sysRec = sistemiDB.find((s: any) => (s.marca + " " + s.sistema) === firstSystem || s.sistema === firstSystem);
-              return parseFloat(sysRec?.uw || "1.1");
-            })();
-            const uwOk = uwProd <= uwLimit[fiscZonaV77];
-
-            // Checklist dinamica per bonus
-            const checklistV77 = (() => {
-              const base = [
-                { id: "fatt", name: "Fattura parlante", sub: "Descrizione chiara + riferimento normativo", obblig: true },
-                { id: "bon", name: "Ricevuta bonifico parlante", sub: "Causale con CF beneficiario + P.IVA fornitore", obblig: true },
-                { id: "sched", name: "Scheda tecnica infissi", sub: "Uw, marcatura CE, vetro · dal produttore", obblig: true },
-                { id: "ce", name: "Dichiarazione conformità CE", sub: "Prodotto serramenti · dal produttore", obblig: false },
-                { id: "cat", name: "Dati catastali immobile", sub: "Foglio, particella, subalterno", obblig: false },
-                { id: "cf", name: "Codice fiscale cliente", sub: "Copia tessera o documento identità", obblig: true },
-                { id: "foto_pre", name: "Foto PRIMA della sostituzione", sub: "Prova stato vecchi infissi", obblig: false, consigl: true },
-                { id: "foto_post", name: "Foto DOPO la posa", sub: "Prova installazione completata", obblig: false, consigl: true },
-              ];
-              if (bonusV77 === "65") {
-                // Ecobonus aggiunge
-                base.push({ id: "ape_ante", name: "APE ante operam", sub: "Attestato prestazione energetica pre-lavori", obblig: false, consigl: true } as any);
-                base.push({ id: "ape_post", name: "APE post operam", sub: "Attestato prestazione energetica post-lavori", obblig: false, consigl: true } as any);
-                base.push({ id: "ass", name: "Asseverazione tecnico", sub: "Firmata e timbrata · obbligatoria per Ecobonus", obblig: true } as any);
-              }
-              if (bonusV77 === "75") {
-                base.push({ id: "rel", name: "Relazione tecnica asseverata", sub: "Conformità norme abbattimento barriere", obblig: true } as any);
-              }
-              return base;
-            })();
-            const checkSaved = c.checklistDocs || {};
-            const nDone = checklistV77.filter((d: any) => checkSaved[d.id]).length;
-            const pctDone = Math.round((nDone / checklistV77.length) * 100);
-
-            // Causale bonifico pre-compilata
-            const causaleV77 = (() => {
-              const az = aziendaInfo || {};
-              const nomeDitta = (az.ragioneSociale || az.nome || "DITTA").toUpperCase();
-              const pivaDitta = az.piva || az.partitaIva || "P.IVA";
-              const nomeCli = (c.cliente || "CLIENTE").toUpperCase();
-              const cfCli = c.codiceFiscale || "CF CLIENTE";
-              if (bonusV77 === "65") {
-                return `Intervento di riqualificazione energetica ai sensi dell'art. 1, commi 344-347, Legge 296/2006 - Fattura n. [NUMERO] del [DATA] - Beneficiario detrazione: ${nomeCli} (CF: ${cfCli}) - Beneficiario pagamento: ${nomeDitta} (P.IVA: ${pivaDitta})`;
-              }
-              if (bonusV77 === "75") {
-                return `Intervento superamento barriere architettoniche art. 119-ter DL 34/2020 - Fattura n. [NUMERO] del [DATA] - Beneficiario detrazione: ${nomeCli} (CF: ${cfCli}) - Beneficiario pagamento: ${nomeDitta} (P.IVA: ${pivaDitta})`;
-              }
-              return `Lavori di ristrutturazione edilizia ai sensi dell'art. 16-bis del DPR 917/1986 - Fattura n. [NUMERO] del [DATA] - Beneficiario detrazione: ${nomeCli} (CF: ${cfCli}) - Beneficiario pagamento: ${nomeDitta} (P.IVA: ${pivaDitta})`;
-            })();
-
-            // Template messaggi
-            const tel = (c.telefono || "").replace(/\D/g, "");
-            const waUrl = (msg: string) => `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
-            const bonusLblV77: any = { "nessuna": "nessuna detrazione", "50": "Bonus Casa 50%", "65": "Ecobonus 50%", "75": "Barriere 75%" };
-            const templates = [
-              {
-                id: "checklist",
-                icon: "check",
-                color: "blue",
-                nome: "Checklist documenti richiesti",
-                sub: "Tutti i documenti che servono per il bonus",
-                msg: `Ciao ${c.cliente || ""}, per ottenere il ${bonusLblV77[bonusV77]} ti servono questi documenti da conservare per 10 anni:\n\n${checklistV77.filter((d: any) => d.obblig).map((d: any, i: number) => `${i + 1}. ${d.name}`).join("\n")}\n\nTi aggiorno appena abbiamo tutto. Grazie!`,
-              },
-              {
-                id: "bonifico",
-                icon: "euro",
-                color: "violet",
-                nome: "Istruzioni bonifico parlante",
-                sub: "Causale pronta + passi per home banking",
-                msg: `Ciao ${c.cliente || ""}, per non perdere la detrazione il bonifico DEVE essere \"parlante\". Nella tua home banking seleziona \"Bonifico per agevolazioni fiscali\" e copia ESATTAMENTE questa causale:\n\n${causaleV77}\n\nMi raccomando: importo esatto come in fattura. Conserva la ricevuta!`,
-              },
-              {
-                id: "recupero",
-                icon: "bolt",
-                color: "green",
-                nome: "Riepilogo detrazione recuperabile",
-                sub: "Quanto risparmia il cliente",
-                msg: `Ciao ${c.cliente || ""}, riepilogo economico del preventivo:\n\nTotale: € ${fmtV77(pwTotale)} IVA incl.\n${bonusLblV77[bonusV77]} recuperabile: € ${fmtV77(recuperoV77)} in 10 anni (€ ${fmtV77(perAnnoV77)}/anno)\nCosto reale per te: € ${fmtV77(costoRealeV77)}\n\nResto a disposizione per qualsiasi chiarimento.`,
-              },
-              {
-                id: "promemoria",
-                icon: "clock",
-                color: "amber",
-                nome: "Promemoria conservazione 10 anni",
-                sub: "Agenzia Entrate può controllare fino al 2036",
-                msg: `Ciao ${c.cliente || ""}, importante: l'Agenzia delle Entrate può richiedere i documenti del ${bonusLblV77[bonusV77]} fino a 10 anni dopo. Conserva in un unico luogo:\n\n- Fattura\n- Ricevuta bonifico parlante\n- Scheda tecnica infissi\n- Dichiarazione CE\n\nConsiglio: scansiona tutto e metti una copia in cloud. Gli scontrini termici sbiadiscono.`,
-              },
-              {
-                id: "conferma",
-                icon: "calendar",
-                color: "pink",
-                nome: "Conferma sopralluogo e data lavori",
-                sub: "Comunicazione inizio lavori",
-                msg: `Ciao ${c.cliente || ""}, confermo il sopralluogo e i dati del cantiere:\n\nIndirizzo: ${c.indirizzo || "[da confermare]"}\nCommessa: ${c.code}\n\nTi aggiorno a breve con la data definitiva dei lavori. Per qualsiasi modifica contattami.`,
-              },
-              {
-                id: "catastali",
-                icon: "user",
-                color: "slate",
-                nome: "Richiesta dati catastali",
-                sub: "Foglio, particella, subalterno",
-                msg: `Ciao ${c.cliente || ""}, per preparare la pratica mi servono i dati catastali dell'immobile. Li trovi sulla visura catastale o sull'atto di acquisto. Mi servono:\n\n- Foglio\n- Particella\n- Subalterno\n\nSe non li hai posso aiutarti a recuperarli. Grazie!`,
-              },
-            ];
-
-            const setCheckDoc = (docId: string, val: boolean) => {
-              const updated = { ...checkSaved, [docId]: val };
-              updCM("checklistDocs", updated);
-            };
-
-            const tplColor: any = {
-              blue: "linear-gradient(145deg, #85B7EB, #378ADD)",
-              violet: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
-              green: "linear-gradient(145deg, #5DCAA5, #1D9E75)",
-              amber: "linear-gradient(145deg, #FAC775, #EF9F27)",
-              pink: "linear-gradient(145deg, #ED93B1, #D4537E)",
-              slate: "linear-gradient(145deg, #8BA8A8, #5F7878)",
-            };
-
-            return (
-              <div style={{ padding: "0 12px 20px", display: "flex", flexDirection: "column", gap: 13 }}>
-
-                {/* ══════ SEZIONE 1: DESTINAZIONE IMMOBILE ══════ */}
-                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                  </div>
-                  Passo 1 &middot; Destinazione immobile
+          {/*  TAB FISCALE (IVA · Detrazioni · Pratica · Guida completa)  */}
+          {prevTab === "fiscale" && (
+            <div style={{ padding: "0 12px 20px" }}>
+              {/* CARD IVA - selettore rapido */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.euro} s={14} c="#28A0A0" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Aliquota IVA commessa</div>
                 </div>
-
-                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>L'immobile è abitazione principale del cliente?</div>
-                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Decide l'aliquota: 50% (prima casa) o 36% (seconda/affitto/azienda)</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {[
-                      { k: "prima", big: "Prima casa", sub: "Residenza del cliente · detrazione 50%" },
-                      { k: "seconda", big: "Seconda casa", sub: "Affitto, villeggiatura, aziendale · 36%" },
-                    ].map((o: any) => {
-                      const on = destV77 === o.k;
-                      return (
-                        <div key={o.k} onClick={() => { setFiscDestV77(o.k as any); updCM("destImmobile", o.k); }} style={{
-                          padding: "13px 11px 11px", borderRadius: 13, cursor: "pointer",
-                          border: on ? "1.5px solid #1D9E75" : "1.5px solid rgba(200,228,228,0.5)",
-                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.1), rgba(29,158,117,0.04))" : "linear-gradient(145deg, #fff, #FAFCFC)",
-                          boxShadow: on ? "0 5px 14px rgba(29,158,117,0.18)" : "none",
-                          position: "relative",
-                        }}>
-                          {on && (
-                            <div style={{ position: "absolute", top: 8, right: 8, width: 16, height: 16, borderRadius: "50%", background: "linear-gradient(145deg, #5DCAA5, #1D9E75)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 4px rgba(29,158,117,0.4)" }}>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </div>
-                          )}
-                          <div style={{ fontSize: 15, fontWeight: 900, color: on ? "#04342C" : "#0F2525", letterSpacing: "-0.3px", lineHeight: 1.1 }}>{o.big}</div>
-                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 700, marginTop: 4, lineHeight: 1.35 }}>{o.sub}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {[4, 10, 22].map(p => (
+                    <div key={p} onClick={() => updCM("ivaPerc", p)} style={{
+                      padding: "12px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: pwIvaDefault === p ? T.acc : T.card,
+                      border: `1.5px solid ${pwIvaDefault === p ? T.acc : T.bdr}`,
+                      color: pwIvaDefault === p ? "#fff" : T.text,
+                      fontSize: 14, fontWeight: 900,
+                      boxShadow: pwIvaDefault === p ? `0 3px 0 ${T.acc}40` : "none",
+                    }}>{p}%</div>
+                  ))}
+                  <div onClick={() => { const v = prompt("IVA personalizzata (%)", String(pwIvaDefault)); if (v != null) { const n = parseFloat(v); if (!isNaN(n)) updCM("ivaPerc", n); } }} style={{
+                    padding: "12px 6px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                    background: ![4,10,22].includes(pwIvaDefault) ? T.acc : T.card,
+                    border: `1.5px solid ${![4,10,22].includes(pwIvaDefault) ? T.acc : T.bdr}`,
+                    color: ![4,10,22].includes(pwIvaDefault) ? "#fff" : T.sub,
+                    fontSize: 13, fontWeight: 800,
+                  }}>{![4,10,22].includes(pwIvaDefault) ? `${pwIvaDefault}%` : "Altra"}</div>
                 </div>
+              </div>
 
-                {/* ══════ SEZIONE 2: BONUS FISCALE ══════ */}
-                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2L15.09 8.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
-                  </div>
-                  Passo 2 &middot; Bonus fiscale
+              {/* CARD DETRAZIONE - selettore rapido */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(245,166,35,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.building} s={14} c="#D08008" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Detrazione fiscale cliente</div>
                 </div>
-
-                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", marginBottom: 5, letterSpacing: "-0.1px" }}>Quale detrazione applichi?</div>
-                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 11, lineHeight: 1.4 }}>Ogni bonus ha documenti diversi. Ti guido io, passo-passo.</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-                    {[
-                      { k: "50", icoBg: "linear-gradient(145deg, #5DCAA5, #1D9E75)", nome: "Bonus Casa", perc: "50%", percBg: "rgba(29,158,117,0.14)", percCol: "#04342C", desc: "Ristrutturazione edilizia · art. 16-bis DPR 917/86 · scelta più comune, più semplice", stats: "MAX € 96.000 · 10 ANNI · NO LIMITI Uw" },
-                      { k: "65", icoBg: "linear-gradient(145deg, #FAC775, #EF9F27)", nome: "Ecobonus", perc: "50%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Risparmio energetico · L. 296/2006 · richiede Uw compatibile + ENEA obbligatoria", stats: "DETRAZIONE MAX € 60.000 · ENEA SÌ" },
-                      { k: "75", icoBg: "linear-gradient(145deg, #AFA9EC, #7F77DD)", nome: "Barriere architettoniche", perc: "75%", percBg: "rgba(239,159,39,0.14)", percCol: "#854F0B", desc: "Art. 119-ter DL 34/2020 · richiede relazione tecnica asseverata", stats: "SOLO CONDOMINI 2026" },
-                      { k: "nessuna", icoBg: "linear-gradient(145deg, #B8C5C5, #7A9090)", nome: "Nessuna detrazione", perc: "0%", percBg: "rgba(122,144,144,0.14)", percCol: "#3C4F4F", desc: "Cliente non vuole o non può · bonifico ordinario, nessuna pratica", stats: "" },
-                    ].map((b: any) => {
-                      const on = bonusV77 === b.k;
-                      return (
-                        <div key={b.k} onClick={() => updCM("detrazione", b.k)} style={{
-                          padding: "13px 14px", borderRadius: 15, cursor: "pointer",
-                          border: on ? "1.5px solid #1D9E75" : "1.5px solid rgba(200,228,228,0.5)",
-                          background: on ? "linear-gradient(145deg, rgba(93,202,165,0.08), rgba(29,158,117,0.02))" : "#fff",
-                          display: "flex", gap: 12, alignItems: "flex-start",
-                          boxShadow: on ? "0 6px 16px rgba(29,158,117,0.15)" : "0 3px 8px rgba(13,31,31,0.04)",
-                          position: "relative",
-                        }}>
-                          <div style={{ width: 44, height: 44, borderRadius: 13, background: b.icoBg, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "inset 0 1px 2px rgba(255,255,255,0.35)" }}>
-                            {b.k === "50" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>}
-                            {b.k === "65" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>}
-                            {b.k === "75" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>}
-                            {b.k === "nessuna" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.2px", display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" as any }}>
-                              {b.nome}
-                              <span style={{ fontSize: 10, fontWeight: 900, padding: "2px 8px", borderRadius: 50, letterSpacing: "0.3px", background: b.percBg, color: b.percCol }}>{b.perc}</span>
-                            </div>
-                            <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginTop: 3, lineHeight: 1.4 }}>{b.desc}</div>
-                            {b.stats && <div style={{ fontSize: 9, color: "#5A7878", fontWeight: 800, letterSpacing: "0.3px", marginTop: 6 }}>{b.stats}</div>}
-                          </div>
-                          {on && (
-                            <div style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(145deg, #5DCAA5, #1D9E75)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 5px rgba(29,158,117,0.4)" }}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* ══════ BOX RECUPERO ══════ */}
-                {bonusV77 !== "nessuna" && recuperoV77 > 0 && (
-                  <div style={{ background: "linear-gradient(155deg, #FFF7E6 0%, #FFE8C2 100%)", border: "1.5px solid rgba(239,159,39,0.3)", borderRadius: 16, padding: "13px 14px", display: "flex", alignItems: "center", gap: 12, position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", top: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, rgba(250,199,117,0.4), transparent 65%)", pointerEvents: "none" as any }} />
-                    <div style={{ width: 42, height: 42, borderRadius: 13, background: "linear-gradient(145deg, #FAC775, #EF9F27)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 10px rgba(239,159,39,0.3), inset 0 1px 2px rgba(255,255,255,0.35)" }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    </div>
-                    <div style={{ flex: 1, position: "relative" }}>
-                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: "1px", textTransform: "uppercase" as any, color: "#854F0B", opacity: 0.85 }}>IL CLIENTE RECUPERA IN 10 ANNI</div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: "#854F0B", letterSpacing: "-0.5px", lineHeight: 1.1, marginTop: 2 }}>€ {fmtV77(recuperoV77)}</div>
-                      <div style={{ fontSize: 10, color: "#6A4810", fontWeight: 700, marginTop: 3, lineHeight: 1.35 }}>{aliquotaV77}% di € {fmtV77(subtotV77)} imponibile · € {fmtV77(perAnnoV77)}/anno per 10 anni</div>
-                    </div>
-                  </div>
-                )}
-
-                {/* ══════ WIDGET Uw (solo Ecobonus) ══════ */}
-                {bonusV77 === "65" && (
-                  <>
-                    <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-                      </div>
-                      Requisiti tecnici
-                    </div>
-
-                    <div style={{ background: "#fff", borderRadius: 16, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 3px 10px rgba(13,31,31,0.04)" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(145deg, rgba(55,138,221,0.2), rgba(55,138,221,0.08))", color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M17.66 3.72l-5.29 8.05-3.62-1.57 1.57-3.62L18.38 1l-.72 2.72z"/></svg>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Trasmittanza Uw</div>
-                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 700, marginTop: 2 }}>Richiesta per Ecobonus · DM 6 agosto 2020</div>
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 9.5, fontWeight: 800, color: "#4A6E6E", letterSpacing: "0.6px", marginBottom: 5 }}>ZONA CLIMATICA</div>
-                      <div style={{ display: "flex", gap: 6, marginBottom: 11 }}>
-                        {(["AB", "C", "D", "E", "F"] as const).map(z => {
-                          const on = fiscZonaV77 === z;
-                          return (
-                            <div key={z} onClick={() => setFiscZonaV77(z)} style={{
-                              flex: 1, padding: "7px 4px", borderRadius: 8, textAlign: "center" as any,
-                              fontSize: 10.5, fontWeight: 900,
-                              color: on ? "#fff" : "#5A7878",
-                              background: on ? "linear-gradient(145deg, #85B7EB, #378ADD)" : "#F4F8F8",
-                              border: `1px solid ${on ? "#378ADD" : "rgba(200,228,228,0.4)"}`,
-                              cursor: "pointer",
-                              boxShadow: on ? "0 3px 8px rgba(55,138,221,0.3)" : "none",
-                            }}>{uwZonaLbl[z]}</div>
-                          );
-                        })}
-                      </div>
-                      <div style={{ padding: "11px 12px", background: uwOk ? "rgba(29,158,117,0.08)" : "rgba(226,75,74,0.08)", border: `1.5px solid ${uwOk ? "rgba(29,158,117,0.3)" : "rgba(226,75,74,0.3)"}`, borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 26, height: 26, borderRadius: 8, background: uwOk ? "linear-gradient(145deg, #5DCAA5, #1D9E75)" : "linear-gradient(145deg, #F09595, #E24B4A)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          {uwOk
-                            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
-                        </div>
-                        <div style={{ flex: 1, fontSize: 10.5, color: uwOk ? "#04342C" : "#8B1A1A", fontWeight: 800, lineHeight: 1.4 }}>
-                          <strong>{pwVani[0]?.sistema || "Sistema"} · Uw {uwProd.toFixed(1)}</strong><br/>
-                          Richiesto ≤ {uwLimit[fiscZonaV77].toFixed(2)} per Zona {uwZonaLbl[fiscZonaV77]} · {uwOk ? "ampiamente conforme" : "NON CONFORME"}
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* ══════ CHECKLIST DOCUMENTI ══════ */}
-                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-                  </div>
-                  Documenti da raccogliere <span style={{ background: "rgba(29,158,117,0.14)", color: "#1D9E75", padding: "1px 7px", borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</span>
-                </div>
-
-                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Checklist {bonusLblV77[bonusV77]}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                      <div style={{ width: 60, height: 6, background: "rgba(200,228,228,0.5)", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${pctDone}%`, background: "linear-gradient(90deg, #5DCAA5, #1D9E75)", borderRadius: 3, boxShadow: "0 0 6px rgba(29,158,117,0.4)" }} />
-                      </div>
-                      <div style={{ fontSize: 10, fontWeight: 900, color: "#1D9E75", letterSpacing: "0.3px" }}>{nDone}/{checklistV77.length}</div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Conservare tutto per 10 anni · L'Agenzia delle Entrate può chiederli fino al {new Date().getFullYear() + 10}</div>
-
-                  {checklistV77.map((d: any) => {
-                    const isDone = !!checkSaved[d.id];
-                    return (
-                      <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 0", borderBottom: "1px solid rgba(200,228,228,0.3)" }}>
-                        <div onClick={() => setCheckDoc(d.id, !isDone)} style={{
-                          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          border: isDone ? "1.5px solid #1D9E75" : "1.5px solid rgba(200,228,228,0.6)",
-                          background: isDone ? "linear-gradient(145deg, #5DCAA5, #1D9E75)" : "#fff",
-                          cursor: "pointer",
-                          boxShadow: isDone ? "0 3px 7px rgba(29,158,117,0.3)" : "none",
-                        }}>
-                          {isDone
-                            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8D4D4" strokeWidth="2.5"><circle cx="12" cy="12" r="9"/></svg>}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 800, color: "#0F2525", letterSpacing: "-0.05px" }}>
-                            {d.name}
-                            {d.obblig && <span style={{ display: "inline-block", background: "rgba(226,75,74,0.12)", color: "#8B1A1A", fontSize: 8.5, fontWeight: 900, padding: "1px 6px", borderRadius: 4, letterSpacing: "0.3px", marginLeft: 5, verticalAlign: 1 }}>OBBLIG</span>}
-                            {d.consigl && <span style={{ display: "inline-block", background: "rgba(239,159,39,0.12)", color: "#854F0B", fontSize: 8.5, fontWeight: 900, padding: "1px 6px", borderRadius: 4, letterSpacing: "0.3px", marginLeft: 5, verticalAlign: 1 }}>CONSIGL</span>}
-                          </div>
-                          <div style={{ fontSize: 9.5, color: "#5A7878", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{d.sub}</div>
-                        </div>
-                        <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                          <div onClick={() => { try { (fotoInputRef as any).current?.click(); } catch (e) {} }} style={{
-                            width: 28, height: 28, borderRadius: 8,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            cursor: "pointer",
-                            background: isDone ? "rgba(29,158,117,0.1)" : "rgba(200,228,228,0.25)",
-                            color: isDone ? "#1D9E75" : "#4A6E6E",
-                            border: `1px solid ${isDone ? "rgba(29,158,117,0.3)" : "rgba(200,228,228,0.4)"}`,
-                          }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                          </div>
-                          <div onClick={() => { try { (fileInputRef as any).current?.click(); } catch (e) {} }} style={{
-                            width: 28, height: 28, borderRadius: 8,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            cursor: "pointer",
-                            background: isDone ? "rgba(29,158,117,0.1)" : "rgba(200,228,228,0.25)",
-                            color: isDone ? "#1D9E75" : "#4A6E6E",
-                            border: `1px solid ${isDone ? "rgba(29,158,117,0.3)" : "rgba(200,228,228,0.4)"}`,
-                          }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* ══════ CAUSALE BONIFICO ══════ */}
-                {bonusV77 !== "nessuna" && (<>
-                  <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    </div>
-                    Causale bonifico parlante
-                  </div>
-
-                  <div style={{ background: "linear-gradient(155deg, #F7FAF9 0%, #EAF2F0 100%)", borderRadius: 16, padding: 14, border: "1px solid rgba(200,228,228,0.5)" }}>
-                    <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 800, lineHeight: 1.4 }}>Questa è la causale che il cliente deve copiare <strong>ESATTAMENTE</strong> nel bonifico, altrimenti rischia di perdere la detrazione.</div>
-                    <div style={{ background: "#0F2525", color: "#AEE9E9", padding: "12px 14px", borderRadius: 11, fontFamily: "SF Mono, Monaco, Consolas, monospace", fontSize: 10.5, lineHeight: 1.55, marginTop: 10, fontWeight: 500, letterSpacing: "0.1px" }}>{causaleV77}</div>
-                    <button onClick={() => {
-                      navigator.clipboard?.writeText(causaleV77).then(() => {
-                        setFiscCopied("causale"); setTimeout(() => setFiscCopied(null), 2500);
-                      }).catch(() => { setFiscCopied("causale"); setTimeout(() => setFiscCopied(null), 2500); });
-                    }} style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                      width: "100%", padding: 11,
-                      background: fiscCopied === "causale" ? "#1D9E75" : "#0F2525",
-                      color: "#fff", borderRadius: 11, fontSize: 11.5, fontWeight: 900, marginTop: 10, cursor: "pointer", letterSpacing: "0.3px", border: "none", fontFamily: "inherit",
-                      boxShadow: "0 5px 12px rgba(15,37,37,0.25)",
-                    }}>
-                      {fiscCopied === "causale"
-                        ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg> COPIATO!</>
-                        : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> COPIA CAUSALE PER IL CLIENTE</>}
-                    </button>
-                  </div>
-                </>)}
-
-                {/* ══════ TEMPLATE MESSAGGI ══════ */}
-                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                  <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  </div>
-                  Messaggi pronti per il cliente
-                </div>
-
-                <div style={{ background: "#fff", borderRadius: 18, padding: 14, border: "1px solid rgba(200,228,228,0.4)", boxShadow: "0 4px 14px rgba(13,31,31,0.05)" }}>
-                  <div style={{ fontSize: 10.5, color: "#5A7878", fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>Testi già preparati, con dati commessa pre-compilati. Tap per inviare su WhatsApp.</div>
-
-                  {templates.map((tpl: any) => (
-                    <div key={tpl.id} onClick={() => {
-                      if (!tel) { alert("Numero telefono cliente mancante"); return; }
-                      window.open(waUrl(tpl.msg), "_blank");
-                    }} style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 0", borderBottom: "1px solid rgba(200,228,228,0.3)", cursor: "pointer" }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 11, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: tplColor[tpl.color], boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)" }}>
-                        {tpl.icon === "check" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>}
-                        {tpl.icon === "euro" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>}
-                        {tpl.icon === "bolt" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
-                        {tpl.icon === "clock" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-                        {tpl.icon === "calendar" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg>}
-                        {tpl.icon === "user" && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>{tpl.nome}</div>
-                        <div style={{ fontSize: 10, color: "#5A7878", fontWeight: 600, marginTop: 2, lineHeight: 1.3 }}>{tpl.sub}</div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "6px 11px", background: "linear-gradient(145deg, rgba(37,211,102,0.14), rgba(27,160,80,0.05))", border: "1px solid rgba(37,211,102,0.3)", color: "#1BA050", borderRadius: 50, fontSize: 9.5, fontWeight: 900, letterSpacing: "0.3px", flexShrink: 0 }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="#1BA050"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5z"/></svg>
-                        INVIA
-                      </div>
-                    </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                  {DETRAZIONI_OPT.map(d => (
+                    <div key={d.id} onClick={() => updCM("detrazione", d.id)} style={{
+                      padding: "11px 10px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: pwDetr === d.id ? "#D08008" : T.card,
+                      border: `1.5px solid ${pwDetr === d.id ? "#D08008" : T.bdr}`,
+                      color: pwDetr === d.id ? "#fff" : T.text,
+                      fontSize: 12, fontWeight: 800,
+                      boxShadow: pwDetr === d.id ? "0 3px 0 #D0800840" : "none",
+                    }}>{d.l}</div>
                   ))}
                 </div>
-
-                {/* ══════ PRATICA ENEA ══════ */}
-                {bonusV77 !== "nessuna" && (<>
-                  <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4A6E6E", letterSpacing: "1.3px", textTransform: "uppercase" as any, padding: "4px 6px 0", display: "flex", alignItems: "center", gap: 7 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg, rgba(93,202,165,0.28), rgba(29,158,117,0.14))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 11l3 3L22 4"/></svg>
-                    </div>
-                    Pratica ENEA
-                  </div>
-
-                  <div style={{ background: "linear-gradient(155deg, #1E8080 0%, #0F5555 100%)", borderRadius: 20, padding: 18, color: "#fff", boxShadow: "0 14px 32px rgba(15,68,68,0.3)", position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", top: -40, right: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(95,208,208,0.25), transparent 65%)", pointerEvents: "none" as any }} />
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 11px", background: "rgba(255,255,255,0.2)", borderRadius: 50, fontSize: 9, fontWeight: 900, letterSpacing: "1.1px", textTransform: "uppercase" as any, position: "relative" }}>
-                      {bonusV77 === "65" ? "OBBLIGATORIA ENTRO 90 GG" : "NON OBBLIGATORIA PER " + bonusLblV77[bonusV77].toUpperCase()}
-                    </div>
-                    <div style={{ fontSize: 18, fontWeight: 900, marginTop: 10, letterSpacing: "-0.4px", lineHeight: 1.15, position: "relative", textShadow: "0 2px 4px rgba(0,0,0,0.15)" }}>
-                      {bonusV77 === "65" ? "ENEA è obbligatoria" : "ENEA qui è consigliata, non dovuta"}
-                    </div>
-                    <div style={{ fontSize: 11.5, opacity: 0.9, marginTop: 6, fontWeight: 500, lineHeight: 1.4, position: "relative" }}>
-                      {bonusV77 === "65"
-                        ? "Per Ecobonus va inviata entro 90 giorni dalla fine lavori, pena decadenza della detrazione."
-                        : `Hai scelto ${bonusLblV77[bonusV77]}. Prepariamo comunque la scheda: se cambi idea, è pronta.`}
-                    </div>
-                    <button style={{ marginTop: 14, width: "100%", padding: 14, background: "#fff", color: "#0F5555", border: "none", borderRadius: 14, fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 9, letterSpacing: "0.3px", boxShadow: "0 6px 14px rgba(0,0,0,0.2), inset 0 -2px 0 rgba(15,85,85,0.08)", position: "relative" }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0F5555" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                      PREPARA SCHEDA ENEA PDF
-                    </button>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 10, padding: "10px 11px", background: "rgba(0,0,0,0.25)", borderRadius: 10, position: "relative" }}>
-                      <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                      </div>
-                      <div style={{ fontSize: 10, lineHeight: 1.4, fontWeight: 600, opacity: 0.92 }}>Il cliente carica la pratica su <strong>bonusfiscali.enea.it</strong> solo con SPID o CIE. Nessun documento va caricato, solo la scheda descrittiva.</div>
-                    </div>
-                  </div>
-                </>)}
-
-                {/* ══════ TOTALE + COSTO REALE ══════ */}
-                <div style={{ background: "linear-gradient(155deg, #8FE5C5 0%, #1D9E75 55%, #0F7A58 100%)", borderRadius: 24, padding: 18, color: "#fff", boxShadow: "0 18px 40px rgba(15,122,88,0.35)", position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" as any }} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 11, position: "relative" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 700 }}><span>Imponibile</span> <span>€ {fmtV77(subtotV77)}</span></div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, opacity: 0.75 }}><span>+ IVA {pwIvaDefault}%</span> <span>€ {fmtV77(pwIvaCalc)}</span></div>
-                    <div style={{ height: 1, background: "rgba(255,255,255,0.22)", margin: "4px 0" }} />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", position: "relative", paddingTop: 4 }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: "0.5px", textTransform: "uppercase" as any, opacity: 0.92 }}>Totale IVA incl.</div>
-                    <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.9px", textShadow: "0 2px 6px rgba(0,0,0,0.18)" }}>€ {fmtV77(pwTotale)}</div>
-                  </div>
-                  {bonusV77 !== "nessuna" && recuperoV77 > 0 && (
-                    <div style={{ marginTop: 11, padding: "11px 13px", background: "rgba(255,255,255,0.2)", borderRadius: 13, position: "relative", display: "flex", gap: 10, alignItems: "center" }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 9.5, fontWeight: 900, opacity: 0.88, letterSpacing: "0.3px", textTransform: "uppercase" as any }}>Costo reale per il cliente</div>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, opacity: 0.9, marginTop: 2, lineHeight: 1.3 }}><strong style={{ fontWeight: 900, fontSize: 14.5 }}>€ {fmtV77(costoRealeV77)}</strong> dopo bonus {aliquotaV77}% in 10 anni</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* NAV BOTTOM */}
-                <div style={{ display: "flex", gap: 8, padding: "10px 0 8px" }}>
-                  <button onClick={() => setPrevTab("sopralluogo")} style={{ padding: 14, borderRadius: 12, background: "#fff", color: "#4A6E6E", border: "1px solid rgba(200,228,228,0.5)", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
-                    Indietro
-                  </button>
-                  <button onClick={() => setPrevTab("condizioni")} style={{ flex: 1, padding: 14, borderRadius: 12, background: "linear-gradient(145deg, #1D9E75, #0F7A58)", color: "#fff", border: "none", fontSize: 13, fontWeight: 900, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 14px rgba(15,122,88,0.3), inset 0 -2px 0 rgba(0,0,0,0.08)", letterSpacing: "0.3px" }}>
-                    Prossimo: Condizioni →
-                  </button>
-                </div>
-
               </div>
-            );
-          })()}
+
+              {/* CARD SCONTO */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(40,160,160,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(220,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.tag} s={14} c="#DC4444" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Sconto commerciale</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6 }}>
+                  {[0, 5, 10, 15, 20].map(p => (
+                    <div key={p} onClick={() => updCM("scontoPerc", p)} style={{
+                      padding: "10px 4px", borderRadius: 10, cursor: "pointer", textAlign: "center" as any,
+                      background: pwSconto === p ? "#DC4444" : T.card,
+                      border: `1.5px solid ${pwSconto === p ? "#DC4444" : T.bdr}`,
+                      color: pwSconto === p ? "#fff" : T.text,
+                      fontSize: 13, fontWeight: 800,
+                    }}>{p === 0 ? "No" : p + "%"}</div>
+                  ))}
+                </div>
+              </div>
+
+              {/* GUIDA COMPLETA: IVA 4/10 + Detrazioni 50/65/75 con requisiti, checklist documenti, testo fattura */}
+              <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #3B7FE030`, padding: 16, marginBottom: 12, boxShadow: "0 2px 10px rgba(59,127,224,0.08)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(59,127,224,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}><I d={ICO.fileText} s={14} c="#3B7FE0" /></div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Guida pratica fiscale 2026</div>
+                </div>
+                <GuidaIvaDetrazioni />
+              </div>
+            </div>
+          )}
 
           {/*  TAB CONDIZIONI (pagamento · consegna · garanzia)  */}
           {prevTab === "condizioni" && (
@@ -3211,24 +550,16 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, letterSpacing: "0.5px", marginBottom: 6 }}>NOTE PREVENTIVO (visibili al cliente)</div>
                 <textarea value={c.notePreventivo || ""} onChange={e => updCM("notePreventivo", e.target.value)} placeholder="Es. Prezzo comprensivo di posa in opera standard. Lavori supplementari da concordare." style={{ width: "100%", minHeight: 80, padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, fontFamily: "inherit", resize: "vertical" as any, boxSizing: "border-box" as any }} />
               </div>
-              <div style={{ marginTop: 24, padding: "16px 0", display: "flex", gap: 8 }}>
-                <button onClick={() => setPrevTab("fiscale")} style={{ padding: 18, borderRadius: 12, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", minWidth: 90 }}>
-                  Indietro
-                </button>
-                <button onClick={() => setPrevTab("riepilogo")} style={{ flex: 1, padding: 18, borderRadius: 12, background: "#28A0A0", color: "#fff", border: "none", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(40,160,160,0.25)" }}>
-                  Prossimo: Vedi riepilogo
-                </button>
-              </div>
             </div>
           )}
 
           {/*  TAB RIEPILOGO  */}
           {prevTab === "riepilogo" && (
-            <div style={{ padding: "0 12px 20px", background: "#EEF8F8", minHeight: "100%" }}>
-              <div style={{ background: "linear-gradient(135deg, #0D1F1F 0%, #143636 100%)", borderRadius: 14, padding: 18, marginBottom: 10, color: "#fff" }}>
+            <div style={{ padding: "0 12px 20px" }}>
+              <div style={{ background: T.topbar || "#1A1A1C", borderRadius: 12, padding: 16, marginBottom: 12, color: "#fff" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <div><div style={{ fontSize: 10, color: "#ffffff60" }}>PREVENTIVO</div><div style={{ fontSize: 26, fontWeight: 900, marginTop: 2 }}>€{pwFmt(pwTotale)}</div></div>
-                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: "#28A0A030", borderRadius: 8, padding: "6px 10px", textAlign: "right" as any, border: "1px solid #28A0A060" }}><div style={{ fontSize: 9, color: "#ffffffa0", fontWeight: 700 }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#7FE5E5" }}>−€{pwFmt(pwDetraibile)}</div></div>)}
+                  {pwDetrObj && pwDetrObj.perc > 0 && (<div style={{ background: `${T.grn}30`, borderRadius: 8, padding: "6px 10px", textAlign: "right" as any }}><div style={{ fontSize: 9, color: "#ffffffa0" }}>{pwDetrObj.l}</div><div style={{ fontSize: 14, fontWeight: 900, color: "#4ade80" }}>-€{pwFmt(pwDetraibile)}</div></div>)}
                 </div>
                 <div style={{ fontSize: 10, color: "#ffffff60", marginTop: 6 }}>{c.code} · {c.cliente} · {pwVani.length} vani · {pwVani.reduce((s, v) => s + (v.pezzi || 1), 0)}pz</div>
               </div>
@@ -3263,9 +594,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   <span style={{ fontSize: 22, fontWeight: 900, color: T.acc }}>€{pwFmt(pwTotale)}</span>
                 </div>
                 {pwDetrObj && pwDetrObj.perc > 0 && (<>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: "#28A0A010", borderRadius: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0" }}><I d={ICO.building} /> {pwDetrObj.l}</span>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: "#28A0A0" }}>-€{pwFmt(pwDetraibile)}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, padding: "8px 10px", background: `${T.grn}10`, borderRadius: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.grn }}><I d={ICO.building} /> {pwDetrObj.l}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: T.grn }}>-€{pwFmt(pwDetraibile)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                     <span style={{ fontSize: 11, fontWeight: 700 }}>Costo effettivo</span>
@@ -3281,246 +612,19 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 </div>
               )}
 
-              {/* SCHEDE COMMERCIALI */}
-              <div style={{ marginTop: 14, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#28A0A0", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE COMMERCIALI</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div onClick={() => alert("Scheda tecnica in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Scheda tecnica</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Tutti i vani in 1 PDF</div>
-                  </div>
-                  <div onClick={() => alert("Simulazione fiscale in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Simulazione fiscale</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Risparmio detrazione</div>
-                  </div>
-                  <div onClick={() => alert("Tempi e garanzie in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Tempi e garanzie</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Consegna + posa + gar.</div>
-                  </div>
-                  <div onClick={() => alert("Condizioni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Condizioni</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Pagamento e accordi</div>
-                  </div>
-                </div>
-              </div>
-              {/* SCHEDE TECNICHE */}
-              <div style={{ marginTop: 10, background: T.card, borderRadius: 12, padding: 14, border: `1px solid ${T.bdr}` }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#28A0A0", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>SCHEDE TECNICHE DETTAGLIATE</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div onClick={() => alert("Trasmittanze in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Trasmittanze</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Uw / Ug / Uf per vano</div>
-                  </div>
-                  <div onClick={() => alert("Profilo in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Profilo</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Sezioni e camere</div>
-                  </div>
-                  <div onClick={() => alert("Vetro in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Vetro</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Stratigrafia e gas</div>
-                  </div>
-                  <div onClick={() => alert("Disegni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Disegni tecnici</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>CAD per ogni vano</div>
-                  </div>
-                  <div onClick={() => alert("Accessori in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Accessori</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>Tapp./zanz./pers.</div>
-                  </div>
-                  <div onClick={() => alert("Certificazioni in arrivo")} style={{ padding: 12, border: "1px solid #C8E4E4", borderRadius: 8, fontSize: 12, cursor: "pointer", background: "#fff" }}>
-                    <div style={{ fontWeight: 700, color: "#0D1F1F" }}>Certificazioni</div>
-                    <div style={{ color: "#6A8484", fontSize: 10, marginTop: 2 }}>CE acustico/termico</div>
-                  </div>
-                </div>
-              </div>
               <div style={{ marginTop: 16, display: "flex", gap: 8, marginBottom: 8 }}>
-                <button disabled={!!pdfBusy} onClick={async () => {
-                  if (pdfBusy) return;
-                  setPdfBusy("pdf");
-                  try {
-                    await Promise.race([
-                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
-                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
-                    ]);
-                  } catch(err: any) {
-                    console.error("[PDF]", err);
-                    alert("Errore generazione PDF: " + (err?.message || err));
-                  } finally {
-                    setPdfBusy(null);
-                  }
-                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "pdf" ? "#28A0A018" : "#fff", color: "#28A0A0", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "pdf" ? 0.5 : 1 }}>{pdfBusy === "pdf" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid #28A0A0", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.fileText} /> PDF</>}</button>
-                <button disabled={!!pdfBusy} onClick={async () => {
-                  if (pdfBusy) return;
-                  setPdfBusy("anteprima");
-                  try {
-                    await Promise.race([
-                      generaPreventivoCondivisibile(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }),
-                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout (20s)")), 20000)),
-                    ]);
-                  } catch(err: any) {
-                    console.error("[Anteprima]", err);
-                    alert("Errore Anteprima: " + (err?.message || err));
-                  } finally {
-                    setPdfBusy(null);
-                  }
-                }} style={{ flex: 1, padding: 14, borderRadius: 10, background: pdfBusy === "anteprima" ? "#28A0A018" : T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", opacity: pdfBusy && pdfBusy !== "anteprima" ? 0.5 : 1 }}>{pdfBusy === "anteprima" ? <><span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid " + T.sub, borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 6, verticalAlign: "middle" }} /> Generazione...</> : <><I d={ICO.eye} /> Anteprima</>}</button>
+                <button onClick={() => generaPreventivoPDF(c)} style={{ flex: 1, padding: 14, borderRadius: 10, background: `${T.acc}10`, color: T.acc, border: `1.5px solid ${T.acc}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> PDF</button>
+                <button onClick={() => generaPreventivoCondivisibile(c)} style={{ flex: 1, padding: 14, borderRadius: 10, background: T.card, color: T.sub, border: `1.5px solid ${T.bdr}`, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.eye} /> Anteprima</button>
               </div>
-              <button disabled={!!pdfBusy} onClick={async () => {
-                if (pdfBusy) return;
-                setPdfBusy("invia");
-                try {
-                  // ─── 1. CREA LINK PUBBLICO (retry 3x, 15s ciascuno) ───
-                  let linkPubblico = "";
-                  let linkError: any = null;
-                  // v17: snapshot arricchito con tutti i dettagli vani per pagina cliente intera
-                  const _vaniSrc = ((typeof getVaniAttivi === "function" ? getVaniAttivi(c) : (c.vani || [])) || []);
-                  const _imponibile = (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0;
-                  const _ivaPerc = Number(c.ivaPerc) || Number(aziendaInfo?.ivaDefault) || 10;
-                  const snapshot = {
-                    cliente: (c.cliente || "") + (c.cognome ? " " + c.cognome : ""),
-                    cliente_indirizzo: c.indirizzo || "",
-                    cliente_telefono: c.telefono || "",
-                    cliente_email: c.email || "",
-                    data_preventivo: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" }),
-                    totale: _imponibile,
-                    imponibile: _imponibile,
-                    iva_perc: _ivaPerc,
-                    iva: (_imponibile * _ivaPerc) / 100,
-                    totale_finale: _imponibile + (_imponibile * _ivaPerc) / 100,
-                    vani: _vaniSrc.map((v: any, i: number) => {
-                      const subtot = (typeof calcolaVanoPrezzo === "function" ? calcolaVanoPrezzo(v, c) : 0) || 0;
-                      let righe: any[] = [];
-                      try {
-                        righe = (typeof buildVanoRighe === "function") ? buildVanoRighe(v) : [];
-                      } catch(e) { console.warn("[snapshot] buildVanoRighe fail vano", i, e); }
-                      return {
-                        nome: v.nome || v.tipo || "Vano " + (i+1),
-                        tipo: v.tipo,
-                        misure: (v.misure?.lCentro || v.larghezza || 0) + "x" + (v.misure?.hCentro || v.altezza || 0),
-                        pezzi: Number(v.pezzi) || 1,
-                        prezzo: subtot,
-                        righe: righe.map(r => ({ label: r.label, valore: r.valore, gruppo: r.gruppo, importante: !!r.importante })),
-                      };
-                    }),
-                    azienda: {
-                      ragione: aziendaInfo?.ragione || aziendaInfo?.nome || "",
-                      indirizzo: aziendaInfo?.indirizzo || "",
-                      telefono: aziendaInfo?.telefono || "",
-                      email: aziendaInfo?.email || "",
-                      piva: aziendaInfo?.piva || aziendaInfo?.partitaIva || "",
-                      logo: aziendaInfo?.logo || "",
-                    },
-                  };
-
-                  for (let attempt = 1; attempt <= 3 && !linkPubblico; attempt++) {
-                    try {
-                      const ctrl = new AbortController();
-                      const t = setTimeout(() => ctrl.abort(), 15000);
-                      const r = await fetch("/api/preventivo-link", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ cm_id: c.id, cm_code: c.code, snapshot, azienda_id: (await getAziendaIdDB()) || aziendaInfo?.id }),
-                        signal: ctrl.signal,
-                      });
-                      clearTimeout(t);
-                      if (r.ok) {
-                        const d = await r.json();
-                        linkPubblico = window.location.origin + d.url;
-                      } else {
-                        linkError = "HTTP " + r.status;
-                      }
-                    } catch(e: any) {
-                      linkError = e?.message || e;
-                      console.warn("[link attempt " + attempt + " fail]", e);
-                      if (attempt < 3) await new Promise(r => setTimeout(r, 1000));
-                    }
-                  }
-
-                  if (!linkPubblico) {
-                    alert("Errore creazione link cliente: " + linkError + "\n\nRiprova tra qualche secondo.");
-                    return;
-                  }
-
-                  // ─── 2. GENERA PDF COME BLOB (per share + fallback) ───
-                  let pdfBlob: Blob | null = null;
-                  let pdfFilename = "preventivo_" + (c.code || "X") + ".pdf";
-                  try {
-                    const result = await Promise.race([
-                      generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [], calcolaVanoPrezzo, getVaniAttivi }, { returnBlob: true }),
-                      new Promise((_r, rej) => setTimeout(() => rej(new Error("Timeout PDF (25s)")), 25000)),
-                    ]);
-                    if (result && typeof result === "object" && "blob" in result) {
-                      pdfBlob = (result as any).blob;
-                      pdfFilename = (result as any).filename;
-                    }
-                  } catch(e: any) {
-                    console.error("[PDF fail]", e);
-                    // PDF fallito ma link OK - vado avanti col solo link
-                  }
-
-                  // ─── 3. MARCA COMMESSA COME PREVENTIVO INVIATO (memoria + DB) ───
-                  try {
-                    const nowIso = new Date().toISOString();
-                    const today = nowIso.split("T")[0];
-                    setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" } : cm));
-                    setSelectedCM((prev: any) => prev ? ({ ...prev, preventivoInviato: true, preventivoInviatoAt: nowIso, dataPreventivoInvio: today, fase: "preventivo" }) : prev);
-                    // Persisti in DB - non bloccante: se fallisce, lo stato locale comunque vale
-                    const totaleNum = (c.totalePreventivo || (typeof calcolaTotaleCommessa === "function" ? calcolaTotaleCommessa(c) : 0)) || 0;
-                    markPreventivoInviato(c.id, totaleNum, "preventivo")
-                      .then(ok => { if (!ok) console.warn("[DB] markPreventivoInviato non riuscito"); })
-                      .catch(err => console.warn("[DB] markPreventivoInviato error:", err));
-                  } catch(e) { console.error("[setCantieri fail]", e); }
-
-                  // ─── 4. INVIO UNIFICATO ───
-                  // Costruisci messaggio testuale con link
-                  const clienteNome = (c.cliente || "Cliente").split(" ")[0]; // primo nome
-                  const messaggio = "Ciao " + clienteNome + ", ecco il preventivo " + (c.code || "") + ".\n\nClicca qui per vederlo, accettarlo o richiedere modifiche:\n" + linkPubblico + "\n\nGrazie,\n" + (aziendaInfo?.ragione || aziendaInfo?.nome || "");
-
-                  // ─── v16: WhatsApp link diretto (no piu' navigator.share) ───
-                  // Carico PDF su Supabase Storage per avere URL pubblico cliccabile
-                  let pdfPublicUrl: string | null = null;
-                  if (pdfBlob) {
-                    try {
-                      // Estraggo token dal linkPubblico (e' tipo /p/abc123)
-                      const tokenMatch = linkPubblico.match(/\/p\/([^/?#]+)/);
-                      const token = tokenMatch ? tokenMatch[1] : "preventivo";
-                      pdfPublicUrl = await Promise.race([
-                        uploadPreventivoPdf(pdfBlob, token, c.code || "preventivo"),
-                        new Promise<null>((res) => setTimeout(() => res(null), 12000)),
-                      ]);
-                      if (!pdfPublicUrl) console.warn("[v16] upload PDF fallito o timeout - mando solo link accetta");
-                    } catch(e) { console.warn("[v16] upload PDF crash:", e); }
-                  }
-
-                  // Costruisco messaggio WhatsApp con 1 o 2 link
-                  const ragione = aziendaInfo?.ragione || aziendaInfo?.nome || "";
-                  let msgWA = "Ciao " + clienteNome + ",\n\nEcco il preventivo " + (c.code || "") + ".";
-                  if (pdfPublicUrl) {
-                    msgWA += "\n\nPDF: " + pdfPublicUrl;
-                  }
-                  msgWA += "\n\nPer accettare o richiedere modifiche:\n" + linkPubblico;
-                  if (ragione) msgWA += "\n\nGrazie,\n" + ragione;
-
-                  // Apro WhatsApp con messaggio precompilato
-                  const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                  let waUrl = "";
-                  if (tel) {
-                    // Se ha telefono: wa.me/<numero> apre chat diretta
-                    const numero = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
-                    waUrl = "https://wa.me/" + numero + "?text=" + encodeURIComponent(msgWA);
-                  } else {
-                    // Senza telefono: api.whatsapp.com chiede al cliente di scegliere il contatto
-                    waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msgWA);
-                  }
-                  window.open(waUrl, "_blank");
-
-                  setCcDone && setCcDone("Preventivo inviato");
-                  setTimeout(() => { setCcDone && setCcDone(null); setPrevWorkspace && setPrevWorkspace(false); }, 2000);
-                } finally {
-                  setPdfBusy(null);
-                }
-              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: pdfBusy === "invia" ? "#0D1F1F" : "linear-gradient(135deg, #0D1F1F 0%, #28A0A0 100%)", color: "#fff", fontSize: 14, fontWeight: 800, cursor: pdfBusy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 14px rgba(40,160,160,0.25)", opacity: pdfBusy && pdfBusy !== "invia" ? 0.5 : 1 }}>{pdfBusy === "invia" ? <><span style={{ display: "inline-block", width: 14, height: 14, border: "2.5px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "mastrospin 0.8s linear infinite", marginRight: 8, verticalAlign: "middle" }} /> Generazione PDF e link...</> : <><I d={ICO.upload} /> INVIA PREVENTIVO AL CLIENTE {"->"}</>}</button>
-              <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Invia PDF via WhatsApp. La firma verrà richiesta solo dopo la conferma del cliente.</div>
+              <button onClick={async () => {
+                generaPreventivoPDF(c);
+                const url = await generaPreventivoCondivisibile(c);
+                updCM("preventivoInviato", true);
+                updCM("dataPreventivoInvio", new Date().toISOString().split("T")[0]);
+                if (url) updCM("linkPreventivo", url);
+                setCcDone("📐 PDF scaricato + link firma inviato!"); setTimeout(() => setCcDone(null), 3000);
+              }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: "#25d366", color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA →</button>
+              <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>Scarica PDF e apre WhatsApp con link firma elettronica</div>
               <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 8 }}>
                 <span onClick={() => { updCM("preventivoInviato", true); setCcDone("✓ Completato"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000); }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>✓ Segna completato</span>
               </div>
@@ -3535,30 +639,16 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     const storico = await getFascicoliCommessa(c.id);
                     setFascicoliStorico(storico);
                   }}
-                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "1.5px solid #28A0A0", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                 >
-                  <span style={{ fontSize: 16 }}><I d={ICO.ruler} /></span> Documenti tecnici commessa
+                  <span style={{ fontSize: 16 }}><I d={ICO.ruler} /></span> Fascicolo Geometra
                 </button>
-                <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico Uw · Link cliente firma · Excel pratica ENEA</div>
+                <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginTop: 4 }}>PDF tecnico · Link cliente · Excel ENEA</div>
               </div>
               {/* Avanti dopo invio · solo se non ancora confermato */}
-              {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (() => {
-                const accettato = rispostaCliente?.risposta === "accettato";
-                return (
-                  <div style={{ marginTop: 8 }}>
-                    {accettato && (
-                      <div style={{ background: "linear-gradient(135deg, #DDF5E6 0%, #C8EBD3 100%)", border: "1px solid #28A268", borderRadius: 12, padding: "10px 14px", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ fontSize: 22 }}>✓</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "#0E5E33", letterSpacing: 0.3 }}>CLIENTE HA ACCETTATO</div>
-                          <div style={{ fontSize: 10, color: "#0E5E33", opacity: 0.85, marginTop: 1 }}>{rispostaCliente?.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT") : ""}{rispostaCliente?.risposta_ip ? " · IP " + rispostaCliente.risposta_ip : ""}</div>
-                        </div>
-                      </div>
-                    )}
-                    <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: accettato ? "linear-gradient(135deg, #28A268 0%, #1F8050 100%)" : T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: accettato ? "0 4px 14px rgba(40,162,104,0.35)" : undefined, animation: accettato ? "mastropulse 1.6s infinite" : undefined }}><I d={ICO.edit} /> {accettato ? "→ CREA CONFERMA D’ORDINE" : "€+ AVANTI → Conferma ordine"}</button>
-                  </div>
-                );
-              })()}
+              {c.preventivoInviato && faseIndex(c.fase) < faseIndex("conferma") && (
+                <button onClick={() => { setFaseTo(c.id, "conferma"); setPrevWorkspace(false); setCcDone(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}><I d={ICO.edit} />€+ AVANTI → Conferma ordine</button>
+              )}
               {ccDone && <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
             </div>
           )}
@@ -3948,7 +1038,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         <div style={{ padding: "calc(env(safe-area-inset-top, 0px) + 8px) 12px 0", background: "#E4F2F2" }}>
           <div style={{
             background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-            borderRadius: 22, padding: "34px 22px 70px",
+            borderRadius: 22, padding: "14px 16px 14px",
             position: "relative", overflow: "hidden",
             boxShadow: "0 10px 26px rgba(31,120,120,0.35), inset 0 2px 3px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.12)",
             marginBottom: 10,
@@ -3957,7 +1047,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "50%", background: "linear-gradient(180deg, rgba(255,255,255,0.2), transparent)", borderRadius: "22px 22px 0 0", pointerEvents: "none" }} />
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
-              <div onClick={() => { setSelectedRilievo(null); setCmSubTab("rilievi"); setSelectedCM(null); }} style={{
+              <div onClick={() => { setSelectedRilievo(null); setSelectedCM(null); setCmSubTab("rilievi"); }} style={{
                 width: 36, height: 36, borderRadius: 10,
                 background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.25)",
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -3985,24 +1075,31 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               )}
             </div>
 
+            {/* Azioni secondarie: riepilogo + PDF */}
+            <div style={{ display: "flex", gap: 6, marginTop: 10, position: "relative", zIndex: 2 }}>
+              <div onClick={() => setShowRiepilogo(true)} style={{
+                flex: 1, padding: "8px 10px", borderRadius: 10,
+                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                cursor: "pointer",
+                color: "#fff", fontSize: 11, fontWeight: 700,
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
+                Riepilogo
+              </div>
+              <div onClick={exportPDF} style={{
+                flex: 1, padding: "8px 10px", borderRadius: 10,
+                background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                cursor: "pointer",
+                color: "#fff", fontSize: 11, fontWeight: 700,
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Esporta PDF
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Contact actions - hide when selectedRilievo active (v67) */}
-        {!selectedRilievo && (
-        <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
-          {[
-            { ico: ICO.phone, label: "Chiama",   col: T.grn,  act: () => window.location.href=`tel:${c.telefono || ""}` },
-            { ico: ICO.map,   label: "Naviga",   col: T.blue, act: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(c.indirizzo || "")}`) },
-            { ico: ICO.send,  label: "WhatsApp", col: "#25d366", act: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Commessa ${c.code} - ${c.cliente}`)}`) },
-          ].map((a, i) => (
-            <div key={i} onClick={a.act} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
-              <Ico d={a.ico} s={18} c={a.col} />
-              <span style={{ fontSize: 10, fontWeight: 600, color: T.sub }}>{a.label}</span>
-            </div>
-          ))}
-        </div>
-        )}
 
         {/* Banner rilievo info - modifica riparazione */}
         {r?.motivoModifica && (
@@ -4025,11 +1122,13 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         {/* Info badges: riparazione / nuova / sistema / salita / mezzo / piano / foro / telefono */}
         <div style={{ padding: "0 12px 8px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.wrench} /> Riparazione</span>}
+          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>Nuova</span>}
           {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
           {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
           {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>{c.mezzoSalita}</span>}
           {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
           {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
+          {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}><I d={ICO.phone} /> {c.telefono}</span>}
         </div>
 
         {/* Note commessa */}
@@ -4059,9 +1158,20 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           </div>
         )}
 
+        {/* Info badges */}
+        <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.wrench} /> Riparazione</span>}
+          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>Nuova</span>}
+          {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
+          {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
+          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>{c.mezzoSalita}</span>}
+          {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
+          {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
+          {c.telefono && <span onClick={() => window.location.href=`tel:${c.telefono}`} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}><I d={ICO.phone} /> {c.telefono}</span>}
+        </div>
         {c.note && <div style={{ padding: "0 16px", marginBottom: 6 }}><div style={{ padding: "8px 12px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 12, color: T.sub, lineHeight: 1.4 }}><I d={ICO.fileText} /> {c.note}</div></div>}
 
-        {/* Stato lavoro inline · replaces old phase panels */}
+        {/* Centro Comando inline · replaces old phase panels */}
         {(() => {
           const vaniCC = getVaniAttivi(c);
           const rilieviCC = c.rilievi || [];
@@ -4104,63 +1214,35 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           const progCC = Math.round((doneCC / stepsCC.length) * 100);
 
           return (
-            <div style={{ margin: "14px 16px 8px", padding: "18px 16px", background: "#fff", borderRadius: 16, border: "1px solid #E4F2F2", boxShadow: "0 2px 8px rgba(40,160,160,0.08)" }}>
-              {/* Stato lavoro header - hide when selectedRilievo (v67) */}
-              {!selectedRilievo && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 14 }}>
+            <div style={{ margin: "8px 16px 4px" }}>
+              {/* Centro Comando header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#28A0A0", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(40,160,160,0.3)" }}>
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "#0D1F1F", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28A0A0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                   </div>
-                  <span style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.3px" }}>Stato lavoro</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "#0D1F1F", letterSpacing: "-0.02em" }}>Centro Comando</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 800, color: "#1A7A7A", background: "#fff", padding: "4px 11px", borderRadius: 10, boxShadow: "0 2px 4px rgba(0,0,0,0.12)" }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#28A0A0", background: "rgba(40,160,160,0.1)", padding: "3px 10px", borderRadius: 8 }}>{doneCC}/{stepsCC.length} · {progCC}%</span>
               </div>
-              )}
-              {/* Progress dots con label - hide when selectedRilievo (v67) */}
-              {!selectedRilievo && (
-              <div style={{ display: "flex", gap: 0, marginBottom: 14, marginTop: 4, justifyContent: "space-between", alignItems: "flex-start", padding: 0, width: "100%" }}>
+              {/* Progress dots con label */}
+              <div style={{ display: "flex", gap: 2, marginBottom: 6, justifyContent: "center", alignItems: "flex-end" }}>
                 {stepsCC.map((s, i) => (
-                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 0, flex: "1 1 0", minWidth: 0 }}>
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                       <div style={{
-                        width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-                        background: s.skipped ? "#ff9500" : s.done ? "#28A0A0" : i === curIdxCC ? T.acc : "#F0EDE5",
+                        width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10,
+                        background: s.skipped ? "#ff9500" : s.done ? "#28A0A0" : i === curIdxCC ? T.acc : T.bg,
                         color: s.done || s.skipped || i === curIdxCC ? "#fff" : T.sub, fontWeight: 700,
-                        boxShadow: i === curIdxCC ? "0 2px 8px rgba(40,160,160,0.35)" : "none",
-                        border: i === curIdxCC ? "2px solid #fff" : s.done ? "2px solid #28A0A0" : "2px solid transparent",
-                      }}>{s.skipped ? <I d={ICO.check} s={14} c="#fff" /> : s.done ? <I d={ICO.check} s={14} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={14} c={i === curIdxCC ? "#fff" : T.sub} />}</div>
-                      <div style={{ fontSize: 9, color: i === curIdxCC ? "#0D1F1F" : s.done ? "#0F6E56" : T.sub, fontWeight: i === curIdxCC ? 800 : 600, whiteSpace: "nowrap", maxWidth: 42, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center", marginTop: 4 }}>{s.l}</div>
+                      }}>{s.skipped ? <I d={ICO.check} s={10} c="#fff" /> : s.done ? <I d={ICO.check} s={10} c="#fff" /> : <Ico d={ICO[s.icon as keyof typeof ICO] || ICO.edit} s={10} c="#fff" />}</div>
+                      <div style={{ fontSize: 7, color: i === curIdxCC ? T.acc : s.done ? "#28A0A0" : T.sub, fontWeight: i === curIdxCC ? 800 : 500, whiteSpace: "nowrap", maxWidth: 32, overflow: "hidden", textOverflow: "ellipsis", textAlign: "center" }}>{s.l}</div>
                     </div>
-                    {i < stepsCC.length - 1 && <div style={{ flex: 1, minWidth: 4, height: 2, background: s.done ? "#28A0A0" : T.bdr, borderRadius: 2, marginBottom: 18, marginTop: 0 }} />}
+                    {i < stepsCC.length - 1 && <div style={{ width: 6, height: 2, background: s.done ? "#28A0A0" : T.bdr, marginBottom: 12 }} />}
                   </div>
                 ))}
               </div>
-              )}
-              {/* Mini-card Rilievo collassata — visibile quando fase > sopralluogo */}
-              {curIdxCC > 0 && rilieviCC.length > 0 && (
-                <div onClick={() => { setPrevWorkspace(true); setPrevTab("sopralluogo"); }} style={{
-                  background: "#fff", borderRadius: 14, border: "1px solid " + T.bdr,
-                  padding: "12px 14px", marginBottom: 10, cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 12,
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 10, background: "#28A0A015", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <I d={ICO.mapPin} s={14} c="#28A0A0" />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#0D1F1F" }}>Rilievo</span>
-                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 5, background: "#28A0A0", color: "#fff" }}>✓ FATTO</span>
-                    </div>
-                    <div style={{ fontSize: 10, color: T.sub }}>{rilieviCC.length} rilievi · {vaniCC.length} vani · tap per consultare</div>
-                  </div>
-                  <I d={ICO.chevronRight} s={14} c={T.sub} />
-                </div>
-              )}
-
-              {/* Current action - hide when selectedRilievo (v67) */}
-              {!selectedRilievo && curCC && (
+              {/* Current action */}
+              {curCC && (
                 <div style={{ background: T.card, borderRadius: 14, border: `1.5px solid #C8E4E4`, padding: "14px 16px", boxShadow: "0 2px 12px rgba(40,160,160,0.08)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(40,160,160,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -4183,15 +1265,20 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   {ccDone && <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#28A0A018", border: "1px solid #28A0A040", fontSize: 12, fontWeight: 700, color: "#28A0A0", textAlign: "center" }}>{ccDone}</div>}
 
                   {/* Skipped steps log */}
-                  <PassaggiSaltati
-                    skipLog={c.skipLog || []}
-                    steps={stepsCC}
-                    onRiprendi={(si, faseId) => {
-                      setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: (cm.skipLog || []).filter((_, i) => i !== si), fase: faseId } : cm));
-                      setSelectedCM((prev: any) => ({ ...prev, skipLog: (prev.skipLog || []).filter((_: any, i: number) => i !== si), fase: faseId }));
-                      setCcDone("Riaperto"); setTimeout(() => setCcDone(null), 2500);
-                    }}
-                  />
+                  {(c.skipLog || []).length > 0 && (
+                    <div style={{ marginBottom: 8, padding: "6px 10px", borderRadius: 8, background: "#ff950010", border: "1px solid #ff950030" }}>
+                      <div style={{ fontSize: 9, fontWeight: 800, color: "#ff9500", textTransform: "uppercase", marginBottom: 3 }}>Passaggi saltati</div>
+                      {(c.skipLog || []).map((skip, si) => {
+                        const stepInfo = stepsCC.find(s => s.id === skip.fase);
+                        return (
+                          <div key={si} style={{ fontSize: 10, color: T.text, display: "flex", gap: 6, padding: "2px 0" }}>
+                            <span style={{ color: "#ff9500", fontWeight: 700 }}>⏭ {stepInfo?.l || skip.fase}</span>
+                            <span style={{ color: T.sub, flex: 1 }}>{skip.motivo || "·"}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/*  SOPRALLUOGO · Lista rilievi + Crea nuovo  */}
                   {curCC.id === "sopralluogo" && (
@@ -4203,41 +1290,36 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                             const vaniDelRil = (ril.vani || []).length;
                             const tipoR = ril.tipo || "provvisorio";
                             const tipoMap: any = {
-                              provvisorio: { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
-                              verificato:  { l: "Verificato",  c: "#0A2842", bg: "#9FC6F0" },
-                              definitivo:  { l: "Definitivo",  c: "#04342C", bg: "#A5DCC6" },
-                              da_rivedere: { l: "Da rivedere", c: "#4B1515", bg: "#F7B5B5" },
-                              indicativa:  { l: "Provvisorio", c: "#412402", bg: "#FAC775" },
-                              personalizzato: { l: "Personalizzato", c: "#26215C", bg: "#B5B0E8" },
+                              provvisorio: { l: "Provvisorio", c: "#D08008", bg: "#D0800815" },
+                              verificato:  { l: "Verificato",  c: "#D08008", bg: "#D0800815" },
+                              definitivo:  { l: "Definitivo",  c: "#28A0A0", bg: "#28A0A015" },
+                              da_rivedere: { l: "Da rivedere", c: "#DC4444", bg: "#DC444415" },
+                              indicativa:  { l: "Provvisorio", c: "#D08008", bg: "#D0800815" },
                             };
                             const tt = tipoMap[tipoR] || tipoMap.provvisorio;
                             return (
-                              <React.Fragment key={ril.id}>
-                              <div onClick={(e) => {
-                                e.stopPropagation();
-                                console.log("[CLICK RILIEVO]", ril.id, "vani:", (ril.vani||[]).length);
+                              <div key={ril.id} onClick={() => {
                                 setSelectedRilievo(ril);
                                 setCmSubTab("sopralluoghi");
                                 // Scroll alla sezione vani dopo render
                                 setTimeout(() => {
-                                  const el = document.getElementById("cm-tab-vani") || document.querySelector('[data-tab="sopralluoghi"]');
-                                  if (el) (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
-                                  else window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-                                }, 150);
+                                  const el = document.getElementById("cm-tab-vani");
+                                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }, 100);
                               }} style={{
-                                background: tt.bg, border: "none", borderRadius: 12,
-                                padding: "12px 14px", marginBottom: 8, cursor: "pointer", boxShadow: `0 2px 8px ${tt.c}20`,
+                                background: T.card, border: `1.5px solid ${T.bdr}`, borderRadius: 10,
+                                padding: "10px 12px", marginBottom: 6, cursor: "pointer",
                                 display: "flex", alignItems: "center", gap: 10,
                               }}>
-                                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.28)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12l4-4"/><path d="M16 8l2 2"/><path d="M8 12a4 4 0 1 1 4 4"/><circle cx="12" cy="12" r="1.5" fill="#fff"/></svg>
+                                <div style={{ width: 34, height: 34, borderRadius: 8, background: tt.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                  <I d={ICO.ruler} s={16} c={tt.c} />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}>R{ril.n || ri + 1}</span>
-                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 9px", borderRadius: 6, background: "#fff", color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.4px" }}>{tt.l}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>R{ril.n || ri + 1}</span>
+                                    <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5, background: tt.bg, color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{tt.l}</span>
                                   </div>
-                                  <div style={{ fontSize: 11, color: "#fff", opacity: 0.9, marginTop: 2, fontWeight: 600 }}>
+                                  <div style={{ fontSize: 10, color: T.sub, marginTop: 2 }}>
                                     {ril.data ? new Date(ril.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" }) : "·"}
                                     {ril.rilevatore ? ` · ${ril.rilevatore}` : ""}
                                     {` · ${vaniDelRil} ${vaniDelRil === 1 ? "vano" : "vani"}`}
@@ -4245,635 +1327,27 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                                 </div>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.sub} strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
                               </div>
-
-                              {/* v66 · Dettaglio rilievo espanso · Design mockup v8 */}
-                              {selectedRilievo?.id === ril.id && (() => {
-                                // --- Tipo edificio: lettura identica a MODAL AGGIUNGI VANO COMPLESSO ---
-                                const tEdifV66 = (c as any).tipoEdificio || (c as any).tipo_edificio || "";
-                                const tEdifLabelV66 = (() => {
-                                  switch (tEdifV66) {
-                                    case "palazzo": return "Palazzo residenziale";
-                                    case "condominio": return "Condominio";
-                                    case "scuola": return "Scuola";
-                                    case "ospedale": return "Ospedale / Clinica";
-                                    case "ufficio": return "Ufficio / Direzionale";
-                                    case "hotel": return "Hotel / RSA";
-                                    case "centro_comm": return "Centro commerciale";
-                                    case "industriale": return "Capannone / Industriale";
-                                    case "personalizzato": return "Personalizzato";
-                                    default: return "Casa singola";
-                                  }
-                                })();
-                                const tEdifLabelsV66 = (() => {
-                                  switch (tEdifV66) {
-                                    case "palazzo": return { l1: "Scala", l2: "Piano", l3: "Interno" };
-                                    case "condominio": return { l1: "", l2: "Piano", l3: "Interno" };
-                                    case "scuola": return { l1: "Edificio/Plesso", l2: "Piano", l3: "Aula" };
-                                    case "ospedale": return { l1: "Padiglione", l2: "Piano", l3: "Reparto" };
-                                    case "ufficio": return { l1: "Edificio", l2: "Piano", l3: "Ufficio" };
-                                    case "hotel": return { l1: "Edificio", l2: "Piano", l3: "Camera" };
-                                    case "centro_comm": return { l1: "", l2: "Livello", l3: "Negozio" };
-                                    case "industriale": return { l1: "Corpo", l2: "", l3: "Settore" };
-                                    case "personalizzato": return { l1: (c as any).livello1Label || "Livello 1", l2: (c as any).livello2Label || "Livello 2", l3: (c as any).livello3Label || "Livello 3" };
-                                    default: return { l1: "Zona", l2: "Piano", l3: "Locale" };
-                                  }
-                                })();
-                                const tEdifStructV66 = [tEdifLabelsV66.l1, tEdifLabelsV66.l2, tEdifLabelsV66.l3].filter(Boolean).join(" · ");
-
-                                // --- KPI ---
-                                const vaniCountV66 = (ril.vani || []).length;
-                                const vaniCompletiV66 = (ril.vani || []).filter(v => Object.values(v.misure || {}).filter(x => (x as number) > 0).length >= 6).length;
-                                const fotoCountV66 = (ril.vani || []).reduce((a, v) => a + Object.keys(v.foto || {}).length, 0);
-
-                                // --- Titolo dinamico prossima azione ---
-                                const nextActionTitleV66 = vaniCountV66 === 0 ? "Aggiungi il primo vano" : (vaniCompletiV66 < vaniCountV66 ? "Completa le misure" : "Rilievo completo");
-                                const nextActionDescV66 = vaniCountV66 === 0 ? "Compila 8 misure per ogni vano. Inizia dal primo." : `${vaniCompletiV66}/${vaniCountV66} vani completi · continua il rilievo`;
-                                const nextActionBtnV66 = vaniCountV66 === 0 ? "AGGIUNGI PRIMO VANO" : "APRI RILIEVO";
-
-                                return (
-                                <div style={{
-                                  marginTop: 0, marginBottom: 10,
-                                  background: "transparent",
-                                  display: "flex", flexDirection: "column", gap: 12,
-                                }}>
-                                  {/* MINI STEPPER 8 puntini */}
-                                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px" }}>
-                                    <div style={{ fontSize: 9.5, fontWeight: 900, color: T.sub, letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
-                                    <div style={{ display: "flex", gap: 3, flex: 1 }}>
-                                      <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
-                                      {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
-                                    </div>
-                                    <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
-                                  </div>
-
-                                  {/* BIG ACTION viola */}
-                                  <div style={{
-                                    borderRadius: 22, padding: "20px 18px 18px",
-                                    background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
-                                    color: "#fff",
-                                    boxShadow: "0 14px 32px rgba(127,119,221,0.35), 0 6px 12px rgba(127,119,221,0.2)",
-                                    position: "relative", overflow: "hidden",
-                                    display: "flex", flexDirection: "column",
-                                  }}>
-                                    {/* glow decorativi */}
-                                    <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" }} />
-                                    <div style={{ position: "absolute", bottom: -60, left: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)", pointerEvents: "none" }} />
-
-                                    {/* Tag */}
-                                    <div style={{
-                                      display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-                                      padding: "5px 11px", background: "rgba(255,255,255,0.22)",
-                                      borderRadius: 50, fontSize: 8.5, fontWeight: 900, letterSpacing: "1.1px",
-                                      textTransform: "uppercase" as any, position: "relative",
-                                    }}>
-                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
-                                      Prossima mossa
-                                    </div>
-
-                                    {/* Titolo */}
-                                    <div style={{
-                                      fontSize: 22, fontWeight: 900, marginTop: 12,
-                                      letterSpacing: "-0.5px", lineHeight: 1.15,
-                                      textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
-                                    }}>{nextActionTitleV66}</div>
-
-                                    {/* Desc */}
-                                    <div style={{
-                                      fontSize: 11.5, opacity: 0.94, marginTop: 6,
-                                      lineHeight: 1.4, fontWeight: 500, position: "relative",
-                                    }}>{nextActionDescV66}</div>
-
-                                    {/* Pill tipo edificio */}
-                                    <div style={{
-                                      marginTop: 12, background: "rgba(255,255,255,0.18)",
-                                      borderRadius: 12, padding: "10px 12px",
-                                      display: "flex", alignItems: "center", gap: 10, position: "relative",
-                                    }}>
-                                      <div style={{
-                                        width: 36, height: 36, borderRadius: 11,
-                                        background: "rgba(255,255,255,0.22)",
-                                        display: "flex", alignItems: "center", justifyContent: "center",
-                                        flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
-                                      }}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
-                                      </div>
-                                      <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 8.5, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
-                                        <div style={{ fontSize: 13, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV66}</div>
-                                        {tEdifStructV66 && <div style={{ fontSize: 10, opacity: 0.88, marginTop: 1, fontWeight: 600 }}>{tEdifStructV66}</div>}
-                                      </div>
-                                    </div>
-
-                                    {/* Meta tiles */}
-                                    <div style={{
-                                      marginTop: 12, display: "grid",
-                                      gridTemplateColumns: fotoCountV66 > 0 ? "1fr 1fr 1fr" : "1fr 1fr",
-                                      gap: 8, position: "relative",
-                                    }}>
-                                      <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "9px 11px" }}>
-                                        <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Vani</div>
-                                        <div style={{ fontSize: 17, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>{vaniCompletiV66}/{vaniCountV66 || "—"}</div>
-                                        <div style={{ fontSize: 9.5, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>{vaniCountV66 === 0 ? "da configurare" : (vaniCompletiV66 === vaniCountV66 ? "tutti OK" : "in corso")}</div>
-                                      </div>
-                                      <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "9px 11px" }}>
-                                        <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Misure</div>
-                                        <div style={{ fontSize: 17, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>{vaniCompletiV66 * 8}/{vaniCountV66 * 8 || 8}</div>
-                                        <div style={{ fontSize: 9.5, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>per vano</div>
-                                      </div>
-                                      {fotoCountV66 > 0 && (
-                                        <div style={{ background: "rgba(255,255,255,0.18)", borderRadius: 12, padding: "9px 11px" }}>
-                                          <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Foto</div>
-                                          <div style={{ fontSize: 17, fontWeight: 900, marginTop: 2, letterSpacing: "-0.3px" }}>{fotoCountV66}</div>
-                                          <div style={{ fontSize: 9.5, opacity: 0.85, marginTop: 1, fontWeight: 600 }}>totali</div>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* BIG BTN — onClick IDENTICO all'originale */}
-                                    <button onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedRilievo(ril);
-                                      if (ril.complesso && (ril.vani || []).length === 0) {
-                                        setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza(""); setNvCustom([]);
-                                        setShowAggiungiVanoModal(true);
-                                        return;
-                                      }
-                                      const vaniR = ril.vani || [];
-                                      if (vaniR.length > 0) {
-                                        setSelectedVano(vaniR[0]);
-                                        setVanoStep(0);
-                                      } else {
-                                        const nuovoVano = { id: Date.now(), nome: "Vano 1", tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
-                                        const updR = { ...ril, vani: [...(ril.vani || []), nuovoVano] };
-                                        setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === ril.id ? updR : r2), aggiornato: "Oggi" } : cm));
-                                        setSelectedCM(prev => ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === ril.id ? updR : r2) }));
-                                        setSelectedRilievo(updR);
-                                        setSelectedVano(nuovoVano);
-                                        setVanoStep(0);
-                                      }
-                                    }} style={{
-                                      marginTop: 14, width: "100%", padding: 15,
-                                      background: "#fff", color: "#3C3489",
-                                      border: "none", borderRadius: 14,
-                                      fontSize: 13.5, fontWeight: 900, letterSpacing: "0.4px",
-                                      cursor: "pointer", fontFamily: "inherit",
-                                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                                      boxShadow: "0 6px 16px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
-                                      position: "relative",
-                                    }}>
-                                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                      {nextActionBtnV66}
-                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                    </button>
-                                  </div>
-
-                                  {/* MENU 4 CENTRI */}
-                                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-                                    {/* CLIENTE - placeholder v67 */}
-                                    <button onClick={(e) => { e.stopPropagation(); }} style={{
-                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                                      padding: "11px 4px", background: "#fff",
-                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
-                                      cursor: "pointer", fontFamily: "inherit",
-                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
-                                    }}>
-                                      <div style={{ width: 30, height: 30, borderRadius: 9,
-                                        background: "linear-gradient(145deg, rgba(93,202,165,0.22), rgba(29,158,117,0.12))",
-                                        color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center",
-                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
-                                      }}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                      </div>
-                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Cliente</span>
-                                    </button>
-
-                                    {/* ALLEGATI - per ora fotoInputRef (preserva onClick Foto) */}
-                                    <button onClick={(e) => { e.stopPropagation(); fotoInputRef.current?.click(); }} style={{
-                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                                      padding: "11px 4px", background: "#fff",
-                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
-                                      cursor: "pointer", fontFamily: "inherit",
-                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
-                                    }}>
-                                      <div style={{ width: 30, height: 30, borderRadius: 9,
-                                        background: "linear-gradient(145deg, rgba(175,169,236,0.22), rgba(127,119,221,0.12))",
-                                        color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center",
-                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
-                                      }}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                                      </div>
-                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Allegati</span>
-                                      {fotoCountV66 > 0 && (
-                                        <div style={{ position: "absolute", top: 6, right: 8, fontSize: 9, fontWeight: 900, background: "linear-gradient(145deg, #E24B4A, #C53030)", color: "#fff", padding: "1px 6px", borderRadius: 50, boxShadow: "0 2px 4px rgba(226,75,74,0.3)", minWidth: 16, textAlign: "center" as any }}>{fotoCountV66}</div>
-                                      )}
-                                    </button>
-
-                                    {/* NOTE - placeholder v67 */}
-                                    <button onClick={(e) => { e.stopPropagation(); }} style={{
-                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                                      padding: "11px 4px", background: "#fff",
-                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
-                                      cursor: "pointer", fontFamily: "inherit",
-                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
-                                    }}>
-                                      <div style={{ width: 30, height: 30, borderRadius: 9,
-                                        background: "linear-gradient(145deg, rgba(250,199,117,0.25), rgba(239,159,39,0.12))",
-                                        color: "#EF9F27", display: "flex", alignItems: "center", justifyContent: "center",
-                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
-                                      }}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                                      </div>
-                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Note</span>
-                                    </button>
-
-                                    {/* AZIONI - toggle mini menu con onClick originali */}
-                                    <button onClick={(e) => { e.stopPropagation(); setAzioniOpenV66(v => !v); }} style={{
-                                      display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                                      padding: "11px 4px", background: "#fff",
-                                      border: "1px solid rgba(200,228,228,0.4)", borderRadius: 13,
-                                      cursor: "pointer", fontFamily: "inherit",
-                                      boxShadow: "0 2px 6px rgba(13,31,31,0.04)", position: "relative",
-                                    }}>
-                                      <div style={{ width: 30, height: 30, borderRadius: 9,
-                                        background: "linear-gradient(145deg, rgba(133,183,235,0.22), rgba(55,138,221,0.12))",
-                                        color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center",
-                                        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.6)",
-                                      }}>
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/><path d="M1 12h6m6 0h6"/></svg>
-                                      </div>
-                                      <span style={{ fontSize: 9.5, fontWeight: 900, color: "#0F2525", letterSpacing: "0.2px" }}>Azioni</span>
-                                    </button>
-                                  </div>
-
-                                  {/* AZIONI · pannello inline espandibile (mini menu temporaneo) */}
-                                  {azioniOpenV66 && (
-                                    <div style={{
-                                      background: "#fff", border: "1px solid rgba(200,228,228,0.4)",
-                                      borderRadius: 14, padding: 10,
-                                      boxShadow: "0 3px 10px rgba(13,31,31,0.06)",
-                                      display: "flex", flexDirection: "column", gap: 6,
-                                    }}>
-                                      {/* Riepilogo */}
-                                      <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(ril); setShowRiepilogo(true); setAzioniOpenV66(false); }} style={{
-                                        display: "flex", alignItems: "center", gap: 10,
-                                        padding: "10px 12px", background: "transparent",
-                                        border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
-                                        cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
-                                      }}>
-                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(55,138,221,0.15), rgba(55,138,221,0.08))", color: "#378ADD", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Riepilogo rilievo</div>
-                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Vedi scheda completa</div>
-                                        </div>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                                      </button>
-
-                                      {/* PDF */}
-                                      <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(ril); exportPDF(); setAzioniOpenV66(false); }} style={{
-                                        display: "flex", alignItems: "center", gap: 10,
-                                        padding: "10px 12px", background: "transparent",
-                                        border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
-                                        cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
-                                      }}>
-                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(29,158,117,0.15), rgba(29,158,117,0.08))", color: "#1D9E75", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Esporta PDF rilievo</div>
-                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Scheda tecnica per officina</div>
-                                        </div>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                                      </button>
-
-                                      {/* Duplica */}
-                                      <button onClick={(e) => {
-                                        e.stopPropagation();
-                                        const rilieviCor = selectedCM?.rilievi || [];
-                                        const nextN = rilieviCor.length + 1;
-                                        const vaniCopia = (ril.vani || []).map(v => ({
-                                          ...v,
-                                          id: Date.now() + Math.floor(Math.random()*1000) + (v.id || 0),
-                                          misure: { ...(v.misure || {}) },
-                                          foto: { ...(v.foto || {}) },
-                                          accessori: v.accessori ? {
-                                            tapparella: { ...(v.accessori.tapparella || { attivo: false }) },
-                                            persiana: { ...(v.accessori.persiana || { attivo: false }) },
-                                            zanzariera: { ...(v.accessori.zanzariera || { attivo: false }) },
-                                          } : { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
-                                        }));
-                                        const nuovoR = {
-                                          id: Date.now(),
-                                          n: nextN,
-                                          data: new Date().toISOString().split("T")[0],
-                                          tipo: "da_rivedere",
-                                          rilevatore: ril.rilevatore || "",
-                                          note: `Duplicato da R${ril.n || ""}`,
-                                          vani: vaniCopia,
-                                          duplicatoDa: ril.id,
-                                        };
-                                        setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: [...(cm.rilievi||[]), nuovoR], aggiornato: "Oggi" } : cm));
-                                        setSelectedCM(prev => prev ? ({ ...prev, rilievi: [...(prev.rilievi||[]), nuovoR] }) : prev);
-                                        setSelectedRilievo(nuovoR);
-                                        setAzioniOpenV66(false);
-                                      }} style={{
-                                        display: "flex", alignItems: "center", gap: 10,
-                                        padding: "10px 12px", background: "transparent",
-                                        border: "none", borderBottom: "1px solid rgba(200,228,228,0.3)",
-                                        cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "left" as any,
-                                      }}>
-                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(127,119,221,0.15), rgba(127,119,221,0.08))", color: "#7F77DD", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1 -2 -2V4a2 2 0 0 1 2 -2h9a2 2 0 0 1 2 2v1"/></svg>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Duplica rilievo</div>
-                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Crea R{((selectedCM?.rilievi||[]).length)+1} partendo da questo</div>
-                                        </div>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                                      </button>
-
-                                      {/* Segnala problema */}
-                                      <button onClick={(e) => {
-                                        e.stopPropagation();
-                                        setProblemaForm({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" });
-                                        setShowProblemaModal(true);
-                                        setAzioniOpenV66(false);
-                                      }} style={{
-                                        display: "flex", alignItems: "center", gap: 10,
-                                        padding: "10px 12px", background: "transparent",
-                                        border: "none", cursor: "pointer", fontFamily: "inherit",
-                                        width: "100%", textAlign: "left" as any,
-                                      }}>
-                                        <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(145deg, rgba(239,159,39,0.15), rgba(239,159,39,0.08))", color: "#EF9F27", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#0D1F1F" }}>Segnala problema</div>
-                                          <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginTop: 1 }}>Imprevisto, materiale mancante</div>
-                                        </div>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                                      </button>
-                                    </div>
-                                  )}
-
-                                  {/* CRONOLOGIA accordion v67 - come mockup v8 */}
-                                  {(() => {
-                                    const storicoCron = (c.storico || []) as any[];
-                                    const lastEvt = storicoCron[storicoCron.length - 1];
-                                    const lastTxt = lastEvt ? (lastEvt.quando || "poco fa") : "Adesso";
-                                    return (
-                                      <div>
-                                        <div onClick={(e) => { e.stopPropagation(); setCronOpenV67(v => !v); }} style={{
-                                          background: "#fff",
-                                          border: "1px solid rgba(200,228,228,0.4)",
-                                          borderRadius: cronOpenV67 ? "14px 14px 0 0" : 14,
-                                          borderBottomColor: cronOpenV67 ? "transparent" : "rgba(200,228,228,0.4)",
-                                          padding: "12px 14px",
-                                          display: "flex", alignItems: "center", gap: 12,
-                                          cursor: "pointer",
-                                          boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
-                                        }}>
-                                          <div style={{
-                                            width: 34, height: 34, borderRadius: 10,
-                                            background: "linear-gradient(145deg, rgba(127,119,221,0.18), rgba(29,158,117,0.12))",
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            color: "#3C3489",
-                                            boxShadow: "inset 0 1px 1px rgba(255,255,255,0.5)",
-                                          }}>
-                                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                          </div>
-                                          <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: 13, fontWeight: 900, color: "#0F2525", letterSpacing: "-0.1px" }}>Cronologia</div>
-                                            <div style={{ fontSize: 10.5, color: T.sub, fontWeight: 600, marginTop: 2 }}>
-                                              {storicoCron.length > 0 ? `${storicoCron.length} eventi · ultima ${lastTxt}` : "1 evento · ultima Adesso"}
-                                            </div>
-                                          </div>
-                                          <div style={{
-                                            fontSize: 10, fontWeight: 900, color: "#3C3489",
-                                            background: "linear-gradient(145deg, rgba(175,169,236,0.28), rgba(127,119,221,0.15))",
-                                            padding: "4px 10px", borderRadius: 50, letterSpacing: "0.3px",
-                                            border: "1px solid rgba(127,119,221,0.22)",
-                                          }}>{storicoCron.length || 1}</div>
-                                          <div style={{
-                                            width: 24, height: 24, borderRadius: 8,
-                                            background: "rgba(40,160,160,0.08)",
-                                            display: "flex", alignItems: "center", justifyContent: "center",
-                                            color: "#1A7A7A",
-                                            transform: cronOpenV67 ? "rotate(180deg)" : "none",
-                                            transition: "transform 0.2s",
-                                          }}>
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                          </div>
-                                        </div>
-                                        {cronOpenV67 && (
-                                          <div style={{
-                                            background: "#fff",
-                                            border: "1px solid rgba(200,228,228,0.4)",
-                                            borderTop: "1px dashed rgba(200,228,228,0.6)",
-                                            borderRadius: "0 0 14px 14px",
-                                            padding: "14px 12px 12px",
-                                            position: "relative",
-                                            boxShadow: "0 3px 8px rgba(13,31,31,0.04)",
-                                          }}>
-                                            <div style={{ position: "absolute", left: 30, top: 22, bottom: 22, width: 2, background: "linear-gradient(180deg, #AFA9EC 0%, #5DCAA5 50%, #FAC775 100%)", borderRadius: 1, opacity: 0.3 }} />
-                                            {storicoCron.length > 0 ? storicoCron.slice().reverse().map((ev, k) => (
-                                              <div key={k} style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
-                                                <div style={{
-                                                  width: 36, height: 36, borderRadius: 11,
-                                                  background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
-                                                  color: "#fff", flexShrink: 0,
-                                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                                  boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
-                                                }}>
-                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
-                                                </div>
-                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
-                                                  <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
-                                                    <strong style={{ color: "#3C3489", fontWeight: 900 }}>{ev.chi || "Sistema"}</strong> · {ev.cosa || ev.tipo || "evento"}
-                                                  </div>
-                                                  <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>{ev.quando || ""}</div>
-                                                </div>
-                                              </div>
-                                            )) : (
-                                              <div style={{ display: "flex", gap: 12, padding: "7px 0", position: "relative" }}>
-                                                <div style={{
-                                                  width: 36, height: 36, borderRadius: 11,
-                                                  background: "linear-gradient(145deg, #AFA9EC, #7F77DD)",
-                                                  color: "#fff", flexShrink: 0,
-                                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                                  boxShadow: "0 3px 8px rgba(127,119,221,0.3), inset 0 1px 1px rgba(255,255,255,0.25)",
-                                                }}>
-                                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L14.4 8.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
-                                                </div>
-                                                <div style={{ flex: 1, background: "linear-gradient(145deg, rgba(127,119,221,0.04), rgba(200,228,228,0.08))", borderRadius: 10, padding: "8px 11px", border: "1px solid rgba(200,228,228,0.35)" }}>
-                                                  <div style={{ fontSize: 11.5, color: "#0F2525", fontWeight: 700, lineHeight: 1.35 }}>
-                                                    <strong style={{ color: "#3C3489", fontWeight: 900 }}>Tu</strong> · creato la commessa
-                                                  </div>
-                                                  <div style={{ fontSize: 9.5, color: "#8FA8A8", fontWeight: 700, marginTop: 2, letterSpacing: "0.3px" }}>Adesso</div>
-                                                </div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* CHIUDI DETTAGLIO - invariato */}
-                                  <button onClick={(e) => { e.stopPropagation(); setSelectedRilievo(null); setAzioniOpenV66(false); }} style={{
-                                    padding: "11px", borderRadius: 10,
-                                    background: "linear-gradient(145deg, #3C3489 0%, #26215C 100%)",
-                                    color: "#fff", border: "none",
-                                    fontSize: 11, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
-                                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6, letterSpacing: "0.4px",
-                                    boxShadow: "0 4px 12px rgba(60,52,137,0.4), inset 0 1px 1px rgba(255,255,255,0.2)",
-                                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                                  }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-                                    CHIUDI DETTAGLIO
-                                  </button>
-                                </div>
-                                );
-                              })()}
-                              </React.Fragment>
                             );
                           })}
                         </div>
                       )}
 
-                      {/* v68 · BIG ACTION VIOLA quando zero rilievi */}
-                      {!selectedRilievo && rilieviCC.length === 0 && (() => {
-                        const tEdifV68 = (c as any).tipoEdificio || (c as any).tipo_edificio || "";
-                        const tEdifLabelV68 = (() => {
-                          switch (tEdifV68) {
-                            case "palazzo": return "Palazzo residenziale";
-                            case "condominio": return "Condominio";
-                            case "scuola": return "Scuola";
-                            case "ospedale": return "Ospedale / Clinica";
-                            case "ufficio": return "Ufficio / Direzionale";
-                            case "hotel": return "Hotel / RSA";
-                            case "centro_comm": return "Centro commerciale";
-                            case "industriale": return "Capannone / Industriale";
-                            case "personalizzato": return "Personalizzato";
-                            default: return "Casa singola";
-                          }
-                        })();
-                        const tEdifStructV68 = (() => {
-                          switch (tEdifV68) {
-                            case "palazzo": return "Scala · Piano · Interno";
-                            case "condominio": return "Piano · Interno";
-                            case "scuola": return "Edificio/Plesso · Piano · Aula";
-                            case "ospedale": return "Padiglione · Piano · Reparto";
-                            case "ufficio": return "Edificio · Piano · Ufficio";
-                            case "hotel": return "Edificio · Piano · Camera";
-                            case "centro_comm": return "Livello · Negozio";
-                            case "industriale": return "Corpo · Settore";
-                            case "personalizzato": return [(c as any).livello1Label || "Livello 1", (c as any).livello2Label || "Livello 2", (c as any).livello3Label || "Livello 3"].join(" · ");
-                            default: return "Zona · Piano · Locale";
-                          }
-                        })();
-                        return (
-                          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 6 }}>
-                            {/* mini stepper 8 puntini */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 2px" }}>
-                              <div style={{ fontSize: 9.5, fontWeight: 900, color: T.sub, letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Passo 1/8</div>
-                              <div style={{ display: "flex", gap: 3, flex: 1 }}>
-                                <div style={{ flex: 1, height: 4, borderRadius: 2, background: "linear-gradient(90deg, #AFA9EC, #7F77DD)", boxShadow: "0 0 6px rgba(127,119,221,0.5)" }} />
-                                {[1,2,3,4,5,6,7].map(i => (<div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(200,228,228,0.5)" }} />))}
-                              </div>
-                              <div style={{ fontSize: 9.5, fontWeight: 900, color: "#7F77DD", letterSpacing: "0.4px", textTransform: "uppercase" as any, flexShrink: 0 }}>Rilievo</div>
-                            </div>
+                      {/* Info se zero rilievi */}
+                      {rilieviCC.length === 0 && (
+                        <div style={{ fontSize: 11, color: T.sub, marginBottom: 8, textAlign: "center" as any, padding: "4px 0" }}>
+                          Nessun rilievo ancora · Crea il primo sopralluogo
+                        </div>
+                      )}
 
-                            {/* big action viola */}
-                            <div style={{
-                              borderRadius: 22, padding: "20px 18px 18px",
-                              background: "linear-gradient(155deg, #B5B0EE 0%, #7F77DD 55%, #6961CB 100%)",
-                              color: "#fff",
-                              boxShadow: "0 14px 32px rgba(127,119,221,0.35), 0 6px 12px rgba(127,119,221,0.2)",
-                              position: "relative", overflow: "hidden",
-                              display: "flex", flexDirection: "column",
-                            }}>
-                              <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.22), transparent 65%)", pointerEvents: "none" }} />
-                              <div style={{ position: "absolute", bottom: -60, left: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%)", pointerEvents: "none" }} />
-
-                              <div style={{
-                                display: "inline-flex", alignItems: "center", gap: 6, alignSelf: "flex-start",
-                                padding: "5px 11px", background: "rgba(255,255,255,0.22)",
-                                borderRadius: 50, fontSize: 8.5, fontWeight: 900, letterSpacing: "1.1px",
-                                textTransform: "uppercase" as any, position: "relative",
-                              }}>
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.4 6.6L22 9.3l-5.8 4.7 1.8 7.5L12 17.8l-6 3.7 1.8-7.5L2 9.3l7.6-.7z"/></svg>
-                                Prima mossa
-                              </div>
-
-                              <div style={{
-                                fontSize: 22, fontWeight: 900, marginTop: 12,
-                                letterSpacing: "-0.5px", lineHeight: 1.15,
-                                textShadow: "0 2px 4px rgba(0,0,0,0.2)", position: "relative",
-                              }}>Crea il primo<br/>sopralluogo</div>
-
-                              <div style={{
-                                fontSize: 11.5, opacity: 0.94, marginTop: 6,
-                                lineHeight: 1.4, fontWeight: 500, position: "relative",
-                              }}>Vai in cantiere e fai il rilievo delle misure.</div>
-
-                              {/* Pill tipo edificio */}
-                              <div style={{
-                                marginTop: 12, background: "rgba(255,255,255,0.18)",
-                                borderRadius: 12, padding: "10px 12px",
-                                display: "flex", alignItems: "center", gap: 10, position: "relative",
-                              }}>
-                                <div style={{
-                                  width: 36, height: 36, borderRadius: 11,
-                                  background: "rgba(255,255,255,0.22)",
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  flexShrink: 0, boxShadow: "inset 0 1px 1px rgba(255,255,255,0.3)",
-                                }}>
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M10 22v-4h4v4"/><line x1="9" y1="6" x2="9.01" y2="6"/><line x1="15" y1="6" x2="15.01" y2="6"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/></svg>
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 8.5, fontWeight: 900, letterSpacing: "0.8px", textTransform: "uppercase" as any, opacity: 0.85 }}>Immobile</div>
-                                  <div style={{ fontSize: 13, fontWeight: 900, marginTop: 1, letterSpacing: "-0.1px" }}>{tEdifLabelV68}</div>
-                                  <div style={{ fontSize: 10, opacity: 0.88, marginTop: 1, fontWeight: 600 }}>{tEdifStructV68}</div>
-                                </div>
-                              </div>
-
-                              <button onClick={() => {
-                                setNuovoRilievoTipo("provvisorio");
-                                setNuovoRilievoRilevatore("");
-                                setNuovoRilievoComplesso(false);
-                                setNuovoRilievoNote("");
-                                setShowNuovoRilievoModal(true);
-                              }} style={{
-                                marginTop: 14, width: "100%", padding: 15,
-                                background: "#fff", color: "#3C3489",
-                                border: "none", borderRadius: 14,
-                                fontSize: 13.5, fontWeight: 900, letterSpacing: "0.4px",
-                                cursor: "pointer", fontFamily: "inherit",
-                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                                boxShadow: "0 6px 16px rgba(0,0,0,0.2), inset 0 -3px 0 rgba(60,52,137,0.08)",
-                                position: "relative",
-                              }}>
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                CREA RILIEVO
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3C3489" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Bottone CREA NUOVO RILIEVO compatto - solo quando ci sono gia' rilievi ma nessuno selezionato */}
-                      {!selectedRilievo && rilieviCC.length > 0 && <button onClick={() => {
+                      {/* Bottone CREA NUOVO RILIEVO */}
+                      <button onClick={() => {
                         setNuovoRilievoTipo("provvisorio");
                         setNuovoRilievoRilevatore("");
-                        setNuovoRilievoComplesso(false);
                         setNuovoRilievoNote("");
                         setShowNuovoRilievoModal(true);
                       }} style={{ width: "100%", padding: 14, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> CREA NUOVO RILIEVO
-                      </button>}
+                        <I d={ICO.ruler} /> + CREA {rilieviCC.length > 0 ? "NUOVO " : ""}RILIEVO
+                      </button>
 
                       {vaniCC.length > 0 && (
                         <div style={{ fontSize: 12, color: "#28A0A0", fontWeight: 700, textAlign: "center", marginTop: 8 }}>✓ {vaniCC.length} vani misurati · Vai al preventivo</div>
@@ -4881,175 +1355,9 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     </div>
                   )}
 
-                  {/*  BIVIO SECONDARIO · CHIUDI RILIEVO (chiudi e vai / azioni extra)  */}
-                  {curCC.id === "preventivo" && c.preventivoModoScelto === "chiuso_bivio" && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div onClick={() => {
-                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: null } : cm));
-                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: null }));
-                      }} style={{ fontSize: 11, color: T.sub, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        ← Torna alla scelta
-                      </div>
-
-                      <div style={{ fontSize: 11, color: T.sub, textAlign: "center" as any, marginBottom: 4 }}>Come vuoi chiudere il rilievo?</div>
-
-                      {/* OPZIONE A · CHIUDI E VAI */}
-                      <div onClick={() => {
-                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso" } : cm));
-                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso" }));
-                        setPrevWorkspace(false);
-                        setSelectedRilievo(null);
-                        setCmSubTab && setCmSubTab("rilievi");
-                        setSelectedCM(null);
-                        setCcDone("✓ Rilievo chiuso · vai al prossimo"); setTimeout(() => setCcDone(null), 2500);
-                      }} style={{
-                        padding: "16px 14px", borderRadius: 14, cursor: "pointer",
-                        background: "#fff", border: "2px solid " + T.bdr,
-                        display: "flex", alignItems: "center", gap: 12,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                      }}>
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: T.grnLt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <I d={ICO.checkCircle} s={18} c={T.grn} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F", marginBottom: 2 }}>Chiudi e vai al prossimo</div>
-                          <div style={{ fontSize: 10, color: T.sub, lineHeight: 1.3 }}>Salva · il preventivo lo faccio dopo in azienda</div>
-                        </div>
-                        <I d={ICO.chevronRight} s={14} c={T.sub} />
-                      </div>
-
-                      {/* OPZIONE B · AZIONI EXTRA */}
-                      <div style={{
-                        padding: "14px 14px", borderRadius: 14,
-                        background: "#fff", border: "2px solid " + T.bdr,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                      }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                          <div style={{ width: 40, height: 40, borderRadius: 10, background: T.blueLt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <I d={ICO.send} s={18} c={T.blue} />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: 900, color: "#0D1F1F" }}>Azioni extra prima di chiudere</div>
-                            <div style={{ fontSize: 10, color: T.sub, marginTop: 1 }}>Stampa · invia · esporta per altro gestionale</div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                          {/* Stampa PDF */}
-                          <button onClick={() => {
-                            try { exportPDF && exportPDF(); } catch(e) { console.warn(e); }
-                            setCcDone("✓ PDF pronto"); setTimeout(() => setCcDone(null), 2500);
-                          }} style={{
-                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid " + T.bdr, background: T.card, cursor: "pointer", fontFamily: "inherit",
-                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                          }}>
-                            <I d={ICO.fileText} s={18} c={T.text} />
-                            <span style={{ fontSize: 11, fontWeight: 800, color: T.text }}>Stampa PDF</span>
-                          </button>
-
-                          {/* WhatsApp */}
-                          <button onClick={() => {
-                            const tel = (c.telefono || "").replace(/[^0-9+]/g, "");
-                            const msg = `Ciao ${c.cliente || ""}, ti mando il riepilogo del rilievo fatto oggi.`;
-                            const wa = `https://wa.me/${tel.startsWith("+") ? tel.slice(1) : "39" + tel}?text=${encodeURIComponent(msg)}`;
-                            window.open(wa, "_blank");
-                            setCcDone("✓ WhatsApp aperto"); setTimeout(() => setCcDone(null), 2500);
-                          }} style={{
-                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #25d36630", background: "#25d36608", cursor: "pointer", fontFamily: "inherit",
-                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                          }}>
-                            <I d={ICO.send} s={18} c="#25d366" />
-                            <span style={{ fontSize: 11, fontWeight: 800, color: "#25d366" }}>WhatsApp</span>
-                          </button>
-
-                          {/* Export Excel gestionale */}
-                          <button onClick={() => {
-                            try { generaExcelFascicolo && generaExcelFascicolo(c, r); } catch(e) { console.warn(e); }
-                            setCcDone("✓ Excel pronto per gestionale"); setTimeout(() => setCcDone(null), 2500);
-                          }} style={{
-                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #28A0A030", background: "#28A0A008", cursor: "pointer", fontFamily: "inherit",
-                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                          }}>
-                            <I d={ICO.clipboard} s={18} c={T.acc} />
-                            <span style={{ fontSize: 11, fontWeight: 800, color: T.acc }}>Export gestionale</span>
-                          </button>
-
-                          {/* Invia a MASTRO Desktop */}
-                          <button onClick={() => {
-                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, inviatoDesktop: true, dataInvioDesktop: new Date().toISOString().split("T")[0] } : cm));
-                            setSelectedCM((prev: any) => ({ ...prev, inviatoDesktop: true }));
-                            setCcDone("✓ Rilievo in coda MASTRO Desktop"); setTimeout(() => setCcDone(null), 2500);
-                          }} style={{
-                            padding: "12px 8px", borderRadius: 10, border: "1.5px solid #3B7FE030", background: "#3B7FE008", cursor: "pointer", fontFamily: "inherit",
-                            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                          }}>
-                            <I d={ICO.monitor} s={18} c={T.blue} />
-                            <span style={{ fontSize: 11, fontWeight: 800, color: T.blue }}>A MASTRO Desktop</span>
-                          </button>
-                        </div>
-
-                        <div style={{ fontSize: 10, color: T.sub, marginTop: 10, textAlign: "center" as any, fontStyle: "italic" as any }}>
-                          Quando hai fatto, torna indietro e premi "Chiudi e vai"
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/*  PREVENTIVO (CUORE · LINK A WORKSPACE)  */}
-                  {curCC.id === "preventivo" && !c.preventivoModoScelto && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 4, textAlign: "center" }}>Rilievo completato · Scegli cosa fare</div>
-
-                      {/* CARD 1 — CHIUDI RILIEVO (ora apre bivio secondario) */}
-                      <div onClick={() => {
-                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "chiuso_bivio" } : cm));
-                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "chiuso_bivio" }));
-                      }} style={{
-                        padding: "18px 16px", borderRadius: 14, cursor: "pointer",
-                        background: "#fff", border: "2px solid " + T.bdr,
-                        display: "flex", alignItems: "center", gap: 12,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                      }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#7B6BA515", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <I d={ICO.folder} s={20} c="#7B6BA5" />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 900, color: "#0D1F1F", marginBottom: 2 }}>Chiudi rilievo</div>
-                          <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.3 }}>Salva e vai al prossimo cliente · preventivo lo fai dopo in azienda</div>
-                        </div>
-                        <I d={ICO.chevronRight} s={16} c={T.sub} />
-                      </div>
-
-                      {/* CARD 2 — FAI PREVENTIVO */}
-                      <div onClick={() => {
-                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: "preventivo" } : cm));
-                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: "preventivo" }));
-                      }} style={{
-                        padding: "18px 16px", borderRadius: 14, cursor: "pointer",
-                        background: T.acc, border: "2px solid " + T.acc,
-                        display: "flex", alignItems: "center", gap: 12,
-                        boxShadow: "0 4px 14px rgba(40,160,160,0.3)",
-                      }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <I d={ICO.euro} s={20} c="#fff" />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 900, color: "#fff", marginBottom: 2 }}>Preventivo al volo</div>
-                          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.9)", lineHeight: 1.3 }}>Hai già i prezzi · invia subito al cliente</div>
-                        </div>
-                        <I d={ICO.chevronRight} s={16} c="#fff" />
-                      </div>
-                    </div>
-                  )}
-
-                  {curCC.id === "preventivo" && c.preventivoModoScelto === "preventivo" && (
+                  {curCC.id === "preventivo" && (
                     <div>
-                      <div onClick={() => {
-                        setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoModoScelto: null } : cm));
-                        setSelectedCM((prev: any) => ({ ...prev, preventivoModoScelto: null }));
-                      }} style={{ fontSize: 11, color: T.sub, cursor: "pointer", marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        ← Torna alla scelta
-                      </div>
                       <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>{vaniCC.length} vani · {vaniConPrezzoCC.length} con prezzo</div>
                       
                       {/* Totale rapido */}
@@ -5096,7 +1404,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                       })()}
 
                       {/* BOTTONE PRINCIPALE */}
-                      <button onClick={() => { setPrevWorkspace(true); setPrevTab("sopralluogo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
+                      <button onClick={() => { setPrevWorkspace(true); setPrevTab("riepilogo"); setEditingVanoId(null); }} style={{ width: "100%", padding: 16, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 8 }}><I d={ICO.clipboard} /> APRI PREVENTIVO →</button>
 
                       {/* BOTTONE INVIA DOCUMENTI AL CLIENTE */}
                       {(() => {
@@ -5130,109 +1438,8 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                           setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: true, dataPreventivoInvio: new Date().toISOString().split("T")[0] } : cm));
                           setSelectedCM(prev => ({ ...prev, preventivoInviato: true }));
                           setCcDone("✓ Completato"); setTimeout(() => setCcDone(null), 3000);
-                        }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Già inviato? Segna come completato</span>
+                        }} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gi+ inviato? Segna come completato</span>
                       </div>
-
-                      {/* STATO POST-INVIO: attesa cliente */}
-                      {c.preventivoInviato && (
-                        <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: "#fff8e1", border: "1px solid #ffc107" }}>
-                          <div style={{ fontSize: 11, fontWeight: 800, color: "#b8860b", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>In attesa risposta cliente</div>
-                          <div style={{ fontSize: 10, color: T.sub, marginBottom: 10 }}>
-                            Preventivo inviato{c.dataPreventivoInvio ? ` il ${new Date(c.dataPreventivoInvio).toLocaleDateString("it-IT")}` : ""}. Segna la risposta quando arriva.
-                          </div>
-                          {rispostaCliente && rispostaCliente.risposta && (
-                            <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: rispostaCliente.risposta === "accettato" ? "#D1FAE5" : rispostaCliente.risposta === "modifiche" ? "#FEF3C7" : "#DBEAFE", border: "1px solid " + (rispostaCliente.risposta === "accettato" ? "#10B981" : rispostaCliente.risposta === "modifiche" ? "#F59E0B" : "#3B82F6") }}>
-                              <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>
-                                {rispostaCliente.risposta === "accettato" && "✓ Cliente ha accettato dal link!"}
-                                {rispostaCliente.risposta === "modifiche" && "↻ Cliente chiede modifiche dal link"}
-                                {rispostaCliente.risposta === "chiamare" && "📞 Cliente vuole essere chiamato"}
-                              </div>
-                              {rispostaCliente.risposta_nota && (
-                                <div style={{ fontSize: 11, color: T.text, fontStyle: "italic", marginBottom: 4 }}>
-                                  "{rispostaCliente.risposta_nota}"
-                                </div>
-                              )}
-                              <div style={{ fontSize: 9, color: T.sub }}>
-                                {rispostaCliente.risposta_at ? new Date(rispostaCliente.risposta_at).toLocaleString("it-IT") : ""}
-                              </div>
-                            </div>
-                          )}
-                          {rispostaCliente && !rispostaCliente.risposta && rispostaCliente.visualizzato && (
-                            <div style={{ marginBottom: 10, padding: 8, borderRadius: 8, background: "#F3F4F6", fontSize: 10, color: T.sub }}>
-                              👁 Cliente ha visualizzato il link{rispostaCliente.visualizzato_at ? " " + new Date(rispostaCliente.visualizzato_at).toLocaleString("it-IT") : ""} — sta decidendo
-                            </div>
-                          )}
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                            <button onClick={() => {
-                              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] } : cm));
-                              setSelectedCM((prev: any) => ({ ...prev, preventivoAccettato: true, dataPreventivoAccett: new Date().toISOString().split("T")[0] }));
-                              setFaseTo(c.id, "conferma");
-                              setCcDone("✓ Cliente accettato → Conferma"); setTimeout(() => setCcDone(null), 3000);
-                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "none", background: "#28A0A0", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                              ✓ Cliente OK
-                            </button>
-                            <button onClick={() => {
-                              const nota = prompt("Cosa vuole modificare il cliente?");
-                              if (nota === null) return;
-                              const revEntry = { motivo: nota || "Modifiche richieste", quando: new Date().toISOString() };
-                              setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, preventivoInviato: false, preventivoRevisioni: [...(cm.preventivoRevisioni || []), revEntry] } : cm));
-                              setSelectedCM((prev: any) => ({ ...prev, preventivoInviato: false, preventivoRevisioni: [...(prev.preventivoRevisioni || []), revEntry] }));
-                              setCcDone("Riaperto per modifiche"); setTimeout(() => setCcDone(null), 3000);
-                            }} style={{ padding: "12px 10px", borderRadius: 8, border: "1.5px solid #ff9500", background: "#fff", color: "#ff9500", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                              ↻ Richiede modifiche
-                            </button>
-                          </div>
-                          {(c.preventivoRevisioni && c.preventivoRevisioni.length > 0) && (
-                            <div style={{ marginTop: 10, padding: "6px 8px", background: "#fff", borderRadius: 6, fontSize: 10, color: T.sub }}>
-                              <strong>Revisioni ({c.preventivoRevisioni.length})</strong>: {c.preventivoRevisioni[c.preventivoRevisioni.length-1].motivo}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* CARD TAVOLA TECNICA */}
-                      {(() => {
-                        const vaniAttivi = (selectedRilievo?.vani || []).filter((v) => !!v.sistema && (v.misure?.lCentro || v.misure?.lAlto) && (v.misure?.hCentro || v.misure?.hSx));
-                        const canGenerate = vaniAttivi.length > 0;
-                        return (
-                          <div style={{ marginTop: 14, padding: 14, background: "#F4F9F9", borderRadius: 12, border: `1px solid ${T.bdr}` }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                              <div style={{ width: 32, height: 32, borderRadius: 8, background: canGenerate ? "linear-gradient(135deg, #2D7A6B, #1A9E73)" : "#C8D4D4", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-                                <I d={ICO.ruler} />
-                              </div>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Tavola Tecnica</div>
-                                <div style={{ fontSize: 10, color: T.sub }}>Vista frontale - Nodi - Specifiche - Trasmittanza Uw</div>
-                              </div>
-                              {canGenerate && <span style={{ fontSize: 9, fontWeight: 700, padding: "3px 7px", borderRadius: 5, background: `${T.grn}15`, color: T.grn }}>{vaniAttivi.length} vani</span>}
-                            </div>
-                            {canGenerate ? (
-                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                {vaniAttivi.map((v) => (
-                                  <button key={v.id} onClick={() => {
-                                    try {
-                                      const ctx = { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [],
-                                        cliente: c.cliente || c.nome || "", cognome: c.cognome || "",
-                                        commessaCode: c.code || c.id || "", commessaData: c.data || "" };
-                                      generaTavolaTecnica(v, ctx);
-                                    } catch(err) {
-                                      alert("Errore Tavola Tecnica: " + (err?.message || err));
-                                    }
-                                  }} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: "#fff", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                      <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{v.nome || `Vano ${v.id}`}</div>
-                                      <div style={{ fontSize: 9, color: T.sub }}>{v.tipo || "-"} - {v.sistema || "-"} - {v.misure?.lCentro || v.misure?.lAlto || "?"}x{v.misure?.hCentro || v.misure?.hSx || "?"}mm</div>
-                                    </div>
-                                    <span style={{ fontSize: 11, color: T.acc, fontWeight: 800 }}>PDF</span>
-                                  </button>
-                                ))}
-                              </div>
-                            ) : (
-                              <div style={{ fontSize: 11, color: T.sub, textAlign: "center", padding: "10px 4px", fontStyle: "italic" }}>Completa misure e sistema di almeno un vano per generare</div>
-                            )}
-                          </div>
-                        );
-                      })()}
                     </div>
                   )}
 
@@ -5240,57 +1447,23 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   {curCC.id === "conferma" && (
                     <div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: T.acc, marginBottom: 8 }}>Totale: €{fmtCC(totIvaCC)} (IVA {ivaPercCC}% incl.)</div>
-                      {c.firmaCliente && (
-                        <div style={{ marginBottom: 10, padding: 12, borderRadius: 10, background: "#28A0A012", border: "1px solid #28A0A030" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                            <span style={{ fontSize: 18 }}>✓</span>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 12, fontWeight: 800, color: "#28A0A0" }}>Firma ricevuta</div>
-                              <div style={{ fontSize: 10, color: T.sub }}>{c.dataFirma ? new Date(c.dataFirma).toLocaleDateString("it-IT") : ""}</div>
-                            </div>
-                          </div>
-                          {c.firmaDocumento?.dataUrl && (
-                            <div style={{ display: "flex", gap: 6 }}>
-                              <button onClick={() => {
-                                if (!c.firmaDocumento?.dataUrl) return;
-                                const w = window.open("");
-                                w?.document.write(`<iframe src="${c.firmaDocumento.dataUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
-                              }} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#fff", color: "#28A0A0", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                                Vedi documento
-                              </button>
-                              <a href={c.firmaDocumento.dataUrl} download={c.firmaDocumento.nome || "documento_firmato.pdf"} style={{ flex: 1, padding: "8px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#28A0A0", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "center", textDecoration: "none", boxSizing: "border-box" as const }}>
-                                Scarica PDF
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {fattCC.length > 0 && (
-                        <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: "#fff", border: "1px solid " + T.bdr }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Fatture emesse</div>
-                          {fattCC.map((f, i) => (
-                            <div key={f.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < fattCC.length - 1 ? "1px solid " + T.bdr : "none" }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>N° {f.numero}/{f.anno} · €{fmtCC(f.importo || 0)}</div>
-                                <div style={{ fontSize: 10, color: T.sub }}>{f.tipo} · {f.data}</div>
-                              </div>
-                              <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 5, background: f.pagata ? "#D1FAE5" : "#FEF3C7", color: f.pagata ? "#10B981" : "#D08008" }}>
-                                {f.pagata ? "Pagata" : "Da incassare"}
-                              </span>
-                            </div>
-                          ))}
-                          <button onClick={() => { if (typeof setTab === "function") setTab("contabilita"); }} style={{ marginTop: 8, width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid " + T.acc, background: "#fff", color: T.acc, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                            Apri contabilità →
-                          </button>
+                      {hasFattCC && !fattCC.every(f => f.pagata) && (
+                        <div style={{ marginBottom: 8, padding: "8px 10px", borderRadius: 8, background: "#D0800815", border: "1px solid #D0800830", display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 13 }}>📋</span>
+                          <span style={{ fontSize: 11, color: "#D08008", fontWeight: 600 }}>Fattura acconto emessa · verifica pagamento in Contabilit+</span>
                         </div>
                       )}
                       {firmaStep === 0 ? (
                         <div>
-                          <button onClick={() => setShowModalFirma(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA {"->"}</button>
+                          <button onClick={async () => {
+                            generaPreventivoPDF(c);
+                            await generaPreventivoCondivisibile(c);
+                            setFirmaStep(1);
+                          }} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: "#25d366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 4 }}><I d={ICO.upload} /> GENERA PDF + INVIA CON FIRMA →</button>
                           <div style={{ fontSize: 10, color: T.sub, textAlign: "center", marginBottom: 6 }}>Scarica PDF e invia link firma elettronica via WhatsApp</div>
-                          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                            <button onClick={() => generaPreventivoPDF(c, { aziendaInfo: aziendaInfo || {}, sistemiDB: sistemiDB || [], vetriDB: vetriDB || [] })} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #28A0A0", background: "#28A0A012", color: "#28A0A0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.fileText} /> Solo PDF</button>
-                            <button onClick={() => setFirmaStep(1)} style={{ flex: 1, padding: "10px 12px", borderRadius: 8, border: "1px solid #28A0A0", background: "#28A0A012", color: "#28A0A0", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Già firmato? Carica</button>
+                          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                            <span onClick={() => generaPreventivoPDF(c)} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}><I d={ICO.fileText} /> Solo PDF</span>
+                            <span onClick={() => setFirmaStep(1)} style={{ fontSize: 10, color: T.sub, cursor: "pointer", textDecoration: "underline" }}>Gi+ inviato? Carica firma</span>
                           </div>
                         </div>
                       ) : !firmaFileUrl ? (
@@ -5422,26 +1595,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                           )}
                         </div>
                       )}
-                      {ordCC.length > 0 && (
-                        <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: "#fff", border: "1px solid " + T.bdr }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>Ordini creati</div>
-                          {ordCC.map((o, i) => {
-                            const fornNome = typeof o.fornitore === "object" ? (o.fornitore?.nome || "Fornitore") : (o.fornitore || "Fornitore");
-                            return (
-                              <div key={o.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < ordCC.length - 1 ? "1px solid " + T.bdr : "none" }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: T.text }}>N {o.numero}/{o.anno} - {fornNome || "Da assegnare"}</div>
-                                  <div style={{ fontSize: 10, color: T.sub }}>{(o.righe?.length) || 0} voci - {o.dataOrdine}</div>
-                                </div>
-                                <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 5, background: o.conferma?.ricevuta ? "#D1FAE5" : "#FEF3C7", color: o.conferma?.ricevuta ? "#10B981" : "#D08008" }}>
-                                  {o.conferma?.ricevuta ? "Confermato" : "Inviato"}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
                       <button onClick={() => setShowOrdinePreview(true)} style={{ width: "100%", padding: 14, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}><I d={ICO.package} /> CREA ORDINE FORNITORE →</button>
 
                       {/* · MODAL ANTEPRIMA ORDINE FORNITORE · */}
@@ -5862,21 +2015,19 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                         if (skipIdx >= 0 && skipIdx < stepsCC.length - 1) {
                           const skipNote = prompt("Motivo per saltare '" + curCC.l + "':");
                           if (skipNote !== null) {
-                            const nuovoSkip = { fase: curCC.id, motivo: skipNote, quando: new Date().toISOString() };
+                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: [...(cm.skipLog || []), { fase: curCC.id, motivo: skipNote, quando: new Date().toISOString() }] } : cm));
                             const nextStep = stepsCC[skipIdx + 1];
-                            setCantieri(cs => cs.map(cm => cm.id === c.id ? { ...cm, skipLog: [...(cm.skipLog || []), nuovoSkip], fase: nextStep?.id || cm.fase } : cm));
-                            setSelectedCM((prev: any) => ({ ...prev, skipLog: [...(prev.skipLog || []), nuovoSkip], fase: nextStep?.id || prev.fase }));
                             if (nextStep) setFaseTo(c.id, nextStep.id);
                             setCcDone(`⏭ ${curCC.l} saltato`); setTimeout(() => setCcDone(null), 3000);
                           }
                         }
-                      }} style={{ display: "inline-block", marginTop: 8, padding: "6px 14px", borderRadius: 6, border: "1px solid #ff950050", background: "#ff950012", color: "#ff9500", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>⏭ Salta questo passaggio</span>
+                      }} style={{ fontSize: 10, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>⏭ Salta questo passaggio</span>
                     </div>
                   )}
                 </div>
               )}
-              {/* Totale - hide when selectedRilievo (v67) */}
-              {!selectedRilievo && totPrevCC > 0 && (
+              {/* Totale */}
+              {totPrevCC > 0 && (
                 <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", padding: "8px 12px", background: T.card, borderRadius: 8, border: `1px solid ${T.bdr}` }}>
                   <span style={{ fontSize: 12, fontWeight: 700 }}>Totale IVA incl.</span>
                   <span style={{ fontSize: 14, fontWeight: 900, color: T.acc }}>€{fmtCC(totIvaCC)}</span>
@@ -5886,13 +2037,25 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           );
         })()}
 
+        {/* Contact actions */}
+        <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
+          {[
+            { ico: ICO.phone, label: "Chiama",   col: T.grn,  act: () => window.location.href=`tel:${c.telefono || ""}` },
+            { ico: ICO.map,   label: "Naviga",   col: T.blue, act: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(c.indirizzo || "")}`) },
+            { ico: ICO.send,  label: "WhatsApp", col: "#25d366", act: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Commessa ${c.code} - ${c.cliente}`)}`) },
+          ].map((a, i) => (
+            <div key={i} onClick={a.act} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
+              <Ico d={a.ico} s={18} c={a.col} />
+              <span style={{ fontSize: 10, fontWeight: 600, color: T.sub }}>{a.label}</span>
+            </div>
+          ))}
+        </div>
 
-        {/* == TAB: vani / visite / info - hide when selectedRilievo active (v67) == */}
-        {!selectedRilievo && (
+        {/* == TAB: vani / visite / info == */}
         <div id="cm-tab-vani" style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, margin: "0 0 0 0" }}>
           {[
-            {k:"visite",l:`Rilievi (${(c.rilievi||[]).length})`},
             {k:"sopralluoghi",l:`Vani (${vaniList.length})`},
+            {k:"visite",l:`Visite (${(c.rilievi||[]).length})`},
             {k:"info",l:"ℹ Info"},
           ].map(t => (
             <div key={t.k} onClick={() => setCmSubTab(t.k)} style={{
@@ -5902,7 +2065,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             }}>{t.l}</div>
           ))}
         </div>
-        )}
 
         {/* == TAB VISITE (timeline sopralluoghi) == */}
         {cmSubTab === "visite" && (
@@ -5917,18 +2079,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 ? "✓ Misure definitive · cliente ha firmato"
                 : `+ Misure indicative · ${(c.rilievi||[]).length} ${(c.rilievi||[]).length === 1 ? "visita" : "visite"} effettuate`}
             </div>
-
-            {/* Bottone nuovo rilievo in tab Visite */}
-            {!c.firmaCliente && (
-              <button onClick={() => {
-                setNuovoRilievoTipo("provvisorio");
-                setNuovoRilievoRilevatore("");
-                setNuovoRilievoNote("");
-                setShowNuovoRilievoModal(true);
-              }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "#28A0A0", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
-                + NUOVO RILIEVO
-              </button>
-            )}
 
             {/* Timeline visite */}
             {(c.rilievi||[]).length === 0 ? (
@@ -5984,118 +2134,41 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         {/* == TAB VANI (lista vani del rilievo) == */}
         {cmSubTab === "sopralluoghi" && (
           <div style={{ padding: "0 16px 14px" }}>
-            {/* ═══ SUB-HERO RILIEVO (v52 · coerente con pagina 1) ═══ */}
-            {r && (() => {
-              const nVani = (r.vani || []).length;
-              const nMisurati = (r.vani || []).filter((v: any) => Object.values(v.misure || {}).filter((x: any) => (x as number) > 0).length >= 6).length;
-              const prog = nVani > 0 ? Math.round((nMisurati / nVani) * 100) : 0;
-              const tipoMap: any = {
-                provvisorio: { l: "Provvisorio", bg: "#FAC775", c: "#412402" },
-                verificato:  { l: "Verificato",  bg: "#9FC6F0", c: "#0A2842" },
-                definitivo:  { l: "Definitivo",  bg: "#A5DCC6", c: "#04342C" },
-                da_rivedere: { l: "Da rivedere", bg: "#F7B5B5", c: "#4B1515" },
-                indicativa:  { l: "Provvisorio", bg: "#FAC775", c: "#412402" },
-                personalizzato: { l: "Personalizzato", bg: "#B5B0E8", c: "#26215C" },
-              };
-              const tt = tipoMap[r.tipo || "provvisorio"] || tipoMap.provvisorio;
-              const dataFmt = r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" }) : null;
-              return (
-                <div style={{
-                  background: "linear-gradient(145deg, #5FD0D0 0%, #28A0A0 50%, #1A7A7A 100%)",
-                  borderRadius: 16, padding: "14px 16px", marginBottom: 12,
-                  boxShadow: "0 6px 18px rgba(31,120,120,0.25), inset 0 1px 2px rgba(255,255,255,0.25)",
-                  position: "relative" as any, overflow: "hidden",
-                }}>
-                  <div style={{ position: "absolute", top: -20, right: -15, width: 80, height: 80, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)", pointerEvents: "none" as any }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative", zIndex: 2 }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 12,
-                      background: "rgba(255,255,255,0.22)",
-                      border: "1px solid rgba(255,255,255,0.3)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0,
-                      boxShadow: "inset 0 1px 2px rgba(0,0,0,0.15)",
-                    }}>
-                      <span style={{ fontSize: 16, fontWeight: 900, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>R{r.n || 1}</span>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: "#fff", letterSpacing: "-0.2px", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>Rilievo R{r.n || 1}</span>
-                        <span style={{ fontSize: 9, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: tt.bg, color: tt.c, textTransform: "uppercase" as any, letterSpacing: "0.3px" }}>{tt.l}</span>
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>
-                        {dataFmt || "senza data"}
-                        {r.rilevatore ? ` · ${r.rilevatore}` : ""}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "right" as any, flexShrink: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 900, color: "#fff", lineHeight: 1, textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}>{prog}%</div>
-                      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.8)", fontWeight: 600, marginTop: 2 }}>{nMisurati}/{nVani} vani</div>
-                    </div>
-                  </div>
-                  {nVani > 0 && (
-                    <div style={{ marginTop: 10, height: 4, background: "rgba(255,255,255,0.2)", borderRadius: 2, overflow: "hidden" }}>
-                      <div style={{ height: "100%", width: `${prog}%`, background: "rgba(255,255,255,0.9)", borderRadius: 2, transition: "width 0.3s" }} />
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
             {/* Rilievo selector - mostra quale stai guardando */}
             {(c.rilievi||[]).length > 1 && r && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0 12px", marginBottom: 6 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: T.sub, letterSpacing: "0.5px", textTransform: "uppercase" as any, marginRight: 2 }}>Altri rilievi:</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 0 10px", borderBottom: `1px solid ${T.bdr}`, marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginRight: 4 }}>Visita:</div>
                 {(c.rilievi||[]).map((ril, ridx) => {
                   const isSel = ril.id === r.id;
                   const isLast = ridx === (c.rilievi||[]).length - 1;
+                  const col = isSel ? (isLast ? T.acc : "#5856d6") : T.sub;
                   return (
                     <div key={ril.id} onClick={() => setSelectedRilievo(ril)}
-                      style={{
-                        padding: "5px 11px", borderRadius: 9, cursor: "pointer",
-                        fontSize: 11, fontWeight: 800,
-                        background: isSel ? "linear-gradient(145deg, #5FD0D0, #1A7A7A)" : "#fff",
+                      style={{ padding: "4px 10px", borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700,
+                        background: isSel ? col : T.bg,
                         color: isSel ? "#fff" : T.sub,
-                        border: `1.5px solid ${isSel ? "transparent" : T.bdr}`,
-                        boxShadow: isSel ? "0 3px 8px rgba(40,160,160,0.35)" : "none",
-                        display: "flex", alignItems: "center", gap: 4,
+                        border: `1.5px solid ${isSel ? col : "transparent"}`,
                       }}>
                       R{ril.n} {!isLast && isSel ? "🔒" : ""}
                     </div>
                   );
                 })}
+                <div style={{ flex: 1 }} />
+                <div style={{ fontSize: 10, color: isStorico ? "#5856d6" : T.sub, fontWeight: isStorico ? 700 : 400 }}>
+                  {isStorico ? "🔒 sola lettura" : `${(r.vani||[]).length} vani`}
+                </div>
               </div>
             )}
             {/*  BANNER STORICO  */}
             {isStorico && (
-              <div style={{
-                padding: "12px 14px", borderRadius: 12, marginBottom: 12,
-                background: "linear-gradient(145deg, #F3F1FE, #EEEDFE)",
-                border: "1.5px solid #B5B0E8",
-                display: "flex", alignItems: "center", gap: 12,
-                boxShadow: "0 2px 8px rgba(88,86,214,0.1)",
-              }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: "rgba(88,86,214,0.15)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <I d={ICO.lock} s={18} c="#5856d6" />
+              <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 10, background: "#5856d610", border: "1.5px solid #5856d630", display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 18 }}><I d={ICO.lock} /></span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#5856d6" }}>Rilievo storico R{r?.n} · sola lettura</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>Questo rilievo  archiviato. Solo l'ultimo rilievo (R{lastRilievo?.n})  modificabile.</div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: "#3C3489", letterSpacing: "0.2px" }}>Rilievo storico R{r?.n} · sola lettura</div>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: "#5856d6aa", marginTop: 2 }}>Solo R{lastRilievo?.n} (più recente) è modificabile</div>
-                </div>
-                <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{
-                  padding: "7px 12px", borderRadius: 9,
-                  background: "linear-gradient(145deg, #5FD0D0, #1A7A7A)",
-                  color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer",
-                  whiteSpace: "nowrap" as any,
-                  boxShadow: "0 3px 8px rgba(40,160,160,0.35)",
-                  flexShrink: 0,
-                }}>
-                  R{lastRilievo?.n} →
+                <div onClick={() => { if (lastRilievo) setSelectedRilievo(lastRilievo); }} style={{ padding: "6px 12px", borderRadius: 8, background: T.acc, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  Vai a R{lastRilievo?.n} →
                 </div>
               </div>
             )}
@@ -6106,7 +2179,19 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 {isStorico ? (
                   <div style={{ fontSize: 12, color: T.sub }}>Nessun vano era presente in questa visita</div>
                 ) : (
-                  <></>
+                  <>
+                    <div style={{ fontSize: 12, color: T.sub, marginBottom: 18, lineHeight: 1.5 }}>Aggiungi il primo vano: finestra, porta, fisso...<br/>Poi inserirai le misure e le foto</div>
+                    <button onClick={() => {
+                  if (!selectedCM || !selectedRilievo) return;
+                  const v = { id: Date.now(), nome: `Vano 1`, tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
+                  const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
+                  setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
+                  setSelectedRilievo(updR);
+                  setSelectedCM(prev => ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2) }));
+                  setSelectedVano(v);
+                  setVanoStep(0);
+                }} style={{ ...S.btn, margin: "0 auto", padding: "14px 32px", fontSize: 15 }}>+ Aggiungi primo vano</button>
+                  </>
                 )}
               </div>
             ) : vaniList.map(v => {
@@ -6114,92 +2199,58 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
               const completo = nMisure >= 6;
               const bloccato = v.note?.startsWith("+ BLOCCATO");
               const colore = bloccato ? T.red : completo ? T.grn : T.orange;
-              const coloreBg = bloccato ? T.redLt : completo ? T.grnLt : T.orangeLt;
-              const nFoto = Object.keys(v.foto || {}).length;
               return (
                 <div key={v.id} onClick={() => { console.log("CLICK VANO", v?.id, v?.nome); setSelectedVano(v); setVanoStep(0); }}
-                  style={{
-                    background: "#fff",
-                    borderRadius: 14,
-                    marginBottom: 10,
-                    padding: "14px 14px",
-                    cursor: "pointer",
-                    boxShadow: "0 3px 10px rgba(31,120,120,0.08)",
-                    border: `1px solid ${T.bdr}`,
-                    borderLeft: `4px solid ${colore}`,
+                  style={{ ...S.card, marginBottom: 8, padding: "12px 14px", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 12,
-                    transition: "transform 0.15s",
-                  }}>
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 11,
-                    background: coloreBg,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0, border: `1.5px solid ${colore}35`,
-                  }}>
-                    <I d={bloccato ? ICO.alertTriangle : completo ? ICO.checkCircle : ICO.grid} s={20} c={colore} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                      <span style={{ fontSize: 14, fontWeight: 800, color: "#0D1F1F", whiteSpace: "nowrap" as any, overflow: "hidden", textOverflow: "ellipsis" }}>{v.nome}</span>
+                    borderLeft: `3px solid ${colore}` }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700 }}>{v.nome}</span>
+                      {/* Badge rilievo di appartenenza */}
                       {(() => {
-                        const rIdx = c.rilievi?.findIndex(r2 => r2.vani?.some(vv => vv.id === v.id));
+                        const rIdx = c.rilievi?.findIndex(r => r.vani?.some(vv => vv.id === v.id));
                         if (rIdx == null || rIdx < 0) return null;
+                        const ril = c.rilievi[rIdx];
+                        const questoBloccato = v.note?.startsWith("+ BLOCCATO");
+                        const questoIncompleto = !questoBloccato && Object.values(v.misure||{}).filter(x=>(x as number)>0).length > 0 && Object.values(v.misure||{}).filter(x=>(x as number)>0).length < 6;
+                        const haProblema = questoBloccato || questoIncompleto;
                         return (
                           <span style={{
-                            fontSize: 9, fontWeight: 800, padding: "2px 7px", borderRadius: 5,
-                            background: T.bg, color: T.sub, letterSpacing: "0.3px",
-                          }}>R{rIdx + 1}</span>
+                            fontSize: 9, fontWeight: 800, borderRadius: 6, padding: "1px 6px",
+                            background: haProblema ? T.redLt : T.bg,
+                            color: haProblema ? T.red : T.sub,
+                            border: `1px solid ${haProblema ? T.red+"40" : T.bdr}`
+                          }}>
+                            R{rIdx + 1} · {ril.data || ril.dataRilievo || "·"}
+                            {haProblema && " <I d={ICO.alertTriangle} />"}
+                          </span>
                         );
                       })()}
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: T.sub, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" as any }}>
-                      {v.tipo && <span>{v.tipo}</span>}
-                      {v.tipo && v.stanza && <span>·</span>}
-                      {v.stanza && <span>{v.stanza}</span>}
-                      {(v.stanza || v.tipo) && v.piano && <span>·</span>}
-                      {v.piano && <span>piano {v.piano}</span>}
-                      {!v.tipo && !v.stanza && !v.piano && <span style={{ fontStyle: "italic" as any }}>da configurare</span>}
-                    </div>
-                    {bloccato && (
-                      <div style={{ fontSize: 10, color: T.red, marginTop: 4, fontWeight: 700 }}>
-                        <I d={ICO.alertTriangle} s={10} /> {v.note?.replace("+ BLOCCATO: ", "")}
-                      </div>
-                    )}
+                    <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} · {v.stanza} · {v.piano}</div>
+                    {bloccato && <div style={{ fontSize: 11, color: T.red, marginTop: 2 }}>{v.note?.replace("+ BLOCCATO: ","")}</div>}
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column" as any, alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 900, color: "#fff",
-                      background: `linear-gradient(145deg, ${colore}, ${colore}dd)`,
-                      borderRadius: 6, padding: "3px 9px",
-                      boxShadow: `0 2px 5px ${colore}40`,
-                      letterSpacing: "0.3px", textTransform: "uppercase" as any,
-                    }}>
-                      {v.pezzi || 1} {(v.pezzi || 1) === 1 ? "pz" : "pz"}
+                  <div style={{ textAlign: "right", display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+                    {/* Badge pezzi */}
+                    <span style={{ fontSize:12, fontWeight:800, color:"#fff",
+                      background: bloccato ? T.red : completo ? T.grn : T.orange,
+                      borderRadius:8, padding:"2px 8px", minWidth:28, textAlign:"center" }}>
+                      {v.pezzi||1} pz
                     </span>
-                    <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                      {nFoto > 0 && (
-                        <span style={{ fontSize: 10, color: T.sub, fontWeight: 700, display: "flex", alignItems: "center", gap: 2 }}>
-                          <I d={ICO.camera} s={10} /> {nFoto}
-                        </span>
-                      )}
-                      <span style={{ fontSize: 10, fontWeight: 700, color: colore }}>
-                        {bloccato ? "bloccato" : completo ? `${nMisure} mis.` : nMisure === 0 ? "da misurare" : `${nMisure}/6 mis.`}
-                      </span>
-                    </div>
+                    {bloccato
+                      ? <span style={S.badge(T.redLt, T.red)}><I d={ICO.alertTriangle} /> Bloccato</span>
+                      : completo
+                      ? <span style={S.badge(T.grnLt, T.grn)}>✓ {nMisure} mis.</span>
+                      : <span style={S.badge(T.orangeLt, T.orange)}><I d={ICO.alertTriangle} /> {nMisure} mis.</span>}
                   </div>
-                  <I d={ICO.chevronRight} s={16} c={T.sub} />
+                  <span style={{ color: T.sub, fontSize: 14 }}>📷</span>
                 </div>
               );
             })}
             {vaniList.length > 0 && !isStorico && (
               <div onClick={() => {
                 if (!selectedCM || !selectedRilievo) return;
-                // Se rilievo complesso, apri modal invece di creare direttamente
-                if (selectedRilievo.complesso) {
-                  setNvL1(""); setNvL2(""); setNvL3(""); setNvStanza(""); setNvCustom([]);
-                  setShowAggiungiVanoModal(true);
-                  return;
-                }
                 const v = { id: Date.now(), nome: `Vano ${(selectedRilievo.vani?.length||0)+1}`, tipo: "", stanza: "", piano: "", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "", misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
                 const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
                 setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
@@ -6208,23 +2259,11 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 setSelectedVano(v);
                 setVanoStep(0);
               }}
-                style={{
-                  padding: "13px 14px", marginTop: 8, cursor: "pointer",
-                  borderRadius: 12,
-                  border: `1.5px dashed ${T.acc}40`,
-                  background: `${T.acc}06`,
-                  display: "flex", alignItems: "center", gap: 10, justifyContent: "center",
-                  boxShadow: "0 2px 6px rgba(31,120,120,0.04)",
-                }}>
-                <div style={{
-                  width: 26, height: 26, borderRadius: 8,
-                  background: `linear-gradient(145deg, #5FD0D0, #28A0A0)`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  boxShadow: "0 2px 5px rgba(40,160,160,0.35)",
-                }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 800, color: T.acc, letterSpacing: "0.2px" }}>Aggiungi vano</span>
+                style={{ ...S.card, padding: "11px 14px", marginTop: 6, cursor: "pointer",
+                  border: `1px dashed ${T.bdr}`, background: "transparent",
+                  display: "flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
+                <span style={{ fontSize: 18, color: T.acc }}>+</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: T.acc }}>Aggiungi vano</span>
               </div>
             )}
           </div>
@@ -6307,9 +2346,20 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
         <input ref={fotoInputRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const a={id:Date.now(),tipo:"foto",nome:f.name,data:new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}),dataUrl:ev.target.result};setCantieri(cs=>cs.map(x=>x.id===selectedCM.id?{...x,allegati:[...(x.allegati||[]),a]}:x));setSelectedCM(p=>({...p,allegati:[...(p.allegati||[]),a]}));};r.readAsDataURL(f);e.target.value="";}}/> 
 
 
+        {/* SEGNALA PROBLEMA */}
+        <div style={{ padding: "0 16px", marginBottom: 8, display: "flex", gap: 8 }}>
+          <button onClick={() => { setProblemaForm({ titolo: "", descrizione: "", tipo: "materiale", priorita: "media", assegnato: "" }); setShowProblemaModal(true); }} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "1.5px solid #FF3B30", background: "#FF3B3008", color: "#FF3B30", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, position: "relative" }}>
+            <I d={ICO.alertTriangle} /> Segnala problema
+            {problemi.filter(p => p.commessaId === c.id && p.stato !== "risolto").length > 0 && <span style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: "50%", background: "#FF3B30", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{problemi.filter(p => p.commessaId === c.id && p.stato !== "risolto").length}</span>}
+          </button>
+          {problemi.filter(p => p.commessaId === c.id).length > 0 && (
+            <button onClick={() => { setShowProblemiView(true); }} style={{ padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.text, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", gap: 6 }}>
+              <I d={ICO.clipboard} /> {problemi.filter(p => p.commessaId === c.id).length}
+            </button>
+          )}
+        </div>
 
-        {/* Allegati / Note / Vocali / Video - hide when selectedRilievo (v68) */}
-        {!selectedRilievo && (
+        {/* Allegati / Note / Vocali / Video */}
         <div style={{ padding: "0 16px", marginBottom: 8 }}>
           <div style={{ display: "flex", gap: 6 }}>
             {[
@@ -6388,7 +2438,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             </div>
           )}
         </div>
-        )}
 
         {/*  SEZIONE INTERVENTI  */}
         {montaggiDB.filter(m => String(m.cmId) === String(c.id)).length > 0 && (
@@ -6408,182 +2457,34 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           </>
         )}
 
-        {/* Timeline/Log v58 - app-nell-app - hide when selectedRilievo (v68) */}
-        {!selectedRilievo && c.log && c.log.length > 0 && (() => {
-          // Colori per tipo evento (palette mockup v3)
-          const EV_COLORS: any = {
-            creazione:    { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", icon: "✦" },
-            rilievo:      { grad: "linear-gradient(155deg, #AFA9EC 0%, #7F77DD 100%)", solid: "#7F77DD", dark: "#3C3489", tint: "rgba(127,119,221,0.12)", icon: "◆" },
-            preventivo:   { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", icon: "€" },
-            firma:        { grad: "linear-gradient(155deg, #5DCAA5 0%, #1D9E75 100%)", solid: "#1D9E75", dark: "#04342C", tint: "rgba(29,158,117,0.12)", icon: "✓" },
-            ordine:       { grad: "linear-gradient(155deg, #FAC775 0%, #EF9F27 100%)", solid: "#EF9F27", dark: "#854F0B", tint: "rgba(239,159,39,0.15)", icon: "▶" },
-            produzione:   { grad: "linear-gradient(155deg, #85B7EB 0%, #378ADD 100%)", solid: "#378ADD", dark: "#042C53", tint: "rgba(55,138,221,0.12)", icon: "⚙" },
-            posa:         { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", icon: "⬒" },
-            collaudo:     { grad: "linear-gradient(155deg, #ED93B1 0%, #D4537E 100%)", solid: "#D4537E", dark: "#4B1528", tint: "rgba(212,83,126,0.14)", icon: "✓" },
-            fattura:      { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", solid: "#639922", dark: "#173404", tint: "rgba(99,153,34,0.14)", icon: "€" },
-            pagamento:    { grad: "linear-gradient(155deg, #97C459 0%, #639922 100%)", solid: "#639922", dark: "#173404", tint: "rgba(99,153,34,0.14)", icon: "✓" },
-            ferma:        { grad: "linear-gradient(155deg, #F09595 0%, #E24B4A 100%)", solid: "#E24B4A", dark: "#8B1A1A", tint: "rgba(226,75,74,0.14)", icon: "⚠" },
-            nota:         { grad: "linear-gradient(155deg, #888780 0%, #5F5E5A 100%)", solid: "#5F5E5A", dark: "#2C2C2A", tint: "rgba(95,94,90,0.14)", icon: "✎" },
-          };
-          const detectType = (cosa: string): string => {
-            const s = (cosa || "").toLowerCase();
-            if (s.includes("creat") || s.includes("aperto") || s.includes("apertura")) return "creazione";
-            if (s.includes("rilievo") || s.includes("sopralluogo") || s.includes("misur")) return "rilievo";
-            if (s.includes("preventivo")) return "preventivo";
-            if (s.includes("firm") || s.includes("confermat")) return "firma";
-            if (s.includes("ordine") || s.includes("ordin")) return "ordine";
-            if (s.includes("produzione") || s.includes("produ")) return "produzione";
-            if (s.includes("posa") || s.includes("install") || s.includes("montag")) return "posa";
-            if (s.includes("collaudo")) return "collaudo";
-            if (s.includes("pagat") || s.includes("pagament") || s.includes("saldo")) return "pagamento";
-            if (s.includes("fattur")) return "fattura";
-            if (s.includes("ferma") || s.includes("bloccat") || s.includes("sospes")) return "ferma";
-            if (s.includes("nota") || s.includes("comment")) return "nota";
-            return "creazione";
-          };
-          const initials = (s: string): string => {
-            if (!s) return "—";
-            const parts = s.trim().split(/\s+/).slice(0, 2);
-            return parts.map(p => p[0]?.toUpperCase() || "").join("") || s[0]?.toUpperCase() || "—";
-          };
+        {/* Timeline/Log */}
+        {c.log && c.log.length > 0 && (
+          <>
+            <div style={{ ...S.section, marginTop: 8 }}>
+              <div style={S.sectionTitle}>Cronologia</div>
+            </div>
+            <div style={{ padding: "0 16px" }}>
+              {c.log.map((l, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
+                    {i < c.log.length - 1 && <div style={{ width: 1, flex: 1, background: T.bdr, marginTop: 4 }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, color: T.text, lineHeight: 1.3 }}><strong>{l.chi}</strong> {l.cosa}</div>
+                    <div style={{ fontSize: 10, color: T.sub2, marginTop: 1 }}>{l.quando}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
-          return (
-            <CronologiaBlock
-              log={c.log}
-              EV_COLORS={EV_COLORS}
-              detectType={detectType}
-              initials={initials}
-              commessa={c}
-              T={T}
-              S={S}
-              operatoriDB={typeof operatoriDB !== "undefined" ? operatoriDB : []}
-            />
-          );
-        })()}
-
-        {/* Elimina - hide when selectedRilievo (v68) */}
-        {!selectedRilievo && (
+        {/* Elimina */}
         <div style={{ padding: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
           {c.fase === "chiusura" && <div style={{ fontSize: 12, fontWeight: 700, color: T.grn }}>✓ Commessa chiusa</div>}
           <span onClick={() => deleteCommessa(c.id)} style={{ fontSize: 11, color: T.sub2, cursor: "pointer", textDecoration: "underline" }}>Elimina commessa</span>
         </div>
-        )}
-
-        {/*  MODAL AGGIUNGI VANO COMPLESSO  */}
-        {showAggiungiVanoModal && (() => {
-          const tEdif = (c as any).tipoEdificio || (c as any).tipo_edificio || "";
-          const labels = (() => {
-            switch (tEdif) {
-              case "palazzo": return { l1: "Scala", l2: "Piano", l3: "Interno" };
-              case "condominio": return { l1: "", l2: "Piano", l3: "Interno" };
-              case "scuola": return { l1: "Edificio/Plesso", l2: "Piano", l3: "Aula" };
-              case "ospedale": return { l1: "Padiglione", l2: "Piano", l3: "Reparto" };
-              case "ufficio": return { l1: "Edificio", l2: "Piano", l3: "Ufficio" };
-              case "hotel": return { l1: "Edificio", l2: "Piano", l3: "Camera" };
-              case "centro_comm": return { l1: "", l2: "Livello", l3: "Negozio" };
-              case "industriale": return { l1: "Corpo", l2: "", l3: "Settore" };
-              case "personalizzato": return { l1: (c as any).livello1Label || "Livello 1", l2: (c as any).livello2Label || "Livello 2", l3: (c as any).livello3Label || "Livello 3" };
-              default: return { l1: "Zona", l2: "Piano", l3: "Locale" };
-            }
-          })();
-          const canCreate = (!labels.l1 || nvL1.trim()) && (!labels.l2 || nvL2.trim()) && (!labels.l3 || nvL3.trim());
-          return (
-            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9500, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowAggiungiVanoModal(false)}>
-              <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 520, padding: 20, boxShadow: "0 -8px 40px rgba(0,0,0,0.25)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                  <div>
-                    <div style={{ fontSize: 17, fontWeight: 900, color: "#0D1F1F" }}>Nuovo vano · posizione</div>
-                    <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>Indica dove si trova dentro lo stabile</div>
-                  </div>
-                  <div onClick={() => setShowAggiungiVanoModal(false)} style={{ width: 30, height: 30, borderRadius: 15, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>✕</div>
-                </div>
-
-                {labels.l1 && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labels.l1} *</div>
-                    <input style={S.input} placeholder={`Es. ${labels.l1} A`} value={nvL1} onChange={e => setNvL1(e.target.value)} />
-                  </div>
-                )}
-                {labels.l2 && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labels.l2} *</div>
-                    <input style={S.input} placeholder={`Es. 1, Terra, 3`} value={nvL2} onChange={e => setNvL2(e.target.value)} />
-                  </div>
-                )}
-                {labels.l3 && (
-                  <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>{labels.l3} *</div>
-                    <input style={S.input} placeholder={`Es. ${labels.l3} 5`} value={nvL3} onChange={e => setNvL3(e.target.value)} />
-                  </div>
-                )}
-
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 700, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 4 }}>Stanza / ambiente</div>
-                  <input style={S.input} placeholder="Es. Cucina, Bagno, Camera, Aula magna…" value={nvStanza} onChange={e => setNvStanza(e.target.value)} />
-                </div>
-
-                {/* Campi personalizzati ripetibili */}
-                {nvCustom.length > 0 && (
-                  <div style={{ marginBottom: 10, display: "flex", flexDirection: "column", gap: 8 }}>
-                    {nvCustom.map((f, i) => (
-                      <div key={i} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                        <input style={{ ...S.input, flex: 1 }} placeholder="Etichetta" value={f.label} onChange={e => {
-                          const n = [...nvCustom]; n[i] = { ...n[i], label: e.target.value }; setNvCustom(n);
-                        }} />
-                        <input style={{ ...S.input, flex: 2 }} placeholder="Valore" value={f.value} onChange={e => {
-                          const n = [...nvCustom]; n[i] = { ...n[i], value: e.target.value }; setNvCustom(n);
-                        }} />
-                        <div onClick={() => setNvCustom(nvCustom.filter((_, ii) => ii !== i))} style={{ width: 30, height: 30, borderRadius: 8, background: "#FFE8E8", color: "#DC4444", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, fontWeight: 800 }}>×</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div onClick={() => setNvCustom([...nvCustom, { label: "", value: "" }])} style={{
-                  marginBottom: 14, padding: "10px 12px", borderRadius: 10, border: `1.5px dashed ${T.bdr}`,
-                  background: "transparent", cursor: "pointer", textAlign: "center" as any,
-                  fontSize: 12, fontWeight: 700, color: T.acc,
-                }}>
-                  + Aggiungi campo personalizzato
-                </div>
-
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => setShowAggiungiVanoModal(false)} style={{ flex: 1, padding: 13, borderRadius: 12, border: `1.5px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                  <button disabled={!canCreate} onClick={() => {
-                    if (!selectedCM || !selectedRilievo) return;
-                    const customValidi = nvCustom.filter(f => f.label.trim() && f.value.trim());
-                    const customStr = customValidi.map(f => f.value).join(" · ");
-                    const posStr = [nvL1, nvL2, nvL3].filter(Boolean).join(" · ");
-                    const baseNome = [posStr, nvStanza, customStr].filter(Boolean).join(" · ");
-                    const v = {
-                      id: Date.now(),
-                      nome: baseNome || `Vano ${(selectedRilievo.vani?.length||0)+1}`,
-                      tipo: "",
-                      stanza: nvStanza,
-                      piano: nvL2,
-                      livello_1: nvL1,
-                      livello_2: nvL2,
-                      livello_3: nvL3,
-                      campi_custom: nvCustom.filter(f => f.label.trim() && f.value.trim()),
-                      sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "", difficoltaSalita: "", mezzoSalita: "",
-                      misure: {}, foto: {}, note: "", cassonetto: false, pezzi: 1,
-                      accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } },
-                    };
-                    const updR = { ...selectedRilievo, vani: [...(selectedRilievo.vani||[]), v] };
-                    setCantieri(cs => cs.map(cm => cm.id === selectedCM?.id ? { ...cm, rilievi: cm.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2), aggiornato: "Oggi" } : cm));
-                    setSelectedRilievo(updR);
-                    setSelectedCM(prev => prev ? ({ ...prev, rilievi: prev.rilievi.map(r2 => r2.id === selectedRilievo.id ? updR : r2) }) : prev);
-                    setSelectedVano(v);
-                    setVanoStep(0);
-                    setShowAggiungiVanoModal(false);
-                  }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: canCreate ? T.acc : "#ccc", color: "#fff", fontSize: 14, fontWeight: 800, cursor: canCreate ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
-                    + Crea vano
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
 
         {/*  MODAL NUOVO RILIEVO  */}
         {showNuovoRilievoModal && (
@@ -6598,40 +2499,15 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                 <div onClick={() => setShowNuovoRilievoModal(false)} style={{ width: 32, height: 32, borderRadius: 16, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>
               </div>
 
-              {/* TOGGLE RILIEVO SEMPLICE / COMPLESSO */}
-              {true && (
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo rilievo</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                    <div onClick={() => setNuovoRilievoComplesso(false)} style={{
-                      padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                      background: !nuovoRilievoComplesso ? "#28A0A015" : T.card,
-                      border: `1.5px solid ${!nuovoRilievoComplesso ? "#28A0A0" : T.bdr}`,
-                    }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: !nuovoRilievoComplesso ? "#28A0A0" : T.text }}>Semplice</div>
-                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Vani senza gerarchia</div>
-                    </div>
-                    <div onClick={() => setNuovoRilievoComplesso(true)} style={{
-                      padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-                      background: nuovoRilievoComplesso ? "#3C348915" : T.card,
-                      border: `1.5px solid ${nuovoRilievoComplesso ? "#3C3489" : T.bdr}`,
-                    }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: nuovoRilievoComplesso ? "#3C3489" : T.text }}>Complesso</div>
-                      <div style={{ fontSize: 9, color: T.sub, marginTop: 2 }}>Organizza per zone/piani</div>
-                    </div>
-                  </div>
-                </div>
-              )}
               {/* TIPO RILIEVO */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: T.sub, textTransform: "uppercase" as any, letterSpacing: "0.5px", marginBottom: 8 }}>Tipo misure</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
                   {[
-                    { id: "provvisorio",    l: "Provvisorie",   d: "Prima visita, misure indicative",    c: "#D08008" },
-                    { id: "verificato",     l: "Verificate",    d: "Controllate sul posto",              c: "#185FA5" },
-                    { id: "definitivo",     l: "Definitive",    d: "Misure finali, preventivo sbloccato", c: "#0F6E56" },
-                    { id: "da_rivedere",    l: "Da rivedere",   d: "Discrepanze, ricontrollare",         c: "#DC4444" },
-                    { id: "personalizzato", l: "Personalizzato", d: "Tipo a scelta, descrivi nelle note", c: "#3C3489" },
+                    { id: "provvisorio", l: "Provvisorie", d: "Prima visita, misure indicative", c: "#D08008" },
+                    { id: "verificato",  l: "Verificate",  d: "Controllate sul posto", c: "#D08008" },
+                    { id: "definitivo",  l: "Definitive",  d: "Misure finali, preventivo sbloccato", c: "#28A0A0" },
+                    { id: "da_rivedere", l: "Da rivedere", d: "Discrepanze, ricontrollare", c: "#DC4444" },
                   ].map(t => {
                     const on = nuovoRilievoTipo === t.id;
                     return (
@@ -6676,7 +2552,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                     rilevatore: nuovoRilievoRilevatore || "",
                     note: nuovoRilievoNote || "",
                     vani: [],
-                    complesso: nuovoRilievoComplesso,
                   };
                   setCantieri((cs: any[]) => cs.map(cm => cm.id === c.id ? { ...cm, rilievi: [...(cm.rilievi || []), newR] } : cm));
                   setSelectedCM((prev: any) => prev ? ({ ...prev, rilievi: [...(prev.rilievi || []), newR] }) : prev);
@@ -6684,7 +2559,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
                   setShowNuovoRilievoModal(false);
                   setCmSubTab("sopralluoghi");
                 }} style={{ flex: 2, padding: 13, borderRadius: 12, border: "none", background: T.acc, color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                  Crea rilievo · Aggiungi vani
+                  ✓ Crea rilievo · Aggiungi vani
                 </button>
               </div>
             </div>
@@ -6838,116 +2713,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
             </div>
           </div>
         )}
-      {showSendModal && (
-        <div onClick={() => setShowSendModal(null)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "#0D1F1F", marginBottom: 4 }}>Invia preventivo al cliente</div>
-            <div style={{ fontSize: 12, color: "#6A8484", marginBottom: 16 }}>{showSendModal.nome} {showSendModal.tel ? "- " + showSendModal.tel : ""}</div>
-            {!showSendModal.link && (
-              <div style={{ padding: 10, borderRadius: 8, background: "#FEF3C7", color: "#92400E", fontSize: 11, marginBottom: 12 }}>
-                Il link cliente non e stato generato. Verra inviato solo il testo base.
-              </div>
-            )}
-            <div style={{ display: "grid", gap: 8 }}>
-              {showSendModal.tel && (
-                <button onClick={() => {
-                  const msg = showSendModal.link ? `Ciao ${showSendModal.nome}, ecco il preventivo ${showSendModal.code}. Clicca qui per vedere i dettagli e rispondere: ${showSendModal.link}` : `Ciao ${showSendModal.nome}, ecco il tuo preventivo. Rispondi OK se va bene o dimmi cosa modificare. Grazie!`;
-                  const t = showSendModal.tel;
-                  const wa = `https://wa.me/${t.startsWith("+") ? t.slice(1) : "39" + t}?text=` + encodeURIComponent(msg);
-                  window.open(wa, "_blank");
-                  setShowSendModal(null); setCcDone("Inviato via WhatsApp"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
-                }} style={{ padding: 14, borderRadius: 12, border: "none", background: "#25D366", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
-                  WhatsApp - {showSendModal.tel}
-                </button>
-              )}
-              {showSendModal.email && (
-                <button onClick={() => {
-                  const subj = `Preventivo ${showSendModal.code}`;
-                  const body = showSendModal.link ? `Gentile ${showSendModal.nome},\n\ntrovi qui il preventivo ${showSendModal.code}:\n${showSendModal.link}\n\nDal link puoi accettare, chiedere modifiche o richiedere di essere chiamato.\n\nCordiali saluti.` : `Gentile ${showSendModal.nome},\n\nin allegato trovi il preventivo ${showSendModal.code}.\n\nFammi sapere come procedere.\n\nCordiali saluti.`;
-                  const mailto = `mailto:${showSendModal.email}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
-                  window.open(mailto, "_blank");
-                  setShowSendModal(null); setCcDone("Email aperta"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
-                }} style={{ padding: 14, borderRadius: 12, border: "none", background: "#3B7FE0", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
-                  Email - {showSendModal.email}
-                </button>
-              )}
-              {showSendModal.tel && (
-                <button onClick={() => {
-                  const msg = showSendModal.link ? `Preventivo ${showSendModal.code}: ${showSendModal.link}` : `Preventivo ${showSendModal.code} disponibile`;
-                  const t = showSendModal.tel;
-                  const sms = `sms:${t}?body=` + encodeURIComponent(msg);
-                  window.open(sms, "_blank");
-                  setShowSendModal(null); setCcDone("SMS aperto"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
-                }} style={{ padding: 14, borderRadius: 12, border: "1.5px solid #C8E4E4", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
-                  SMS - {showSendModal.tel}
-                </button>
-              )}
-              {showSendModal.link && (
-                <button onClick={() => {
-                  navigator.clipboard.writeText(showSendModal.link).then(() => {
-                    setShowSendModal(null); setCcDone("Link copiato negli appunti"); setTimeout(() => { setCcDone(null); setPrevWorkspace(false); }, 2000);
-                  });
-                }} style={{ padding: 14, borderRadius: 12, border: "1.5px solid #C8E4E4", background: "#fff", color: "#0D1F1F", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", textAlign: "left" as const }}>
-                  Copia link
-                </button>
-              )}
-              {!showSendModal.tel && !showSendModal.email && (
-                <div style={{ padding: 14, borderRadius: 10, background: "#FEE2E2", color: "#991B1B", fontSize: 12 }}>
-                  Nessun contatto disponibile. Aggiungi telefono o email al cliente per inviare.
-                </div>
-              )}
-            </div>
-            <button onClick={() => setShowSendModal(null)} style={{ marginTop: 14, width: "100%", padding: 10, borderRadius: 10, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              Annulla
-            </button>
-          </div>
-        </div>
-      )}
-      {quickEditCliente && (
-        <div onClick={() => setQuickEditCliente(null)} style={{ position: "fixed", inset: 0, zIndex: 99999, background: "rgba(13,31,31,0.6)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, padding: 20, maxWidth: 420, width: "100%" }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4, color: "#0D1F1F" }}>
-              Aggiungi {quickEditCliente === "telefono" ? "telefono" : "email"} cliente
-            </div>
-            <div style={{ fontSize: 11, color: "#6A8484", marginBottom: 14 }}>{c.cliente} {c.cognome || ""}</div>
-            <input
-              type={quickEditCliente === "email" ? "email" : "tel"}
-              value={quickEditValue}
-              onChange={(e) => setQuickEditValue(e.target.value)}
-              placeholder={quickEditCliente === "telefono" ? "es. 3401234567" : "es. cliente@esempio.it"}
-              autoFocus
-              style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #C8E4E4", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" as const, marginBottom: 14 }}
-            />
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setQuickEditCliente(null)} style={{ flex: 1, padding: 12, borderRadius: 10, background: "#fff", color: "#6A8484", border: "1px solid #C8E4E4", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-              <button onClick={() => {
-                if (!quickEditValue.trim()) return;
-                const field = quickEditCliente as string;
-                updCM(field, quickEditValue.trim());
-                setQuickEditCliente(null);
-                setCcDone("Dato salvato!");
-                setTimeout(() => { setCcDone(null); setShowModalFirma(true); }, 800);
-              }} style={{ flex: 2, padding: 12, borderRadius: 10, background: "#28A0A0", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Salva e torna a firma</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {(() => { if (showModalFirma) console.log("[v44 RENDER] showModalFirma=true, c?", !!c, "c.id?", c?.id); return null; })()}
-      {showModalFirma && c && (
-        <ModalFirma
-          commessaId={c.id || c.cm_id || ""}
-          clienteNome={c.cliente || c.nomeCliente || "Cliente"}
-          clienteTelefono={c.telefono || null}
-          clienteEmail={c.email || null}
-          onClose={() => setShowModalFirma(false)}
-          onSuccess={() => {
-            updCM("preventivoInviato", true);
-            updCM("dataPreventivoInvio", new Date().toISOString().split("T")[0]);
-            setCcDone("Firma inviata al cliente");
-            setTimeout(() => setCcDone(null), 3000);
-          }}
-        />
-      )}
       </div>
     );
 
