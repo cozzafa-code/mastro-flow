@@ -4230,6 +4230,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           <TeamMobile
             hideBottomNav={false}
             onOpenCommessa={(id) => { const cm = cantieri.find((c: any) => c.id === id); if (cm) { setSelectedCM(cm); setTab("commesse"); } }}
+            onNavigate={(t: string) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }}
           />
         )}
 
