@@ -2655,6 +2655,12 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           setTab("commesse");
         }
       }}
+      onCreateEvent={(kind, dateIso) => {
+        try {
+          setNewEvent((prev: any) => ({ ...(prev || {}), date: dateIso, type: kind === "nota" ? "task" : kind }));
+        } catch {}
+        setShowNewEvent(true);
+      }}
     />
   );
 

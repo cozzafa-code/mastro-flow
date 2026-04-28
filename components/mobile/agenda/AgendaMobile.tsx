@@ -15,8 +15,11 @@ import { useAgendaMobile } from "../../../hooks/useAgendaMobile";
 import type { AgendaEvent } from "../../../lib/types/agenda";
 
 interface Props {
-  bottomNav?: React.ReactNode; // se passi una nav esterna, sostituisce quella default
+  bottomNav?: React.ReactNode;
+  hideBottomNav?: boolean;
+  cantieri?: any[];
   onOpenCommessa?: (cmId: string | undefined, code: string | undefined) => void;
+  onCreateEvent?: (kind: "montaggio" | "sopralluogo" | "produzione" | "problema" | "task" | "nota", selectedDate: string) => void;
 }
 
 const TODAY_ISO = new Date().toISOString().split("T")[0];
@@ -33,8 +36,8 @@ function formatHeaderTitle(view: "giorno" | "settimana" | "mese") {
   return "Agenda";
 }
 
-export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
-  const a = useAgendaMobile();
+export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpenCommessa, onCreateEvent }: Props) {
+  const a = useAgendaMobile(cantieri);
   const [tap, setTap] = useState<AgendaEvent | null>(null);
   const [fabOpen, setFabOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -92,7 +95,7 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
           onTap={() => {}}
           onBack={() => a.setView("giorno")}
         />
-        {bottomNav ?? <AgendaBottomNav active="agenda" />}
+        {!hideBottomNav && (bottomNav ?? <AgendaBottomNav active="agenda" />)}
       </div>
     );
   }
@@ -220,7 +223,7 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
       </button>
 
       {/* Bottom nav */}
-      {bottomNav ?? <AgendaBottomNav active="agenda" />}
+      {!hideBottomNav && (bottomNav ?? <AgendaBottomNav active="agenda" />)}
 
       {/* Sheets */}
       <AgendaEventSheetMobile
@@ -233,6 +236,12 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
         open={fabOpen}
         onClose={() => setFabOpen(false)}
         onPick={(kind) => {
+          // Se l'host (MastroERP) fornisce onCreateEvent → chiama lui (apre form vero)
+          if (onCreateEvent) {
+            onCreateEvent(kind, a.selectedDate);
+            return;
+          }
+          // Standalone: aggiungo evento di placeholder e mostro toast
           a.addEvent({
             id: "ev_" + Date.now(),
             tipo: kind === "nota" ? "task" : kind,
@@ -241,6 +250,7 @@ export default function AgendaMobile({ bottomNav, onOpenCommessa }: Props) {
             data: a.selectedDate,
             titolo: "Nuovo " + (kind === "nota" ? "appunto" : kind),
           });
+          if (typeof window !== "undefined") window.alert("Evento aggiunto in agenda (mock)");
         }}
       />
       <AgendaFiltersMobile open={filtersOpen} current={a.filters} onClose={() => setFiltersOpen(false)} onApply={a.setFilters} />

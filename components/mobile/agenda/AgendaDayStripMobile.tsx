@@ -43,7 +43,10 @@ export default function AgendaDayStripMobile({ selectedDate, onSelect, daysCount
         return (
           <div
             key={d.iso}
-            onClick={() => onSelect(d.iso)}
+            onClick={() => {
+              console.log("[agenda day strip] click giorno", d.iso);
+              onSelect(d.iso);
+            }}
             style={{
               flex: "1 1 0",
               minWidth: 50,
