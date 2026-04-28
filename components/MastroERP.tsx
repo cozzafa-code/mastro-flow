@@ -45,7 +45,6 @@ import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
 import HomePanel from "./HomePanelMobile";
 import BottomToolbar from "./BottomToolbar";
-import TeamMobile from "./mobile/team/TeamMobile";
 import VoiceAssistant from "./VoiceAssistant";
 import CMDetailPanel from "./CMDetailPanel";
 import ModalPanel from "./ModalPanel";
@@ -90,7 +89,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
 
   // Listener Day · navigazione bidirezionale (con whitelist tab validi)
   React.useEffect(() => {
-    const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro","team"];
+    const TAB_VALIDI = ["home","commesse","clienti","messaggi","agenda","contabilita","montaggi_cal","settings","altro"];
     const MAPPA_DAY: Record<string,string> = {
       preventivo: "commesse",
       mail: "messaggi",
@@ -3837,7 +3836,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
                     <div style={{ fontSize: 20, fontWeight: 900, color: "#fff" }}>Centro Operativo</div>
                     <div style={{ fontSize: 11, color: "rgba(255,255,255,.4)" }}>{team.length} persone - {tuttiCompiti.filter(c => c.stato !== "completato").length} attivi - {eventiOggi.length} eventi oggi</div>
                   </div>
-                  <div onClick={() => setTab("altro")} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginRight: 6 }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></div><div onClick={() => setTab("home")} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                  <div onClick={() => setTab("home")} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                     <I d={ICO.home} s={16} c="rgba(255,255,255,.5)" />
                   </div>
                 </div>
@@ -4226,13 +4225,6 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
           );
         })()}</PanelErrorBoundary>}
           {tab === "settings" && <PanelErrorBoundary name="Impostazioni">{renderSettings()}</PanelErrorBoundary>}
-        {tab === "team" && (
-          <TeamMobile
-            hideBottomNav={false}
-            onOpenCommessa={(id) => { const cm = cantieri.find((c: any) => c.id === id); if (cm) { setSelectedCM(cm); setTab("commesse"); } }}
-          />
-        )}
-
         {tab === "altro" && (() => {
           return (
             <div style={{ padding:"20px 16px 100px", minHeight:"100vh" }}>
@@ -5552,7 +5544,7 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     {/* === CONFIGURATORE STRUTTURE === */}
     {showStrutture && <MastroStrutture onClose={() => setShowStrutture(false)} />}
       {showVoice && <VoiceAssistant onClose={() => setShowVoice(false)} />}
-      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : tab === "team" ? "team" : "home"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
+      <BottomToolbar active={tab === "home" ? "home" : tab === "commesse" ? "commesse" : tab === "agenda" ? "agenda" : tab === "messaggi" ? "talk" : "altro"} onNavigate={(t) => { setSelectedCM(null); setSelectedMsg(null); setSelectedVano(null); setTab(t); }} />
     </>
     </MastroContext.Provider>
   );
