@@ -74,8 +74,11 @@ export async function POST(req: NextRequest) {
           azienda_id: aziendaId,
           commessa_id: commessaUuid,
           tipo: "preventivo",
-          stato: "attivo",
-          livello_firma: "fes",
+          stato: "pending",
+          livello_firma: data.livello === "cartacea" ? "CARTACEA"
+            : data.livello === "fea" ? "FEA"
+            : data.livello === "feq" ? "FEQ"
+            : "FES",
           provider: "mastro",
           snapshot,
           destinatario_telefono: data.telefono || null,
