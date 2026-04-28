@@ -467,3 +467,39 @@ export async function getUltimePosizioniGPS(): Promise<Record<string, GPSSnapsho
   });
   return out;
 }
+
+
+// =================== FASE 5F: AVATAR OPERATORE ===================
+export async function uploadOperatorAvatar(operatoreId: string, file: File): Promise<{ avatar_url: string }> {
+  const { azienda_id } = await getCtx();
+
+  if (file.size > 5 * 1024 * 1024) throw new Error("Immagine troppo grande (max 5 MB)");
+  if (!file.type.startsWith("image/")) throw new Error("Devi caricare un'immagine");
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const safeExt = ["jpg", "jpeg", "png", "webp", "heic"].includes(ext) ? ext : "jpg";
+  const path = `${azienda_id}/${operatoreId}/${Date.now()}.${safeExt}`;
+
+  const { error: upErr } = await supabase.storage
+    .from("operatori-avatar")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type,
+    });
+  if (upErr) throw upErr;
+
+  const { data: urlData } = supabase.storage
+    .from("operatori-avatar")
+    .getPublicUrl(path);
+  const avatar_url = urlData.publicUrl;
+
+  const { error: updErr } = await supabase
+    .from("operatori")
+    .update({ avatar_url })
+    .eq("id", operatoreId)
+    .eq("azienda_id", azienda_id);
+  if (updErr) throw updErr;
+
+  return { avatar_url };
+}

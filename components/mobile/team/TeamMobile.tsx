@@ -1,7 +1,7 @@
 // components/mobile/team/TeamMobile.tsx
 // FASE 3 - wire-up Avvia/Pausa/Riprende/Stop con scrittura DB
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useTeamMobile } from "@/hooks/useTeamMobile";
 import { useTeamFilters } from "@/hooks/useTeamFilters";
 import type { Operator } from "@/lib/types/team";
@@ -9,6 +9,7 @@ import { useMastro } from "@/components/MastroContext";
 import {
   submitTask, risolviAnomalia, creaAnomalia,
   avviaLavoro, pausaLavoro, riprendiLavoro, stopLavoro,
+  uploadOperatorAvatar,
   type CommessaPerAvvio,
 } from "@/lib/team-actions";
 
@@ -74,6 +75,27 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const [showStartSheet, setShowStartSheet] = useState<{ op: Operator } | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<import("@/lib/types/team").Team | null>(null);
   const [showSquadEdit, setShowSquadEdit] = useState<{ id?: string } | null>(null);
+  // FASE 5F: file input nascosto per upload avatar
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoTargetOp, setPhotoTargetOp] = useState<Operator | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // FASE 5G: tracking ultima visita per banner notifiche
+  const [lastSeenAt, setLastSeenAt] = useState<number>(() => {
+    try {
+      const v = typeof window !== "undefined" ? window.localStorage.getItem("mastro:team:lastSeen") : null;
+      return v ? Number(v) : Date.now();
+    } catch { return Date.now(); }
+  });
+  // Marca come "visto" dopo 3s dal mount (altrimenti il banner non comparirebbe mai)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        const now = Date.now();
+        window.localStorage.setItem("mastro:team:lastSeen", String(now));
+      } catch {}
+    }, 3000);
+    return () => clearTimeout(t);
+  }, []);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
@@ -98,11 +120,43 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   };
 
   const handleChat = (op: Operator) => {
+    // FASE 5E: salva filtro operatore prima di navigare
+    try {
+      window.localStorage.setItem("mastro:msgFilter:operator", JSON.stringify({
+        id: op.id, name: op.name, phone: op.phone, ts: Date.now(),
+      }));
+    } catch {}
     if (onNavigate) onNavigate("messaggi");
     else showToast("Apri Messaggi dal menu");
   };
 
   const handleMappa = () => setView("map");
+
+  // FASE 5F: bottone Foto su detail operatore -> apre file picker
+  const handleFoto = (op: Operator) => {
+    setPhotoTargetOp(op);
+    fileInputRef.current?.click();
+  };
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // reset cosi puoi ricaricare la stessa foto
+    if (!file || !photoTargetOp) return;
+    try {
+      setUploadingPhoto(true);
+      await uploadOperatorAvatar(photoTargetOp.id, file);
+      showToast("Foto aggiornata");
+      setPhotoTargetOp(null);
+      await refetch();
+      // Aggiorna selectedOp se necessario
+      if (selectedOp?.id === photoTargetOp.id) {
+        // refetch aggiorna operators e useEffect/sync rinnovera selectedOp
+      }
+    } catch (err: any) {
+      showToast("Errore foto: " + (err?.message || "upload fallito"));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleTask = (op?: Operator) => {
     setTaskDefaultOp(op?.id);
@@ -258,7 +312,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
           onChiama={() => handleChiama(selectedOp)}
           onMappa={() => setView("map")}
           onChat={() => handleChat(selectedOp)}
-          onFoto={() => showToast("Foto: in arrivo")}
+          onFoto={() => handleFoto(selectedOp)}
           onTask={() => handleTask(selectedOp)}
           onProblema={() => handleNuovoProblema(selectedOp)}
           onVaiCommessa={() => selectedOp.commessa_id && onOpenCommessa?.(selectedOp.commessa_id)}
@@ -357,6 +411,41 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
           <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 2, textTransform: "capitalize" }}>{dataLunga}</div>
         </div>
       </div>
+
+      {/* FASE 5G: banner notifica nuovi problemi */}
+      {(() => {
+        const nuoviProblemi = problems.filter(p =>
+          p.status === "aperto" &&
+          p.reported_at &&
+          new Date(p.reported_at).getTime() > lastSeenAt
+        );
+        if (nuoviProblemi.length === 0) return null;
+        return (
+          <div style={{ padding: "10px 14px 0" }}>
+            <div onClick={() => { setTab("problemi"); setLastSeenAt(Date.now()); try { window.localStorage.setItem("mastro:team:lastSeen", String(Date.now())); } catch {} }} style={{
+              background: "linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)",
+              border: "1px solid #FCA5A5",
+              borderRadius: 14,
+              padding: "12px 14px",
+              cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 10,
+            }}>
+              <div style={{ width: 32, height: 32, borderRadius: 999, background: "#DC2626", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ color: "#FFF", fontWeight: 700, fontSize: 14 }}>!</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#991B1B", lineHeight: 1.2 }}>
+                  {nuoviProblemi.length === 1 ? "1 nuovo problema" : `${nuoviProblemi.length} nuovi problemi`}
+                </div>
+                <div style={{ fontSize: 11, color: "#7F1D1D", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as any }}>
+                  {nuoviProblemi[0].title}{nuoviProblemi.length > 1 ? ` · +${nuoviProblemi.length - 1}` : ""} · tap per vedere
+                </div>
+              </div>
+              <span style={{ color: "#991B1B", fontSize: 16, fontWeight: 600 }}>›</span>
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ padding: "14px 14px 0", display: "flex", gap: 6 }}>
         {TABS.map(t => {
@@ -642,6 +731,34 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
           onClose={() => setShowSquadEdit(null)}
           onSaved={() => { setShowSquadEdit(null); refetch(); }}
         />
+      )}
+
+      {/* FASE 5F: file input nascosto per upload foto */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="user"
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
+      {uploadingPhoto && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(13,31,31,0.6)", zIndex: 10001,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: "#FFF", padding: "20px 28px", borderRadius: 14,
+            display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 600, color: "#1A1A1A",
+          }}>
+            <div style={{
+              width: 18, height: 18, border: "2.5px solid #28A0A0", borderTopColor: "transparent",
+              borderRadius: 999, animation: "teamSpin 0.8s linear infinite",
+            }} />
+            Caricamento foto...
+            <style>{`@keyframes teamSpin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        </div>
       )}
     </div>
   );
