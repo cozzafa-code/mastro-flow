@@ -60,7 +60,7 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
     return formatHeaderSub(a.selectedDate);
   }, [a.selectedDate, a.view]);
 
-  const handleAction = (action: "vai" | "chiama" | "mappa" | "risolvi", e: AgendaEvent) => {
+  const handleAction = (action: "vai" | "chiama" | "mappa" | "risolvi" | "apri" | "sollecita" | "fattura" | "incassa", e: AgendaEvent) => {
     if (action === "mappa" || action === "vai") {
       if (e.indirizzo) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.indirizzo)}`, "_blank");
       return;
@@ -72,6 +72,25 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
     if (action === "risolvi") {
       a.completeEvent(e.id);
       setCompleted(e);
+      return;
+    }
+    // === Azioni documentali ===
+    if (action === "apri") {
+      // Apre la commessa nel pannello MastroERP
+      onOpenCommessa?.(e.cmId, e.commessaCode);
+      return;
+    }
+    if (action === "sollecita") {
+      // Per ora apre la commessa, l'utente sollecita da lì
+      onOpenCommessa?.(e.cmId, e.commessaCode);
+      return;
+    }
+    if (action === "fattura") {
+      onOpenCommessa?.(e.cmId, e.commessaCode);
+      return;
+    }
+    if (action === "incassa") {
+      onOpenCommessa?.(e.cmId, e.commessaCode);
       return;
     }
   };
@@ -146,6 +165,42 @@ export default function AgendaMobile({ bottomNav, hideBottomNav, cantieri, onOpe
       {/* === VISTA GIORNO === */}
       {a.view === "giorno" && (
         <>
+          {/* Riepilogo documenti urgenti (oltre operativo) */}
+          {(() => {
+            const docUrgenti = a.eventsOfDay.filter((e) => e.isAllDay && (e.tipo === "firma" || (e.tipo === "saldo" && e.stato === "urgente") || (e.tipo === "preventivo" && e.stato === "urgente")));
+            const conteggi = a.eventsOfDay.filter((e) => e.isAllDay).reduce((acc: Record<string, number>, e) => {
+              acc[e.tipo] = (acc[e.tipo] || 0) + 1;
+              return acc;
+            }, {});
+            const totDoc = Object.values(conteggi).reduce((s, n) => s + n, 0);
+            if (totDoc === 0) return null;
+            const summary: string[] = [];
+            if (conteggi.preventivo) summary.push(`${conteggi.preventivo} preventivi in attesa`);
+            if (conteggi.firma) summary.push(`${conteggi.firma} da firmare`);
+            if (conteggi.acconto) summary.push(`${conteggi.acconto} acconti`);
+            if (conteggi.saldo) summary.push(`${conteggi.saldo} saldi`);
+            return (
+              <div style={{ padding: "14px 14px 0" }}>
+                <div style={{ background: "linear-gradient(135deg, #FFF8E1 0%, #FCE6F2 100%)", borderRadius: 14, padding: "12px 14px", border: "1px solid rgba(229,178,58,0.3)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 18 }}>📋</span>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: "#9C7A1A", letterSpacing: 0.5 }}>
+                      {totDoc} {totDoc === 1 ? "DOCUMENTO" : "DOCUMENTI"} DA GESTIRE
+                      {docUrgenti.length > 0 && (
+                        <span style={{ marginLeft: 6, padding: "2px 7px", background: "#DC2626", color: "#fff", borderRadius: 6, fontSize: 9, letterSpacing: 0.4 }}>
+                          {docUrgenti.length} URGENTI
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#52525B", marginTop: 4, marginLeft: 26 }}>
+                    {summary.join(" · ")}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div style={{ padding: "16px 16px 6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontSize: 11, fontWeight: 900, color: "#28A0A0", letterSpacing: 1 }}>
               {a.selectedDate === TODAY_ISO ? "OGGI" : "GIORNO"} · {a.eventsOfDay.length} {a.eventsOfDay.length === 1 ? "IMPEGNO" : "IMPEGNI"}
