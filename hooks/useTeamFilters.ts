@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import type { Operator } from "@/lib/types/team";
 
-export type TeamTab = "tutti" | "attivi" | "squadre" | "problemi";
+export type TeamTab = "tutti" | "attivi" | "squadre" | "problemi" | "pianificazione";
 
 export function useTeamFilters(operators: Operator[]) {
   const [tab, setTab] = useState<TeamTab>("tutti");

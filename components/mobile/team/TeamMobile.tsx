@@ -25,6 +25,7 @@ import TeamMapMobile from "./TeamMapMobile";
 import NewTaskSheetMobile from "./NewTaskSheetMobile";
 import NewTeamActionSheetMobile from "./NewTeamActionSheetMobile";
 import StartLavoroSheet from "./StartLavoroSheet";
+import TeamPlanningMobile from "./TeamPlanningMobile";
 
 interface Props {
   hideBottomNav?: boolean;
@@ -286,6 +287,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const TABS: { id: any; lbl: string; n?: number }[] = [
     { id: "tutti", lbl: "Tutti", n: stats.total },
     { id: "attivi", lbl: "Attivi", n: stats.attivi },
+    { id: "pianificazione", lbl: "Piano" },
     { id: "squadre", lbl: "Squadre", n: teams.length },
     { id: "problemi", lbl: "Problemi", n: problems.filter(p => p.status === "aperto").length },
   ];
@@ -471,6 +473,14 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
               );
             })}
           </>
+        )}
+
+        {!loading && !error && tab === "pianificazione" && (
+          <TeamPlanningMobile
+            operators={operators}
+            onOpenCommessa={onOpenCommessa}
+            onPlanned={() => refetch()}
+          />
         )}
 
         {!loading && !error && tab === "squadre" && (
