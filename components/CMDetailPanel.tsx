@@ -14,6 +14,7 @@ import { buildVanoRighe } from "../lib/vano-helpers";
 import { uploadPreventivoPdf } from "../lib/upload-preventivo-pdf";
 import ModalFirma from "./ModalFirma";
 import { useMastro } from "./MastroContext";
+import SchedaFinanziariaCommessa from "./finanze/SchedaFinanziariaCommessa";
 import { FF, ICO, Ico, I, MOTIVI_BLOCCO, TIPOLOGIE_RAPIDE , IcoKey, markPreventivoInviato, setFaseCommessa } from "./mastro-constants";
 import { buildSnapshot, creaFascicolo, getFascicoliCommessa, revocaFascicolo } from "../lib/fascicolo-service";
 import { generaFascicoloGeometraPDF } from "../lib/pdf-fascicolo";
@@ -1654,125 +1655,48 @@ export default function CMDetailPanel() {
                 </div>
 
                 {/* v55: BLOCCO MODALITA FIRMATO - sostituisce sezione preventivo con conferma+acconto+navigazione */}
-                {haFirmato29 && (() => {
-                  const fattCmId55 = (typeof fattureDB !== "undefined" && Array.isArray(fattureDB)) ? fattureDB.filter((f: any) => f.cmId === c29.id) : [];
-                  const haAcconto55 = fattCmId55.some((f: any) => f.tipo === "acconto" || f.tipo === "unica");
-                  const importoSugg55 = Math.round((totale29 || 0) * (typeof fattPerc !== "undefined" ? fattPerc : 30) / 100);
+                                {haFirmato29 && (() => {
+                  const fattCmIdScheda = (typeof fattureDB !== "undefined" && Array.isArray(fattureDB)) ? fattureDB.filter((f: any) => f.cmId === c29.id) : [];
                   return (
-                    <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px dashed #C8E4E4" }}>
-                      {/* Documento firmato */}
-                      <div style={{ background: "#28A0A012", border: "1px solid #28A0A030", borderRadius: 10, padding: "10px 12px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 10, background: "#28A0A0", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, flexShrink: 0 }}>✓</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 800, color: "#0D1F1F" }}>Conferma firmata</div>
-                          <div style={{ fontSize: 10, color: "#28A0A0", marginTop: 1 }}>{dataFirmaFmt29 || "documento ricevuto"}</div>
-                        </div>
-                        {ris29?.token && (
-                          <button onClick={() => window.open("/p/" + ris29.token, "_blank")} style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #28A0A0", background: "#fff", color: "#28A0A0", fontSize: 10, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>VEDI →</button>
-                        )}
-                      </div>
-
-                      {!haAcconto55 ? (
-                        <>
-                          {/* Selettore percentuale acconto */}
-                          <div style={{ fontSize: 10, fontWeight: 800, color: "#28A0A0", letterSpacing: 0.6, marginBottom: 6 }}>ACCONTO DA FATTURARE</div>
-                          <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" as any }}>
-                            {[30, 40, 50, 60, 100].map((p: number) => (
-                              <div key={p} onClick={() => { if (typeof setFattPerc === "function") setFattPerc(p); }} style={{
-                                flex: 1, minWidth: 50, padding: "8px 6px", borderRadius: 8, cursor: "pointer", textAlign: "center" as any,
-                                fontSize: 11, fontWeight: 800,
-                                background: (typeof fattPerc !== "undefined" && fattPerc === p) ? "#28A0A0" : "#fff",
-                                color: (typeof fattPerc !== "undefined" && fattPerc === p) ? "#fff" : "#0D1F1F",
-                                border: `1.5px solid ${(typeof fattPerc !== "undefined" && fattPerc === p) ? "#28A0A0" : "#C8E4E4"}`,
-                              }}>
-                                {p === 100 ? "Unica" : p + "%"}
-                              </div>
-                            ))}
-                          </div>
-                          {/* Bottone CREA FATTURA ACCONTO */}
-                          <button onClick={() => {
-                            if (typeof setAccontoImporto === "function") setAccontoImporto(String(importoSugg55));
-                            if (typeof setShowAccontoModal === "function") setShowAccontoModal(true);
-                          }} style={{
-                            width: "100%", padding: "14px 16px", marginBottom: 10,
-                            background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
-                            border: "none", borderRadius: 12, color: "#fff",
-                            fontSize: 13, fontWeight: 900, cursor: "pointer",
-                            fontFamily: "inherit", letterSpacing: 0.4,
-                            boxShadow: "0 4px 12px rgba(245,158,11,0.3)",
-                          }}>
-                            + CREA FATTURA ACCONTO {fmtEur29(importoSugg55)} →
-                          </button>
-                        </>
-                      ) : (
-                        <div style={{ background: "#D1FAE5", border: "1px solid #6EE7B7", borderRadius: 10, padding: "10px 12px", marginBottom: 10, fontSize: 11, fontWeight: 800, color: "#065F46", display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontSize: 16 }}>✓</span>
-                          <span style={{ flex: 1 }}>Acconto già fatturato {fmtEur29(fattCmId55.filter((f: any) => f.tipo === "acconto" || f.tipo === "unica").reduce((s: number, f: any) => s + (f.importo || 0), 0))}</span>
-                        </div>
-                      )}
-
-                      {/* Bottoni navigazione moduli esistenti — Pianifica montaggio solo se acconto PAGATO */}
-                      {(() => {
-                        const accontoPagato55 = (fattCmId55 || []).some((f: any) => (f.tipo === "acconto" || f.tipo === "unica") && !!f.pagata);
-                        return (
-                          <div style={{ display: "grid", gridTemplateColumns: accontoPagato55 ? "1fr 1fr" : "1fr", gap: 8 }}>
-                            <button onClick={() => { if (typeof setTab === "function") setTab("contabilita"); }} style={{
-                              padding: "10px 8px", borderRadius: 10,
-                              background: "#fff", border: "1.5px solid #28A0A0",
-                              color: "#28A0A0", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                            }}>📊 Contabilità</button>
-                            {accontoPagato55 && (
-                              <button onClick={() => { if (typeof setTab === "function") setTab("montaggi_cal"); }} style={{
-                                padding: "10px 8px", borderRadius: 10,
-                                background: "#fff", border: "1.5px solid #7F77DD",
-                                color: "#7F77DD", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                              }}>📅 Pianifica montaggio</button>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
+                    <SchedaFinanziariaCommessa
+                      commessa={c29}
+                      totaleCommessa={totale29}
+                      fatture={fattCmIdScheda as any}
+                      fmtEur={fmtEur29}
+                      onCreaFattura={(tipo, importo, scadenza, note) => {
+                        if (typeof creaFattura === "function") {
+                          creaFattura(c29, tipo as any, importo, scadenza, note);
+                        }
+                        if (typeof setCcDone === "function") {
+                          setCcDone("Fattura creata");
+                          setTimeout(() => setCcDone(null), 3000);
+                        }
+                      }}
+                      onMarcaPagata={(fatturaId, metodoPag) => {
+                        if (typeof setFattureDB === "function") {
+                          setFattureDB((prev: any[]) => prev.map((f: any) => f.id === fatturaId ? { ...f, pagata: true, dataPagamento: new Date().toISOString().split("T")[0], metodoPagamento: metodoPag } : f));
+                        }
+                        if (typeof setCcDone === "function") {
+                          setCcDone("Fattura pagata");
+                          setTimeout(() => setCcDone(null), 3000);
+                        }
+                      }}
+                      onAnnullaFattura={(fatturaId) => {
+                        if (typeof setFattureDB === "function") {
+                          setFattureDB((prev: any[]) => prev.filter((f: any) => f.id !== fatturaId));
+                        }
+                      }}
+                      onSollecitaWhatsApp={(fattura) => {
+                        const tel = (c29.telefono || "").replace(/[^0-9+]/g, "");
+                        const numWA = tel.startsWith("+") ? tel.slice(1) : (tel.startsWith("39") ? tel : "39" + tel);
+                        const msg = encodeURIComponent("Gentile " + (c29.cliente || "") + ", le ricordo cortesemente la scadenza della fattura n." + fattura.numero + "/" + fattura.anno + " di " + fmtEur29(fattura.importo) + ". Resto a disposizione per chiarimenti.");
+                        window.open("https://wa.me/" + numWA + "?text=" + msg, "_blank");
+                      }}
+                    />
                   );
                 })()}
 
-                {/* MODAL FATTURA ACCONTO inline pannello v29 */}
-                {showAccontoModal && (
-                  <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-                    <div style={{ background: T.card, borderRadius: 16, padding: 24, width: "100%", maxWidth: 360, boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>Fattura {fattPerc === 100 ? "unica" : "acconto"}</div>
-                      <div style={{ fontSize: 12, color: T.sub, marginBottom: 16 }}>Commessa <strong>{(selectedCM as any)?.code}</strong></div>
-                      <div style={{ fontSize: 11, color: T.sub, marginBottom: 6, fontWeight: 600 }}>Importo da fatturare (€)</div>
-                      <input
-                        type="number"
-                        value={accontoImporto}
-                        onChange={e => setAccontoImporto(e.target.value)}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: `1.5px solid ${T.acc}`, fontSize: 18, fontWeight: 800, color: T.acc, background: T.bg, fontFamily: "inherit", marginBottom: 16, boxSizing: "border-box" as any, outline: "none" }}
-                        autoFocus
-                      />
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => setShowAccontoModal(false)} style={{ flex: 1, padding: 11, borderRadius: 10, border: `1px solid ${T.bdr}`, background: T.card, color: T.sub, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Annulla</button>
-                        <button onClick={() => {
-                          const imp = parseFloat(accontoImporto);
-                          if (!imp || imp <= 0) return;
-                          if (typeof creaFattura === "function") {
-                            creaFattura(selectedCM, fattPerc === 100 ? "unica" : "acconto", imp);
-                          }
-                          setShowAccontoModal(false);
-                          if (typeof setCcDone === "function") {
-                            setCcDone("Fattura creata");
-                            setTimeout(() => setCcDone(null), 3000);
-                          }
-                        }} style={{ flex: 2, padding: 11, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>CREA FATTURA</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            );
-          })()}
-
-          {/* MENU 4 CENTRI */}
+                {/* MENU 4 CENTRI */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
             {[
               { id: "cliente", label: "Cliente", color: "#1D9E75", tintFrom: "rgba(93,202,165,0.22)", tintTo: "rgba(29,158,117,0.12)", badge: 0, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },

@@ -2705,13 +2705,19 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
     return annoPrev.length + 1;
   };
 
-  const creaFattura = (c, tipo: "acconto" | "saldo" | "unica", importoOverride?: number) => {
+  const creaFattura = (c, tipo: "acconto" | "sal" | "saldo" | "unica", importoOverride?: number, scadenzaIso?: string, noteCustom?: string) => {
     const num = nextNumFattura();
     const anno = new Date().getFullYear();
     // Calcola totale REALE dai vani + voci libere
     const importoBase = calcolaTotaleCommessa(c);
     const giaPagato = fattureDB.filter(f => f.cmId === c.id && f.pagata).reduce((s, f) => s + (f.importo || 0), 0);
-    const importo = importoOverride && importoOverride > 0 ? Math.round(importoOverride) : (tipo === "acconto" ? Math.round(importoBase * 0.5) : tipo === "saldo" ? Math.round(importoBase - giaPagato) : importoBase);
+    const giaFatturatoFn = fattureDB.filter(f => f.cmId === c.id).reduce((s, f) => s + (f.importo || 0), 0);
+    const importo = importoOverride && importoOverride > 0
+      ? Math.round(importoOverride)
+      : (tipo === "acconto" ? Math.round(importoBase * 0.5)
+        : tipo === "sal" ? Math.round((importoBase - giaFatturatoFn) * 0.5)
+        : tipo === "saldo" ? Math.round(importoBase - giaPagato)
+        : importoBase);
     const iva = 10; // serramenti = 10% se ristrutturazione, 22% se nuova costruzione
     const imponibile = Math.round(importo / (1 + iva / 100) * 100) / 100;
     const ivaAmt = importo - imponibile;
@@ -2738,8 +2744,11 @@ function MastroMisureInner({ user, azienda: aziendaInit, forceMobile, forceDeskt
       pagata: false,
       dataPagamento: null,
       metodoPagamento: "",
-      scadenza: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split("T")[0]; })(),
-      note: tipo === "acconto" ? "Acconto 50% su ordine" : tipo === "saldo" ? "Saldo a completamento lavori" : "",
+      scadenza: scadenzaIso || (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split("T")[0]; })(),
+      note: noteCustom || (tipo === "acconto" ? "Acconto 50% su ordine"
+                          : tipo === "sal" ? "SAL stato avanzamento lavori"
+                          : tipo === "saldo" ? "Saldo a completamento lavori"
+                          : ""),
     };
     setFattureDB(prev => [...prev, fattura]);
     // AUTO-ADVANCE pipeline
