@@ -1349,15 +1349,19 @@ export default function CMDetailPanel() {
             const telPul29 = (c29.telefono || "").replace(/[^0-9+]/g, "");
             const numWA29 = telPul29.startsWith("+") ? telPul29.slice(1) : (telPul29.startsWith("39") ? telPul29 : "39" + telPul29);
 
+            // v52: countdown giorni in attesa
+            const giorniDaInvio29 = (() => { const dt = c29.preventivoInviatoAt ? new Date(c29.preventivoInviatoAt) : (c29.dataPreventivoInvio ? new Date(c29.dataPreventivoInvio) : null); if (!dt || isNaN(dt.getTime())) return null; return Math.max(0, Math.floor((Date.now() - dt.getTime()) / 86400000)); })();
+            const giorniLbl29 = giorniDaInvio29 == null ? "" : giorniDaInvio29 === 0 ? " · oggi" : giorniDaInvio29 === 1 ? " · 1g" : " · " + giorniDaInvio29 + "g";
+            const inAttesaBg29 = giorniDaInvio29 != null && giorniDaInvio29 >= 3 ? "#DC2626" : "#71717A";
             // Badge stato
             const badge29 = tipoRis29 === "accettato" ? { txt: "ACCETTATO", bg: "#28A268", icon: "✓" } :
                             tipoRis29 === "modifiche" ? { txt: "CHIEDE MODIFICHE", bg: "#F59E0B", icon: "✏" } :
                             tipoRis29 === "chiamare" ? { txt: "VUOLE CONTATTO", bg: "#3B82F6", icon: "📞" } :
-                            ris29?.visualizzato ? { txt: "VISTO DAL CLIENTE", bg: "#8B5CF6", icon: "👁" } :
-                            { txt: "IN ATTESA", bg: "#71717A", icon: "⏳" };
+                            ris29?.visualizzato ? { txt: "VISTO DAL CLIENTE" + giorniLbl29, bg: "#8B5CF6", icon: "👁" } :
+                            { txt: "IN ATTESA" + giorniLbl29, bg: inAttesaBg29, icon: "⏳" };
 
             // Prossima azione consigliata
-            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { console.log("[v44 CLICK] CREA CONFERMA D'ORDINE", { cmId: c29.id, fasePrima: c29.fase }); setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); console.log("[v44 CLICK] setShowModalFirma(true) chiamato"); setShowModalFirma(true); } } :
+            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
                              // Crea R(N+1) duplicando il corrente
                              const oggiIso = new Date().toISOString().split("T")[0];
@@ -6932,7 +6936,6 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           </div>
         </div>
       )}
-      {(() => { if (showModalFirma) console.log("[v44 RENDER] showModalFirma=true, c?", !!c, "c.id?", c?.id); return null; })()}
       {showModalFirma && c && (
         <ModalFirma
           commessaId={c.id || c.cm_id || ""}
