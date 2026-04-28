@@ -344,22 +344,34 @@ export default function CMDetailPanel() {
         try {
           const { data, error } = await supabase
             .from("commesse")
-            .select("fase, preventivo_inviato_at")
+            .select("fase, preventivo_inviato_at, firma_cliente, firma_data")
             .eq("id", selectedCM.id)
             .maybeSingle();
           if (!alive || error || !data) return;
           const dbInviato = !!data.preventivo_inviato_at;
           const dbFase = data.fase;
+          const dbFirmaData = (data as any).firma_data;
+          const dbFirmaCliente = (data as any).firma_cliente;
           const localInviato = !!(selectedCM as any).preventivoInviato || !!(selectedCM as any).preventivoInviatoAt;
-          // Se DB e local divergono, aggiorna local
-          if (dbInviato !== localInviato || dbFase !== (selectedCM as any).fase) {
-            console.log("[v33 sync] DB ha aggiornamenti per", selectedCM.id, { dbFase, dbInviato, localFase: (selectedCM as any).fase, localInviato });
-            const update = {
+          const localFirmaData = (selectedCM as any).firma_data || (selectedCM as any).firmaData;
+          // v57: includo firma nel diff DB->local
+          const firmaDiverge = !!dbFirmaData && !localFirmaData;
+          if (dbInviato !== localInviato || dbFase !== (selectedCM as any).fase || firmaDiverge) {
+            console.log("[v57 sync] DB ha aggiornamenti per", selectedCM.id, { dbFase, dbInviato, dbFirmaData, dbFirmaCliente, localFase: (selectedCM as any).fase, localInviato, localFirmaData });
+            const update: any = {
               preventivoInviato: dbInviato,
               preventivoInviatoAt: data.preventivo_inviato_at,
               dataPreventivoInvio: data.preventivo_inviato_at ? data.preventivo_inviato_at.split("T")[0] : null,
               fase: dbFase,
             };
+            if (dbFirmaData) {
+              update.firma_data = dbFirmaData;
+              update.firmaData = dbFirmaData;
+            }
+            if (dbFirmaCliente) {
+              update.firma_cliente = dbFirmaCliente;
+              update.firmaCliente = dbFirmaCliente;
+            }
             setCantieri((cs: any[]) => cs.map((c: any) => c.id === selectedCM.id ? { ...c, ...update } : c));
             setSelectedCM((p: any) => p ? ({ ...p, ...update }) : p);
           }
