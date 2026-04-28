@@ -1,11 +1,12 @@
 // hooks/useTeamMobile.ts
-// FASE 1 — Lettura dati REALI da Supabase. Niente mock.
+// FASE 4 - aggiunge realtime subscription + timeline reale da operatore_eventi_stato + anomalie
 "use client";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Operator, Team, TeamProblem, TimelineEvent, OperatorStatus } from "@/lib/types/team";
+import { useTeamRealtime } from "./useTeamRealtime";
 
-const POLL_MS = 30_000;
+const POLL_MS = 90_000; // fallback, realtime e' primario
 
 // ===== Helpers =====
 function formatTimer(secs: number): string {
@@ -34,6 +35,12 @@ function isToday(dateStr: string | null): boolean {
   return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
 }
 
+function hhmmFromIso(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+}
+
 // Deriva lo stato visivo dell'operatore dai suoi montaggi di oggi
 function deriveOperatorStatus(opId: string, montaggi: any[], anomalie: any[]): {
   status: OperatorStatus;
@@ -47,7 +54,6 @@ function deriveOperatorStatus(opId: string, montaggi: any[], anomalie: any[]): {
   problem_title?: string;
   problem_reported_ago?: string;
 } {
-  // Anomalia aperta → priorità massima: problema
   const anomaly = anomalie.find(a => a.operatore_id === opId && a.stato !== "risolta");
   if (anomaly) {
     const linkedM = montaggi.find(m => m.commessa_id === anomaly.commessa_id);
@@ -61,7 +67,6 @@ function deriveOperatorStatus(opId: string, montaggi: any[], anomalie: any[]): {
     };
   }
 
-  // Cerca montaggio "live" (oggi, non completato) dove operatore è singolo o in squadra
   const oggiNonChiusi = montaggi.filter(m => {
     if (!isToday(m.data_montaggio)) return false;
     if (m.completato_at) return false;
@@ -70,7 +75,6 @@ function deriveOperatorStatus(opId: string, montaggi: any[], anomalie: any[]): {
     return inSingolo || inSquadra;
   });
 
-  // Priorità: in_corso > programmato
   const inCorso = oggiNonChiusi.find(m => m.stato === "in_corso");
   if (inCorso) {
     const orePrev = Number(inCorso.ore_preventivate) || 0;
@@ -104,7 +108,6 @@ function deriveOperatorStatus(opId: string, montaggi: any[], anomalie: any[]): {
     };
   }
 
-  // Niente di oggi → offline
   return { status: "offline" };
 }
 
@@ -115,8 +118,9 @@ export function useTeamMobile() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [aziendaId, setAziendaId] = useState<string | null>(null);
+  // Cache eventi per timeline (per ogni operatore)
+  const [eventiByOp, setEventiByOp] = useState<Record<string, TimelineEvent[]>>({});
 
-  // Risolve azienda_id dell'utente loggato (via profili)
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -124,10 +128,7 @@ export function useTeamMobile() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { if (alive) { setLoading(false); setError("not_authenticated"); } return; }
         const { data: prof } = await supabase
-          .from("profili")
-          .select("azienda_id")
-          .eq("id", user.id)
-          .maybeSingle();
+          .from("profili").select("azienda_id").eq("id", user.id).maybeSingle();
         if (!alive) return;
         if (prof?.azienda_id) setAziendaId(prof.azienda_id);
         else setError("no_azienda");
@@ -142,7 +143,8 @@ export function useTeamMobile() {
     if (!aziendaId) return;
     try {
       setError(null);
-      // 1) Operatori attivi (escludi titolare per non comparire come "operatore lavoratore")
+
+      // 1) Operatori
       const { data: opsRows, error: opsErr } = await supabase
         .from("operatori")
         .select("id, nome, cognome, ruolo, telefono, avatar_url, colore, attivo")
@@ -152,7 +154,7 @@ export function useTeamMobile() {
         .order("nome");
       if (opsErr) throw opsErr;
 
-      // 2) Montaggi recenti (oggi + ieri per sicurezza)
+      // 2) Montaggi (oggi + ieri)
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const { data: mRows, error: mErr } = await supabase
         .from("montaggi")
@@ -164,7 +166,6 @@ export function useTeamMobile() {
         .order("avviato_at", { ascending: false, nullsFirst: false });
       if (mErr) throw mErr;
 
-      // Flatten join commesse
       const montaggi = (mRows || []).map((m: any) => ({
         ...m,
         commessa_code: m.commesse?.code || null,
@@ -173,7 +174,7 @@ export function useTeamMobile() {
         indirizzo: m.commesse?.indirizzo || null,
       }));
 
-      // 3) Anomalie aperte (per derivare problemi)
+      // 3) Anomalie aperte
       const { data: anomRows } = await supabase
         .from("anomalie")
         .select("id, operatore_id, commessa_id, titolo, descrizione, stato, severita, rilevata_at")
@@ -183,13 +184,18 @@ export function useTeamMobile() {
 
       // 4) Squadre
       const { data: sqRows } = await supabase
-        .from("squadre")
-        .select("id, nome, descrizione")
-        .eq("azienda_id", aziendaId);
-
+        .from("squadre").select("id, nome, descrizione").eq("azienda_id", aziendaId);
       const { data: sqMembri } = await supabase
-        .from("squadre_membri")
-        .select("squadra_id, operatore_id");
+        .from("squadre_membri").select("squadra_id, operatore_id");
+
+      // 5) FASE 4: eventi audit di oggi per timeline
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const { data: eventiRows } = await supabase
+        .from("operatore_eventi_stato")
+        .select("id, operatore_id, evento, stato_da, stato_a, motivo, note, creato_at, commessa_id, montaggio_id")
+        .eq("azienda_id", aziendaId)
+        .gte("creato_at", todayStart.toISOString())
+        .order("creato_at", { ascending: true });
 
       // ===== BUILD OPERATORS =====
       const ops: Operator[] = (opsRows || []).map((o: any) => {
@@ -205,6 +211,66 @@ export function useTeamMobile() {
         };
       });
       setOperators(ops);
+
+      // ===== BUILD TIMELINE EVENTS PER OPERATORE =====
+      const tl: Record<string, TimelineEvent[]> = {};
+      (eventiRows || []).forEach((e: any) => {
+        const opId = e.operatore_id as string;
+        if (!opId) return;
+        const linkedM = montaggi.find(m => m.id === e.montaggio_id);
+        const commessaCode = linkedM?.commessa_code || null;
+
+        let type: TimelineEvent["type"] = "ripresa";
+        let label = "";
+        switch (e.evento) {
+          case "avvio":
+            type = "inizio_lavoro";
+            label = commessaCode ? `Avviato montaggio ${commessaCode}` : "Avviato lavoro";
+            break;
+          case "pausa":
+            type = "pausa";
+            label = e.motivo ? `Pausa: ${e.motivo}` : "Pausa";
+            break;
+          case "riprende":
+            type = "ripresa";
+            label = "Ripreso il lavoro";
+            break;
+          case "stop":
+            type = "ripresa";
+            label = commessaCode ? `Completato ${commessaCode}` : "Lavoro completato";
+            break;
+          default:
+            type = "ripresa";
+            label = e.note || e.evento;
+        }
+        const time = hhmmFromIso(e.creato_at);
+        if (!tl[opId]) tl[opId] = [];
+        tl[opId].push({
+          id: e.id, operator_id: opId, time, type, label,
+          detail: e.note || undefined,
+        });
+      });
+
+      // Aggiungi eventi anomalia (segnalazioni problemi di oggi)
+      (anomRows || []).forEach((a: any) => {
+        if (!a.operatore_id) return;
+        if (!isToday(a.rilevata_at)) return;
+        const opId = a.operatore_id as string;
+        if (!tl[opId]) tl[opId] = [];
+        tl[opId].push({
+          id: `anom-${a.id}`,
+          operator_id: opId,
+          time: hhmmFromIso(a.rilevata_at),
+          type: "pausa", // colore arancione per attirare l'occhio
+          label: `Problema: ${a.titolo || a.descrizione || "segnalazione"}`,
+        });
+      });
+
+      // Sort each timeline by time
+      Object.keys(tl).forEach(k => {
+        tl[k].sort((x, y) => x.time.localeCompare(y.time));
+      });
+      setEventiByOp(tl);
 
       // ===== BUILD TEAMS =====
       const tms: Team[] = (sqRows || []).map((sq: any) => {
@@ -257,13 +323,16 @@ export function useTeamMobile() {
     }
   }, [aziendaId]);
 
-  // Iniziale + polling
+  // Iniziale + polling fallback
   useEffect(() => {
     if (!aziendaId) return;
     fetchAll();
     const t = setInterval(fetchAll, POLL_MS);
     return () => clearInterval(t);
   }, [aziendaId, fetchAll]);
+
+  // FASE 4: realtime live updates
+  useTeamRealtime(aziendaId, fetchAll);
 
   const stats = useMemo(() => ({
     attivi:  operators.filter(o => o.status === "attivo").length,
@@ -273,13 +342,9 @@ export function useTeamMobile() {
     total:   operators.length,
   }), [operators]);
 
-  // Timeline derivata da montaggi recenti (solo eventi base, FASE 1)
-  // FASE 4 sostituiremo con timeline reale da log/eventi.
   const getTimelineFor = useCallback((id: string): TimelineEvent[] => {
-    // FASE 1: timeline placeholder (la logica eventi richiede tabella eventi che e' praticamente vuota)
-    // Solo eventi derivabili da montaggi
-    return [];
-  }, []);
+    return eventiByOp[id] || [];
+  }, [eventiByOp]);
 
   return { operators, teams, problems, stats, getTimelineFor, loading, error, refetch: fetchAll };
 }
