@@ -347,7 +347,12 @@ export default function CMDetailPanel() {
             .select("fase, preventivo_inviato_at, firma_cliente, firma_data")
             .eq("id", selectedCM.id)
             .maybeSingle();
-          if (!alive || error || !data) return;
+          console.log("[DIAG-FIRMA] SELECT result:", { error, data, cmId: selectedCM.id, code: (selectedCM as any).code });
+          console.log("[DIAG-FIRMA] selectedCM stato locale:", { firma_data: (selectedCM as any).firma_data, firmaData: (selectedCM as any).firmaData, firma_cliente: (selectedCM as any).firma_cliente, firmaCliente: (selectedCM as any).firmaCliente, fase: (selectedCM as any).fase });
+          if (!alive || error || !data) {
+            console.log("[DIAG-FIRMA] EARLY RETURN:", { alive, error, data });
+            return;
+          }
           const dbInviato = !!data.preventivo_inviato_at;
           const dbFase = data.fase;
           const dbFirmaData = (data as any).firma_data;
@@ -355,7 +360,11 @@ export default function CMDetailPanel() {
           const localInviato = !!(selectedCM as any).preventivoInviato || !!(selectedCM as any).preventivoInviatoAt;
           const localFirmaData = (selectedCM as any).firma_data || (selectedCM as any).firmaData;
           // v57: includo firma nel diff DB->local
+          const dbFirmaData = (data as any).firma_data;
+          const dbFirmaCliente = (data as any).firma_cliente;
+          const localFirmaData = (selectedCM as any).firma_data || (selectedCM as any).firmaData;
           const firmaDiverge = !!dbFirmaData && !localFirmaData;
+          console.log("[DIAG-FIRMA] decisione sync:", { dbInviato, localInviato, dbFase, localFase: (selectedCM as any).fase, dbFirmaData, localFirmaData, firmaDiverge, willUpdate: (dbInviato !== localInviato || dbFase !== (selectedCM as any).fase || firmaDiverge) });
           if (dbInviato !== localInviato || dbFase !== (selectedCM as any).fase || firmaDiverge) {
             console.log("[v57 sync] DB ha aggiornamenti per", selectedCM.id, { dbFase, dbInviato, dbFirmaData, dbFirmaCliente, localFase: (selectedCM as any).fase, localInviato, localFirmaData });
             const update: any = {
