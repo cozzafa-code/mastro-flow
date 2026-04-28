@@ -1343,7 +1343,7 @@ export default function CMDetailPanel() {
                             { txt: "IN ATTESA", bg: "#71717A", icon: "⏳" };
 
             // Prossima azione consigliata
-            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); setShowModalFirma(true); } } :
+            const prossima = tipoRis29 === "accettato" ? { lbl: "CREA CONFERMA D'ORDINE", bg: "linear-gradient(135deg, #28A268 0%, #1F8050 100%)", action: () => { console.log("[v44 CLICK] CREA CONFERMA D'ORDINE", { cmId: c29.id, fasePrima: c29.fase }); setFaseTo(c29.id, "conferma"); setCantieri((cs: any[]) => cs.map((x: any) => x.id === c29.id ? { ...x, fase: "conferma" } : x)); setSelectedCM((p: any) => p ? ({ ...p, fase: "conferma" }) : p); console.log("[v44 CLICK] setShowModalFirma(true) chiamato"); setShowModalFirma(true); } } :
                            tipoRis29 === "modifiche" ? { lbl: "AGGIORNA PREVENTIVO", bg: "#F59E0B", action: () => {
                              // Crea R(N+1) duplicando il corrente
                              const oggiIso = new Date().toISOString().split("T")[0];
@@ -6918,6 +6918,7 @@ ${cV70.note ? `<h2>Note</h2><p>${esc(cV70.note)}</p>` : ""}
           </div>
         </div>
       )}
+      {(() => { if (showModalFirma) console.log("[v44 RENDER] showModalFirma=true, c?", !!c, "c.id?", c?.id); return null; })()}
       {showModalFirma && c && (
         <ModalFirma
           commessaId={c.id || c.cm_id || ""}
