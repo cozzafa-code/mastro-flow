@@ -1025,6 +1025,20 @@ export default function CMDetailPanel() {
 
     return (
       <>
+      {/* v45: ModalFirma anche qui, per fase=conferma quando si cade nel Centro Comando v70 */}
+      {showModalFirma && cV70 && (
+        <ModalFirma
+          commessaId={cV70.id || ""}
+          clienteNome={cV70.cliente || (cV70 as any).nomeCliente || "Cliente"}
+          clienteTelefono={cV70.telefono || null}
+          clienteEmail={(cV70 as any).email || null}
+          onClose={() => setShowModalFirma(false)}
+          onSuccess={() => {
+            setCcDone("Firma inviata al cliente");
+            setTimeout(() => setCcDone(null), 3000);
+          }}
+        />
+      )}
       <div style={{ minHeight: "100vh", background: "#E8F0F0", paddingBottom: 20 }}>
         {_accettatoBanner}{_modificheCard}{_contattaCard}
         {/* ============ HEADER TEAL ============ */}
