@@ -1478,6 +1478,8 @@ export default function CMDetailPanel() {
                           <button onClick={(e) => {
                             e.stopPropagation();
                             setSelectedRilievo(r);
+                            // v56: navigo a sopralluoghi per aprire vani/misure
+                            if (typeof setCmSubTab === "function") setCmSubTab("sopralluoghi");
                           }} style={{
                             padding: "6px 10px", borderRadius: 8, border: "1px solid #28A0A0",
                             background: "#fff", color: "#0F5E55",
