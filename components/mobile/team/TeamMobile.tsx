@@ -26,6 +26,8 @@ import NewTaskSheetMobile from "./NewTaskSheetMobile";
 import NewTeamActionSheetMobile from "./NewTeamActionSheetMobile";
 import StartLavoroSheet from "./StartLavoroSheet";
 import TeamPlanningMobile from "./TeamPlanningMobile";
+import SquadDetailMobile from "./SquadDetailMobile";
+import SquadEditSheet from "./SquadEditSheet";
 
 interface Props {
   hideBottomNav?: boolean;
@@ -33,7 +35,7 @@ interface Props {
   onNavigate?: (tab: string) => void;
 }
 
-type View = "list" | "detail" | "map";
+type View = "list" | "detail" | "map" | "squad-detail";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 const PAGE_BG = "#F4F1EA";
@@ -70,6 +72,8 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
   const [toast, setToast] = useState<string | null>(null);
   // FASE 3: sheet "Avvia lavoro" (selezione commessa)
   const [showStartSheet, setShowStartSheet] = useState<{ op: Operator } | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<import("@/lib/types/team").Team | null>(null);
+  const [showSquadEdit, setShowSquadEdit] = useState<{ id?: string } | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
@@ -276,6 +280,29 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
             fontSize: 12, fontWeight: 500, zIndex: 10000, boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
             maxWidth: "85%", textAlign: "center" as any,
           }}>{toast}</div>
+        )}
+      </>
+    );
+  }
+  if (view === "squad-detail" && selectedTeam) {
+    return (
+      <>
+        <SquadDetailMobile
+          team={selectedTeam}
+          operators={operators}
+          onBack={() => { setView("list"); setSelectedTeam(null); }}
+          onEdit={() => setShowSquadEdit({ id: selectedTeam.id })}
+          onOpenOperator={(op) => { setSelectedOp(op); setView("detail"); }}
+          onOpenCommessa={onOpenCommessa}
+          onDeleted={() => refetch()}
+        />
+        {showSquadEdit && (
+          <SquadEditSheet
+            operators={operators}
+            squadraId={showSquadEdit.id}
+            onClose={() => setShowSquadEdit(null)}
+            onSaved={() => { setShowSquadEdit(null); refetch(); }}
+          />
         )}
       </>
     );
@@ -490,7 +517,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
               title="Nessuna squadra"
               subtitle="Crea la tua prima squadra"
               heroVariant="none"
-              actions={[{ label: "+ Nuova squadra", variant: "primary", onClick: () => onNavigate?.("settings") }]}
+              actions={[{ label: "+ Nuova squadra", variant: "primary", onClick: () => setShowSquadEdit({}) }]}
             />
           ) : (
             <MiniAppCard
@@ -498,6 +525,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
               title="Squadre attive"
               subtitle={`${teams.length} squadre · ${teams.reduce((a, t) => a + t.active_count, 0)} operatori`}
               heroVariant="none"
+              actions={[{ label: "+ Nuova squadra", variant: "primary", onClick: () => setShowSquadEdit({}) }]}
             >
               {teams.map((sq, i) => (
                 <MiniListRow
@@ -508,7 +536,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
                   title={sq.name}
                   subtitle={`${sq.members.join(", ")} · ${sq.current_job || ""}`}
                   trailing={<MiniBadge label={sq.problem_count > 0 ? `${sq.problem_count} prob.` : `${sq.active_count} attivi`} bg={sq.problem_count > 0 ? TOKENS.red : TOKENS.mint} fg={sq.problem_count > 0 ? TOKENS.redInk : TOKENS.mintInk} />}
-                  onClick={() => showToast("Dettaglio squadra: in arrivo")}
+                  onClick={() => { setSelectedTeam(sq); setView("squad-detail"); }}
                 />
               ))}
             </MiniAppCard>
@@ -578,7 +606,7 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
         <NewTeamActionSheetMobile
           onClose={() => setShowFab(false)}
           onNuovoTask={() => { setShowFab(false); handleTask(); }}
-          onNuovaSquadra={() => { setShowFab(false); onNavigate?.("settings"); }}
+          onNuovaSquadra={() => { setShowFab(false); setShowSquadEdit({}); }}
           onNuovoProblema={() => { setShowFab(false); handleNuovoProblema(); }}
           onAssegnaLavoro={() => { setShowFab(false); handleTask(); }}
           onApriMappa={() => { setShowFab(false); setView("map"); }}
@@ -600,6 +628,15 @@ export default function TeamMobile({ hideBottomNav, onOpenCommessa, onNavigate }
           operatorName={showStartSheet.op.name}
           onClose={() => setShowStartSheet(null)}
           onSelect={handleStartConfirm}
+        />
+      )}
+
+      {showSquadEdit && (
+        <SquadEditSheet
+          operators={operators}
+          squadraId={showSquadEdit.id}
+          onClose={() => setShowSquadEdit(null)}
+          onSaved={() => { setShowSquadEdit(null); refetch(); }}
         />
       )}
     </div>

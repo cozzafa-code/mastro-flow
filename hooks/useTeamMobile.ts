@@ -1,14 +1,13 @@
 // hooks/useTeamMobile.ts
-// FASE 4 - aggiunge realtime subscription + timeline reale da operatore_eventi_stato + anomalie
+// FASE 1+2+3+4+5B - dati reali Supabase + realtime + squadre con capo/colore
 "use client";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Operator, Team, TeamProblem, TimelineEvent, OperatorStatus } from "@/lib/types/team";
 import { useTeamRealtime } from "./useTeamRealtime";
 
-const POLL_MS = 90_000; // fallback, realtime e' primario
+const POLL_MS = 90_000;
 
-// ===== Helpers =====
 function formatTimer(secs: number): string {
   if (!secs || secs < 0) return "";
   const h = Math.floor(secs / 3600);
@@ -41,18 +40,11 @@ function hhmmFromIso(iso: string | null): string {
   return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
-// Deriva lo stato visivo dell'operatore dai suoi montaggi di oggi
 function deriveOperatorStatus(opId: string, montaggi: any[], anomalie: any[]): {
   status: OperatorStatus;
-  current_job?: string;
-  commessa_id?: string;
-  commessa_code?: string;
-  cliente?: string;
-  position_label?: string;
-  timer_label?: string;
-  progress?: number;
-  problem_title?: string;
-  problem_reported_ago?: string;
+  current_job?: string; commessa_id?: string; commessa_code?: string; cliente?: string;
+  position_label?: string; timer_label?: string; progress?: number;
+  problem_title?: string; problem_reported_ago?: string;
 } {
   const anomaly = anomalie.find(a => a.operatore_id === opId && a.stato !== "risolta");
   if (anomaly) {
@@ -118,7 +110,6 @@ export function useTeamMobile() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [aziendaId, setAziendaId] = useState<string | null>(null);
-  // Cache eventi per timeline (per ogni operatore)
   const [eventiByOp, setEventiByOp] = useState<Record<string, TimelineEvent[]>>({});
 
   useEffect(() => {
@@ -144,17 +135,13 @@ export function useTeamMobile() {
     try {
       setError(null);
 
-      // 1) Operatori
       const { data: opsRows, error: opsErr } = await supabase
         .from("operatori")
         .select("id, nome, cognome, ruolo, telefono, avatar_url, colore, attivo")
-        .eq("azienda_id", aziendaId)
-        .eq("attivo", true)
-        .neq("ruolo", "titolare")
+        .eq("azienda_id", aziendaId).eq("attivo", true).neq("ruolo", "titolare")
         .order("nome");
       if (opsErr) throw opsErr;
 
-      // 2) Montaggi (oggi + ieri)
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const { data: mRows, error: mErr } = await supabase
         .from("montaggi")
@@ -174,21 +161,24 @@ export function useTeamMobile() {
         indirizzo: m.commesse?.indirizzo || null,
       }));
 
-      // 3) Anomalie aperte
       const { data: anomRows } = await supabase
         .from("anomalie")
         .select("id, operatore_id, commessa_id, titolo, descrizione, stato, severita, rilevata_at")
-        .eq("azienda_id", aziendaId)
-        .neq("stato", "risolta")
+        .eq("azienda_id", aziendaId).neq("stato", "risolta")
         .order("rilevata_at", { ascending: false });
 
-      // 4) Squadre
+      // FASE 5B: squadre con nuovi campi
       const { data: sqRows } = await supabase
-        .from("squadre").select("id, nome, descrizione").eq("azienda_id", aziendaId);
-      const { data: sqMembri } = await supabase
-        .from("squadre_membri").select("squadra_id, operatore_id");
+        .from("squadre")
+        .select("id, nome, descrizione, capo_squadra_id, zona, specializzazione, colore, attiva")
+        .eq("azienda_id", aziendaId)
+        .order("nome");
 
-      // 5) FASE 4: eventi audit di oggi per timeline
+      const { data: sqMembri } = await supabase
+        .from("squadre_membri")
+        .select("squadra_id, team_id, ruolo_in_squadra")
+        .is("data_uscita", null); // solo membri attivi
+
       const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
       const { data: eventiRows } = await supabase
         .from("operatore_eventi_stato")
@@ -197,84 +187,57 @@ export function useTeamMobile() {
         .gte("creato_at", todayStart.toISOString())
         .order("creato_at", { ascending: true });
 
-      // ===== BUILD OPERATORS =====
       const ops: Operator[] = (opsRows || []).map((o: any) => {
         const fullName = [o.nome, o.cognome].filter(Boolean).join(" ");
         const derived = deriveOperatorStatus(o.id, montaggi, anomRows || []);
         return {
-          id: o.id,
-          name: fullName || "Operatore",
+          id: o.id, name: fullName || "Operatore",
           avatar_url: o.avatar_url || undefined,
-          status: derived.status,
-          phone: o.telefono || undefined,
+          status: derived.status, phone: o.telefono || undefined,
           ...derived,
         };
       });
       setOperators(ops);
 
-      // ===== BUILD TIMELINE EVENTS PER OPERATORE =====
       const tl: Record<string, TimelineEvent[]> = {};
       (eventiRows || []).forEach((e: any) => {
         const opId = e.operatore_id as string;
         if (!opId) return;
         const linkedM = montaggi.find(m => m.id === e.montaggio_id);
         const commessaCode = linkedM?.commessa_code || null;
-
         let type: TimelineEvent["type"] = "ripresa";
         let label = "";
         switch (e.evento) {
-          case "avvio":
-            type = "inizio_lavoro";
-            label = commessaCode ? `Avviato montaggio ${commessaCode}` : "Avviato lavoro";
-            break;
-          case "pausa":
-            type = "pausa";
-            label = e.motivo ? `Pausa: ${e.motivo}` : "Pausa";
-            break;
-          case "riprende":
-            type = "ripresa";
-            label = "Ripreso il lavoro";
-            break;
-          case "stop":
-            type = "ripresa";
-            label = commessaCode ? `Completato ${commessaCode}` : "Lavoro completato";
-            break;
-          default:
-            type = "ripresa";
-            label = e.note || e.evento;
+          case "avvio": type = "inizio_lavoro"; label = commessaCode ? `Avviato montaggio ${commessaCode}` : "Avviato lavoro"; break;
+          case "pausa": type = "pausa"; label = e.motivo ? `Pausa: ${e.motivo}` : "Pausa"; break;
+          case "riprende": type = "ripresa"; label = "Ripreso il lavoro"; break;
+          case "stop": type = "ripresa"; label = commessaCode ? `Completato ${commessaCode}` : "Lavoro completato"; break;
+          default: type = "ripresa"; label = e.note || e.evento;
         }
         const time = hhmmFromIso(e.creato_at);
         if (!tl[opId]) tl[opId] = [];
-        tl[opId].push({
-          id: e.id, operator_id: opId, time, type, label,
-          detail: e.note || undefined,
-        });
+        tl[opId].push({ id: e.id, operator_id: opId, time, type, label, detail: e.note || undefined });
       });
 
-      // Aggiungi eventi anomalia (segnalazioni problemi di oggi)
       (anomRows || []).forEach((a: any) => {
         if (!a.operatore_id) return;
         if (!isToday(a.rilevata_at)) return;
         const opId = a.operatore_id as string;
         if (!tl[opId]) tl[opId] = [];
         tl[opId].push({
-          id: `anom-${a.id}`,
-          operator_id: opId,
+          id: `anom-${a.id}`, operator_id: opId,
           time: hhmmFromIso(a.rilevata_at),
-          type: "pausa", // colore arancione per attirare l'occhio
+          type: "pausa",
           label: `Problema: ${a.titolo || a.descrizione || "segnalazione"}`,
         });
       });
 
-      // Sort each timeline by time
-      Object.keys(tl).forEach(k => {
-        tl[k].sort((x, y) => x.time.localeCompare(y.time));
-      });
+      Object.keys(tl).forEach(k => { tl[k].sort((x, y) => x.time.localeCompare(y.time)); });
       setEventiByOp(tl);
 
-      // ===== BUILD TEAMS =====
+      // Build teams with new fields
       const tms: Team[] = (sqRows || []).map((sq: any) => {
-        const memberIds = (sqMembri || []).filter((sm: any) => sm.squadra_id === sq.id).map((sm: any) => sm.operatore_id);
+        const memberIds = (sqMembri || []).filter((sm: any) => sm.squadra_id === sq.id).map((sm: any) => sm.team_id);
         const memberOps = ops.filter(o => memberIds.includes(o.id));
         const active = memberOps.filter(o => o.status === "attivo" || o.status === "pausa" || o.status === "viaggio").length;
         const probl = memberOps.filter(o => o.status === "problema").length;
@@ -285,16 +248,13 @@ export function useTeamMobile() {
           name: sq.nome,
           members: memberOps.map(o => o.name),
           member_ids: memberIds,
-          current_job: sq.descrizione || undefined,
+          current_job: sq.descrizione || sq.specializzazione || sq.zona || undefined,
           status_label: probl > 0 ? `${probl} problema` : `${active} attivi`,
-          problem_count: probl,
-          active_count: active,
-          progress: avgProg,
+          problem_count: probl, active_count: active, progress: avgProg,
         };
       });
       setTeams(tms);
 
-      // ===== BUILD PROBLEMS =====
       const probs: TeamProblem[] = (anomRows || []).map((a: any) => {
         const linkedM = montaggi.find(m => m.commessa_id === a.commessa_id);
         const reporterOp = ops.find(o => o.id === a.operatore_id);
@@ -303,16 +263,14 @@ export function useTeamMobile() {
           sev === "alta" || sev === "critica" ? "Alta" :
           sev === "bassa" ? "Bassa" : "Media";
         return {
-          id: a.id,
-          title: a.titolo || a.descrizione || "Problema",
+          id: a.id, title: a.titolo || a.descrizione || "Problema",
           commessa_id: a.commessa_id || undefined,
           commessa_label: linkedM?.commessa_code ? `${linkedM.commessa_code}${linkedM.cliente ? ` · ${linkedM.cliente}` : ""}` : undefined,
           ordine_label: undefined,
           reported_by: reporterOp?.name || "Operatore",
           reported_at: a.rilevata_at,
           reported_ago: tempoTrascorso(a.rilevata_at),
-          priority,
-          status: a.stato === "risolta" ? "risolto" : "aperto",
+          priority, status: a.stato === "risolta" ? "risolto" : "aperto",
         };
       });
       setProblems(probs);
@@ -323,7 +281,6 @@ export function useTeamMobile() {
     }
   }, [aziendaId]);
 
-  // Iniziale + polling fallback
   useEffect(() => {
     if (!aziendaId) return;
     fetchAll();
@@ -331,7 +288,6 @@ export function useTeamMobile() {
     return () => clearInterval(t);
   }, [aziendaId, fetchAll]);
 
-  // FASE 4: realtime live updates
   useTeamRealtime(aziendaId, fetchAll);
 
   const stats = useMemo(() => ({
