@@ -87,7 +87,7 @@ export default function SettingsVetriMobile({ onBack }: { onBack: () => void }) 
     try {
       const { supabase: sb } = await import('@/lib/supabase')
       const azienda_id = ctx?.aziendaIdReal || ctx?.aziendaInfo?.id || null
-      const nuovo = { nome: 'Nuovo vetro', composizione: '4float+16argon+4BE', ug: 1.1, spessore: 24, attivo: true, azienda_id }
+      const nuovo = { nome: 'Nuovo vetro', codice: 'VT-' + Date.now(), composizione: '4float+16argon+4BE', ug: 1.1, spessore: 24, attivo: true, azienda_id }
       const { data, error } = await sb.from('catalogo_vetri').insert([nuovo]).select().single()
       if (error) { alert('Errore: ' + error.message); return }
       setVetri(prev => [...prev, data as Vetro])
