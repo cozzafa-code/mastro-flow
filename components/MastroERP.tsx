@@ -43,7 +43,7 @@ import PreventivoModal from "./PreventivoModal";
 import RilieviListPanel from "./RilieviListPanel";
 import VanoDetailPanel from "./VanoDetailPanel";
 import VanoSectorRouter from "./VanoSectorRouter";
-import HomePanel from "./HomePanelMobile";
+import HomePanel from "./HomePanelMobileV2";
 import BottomToolbar from "./BottomToolbar";
 import TeamMobile from "./mobile/team/TeamMobile";
 import VoiceAssistant from "./VoiceAssistant";
