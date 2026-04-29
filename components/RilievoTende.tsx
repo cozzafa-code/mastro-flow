@@ -23,6 +23,9 @@ type Tenda = {
   bracci:Braccio[];
   aggancio:Pt[];
   misure:{ L?:string; S?:string; A?:string; muro?:string; note?:string };
+  fornitore?:string;
+  modello?:string;
+  colore?:string;
 };
 type CatalogoItem = { id:string; tipo:string; nome:string; categoria?:Categoria; fornitore?:string; png_url?:string; prezzo?:number };
 type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any; catalogo?:CatalogoItem[]; vanoId?:string };
@@ -577,6 +580,10 @@ export default function RilievoTende(props: Props){
     }
     for(let i=details.length-1;i>=0;i--){
       const d=details[i];
+      // Hit test ancora (cerchio P)
+      if(Math.hypot(p.x-d.anchor.x, p.y-d.anchor.y) <= 14){
+        return {what:"anchor", i:i};
+      }
       if(p.x>=d.thumb.x && p.x<=d.thumb.x+d.thumb.w && p.y>=d.thumb.y && p.y<=d.thumb.y+d.thumb.h){
         if(Math.abs(p.x-(d.thumb.x+d.thumb.w))<14 && Math.abs(p.y-(d.thumb.y+d.thumb.h))<14) return {what:"thumbResize",i:i};
         return {what:"thumbMove",i:i,ox:p.x-d.thumb.x,oy:p.y-d.thumb.y};
@@ -603,6 +610,38 @@ export default function RilievoTende(props: Props){
   }
 
   function applyDrag(p:Pt, dr:any){
+    // Drag particolari: indipendenti da activeIdx
+    if(dr.what==="thumbMove"){
+      setDetails(function(prev){
+        return prev.map(function(d, i){
+          if(i!==dr.i) return d;
+          const newThumb = { x: p.x - dr.ox, y: p.y - dr.oy, w: d.thumb.w, h: d.thumb.h };
+          return Object.assign({}, d, { thumb: newThumb });
+        });
+      });
+      return;
+    }
+    if(dr.what==="thumbResize"){
+      setDetails(function(prev){
+        return prev.map(function(d, i){
+          if(i!==dr.i) return d;
+          const newW = Math.max(50, p.x - d.thumb.x);
+          const newH = Math.max(40, p.y - d.thumb.y);
+          return Object.assign({}, d, { thumb: { x: d.thumb.x, y: d.thumb.y, w: newW, h: newH } });
+        });
+      });
+      return;
+    }
+    if(dr.what==="anchor"){
+      setDetails(function(prev){
+        return prev.map(function(d, i){
+          if(i!==dr.i) return d;
+          return Object.assign({}, d, { anchor: p });
+        });
+      });
+      return;
+    }
+    // Drag handle tenda: serve activeIdx valido
     if(activeIdx<0) return;
     setTende(function(prev){
       return prev.map(function(t, i){
@@ -1089,7 +1128,15 @@ export default function RilievoTende(props: Props){
 
         {sheetOpen==="misure" && active && (
           <div style={{padding:"10px 12px 14px"}}>
-            <div style={{fontSize:11, color:T.sub, marginBottom:8}}>Misure tenda T{activeIdx+1} ({modelLabel(active.model)})</div>
+            <div style={{fontSize:11, color:T.sub, marginBottom:8}}>Tenda T{activeIdx+1} ({modelLabel(active.model)})</div>
+            {/* Identita commerciale */}
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:10, paddingBottom:10, borderBottom:"1px solid "+T.bdr}}>
+              <div><label style={lbl}>Marca / Fornitore</label><input style={inp} type="text" placeholder="Es. Gibus, Pratic, KE..." value={active.fornitore||""} onChange={function(e){ updateActive({fornitore:e.target.value}); }} /></div>
+              <div><label style={lbl}>Modello / Sistema</label><input style={inp} type="text" placeholder="Es. Med Twist, Vela..." value={active.modello||""} onChange={function(e){ updateActive({modello:e.target.value}); }} /></div>
+              <div style={{gridColumn:"1 / -1"}}><label style={lbl}>Colore tessuto / struttura</label><input style={inp} type="text" placeholder="Es. RAL 7016 + tessuto Sunworker 8780" value={active.colore||""} onChange={function(e){ updateActive({colore:e.target.value}); }} /></div>
+            </div>
+            {/* Misure tecniche */}
+            <div style={{fontSize:10, color:T.sub, marginBottom:6, fontWeight:600, textTransform:"uppercase" as const, letterSpacing:"0.5px"}}>Misure</div>
             <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8}}>
               <div><label style={lbl}>Larghezza</label><input style={inp} type="number" placeholder="cm" value={active.misure.L||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {L:e.target.value})}); }} /></div>
               <div><label style={lbl}>{active.categoria==="esterno"?"Sporgenza":"Profondita"}</label><input style={inp} type="number" placeholder="cm" value={active.misure.S||""} onChange={function(e){ updateActive({misure:Object.assign({}, active.misure, {S:e.target.value})}); }} /></div>
