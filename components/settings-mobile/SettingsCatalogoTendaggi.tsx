@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { T } from '../home-mobile/HomeUI'
-import { useMastro } from '../MastroContext'
+import { getAziendaId } from '@/lib/supabase-sync'
 
 interface Modello {
   id: string
@@ -66,17 +66,17 @@ function tipoLabel(id: string) {
 }
 
 export default function SettingsCatalogoTendaggi({ onBack }: { onBack: () => void }) {
-  const ctx: any = (() => { try { return useMastro() } catch { return {} } })()
   const [items, setItems] = useState<Modello[]>([])
   const [loading, setLoading] = useState(true)
   const [filtroCat, setFiltroCat] = useState<'tutti' | 'esterno' | 'interno'>('tutti')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Modello | null>(null)
-
-  const azienda_id = ctx?.aziendaIdReal || ctx?.aziendaInfo?.id || null
+  const [aziendaId, setAziendaId] = useState<string | null>(null)
 
   useEffect(() => { (async () => {
     try {
+      const id = await getAziendaId()
+      setAziendaId(id)
       const { supabase: sb } = await import('@/lib/supabase')
       const { data, error } = await sb.from('catalogo_tendaggi').select('*').order('ordine', { ascending: true }).order('fornitore', { ascending: true })
       if (error) console.error(error)
@@ -86,10 +86,10 @@ export default function SettingsCatalogoTendaggi({ onBack }: { onBack: () => voi
   })() }, [])
 
   const aggiungi = async () => {
-    if (!azienda_id) { alert('Azienda non identificata'); return }
+    if (!aziendaId) { alert('Azienda non identificata. Riapri la pagina e ritenta.'); return }
     const { supabase: sb } = await import('@/lib/supabase')
     const nuovo: any = {
-      azienda_id,
+      azienda_id: aziendaId,
       fornitore: 'Nuovo fornitore',
       modello: 'Nuovo modello ' + Date.now().toString().slice(-4),
       categoria: 'esterno',

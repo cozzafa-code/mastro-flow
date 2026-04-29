@@ -164,9 +164,7 @@ export default function VanoDetailPanel() {
     spCanvasRef, canvasRef, fotoVanoRef, videoVanoRef, openCamera,
   } = useMastro();
   // Catalogo tendaggi aziendale (per RilievoTende)
-  const ctxAny: any = useMastro() as any;
-  const aziendaIdCat: string | null = ctxAny?.aziendaIdReal || ctxAny?.aziendaInfo?.id || null;
-  const { items: catalogoTendaggiRaw } = useCatalogoTendaggi(aziendaIdCat);
+  const { items: catalogoTendaggiRaw } = useCatalogoTendaggi();
   const catalogoTendePerRilievo = React.useMemo(() => catalogoTendaggiRaw.map((c) => ({
     id: c.id,
     tipo: c.tipo_modello,

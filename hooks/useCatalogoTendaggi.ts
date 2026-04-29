@@ -1,5 +1,6 @@
 // hooks/useCatalogoTendaggi.ts
 // Hook caricamento catalogo aziendale tendaggi.
+// Recupera azienda_id automaticamente via getAziendaId (localStorage/operatore/profili).
 
 import { useEffect, useState } from 'react'
 
@@ -14,16 +15,21 @@ export type CatalogoTendaItem = {
   unita_prezzo: 'mq' | 'pz' | null
 }
 
-export function useCatalogoTendaggi(aziendaId: string | null | undefined) {
+export function useCatalogoTendaggi() {
   const [items, setItems] = useState<CatalogoTendaItem[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!aziendaId) { setItems([]); return }
     let alive = true
     setLoading(true)
     ;(async () => {
       try {
+        const { getAziendaId } = await import('@/lib/supabase-sync')
+        const aziendaId = await getAziendaId()
+        if (!aziendaId) {
+          if (alive) { setItems([]); setLoading(false) }
+          return
+        }
         const { supabase } = await import('@/lib/supabase')
         const { data, error } = await supabase
           .from('catalogo_tendaggi')
@@ -41,7 +47,7 @@ export function useCatalogoTendaggi(aziendaId: string | null | undefined) {
       if (alive) setLoading(false)
     })()
     return () => { alive = false }
-  }, [aziendaId])
+  }, [])
 
   return { items, loading }
 }
