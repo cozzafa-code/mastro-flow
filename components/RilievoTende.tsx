@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const T = {
   bg: "#FFFFFF", card: "#FFFFFF", bdr: "#C8E4E4",
@@ -76,18 +77,27 @@ function newTenda(model:string, categoria:Categoria, offset:number):Tenda{
   return { id: uid(), categoria: categoria, model: model, corners: c, bracci: defaultBracci(c), aggancio: defaultAggancio(c), misure:{} };
 }
 
-function getToken():string{
+async function getToken():Promise<string>{
   if(typeof window === "undefined") return "";
-  return localStorage.getItem("sb-access-token") || "";
+  // Pattern usato dall'app: supabase.auth.getSession() per ottenere access_token
+  // Il token NON e' in localStorage('sb-access-token') ma nei cookie gestiti da Supabase SDK
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || "";
+  } catch(e) {
+    return "";
+  }
 }
 
 async function uploadFotoApi(file:File, vanoId:string):Promise<{url:string;path:string}>{
+  const token = await getToken();
+  if(!token) throw new Error("Sessione scaduta - rifai login");
   const fd = new FormData();
   fd.append("file", file);
   fd.append("vano_id", vanoId);
   const res = await fetch("/api/rilievo-tende/foto", {
     method: "POST",
-    headers: { Authorization: "Bearer "+getToken() },
+    headers: { Authorization: "Bearer "+token },
     body: fd
   });
   if(!res.ok){
