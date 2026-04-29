@@ -275,7 +275,7 @@ export function generaSvgSezione(layers: VetroLayer[], scale = 3): string {
     x += w
   })
 
-  return '<svg viewBox="-2 -2 ' + (x + 4) + ' ' + (H + 22) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto">' + p.join('') + '</svg>'
+  return '<svg viewBox="-2 -2 ' + (x + 4) + ' ' + (H + 22) + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" >' + p.join('') + '</svg>'
 }
 
 let _id = 0
