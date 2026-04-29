@@ -171,7 +171,7 @@ export default function CostruttoreVetriMobile({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <Kpi label="Spessore" value={calc.sp + 'mm'} unit="" color={T.text} isString />
-              <Kpi label="Peso" value={calc.peso} unit="kg/m²" color={T.text} />
+              <Kpi label="Peso" value={calc.peso.toFixed(1)} isString unit="kg/m²" color={T.text} />
               <Kpi label="Psi bordo" value={calc.psi} unit="W/mK" color={calc.psi <= 0.04 ? T.numTeal : calc.psi <= 0.06 ? T.numAmber : T.numRed} />
               <Kpi label="Sicurezza" value={calc.hasSic ? 'SI' : 'NO'} unit="" color={calc.hasSic ? T.numTeal : T.numRed} isString />
             </div>
