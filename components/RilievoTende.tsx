@@ -3,7 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 
 const T = {
   bg: "#FFFFFF", card: "#FFFFFF", bdr: "#C8E4E4",
-  acc: "#0F766E", accLt: "#E1F5EE", text: "#0D1F1F", sub: "#5F7575",
+  acc: "#0F766E", accLt: "#E1F5EE", accDk: "#0A5A4F",
+  text: "#0D1F1F", sub: "#5F7575",
   warn: "#D11A1A", arrow: "#E5A23A"
 };
 
@@ -12,6 +13,8 @@ type Braccio = { top:Pt; bot:Pt };
 type Detail = { dataUrl:string; img:HTMLImageElement|null; anchor:Pt; thumb:{x:number;y:number;w:number;h:number}; caption:string };
 type Quota = { p1:Pt; p2:Pt; label:string };
 type Props = { onClose:()=>void; onSave?:(data:any)=>void; initial?:any };
+
+const MODELS:[string,string][] = [["cassonetto","Cassonetto"],["bracci","Solo telo"],["capottina","Capottina"],["caduta","A caduta"],["rullo","Rullo"]];
 
 export default function RilievoTende({ onClose, onSave, initial }: Props){
   const cvRef = useRef<HTMLCanvasElement>(null);
@@ -30,6 +33,7 @@ export default function RilievoTende({ onClose, onSave, initial }: Props){
   const [quotaPending, setQuotaPending] = useState<Pt|null>(null);
   const [popup, setPopup] = useState<any>(null);
   const [lightbox, setLightbox] = useState<Detail|null>(null);
+  const [sheetOpen, setSheetOpen] = useState<"modello"|"misure"|null>("modello");
   const mouseRef = useRef({x:0,y:0});
 
   const [misure, setMisure] = useState({
@@ -124,15 +128,15 @@ export default function RilievoTende({ onClose, onSave, initial }: Props){
       const ir=img.width/img.height, cr=W/H;
       let dw,dh,ox,oy;
       if(ir>cr){ dw=W; dh=W/ir; ox=0; oy=(H-dh)/2; } else { dh=H; dw=H*ir; oy=0; ox=(W-dw)/2; }
-      ctx.fillStyle="#F1EFE8"; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle="#F4F1EA"; ctx.fillRect(0,0,W,H);
       ctx.drawImage(img,ox,oy,dw,dh);
     } else {
-      ctx.fillStyle="#F1EFE8"; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle="#888"; ctx.font="14px sans-serif"; ctx.textAlign="center";
-      ctx.fillText("Carica una foto del punto di installazione", W/2, H/2);
+      ctx.fillStyle="#F4F1EA"; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=T.sub; ctx.font="13px sans-serif"; ctx.textAlign="center";
+      ctx.fillText("Tocca 'Foto' per iniziare", W/2, H/2);
       ctx.textAlign="start";
     }
-    if(show.tenda && model && model!=="none" && tCorners){
+    if(show.tenda && model && tCorners){
       const xs=tCorners.map(p=>p.x), ys=tCorners.map(p=>p.y);
       const bw=Math.max(...xs)-Math.min(...xs), bh=Math.max(...ys)-Math.min(...ys);
       const src=tendaPNG(model, Math.max(120,bw), Math.max(80,bh));
@@ -268,7 +272,6 @@ export default function RilievoTende({ onClose, onSave, initial }: Props){
 
   function selectModel(m:string){
     setModel(m);
-    if(m==="none"){ setTCorners(null); setBracci(null); setAggancio([]); return; }
     const c = tCorners || defaultTenda();
     setTCorners(c);
     if(!bracci) setBracci(defaultBracci(c));
@@ -299,93 +302,134 @@ export default function RilievoTende({ onClose, onSave, initial }: Props){
     onClose();
   }
 
-  const btn:React.CSSProperties = { padding:"6px 12px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", color:T.text, fontSize:13, cursor:"pointer" };
-  const btnAcc:React.CSSProperties = { ...btn, background:T.accLt, color:T.acc, borderColor:T.acc };
-  const lbl:React.CSSProperties = { fontSize:12, color:T.sub, display:"block", marginBottom:3 };
-  const inp:React.CSSProperties = { width:"100%", fontSize:13, padding:"6px 8px", border:"1px solid "+T.bdr, borderRadius:6, background:"#fff", color:T.text };
+  // Stili base
+  const chip = (active:boolean):React.CSSProperties => ({
+    padding:"7px 12px", borderRadius:999, border:"1px solid "+(active?T.acc:T.bdr),
+    background: active?T.accLt:"#fff", color: active?T.acc:T.text,
+    fontSize:12, fontWeight:600, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0
+  });
+  const iconBtn:React.CSSProperties = {
+    width:36, height:36, borderRadius:10, border:"1px solid "+T.bdr,
+    background:"#fff", color:T.text, fontSize:16, cursor:"pointer",
+    display:"inline-flex", alignItems:"center", justifyContent:"center", flexShrink:0
+  };
+  const lbl:React.CSSProperties = { fontSize:11, color:T.sub, display:"block", marginBottom:4, fontWeight:500 };
+  const inp:React.CSSProperties = { width:"100%", fontSize:14, padding:"9px 10px", border:"1px solid "+T.bdr, borderRadius:8, background:"#fff", color:T.text, boxSizing:"border-box" };
 
   return (
-    <div style={{position:"fixed", inset:0, background:"#fff", zIndex:9000, overflow:"auto", padding:16}}>
-      <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:12}}>
-        <div style={{fontSize:16, fontWeight:700, color:T.acc}}>Rilievo Tendaggio</div>
-        <button onClick={onClose} style={{...btn, marginLeft:"auto"}}>Chiudi</button>
-        <button onClick={saveAndClose} style={btnAcc}>Salva</button>
+    <div style={{position:"fixed", inset:0, background:"#fff", zIndex:9000, display:"flex", flexDirection:"column"}}>
+      {/* HEADER sticky */}
+      <div style={{padding:"10px 12px", borderBottom:"1px solid "+T.bdr, background:"#fff", display:"flex", alignItems:"center", gap:8, flexShrink:0}}>
+        <button onClick={onClose} style={{...iconBtn, border:"none", background:"transparent"}}>{"\u2190"}</button>
+        <div style={{flex:1, fontSize:15, fontWeight:700, color:T.acc, lineHeight:1}}>Rilievo Tendaggio</div>
+        <button onClick={saveAndClose} style={{padding:"8px 14px", borderRadius:8, border:"none", background:T.acc, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>Salva</button>
       </div>
 
-      <div style={{display:"flex", gap:8, marginBottom:10, flexWrap:"wrap"}}>
-        <input ref={fileMain} type="file" accept="image/*" style={{display:"none"}} onChange={e=>loadFile(e.target as HTMLInputElement, (im)=>setImg(im))} />
-        <input ref={fileDetail} type="file" accept="image/*" style={{display:"none"}} onChange={e=>loadFile(e.target as HTMLInputElement, (im, url)=>{
+      {/* TOOLBAR azioni */}
+      <div style={{padding:"8px 12px", display:"flex", gap:6, alignItems:"center", borderBottom:"1px solid "+T.bdr, background:"#fff", flexShrink:0, overflowX:"auto"}}>
+        <input ref={fileMain} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>loadFile(e.target as HTMLInputElement, (im)=>setImg(im))} />
+        <input ref={fileDetail} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>loadFile(e.target as HTMLInputElement, (im, url)=>{
           const idx=details.length;
           const draft:Detail = { img:im, dataUrl:url, anchor:{x:320,y:200}, thumb:{x:20+idx*30, y:20+idx*20, w:110, h:80}, caption:"" };
           setPopup({ kind:"caption", title:"Etichetta del particolare", value:"Particolare "+(idx+1), x:320, y:200, payload:draft });
           (e.target as HTMLInputElement).value="";
         })} />
-        <button onClick={()=>fileMain.current?.click()} style={btn}>Carica foto</button>
-        <button onClick={()=>fileDetail.current?.click()} style={btn}>+ Particolare</button>
+        <button onClick={()=>fileMain.current?.click()} style={chip(false)}>{"\uD83D\uDCF7"} Foto</button>
+        <button onClick={()=>fileDetail.current?.click()} style={chip(false)}>{"\u2295"} Particolare</button>
+        <div style={{width:1, height:24, background:T.bdr, margin:"0 4px"}}/>
+        <button onClick={()=>setTool("select")} style={chip(tool==="select")}>{"\u2725"} Sposta</button>
+        <button onClick={()=>setTool("quota")} style={chip(tool==="quota")}>{"\uD83D\uDCCF"} Quota</button>
       </div>
 
-      <div style={{display:"flex", gap:6, marginBottom:8, flexWrap:"wrap", alignItems:"center"}}>
-        <button onClick={()=>setTool("select")} style={tool==="select"?btnAcc:btn}>Sposta</button>
-        <button onClick={()=>setTool("quota")} style={tool==="quota"?btnAcc:btn}>Quota</button>
-        <label style={{fontSize:13, display:"flex", alignItems:"center", gap:4}}><input type="checkbox" checked={show.tenda} onChange={e=>setShow({...show, tenda:e.target.checked})}/>Tenda</label>
-        <label style={{fontSize:13, display:"flex", alignItems:"center", gap:4}}><input type="checkbox" checked={show.bracci} onChange={e=>setShow({...show, bracci:e.target.checked})}/>Bracci</label>
-        <label style={{fontSize:13, display:"flex", alignItems:"center", gap:4}}><input type="checkbox" checked={show.aggancio} onChange={e=>setShow({...show, aggancio:e.target.checked})}/>Aggancio</label>
-      </div>
-
-      <div style={{position:"relative", background:"#F4F4F1", borderRadius:12, padding:12}}>
+      {/* CANVAS area */}
+      <div style={{flex:1, position:"relative", background:"#1a1a1a", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center"}}>
         <canvas ref={cvRef} width={W} height={H}
-          style={{width:"100%", maxWidth:W+"px", display:"block", background:"#fff", borderRadius:8, border:"1px solid "+T.bdr, cursor: tool==="select"?"default":"crosshair"}}
+          style={{width:"100%", height:"100%", maxWidth:"100vw", display:"block", touchAction:"none", cursor: tool==="select"?"default":"crosshair", objectFit:"contain"}}
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp}
           onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
         />
+
+        {/* Layer toggle floating */}
+        <div style={{position:"absolute", top:10, right:10, display:"flex", flexDirection:"column", gap:6}}>
+          {[
+            {k:"tenda" as const, lab:"Tenda"},
+            {k:"bracci" as const, lab:"Bracci"},
+            {k:"aggancio" as const, lab:"Aggancio"}
+          ].map(({k,lab})=>(
+            <button key={k} onClick={()=>setShow({...show, [k]:!show[k]})}
+              style={{padding:"5px 10px", borderRadius:999, border:"none",
+                background: show[k]?T.acc:"rgba(255,255,255,0.85)",
+                color: show[k]?"#fff":T.sub,
+                fontSize:11, fontWeight:600, cursor:"pointer"}}>{lab}</button>
+          ))}
+        </div>
+
+        {/* Popup quota/caption */}
         {popup && (
-          <div style={{position:"absolute", left:Math.max(8, popup.x-110)+"px", top:Math.max(8, popup.y-60)+"px", zIndex:50, background:"#fff", border:"2px solid "+T.acc, borderRadius:8, padding:10, minWidth:220}}>
-            <div style={{fontSize:12, color:T.acc, fontWeight:600, marginBottom:6}}>{popup.title}</div>
+          <div style={{position:"absolute", left:"50%", top:"50%", transform:"translate(-50%,-50%)", zIndex:50, background:"#fff", border:"2px solid "+T.acc, borderRadius:12, padding:14, minWidth:260, boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+            <div style={{fontSize:13, color:T.acc, fontWeight:600, marginBottom:8}}>{popup.title}</div>
             <input autoFocus value={popup.value} onChange={e=>setPopup({...popup, value:e.target.value})}
               onKeyDown={e=>{ if(e.key==="Enter") commitPopup(); if(e.key==="Escape") setPopup(null); }}
-              style={{...inp, fontSize:14}} />
-            <div style={{display:"flex", gap:6, marginTop:8, justifyContent:"flex-end"}}>
-              <button onClick={()=>setPopup(null)} style={btn}>Annulla</button>
-              <button onClick={commitPopup} style={btnAcc}>OK</button>
+              style={{...inp, fontSize:15}} />
+            <div style={{display:"flex", gap:6, marginTop:10, justifyContent:"flex-end"}}>
+              <button onClick={()=>setPopup(null)} style={{padding:"7px 14px", borderRadius:8, border:"1px solid "+T.bdr, background:"#fff", fontSize:13, cursor:"pointer"}}>Annulla</button>
+              <button onClick={commitPopup} style={{padding:"7px 14px", borderRadius:8, border:"none", background:T.acc, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer"}}>OK</button>
             </div>
           </div>
         )}
       </div>
 
-      <div style={{marginTop:10, padding:"10px 12px", border:"1px solid "+T.bdr, borderRadius:8, background:"#fff"}}>
-        <div style={{fontSize:13, marginBottom:8, fontWeight:600, color:T.text}}>Modello</div>
-        <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
-          {[["cassonetto","Cassonetto"],["bracci","Solo telo"],["capottina","Capottina"],["caduta","A caduta"],["rullo","Rullo"],["none","Togli"]].map(([id,lab])=>(
-            <button key={id} onClick={()=>selectModel(id)} style={model===id?btnAcc:btn}>{lab}</button>
+      {/* BOTTOM SHEET tabs */}
+      <div style={{borderTop:"1px solid "+T.bdr, background:"#fff", flexShrink:0}}>
+        <div style={{display:"flex", padding:"6px 8px 0", gap:4}}>
+          {[["modello","Modello"],["misure","Misure"]].map(([k,lab])=>(
+            <button key={k} onClick={()=>setSheetOpen(sheetOpen===k?null:k as any)}
+              style={{flex:1, padding:"10px 12px", border:"none", background:"transparent",
+                borderBottom:"2px solid "+(sheetOpen===k?T.acc:"transparent"),
+                color: sheetOpen===k?T.acc:T.sub,
+                fontSize:13, fontWeight:600, cursor:"pointer"}}>
+              {lab} {k==="modello" && model ? <span style={{opacity:0.6, fontSize:11}}>({MODELS.find(m=>m[0]===model)?.[1]})</span> : null}
+            </button>
           ))}
         </div>
-      </div>
 
-      <div style={{marginTop:10, padding:"10px 12px", border:"1px solid "+T.bdr, borderRadius:8, background:"#fff"}}>
-        <div style={{fontSize:13, marginBottom:10, fontWeight:600, color:T.text}}>Misure</div>
-        <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:10}}>
-          <div><label style={lbl}>Larghezza (cm)</label><input style={inp} type="number" placeholder="es. 300" value={misure.L} onChange={e=>setMisure({...misure, L:e.target.value})} /></div>
-          <div><label style={lbl}>Sporgenza (cm)</label><input style={inp} type="number" placeholder="es. 250" value={misure.S} onChange={e=>setMisure({...misure, S:e.target.value})} /></div>
-          <div><label style={lbl}>H attacco (cm)</label><input style={inp} type="number" placeholder="es. 280" value={misure.A} onChange={e=>setMisure({...misure, A:e.target.value})} /></div>
-          <div><label style={lbl}>Tipo muro</label>
-            <select style={inp} value={misure.muro} onChange={e=>setMisure({...misure, muro:e.target.value})}>
-              <option value="">---</option><option>Pieno</option><option>Forato</option><option>Cemento</option><option>Cappotto</option>
-            </select>
+        {sheetOpen==="modello" && (
+          <div style={{padding:"10px 12px 14px", display:"flex", gap:6, flexWrap:"wrap"}}>
+            {MODELS.map(([id,lab])=>(
+              <button key={id} onClick={()=>selectModel(id)} style={chip(model===id)}>{lab}</button>
+            ))}
+            {model && (
+              <button onClick={()=>{setModel(null); setTCorners(null); setBracci(null); setAggancio([]);}} style={{...chip(false), color:T.warn, borderColor:T.warn}}>Togli</button>
+            )}
           </div>
-        </div>
-        <div style={{marginTop:10}}>
-          <label style={lbl}>Note</label>
-          <textarea rows={2} style={{...inp, resize:"vertical"}} value={misure.note} onChange={e=>setMisure({...misure, note:e.target.value})} />
-        </div>
+        )}
+
+        {sheetOpen==="misure" && (
+          <div style={{padding:"10px 12px 14px"}}>
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8}}>
+              <div><label style={lbl}>Larghezza</label><input style={inp} type="number" placeholder="cm" value={misure.L} onChange={e=>setMisure({...misure, L:e.target.value})} /></div>
+              <div><label style={lbl}>Sporgenza</label><input style={inp} type="number" placeholder="cm" value={misure.S} onChange={e=>setMisure({...misure, S:e.target.value})} /></div>
+              <div><label style={lbl}>H attacco</label><input style={inp} type="number" placeholder="cm" value={misure.A} onChange={e=>setMisure({...misure, A:e.target.value})} /></div>
+              <div><label style={lbl}>Tipo muro</label>
+                <select style={inp} value={misure.muro} onChange={e=>setMisure({...misure, muro:e.target.value})}>
+                  <option value="">---</option><option>Pieno</option><option>Forato</option><option>Cemento</option><option>Cappotto</option>
+                </select>
+              </div>
+            </div>
+            <div style={{marginTop:8}}>
+              <textarea rows={2} style={{...inp, resize:"vertical"}} placeholder="Note" value={misure.note} onChange={e=>setMisure({...misure, note:e.target.value})} />
+            </div>
+          </div>
+        )}
       </div>
 
       {lightbox && (
         <div onClick={e=>{ if((e.target as any).id==="lb") setLightbox(null); }} id="lb"
-          style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.85)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20}}>
-          <div style={{position:"relative", maxWidth:"90vw", maxHeight:"90vh"}}>
-            <img src={lightbox.dataUrl} style={{maxWidth:"90vw", maxHeight:"80vh", display:"block", borderRadius:8}} />
+          style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:20}}>
+          <div style={{position:"relative", maxWidth:"95vw", maxHeight:"95vh"}}>
+            <img src={lightbox.dataUrl} style={{maxWidth:"95vw", maxHeight:"85vh", display:"block", borderRadius:10}} />
             <div style={{color:"#fff", fontSize:14, textAlign:"center", marginTop:10}}>{lightbox.caption}</div>
-            <button onClick={()=>setLightbox(null)} style={{position:"absolute", top:-10, right:-10, width:36, height:36, borderRadius:"50%", background:"#fff", border:"none", fontSize:18, cursor:"pointer"}}>X</button>
+            <button onClick={()=>setLightbox(null)} style={{position:"absolute", top:-12, right:-12, width:40, height:40, borderRadius:"50%", background:"#fff", border:"none", fontSize:20, cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.4)"}}>X</button>
           </div>
         </div>
       )}
